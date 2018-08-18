@@ -316,7 +316,8 @@ verifyDomainValue builtinSort validate =
                 (skipOtherSorts domainValueSort (validate dv))
             _ -> return ()  -- no domain value to verify
       where
-        -- | Run @next@ if @sort@ is hooked to @builtinSort@; do nothing otherwise.
+        -- | Run @next@ if @sort@ is hooked to @builtinSort@; do nothing
+        -- otherwise.
         skipOtherSorts sort next = do
             decl <- Except.catchError
                     (Just <$> verifySort findSort builtinSort sort)
@@ -327,7 +328,8 @@ verifyDomainValue builtinSort validate =
 
 verifyStringLiteral
     :: (StringLiteral -> Either (Error VerifyError) ())
-    -> (DomainValue Object (CommonPurePattern Meta) -> Either (Error VerifyError) ())
+    -> (DomainValue Object (CommonPurePattern Meta)
+    -> Either (Error VerifyError) ())
 verifyStringLiteral validate DomainValue { domainValueChild } =
     case Functor.Foldable.project domainValueChild of
         StringLiteralPattern lit@StringLiteral {} -> validate lit
