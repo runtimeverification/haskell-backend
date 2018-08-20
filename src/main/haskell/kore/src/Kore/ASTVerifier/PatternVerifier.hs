@@ -15,6 +15,7 @@ module Kore.ASTVerifier.PatternVerifier
 
 import           Control.Monad
                  ( foldM, zipWithM_ )
+import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Functor.Foldable
                  (Fix)
 import qualified Data.Map as Map
@@ -454,22 +455,31 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
         "The declared sort is different."
     return (variableSort variable)
 
--- TODO: properly verify child pattern if it's not a stringLiteral
 verifyDomainValue
     :: (MetaOrObject level)
     => DomainValue Object (Fix (Pattern Meta Variable))
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (Sort Object)
-verifyDomainValue dv verifyHelpers declaredSortVariables =
+verifyDomainValue
+    DomainValue
+        { domainValueSort
+        , domainValueChild
+        }
+    verifyHelpers
+    declaredSortVariables
+  =
     case isMetaOrObject verifyHelpers of
         IsMeta -> error "Domain Values are object-only. Should not happen."
         IsObject -> do
             verifySort
                 (verifyHelpersFindSort verifyHelpers)
                 declaredSortVariables
-                (domainValueSort dv)
-            return (domainValueSort dv)
+                domainValueSort
+            case Functor.Foldable.project domainValueChild of
+                StringLiteralPattern _ -> return ()
+                _ -> koreFail "Domain value argument must be a literal string."
+            return domainValueSort
 
 verifyStringPattern :: Either (Error VerifyError) (Sort Meta)
 verifyStringPattern = Right charListMetaSort
