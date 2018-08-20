@@ -3,7 +3,14 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 
-module Test.Kore.ASTUtils (test_substitutions, test_sortAgreement) where
+module Test.Kore.ASTUtils 
+( test_substitutions
+, test_sortAgreement
+, var
+, var_
+, testSort
+, dummyEnvironment
+) where
 
 import Test.Tasty
        ( TestTree, testGroup )
@@ -220,7 +227,6 @@ testGetSetIdentity size = dummyEnvironment $ testGroup "getSetIdent" $ do
 var :: MetaOrObject level => String -> Variable level
 var x =
   Variable (noLocationId x) (testSort "S")
-
 
 var_ :: MetaOrObject level => String -> String -> Variable level
 var_ x s =
