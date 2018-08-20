@@ -47,6 +47,7 @@ dependencies:
   - text
   - time
   - unordered-containers
+  - sbv
 
 build-tools:
   - tasty-discover
