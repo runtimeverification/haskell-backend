@@ -150,5 +150,3 @@ getSortHook
     => Sort Object
     -> Hook
 getSortHook sort = Hook $ Just $ getId $ (\s -> case s of (SortActualSort (SortActual n _)) -> n ; _ -> error (show s)) sort --getSortHook_ given $ sort
-
-
