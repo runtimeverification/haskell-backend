@@ -48,6 +48,19 @@ instance ParseAttributes SMTAttributes where
         hook <- attributesParser
         pure SMTAttributes {..}
 
+data SMTAttributes
+  = SMTAttributes
+  { hook :: !Hook
+  } deriving(Eq, Show)
+
+instance Default SMTAttributes where
+    def = SMTAttributes def
+
+instance ParseAttributes SMTAttributes where
+    attributesParser = do
+        hook <- attributesParser
+        pure SMTAttributes {..} 
+
 -- TODO: No hardcoded strings.
 provePattern
     :: Given SMTAttributes
@@ -135,6 +148,7 @@ translate p = goTranslate
 
 isHook h s =
     h == Hook (Just s)
+
 
 getHookString (Hook (Just s)) = s
 getHookString _ = ""
