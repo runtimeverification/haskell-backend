@@ -96,7 +96,7 @@ commandLineParser =
         <> long "module"
         <> help "The name of the main module in the Kore definition."
         <> value "" )
-    <*> enableDisableFlag "isProgram"
+    <*> enableDisableFlag "is-program"
         True False False
         "Whether the pattern represents a program."
 
