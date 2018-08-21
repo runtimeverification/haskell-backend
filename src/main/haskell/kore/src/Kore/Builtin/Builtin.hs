@@ -35,10 +35,15 @@ module Kore.Builtin.Builtin
     , verifyStringLiteral
     , parseDomainValue
     , notImplemented
+    , binaryOperator
+    , unaryOperator
     ) where
 
 import           Control.Monad
                  ( zipWithM_ )
+import           Control.Monad.Cont
+                 ( ContT )
+import qualified Control.Monad.Cont as Cont
 import qualified Control.Monad.Except as Except
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.HashMap.Strict
@@ -46,42 +51,53 @@ import           Data.HashMap.Strict
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Semigroup
                  ( Semigroup (..) )
-import Data.Void ( Void )
-import Text.Megaparsec ( Parsec )
+import           Data.Void
+                 ( Void )
+import           Text.Megaparsec
+                 ( Parsec )
 import qualified Text.Megaparsec as Parsec
 
-import Kore.AST.Common
-       ( DomainValue (..), Id (..),
-       Pattern (DomainValuePattern, StringLiteralPattern), Sort (..),
-       SortActual (..), SortVariable (..), StringLiteral (..), Symbol (..),
-       Variable )
-import Kore.AST.Error
-       ( withLocationAndContext )
-import Kore.AST.Kore
-       ( CommonKorePattern )
-import Kore.AST.MetaOrObject
-       ( Meta, Object )
-import Kore.AST.PureML
-       ( CommonPurePattern )
-import Kore.AST.Sentence
-       ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
-       SentenceSymbol (..) )
-import Kore.ASTUtils.SmartPatterns ( pattern StringLiteral_ )
-import Kore.ASTVerifier.Error
-       ( VerifyError )
-import Kore.Attribute.Parser
-       ( parseAttributes )
-import Kore.Builtin.Hook
-       ( Hook (..) )
-import Kore.Error
-       ( Error, castError, koreFail, koreFailWhen, withContext )
-import Kore.IndexedModule.IndexedModule
-       ( SortDescription )
-import Kore.Step.Function.Data
-       ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
-       AttemptedFunction (NotApplicable) )
-import Kore.Step.Simplification.Data
-       ( SimplificationProof (SimplificationProof) )
+import           Kore.AST.Common
+                 ( Application (..), DomainValue (..), Id (..),
+                 Pattern (DomainValuePattern, StringLiteralPattern), Sort (..),
+                 SortActual (..), SortVariable (..), StringLiteral (..),
+                 Symbol (..), SymbolOrAlias, Variable )
+import           Kore.AST.Error
+                 ( withLocationAndContext )
+import           Kore.AST.Kore
+                 ( CommonKorePattern )
+import           Kore.AST.MetaOrObject
+                 ( Meta, Object )
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
+import           Kore.AST.Sentence
+                 ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
+                 SentenceSymbol (..) )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.ASTUtils.SmartPatterns
+                 ( pattern StringLiteral_ )
+import           Kore.ASTVerifier.Error
+                 ( VerifyError )
+import           Kore.Attribute.Parser
+                 ( parseAttributes )
+import           Kore.Builtin.Hook
+                 ( Hook (..) )
+import           Kore.Error
+                 ( Error, castError, koreFail, koreFailWhen, withContext )
+import           Kore.IndexedModule.IndexedModule
+                 ( SortDescription )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..) )
+import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.ExpandedPattern
+                 ( ExpandedPattern (..) )
+import           Kore.Step.Function.Data
+                 ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
+                 AttemptedFunction (..) )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Simplification.Data
+                 ( SimplificationProof (..), Simplifier )
 
 type Parser = Parsec Void String
 
@@ -324,10 +340,17 @@ verifySymbolArguments
     builtinArity = length verifyArguments
     arity = length sorts
 
+{- | Verify a domain value pattern.
+
+  If the given pattern is not a domain value, it is skipped.
+
+  See also: 'verifyStringLiteral'
+
+ -}
 verifyDomainValue
     :: String  -- ^ Builtin sort name
     -> DomainValueVerifier
-    -- ^ Validation function
+    -- ^ validation function
     -> PatternVerifier
 verifyDomainValue builtinSort validate =
     PatternVerifier { runPatternVerifier }
@@ -363,15 +386,28 @@ verifyDomainValue builtinSort validate =
               Nothing -> return ()
               Just () -> next
 
+{- | Verify a literal string domain value.
+
+  If the given domain value is not a literal string, it is skipped.
+
+  See also: 'verifyDomainValue'
+
+ -}
 verifyStringLiteral
     :: (StringLiteral -> Either (Error VerifyError) ())
-    -> (DomainValue Object (CommonPurePattern Meta)
-    -> Either (Error VerifyError) ())
+    -- ^ validation function
+    -> DomainValueVerifier
 verifyStringLiteral validate DomainValue { domainValueChild } =
     case Functor.Foldable.project domainValueChild of
         StringLiteralPattern lit@StringLiteral {} -> validate lit
         _ -> return ()
 
+{- | Run a parser in a domain value pattern.
+
+  An error is thrown if the domain value does not contain a literal string.
+  The parsed value is returned.
+
+ -}
 parseDomainValue
     :: Parser a
     -> DomainValue Object (CommonPurePattern Meta)
@@ -394,3 +430,165 @@ parseDomainValue
   where
     castParseError =
         either (Kore.Error.koreFail . Parsec.parseErrorPretty) pure
+
+-- TODO (thomas.tuegel): Using extensible exceptions for error handling would
+-- also simplify this definition and avoid the need for continuation passing.
+{- | @Skip@ allows to quit early when evaluation cannot be continued.
+
+  Use 'Cont.callCC' to capture a continuation which can be called anywhere to
+  exit the current evaluation.
+
+ -}
+type Skip a = ContT (AttemptedFunction Object Variable) Simplifier a
+
+runSkip
+    :: Skip (AttemptedFunction Object Variable)
+    -> Simplifier
+        (AttemptedFunction Object Variable, SimplificationProof Object)
+runSkip action = do
+    a <- Cont.runContT action return
+    return (a, SimplificationProof)
+
+-- | Cast any error into a 'FunctionError'.
+liftParseError :: Either (Kore.Error.Error e) a -> Skip a
+liftParseError =
+    Except.lift . either Except.throwError return . Kore.Error.castError
+
+{- | Run a parser inside a domain value during evaluation.
+
+  If the pattern is not a domain value, the function is skipped using the
+  provided continuation.
+
+  See also: 'Cont.callCC'
+
+ -}
+getDomainValue
+    :: (AttemptedFunction Object Variable -> Skip a)
+    -- ^ Continuation captured with 'Cont.callCC'
+    -> Parser a
+    -- ^ Parser to run in domain value
+    -> CommonPurePattern Object
+    -> Skip a
+getDomainValue skip parse =
+    \case
+        Functor.Foldable.Fix (DomainValuePattern dv) ->
+            liftParseError (parseDomainValue parse dv)
+        _ -> skip NotApplicable
+
+{- | Return the supplied pattern as an 'AttemptedFunction'.
+
+  No substitution or predicate is applied.
+
+  See also: 'ExpandedPattern'
+ -}
+appliedFunction
+    :: Monad m
+    => CommonPurePattern Object
+    -> m (AttemptedFunction Object Variable)
+appliedFunction term =
+    (return . Applied . OrOfExpandedPattern.make)
+        [ExpandedPattern
+            { term
+            , predicate = Predicate.makeTruePredicate
+            , substitution = []
+            }
+        ]
+
+{- | Look up the result sort of a symbol or alias
+ -}
+getResultSort :: MetadataTools level attrs -> SymbolOrAlias level -> Sort level
+getResultSort MetadataTools { sortTools } symbol =
+    case sortTools symbol of
+        ApplicationSorts { applicationSortsResult } -> applicationSortsResult
+
+{- | Construct a builtin binary operator.
+
+  Both operands have the same builtin type, which may be different from the
+  result type.
+
+  The function is skipped if its arguments are not domain values.
+  It is an error if the wrong number of arguments is given; this must be checked
+  during verification.
+
+ -}
+binaryOperator
+    :: Parser a
+    -- ^ Parse operand
+    -> (Sort Object -> b -> CommonPurePattern Object)
+    -- ^ Render result as pattern with given sort
+    -> String
+    -- ^ Builtin function name (for error messages)
+    -> (a -> a -> b)
+    -- ^ Operation on builtin types
+    -> Function
+binaryOperator
+    parse
+    asPattern
+    ctx
+    op
+  =
+    ApplicationFunctionEvaluator binaryOperator1
+  where
+    binaryOperator1
+        tools
+        _
+        Application
+            { applicationSymbolOrAlias =
+                (getResultSort tools -> resultSort)
+            , applicationChildren
+            }
+      =
+        case applicationChildren of
+            [a, b] ->
+                runSkip $ Cont.callCC $ \skip -> do
+                    let get = getDomainValue skip parse
+                    r <- op <$> get a <*> get b
+                    (appliedFunction . asPattern resultSort) r
+            _ -> impossible ctx "Wrong number of arguments"
+
+{- | Construct a builtin unary operator.
+
+  The operand type may differ from the result type.
+
+  The function is skipped if its arguments are not domain values.
+  It is an error if the wrong number of arguments is given; this must be checked
+  during verification.
+
+ -}
+unaryOperator
+    :: Parser a
+    -- ^ Parse operand
+    -> (Sort Object -> b -> CommonPurePattern Object)
+    -- ^ Render result as pattern with given sort
+    -> String
+    -- ^ Builtin function name (for error messages)
+    -> (a -> b)
+    -- ^ Operation on builtin types
+    -> Function
+unaryOperator
+    parse
+    asPattern
+    ctx
+    op
+  =
+    ApplicationFunctionEvaluator unaryOperator1
+  where
+    unaryOperator1
+        tools
+        _
+        Application
+            { applicationSymbolOrAlias =
+                (getResultSort tools -> resultSort)
+            , applicationChildren
+            }
+      =
+        case applicationChildren of
+            [a] ->
+                runSkip $ Cont.callCC $ \skip -> do
+                    let get = getDomainValue skip parse
+                    r <- op <$> get a
+                    (appliedFunction . asPattern resultSort) r
+            _ -> impossible ctx "Wrong number of arguments"
+
+impossible :: String -> String -> a
+impossible ctx what = error (ctx ++ ": The impossible happened! " ++ what)
