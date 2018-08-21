@@ -108,11 +108,19 @@ type SymbolVerifiers = HashMap String SymbolVerifier
 
 newtype PatternVerifier =
     PatternVerifier
-    { runPatternVerifier
+    {
+      {- | Verify object-level patterns in builtin sorts.
+
+        The first argument is a function to look up sorts.
+        The second argument is a (projected) object-level pattern to verify.
+        If the pattern is not in a builtin sort, the verifier should
+        @return ()@.
+
+        See also: 'verifyDomainValue'
+      -}
+      runPatternVerifier
         :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
-        -- ^ Find a sort declaration
         -> Pattern Object Variable CommonKorePattern
-        -- ^ (Projected) Kore pattern to verify
         -> Either (Error VerifyError) ()
     }
 
