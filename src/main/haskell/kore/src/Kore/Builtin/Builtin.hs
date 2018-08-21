@@ -19,12 +19,13 @@ module Kore.Builtin.Builtin
       -- * Using builtin verifiers
       Verifiers (..)
     , SymbolVerifier, SymbolVerifiers
-    , SortVerifier, SortVerifiers
+    , SortDeclVerifier, SortDeclVerifiers
+    , SortVerifier
     , PatternVerifier (..)
     , Function
     , Parser
     , symbolVerifier
-    , sortVerifier
+    , sortDeclVerifier
       -- * Declaring builtin verifiers
     , verifySortDecl
     , verifySort
@@ -86,13 +87,21 @@ type Parser = Parsec Void String
 
 type Function = ApplicationFunctionEvaluator Object Variable
 
-type SortVerifier =
+-- | Verify a sort declaration.
+type SortDeclVerifier =
        KoreSentenceSort Object
     -- ^ Sort declaration to verify
     -> Either (Error VerifyError) ()
 
--- | @SortVerifiers@ associates a @SortVerifier@ with its builtin sort name.
-type SortVerifiers = HashMap String SortVerifier
+type SortVerifier =
+       (Id Object -> Either (Error VerifyError) (SortDescription Object))
+    -- ^ Find a sort declaration
+    -> Sort Object
+    -- ^ Sort to verify
+    -> Either (Error VerifyError) ()
+
+-- | @SortDeclVerifiers@ associates a @SortDeclVerifier@ with its builtin sort name.
+type SortDeclVerifiers = HashMap String SortDeclVerifier
 
 type SymbolVerifier =
        (Id Object -> Either (Error VerifyError) (SortDescription Object))
@@ -150,25 +159,25 @@ type DomainValueVerifier =
  -}
 data Verifiers =
     Verifiers
-    { sortVerifiers :: SortVerifiers
+    { sortDeclVerifiers :: SortDeclVerifiers
     , symbolVerifiers :: SymbolVerifiers
     , patternVerifier :: PatternVerifier
     }
 
-{- | Look up and apply a builtin sort verifier.
+{- | Look up and apply a builtin sort declaration verifier.
 
   The 'Hook' name should refer to a builtin sort; if it is unset or the name is
   not recognized, verification succeeds.
 
  -}
-sortVerifier :: Verifiers -> Hook -> SortVerifier
-sortVerifier Verifiers { sortVerifiers } hook =
+sortDeclVerifier :: Verifiers -> Hook -> SortDeclVerifier
+sortDeclVerifier Verifiers { sortDeclVerifiers } hook =
     let
-        hookedSortVerifier :: Maybe SortVerifier
+        hookedSortVerifier :: Maybe SortDeclVerifier
         hookedSortVerifier = do
             -- Get the builtin sort name.
             sortName <- getHook hook
-            HashMap.lookup sortName sortVerifiers
+            HashMap.lookup sortName sortDeclVerifiers
     in
         case hookedSortVerifier of
             Nothing ->
@@ -218,7 +227,7 @@ notImplemented =
   Check that the hooked sort does not take any sort parameters.
 
  -}
-verifySortDecl :: SortVerifier
+verifySortDecl :: SortDeclVerifier
 verifySortDecl
     SentenceSort
     { sentenceSortName = sortId@Id { getId = sortName }
@@ -266,12 +275,12 @@ verifySort _ _ (SortVariableSort SortVariable { getSortVariable }) =
 
  -}
 verifySymbol
-    :: String  -- ^ Builtin result sort
-    -> [String]  -- ^ Builtin argument sorts
+    :: SortVerifier  -- ^ Builtin result sort
+    -> [SortVerifier]  -- ^ Builtin argument sorts
     -> SymbolVerifier
 verifySymbol
-    builtinResult
-    builtinSorts
+    verifyResult
+    verifyArguments
     findSort
     decl@SentenceSymbol
         { sentenceSymbolSymbol =
@@ -283,9 +292,8 @@ verifySymbol
         symbolId
         ("In symbol '" ++ symbolName ++ "' declaration")
         (do
-            withContext "In result sort"
-                (verifySort findSort builtinResult result)
-            verifySymbolArguments builtinSorts findSort decl
+            withContext "In result sort" (verifyResult findSort result)
+            verifySymbolArguments verifyArguments findSort decl
         )
 
 {- | Verify the arguments of a builtin sort declaration.
@@ -298,10 +306,10 @@ verifySymbol
 
  -}
 verifySymbolArguments
-    :: [String]  -- ^ Builtin argument sorts
+    :: [SortVerifier]  -- ^ Builtin argument sorts
     -> SymbolVerifier
 verifySymbolArguments
-    builtinSorts
+    verifyArguments
     findSort
     SentenceSymbol { sentenceSymbolSorts = sorts }
   =
@@ -310,10 +318,10 @@ verifySymbolArguments
         koreFailWhen (arity /= builtinArity)
             ("Expected " ++ show builtinArity
              ++ " arguments, found " ++ show arity)
-        zipWithM_ (verifySort findSort) builtinSorts sorts
+        zipWithM_ (\verify sort -> verify findSort sort) verifyArguments sorts
     )
   where
-    builtinArity = length builtinSorts
+    builtinArity = length verifyArguments
     arity = length sorts
 
 verifyDomainValue

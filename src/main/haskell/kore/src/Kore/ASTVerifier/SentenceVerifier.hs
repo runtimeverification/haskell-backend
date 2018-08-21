@@ -248,7 +248,7 @@ verifyObjectSentence
         verifySortSentence sortSentence attributesVerification
         let SentenceSort { sentenceSortAttributes } = sortSentence
         hook <- castError (parseAttributes sentenceSortAttributes)
-        Builtin.sortVerifier builtinVerifiers hook sortSentence
+        Builtin.sortDeclVerifier builtinVerifiers hook sortSentence
         pure (VerifySuccess ())
 
 verifyObjectSentence

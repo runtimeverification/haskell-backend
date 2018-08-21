@@ -16,7 +16,7 @@ This module is intended to be imported qualified.
 module Kore.Builtin
     ( Verifiers (..)
     , PatternVerifier (..)
-    , sortVerifier
+    , sortDeclVerifier
     , symbolVerifier
     , koreBuiltins
     ) where
@@ -26,7 +26,7 @@ import Data.Semigroup
 
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
-                 ( PatternVerifier (..), Verifiers (..), sortVerifier,
+                 ( PatternVerifier (..), Verifiers (..), sortDeclVerifier,
                  symbolVerifier )
 import qualified Kore.Builtin.Int as Int
 
@@ -38,9 +38,9 @@ import qualified Kore.Builtin.Int as Int
 koreBuiltins :: Verifiers
 koreBuiltins =
     Verifiers
-    { sortVerifiers =
-           Bool.sortVerifiers
-        <> Int.sortVerifiers
+    { sortDeclVerifiers =
+           Bool.sortDeclVerifiers
+        <> Int.sortDeclVerifiers
     , symbolVerifiers =
            Bool.symbolVerifiers
         <> Int.symbolVerifiers
