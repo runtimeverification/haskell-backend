@@ -13,6 +13,8 @@ import Kore.AST.AstWithLocation
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
+import Kore.AST.PureML
+       ( asPurePattern )
 import Kore.AST.Sentence
 import Kore.Building.Implicit
 import Kore.Building.Patterns as Patterns
@@ -470,6 +472,34 @@ test_patternVerifier =
         [ objectSortSentence
         , anotherSortSentence
         ]
+        NeedsInternalDefinitions
+    , failureTestsForObjectPattern "Domain value - complex argument"
+        (ExpectedErrorMessage
+            "Domain value argument must be a literal string.")
+        (ErrorStack
+            [ "\\dv (<test data>)" ]
+        )
+        (DomainValuePattern DomainValue
+            { domainValueSort = objectSort
+            , domainValueChild =
+                (asPurePattern . AndPattern)
+                    And
+                        { andSort =
+                            updateAstLocation stringMetaSort AstLocationTest
+                        , andFirst =
+                            (asPurePattern . StringLiteralPattern)
+                                (StringLiteral "first")
+                        , andSecond =
+                            (asPurePattern . StringLiteralPattern)
+                                (StringLiteral "second")
+                        }
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort (updateAstLocation objectSort AstLocationTest))
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort objectSort)
+        [objectSortSentence]
         NeedsInternalDefinitions
     ]
   where
