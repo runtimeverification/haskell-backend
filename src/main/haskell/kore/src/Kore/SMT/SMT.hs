@@ -85,6 +85,7 @@ translate
     -> Predicate
 translate p = goTranslate
   where
+<<<<<<< c3014bd64f917856a94b15aef4ef27d329b27ec4
     vars = Set.toList $ freeVars p
     filterVars hookName =
         filter (\v -> isHook (getSortHook $ variableSort v) hookName) vars
