@@ -11,7 +11,7 @@ imp-kompiled: imp.k
 	krun $<
 
 %.korun: %.imp.kore
-	stack exec -- kore-exec --run imp.kore --module IMP --pgm $<
+	stack exec -- kore-exec imp.kore --module IMP --pgm $<
 
 clean:
 	rm -rf imp.kore imp-kompiled tests/*.imp.kore

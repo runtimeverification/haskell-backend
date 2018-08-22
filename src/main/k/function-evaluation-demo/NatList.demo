@@ -1,1 +1,1 @@
-LbldemoNatList{}()
+primesUpTo(factorial(Succ(Succ(Succ(Succ(Zero))))))
