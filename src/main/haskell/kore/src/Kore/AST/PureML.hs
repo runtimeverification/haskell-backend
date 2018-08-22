@@ -111,18 +111,18 @@ type PurePatternStub level variable =
 type CommonPurePatternStub level =
     PurePatternStub level Variable
 
-{--| 'mapPatternVariables' replaces all variables in a 'PureMLPattern'
+{-| 'mapPatternVariables' replaces all variables in a 'PureMLPattern'
 using the provided mapping.
---}
+-}
 mapPatternVariables
     :: (variableFrom level -> variableTo level)
     -> PureMLPattern level variableFrom
     -> PureMLPattern level variableTo
 mapPatternVariables mapper = cata (Fix . mapPatternVariable mapper)
 
-{--| 'mapPatternVariables' replaces the variables occurring directly
+{-| 'mapPatternVariables' replaces the variables occurring directly
 (i.e. without recursion) in a 'Pattern', using the provided mapping.
---}
+-}
 mapPatternVariable
     :: (variableFrom level -> variableTo level)
     -> Pattern level variableFrom child

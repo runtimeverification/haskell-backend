@@ -24,7 +24,7 @@ import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.ASTHelpers
-       (ApplicationSorts (..))
+       ( ApplicationSorts (..) )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
@@ -194,9 +194,9 @@ data FunctionalProof level variable
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
   deriving (Eq, Show)
 
-{--| 'mapFunctionalProofVariables' replaces all variables in a 'FunctionalProof'
+{-| 'mapFunctionalProofVariables' replaces all variables in a 'FunctionalProof'
 using the provided mapping.
---}
+-}
 mapFunctionalProofVariables
     :: (variableFrom level -> variableTo level)
     -> FunctionalProof level variableFrom
