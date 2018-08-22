@@ -8,7 +8,9 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Iff
-    (simplify
+    ( makeEvaluate
+    , simplify
+    , simplifyEvaluated
     ) where
 
 import Data.Reflection
@@ -35,8 +37,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, isFalse, isTrue, make, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
-import           Kore.Step.Simplification.Not
-                 ( makeEvaluateNot, simplifyEvaluatedNot )
+import qualified Kore.Step.Simplification.Not as Not
+                 ( makeEvaluate, simplifyEvaluated )
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrOfExpandedPattern'
 children.
@@ -61,9 +63,13 @@ simplify
         , iffSecond = second
         }
   =
-    simplifyEvaluatedIff first second
+    simplifyEvaluated first second
 
-simplifyEvaluatedIff
+{-| evaluates an 'Iff' given its two 'OrOfExpandedPattern' children.
+
+See 'simplify' for detailed documentation.
+-}
+simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Given (SortTools level)
@@ -73,28 +79,32 @@ simplifyEvaluatedIff
     => OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluatedIff first second
+simplifyEvaluated first second
   | OrOfExpandedPattern.isTrue first =
     (second, SimplificationProof)
   | OrOfExpandedPattern.isFalse first =
-    simplifyEvaluatedNot second
+    Not.simplifyEvaluated second
   | OrOfExpandedPattern.isTrue second =
     (first, SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
-    simplifyEvaluatedNot first
+    Not.simplifyEvaluated first
   | otherwise =
     case ( firstPatterns, secondPatterns )
       of
-        ([firstP], [secondP]) -> makeEvaluateIff firstP secondP
+        ([firstP], [secondP]) -> makeEvaluate firstP secondP
         _ ->
-            makeEvaluateIff
+            makeEvaluate
                 (OrOfExpandedPattern.toExpandedPattern first)
                 (OrOfExpandedPattern.toExpandedPattern second)
   where
     firstPatterns = OrOfExpandedPattern.extractPatterns first
     secondPatterns = OrOfExpandedPattern.extractPatterns second
 
-makeEvaluateIff
+{-| evaluates an 'Iff' given its two 'ExpandedPattern' children.
+
+See 'simplify' for detailed documentation.
+-}
+makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Given (SortTools level)
@@ -104,15 +114,15 @@ makeEvaluateIff
     => ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluateIff first second
+makeEvaluate first second
   | ExpandedPattern.isTop first =
     (OrOfExpandedPattern.make [second], SimplificationProof)
   | ExpandedPattern.isBottom first =
-    (fst $ makeEvaluateNot second, SimplificationProof)
+    (fst $ Not.makeEvaluate second, SimplificationProof)
   | ExpandedPattern.isTop second =
     (OrOfExpandedPattern.make [first], SimplificationProof)
   | ExpandedPattern.isBottom second =
-    (fst $ makeEvaluateNot first, SimplificationProof)
+    (fst $ Not.makeEvaluate first, SimplificationProof)
   | otherwise =
     makeEvaluateNonBoolIff first second
 

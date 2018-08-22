@@ -46,6 +46,8 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern),
                  PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.PatternAttributes
+                 ( FunctionalProof (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
@@ -58,9 +60,8 @@ import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( UnificationError, ctorSubstitutionCycleToBottom )
 import           Kore.Unification.Unifier
-                 ( FunctionalProof (..), UnificationProof (..),
-                 UnificationSubstitution, mapSubstitutionVariables,
-                 unificationProcedure )
+                 ( UnificationProof (..), UnificationSubstitution,
+                 mapSubstitutionVariables, unificationProcedure )
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh.Class
@@ -512,6 +513,10 @@ functionalProofStepVariablesToCommon _ mapping (FunctionalHead f) =
     return (mapping, FunctionalHead f)
 functionalProofStepVariablesToCommon _ mapping (FunctionalDomainValue dv) =
     return (mapping, FunctionalDomainValue dv)
+functionalProofStepVariablesToCommon _ mapping (FunctionalStringLiteral dv) =
+    return (mapping, FunctionalStringLiteral dv)
+functionalProofStepVariablesToCommon _ mapping (FunctionalCharLiteral dv) =
+    return (mapping, FunctionalCharLiteral dv)
 
 variableStepVariablesToCommon
     :: MetaOrObject level
