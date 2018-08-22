@@ -62,8 +62,9 @@ import Kore.IndexedModule.IndexedModule
        ( SortDescription )
 import Kore.Step.Function.Data
        ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
-       AttemptedFunction (NotApplicable),
-       FunctionResultProof (FunctionResultProof) )
+       AttemptedFunction (NotApplicable) )
+import Kore.Step.Simplification.Data
+       ( SimplificationProof (SimplificationProof) )
 
 type Function = ApplicationFunctionEvaluator Object Variable
 
@@ -157,7 +158,7 @@ notImplemented :: Function
 notImplemented =
     ApplicationFunctionEvaluator notImplemented0
   where
-    notImplemented0 _ _ _ _ = pure (NotApplicable, FunctionResultProof)
+    notImplemented0 _ _ _ = pure (NotApplicable, SimplificationProof)
 
 {- | Verify a builtin sort declaration.
 

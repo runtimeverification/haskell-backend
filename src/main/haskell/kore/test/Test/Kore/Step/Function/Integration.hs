@@ -11,45 +11,48 @@ import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
 
-import Kore.AST.Common
-       ( Application (..), AstLocation (..), Id (..), Pattern (..),
-       SymbolOrAlias (..) )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( CommonPurePattern )
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
-import Kore.ASTHelpers
-       ( ApplicationSorts (..) )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts
-import Kore.Error
-       ( printError )
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..), SortTools )
-import Kore.MetaML.AST
-       ( CommonMetaPattern )
-import Kore.Predicate.Predicate
-       ( CommonPredicate, makeAndPredicate, makeCeilPredicate,
-       makeEqualsPredicate, makeTruePredicate )
-import Kore.Step.BaseStep
-       ( AxiomPattern (..) )
-import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( CommonExpandedPattern, ExpandedPattern (..) )
-import Kore.Step.Function.Data
-       ( ApplicationFunctionEvaluator (..), CommonApplicationFunctionEvaluator,
-       CommonAttemptedFunction, CommonConditionEvaluator,
-       CommonPurePatternFunctionEvaluator, FunctionResultProof (..) )
-import Kore.Step.Function.Data as AttemptedFunction
-       ( AttemptedFunction (..) )
-import Kore.Step.Function.Evaluator
-       ( evaluateFunctions )
-import Kore.Step.Function.UserDefined
-       ( axiomFunctionEvaluator )
-import Kore.Step.StepperAttributes
-import Kore.Variables.Fresh.IntCounter
-       ( IntCounter, runIntCounter )
+import           Kore.AST.Common
+                 ( Application (..), AstLocation (..), Id (..), Pattern (..),
+                 SymbolOrAlias (..) )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
+import           Kore.AST.PureToKore
+                 ( patternKoreToPure )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.Building.AsAst
+import           Kore.Building.Patterns
+import           Kore.Building.Sorts
+import           Kore.Error
+                 ( printError )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..), SortTools )
+import           Kore.MetaML.AST
+                 ( CommonMetaPattern )
+import           Kore.Predicate.Predicate
+                 ( CommonPredicate, makeAndPredicate, makeCeilPredicate,
+                 makeEqualsPredicate, makeTruePredicate )
+import           Kore.Step.BaseStep
+                 ( AxiomPattern (..) )
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( CommonExpandedPattern, ExpandedPattern (..) )
+import           Kore.Step.Function.Data
+                 ( ApplicationFunctionEvaluator (..),
+                 CommonApplicationFunctionEvaluator, CommonAttemptedFunction )
+import           Kore.Step.Function.Data as AttemptedFunction
+                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.UserDefined
+                 ( axiomFunctionEvaluator )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( make )
+import           Kore.Step.Simplification.Data
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
+import qualified Kore.Step.Simplification.Pattern as Pattern
+                 ( simplify )
+import           Kore.Step.StepperAttributes
+import           Kore.Variables.Fresh.IntCounter
+                 ( IntCounter, runIntCounter )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -93,11 +96,14 @@ test_functionIntegration =
                 (asPureMetaPattern (metaF (metaF metaC)))
             )
         )
-    , testCase "Does not evaluate with 'or' - may chage in the future"
+    , testCase "Evaluates 'or'"
         (assertEqualWithExplanation ""
             ExpandedPattern
                 { term = asPureMetaPattern
-                    (metaF (metaOr PatternSort (metaF metaC) (metaF metaC)))
+                    (metaOr PatternSort
+                        (metaG (metaG metaC))
+                        (metaG (metaG metaD))
+                    )
                 , predicate = makeTruePredicate
                 , substitution = []
                 }
@@ -110,7 +116,7 @@ test_functionIntegration =
                     ]
                 )
                 (asPureMetaPattern
-                    (metaF (metaOr PatternSort (metaF metaC) (metaF metaC)))
+                    (metaF (metaOr PatternSort (metaF metaC) (metaF metaD)))
                 )
             )
         )
@@ -139,7 +145,7 @@ test_functionIntegration =
         (assertEqualWithExplanation ""
             ExpandedPattern
                 { term = asPureMetaPattern (metaF metaD)
-                , predicate = makeCeil metaC
+                , predicate = makeCeil metaE
                 , substitution = []
                 }
             (evaluate
@@ -147,7 +153,7 @@ test_functionIntegration =
                 (Map.singleton cId
                     [ appliedMockEvaluator ExpandedPattern
                         { term   = asPureMetaPattern metaD
-                        , predicate = makeCeil metaC
+                        , predicate = makeCeil metaE
                         , substitution = []
                         }
                     ]
@@ -159,7 +165,7 @@ test_functionIntegration =
         (assertEqualWithExplanation ""
             ExpandedPattern
                 { term = asPureMetaPattern (metaG (metaSigma metaE metaE))
-                , predicate = makeAnd (makeCeil metaC) (makeCeil metaD)
+                , predicate = makeAnd (makeCeil metaB) (makeCeil metaA)
                 , substitution = []
                 }
             (evaluate
@@ -168,7 +174,7 @@ test_functionIntegration =
                     [   ( cId
                         ,   [ appliedMockEvaluator ExpandedPattern
                                 { term = asPureMetaPattern metaE
-                                , predicate = makeCeil metaC
+                                , predicate = makeCeil metaB
                                 , substitution = []
                                 }
                             ]
@@ -176,7 +182,7 @@ test_functionIntegration =
                     ,   ( dId
                         ,   [ appliedMockEvaluator ExpandedPattern
                                 { term = asPureMetaPattern metaE
-                                , predicate = makeCeil metaD
+                                , predicate = makeCeil metaA
                                 , substitution = []
                                 }
                             ]
@@ -242,17 +248,18 @@ appliedMockEvaluator
     :: CommonExpandedPattern level -> CommonApplicationFunctionEvaluator level
 appliedMockEvaluator result =
     ApplicationFunctionEvaluator
-        (mockEvaluator (AttemptedFunction.Applied result))
+        (mockEvaluator
+            (AttemptedFunction.Applied (OrOfExpandedPattern.make [result]))
+        )
 
 mockEvaluator
     :: CommonAttemptedFunction level
     -> MetadataTools level StepperAttributes
-    -> CommonConditionEvaluator level
-    -> CommonPurePatternFunctionEvaluator level
+    -> CommonPureMLPatternSimplifier level
     -> Application level (CommonPurePattern level)
-    -> IntCounter (CommonAttemptedFunction level, FunctionResultProof level)
-mockEvaluator evaluation _ _ _ _ =
-    return (evaluation, FunctionResultProof)
+    -> IntCounter (CommonAttemptedFunction level, SimplificationProof level)
+mockEvaluator evaluation _ _ _ =
+    return (evaluation, SimplificationProof)
 
 evaluate
     :: MetaOrObject level
@@ -263,7 +270,7 @@ evaluate
 evaluate metadataTools functionIdToEvaluator patt =
     fst $ fst
         (runIntCounter
-            (evaluateFunctions metadataTools functionIdToEvaluator patt)
+            (Pattern.simplify metadataTools functionIdToEvaluator patt)
             0
         )
 
@@ -302,7 +309,7 @@ mockSortTools :: SortTools Meta
 mockSortTools = const
     ApplicationSorts
     { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
-    , applicationSortsResult = (asAst PatternSort)
+    , applicationSortsResult = asAst PatternSort
     }
 
 
@@ -365,6 +372,48 @@ metaG
     :: (MetaPattern PatternSort p1)
     => p1 -> MetaG p1
 metaG = MetaG
+
+aId :: Id Meta
+aId = Id "#a" AstLocationTest
+
+aSymbol :: SymbolOrAlias Meta
+aSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = aId
+    , symbolOrAliasParams = []
+    }
+
+data MetaA = MetaA
+
+instance ProperPattern Meta PatternSort MetaA
+  where
+    asProperPattern MetaA =
+        ApplicationPattern Application
+            { applicationSymbolOrAlias = aSymbol
+            , applicationChildren = []
+            }
+metaA :: MetaA
+metaA = MetaA
+
+bId :: Id Meta
+bId = Id "#b" AstLocationTest
+
+bSymbol :: SymbolOrAlias Meta
+bSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = bId
+    , symbolOrAliasParams = []
+    }
+
+data MetaB = MetaB
+
+instance ProperPattern Meta PatternSort MetaB
+  where
+    asProperPattern MetaB =
+        ApplicationPattern Application
+            { applicationSymbolOrAlias = bSymbol
+            , applicationChildren = []
+            }
+metaB :: MetaB
+metaB = MetaB
 
 cId :: Id Meta
 cId = Id "#c" AstLocationTest

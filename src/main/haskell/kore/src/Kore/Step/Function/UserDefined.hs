@@ -8,36 +8,55 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.UserDefined
-    ( PureMLPatternFunctionEvaluator
+    ( PureMLPatternSimplifier
     , axiomFunctionEvaluator
     ) where
 
-import Kore.AST.Common
-       ( Application (..), Pattern (..), SortedVariable )
-import Kore.AST.MetaOrObject
-       ( MetaOrObject )
-import Kore.AST.PureML
-       ( CommonPurePattern, PureMLPattern, asPurePattern )
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
-import Kore.Predicate.Predicate
-       ( pattern PredicateFalse, makeTruePredicate )
-import Kore.Step.BaseStep
-       ( AxiomPattern, stepWithAxiom )
-import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( ExpandedPattern (..), bottom )
-import Kore.Step.Function.Data as AttemptedFunction
-       ( AttemptedFunction (..) )
-import Kore.Step.Function.Data
-       ( CommonAttemptedFunction, CommonConditionEvaluator,
-       CommonPurePatternFunctionEvaluator, ConditionEvaluator (..),
-       FunctionResultProof (..), PureMLPatternFunctionEvaluator (..) )
-import Kore.Step.StepperAttributes
-       ( StepperAttributes )
-import Kore.Step.Substitution
-       ( mergePredicatesAndSubstitutions )
-import Kore.Variables.Fresh.IntCounter
-       ( IntCounter )
+import Data.Reflection
+       ( give )
+
+
+import           Kore.AST.Common
+                 ( Application (..), Pattern (..), SortedVariable )
+import           Kore.AST.MetaOrObject
+                 ( Meta, MetaOrObject, Object )
+import           Kore.AST.PureML
+                 ( CommonPurePattern, PureMLPattern, asPurePattern )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..) )
+import           Kore.Predicate.Predicate
+                 ( pattern PredicateFalse, makeTruePredicate )
+import           Kore.Step.BaseStep
+                 ( AxiomPattern, stepWithAxiom )
+import qualified Kore.Step.Condition.Evaluator as Predicate
+                 ( evaluate )
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..) )
+import           Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution (PredicateSubstitution) )
+import           Kore.Step.Function.Data as AttemptedFunction
+                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.Data
+                 ( CommonAttemptedFunction )
+import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( mergeWithPredicateSubstitution )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( make, traverseWithPairs )
+import           Kore.Step.Simplification.Data
+                 ( CommonPureMLPatternSimplifier, PureMLPatternSimplifier (..),
+                 SimplificationProof (..) )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
+import           Kore.Step.Substitution
+                 ( mergePredicatesAndSubstitutions )
+import           Kore.Substitution.Class
+                 ( Hashable )
+import           Kore.Variables.Fresh.IntCounter
+                 ( IntCounter )
+import           Kore.Variables.Int
+                 ( IntVariable (..) )
 
 {-| 'axiomFunctionEvaluator' evaluates a user-defined function. After
 evaluating the function, it tries to re-evaluate all functions on the result.
@@ -49,51 +68,41 @@ axiomFunctionEvaluator
     => AxiomPattern level
     -- ^ Axiom defining the current function.
     -> MetadataTools level StepperAttributes
-    -> CommonConditionEvaluator level
-    -- ^ Evaluates conditions
-    -> CommonPurePatternFunctionEvaluator level
+    -- ^ Tools for finding additional information about patterns
+    -- such as their sorts, whether they are constructors or hooked.
+    -> CommonPureMLPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> Application level (CommonPurePattern level)
     -- ^ The function on which to evaluate the current function.
-    -> IntCounter (CommonAttemptedFunction level, FunctionResultProof level)
+    -> IntCounter (CommonAttemptedFunction level, SimplificationProof level)
 axiomFunctionEvaluator
     axiom
     tools
-    (ConditionEvaluator conditionEvaluator)
-    functionEvaluator
+    simplifier
     app
   =
     case stepResult of
-        -- TODO: Make sure that Left excludes bottom results
         Left _ ->
-            return (AttemptedFunction.NotApplicable, FunctionResultProof)
-        Right configurationWithProof ->
+            return (AttemptedFunction.NotApplicable, SimplificationProof)
+        Right stepPatternWithProof ->
             do
-                (   ExpandedPattern
-                        { term = rewrittenPattern
-                        , predicate = rewritingCondition
-                        , substitution = rewritingSubstitution
-                        }
+                (stepPattern, _) <- stepPatternWithProof
+                (   rewrittenPattern@ExpandedPattern
+                        { predicate = rewritingCondition }
                     , _
-                    ) <- configurationWithProof
-                (evaluatedRewritingCondition, _) <-
-                    conditionEvaluator rewritingCondition
-                case evaluatedRewritingCondition of
+                    ) <- evaluatePredicate tools simplifier stepPattern
+                case rewritingCondition of
                     PredicateFalse ->
                         return
-                            ( AttemptedFunction.Applied ExpandedPattern.bottom
-                            , FunctionResultProof
+                            ( AttemptedFunction.Applied
+                                (OrOfExpandedPattern.make [])
+                            , SimplificationProof
                             )
                     _ ->
                         reevaluateFunctions
                             tools
-                            (ConditionEvaluator conditionEvaluator)
-                            functionEvaluator
-                            ExpandedPattern
-                                { term   = rewrittenPattern
-                                , predicate = evaluatedRewritingCondition
-                                , substitution = rewritingSubstitution
-                                }
+                            simplifier
+                            rewrittenPattern
   where
     stepResult =
         stepWithAxiom
@@ -118,53 +127,98 @@ reevaluateFunctions
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Ord (variable level)
-        , Show (variable level))
+        , Show (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , IntVariable variable
+        , Hashable variable
+        )
     => MetadataTools level StepperAttributes
-    -> ConditionEvaluator level variable
-    -- ^ Evaluates conditions
-    -> PureMLPatternFunctionEvaluator level variable
+    -- ^ Tools for finding additional information about patterns
+    -- such as their sorts, whether they are constructors or hooked.
+    -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
     -- ^ Function evaluation result.
-    -> IntCounter (AttemptedFunction level variable, FunctionResultProof level)
+    -> IntCounter (AttemptedFunction level variable, SimplificationProof level)
 reevaluateFunctions
     tools
-    (ConditionEvaluator conditionEvaluator)
-    (PureMLPatternFunctionEvaluator functionEvaluator)
+    wrappedSimplifier@(PureMLPatternSimplifier simplifier)
     ExpandedPattern
         { term   = rewrittenPattern
         , predicate = rewritingCondition
         , substitution = rewrittenSubstitution
         }
   = do
-    ( ExpandedPattern
-        { term = simplifiedPattern
-        , predicate = simplificationCondition
-        , substitution = simplificationSubstitution
-        }
-        , _  -- TODO: Use this proof
+    (pattOr , _proof) <-
         -- TODO(virgil): This call should be done in Evaluator.hs, but,
         -- for optimization purposes, it's done here. Make sure that
         -- this still makes sense after the evaluation code is fully
         -- optimized.
-        ) <- functionEvaluator rewrittenPattern
-    let
-        (mergedCondition, mergedSubstitution, _) =
-            mergePredicatesAndSubstitutions
-                tools
-                [rewritingCondition, simplificationCondition]
-                [rewrittenSubstitution, simplificationSubstitution]
-    (evaluatedMergedCondition, _) <- conditionEvaluator mergedCondition
-    case evaluatedMergedCondition of
-        PredicateFalse -> return
-            ( AttemptedFunction.Applied ExpandedPattern.bottom
-            , FunctionResultProof
-            )
-        _ -> return
-            ( AttemptedFunction.Applied ExpandedPattern
-                { term   = simplifiedPattern
-                , predicate = evaluatedMergedCondition
-                , substitution = mergedSubstitution
+        simplifier rewrittenPattern
+    (mergedPatt, _proof) <-
+        OrOfExpandedPattern.mergeWithPredicateSubstitution
+            tools
+            wrappedSimplifier
+            PredicateSubstitution
+                { predicate = rewritingCondition
+                , substitution = rewrittenSubstitution
                 }
-            , FunctionResultProof
-            )
+            pattOr
+    (evaluatedPatt, _) <-
+        OrOfExpandedPattern.traverseWithPairs
+            (evaluatePredicate tools wrappedSimplifier)
+            mergedPatt
+    return
+        ( AttemptedFunction.Applied evaluatedPatt
+        , SimplificationProof
+        )
+
+evaluatePredicate
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , IntVariable variable
+        , Hashable variable
+        )
+    => MetadataTools level StepperAttributes
+    -- ^ Tools for finding additional information about patterns
+    -- such as their sorts, whether they are constructors or hooked.
+    -> PureMLPatternSimplifier level variable
+    -- ^ Evaluates functions in a pattern.
+    -> ExpandedPattern level variable
+    -- ^ The condition to be evaluated.
+    -> IntCounter
+        (ExpandedPattern level variable, SimplificationProof level)
+evaluatePredicate
+    tools
+    simplifier
+    ExpandedPattern {term, predicate, substitution}
+  = do
+    (   PredicateSubstitution
+            { predicate = evaluatedPredicate
+            , substitution = evaluatedSubstitution
+            }
+        , _proof
+        ) <- give (sortTools tools) Predicate.evaluate simplifier predicate
+    (   PredicateSubstitution
+            { predicate = mergedPredicate
+            , substitution = mergedSubstitution
+            }
+        , _proof
+        ) <- mergePredicatesAndSubstitutions
+            tools
+            [evaluatedPredicate]
+            [substitution, evaluatedSubstitution]
+    -- TODO(virgil): Do I need to re-evaluate the predicate?
+    return
+        ( ExpandedPattern
+            { term = term
+            , predicate = mergedPredicate
+            , substitution = mergedSubstitution
+            }
+        , SimplificationProof
+        )

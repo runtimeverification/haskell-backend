@@ -13,6 +13,7 @@ module Kore.Step.BaseStep
     , StepperVariable (..)
     , StepProof (..)
     , VariableRenaming (..)
+    , simplifyStepProof
     , stepProofSumName
     , stepWithAxiom
     ) where
@@ -40,13 +41,13 @@ import           Kore.Predicate.Predicate
                  makeMultipleAndPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
-import           Kore.Step.Condition.Condition
-                 ( ConditionSort (..) )
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern),
                  PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Simplification.Data
+                 ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -68,7 +69,6 @@ import           Kore.Variables.Fresh.IntCounter
                  ( IntCounter )
 import           Kore.Variables.Int
                  ( IntVariable (..) )
-
 {-| 'StepperConfiguration' represents the configuration to which a rewriting
 axiom is applied.
 
@@ -79,9 +79,6 @@ data StepperConfiguration level = StepperConfiguration
     { stepperConfigurationPattern       :: !(CommonPurePattern level)
     -- ^ The pattern being rewritten.
 
-    -- TODO(virgil): Remove and extract from condition.
-    , stepperConfigurationConditionSort :: !(ConditionSort level)
-    -- ^ The sort for the configuration condition.
     , stepperConfigurationCondition     :: !(CommonPurePattern level)
     -- ^ The condition predicate.
     -- TODO(virgil): Make this an EvaluatedCondition.
@@ -97,11 +94,13 @@ data StepProof level
     -- ^ Proof for a unification that happened during the step.
     | StepProofVariableRenamings [VariableRenaming level]
     -- ^ Proof for the remanings that happened during ther proof.
+    | StepProofSimplification (SimplificationProof level)
+    -- ^ Proof for the simplification part of a step.
     deriving (Show, Eq)
 
 {-| 'simplifyStepProof' simplifies the representation of a 'StepProof'.
 
-As an example, it replaces a StepProofCombined wit a single element with its
+As an example, it replaces a StepProofCombined with a single element with its
 contents.
 -}
 simplifyStepProof :: StepProof level -> StepProof level
@@ -110,6 +109,7 @@ simplifyStepProof (StepProofCombined things) =
 simplifyStepProof a@(StepProofUnification _) = a
 simplifyStepProof (StepProofVariableRenamings []) = StepProofCombined []
 simplifyStepProof a@(StepProofVariableRenamings _) = a
+simplifyStepProof a@(StepProofSimplification _) = a
 
 {-| `simplifyCombinedItems` simplifies the representation of a list of
     'StepProof's recursively.
@@ -168,6 +168,7 @@ stepProofSumName :: StepProof level -> String
 stepProofSumName (StepProofUnification _)       = "StepProofUnification"
 stepProofSumName (StepProofCombined _)          = "StepProofCombined"
 stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
+stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
 {-| 'stepWithAxiom' executes a single rewriting step using the provided axiom.
 
