@@ -128,9 +128,9 @@ newtype PatternVerifier =
         See also: 'verifyDomainValue'
       -}
       runPatternVerifier
-        :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
-        -> Pattern Object Variable CommonKorePattern
-        -> Either (Error VerifyError) ()
+          :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
+          -> Pattern Object Variable CommonKorePattern
+          -> Either (Error VerifyError) ()
     }
 
 instance Semigroup PatternVerifier where
@@ -342,8 +342,8 @@ verifyDomainValue builtinSort validate =
         \case
             DomainValuePattern dv@DomainValue { domainValueSort } ->
                 withContext
-                ("Verifying builtin sort '" ++ builtinSort ++ "'")
-                (skipOtherSorts domainValueSort (validate dv))
+                    ("Verifying builtin sort '" ++ builtinSort ++ "'")
+                    (skipOtherSorts domainValueSort (validate dv))
             _ -> return ()  -- no domain value to verify
       where
         -- | Run @next@ if @sort@ is hooked to @builtinSort@; do nothing
@@ -355,7 +355,8 @@ verifyDomainValue builtinSort validate =
             -- ^ Verifier run iff pattern sort is hooked to designated builtin
             -> Either (Error VerifyError) ()
         skipOtherSorts sort next = do
-            decl <- Except.catchError
+            decl <-
+                Except.catchError
                     (Just <$> verifySort findSort builtinSort sort)
                     (\_ -> return Nothing)
             case decl of
