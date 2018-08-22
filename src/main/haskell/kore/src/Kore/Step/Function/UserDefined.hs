@@ -12,9 +12,9 @@ module Kore.Step.Function.UserDefined
     , axiomFunctionEvaluator
     ) where
 
-import Data.Reflection
-       ( give )
-
+import qualified Control.Monad.Except as Except
+import           Data.Reflection
+                 ( give )
 
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SortedVariable )
@@ -46,15 +46,13 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( CommonPureMLPatternSimplifier, PureMLPatternSimplifier (..),
-                 SimplificationProof (..) )
+                 Simplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 import           Kore.Variables.Int
                  ( IntVariable (..) )
 
@@ -74,7 +72,7 @@ axiomFunctionEvaluator
     -- ^ Evaluates functions in patterns
     -> Application level (CommonPurePattern level)
     -- ^ The function on which to evaluate the current function.
-    -> IntCounter (CommonAttemptedFunction level, SimplificationProof level)
+    -> Simplifier (CommonAttemptedFunction level, SimplificationProof level)
 axiomFunctionEvaluator
     axiom
     tools
@@ -86,7 +84,7 @@ axiomFunctionEvaluator
             return (AttemptedFunction.NotApplicable, SimplificationProof)
         Right stepPatternWithProof ->
             do
-                (stepPattern, _) <- stepPatternWithProof
+                (stepPattern, _) <- Except.lift stepPatternWithProof
                 (   rewrittenPattern@ExpandedPattern
                         { predicate = rewritingCondition }
                     , _
@@ -140,7 +138,7 @@ reevaluateFunctions
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
     -- ^ Function evaluation result.
-    -> IntCounter (AttemptedFunction level variable, SimplificationProof level)
+    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
 reevaluateFunctions
     tools
     wrappedSimplifier@(PureMLPatternSimplifier simplifier)
@@ -191,8 +189,7 @@ evaluatePredicate
     -- ^ Evaluates functions in a pattern.
     -> ExpandedPattern level variable
     -- ^ The condition to be evaluated.
-    -> IntCounter
-        (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 evaluatePredicate
     tools
     simplifier
@@ -209,10 +206,12 @@ evaluatePredicate
             , substitution = mergedSubstitution
             }
         , _proof
-        ) <- mergePredicatesAndSubstitutions
-            tools
-            [evaluatedPredicate]
-            [substitution, evaluatedSubstitution]
+        ) <- Except.lift
+            (mergePredicatesAndSubstitutions
+                tools
+                [evaluatedPredicate]
+                [substitution, evaluatedSubstitution]
+            )
     -- TODO(virgil): Do I need to re-evaluate the predicate?
     return
         ( ExpandedPattern

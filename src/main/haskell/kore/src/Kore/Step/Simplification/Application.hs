@@ -11,6 +11,7 @@ module Kore.Step.Simplification.Application
     ( simplify
     ) where
 
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
@@ -38,7 +39,8 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..) )
+                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -47,8 +49,6 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 import           Kore.Variables.Int
                  ( IntVariable (..) )
 
@@ -85,7 +85,7 @@ simplify
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
     -> Application level (OrOfExpandedPattern level variable)
-    -> IntCounter
+    -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )
@@ -131,7 +131,7 @@ makeAndEvaluateApplications
     -- ^ Map from symbol IDs to defined functions
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
-    -> IntCounter
+    -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeAndEvaluateApplications
     tools
@@ -165,7 +165,7 @@ evaluateApplicationFunction
     -- ^ Map from symbol IDs to defined functions
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated
-    -> IntCounter
+    -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 evaluateApplicationFunction
     tools
@@ -198,7 +198,7 @@ makeExpandedApplication
     => MetadataTools level StepperAttributes
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
-    -> IntCounter
+    -> Simplifier
         (ExpandedApplication level variable, SimplificationProof level)
 makeExpandedApplication tools symbol children
   = do
@@ -206,10 +206,12 @@ makeExpandedApplication tools symbol children
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , _proof) <- mergePredicatesAndSubstitutions
-            tools
-            (map ExpandedPattern.predicate children)
-            (map ExpandedPattern.substitution children)
+        , _proof) <- Monad.Trans.lift
+            (mergePredicatesAndSubstitutions
+                tools
+                (map ExpandedPattern.predicate children)
+                (map ExpandedPattern.substitution children)
+            )
     return
         ( ExpandedApplication
             { term = Application

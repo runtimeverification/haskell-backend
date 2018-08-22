@@ -13,6 +13,7 @@ module Kore.Step.Step
     , MaxStepCount(..)
     ) where
 
+import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Either
                  ( rights )
 import qualified Data.Map as Map
@@ -34,6 +35,8 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, traverseFlattenWithPairs )
+import           Kore.Step.Simplification.Data
+                 ( Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
@@ -59,13 +62,14 @@ step
     -- ^ Rewriting axioms
     -> CommonOrOfExpandedPattern level
     -- ^ Configuration being rewritten.
-    ->  IntCounter
+    -> Simplifier
         (CommonOrOfExpandedPattern level, StepProof level)
 step tools symbolIdToEvaluator axioms configuration = do
-    (stepPattern, stepProofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairs
+    (stepPattern, stepProofs) <- Monad.Trans.lift
+        (OrOfExpandedPattern.traverseFlattenWithPairs
             (baseStepWithPattern tools axioms)
             configuration
+        )
     (simplifiedPattern, simplificationProofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairs
             (ExpandedPattern.simplify tools symbolIdToEvaluator)
@@ -128,7 +132,7 @@ pickFirstStepper
     -- ^ The maximum number of steps to be made
     -> CommonExpandedPattern level
     -- ^ Configuration being rewritten.
-    -> IntCounter (CommonExpandedPattern level, StepProof level)
+    -> Simplifier (CommonExpandedPattern level, StepProof level)
 pickFirstStepper _ _ _ (MaxStepCount 0) stepperConfiguration =
     return (stepperConfiguration, StepProofCombined [])
 pickFirstStepper _ _ _ (MaxStepCount n) _ | n < 0 =
@@ -163,7 +167,7 @@ pickFirstStepperSkipMaxCheck
     -- ^ The maximum number of steps to be made
     -> CommonExpandedPattern level
     -- ^ Configuration being rewritten.
-    -> IntCounter (CommonExpandedPattern level, StepProof level)
+    -> Simplifier (CommonExpandedPattern level, StepProof level)
 pickFirstStepperSkipMaxCheck
     tools symbolIdToEvaluator axioms maxStepCount stepperConfiguration
   = do

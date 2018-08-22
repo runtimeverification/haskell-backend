@@ -7,6 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import           Control.Monad.Except
+                 ( runExceptT )
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
@@ -21,6 +23,8 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkApp, mkBottom )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
+import           Kore.Error
+                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -438,7 +442,9 @@ evaluate
     symbolIdToEvaluator
     application
   =
-    fst $ fst $
+    either (error . printError) fst $ fst $
         runIntCounter
-            (simplify tools simplifier symbolIdToEvaluator application)
+            (runExceptT
+                (simplify tools simplifier symbolIdToEvaluator application)
+            )
             0

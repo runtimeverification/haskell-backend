@@ -12,6 +12,7 @@ module Kore.Step.Simplification.And
     , makeEvaluate
     ) where
 
+import qualified Control.Monad.Trans as Monad.Trans
 import Data.Reflection
        ( Given, give )
 
@@ -40,7 +41,7 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( crossProductGenericF, filterOr, isFalse, isTrue, make )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( Simplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -81,7 +82,7 @@ simplify
         )
     => MetadataTools level StepperAttributes
     -> And level (OrOfExpandedPattern level variable)
-    -> IntCounter
+    -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )
@@ -107,7 +108,7 @@ simplifyEvaluated
     => MetadataTools level StepperAttributes
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
-    -> IntCounter
+    -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 simplifyEvaluated tools first second
   | OrOfExpandedPattern.isFalse first =
@@ -121,8 +122,10 @@ simplifyEvaluated tools first second
     return (first, SimplificationProof)
 
   | otherwise = do
-    orWithProof <- OrOfExpandedPattern.crossProductGenericF
-        (makeEvaluate tools) first second
+    orWithProof <- Monad.Trans.lift
+        (OrOfExpandedPattern.crossProductGenericF
+            (makeEvaluate tools) first second
+        )
     return
         -- TODO: It's not obvious at all when filtering occurs and when it doesn't.
         ( OrOfExpandedPattern.filterOr

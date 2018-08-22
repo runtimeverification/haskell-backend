@@ -5,6 +5,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import           Control.Monad.Except
+                 ( runExceptT )
 import           Data.Default
                  ( def )
 import qualified Data.Map as Map
@@ -47,12 +49,13 @@ import           Kore.Step.Function.UserDefined
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 Simplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
 import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter, runIntCounter )
+                 ( runIntCounter )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -257,7 +260,8 @@ mockEvaluator
     -> MetadataTools level StepperAttributes
     -> CommonPureMLPatternSimplifier level
     -> Application level (CommonPurePattern level)
-    -> IntCounter (CommonAttemptedFunction level, SimplificationProof level)
+    -> Simplifier
+        (CommonAttemptedFunction level, SimplificationProof level)
 mockEvaluator evaluation _ _ _ =
     return (evaluation, SimplificationProof)
 
@@ -268,11 +272,16 @@ evaluate
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 evaluate metadataTools functionIdToEvaluator patt =
-    fst $ fst
-        (runIntCounter
-            (Pattern.simplify metadataTools functionIdToEvaluator patt)
+    case result of
+        Right (p, _) -> p
+        Left err -> error (printError err)
+  where
+    (result, _) =
+        runIntCounter
+            (runExceptT
+                (Pattern.simplify metadataTools functionIdToEvaluator patt)
+            )
             0
-        )
 
 v1 :: MetaSort sort => sort -> MetaVariable sort
 v1 = metaVariable "#v1" AstLocationTest
