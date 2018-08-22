@@ -77,7 +77,7 @@ axiomPatternsUnitTests =
                 $ extractIndexedModule "TEST"
                     (verifyAndIndexDefinition
                         DoNotVerifyAttributes
-                        Builtin.koreBuiltins
+                        Builtin.koreVerifiers
                         (Definition
                             { definitionAttributes = Attributes []
                             , definitionModules =

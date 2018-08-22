@@ -26,9 +26,10 @@ module Kore.Builtin.Int
 
 import           Control.Monad
                  ( void )
-import           Data.HashMap.Strict
-                 ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
+import           Data.Map
+                 ( Map )
+import qualified Data.Map as Map
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
 import qualified Kore.AST.Common as Kore
@@ -151,9 +152,9 @@ asPattern resultSort result =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: HashMap String Builtin.Function
+builtinFunctions :: Map String Builtin.Function
 builtinFunctions =
-    HashMap.fromList
+    Map.fromList
     [
       -- TODO (thomas.tuegel): Implement bit ranges.
       ("INT.bitRange", Builtin.notImplemented)

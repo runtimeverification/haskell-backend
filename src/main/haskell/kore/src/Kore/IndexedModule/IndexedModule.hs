@@ -28,6 +28,7 @@ module Kore.IndexedModule.IndexedModule
     , metaNameForObjectSort
     , SortDescription
     , getIndexedSentence
+    , hookedObjectSymbolSentences
     ) where
 
 import           Control.Arrow
@@ -673,3 +674,19 @@ parseAttributesInModule
     => Attributes
     -> Either (Error IndexModuleError) a
 parseAttributesInModule = castError . parseAttributes
+
+{- | Retrieve those object-level symbol sentences that are hooked.
+
+ -}
+hookedObjectSymbolSentences
+    :: IndexedModule sorts pat variable atts
+    -> Map.Map (Id Object) (atts, SentenceSymbol Object pat variable)
+hookedObjectSymbolSentences
+    IndexedModule
+        { indexedModuleObjectSymbolSentences
+        , indexedModuleHookedIdentifiers
+        }
+  =
+    Map.restrictKeys
+        indexedModuleObjectSymbolSentences
+        indexedModuleHookedIdentifiers
