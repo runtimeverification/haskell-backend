@@ -332,6 +332,12 @@ verifyDomainValue
 verifyDomainValue builtinSort validate =
     PatternVerifier { runPatternVerifier }
   where
+    runPatternVerifier
+        :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
+        -- ^ Function to lookup sorts by identifier
+        -> Pattern Object Variable CommonKorePattern
+        -- ^ Pattern to verify
+        -> Either (Error VerifyError) ()
     runPatternVerifier findSort =
         \case
             DomainValuePattern dv@DomainValue { domainValueSort } ->
@@ -342,6 +348,12 @@ verifyDomainValue builtinSort validate =
       where
         -- | Run @next@ if @sort@ is hooked to @builtinSort@; do nothing
         -- otherwise.
+        skipOtherSorts
+            :: Sort Object
+            -- ^ Sort of pattern under verification
+            -> Either (Error VerifyError) ()
+            -- ^ Verifier run iff pattern sort is hooked to designated builtin
+            -> Either (Error VerifyError) ()
         skipOtherSorts sort next = do
             decl <- Except.catchError
                     (Just <$> verifySort findSort builtinSort sort)
