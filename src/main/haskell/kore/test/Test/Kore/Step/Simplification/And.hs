@@ -7,6 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import Control.Monad.Except
+       ( runExceptT )
 import Data.Reflection
        ( give )
 
@@ -20,6 +22,8 @@ import           Kore.ASTUtils.SmartConstructors
                  ( getSort, mkAnd, mkApp, mkBottom, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
+import           Kore.Error
+                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (MetadataTools), SortTools )
 import qualified Kore.IndexedModule.MetadataTools
@@ -373,8 +377,8 @@ evaluate
     :: And Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate patt =
-    fst $ fst $ runIntCounter
-        (simplify mockMetadataTools patt)
+    either (error . printError) fst $ fst $ runIntCounter
+        (runExceptT $ simplify mockMetadataTools patt)
         0
 
 evaluatePatterns

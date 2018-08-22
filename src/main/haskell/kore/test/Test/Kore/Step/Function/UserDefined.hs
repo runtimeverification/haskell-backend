@@ -5,6 +5,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import Control.Monad.Except
+       ( runExceptT )
 import Data.Default
        ( def )
 import Data.List
@@ -444,11 +446,13 @@ evaluateWithAxiom
             , substitution = sort substitution
             }
     evaluated =
-        fst $ fst $ runIntCounter
-            (axiomFunctionEvaluator
-                axiom
-                metadataTools
-                simplifier
-                app
+        either (error . printError) fst
+            (fst $ runIntCounter
+                (runExceptT $ axiomFunctionEvaluator
+                    axiom
+                    metadataTools
+                    simplifier
+                    app
+                )
+                0
             )
-            0

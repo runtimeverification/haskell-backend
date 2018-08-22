@@ -31,10 +31,8 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( toExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..),
+                 ( PureMLPatternSimplifier (..), Simplifier,
                  SimplificationProof (SimplificationProof) )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
@@ -49,7 +47,7 @@ evaluate
     -- ^ The condition to be evaluated.
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
-    -> IntCounter
+    -> Simplifier
         (PredicateSubstitution level variable, SimplificationProof level)
 evaluate
     (PureMLPatternSimplifier simplifier)

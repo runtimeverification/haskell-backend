@@ -7,6 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import Control.Monad.Except
+       ( runExceptT )
 import Data.Reflection
        ( give )
 
@@ -19,6 +21,7 @@ import           Kore.ASTUtils.SmartConstructors
                  mkStringLiteral, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
+import qualified Kore.Error
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SortTools )
 import           Kore.Predicate.Predicate
@@ -616,8 +619,8 @@ evaluateOr
     -> Equals Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluateOr tools equals =
-    fst $ fst $ runIntCounter
-        (simplify tools equals)
+    either (error . Kore.Error.printError) fst $ fst $ runIntCounter
+        (runExceptT $ simplify tools equals)
         0
 
 evaluate
@@ -634,7 +637,7 @@ evaluateGeneric
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 evaluateGeneric tools first second =
-    fst $ fst $ runIntCounter
-        (makeEvaluate tools first second)
+    either (error . Kore.Error.printError) fst $ fst $ runIntCounter
+        (runExceptT $ makeEvaluate tools first second)
         0
 

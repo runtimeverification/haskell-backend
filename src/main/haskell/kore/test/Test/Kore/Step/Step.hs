@@ -5,6 +5,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import           Control.Monad.Except
+                 ( runExceptT )
 import           Data.Default
                  ( def )
 import qualified Data.Map as Map
@@ -646,8 +648,8 @@ runStep
     -> [AxiomPattern level]
     -> (CommonOrOfExpandedPattern level, StepProof level)
 runStep metadataTools configuration axioms =
-    fst $ runIntCounter
-        (step
+    either (error . printError) id $ fst $ runIntCounter
+        (runExceptT $ step
             metadataTools
             Map.empty
             axioms
@@ -665,9 +667,9 @@ runStepsPickFirst
     -> [AxiomPattern level]
     -> (CommonExpandedPattern level, StepProof level)
 runStepsPickFirst metadataTools maxStepCount configuration axioms =
-    fst $
+    either (error . printError) id $ fst $
         runIntCounter
-            (pickFirstStepper
+            (runExceptT $ pickFirstStepper
                 metadataTools Map.empty axioms maxStepCount configuration
             )
             0

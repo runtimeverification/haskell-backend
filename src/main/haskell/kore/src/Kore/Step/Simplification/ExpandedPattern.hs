@@ -34,15 +34,14 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..) )
+                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 Simplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 import           Kore.Variables.Int
                  ( IntVariable (..) )
 
@@ -62,7 +61,7 @@ simplify
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level variable
-    -> IntCounter
+    -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )

@@ -8,19 +8,34 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Data
-    ( PureMLPatternSimplifier (..)
+    ( SimplificationError
+    , Simplifier
+    , PureMLPatternSimplifier (..)
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
     ) where
+
+import Control.Monad.Except
+       ( ExceptT )
 
 import Kore.AST.Common
        ( Variable )
 import Kore.AST.PureML
        ( PureMLPattern )
+import Kore.Error
+       ( Error )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
+
+
+{- | A tag for errors during simplification
+
+  See also: 'Error'
+
+ -}
+data SimplificationError
 
 {-| 'SimplificationProof' is a placeholder for proofs showing that the
 simplification of a MetaMLPattern was correct.
@@ -28,13 +43,21 @@ simplification of a MetaMLPattern was correct.
 data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
+{- | The concrete monad in which simplification occurs.
+
+ -}
+-- TODO (thomas.tuegel): Replace IntCounter with a single state carrying both
+-- the counter and the proof.
+-- TODO (thomas.tuegel): Lift the StateT to the outer level.
+type Simplifier = ExceptT (Error SimplificationError) IntCounter
+
 {-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.
 -}
 newtype PureMLPatternSimplifier level variable =
     PureMLPatternSimplifier
         ( PureMLPattern level variable
-        -> IntCounter
+        -> Simplifier
             ( OrOfExpandedPattern level variable
             , SimplificationProof level
             )

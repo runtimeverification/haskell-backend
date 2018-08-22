@@ -2,6 +2,8 @@ module Main (main) where
 
 import           Control.Monad
                  ( when )
+import           Control.Monad.Except
+                 ( runExceptT )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -148,7 +150,9 @@ main = do
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
             finalExpandedPattern <- clockSomething "Executing"
-                    $ fst $ fst $ (`runIntCounter` 1)
+                    $ either (error . Kore.Error.printError) fst
+                    $ fst $ (`runIntCounter` 1)
+                    $ runExceptT
                     $ do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
