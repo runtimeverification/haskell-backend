@@ -57,26 +57,26 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Variables.Free
        ( pureAllVariables )
 
-{--| 'PredicateProof' is a placeholder for a proof showing that a Predicate
+{-| 'PredicateProof' is a placeholder for a proof showing that a Predicate
 evaluation was correct.
---}
+-}
 data PredicateProof level = PredicateProof
     deriving (Show, Eq)
 
-{--| 'GenericPredicate' is a wrapper for predicates used for type safety.
+{-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
 can be manipulated only by functions in this module.
---}
+-}
 newtype GenericPredicate pat = GenericPredicate pat
     deriving (Show, Eq, Functor, Traversable, Foldable)
 
-{--| 'Predicate' is a user-visible representation for predicates.
---}
+{-| 'Predicate' is a user-visible representation for predicates.
+-}
 type Predicate level var = GenericPredicate (PureMLPattern level var)
 
-{--| 'CommonPredicate' follows the generic convention of particularizing types
+{-| 'CommonPredicate' follows the generic convention of particularizing types
 to Variable.
---}
+-}
 type CommonPredicate level = Predicate level Variable
 
 {- 'compactPredicatePredicate' removes one level of 'GenericPredicate' which
@@ -126,9 +126,9 @@ isFalse :: Predicate level var -> Bool
 isFalse PredicateFalse = True
 isFalse _ = False
 
-{--| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
+{-| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
 doing some simplification.
---}
+-}
 makeMultipleAndPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -141,9 +141,9 @@ makeMultipleAndPredicate =
         (\(cond1, _) cond2 -> makeAndPredicate cond1 cond2)
         (makeTruePredicate, PredicateProof)
 
-{--| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
+{-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
 doing some simplification.
---}
+-}
 makeMultipleOrPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -156,9 +156,9 @@ makeMultipleOrPredicate =
         (\(cond1, _) cond2 -> makeOrPredicate cond1 cond2)
         (makeFalsePredicate, PredicateProof)
 
-{--| 'makeAndPredicate' combines two Predicates with an 'and', doing some
+{-| 'makeAndPredicate' combines two Predicates with an 'and', doing some
 simplification.
---}
+-}
 makeAndPredicate
     -- TODO(virgil): Group these constraints in a class
     -- or, even better, a type (like ShowMetaOrObject in MetaOrObject).
@@ -178,9 +178,9 @@ makeAndPredicate (GenericPredicate first) (GenericPredicate second) =
     , PredicateProof
     )
 
-{--| 'makeOrPredicate' combines two Predicates with an 'or', doing
+{-| 'makeOrPredicate' combines two Predicates with an 'or', doing
 some simplification.
---}
+-}
 makeOrPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -198,9 +198,9 @@ makeOrPredicate (GenericPredicate first) (GenericPredicate second) =
     , PredicateProof
     )
 
-{--| 'makeImpliesPredicate' combines two Predicates into an
+{-| 'makeImpliesPredicate' combines two Predicates into an
 implication, doing some simplification.
---}
+-}
 makeImpliesPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -219,9 +219,9 @@ makeImpliesPredicate (GenericPredicate first) (GenericPredicate second) =
     , PredicateProof
     )
 
-{--| 'makeIffPredicate' combines two evaluated with an 'iff', doing
+{-| 'makeIffPredicate' combines two evaluated with an 'iff', doing
 some simplification.
---}
+-}
 makeIffPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -241,9 +241,9 @@ makeIffPredicate (GenericPredicate first) (GenericPredicate second) =
     , PredicateProof
     )
 
-{--| 'makeNotPredicate' negates an evaluated Predicate, doing some
+{-| 'makeNotPredicate' negates an evaluated Predicate, doing some
 simplification.
---}
+-}
 makeNotPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -258,9 +258,9 @@ makeNotPredicate (GenericPredicate predicate) =
     , PredicateProof
     )
 
-{--| 'makeEqualsPredicate' combines two patterns with equals, producing a
+{-| 'makeEqualsPredicate' combines two patterns with equals, producing a
 predicate.
---}
+-}
 makeEqualsPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -272,9 +272,9 @@ makeEqualsPredicate
 makeEqualsPredicate first second =
     GenericPredicate $ mkEquals first second
 
-{--| 'makeInPredicate' combines two patterns with 'in', producing a
+{-| 'makeInPredicate' combines two patterns with 'in', producing a
 predicate.
---}
+-}
 makeInPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -286,9 +286,9 @@ makeInPredicate
 makeInPredicate first second =
     GenericPredicate $ mkIn first second
 
-{--| 'makeCeilPredicate' takes the 'ceil' of a pattern, producing a
+{-| 'makeCeilPredicate' takes the 'ceil' of a pattern, producing a
 predicate.
---}
+-}
 makeCeilPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -299,9 +299,9 @@ makeCeilPredicate
 makeCeilPredicate patt =
     GenericPredicate $ mkCeil patt
 
-{--| 'makeFloorPredicate' takes the 'floor' of a pattern, producing a
+{-| 'makeFloorPredicate' takes the 'floor' of a pattern, producing a
 predicate.
---}
+-}
 makeFloorPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
@@ -312,16 +312,16 @@ makeFloorPredicate
 makeFloorPredicate patt =
     GenericPredicate $ mkFloor patt
 
-{--| 'makeTruePredicate' produces a predicate wrapping a 'top'.
---}
+{-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
+-}
 makeTruePredicate
     ::  (MetaOrObject level)
     => Predicate level var
 makeTruePredicate =
     GenericPredicate mkTop
 
-{--| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
---}
+{-| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
+-}
 makeFalsePredicate
     ::  (MetaOrObject level)
     => Predicate level var

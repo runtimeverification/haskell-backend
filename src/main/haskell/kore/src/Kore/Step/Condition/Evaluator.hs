@@ -28,11 +28,11 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier (..),
                  SimplificationProof (SimplificationProof) )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
 import           Kore.Variables.Fresh.IntCounter
                  ( IntCounter )
 
@@ -72,11 +72,12 @@ asPredicateSubstitution
 asPredicateSubstitution
     ExpandedPattern {term, predicate, substitution}
   =
-    case makeAndPredicate predicate (wrapPredicate term) of
-        (andPatt, _proof) ->
-            ( PredicateSubstitution
-                { predicate = andPatt
-                , substitution = substitution
-                }
-            , SimplificationProof
-            )
+    let
+        (andPatt, _proof) = makeAndPredicate predicate (wrapPredicate term)
+    in
+        ( PredicateSubstitution
+            { predicate = andPatt
+            , substitution = substitution
+            }
+        , SimplificationProof
+        )

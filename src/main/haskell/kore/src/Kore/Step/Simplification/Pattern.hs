@@ -84,6 +84,9 @@ import           Kore.Variables.Fresh.IntCounter
 import           Kore.Variables.Int
                  ( IntVariable (..) )
 
+-- TODO(virgil): Add a Simplifiable class and make all pattern types
+-- instances of that.
+
 {-|'simplify' simplifies a PureMLPattern level variable, returning an
 'ExpandedPattern'.
 -}

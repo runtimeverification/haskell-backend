@@ -13,7 +13,7 @@ module Kore.Step.OrOfExpandedPattern
     ( CommonOrOfExpandedPattern
     , MultiOr (..)
     , OrOfExpandedPattern
-    , filterOr -- TODO: This hsould be internal-only.
+    , filterOr -- TODO: This should be internal-only.
     , flatten
     , fmapFlattenWithPairs
     , fullCrossProduct
@@ -56,18 +56,21 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..), bottom, isBottom, isTop, toMLPattern )
 
 {-| 'MultiOr' is a Matching logic or of its children
+
+TODO(virgil): Make this a list-like monad, many things would be nicer.
 -}
 newtype MultiOr child = MultiOr [child]
     deriving (Eq, Foldable, Functor, Show, Traversable)
 
-{-| 'OrOfExpandedPattern' is a MultiOr of ExpandedPatterns, which is the most
-common case.
+
+{-| 'OrOfExpandedPattern' is a 'MultiOr' of 'ExpandedPatterns', which is the
+most common case.
 -}
 type OrOfExpandedPattern level variable =
     MultiOr (ExpandedPattern level variable)
 
-{-| 'OrOfExpandedPattern' particularizes OrOfExpandedPattern to Variable,
-following the same convention as the other Common* types.
+{-| 'CommonOrOfExpandedPattern' particularizes 'OrOfExpandedPattern' to
+'Variable', following the same convention as the other Common* types.
 -}
 type CommonOrOfExpandedPattern level = OrOfExpandedPattern level Variable
 
@@ -89,7 +92,7 @@ make
     :: [ExpandedPattern level variable] -> OrOfExpandedPattern level variable
 make patts = filterOr (MultiOr patts)
 
-{-|'makeMultiOr' constructs a MultiOr.
+{-|'makeMultiOr' constructs a 'MultiOr'.
 -}
 makeMultiOr :: [a] -> MultiOr a
 makeMultiOr = MultiOr
@@ -144,7 +147,8 @@ isTrue _ = False
 
 {-| 'fullCrossProduct' distributes all the elements in a list of or, making
 all possible tuples. Each of these tuples will be an element of the resulting
-or.
+or. This is useful when, say, distributing 'And' or 'Application' patterns
+over 'Or'.
 
 As an example,
 

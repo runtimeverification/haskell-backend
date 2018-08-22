@@ -18,43 +18,28 @@ import           Data.Either
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Id, SortedVariable )
+                 ( Id )
 import           Kore.AST.MetaOrObject
-                 ( Meta, MetaOrObject, Object )
+                 ( MetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.BaseStep
                  ( AxiomPattern, StepProof (..), simplifyStepProof,
                  stepWithAxiom )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern),
-                 PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+                 ( CommonExpandedPattern )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator,
-                 CommonApplicationFunctionEvaluator )
-import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
-                 ( mergeWithPredicateSubstitution )
+                 ( CommonApplicationFunctionEvaluator )
 import           Kore.Step.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
+                 ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, traverseFlattenWithPairs,
-                 traverseWithPairs )
-import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..) )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplifyToOr )
+                 ( extractPatterns, make, traverseFlattenWithPairs )
+import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+                 ( simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh.IntCounter
                  ( IntCounter )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
 
 data MaxStepCount
     = MaxStepCount Integer
@@ -79,62 +64,19 @@ step
 step tools symbolIdToEvaluator axioms configuration = do
     (stepPattern, stepProofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairs
-            (stepWithPattern tools axioms)
+            (baseStepWithPattern tools axioms)
             configuration
-    -- TODO: Shouldn't simplification be in stepWithPattern? Or shouldn't that
-    -- be "baseStepWithPattern"?
-    (simplificationPattern, simplificationProofs) <-
+    (simplifiedPattern, simplificationProofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairs
-            (simplifyToOr tools symbolIdToEvaluator)
+            (ExpandedPattern.simplify tools symbolIdToEvaluator)
             stepPattern
     return
-        ( simplificationPattern
+        ( simplifiedPattern
         , simplifyStepProof $ StepProofCombined
             (map StepProofSimplification simplificationProofs ++ stepProofs)
         )
 
--- TODO: Move to ExpandedPattern
-simplifyToOr
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , IntVariable variable
-        , Hashable variable
-        )
-    => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
-    -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
-    -> IntCounter
-        ( OrOfExpandedPattern level variable
-        , SimplificationProof level
-        )
-simplifyToOr
-    tools
-    symbolIdToEvaluator
-    ExpandedPattern {term, predicate, substitution}
-  = do
-    (simplifiedTerm, _)
-        <- Pattern.simplifyToOr tools symbolIdToEvaluator term
-    (simplifiedPatt, _) <-
-        OrOfExpandedPattern.traverseWithPairs
-            (ExpandedPattern.mergeWithPredicateSubstitution
-                tools
-                -- TODO: refactor.
-                (PureMLPatternSimplifier
-                    (Pattern.simplifyToOr tools symbolIdToEvaluator))
-                PredicateSubstitution
-                    { predicate = predicate
-                    , substitution = substitution
-                    }
-            )
-            simplifiedTerm
-    return (simplifiedPatt, SimplificationProof)
-
-stepWithPattern
+baseStepWithPattern
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> [AxiomPattern level]
@@ -142,7 +84,7 @@ stepWithPattern
     -> CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> IntCounter (CommonOrOfExpandedPattern level, StepProof level)
-stepWithPattern tools axioms configuration = do
+baseStepWithPattern tools axioms configuration = do
     stepResultsWithProofs <- sequence (stepToList tools configuration axioms)
     return
         ( OrOfExpandedPattern.make

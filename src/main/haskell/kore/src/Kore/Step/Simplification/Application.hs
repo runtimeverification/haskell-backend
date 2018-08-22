@@ -109,7 +109,6 @@ simplify
                 symbol
             )
             orDistributedChildren
-    -- TODO: It's not obvious at all when filtering occurs and when id doesn't.
     return
         ( unflattenedOr
         , SimplificationProof

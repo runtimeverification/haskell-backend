@@ -124,8 +124,7 @@ evaluateApplication
     unwrapApplied
         :: (AttemptedFunction level variable, proof)
         -> OrOfExpandedPattern level variable
-    -- TODO: Use the proof.
-    unwrapApplied (AttemptedFunction.Applied term, _) = term
+    unwrapApplied (AttemptedFunction.Applied term, _proof) = term
     unwrapApplied _ = error "Can only unwrap 'Applied' terms."
 
     unchangedPatt =
@@ -149,9 +148,12 @@ evaluateApplication
                 True
             (AttemptedFunction.Applied thing, _) ->
                 not (OrOfExpandedPattern.isFalse thing)
+-- TODO(virgil): Builtins are not expected to recursively simplify until the
+-- result stabilizes. Find out if that is indeed the case, then, if needed,
+-- move the recursive simplification call from UserDefined.hs here.
 
-{-| 'mergeWithCondition' ands the given condition to the given function
-evaluation.
+{-| 'mergeWithCondition' ands the given condition-substitution to the given
+function evaluation.
 -}
 mergeWithConditionAndSubstitution
     ::  ( MetaOrObject level
@@ -189,5 +191,3 @@ mergeWithConditionAndSubstitution
         toMerge
         functionResult
     return (AttemptedFunction.Applied evaluated, SimplificationProof)
-
--- TODO(virgil): Iterate evaluation until it stabilizes?

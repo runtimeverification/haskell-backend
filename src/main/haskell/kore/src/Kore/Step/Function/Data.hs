@@ -31,44 +31,52 @@ import Kore.Step.StepperAttributes
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
 
-{--| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
+{-| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
 pattern. This can be either a built-in evaluator or a user-defined one.
---}
+
+Arguments:
+
+* 'MetadataTools' are tools for finding additional information about
+patterns such as their sorts, whether they are constructors or hooked.
+
+* 'PureMLPatternSimplifier' is a Function for simplifying patterns, used for
+the post-processing of the function application results.
+
+* 'Application' is the pattern to be evaluated.
+
+Return value:
+
+It returns the result of appling the function, together with a proof certifying
+that the function was applied correctly (which is only a placeholder right now).
+-}
 newtype ApplicationFunctionEvaluator level variable =
     ApplicationFunctionEvaluator
         (forall . ( MetaOrObject level)
         => MetadataTools level StepperAttributes
-        -- ^ Tools for finding additional information about patterns
-        -- such as their sorts, whether they are constructors or hooked.
         -> PureMLPatternSimplifier level variable
-        -- ^ Function for simplifying patterns.
         -> Application level (PureMLPattern level variable)
-        -- ^ Pattern to be evaluated, in case it is a function application
         -> IntCounter
             ( AttemptedFunction level variable
-            -- ^ The result of applying the function
             , SimplificationProof level
-            -- ^ Proof certifying that the function was applied correctly
-            -- (placeholder for now).
             )
         )
 
-{--| 'CommonApplicationFunctionEvaluator' particularizes
+{-| 'CommonApplicationFunctionEvaluator' particularizes
 'ApplicationFunctionEvaluator' to 'Variable', following the same pattern as
 the other `Common*` types.
---}
+-}
 type CommonApplicationFunctionEvaluator level =
     ApplicationFunctionEvaluator level Variable
 
-{--| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
+{-| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
 cases where the function can't be fully evaluated.
---}
+-}
 data AttemptedFunction level variable
     = NotApplicable
     | Applied !(OrOfExpandedPattern level variable)
   deriving (Show, Eq)
 
-{--| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
+{-| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
 following the same pattern as the other `Common*` types.
---}
+-}
 type CommonAttemptedFunction level = AttemptedFunction level Variable

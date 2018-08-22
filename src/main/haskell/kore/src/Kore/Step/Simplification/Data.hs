@@ -22,15 +22,15 @@ import Kore.Step.OrOfExpandedPattern
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
 
-{--| 'SimplificationProof' is a placeholder for proofs showing that the
+{-| 'SimplificationProof' is a placeholder for proofs showing that the
 simplification of a MetaMLPattern was correct.
---}
+-}
 data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
-{--| 'PureMLPatternSimplifier' wraps a function that evaluates
+{-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.
---}
+-}
 newtype PureMLPatternSimplifier level variable =
     PureMLPatternSimplifier
         ( PureMLPattern level variable
@@ -40,8 +40,8 @@ newtype PureMLPatternSimplifier level variable =
             )
         )
 
-{--| 'CommonPurePatternFunctionEvaluator' wraps a function that evaluates
+{-| 'CommonPurePatternFunctionEvaluator' wraps a function that evaluates
 Kore functions on CommonPurePatterns.
---}
+-}
 type CommonPureMLPatternSimplifier level =
     PureMLPatternSimplifier level Variable

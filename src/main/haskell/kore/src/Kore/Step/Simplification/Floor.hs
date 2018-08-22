@@ -75,7 +75,6 @@ simplifyEvaluatedFloor
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 simplifyEvaluatedFloor child =
     case OrOfExpandedPattern.extractPatterns child of
-        -- TODO: Remove fst
         [childP] -> makeEvaluateFloor childP
         _ ->
             makeEvaluateFloor
