@@ -41,9 +41,8 @@ module Kore.Builtin.Builtin
 
 import           Control.Monad
                  ( zipWithM_ )
-import           Control.Monad.Cont
-                 ( ContT )
-import qualified Control.Monad.Cont as Cont
+import           Control.Monad.Except
+                 ( MonadError )
 import qualified Control.Monad.Except as Except
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.HashMap.Strict
@@ -84,7 +83,8 @@ import           Kore.Attribute.Parser
 import           Kore.Builtin.Hook
                  ( Hook (..) )
 import           Kore.Error
-                 ( Error, castError, koreFail, koreFailWhen, withContext )
+                 ( Error )
+import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( SortDescription )
 import           Kore.IndexedModule.MetadataTools
@@ -97,7 +97,7 @@ import           Kore.Step.Function.Data
                  AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), Simplifier )
+                 ( SimplificationProof (..) )
 
 type Parser = Parsec Void String
 
@@ -255,8 +255,10 @@ verifySortDecl
     ("In sort '" ++ sortName ++ "' declaration")
     (case sentenceSortParameters of
         [] -> pure ()
-        _ -> koreFail ("Expected 0 sort parameters, found "
-                        ++ show (length sentenceSortParameters))
+        _ ->
+            Kore.Error.koreFail
+                ("Expected 0 sort parameters, found "
+                    ++ show (length sentenceSortParameters))
     )
 
 {- | Verify the occurrence of a builtin sort.
@@ -273,15 +275,15 @@ verifySort
 verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
     do
         SentenceSort { sentenceSortAttributes } <- findSort sortActualName
-        let
-            expectHook = Hook (Just builtinName)
-        declHook <- castError (parseAttributes sentenceSortAttributes)
-        koreFailWhen (expectHook /= declHook)
+        let expectHook = Hook (Just builtinName)
+        declHook <- Kore.Error.castError (parseAttributes sentenceSortAttributes)
+        Kore.Error.koreFailWhen (expectHook /= declHook)
             ("Sort '" ++ getId sortActualName
-             ++ "' is not hooked to builtin sort '"
-             ++ builtinName ++ "'")
+                ++ "' is not hooked to builtin sort '"
+                ++ builtinName ++ "'")
 verifySort _ _ (SortVariableSort SortVariable { getSortVariable }) =
-    koreFail ("unexpected sort variable '" ++ getId getSortVariable ++ "'")
+    Kore.Error.koreFail
+        ("unexpected sort variable '" ++ getId getSortVariable ++ "'")
 
 {- | Verify a builtin symbol declaration.
 
@@ -308,7 +310,8 @@ verifySymbol
         symbolId
         ("In symbol '" ++ symbolName ++ "' declaration")
         (do
-            withContext "In result sort" (verifyResult findSort result)
+            Kore.Error.withContext "In result sort"
+                (verifyResult findSort result)
             verifySymbolArguments verifyArguments findSort decl
         )
 
@@ -329,9 +332,9 @@ verifySymbolArguments
     findSort
     SentenceSymbol { sentenceSymbolSorts = sorts }
   =
-    withContext "In argument sorts"
+    Kore.Error.withContext "In argument sorts"
     (do
-        koreFailWhen (arity /= builtinArity)
+        Kore.Error.koreFailWhen (arity /= builtinArity)
             ("Expected " ++ show builtinArity
              ++ " arguments, found " ++ show arity)
         zipWithM_ (\verify sort -> verify findSort sort) verifyArguments sorts
@@ -364,7 +367,7 @@ verifyDomainValue builtinSort validate =
     runPatternVerifier findSort =
         \case
             DomainValuePattern dv@DomainValue { domainValueSort } ->
-                withContext
+                Kore.Error.withContext
                     ("Verifying builtin sort '" ++ builtinSort ++ "'")
                     (skipOtherSorts domainValueSort (validate dv))
             _ -> return ()  -- no domain value to verify
@@ -416,7 +419,7 @@ parseDomainValue
     parser
     DomainValue { domainValueChild }
   =
-    withContext "Parsing domain value"
+    Kore.Error.withContext "While parsing domain value"
         (case domainValueChild of
             StringLiteral_ StringLiteral { getStringLiteral = lit } ->
                 let parsed =
@@ -430,50 +433,6 @@ parseDomainValue
   where
     castParseError =
         either (Kore.Error.koreFail . Parsec.parseErrorPretty) pure
-
--- TODO (thomas.tuegel): Using extensible exceptions for error handling would
--- also simplify this definition and avoid the need for continuation passing.
-{- | @Skip@ allows to quit early when evaluation cannot be continued.
-
-  Use 'Cont.callCC' to capture a continuation which can be called anywhere to
-  exit the current evaluation.
-
- -}
-type Skip a = ContT (AttemptedFunction Object Variable) Simplifier a
-
-runSkip
-    :: Skip (AttemptedFunction Object Variable)
-    -> Simplifier
-        (AttemptedFunction Object Variable, SimplificationProof Object)
-runSkip action = do
-    a <- Cont.runContT action return
-    return (a, SimplificationProof)
-
--- | Cast any error into a 'FunctionError'.
-liftParseError :: Either (Kore.Error.Error e) a -> Skip a
-liftParseError =
-    Except.lift . either Except.throwError return . Kore.Error.castError
-
-{- | Run a parser inside a domain value during evaluation.
-
-  If the pattern is not a domain value, the function is skipped using the
-  provided continuation.
-
-  See also: 'Cont.callCC'
-
- -}
-getDomainValue
-    :: (AttemptedFunction Object Variable -> Skip a)
-    -- ^ Continuation captured with 'Cont.callCC'
-    -> Parser a
-    -- ^ Parser to run in domain value
-    -> CommonPurePattern Object
-    -> Skip a
-getDomainValue skip parse =
-    \case
-        Functor.Foldable.Fix (DomainValuePattern dv) ->
-            liftParseError (parseDomainValue parse dv)
-        _ -> skip NotApplicable
 
 {- | Return the supplied pattern as an 'AttemptedFunction'.
 
@@ -522,14 +481,15 @@ binaryOperator
     -- ^ Operation on builtin types
     -> Function
 binaryOperator
-    parse
+    parser
     asPattern
     ctx
     op
   =
-    ApplicationFunctionEvaluator binaryOperator1
+    ApplicationFunctionEvaluator binaryOperator0
   where
-    binaryOperator1
+    get = Except.liftEither . Kore.Error.castError . parseDomainValue parser
+    binaryOperator0
         tools
         _
         Application
@@ -538,13 +498,24 @@ binaryOperator
             , applicationChildren
             }
       =
-        case applicationChildren of
-            [a, b] ->
-                runSkip $ Cont.callCC $ \skip -> do
-                    let get = getDomainValue skip parse
+        Kore.Error.withContext ctx
+            (case Functor.Foldable.project <$> applicationChildren of
+                [DomainValuePattern a, DomainValuePattern b] -> do
+                    -- Apply the operator to two domain values
                     r <- op <$> get a <*> get b
-                    (appliedFunction . asPattern resultSort) r
-            _ -> impossible ctx "Wrong number of arguments"
+                    (,)
+                        <$> (appliedFunction . asPattern resultSort) r
+                        <*> pure SimplificationProof
+                [_, DomainValuePattern _] ->
+                    Kore.Error.withContext
+                        "In first argument"
+                        expectedDomainValue
+                [DomainValuePattern _, _] ->
+                    Kore.Error.withContext
+                        "In second argument"
+                        expectedDomainValue
+                _ -> wrongArity
+            )
 
 {- | Construct a builtin unary operator.
 
@@ -566,14 +537,15 @@ unaryOperator
     -- ^ Operation on builtin types
     -> Function
 unaryOperator
-    parse
+    parser
     asPattern
     ctx
     op
   =
-    ApplicationFunctionEvaluator unaryOperator1
+    ApplicationFunctionEvaluator unaryOperator0
   where
-    unaryOperator1
+    get = Except.liftEither . Kore.Error.castError . parseDomainValue parser
+    unaryOperator0
         tools
         _
         Application
@@ -582,13 +554,23 @@ unaryOperator
             , applicationChildren
             }
       =
-        case applicationChildren of
-            [a] ->
-                runSkip $ Cont.callCC $ \skip -> do
-                    let get = getDomainValue skip parse
+        Kore.Error.withContext ctx
+            (case Functor.Foldable.project <$> applicationChildren of
+                [DomainValuePattern a] -> do
+                    -- Apply the operator to a domain value
                     r <- op <$> get a
-                    (appliedFunction . asPattern resultSort) r
-            _ -> impossible ctx "Wrong number of arguments"
+                    (,)
+                        <$> (appliedFunction . asPattern resultSort) r
+                        <*> pure SimplificationProof
+                [_] ->
+                    Kore.Error.withContext
+                        "In first argument"
+                        expectedDomainValue
+                _ -> wrongArity
+            )
 
-impossible :: String -> String -> a
-impossible ctx what = error (ctx ++ ": The impossible happened! " ++ what)
+expectedDomainValue :: MonadError (Error w) m => m a
+expectedDomainValue = Kore.Error.koreFail "Expected domain value"
+
+wrongArity :: MonadError (Error w) m => m a
+wrongArity = Kore.Error.koreFail "Wrong number of arguments"
