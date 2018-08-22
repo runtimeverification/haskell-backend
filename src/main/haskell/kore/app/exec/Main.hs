@@ -49,6 +49,8 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Registry
                  ( extractEvaluators )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( MaxStepCount (AnyStepCount), pickFirstStepper )
 import           Kore.Step.StepperAttributes
@@ -148,12 +150,25 @@ main = do
                 expandedPattern = makeExpandedPattern runningPattern
                 finalExpandedPattern =
                     fst $ fst $ (`runIntCounter` 1)
-                    $ pickFirstStepper
-                        metadataTools
-                        functionRegistry
-                        axiomPatterns
-                        AnyStepCount
-                        expandedPattern
+                    $ do
+                        simplifiedPatterns <-
+                            ExpandedPattern.simplify
+                                metadataTools
+                                functionRegistry
+                                expandedPattern
+                        let
+                            initialPattern =
+                                case
+                                    OrOfExpandedPattern.extractPatterns
+                                        (fst simplifiedPatterns) of
+                                    [] -> expandedPattern
+                                    (config : _) -> config
+                        pickFirstStepper
+                            metadataTools
+                            functionRegistry
+                            axiomPatterns
+                            AnyStepCount
+                            initialPattern
             putStrLn $ unparseToString
                 (ExpandedPattern.term finalExpandedPattern)
 
