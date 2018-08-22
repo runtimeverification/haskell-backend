@@ -47,6 +47,8 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Function.Registry
+                 ( extractEvaluators )
 import           Kore.Step.Step
                  ( MaxStepCount (AnyStepCount), pickFirstStepper )
 import           Kore.Step.StepperAttributes
@@ -132,6 +134,8 @@ main = do
                 mainModule (ModuleName mainModuleName) indexedModules
             mainPatternVerify indexedModule parsedPattern
             let
+                functionRegistry =
+                    extractEvaluators Object indexedModule
                 axiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
                 metadataTools = extractMetadataTools indexedModule
@@ -143,8 +147,13 @@ main = do
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
                 finalExpandedPattern =
-                    fst $ fst $ (`runIntCounter` 1) $ pickFirstStepper
-                        metadataTools AnyStepCount expandedPattern axiomPatterns
+                    fst $ fst $ (`runIntCounter` 1)
+                    $ pickFirstStepper
+                        metadataTools
+                        functionRegistry
+                        axiomPatterns
+                        AnyStepCount
+                        expandedPattern
             putStrLn $ unparseToString
                 (ExpandedPattern.term finalExpandedPattern)
 
