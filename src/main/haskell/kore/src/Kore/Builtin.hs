@@ -60,8 +60,17 @@ koreVerifiers =
         <> Int.patternVerifier
     }
 
+{- | Construct an evaluation context for Kore builtin functions.
+
+  Returns a map from symbol identifiers to builtin functions used for function
+  evaluation in the context of the given module.
+
+  See also: 'Data.Step.Step.step'
+
+ -}
 koreFunctionContext
     :: KoreIndexedModule StepperAttributes
+    -- ^ Module under which evaluation takes place
     -> Map (Kore.Id Object) [Builtin.Function]
 koreFunctionContext indexedModule =
     Map.mapMaybe lookupBuiltins (hookedSymbolAttributes indexedModule)
