@@ -230,7 +230,7 @@ mainVerify willChkAttr definition =
         clockSomething "Verifying the definition"
             (verifyAndIndexDefinition
                 attributesVerification
-                Builtin.koreBuiltins
+                Builtin.koreVerifiers
                 definition
             )
       case verifyResult of
@@ -254,7 +254,7 @@ mainPatternVerify indexedModule patt =
         Left err1 -> error (printError err1)
         Right _   -> return ()
   where
-    Builtin.Verifiers { patternVerifier } = Builtin.koreBuiltins
+    Builtin.Verifiers { patternVerifier } = Builtin.koreVerifiers
 
 makePurePattern
     :: CommonKorePattern

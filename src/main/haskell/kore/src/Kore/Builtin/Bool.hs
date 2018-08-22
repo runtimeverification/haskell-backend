@@ -28,9 +28,10 @@ import           Control.Monad
                  ( void )
 import           Data.Functor
                  ( ($>) )
-import           Data.HashMap.Strict
-                 ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
+import           Data.Map
+                 ( Map )
+import qualified Data.Map as Map
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
@@ -120,9 +121,9 @@ asPattern resultSort result =
 
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
  -}
-builtinFunctions :: HashMap String Builtin.Function
+builtinFunctions :: Map String Builtin.Function
 builtinFunctions =
-    HashMap.fromList
+    Map.fromList
     [ ("BOOL.or", binaryOperator "BOOL.or" (||))
     , ("BOOL.and", binaryOperator "BOOL.and" (&&))
     , ("BOOL.xor", binaryOperator "BOOL.xor" xor)

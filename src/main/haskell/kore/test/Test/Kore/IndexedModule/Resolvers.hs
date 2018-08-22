@@ -155,7 +155,7 @@ testIndexedModule =
     case
         verifyAndIndexDefinition
             DoNotVerifyAttributes
-            Builtin.koreBuiltins
+            Builtin.koreVerifiers
             testDefinition
       of
         Right modulesMap ->
