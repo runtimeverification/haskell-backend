@@ -1,12 +1,15 @@
 module Test.Tasty.HUnit.Extensions where
 
-import           Control.Exception (SomeException, catch, evaluate)
-import           Control.Monad
-import           Data.CallStack
-import           Data.Functor.Classes
-import           Data.Functor.Foldable
-import           Data.List         (intercalate, isInfixOf)
-import           Test.Tasty.HUnit  (assertBool, assertFailure)
+import Control.Exception
+       ( SomeException, catch, evaluate )
+import Control.Monad
+import Data.CallStack
+import Data.Functor.Classes
+import Data.Functor.Foldable
+import Data.List
+       ( intercalate, isInfixOf )
+import Test.Tasty.HUnit
+       ( assertBool, assertFailure )
 
 assertEqualWithPrinter
     :: (Eq a, HasCallStack)
@@ -68,24 +71,24 @@ assertSubstring message first second =
         )
         (first `isInfixOf` second)
 
-{--| 'EqualWithExplanation' is a class for objects that can be compared for
+{-| 'EqualWithExplanation' is a class for objects that can be compared for
 equality, and for which an explanation of an equality failure is desired.
 
 This can be used with, e.g., assertEqualWithExplanation.
---}
+-}
 class EqualWithExplanation a where
-    {--| 'compareWithExplanation' compares two values, returning Nothing
+    {-| 'compareWithExplanation' compares two values, returning Nothing
     if they are equal or (Just explanation) if they are different.
 
     This explanation is assumed to be a human readable representation of the
     two input values that highlights why they are not equal. As an example,
     whn comparing (a, b) with (a, c), this function may return
     (..., b <vs> c).
-    --}
+    -}
     compareWithExplanation :: a -> a -> Maybe String
-    {--| 'printWithExplanation' should display the data passed to it.
+    {-| 'printWithExplanation' should display the data passed to it.
     TODO: Consider removing it and using 'show'.
-    --}
+    -}
     printWithExplanation :: a -> String
 
 assertEqualWithExplanation
@@ -250,9 +253,9 @@ data StructEWEField struct = StructEWEField
         -> struct
         -> (forall field . EqualWithExplanation field => (field, field))
     }
-{--| 'StructEqualWithExplanation' is a helper class for declaring structs
+{-| 'StructEqualWithExplanation' is a helper class for declaring structs
 as instances of 'EqualWithExplanation'
---}
+-}
 class EqualWithExplanation struct => StructEqualWithExplanation struct where
     structFieldsWithNames :: struct -> struct -> [EqWrap]
     structConstructorName :: struct -> String
@@ -302,9 +305,9 @@ data SumConstructor
     = SumConstructorDifferent String String
     | SumConstructorSameNoArguments
     | SumConstructorSameWithArguments EqWrap
-{--| 'SumEqualWithExplanation' is a helper class for declaring sum types
+{-| 'SumEqualWithExplanation' is a helper class for declaring sum types
 as instances of 'EqualWithExplanation'
---}
+-}
 class EqualWithExplanation sum => SumEqualWithExplanation sum where
     sumConstructorPair :: sum -> sum -> SumConstructor
     sumCompareWithExplanation :: sum -> sum -> Maybe String
