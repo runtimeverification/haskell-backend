@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Predicate.Predicate
+Module      : Kore.Step.ExpandedPattern
 Description : Data structures and functions for manipulating
               ExpandedPatterns, i.e. a representation of paterns
               optimized for the stepper.
@@ -11,13 +11,17 @@ Portability : portable
 -}
 module Kore.Step.ExpandedPattern
     ( CommonExpandedPattern
+    , CommonPredicateSubstitution
     , ExpandedPattern (..)
     , PredicateSubstitution (..)
     , allVariables
     , bottom
+    , isBottom
+    , isTop
     , mapVariables
     , substitutionToPredicate
     , toMLPattern
+    , top
     ) where
 
 import           Data.List
@@ -34,7 +38,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern, mapPatternVariables )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkBottom, mkVar )
+                 ( mkAnd, mkBottom, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_, pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
@@ -50,27 +54,40 @@ import           Kore.Variables.Free
                  ( pureAllVariables )
 
 {-|'ExpandedPattern' is a representation of a PureMLPattern that is easier
-to use when executing Kore.
+to use when executing Kore. It consists of an "and" between a term, a
+predicate and a substitution
 -}
-data ExpandedPattern level var = ExpandedPattern
-    { term         :: !(PureMLPattern level var)
-    , predicate    :: !(Predicate level var)
-    , substitution :: !(UnificationSubstitution level var)
+data ExpandedPattern level variable = ExpandedPattern
+    { term         :: !(PureMLPattern level variable)
+    -- ^ Free-form pattern.
+    , predicate    :: !(Predicate level variable)
+    -- ^ pattern that only evaluates to Top or Bottom.
+    , substitution :: !(UnificationSubstitution level variable)
+    -- ^ special kind of predicate of the type
+    -- variable1 = term1 /\ variable2 = term2 /\ ...
     }
     deriving (Eq, Show)
 
 {-|'PredicateSubstitution' is a representation of a specific type of
 PureMLPattern that occurs in certain cases when executing Kore.
 -}
-data PredicateSubstitution level var = PredicateSubstitution
-    { predicate    :: !(Predicate level var)
-    , substitution :: !(UnificationSubstitution level var)
+data PredicateSubstitution level variable = PredicateSubstitution
+    { predicate    :: !(Predicate level variable)
+    -- ^ pattern that only evaluates to Top or Bottom.
+    , substitution :: !(UnificationSubstitution level variable)
+    -- ^ special kind of predicate of the type
+    -- variable1 = term1 /\ variable2 = term2 /\ ...
     }
     deriving (Eq, Show)
 
 {-|'CommonExpandedPattern' particularizes ExpandedPattern to Variable.
 -}
 type CommonExpandedPattern level = ExpandedPattern level Variable
+
+{-| 'CommonPredicateSubstitution' particularizes PredicateSubstitution to
+Variable.
+-}
+type CommonPredicateSubstitution level = PredicateSubstitution level Variable
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
 in an ExpandedPattern.
@@ -93,9 +110,9 @@ mapVariables
 from an ExpandedPattern.
 -}
 allVariables
-    ::  Ord (var level)
-    => ExpandedPattern level var
-    -> Set.Set (var level)
+    ::  Ord (variable level)
+    => ExpandedPattern level variable
+    -> Set.Set (variable level)
 allVariables
     ExpandedPattern { term, predicate, substitution }
   =
@@ -118,9 +135,9 @@ allVariables
 toMLPattern
     ::  ( MetaOrObject level
         , Given (SortTools level)
-        , SortedVariable var
-        , Show (var level))
-    => ExpandedPattern level var -> PureMLPattern level var
+        , SortedVariable variable
+        , Show (variable level))
+    => ExpandedPattern level variable -> PureMLPattern level variable
 toMLPattern
     ExpandedPattern { term, predicate, substitution }
   =
@@ -132,11 +149,11 @@ toMLPattern
     simpleAnd
         ::  ( MetaOrObject level
             , Given (SortTools level)
-            , SortedVariable var
-            , Show (var level))
-        => PureMLPattern level var
-        -> Predicate level var
-        -> PureMLPattern level var
+            , SortedVariable variable
+            , Show (variable level))
+        => PureMLPattern level variable
+        -> Predicate level variable
+        -> PureMLPattern level variable
     simpleAnd (Top_ _)      predicate'     = unwrapPredicate predicate'
     simpleAnd patt          PredicateTrue  = patt
     simpleAnd b@(Bottom_ _) _              = b
@@ -174,7 +191,7 @@ singleSubstitutionToPredicate (var, patt) =
 
 
 {-|'bottom' is an expanded pattern that has a bottom condition and that
-should become bottom when transformed to a ML pattern.
+should become Bottom when transformed to a ML pattern.
 -}
 bottom :: MetaOrObject level => ExpandedPattern level variable
 bottom =
@@ -183,3 +200,35 @@ bottom =
         , predicate = makeFalsePredicate
         , substitution = []
         }
+
+{-|'top' is an expanded pattern that has a top condition and that
+should become Top when transformed to a ML pattern.
+-}
+top :: MetaOrObject level => ExpandedPattern level variable
+top =
+    ExpandedPattern
+        { term      = mkTop
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+
+{-| 'isTop' checks whether an ExpandedPattern is equivalent to a top Pattern.
+-}
+isTop :: ExpandedPattern level variable -> Bool
+isTop
+    ExpandedPattern
+        { term = Top_ _, predicate = PredicateTrue, substitution = [] }
+  = True
+isTop _ = False
+
+{-| 'isBottom' checks whether an ExpandedPattern is equivalent to a bottom
+Pattern.
+-}
+isBottom :: ExpandedPattern level variable -> Bool
+isBottom
+    ExpandedPattern {term = Bottom_ _}
+  = True
+isBottom
+    ExpandedPattern {predicate = PredicateFalse}
+  = True
+isBottom _ = False
