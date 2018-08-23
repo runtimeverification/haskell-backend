@@ -97,8 +97,8 @@ symbolVerifiers =
       )
     , ("MAP.lookup"
       , Builtin.verifySymbol trivialVerifier
-          [ trivialVerifier
-          , assertSort
+          [ assertSort
+          , trivialVerifier
           ]
       )
     ]
@@ -146,7 +146,7 @@ evalLookup =
   where
     evalLookup0 tools _ pat =
           case pat of
-              Application _ [k, m] -> goFind k m
+              Application _ [m, k] -> goFind k m
               _ -> failedToEval
       where
         goFind k m = case m of
