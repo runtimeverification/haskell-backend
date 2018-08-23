@@ -54,7 +54,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( MaxStepCount (AnyStepCount), pickFirstStepper )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
+                 ( StepperAttributes (..) )
 import           Kore.Unparser.Unparse
                  ( unparseToString )
 import           Kore.Variables.Fresh.IntCounter
@@ -63,7 +63,6 @@ import           Kore.Variables.Fresh.IntCounter
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,
        mainGlobal )
-
 
 {-
 Main module to run kore-exec
@@ -140,7 +139,7 @@ main = do
                     extractEvaluators Object indexedModule
                 axiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
-                metadataTools = extractMetadataTools indexedModule
+                metadataTools = constructorFunctions (extractMetadataTools indexedModule)
                 purePattern = makePurePattern parsedPattern
                 runningPattern =
                     if isKProgram
@@ -318,3 +317,11 @@ configVarSort = groundObjectSort "SortKConfigVar"
 
 kSort :: Sort Object
 kSort = groundObjectSort "SortK"
+
+constructorFunctions :: MetadataTools Object StepperAttributes -> MetadataTools Object StepperAttributes
+constructorFunctions tools =
+    tools
+    { attributes = \h -> let atts = attributes tools h in
+        atts
+        { isConstructor = isConstructor atts || isFunction atts}
+    }
