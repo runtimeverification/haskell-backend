@@ -6,23 +6,69 @@ module Kore.Step.AxiomPatterns
     , koreIndexedModuleToAxiomPatterns
     ) where
 
+import Data.Default
+       ( Default (..) )
 import Data.Either
        ( rights )
+import Data.Functor ( ($>) )
+import Data.Ord
+       ( comparing )
+import Data.Semigroup
+       ( (<>) )
 
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
-import Kore.AST.Sentence
-import Kore.ASTUtils.SmartPatterns
-import Kore.Error
-import Kore.IndexedModule.IndexedModule
-import Kore.Predicate.Predicate
-       ( CommonPredicate, wrapPredicate )
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.AST.PureToKore
+                 ( patternKoreToPure )
+import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.Attribute.Parser
+                 ( ParseAttributes (..) )
+import qualified Kore.Attribute.Parser as Attribute
+import           Kore.Error
+import           Kore.IndexedModule.IndexedModule
+import           Kore.Predicate.Predicate
+                 ( CommonPredicate, wrapPredicate )
 
 newtype AxiomPatternError = AxiomPatternError ()
+
+data HeatingCooling = Heat | Cool
+  deriving (Eq, Ord, Show)
+
+data AxiomAttributes =
+    AxiomAttributes
+        { heatingCooling :: !(Maybe HeatingCooling)
+        }
+  deriving (Eq, Ord, Show)
+
+instance Default AxiomAttributes where
+    def =
+        AxiomAttributes
+            { heatingCooling = Nothing
+            }
+
+instance ParseAttributes AxiomAttributes where
+    attributesParser =
+        do
+            heatingCooling <-
+                Attribute.optional (Attribute.choose getHeat getCool)
+            return AxiomAttributes {..}
+
+getHeat :: Attribute.Parser HeatingCooling
+getHeat =
+    Attribute.assertKeyOnlyAttribute "heat" $> Heat
+
+getCool :: Attribute.Parser HeatingCooling
+getCool =
+    Attribute.assertKeyOnlyAttribute "cool" $> Cool
+
+parseAxiomAttributes
+    :: Attributes
+    -> Either (Error AxiomPatternError) AxiomAttributes
+parseAxiomAttributes attrs =
+    Kore.Error.castError (Attribute.parseAttributes attrs)
 
 {- | Normal rewriting and function axioms
 
@@ -35,8 +81,16 @@ data AxiomPattern level = AxiomPattern
     { axiomPatternLeft  :: !(CommonPurePattern level)
     , axiomPatternRight :: !(CommonPurePattern level)
     , axiomPatternRequires :: !(CommonPredicate level)
+    , axiomAttributes :: !AxiomAttributes
     }
-    deriving (Show, Eq)
+    deriving (Eq, Show)
+
+instance Ord level => Ord (AxiomPattern level) where
+    compare a b =
+        comparing axiomAttributes a b
+        <> comparing axiomPatternLeft a b
+        <> comparing axiomPatternRight a b
+        <> comparing axiomPatternRequires a b
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
@@ -44,7 +98,7 @@ from function axioms (used for functional simplification).
 data QualifiedAxiomPattern level
     = RewriteAxiomPattern (AxiomPattern level)
     | FunctionAxiomPattern (AxiomPattern level)
-    deriving (Show, Eq)
+    deriving (Eq, Ord, Show)
 
 
 -- | Extracts all 'AxiomPattern' structures matching a given @level@ from
@@ -78,9 +132,17 @@ sentenceToAxiomPattern
     => level
     -> Sentence level' UnifiedSortVariable UnifiedPattern Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
-sentenceToAxiomPattern level (SentenceAxiomSentence sa) =
-    case patternKoreToPure level (sentenceAxiomPattern sa) of
-        Right pat -> patternToAxiomPattern pat
+sentenceToAxiomPattern
+    level
+    (SentenceAxiomSentence SentenceAxiom
+        { sentenceAxiomPattern
+        , sentenceAxiomAttributes
+        }
+    )
+  = do
+    axiomAttributes <- parseAxiomAttributes sentenceAxiomAttributes
+    case patternKoreToPure level sentenceAxiomPattern of
+        Right pat -> patternToAxiomPattern axiomAttributes pat
         Left err  -> Left err
 sentenceToAxiomPattern _ _ =
     koreFail "Only axiom sentences can be translated to AxiomPatterns"
@@ -92,9 +154,10 @@ not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern
     :: MetaOrObject level
-    => CommonPurePattern level
+    => AxiomAttributes
+    -> CommonPurePattern level
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
-patternToAxiomPattern pat =
+patternToAxiomPattern axiomAttributes pat =
     case pat of
         -- normal rewrite axioms
         And_ _ requires (And_ _ _ensures (Rewrites_ _ lhs rhs)) ->
@@ -102,6 +165,7 @@ patternToAxiomPattern pat =
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = wrapPredicate requires
+                , axiomAttributes
                 }
         -- function axioms
         Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
@@ -109,6 +173,7 @@ patternToAxiomPattern pat =
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = wrapPredicate requires
+                , axiomAttributes
                 }
-        Forall_ _ _ child -> patternToAxiomPattern child
+        Forall_ _ _ child -> patternToAxiomPattern axiomAttributes child
         _ -> koreFail "Unsupported pattern type in axiom"

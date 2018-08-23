@@ -5,6 +5,7 @@ import           Control.Applicative
 import           Control.Monad
                  ( when )
 import qualified Data.Functor.Foldable as Functor.Foldable
+import qualified Data.List as List
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -157,7 +158,8 @@ main = do
                         -- builtin functions
                         (Builtin.koreEvaluators indexedModule)
                 axiomPatterns =
-                    koreIndexedModuleToAxiomPatterns Object indexedModule
+                    List.sort
+                        (koreIndexedModuleToAxiomPatterns Object indexedModule)
                 metadataTools = constructorFunctions (extractMetadataTools indexedModule)
                 purePattern = makePurePattern parsedPattern
                 runningPattern =
