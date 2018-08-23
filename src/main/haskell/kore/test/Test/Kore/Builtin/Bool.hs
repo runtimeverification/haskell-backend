@@ -50,6 +50,9 @@ prop_xor = propBinary xor xorSymbol
 prop_ne :: Bool -> Bool -> Property
 prop_ne = propBinary (/=) neSymbol
 
+prop_eq :: Bool -> Bool -> Property
+prop_eq = propBinary (==) eqSymbol
+
 prop_not :: Bool -> Property
 prop_not = propUnary not notSymbol
 
@@ -85,6 +88,10 @@ propUnary impl symb =
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
 asPattern :: Bool -> CommonPurePattern Object
 asPattern = Bool.asPattern boolSort
+
+-- | Specialize 'Bool.asExpandedPattern' to the builtin sort 'boolSort'.
+asExpandedPattern :: Bool -> CommonExpandedPattern Object
+asExpandedPattern = Bool.asExpandedPattern boolSort
 
 -- | A sort to hook to the builtin @BOOL.Bool@.
 boolSort :: Sort Object
@@ -126,6 +133,9 @@ xorSymbol = builtinSymbol "xorBool"
 neSymbol :: SymbolOrAlias Object
 neSymbol = builtinSymbol "neBool"
 
+eqSymbol :: SymbolOrAlias Object
+eqSymbol = builtinSymbol "eqBool"
+
 notSymbol :: SymbolOrAlias Object
 notSymbol = builtinSymbol "notBool"
 
@@ -166,6 +176,7 @@ boolModule =
             , binarySymbolDecl "BOOL.and" andSymbol
             , binarySymbolDecl "BOOL.xor" xorSymbol
             , binarySymbolDecl "BOOL.ne" neSymbol
+            , binarySymbolDecl "BOOL.eq" eqSymbol
             , unarySymbolDecl "BOOL.not" notSymbol
             , binarySymbolDecl "BOOL.implies" impliesSymbol
             ]

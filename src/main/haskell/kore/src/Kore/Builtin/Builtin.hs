@@ -89,15 +89,17 @@ import           Kore.IndexedModule.IndexedModule
                  ( SortDescription )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( CommonExpandedPattern )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
                  AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 Simplifier )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 type Parser = Parsec Void String
 
@@ -442,16 +444,10 @@ parseDomainValue
  -}
 appliedFunction
     :: Monad m
-    => CommonPurePattern Object
+    => CommonExpandedPattern Object
     -> m (AttemptedFunction Object Variable)
-appliedFunction term =
-    (return . Applied . OrOfExpandedPattern.make)
-        [ExpandedPattern
-            { term
-            , predicate = Predicate.makeTruePredicate
-            , substitution = []
-            }
-        ]
+appliedFunction epat =
+    (return . Applied . OrOfExpandedPattern.make) [epat]
 
 {- | Look up the result sort of a symbol or alias
  -}
@@ -473,7 +469,7 @@ getResultSort MetadataTools { sortTools } symbol =
 binaryOperator
     :: Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonPurePattern Object)
+    -> (Sort Object -> b -> CommonExpandedPattern Object)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -486,36 +482,24 @@ binaryOperator
     ctx
     op
   =
-    ApplicationFunctionEvaluator binaryOperator0
+    functionEvaluator ctx binaryOperator0
   where
     get = Except.liftEither . Kore.Error.castError . parseDomainValue parser
-    binaryOperator0
-        tools
-        _
-        Application
-            { applicationSymbolOrAlias =
-                (getResultSort tools -> resultSort)
-            , applicationChildren
-            }
-      =
-        Kore.Error.withContext ctx
-            (case Functor.Foldable.project <$> applicationChildren of
-                [DomainValuePattern a, DomainValuePattern b] -> do
-                    -- Apply the operator to two domain values
-                    r <- op <$> get a <*> get b
-                    (,)
-                        <$> (appliedFunction . asPattern resultSort) r
-                        <*> pure SimplificationProof
-                [_, DomainValuePattern _] ->
-                    Kore.Error.withContext
-                        "In first argument"
-                        expectedDomainValue
-                [DomainValuePattern _, _] ->
-                    Kore.Error.withContext
-                        "In second argument"
-                        expectedDomainValue
-                _ -> wrongArity
-            )
+    binaryOperator0 _ _ resultSort children =
+        case Functor.Foldable.project <$> children of
+            [DomainValuePattern a, DomainValuePattern b] -> do
+                -- Apply the operator to two domain values
+                r <- op <$> get a <*> get b
+                (appliedFunction . asPattern resultSort) r
+            [_, DomainValuePattern _] ->
+                Kore.Error.withContext
+                    "In first argument"
+                    expectedDomainValue
+            [DomainValuePattern _, _] ->
+                Kore.Error.withContext
+                    "In second argument"
+                    expectedDomainValue
+            _ -> wrongArity
 
 {- | Construct a builtin unary operator.
 
@@ -529,7 +513,7 @@ binaryOperator
 unaryOperator
     :: Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonPurePattern Object)
+    -> (Sort Object -> b -> CommonExpandedPattern Object)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -542,12 +526,38 @@ unaryOperator
     ctx
     op
   =
-    ApplicationFunctionEvaluator unaryOperator0
+    functionEvaluator ctx unaryOperator0
   where
     get = Except.liftEither . Kore.Error.castError . parseDomainValue parser
-    unaryOperator0
+    unaryOperator0 _ _ resultSort children =
+        case Functor.Foldable.project <$> children of
+            [DomainValuePattern a] -> do
+                -- Apply the operator to a domain value
+                r <- op <$> get a
+                (appliedFunction . asPattern resultSort) r
+            [_] ->
+                Kore.Error.withContext
+                    "In first argument"
+                    expectedDomainValue
+            _ -> wrongArity
+
+functionEvaluator
+    :: String
+       -- ^ Builtin function name (for error messages)
+    -> (  MetadataTools Object StepperAttributes
+       -> CommonPureMLPatternSimplifier Object
+       -> Sort Object
+       -> [CommonPurePattern Object]
+       -> Simplifier (AttemptedFunction Object Variable)
+       )
+    -- ^ Builtin function implementation
+    -> Function
+functionEvaluator ctx impl =
+    ApplicationFunctionEvaluator evaluator
+  where
+    evaluator
         tools
-        _
+        simplifier
         Application
             { applicationSymbolOrAlias =
                 (getResultSort tools -> resultSort)
@@ -555,18 +565,9 @@ unaryOperator
             }
       =
         Kore.Error.withContext ctx
-            (case Functor.Foldable.project <$> applicationChildren of
-                [DomainValuePattern a] -> do
-                    -- Apply the operator to a domain value
-                    r <- op <$> get a
-                    (,)
-                        <$> (appliedFunction . asPattern resultSort) r
-                        <*> pure SimplificationProof
-                [_] ->
-                    Kore.Error.withContext
-                        "In first argument"
-                        expectedDomainValue
-                _ -> wrongArity
+            (do
+                attempt <- impl tools simplifier resultSort applicationChildren
+                return (attempt, SimplificationProof)
             )
 
 expectedDomainValue :: MonadError (Error w) m => m a
