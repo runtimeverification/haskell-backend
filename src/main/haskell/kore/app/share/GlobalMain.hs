@@ -24,6 +24,8 @@ import Data.Version
        ( showVersion )
 import System.Clock
        ( Clock (Monotonic), diffTimeSpec, getTime )
+import System.IO
+       ( hPutStrLn, stderr )
 import Development.GitRev
        ( gitBranch, gitCommitDate, gitHash )
 import Options.Applicative
@@ -158,5 +160,5 @@ clockSomethingIO description something = do
     start <- getTime Monotonic
     x     <- something
     end   <- getTime Monotonic
-    putStrLn $ description ++" "++ show (diffTimeSpec end start)
+    hPutStrLn stderr $ description ++" "++ show (diffTimeSpec end start)
     return x

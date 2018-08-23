@@ -5,13 +5,13 @@ demo.kore: demo.k
 	kast --kore $< > $<.kore
 
 %.output: %.demo.kore demo.kore
-	stack exec -- kore-exec demo.kore --module DEMO --pattern $< > $>
+	stack exec -- kore-exec demo.kore --module DEMO --pattern $< > $@
 
 %.korun: %.output
 	cat $<
 
 %.test: %.output
-  diff $< $<.golden
+	diff $< $<.golden
 
 test: test/Nat.test test/NatList.test test/Truth.test
 
