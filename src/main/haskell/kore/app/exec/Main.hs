@@ -297,9 +297,12 @@ makeKInitConfig
 makeKInitConfig pat =
     mkApp initTCellHead
         [ mkApp mapElementHead
-            [ mkApp (injHead configVarSort kSort)
-                [ mkDomainValue configVarSort
-                  $ mkStringLiteral (StringLiteral "$PGM")
+            [ mkApp kSeqHead
+                [ mkApp (injHead configVarSort kItemSort)
+                    [ mkDomainValue configVarSort
+                      $ mkStringLiteral (StringLiteral "$PGM")
+                    ]
+                , mkApp dotKHead []
                 ]
             , mkApp kSeqHead
                 [ mkApp (injHead patSort kItemSort) [ pat ]
@@ -350,9 +353,6 @@ groundObjectSort name =
 
 configVarSort :: Sort Object
 configVarSort = groundObjectSort "SortKConfigVar"
-
-kSort :: Sort Object
-kSort = groundObjectSort "SortK"
 
 kItemSort :: Sort Object
 kItemSort = groundObjectSort "SortKItem"

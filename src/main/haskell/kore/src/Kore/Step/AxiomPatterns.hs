@@ -20,7 +20,7 @@ import Kore.ASTUtils.SmartPatterns
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.Predicate.Predicate
-       ( CommonPredicate, wrapPredicate )
+       ( CommonPredicate, makeTruePredicate, wrapPredicate )
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -103,12 +103,26 @@ patternToAxiomPattern pat =
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = wrapPredicate requires
                 }
+        -- unconditional rewrite axioms
+        Rewrites_ _ lhs rhs ->
+            pure $ RewriteAxiomPattern AxiomPattern
+                { axiomPatternLeft = lhs
+                , axiomPatternRight = rhs
+                , axiomPatternRequires = makeTruePredicate
+                }
         -- function axioms
         Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
             pure $ FunctionAxiomPattern AxiomPattern
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = wrapPredicate requires
+                }
+        -- unconditional function axioms
+        Equals_ _ _ lhs rhs ->
+            pure $ FunctionAxiomPattern AxiomPattern
+                { axiomPatternLeft = lhs
+                , axiomPatternRight = rhs
+                , axiomPatternRequires = makeTruePredicate
                 }
         Forall_ _ _ child -> patternToAxiomPattern child
         _ -> koreFail "Unsupported pattern type in axiom"
