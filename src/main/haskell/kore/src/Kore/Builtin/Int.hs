@@ -22,6 +22,7 @@ module Kore.Builtin.Int
     , patternVerifier
     , builtinFunctions
     , asPattern
+    , asExpandedPattern
     ) where
 
 import           Control.Monad
@@ -40,6 +41,9 @@ import           Kore.AST.PureML
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import           Kore.Step.ExpandedPattern
+                 ( CommonExpandedPattern )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -150,6 +154,20 @@ asPattern resultSort result =
         (Kore.StringLiteral_ Kore.StringLiteral
             { getStringLiteral = show result })
 
+asExpandedPattern
+    :: Kore.Sort Object  -- ^ resulting sort
+    -> Integer  -- ^ builtin value to render
+    -> CommonExpandedPattern Object
+asExpandedPattern resultSort =
+    ExpandedPattern.fromPurePattern . asPattern resultSort
+
+asPartialExpandedPattern
+    :: Kore.Sort Object  -- ^ resulting sort
+    -> Maybe Integer  -- ^ builtin value to render
+    -> CommonExpandedPattern Object
+asPartialExpandedPattern resultSort =
+    maybe ExpandedPattern.bottom (asExpandedPattern resultSort)
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map String Builtin.Function
@@ -185,8 +203,8 @@ builtinFunctions =
       -- TODO (thomas.tuegel): Implement division.
     , ("INT.ediv", Builtin.notImplemented)
     , ("INT.emod", Builtin.notImplemented)
-    , ("INT.tdiv", Builtin.notImplemented)
-    , ("INT.tmod", Builtin.notImplemented)
+    , partialBinaryOperator "INT.tdiv" tdiv
+    , partialBinaryOperator "INT.tmod" tmod
 
       -- Bitwise operations
       -- TODO (thomas.tuegel): Implement bitwise operations.
@@ -205,8 +223,16 @@ builtinFunctions =
     ]
   where
     unaryOperator name op =
-        (name, Builtin.unaryOperator parse asPattern name op)
+        (name, Builtin.unaryOperator parse asExpandedPattern name op)
     binaryOperator name op =
-        (name, Builtin.binaryOperator parse asPattern name op)
+        (name, Builtin.binaryOperator parse asExpandedPattern name op)
     comparator name op =
-        (name, Builtin.binaryOperator parse Bool.asPattern name op)
+        (name, Builtin.binaryOperator parse Bool.asExpandedPattern name op)
+    partialBinaryOperator name op =
+        (name, Builtin.binaryOperator parse asPartialExpandedPattern name op)
+    tdiv n d
+        | d == 0 = Nothing
+        | otherwise = Just (quot n d)
+    tmod n d
+        | d == 0 = Nothing
+        | otherwise = Just (rem n d)

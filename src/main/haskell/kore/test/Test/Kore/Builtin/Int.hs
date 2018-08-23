@@ -18,22 +18,23 @@ import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.Int as Int
 import           Kore.Builtin.Hook
                  ( hookAttribute )
+import qualified Kore.Builtin.Int as Int
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
-import Test.Kore
-       ( testId )
+import           Test.Kore
+                 ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
-import Test.Kore.Builtin.Builtin
+import           Test.Kore.Builtin.Builtin
 
 prop_gt :: Integer -> Integer -> Property
 prop_gt = propComparison (>) gtSymbol
@@ -80,7 +81,7 @@ propComparison
 propComparison impl symb =
     \a b ->
         let pat = App_ symb (asPattern <$> [a, b])
-        in Test.Bool.asPattern (impl a b) === evaluate pat
+        in Test.Bool.asExpandedPattern (impl a b) === evaluate pat
 
 prop_min :: Integer -> Integer -> Property
 prop_min = propBinary min minSymbol
@@ -122,7 +123,7 @@ propBinary
 propBinary impl symb =
     \a b ->
         let pat = App_ symb (asPattern <$> [a, b])
-        in asPattern (impl a b) === evaluate pat
+        in asExpandedPattern (impl a b) === evaluate pat
 
 prop_abs :: Integer -> Property
 prop_abs = propUnary abs absSymbol
@@ -140,11 +141,73 @@ propUnary
 propUnary impl symb =
     \a ->
         let pat = App_ symb (asPattern <$> [a])
-        in asPattern (impl a) === evaluate pat
+        in asExpandedPattern (impl a) === evaluate pat
+
+prop_tdiv :: Integer -> Integer -> Property
+prop_tdiv = propPartialBinary tdiv tdivSymbol
+
+tdiv :: Integer -> Integer -> Maybe Integer
+tdiv n d
+  | d == 0 = Nothing
+  | otherwise = Just (quot n d)
+
+prop_tmod :: Integer -> Integer -> Property
+prop_tmod = propPartialBinary tmod tmodSymbol
+
+tmod :: Integer -> Integer -> Maybe Integer
+tmod n d
+  | d == 0 = Nothing
+  | otherwise = Just (rem n d)
+
+tdivSymbol :: SymbolOrAlias Object
+tdivSymbol = builtinSymbol "tdivInt"
+
+tmodSymbol :: SymbolOrAlias Object
+tmodSymbol = builtinSymbol "tmodInt"
+
+-- | Test a partial binary operator hooked to the given symbol.
+propPartialBinary
+    :: (Integer -> Integer -> Maybe Integer)
+    -- ^ operator
+    -> SymbolOrAlias Object
+    -- ^ hooked symbol
+    -> (Integer -> Integer -> Property)
+propPartialBinary impl symb =
+    \a b ->
+        let pat = App_ symb (asPattern <$> [a, b])
+        in asPartialExpandedPattern (impl a b) === evaluate pat
+  where
+    asPartialExpandedPattern =
+        maybe ExpandedPattern.bottom asExpandedPattern
+
+prop_tdivZero :: Integer -> Property
+prop_tdivZero = propPartialBinaryZero tdiv tdivSymbol
+
+prop_tmodZero :: Integer -> Property
+prop_tmodZero = propPartialBinaryZero tmod tmodSymbol
+
+-- | Test a partial unary operator hooked to the given symbol.
+propPartialBinaryZero
+    :: (Integer -> Integer -> Maybe Integer)
+    -- ^ operator
+    -> SymbolOrAlias Object
+    -- ^ hooked symbol
+    -> (Integer -> Property)
+propPartialBinaryZero impl symb =
+    \a ->
+        let pat = App_ symb (asPattern <$> [a, 0])
+        in asPartialExpandedPattern (impl a 0) === evaluate pat
+  where
+    asPartialExpandedPattern =
+        maybe ExpandedPattern.bottom asExpandedPattern
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
 asPattern :: Integer -> CommonPurePattern Object
 asPattern = Int.asPattern intSort
+
+-- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
+asExpandedPattern :: Integer -> CommonExpandedPattern Object
+asExpandedPattern = Int.asExpandedPattern intSort
 
 -- | A sort to hook to the builtin @INT.Int@.
 intSort :: Sort Object
@@ -236,14 +299,16 @@ intModule =
             , binarySymbolDecl "INT.sub" subSymbol
             , binarySymbolDecl "INT.mul" mulSymbol
             , unarySymbolDecl "INT.abs" absSymbol
+            , binarySymbolDecl "INT.tdiv" tdivSymbol
+            , binarySymbolDecl "INT.tmod" tmodSymbol
             ]
         }
 
-evaluate :: CommonPurePattern Object -> CommonPurePattern Object
+evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
     case evalSimplifier (Pattern.simplify tools builtinFunctions pat) of
         Left err -> error (Kore.Error.printError err)
-        Right (ExpandedPattern { term }, _) -> term
+        Right (epat, _) -> epat
   where
     tools = extractMetadataTools indexedModule
 

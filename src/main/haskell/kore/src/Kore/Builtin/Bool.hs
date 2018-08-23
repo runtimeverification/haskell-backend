@@ -22,6 +22,7 @@ module Kore.Builtin.Bool
     , patternVerifier
     , builtinFunctions
     , asPattern
+    , asExpandedPattern
     ) where
 
 import           Control.Monad
@@ -42,6 +43,9 @@ import           Kore.AST.PureML
                  ( CommonPurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Builtin as Builtin
+import           Kore.Step.ExpandedPattern
+                 ( CommonExpandedPattern )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -119,6 +123,13 @@ asPattern resultSort result =
     unparse True = "true"
     unparse False = "false"
 
+asExpandedPattern
+    :: Kore.Sort Object  -- ^ resulting sort
+    -> Bool  -- ^ builtin value to render
+    -> CommonExpandedPattern Object
+asExpandedPattern resultSort =
+    ExpandedPattern.fromPurePattern . asPattern resultSort
+
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
  -}
 builtinFunctions :: Map String Builtin.Function
@@ -135,7 +146,7 @@ builtinFunctions =
     , ("BOOL.orElse", Builtin.notImplemented)
     ]
   where
-    unaryOperator = Builtin.unaryOperator parse asPattern
-    binaryOperator = Builtin.binaryOperator parse asPattern
+    unaryOperator = Builtin.unaryOperator parse asExpandedPattern
+    binaryOperator = Builtin.binaryOperator parse asExpandedPattern
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
