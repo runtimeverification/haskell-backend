@@ -74,28 +74,31 @@ prop_implies a b =
     pat = App_ impliesSymbol (asPattern <$> [a, b])
     implies u v = not u || v
 
+-- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
 asPattern :: Bool -> CommonPurePattern Object
 asPattern = Bool.asPattern boolSort
 
-boolId :: Id Object
-boolId = testId "Bool"
-
+-- | A sort to hook to the builtin @BOOL.Bool@.
 boolSort :: Sort Object
 boolSort =
     SortActualSort SortActual
-        { sortActualName = boolId
+        { sortActualName = testId "Bool"
         , sortActualSorts = []
         }
 
+-- | Declare 'boolSort' in a Kore module.
 boolSortDecl :: KoreSentence
 boolSortDecl =
-    asSentence (SentenceSort
-        { sentenceSortName = boolId
+    (asSentence . SentenceHookedSort) (SentenceSort
+        { sentenceSortName =
+            let SortActualSort SortActual { sortActualName } = boolSort
+            in sortActualName
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes [ hookAttribute "BOOL.Bool" ]
         }
         :: KoreSentenceSort Object)
 
+-- | Make an unparameterized builtin symbol with the given name.
 builtinSymbol :: String -> SymbolOrAlias Object
 builtinSymbol name =
     SymbolOrAlias
@@ -121,11 +124,16 @@ notSymbol = builtinSymbol "notBool"
 impliesSymbol :: SymbolOrAlias Object
 impliesSymbol = builtinSymbol "impliesBool"
 
+-- | Declare a symbol hooked to the given builtin name.
 hookedSymbolDecl
     :: String
+    -- ^ builtin name
     -> SymbolOrAlias Object
+    -- ^ symbol
     -> Sort Object
+    -- ^ result sort
     -> [Sort Object]
+    -- ^ argument sorts
     -> KoreSentence
 hookedSymbolDecl
     builtinName
@@ -150,10 +158,20 @@ hookedSymbolDecl
             }
     sentenceSymbolAttributes = Attributes [ hookAttribute builtinName ]
 
+{- | Declare a hooked symbol with two arguments.
+
+  The result and arguments all have sort 'boolSort'.
+
+  -}
 binarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
 binarySymbolDecl builtinName symbol =
     hookedSymbolDecl builtinName symbol boolSort [boolSort, boolSort]
 
+{- | Declare a hooked symbol with one argument.
+
+  The result and argument have sort 'boolSort'.
+
+ -}
 unarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
 unarySymbolDecl builtinName symbol =
     hookedSymbolDecl builtinName symbol boolSort [boolSort]
@@ -161,6 +179,8 @@ unarySymbolDecl builtinName symbol =
 boolModuleName :: ModuleName
 boolModuleName = ModuleName "BOOL"
 
+{- | Declare the @BOOL@ builtins.
+ -}
 boolModule :: KoreModule
 boolModule =
     Module
