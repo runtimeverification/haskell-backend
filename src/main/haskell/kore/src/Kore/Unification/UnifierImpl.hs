@@ -193,7 +193,7 @@ data FunctionalProof level variable
     | FunctionalStringLiteral StringLiteral
     -- ^String literals are functional as they represent one value in the model.
     | FunctionalCharLiteral CharLiteral
-    -- ^String literals are functional as they represent one value in the model.
+    -- ^Char literals are functional as they represent one value in the model.
     | FunctionalDomainValue (DomainValue level (PureMLPattern Meta Variable))
     -- ^Domain values are functional as they represent one value in the model.
     | FunctionalHead (SymbolOrAlias level)
