@@ -4,8 +4,16 @@ demo.kore: demo.k
 %.demo.kore: %.demo demo.kore
 	kast --kore $< > $<.kore
 
-%.korun: %.demo.kore demo.kore
-	stack exec -- kore-exec demo.kore --module DEMO --pattern $<
+%.output: %.demo.kore demo.kore
+	stack exec -- kore-exec demo.kore --module DEMO --pattern $< > $>
+
+%.korun: %.output
+	cat $<
+
+%.test: %.output
+  diff $< $<.golden
+
+test: test/Nat.test test/NatList.test test/Truth.test
 
 clean:
-	rm -rf demo.kore demo-kompiled *.demo.kore
+	rm -rf demo.kore demo-kompiled test/*.demo.kore test/*.output
