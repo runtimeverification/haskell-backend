@@ -18,7 +18,7 @@ module INT
     hooked-symbol xorInt{}(Int{}, Int{}) : Int{} [hook{}("INT.xor")]
     hooked-symbol addInt{}(Int{}, Int{}) : Int{} [hook{}("INT.add")]
     hooked-symbol neInt{}(Int{}, Int{}) : Bool{} [hook{}("INT.ne")]
-    hooked-symbol randInt{}() : Int{} [hook{}("INT.rand")]
+    hooked-symbol randInt{}(Int{}) : Int{} [hook{}("INT.rand")]
     hooked-symbol leInt{}(Int{}, Int{}) : Bool{} [hook{}("INT.le")]
     hooked-symbol log2Int{}(Int{}) : Int{} [hook{}("INT.log2")]
     hooked-symbol andInt{}(Int{}, Int{}) : Int{} [hook{}("INT.and")]

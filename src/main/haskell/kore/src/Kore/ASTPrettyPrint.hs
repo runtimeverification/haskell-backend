@@ -18,7 +18,8 @@ import Kore.Parser.CString
        ( escapeCString )
 import Kore.Unification.Unifier
 
-import Data.String(fromString)
+import Data.String
+       ( fromString )
 import Data.Text.Prettyprint.Doc as Doc
 import Data.Text.Prettyprint.Doc.Render.String
 
@@ -753,5 +754,7 @@ instance (MetaOrObject level, PrettyPrint (variable level))
   where
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v
+    prettyPrint flags (FunctionalDomainValue dv) =
+        writeOneFieldStruct flags "FunctionalDomainValue" dv
     prettyPrint flags (FunctionalHead h) =
         writeOneFieldStruct flags "FunctionalHead" h

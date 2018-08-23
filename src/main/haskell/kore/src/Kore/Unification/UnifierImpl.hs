@@ -189,6 +189,8 @@ data FunctionalProof level variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
+    | FunctionalDomainValue (DomainValue level (PureMLPattern Meta Variable))
+    -- ^Domain values are functional as ther represent one value in the model.
     | FunctionalHead (SymbolOrAlias level)
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
@@ -203,16 +205,21 @@ mapFunctionalProofVariables
     -> FunctionalProof level variableTo
 mapFunctionalProofVariables mapper (FunctionalVariable variable) =
     FunctionalVariable (mapper variable)
+mapFunctionalProofVariables _ (FunctionalDomainValue dv) =
+    FunctionalDomainValue dv
 mapFunctionalProofVariables _ (FunctionalHead functionalHead) =
     FunctionalHead functionalHead
 
 -- checks whether a pattern is functional or not
 isFunctionalPattern
-    :: MetadataTools level StepperAttributes
+    :: Show (variable level)
+    => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either (UnificationError level) [FunctionalProof level variable]
 isFunctionalPattern tools = fixBottomUpVisitorM reduceM
   where
+    reduceM (DomainValuePattern dv) =
+        Right [FunctionalDomainValue dv]
     reduceM (VariablePattern v) =
         Right [FunctionalVariable v]
     reduceM (ApplicationPattern ap) =
@@ -225,7 +232,11 @@ isFunctionalPattern tools = fixBottomUpVisitorM reduceM
     reduceM _ = Left NonFunctionalPattern
 
 simplifyAnds
-    :: (Eq level, Ord (variable level), SortedVariable variable)
+    :: ( Eq level
+       , Ord (variable level)
+       , SortedVariable variable
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> [PureMLPattern level variable]
     -> Either
@@ -262,7 +273,10 @@ simplifyAnds tools (p:ps) =
             )
 
 simplifyAnd
-    :: (Eq level, Ord (variable level))
+    :: ( Eq level
+       , Ord (variable level)
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either
@@ -274,7 +288,10 @@ simplifyAnd tools =
 -- Performs variable and equality checks and distributes the conjunction
 -- to the children, creating sub-unification problems
 preTransform
-    :: (Eq level, Ord (variable level))
+    :: ( Eq level
+       , Ord (variable level)
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> UnFixedPureMLPattern level variable
     -> Either
@@ -331,7 +348,8 @@ preTransform _ _ = Left $ Left UnsupportedPatterns
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
 -- if phi is a functional pattern.
 mlProposition_5_24_3
-    :: MetadataTools level StepperAttributes
+    :: Show (variable level)
+    => MetadataTools level StepperAttributes
     -> variable level
     -- ^variable pattern
     -> PureMLPattern level variable
@@ -401,7 +419,11 @@ groupSubstitutionByVariable =
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: (Eq level, Ord (variable level), SortedVariable variable)
+    :: ( Eq level
+       , Ord (variable level)
+       , SortedVariable variable
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
@@ -427,7 +449,11 @@ instance Monoid (UnificationProof level variable) where
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: (Eq level, Ord (variable level), SortedVariable variable)
+    :: ( Eq level
+       , Ord (variable level)
+       , SortedVariable variable
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
@@ -467,7 +493,9 @@ normalizeSubstitutionDuplication tools subst =
 unificationProcedure
     ::  ( SortedVariable variable
         , Ord (variable level)
-        , MetaOrObject level)
+        , MetaOrObject level
+        , Show (variable level)
+        )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> PureMLPattern level variable

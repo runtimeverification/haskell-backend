@@ -96,13 +96,4 @@ endmodule
 
 module DEMO
   imports NAT-LIST
-
-  syntax NatList ::= demoNatList()    [function]
-  rule demoNatList() => primesUpTo(factorial(Succ(Succ(Succ(Succ(Zero))))))
-
-  syntax Truth ::= demoTruth()    [function]
-  rule demoTruth() => divides(Succ(Succ(Zero)), Succ(Succ(Succ(Succ(Zero)))))
-
-  syntax Nat ::= demoNat()    [function]
-  rule demoNat() => fibonacci(factorial(Succ(Succ(Succ(Zero)))))
 endmodule

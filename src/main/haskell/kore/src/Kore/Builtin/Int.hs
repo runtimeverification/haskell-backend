@@ -82,7 +82,7 @@ symbolVerifiers =
       , Builtin.verifySymbol assertSort [assertSort, assertSort, assertSort]
       )
 
-    , ("INT.rand", Builtin.verifySymbol assertSort [])
+    , ("INT.rand", Builtin.verifySymbol assertSort [assertSort])
     , ("INT.srand", Builtin.verifySymbolArguments [assertSort])
 
       -- TODO (thomas.tuegel): Implement builtin BOOL
