@@ -21,7 +21,7 @@ module IMP-SYNTAX
                  | "while" "(" BExp ")" Block
                  > Stmt Stmt                  [left]
   syntax Pgm ::= "int" Ids ";" Stmt
-  syntax Ids ::= List{Id,","}  
+  syntax Ids ::= List{Id,","}
 endmodule
 
 module IMP
@@ -60,7 +60,7 @@ module IMP
   rule if (false) _ else S => S
   rule while (B) S => if (B) {S while (B) S} else {}  [structural]
 // Pgm
-  rule <k> int (X,Xs => Xs);_ </k> <state> S:State => set(S, X, 0) </state>
+  rule <k> int (X,Xs => Xs);_ ...</k> <state> S:State => set(S, X, 0) </state>
     requires notBool (inState(S, X))
   rule int .Ids; S => S  [structural]
 

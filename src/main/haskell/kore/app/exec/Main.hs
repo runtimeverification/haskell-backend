@@ -289,7 +289,10 @@ makeKInitConfig pat =
                 [ mkDomainValue configVarSort
                   $ mkStringLiteral (StringLiteral "$PGM")
                 ]
-            , mkApp (injHead patSort kSort) [ pat ]
+            , mkApp kSeqHead
+                [ mkApp (injHead patSort kItemSort) [ pat ]
+                , mkApp dotKHead []
+                ]
             ]
         ]
   where
@@ -300,6 +303,12 @@ makeKInitConfig pat =
 
 initTCellHead :: SymbolOrAlias Object
 initTCellHead = groundHead "LblinitTCell" AstLocationImplicit
+
+kSeqHead :: SymbolOrAlias Object
+kSeqHead = groundHead "kseq" AstLocationImplicit
+
+dotKHead :: SymbolOrAlias Object
+dotKHead = groundHead "dotk" AstLocationImplicit
 
 mapElementHead :: SymbolOrAlias Object
 mapElementHead = groundHead "Lbl'UndsPipe'-'-GT-Unds'" AstLocationImplicit
@@ -333,6 +342,9 @@ configVarSort = groundObjectSort "SortKConfigVar"
 kSort :: Sort Object
 kSort = groundObjectSort "SortK"
 
+kItemSort :: Sort Object
+kItemSort = groundObjectSort "SortKItem"
+
 -- TODO (traiansf): Get rid of this.
 -- The function below works around several limitations of
 -- the current tool by tricking the tool into believing that
@@ -349,4 +361,9 @@ constructorFunctions tools =
     }
   where
     isInj :: SymbolOrAlias Object -> Bool
-    isInj h = getId (symbolOrAliasConstructor h) == "inj"
+    isInj h =
+        getId (symbolOrAliasConstructor h) == "inj"
+        ||
+        getId (symbolOrAliasConstructor h) == "kseq"
+        ||
+        getId (symbolOrAliasConstructor h) == "dotk"
