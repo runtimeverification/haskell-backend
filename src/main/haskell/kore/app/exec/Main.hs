@@ -1,5 +1,7 @@
 module Main (main) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import           Control.Monad
                  ( when )
 import qualified Data.Functor.Foldable as Functor.Foldable
@@ -11,8 +13,8 @@ import           Data.Reflection
 import           Data.Semigroup
                  ( (<>) )
 import           Options.Applicative
-                 ( InfoMod, Parser, argument, fullDesc, header, help, long,
-                 metavar, progDesc, str, strOption, value )
+                 ( InfoMod, Parser, argument, auto, fullDesc, header, help,
+                 long, metavar, option, progDesc, str, strOption, value )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -57,7 +59,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
-                 ( MaxStepCount (AnyStepCount), pickFirstStepper )
+                 ( MaxStepCount (..), pickFirstStepper )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Unparser.Unparse
@@ -83,6 +85,7 @@ data KoreExecOptions = KoreExecOptions
     , isKProgram          :: !Bool
     -- ^ Whether the pattern file represents a program to be put in the
     -- initial configuration before execution
+    , maxStepCount        :: !MaxStepCount
     }
 
 -- | Command Line Argument Parser
@@ -105,6 +108,14 @@ commandLineParser =
     <*> enableDisableFlag "is-program"
         True False False
         "Whether the pattern represents a program."
+    <*> (MaxStepCount <$> depth <|> pure AnyStepCount)
+  where
+    depth =
+        option auto
+            (  metavar "DEPTH"
+            <> long "depth"
+            <> help "Execute up to DEPTH steps."
+            )
 
 
 -- | modifiers for the Command line parser description
@@ -128,6 +139,7 @@ main = do
         , patternFileName
         , mainModuleName
         , isKProgram
+        , maxStepCount
         }
       -> do
         parsedDefinition <- mainDefinitionParse definitionFileName
@@ -174,7 +186,7 @@ main = do
                         metadataTools
                         functionRegistry
                         axiomPatterns
-                        AnyStepCount
+                        maxStepCount
                         initialPattern
             putStrLn $ unparseToString
                 (ExpandedPattern.term finalExpandedPattern)
