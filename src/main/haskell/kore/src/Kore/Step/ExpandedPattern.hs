@@ -22,6 +22,7 @@ module Kore.Step.ExpandedPattern
     , substitutionToPredicate
     , toMLPattern
     , top
+    , fromPurePattern
     ) where
 
 import           Data.List
@@ -232,3 +233,21 @@ isBottom
     ExpandedPattern {predicate = PredicateFalse}
   = True
 isBottom _ = False
+
+{- | Construct an 'ExpandedPattern' from a 'PureMLPattern'.
+
+  The resulting @ExpandedPattern@ has a true predicate and an empty substitution.
+
+  See also: 'makeTruePredicate'
+
+ -}
+fromPurePattern
+    :: MetaOrObject level
+    => PureMLPattern level variable
+    -> ExpandedPattern level variable
+fromPurePattern term =
+    ExpandedPattern
+        { term
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
