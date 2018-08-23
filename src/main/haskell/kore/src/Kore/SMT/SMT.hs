@@ -32,12 +32,6 @@ import           Kore.Implicit.Attributes
 import           Data.Reflection 
 import           Data.SBV
 
--- data HookLookup
---   = HookLookup
---   { getSymbolHook_ :: SymbolOrAlias Object -> Hook
---   , getSortHook_   :: Sort Object -> Hook
---   }
-
 data SMTAttributes
   = SMTAttributes
   { hook :: !Hook
@@ -67,7 +61,7 @@ translate p = goTranslate
     filterVars hookName = 
         filter (\v -> isHook (getSortHook $ variableSort v) hookName) vars
     boolVars = filterVars "BOOL.Bool"
-    intVars  = filterVars "INT.Int"  
+    intVars  = filterVars "INT.Int"
     goTranslate = do
         boolSMTVars <- sBools $ map (getId . variableName) boolVars
         let boolTable = Map.fromList $ zip boolVars boolSMTVars
@@ -91,16 +85,14 @@ translate p = goTranslate
         goBoolean (Iff_     _ x1 x2) = goBinaryOp (<=>) goBoolean x1 x2
         goBoolean (Not_     _ x1)    = goUnaryOp (bnot) goBoolean x1 
         goBoolean (App_ h [x1, x2])
-         | getSymbolHook h == Hook (Just "INT.le")
-           = do
-             tx1 <- goInteger x1
-             tx2 <- goInteger x2
-             return (tx1 .<= tx2)
-         | getSymbolHook h == Hook (Just "INT.gt") 
-           = do 
-             tx1 <- goInteger x1
-             tx2 <- goInteger x2
-             return (tx1 .> tx2)
+         | isHook (getSymbolHook h) "INT.le"
+           = goBinaryOp (.<=) goInteger x1 x2
+         | isHook (getSymbolHook h) "INT.ge"
+           = goBinaryOp (.>=) goInteger x1 x2
+         | isHook (getSymbolHook h) "INT.gt" 
+           = goBinaryOp (.>)  goInteger x1 x2
+         | isHook (getSymbolHook h) "INT.lt"
+           = goBinaryOp (.<)  goInteger x1 x2
         goBoolean (V v)
          | getSortHook (variableSort v) == Hook (Just "BOOL.Bool")
            = case Map.lookup v boolTable of
@@ -126,8 +118,6 @@ translate p = goTranslate
 
 isHook h s =
     h == Hook (Just s)
-
--- getId . symbolOrAliasConstructor
 
 getSymbolHook 
     :: SymbolOrAlias Object 
