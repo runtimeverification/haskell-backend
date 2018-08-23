@@ -2,11 +2,12 @@ module Main (main) where
 
 import           Control.Monad
                  ( when )
+import qualified Data.Functor.Foldable as Functor.Foldable
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
-                 ( Given, give )
+                 ( Given, give, given )
 import           Data.Semigroup
                  ( (<>) )
 import           Options.Applicative
@@ -18,6 +19,8 @@ import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Object (..) )
+import           Kore.AST.MLPatterns
+                 ( getPatternResultSort )
 import           Kore.AST.PureML
                  ( CommonPurePattern, groundHead )
 import           Kore.AST.PureToKore
@@ -286,9 +289,14 @@ makeKInitConfig pat =
                 [ mkDomainValue configVarSort
                   $ mkStringLiteral (StringLiteral "$PGM")
                 ]
-            , pat
+            , mkApp (injHead patSort kSort) [ pat ]
             ]
         ]
+  where
+    sortTools :: SortTools Object
+    sortTools = given
+    patSort :: Sort Object
+    patSort = getPatternResultSort sortTools (Functor.Foldable.project pat)
 
 initTCellHead :: SymbolOrAlias Object
 initTCellHead = groundHead "LblinitTCell" AstLocationImplicit
