@@ -250,7 +250,12 @@ Definition
                             { symbolConstructor = (Id "randInt" AstLocationNone) :: Id Object
                             , symbolParams = []
                             }
-                    , sentenceSymbolSorts = []
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
                     , sentenceSymbolReturnSort =
                         SortActualSort SortActual
                             { sortActualName = (Id "Int" AstLocationNone) :: Id Object
