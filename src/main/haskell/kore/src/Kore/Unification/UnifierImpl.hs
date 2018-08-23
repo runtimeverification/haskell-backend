@@ -178,10 +178,11 @@ simplifyCombinedItems =
         items ++ proofItems
     addContents other proofItems = other : proofItems
 
--- |'FunctionalProof' is used for providing arguments that a pattern is
+-- |@FunctionalProof@ is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
--- pattern consists only of functional symbols and variables.
--- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
+-- pattern consists only of functional symbols, variables, domain values, and
+-- string/char literals.
+-- Hence, a proof that a pattern is functional is a list of @FunctionalProof@.
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data FunctionalProof level variable
@@ -189,8 +190,12 @@ data FunctionalProof level variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
+    | FunctionalStringLiteral StringLiteral
+    -- ^String literals are functional as they represent one value in the model.
+    | FunctionalCharLiteral CharLiteral
+    -- ^String literals are functional as they represent one value in the model.
     | FunctionalDomainValue (DomainValue level (PureMLPattern Meta Variable))
-    -- ^Domain values are functional as ther represent one value in the model.
+    -- ^Domain values are functional as they represent one value in the model.
     | FunctionalHead (SymbolOrAlias level)
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
@@ -205,6 +210,10 @@ mapFunctionalProofVariables
     -> FunctionalProof level variableTo
 mapFunctionalProofVariables mapper (FunctionalVariable variable) =
     FunctionalVariable (mapper variable)
+mapFunctionalProofVariables _ (FunctionalStringLiteral sl) =
+    FunctionalStringLiteral sl
+mapFunctionalProofVariables _ (FunctionalCharLiteral cl) =
+    FunctionalCharLiteral cl
 mapFunctionalProofVariables _ (FunctionalDomainValue dv) =
     FunctionalDomainValue dv
 mapFunctionalProofVariables _ (FunctionalHead functionalHead) =
@@ -218,6 +227,10 @@ isFunctionalPattern
     -> Either (UnificationError level) [FunctionalProof level variable]
 isFunctionalPattern tools = fixBottomUpVisitorM reduceM
   where
+    reduceM (CharLiteralPattern cl) =
+        Right [FunctionalCharLiteral cl]
+    reduceM (StringLiteralPattern sl) =
+        Right [FunctionalStringLiteral sl]
     reduceM (DomainValuePattern dv) =
         Right [FunctionalDomainValue dv]
     reduceM (VariablePattern v) =

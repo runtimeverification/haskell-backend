@@ -754,6 +754,10 @@ instance (MetaOrObject level, PrettyPrint (variable level))
   where
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v
+    prettyPrint flags (FunctionalCharLiteral cl) =
+        writeOneFieldStruct flags "FunctionalCharLiteral" cl
+    prettyPrint flags (FunctionalStringLiteral sl) =
+        writeOneFieldStruct flags "FunctionalStringLiteral" sl
     prettyPrint flags (FunctionalDomainValue dv) =
         writeOneFieldStruct flags "FunctionalDomainValue" dv
     prettyPrint flags (FunctionalHead h) =
