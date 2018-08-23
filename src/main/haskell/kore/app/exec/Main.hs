@@ -136,7 +136,11 @@ main = do
             mainPatternVerify indexedModule parsedPattern
             let
                 functionRegistry =
-                    extractEvaluators Object indexedModule
+                    Map.unionWith (++)
+                        -- user-defined functions
+                        (extractEvaluators Object indexedModule)
+                        -- builtin functions
+                        (Builtin.koreEvaluators indexedModule)
                 axiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
                 metadataTools = constructorFunctions (extractMetadataTools indexedModule)
