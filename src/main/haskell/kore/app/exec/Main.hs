@@ -245,10 +245,12 @@ mainPatternVerify indexedModule patt =
     do
       verifyResult <-
         clockSomething "Verifying the pattern"
-            ( verifyStandalonePattern indexedModule patt)
+            (verifyStandalonePattern patternVerifier indexedModule patt)
       case verifyResult of
         Left err1 -> error (printError err1)
         Right _   -> return ()
+  where
+    Builtin.Verifiers { patternVerifier } = Builtin.koreBuiltins
 
 makePurePattern
     :: CommonKorePattern
