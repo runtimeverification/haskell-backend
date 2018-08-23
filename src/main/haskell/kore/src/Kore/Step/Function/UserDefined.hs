@@ -15,7 +15,6 @@ module Kore.Step.Function.UserDefined
 import Data.Reflection
        ( give )
 
-
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SortedVariable )
 import           Kore.AST.MetaOrObject
