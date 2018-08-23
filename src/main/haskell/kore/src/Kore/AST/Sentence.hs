@@ -231,7 +231,7 @@ The @symbol-declaration@ and @alias-declaration@ categories were also merged
 into 'Sentence', using the @level@ parameter to distinguish the 'Meta' and
 'Object' variants.
 Since axioms and imports exist at both meta and kore levels, we use 'Meta'
-to qualify them. In contrast, since sort declarations are not available
+to qualify them. In contrast, since hook declarations are not available
 at the meta level, we qualify them with 'Object'.
 -}
 data Sentence level sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *) where
