@@ -1,17 +1,19 @@
-imp.kore:
-	kompile imp.k --no-prelude --backend kore
+imp.kore: imp.k
+	kompile imp.k --backend kore --syntax-module IMP
 
 %.imp.kore: %.imp imp.kore
 	kast --kore $< > $<.kore
 
-imp-kompiled: imp.k
-	kompile imp.k
+%.output: %.imp.kore imp.kore
+	stack exec -- kore-exec imp.kore --module IMP --is-program --pattern $< > $@
 
-%.krun: %.imp imp-kompiled
-	krun $<
+%.korun: %.output
+	cat $<
 
-%.korun: %.imp.kore
-	stack exec -- kore-exec imp.kore --module IMP --pgm $<
+%.test: %.output
+	diff $< $<.golden
+
+test: tests/sum.test
 
 clean:
-	rm -rf imp.kore imp-kompiled tests/*.imp.kore
+	rm -rf imp.kore imp-kompiled test/*.imp.kore test/*.output
