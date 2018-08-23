@@ -34,45 +34,53 @@ import           Kore.Step.StepperAttributes
 
 import Test.Kore
        ( testId )
+import Test.Kore.Builtin.Builtin
 
 prop_or :: Bool -> Bool -> Property
-prop_or a b =
-    asPattern (a || b) === evaluate pat
-  where
-    pat = App_ orSymbol (asPattern <$> [a, b])
+prop_or = propBinary (||) orSymbol
 
 prop_and :: Bool -> Bool -> Property
-prop_and a b =
-    asPattern (a && b) === evaluate pat
-  where
-    pat = App_ andSymbol (asPattern <$> [a, b])
-
+prop_and = propBinary (&&) andSymbol
 
 prop_xor :: Bool -> Bool -> Property
-prop_xor a b =
-    asPattern (xor a b) === evaluate pat
+prop_xor = propBinary xor xorSymbol
   where
-    pat = App_ xorSymbol (asPattern <$> [a, b])
     xor u v = (u && not v) || (not u && v)
 
 prop_ne :: Bool -> Bool -> Property
-prop_ne a b =
-    asPattern (a /= b) === evaluate pat
-  where
-    pat = App_ neSymbol (asPattern <$> [a, b])
+prop_ne = propBinary (/=) neSymbol
 
 prop_not :: Bool -> Property
-prop_not a =
-    asPattern (not a) === evaluate pat
-  where
-    pat = App_ notSymbol (asPattern <$> [a])
+prop_not = propUnary not notSymbol
 
 prop_implies :: Bool -> Bool -> Property
-prop_implies a b =
-    asPattern (implies a b) === evaluate pat
+prop_implies = propBinary implies impliesSymbol
   where
-    pat = App_ impliesSymbol (asPattern <$> [a, b])
     implies u v = not u || v
+
+-- | Test a binary operator hooked to the given symbol.
+propBinary
+    :: (Bool -> Bool -> Bool)
+    -- ^ operator
+    -> SymbolOrAlias Object
+    -- ^ hooked symbol
+    -> (Bool -> Bool -> Property)
+propBinary impl symb =
+    \a b ->
+        let pat = App_ symb (asPattern <$> [a, b])
+        in asPattern (impl a b) === evaluate pat
+
+-- | Test a unary operator hooked to the given symbol
+propUnary
+    :: (Bool -> Bool)
+    -- ^ operator
+    -> SymbolOrAlias Object
+    -- ^ hooked symbol
+    -> (Bool -> Property)
+propUnary impl symb =
+    \a ->
+        let pat = App_ symb (asPattern <$> [a])
+        in asPattern (impl a) === evaluate pat
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
 asPattern :: Bool -> CommonPurePattern Object
@@ -123,40 +131,6 @@ notSymbol = builtinSymbol "notBool"
 
 impliesSymbol :: SymbolOrAlias Object
 impliesSymbol = builtinSymbol "impliesBool"
-
--- | Declare a symbol hooked to the given builtin name.
-hookedSymbolDecl
-    :: String
-    -- ^ builtin name
-    -> SymbolOrAlias Object
-    -- ^ symbol
-    -> Sort Object
-    -- ^ result sort
-    -> [Sort Object]
-    -- ^ argument sorts
-    -> KoreSentence
-hookedSymbolDecl
-    builtinName
-    SymbolOrAlias { symbolOrAliasConstructor }
-    sentenceSymbolResultSort
-    sentenceSymbolSorts
-  =
-    (asSentence . SentenceHookedSymbol)
-        (SentenceSymbol
-            { sentenceSymbolSymbol
-            , sentenceSymbolSorts
-            , sentenceSymbolResultSort
-            , sentenceSymbolAttributes
-            }
-            :: KoreSentenceSymbol Object
-        )
-  where
-    sentenceSymbolSymbol =
-        Symbol
-            { symbolConstructor = symbolOrAliasConstructor
-            , symbolParams = []
-            }
-    sentenceSymbolAttributes = Attributes [ hookAttribute builtinName ]
 
 {- | Declare a hooked symbol with two arguments.
 
