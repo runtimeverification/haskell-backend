@@ -44,6 +44,7 @@ from function axioms (used for functional simplification).
 data QualifiedAxiomPattern level
     = RewriteAxiomPattern (AxiomPattern level)
     | FunctionAxiomPattern (AxiomPattern level)
+    deriving (Show, Eq)
 
 
 -- | Extracts all 'AxiomPattern' structures matching a given @level@ from
