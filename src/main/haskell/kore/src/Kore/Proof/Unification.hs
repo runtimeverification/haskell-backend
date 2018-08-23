@@ -9,9 +9,6 @@ Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase       #-}
 {-# OPTIONS_GHC -Wno-unused-matches    #-}
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 

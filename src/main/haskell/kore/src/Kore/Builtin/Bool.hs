@@ -16,12 +16,19 @@ builtin modules.
  -}
 module Kore.Builtin.Bool
     ( sort
-    , sortVerifiers
+    , assertSort
+    , sortDeclVerifiers
     , symbolVerifiers
-    , patternVerifiers
+    , patternVerifier
     ) where
 
+import           Control.Monad
+                 ( void )
+import           Data.Functor
+                 ( ($>) )
 import qualified Data.HashMap.Strict as HashMap
+import qualified Text.Megaparsec as Parsec
+import qualified Text.Megaparsec.Char as Parsec
 
 import qualified Kore.Builtin.Builtin as Builtin
 
@@ -30,13 +37,21 @@ import qualified Kore.Builtin.Builtin as Builtin
 sort :: String
 sort = "BOOL.Bool"
 
+{- | Verify that the sort is hooked to the builtin @Bool@ sort.
+
+  See also: 'sort', 'Builtin.verifySort'
+
+ -}
+assertSort :: Builtin.SortVerifier
+assertSort findSort = Builtin.verifySort findSort sort
+
 {- | Verify that hooked sort declarations are well-formed.
 
   See also: 'Builtin.verifySortDecl'
 
  -}
-sortVerifiers :: Builtin.SortVerifiers
-sortVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
+sortDeclVerifiers :: Builtin.SortDeclVerifiers
+sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -46,20 +61,28 @@ sortVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ("BOOL.or", Builtin.verifySymbol sort [sort, sort])
-    , ("BOOL.and", Builtin.verifySymbol sort [sort, sort])
-    , ("BOOL.xor", Builtin.verifySymbol sort [sort, sort])
-    , ("BOOL.ne", Builtin.verifySymbol sort [sort, sort])
-    , ("BOOL.eq", Builtin.verifySymbol sort [sort, sort])
-    , ("BOOL.not", Builtin.verifySymbol sort [sort])
-    , ("BOOL.implies", Builtin.verifySymbol sort [sort, sort])
-    , ("BOOL.andThen", Builtin.verifySymbol sort [sort, sort])
-    , ("BOOL.orElse", Builtin.verifySymbol sort [sort, sort])
+    [ ("BOOL.or", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("BOOL.and", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("BOOL.xor", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("BOOL.ne", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("BOOL.eq", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("BOOL.not", Builtin.verifySymbol assertSort [assertSort])
+    , ("BOOL.implies", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("BOOL.andThen", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("BOOL.orElse", Builtin.verifySymbol assertSort [assertSort, assertSort])
     ]
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifiers :: Builtin.PatternVerifiers
-patternVerifiers =
-    -- TODO (thomas.tuegel): Not implemented
-    HashMap.empty
+patternVerifier :: Builtin.PatternVerifier
+patternVerifier =
+    Builtin.verifyDomainValue sort
+    (void . Builtin.parseDomainValue parse)
+
+{- | Parse an integer string literal.
+ -}
+parse :: Builtin.Parser Bool
+parse = (Parsec.<|>) true false
+  where
+    true = Parsec.string "true" $> True
+    false = Parsec.string "false" $> False

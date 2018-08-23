@@ -1067,6 +1067,72 @@ Definition
                                 }))))
                             ]
                     }))
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = (Id "zeroInt" AstLocationNone) :: Id Object
+                            , aliasParams = []
+                            }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceAliasLeftPattern =
+                        ApplicationPattern Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = (Id "zeroInt" AstLocationNone) :: Id Object
+                                    , symbolOrAliasParams = []
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasRightPattern =
+                        DomainValuePattern DomainValue
+                            { domainValueSort =
+                                SortActualSort SortActual
+                                    { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                                    , sortActualSorts = []
+                                    }
+                            , domainValueChild =
+                                Fix (StringLiteralPattern (StringLiteral "0"))
+                            }
+                    , sentenceAliasAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = (Id "oneInt" AstLocationNone) :: Id Object
+                            , aliasParams = []
+                            }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceAliasLeftPattern =
+                        ApplicationPattern Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = (Id "oneInt" AstLocationNone) :: Id Object
+                                    , symbolOrAliasParams = []
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasRightPattern =
+                        DomainValuePattern DomainValue
+                            { domainValueSort =
+                                SortActualSort SortActual
+                                    { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                                    , sortActualSorts = []
+                                    }
+                            , domainValueChild =
+                                Fix (StringLiteralPattern (StringLiteral "1"))
+                            }
+                    , sentenceAliasAttributes = Attributes []
+                    })
                 ]
             , moduleAttributes = Attributes []
             }
