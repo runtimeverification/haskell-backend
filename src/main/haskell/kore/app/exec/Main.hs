@@ -318,10 +318,20 @@ configVarSort = groundObjectSort "SortKConfigVar"
 kSort :: Sort Object
 kSort = groundObjectSort "SortK"
 
+-- TODO (traiansf): Get rid of this.
+-- The function below works around several limitations of
+-- the current tool by tricking the tool into believing that
+-- functions are constructors (so that function patterns can match)
+-- and that @inj@ is both functional and constructor.
 constructorFunctions :: MetadataTools Object StepperAttributes -> MetadataTools Object StepperAttributes
 constructorFunctions tools =
     tools
     { attributes = \h -> let atts = attributes tools h in
         atts
-        { isConstructor = isConstructor atts || isFunction atts}
+        { isConstructor = isConstructor atts || isFunction atts || isInj h
+        , isFunctional = isFunctional atts || isInj h
+        }
     }
+  where
+    isInj :: SymbolOrAlias Object -> Bool
+    isInj h = getId (symbolOrAliasConstructor h) == "inj"

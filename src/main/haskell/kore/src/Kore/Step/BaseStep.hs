@@ -510,6 +510,8 @@ functionalProofStepVariablesToCommon
     return (newMapping, FunctionalVariable mappedVariable)
 functionalProofStepVariablesToCommon _ mapping (FunctionalHead f) =
     return (mapping, FunctionalHead f)
+functionalProofStepVariablesToCommon _ mapping (FunctionalDomainValue dv) =
+    return (mapping, FunctionalDomainValue dv)
 
 variableStepVariablesToCommon
     :: MetaOrObject level

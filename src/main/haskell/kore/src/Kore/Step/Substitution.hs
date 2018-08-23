@@ -53,6 +53,7 @@ mergeSubstitutions
     ::  ( MetaOrObject level
         , Ord (variable level)
         , SortedVariable variable
+        , Show (variable level)
         )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
@@ -193,6 +194,7 @@ mergeSubstitutionWithPredicate
     :: ( Ord (variable level)
        , SortedVariable variable
        , MetaOrObject level
+       , Show (variable level)
        )
     => MetadataTools level StepperAttributes
     -> ([Predicate level variable], UnificationSubstitution level variable)
