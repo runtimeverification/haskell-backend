@@ -1,5 +1,6 @@
 module Kore.Step.AxiomPatterns
     ( AxiomPattern(..)
+    , QualifiedAxiomPattern(..)
     , AxiomPatternError(..)
     , koreSentenceToAxiomPattern
     , koreIndexedModuleToAxiomPatterns
@@ -18,7 +19,8 @@ import Kore.AST.Sentence
 import Kore.ASTUtils.SmartPatterns
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
-import Kore.Predicate.Predicate ( CommonPredicate, wrapPredicate )
+import Kore.Predicate.Predicate
+       ( CommonPredicate, wrapPredicate )
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -36,6 +38,14 @@ data AxiomPattern level = AxiomPattern
     }
     deriving (Show, Eq)
 
+{- | Sum type to distinguish rewrite axioms (used for stepping)
+from function axioms (used for functional simplification).
+--}
+data QualifiedAxiomPattern level
+    = RewriteAxiomPattern (AxiomPattern level)
+    | FunctionAxiomPattern (AxiomPattern level)
+
+
 -- | Extracts all 'AxiomPattern' structures matching a given @level@ from
 -- a verified definition.
 koreIndexedModuleToAxiomPatterns
@@ -44,17 +54,19 @@ koreIndexedModuleToAxiomPatterns
     -> KoreIndexedModule atts -- ^'IndexedModule' containing the definition
     -> [AxiomPattern level]
 koreIndexedModuleToAxiomPatterns level idxMod =
-    rights $ map
-        (koreSentenceToAxiomPattern level)
-        (indexedModuleRawSentences idxMod)
+    [ axiomPat | RewriteAxiomPattern axiomPat <-
+        rights $ map
+            (koreSentenceToAxiomPattern level)
+            (indexedModuleRawSentences idxMod)
+    ]
 
 -- | Attempts to extract an 'AxiomPattern' of the given @level@ from
--- a given 'Sentence'.
+-- a given 'KoreSentence'.
 koreSentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> KoreSentence
-    -> Either (Error AxiomPatternError) (AxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 koreSentenceToAxiomPattern level =
     applyUnifiedSentence
         (sentenceToAxiomPattern level)
@@ -64,7 +76,7 @@ sentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> Sentence level' UnifiedSortVariable UnifiedPattern Variable
-    -> Either (Error AxiomPatternError) (AxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 sentenceToAxiomPattern level (SentenceAxiomSentence sa) =
     case patternKoreToPure level (sentenceAxiomPattern sa) of
         Right pat -> patternToAxiomPattern pat
@@ -80,19 +92,19 @@ not encode a normal rewrite or function axiom.
 patternToAxiomPattern
     :: MetaOrObject level
     => CommonPurePattern level
-    -> Either (Error AxiomPatternError) (AxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 patternToAxiomPattern pat =
     case pat of
         -- normal rewrite axioms
         And_ _ requires (And_ _ _ensures (Rewrites_ _ lhs rhs)) ->
-            pure AxiomPattern
+            pure $ RewriteAxiomPattern AxiomPattern
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = wrapPredicate requires
                 }
         -- function axioms
         Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
-            pure AxiomPattern
+            pure $ FunctionAxiomPattern AxiomPattern
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = wrapPredicate requires

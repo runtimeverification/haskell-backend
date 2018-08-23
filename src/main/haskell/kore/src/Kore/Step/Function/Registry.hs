@@ -11,8 +11,6 @@ module Kore.Step.Function.Registry
     ( extractEvaluators
     ) where
 
-import           Control.Monad
-                 ( when )
 import           Data.List
                  ( groupBy, sortBy )
 import qualified Data.Map as Map
@@ -25,19 +23,16 @@ import Kore.AST.Common
 import Kore.AST.Kore
        ( UnifiedPattern, UnifiedSortVariable )
 import Kore.AST.MetaOrObject
-       ( MetaOrObject, asUnified )
+       ( MetaOrObject )
 import Kore.AST.PureML
        ( fromPurePattern )
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
 import Kore.AST.Sentence
-       ( SentenceAxiom (..) )
+       ( AsSentence (..), SentenceAxiom (..) )
 import Kore.IndexedModule.IndexedModule
        ( IndexedModule (..), KoreIndexedModule )
-import Kore.Predicate.Predicate
-       ( wrapPredicate )
 import Kore.Step.AxiomPatterns
-       ( AxiomPattern (..) )
+       ( AxiomPattern (..), QualifiedAxiomPattern (..),
+       koreSentenceToAxiomPattern )
 import Kore.Step.Function.Data
        ( ApplicationFunctionEvaluator (..),
        CommonApplicationFunctionEvaluator )
@@ -46,8 +41,8 @@ import Kore.Step.Function.UserDefined
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 
-{-|Given a 'MeraOrObject' @level@ and a 'KoreIndexedModule', @extractEvaluators@
-creates a registry mappting function symbol identifiers to their
+{-|Given a 'MetaOrObject' @level@ and a 'KoreIndexedModule', @extractEvaluators@
+creates a registry mapping function symbol identifiers to their
 corresponding 'CommonApplicationFunctionEvaluator's.
 -}
 extractEvaluators
@@ -79,46 +74,17 @@ axiomToIdEvaluatorPair
     -> Maybe (Id level, CommonApplicationFunctionEvaluator level)
 axiomToIdEvaluatorPair
     level
-    SentenceAxiom
-        { sentenceAxiomParameters = [axiomSort]
-        , sentenceAxiomPattern    = korePattern
-        }
-  = do
-    purePattern <- case patternKoreToPure level korePattern of
-        Left _  -> Nothing
-        Right p -> return p
-    (precondition, reminder) <- case fromPurePattern purePattern of
-        ImpliesPattern Implies
-            { impliesSort = SortVariableSort sort
-            , impliesFirst = f
-            , impliesSecond = s
-            } -> do
-                when (asUnified sort /= axiomSort) Nothing
-                return (f, s)
-        _ -> Nothing
-    (postcondition, rule) <- case fromPurePattern reminder of
-        AndPattern And {andFirst = f, andSecond = s} -> return (s, f)
-        _                                            -> Nothing
-    case fromPurePattern postcondition of
-        TopPattern _ -> return ()
-        _            -> Nothing
-    (left, right) <- case fromPurePattern rule of
-        EqualsPattern Equals {equalsFirst = f, equalsSecond = s} ->
-            return (f, s)
-        _ -> Nothing
-    leftSymbol <- case fromPurePattern left of
-        ApplicationPattern Application {applicationSymbolOrAlias = s} ->
-            return s
-        _ -> Nothing
-    return
-        ( symbolOrAliasConstructor leftSymbol
-        , ApplicationFunctionEvaluator
-            (axiomFunctionEvaluator
-                AxiomPattern
-                    { axiomPatternLeft  = left
-                    , axiomPatternRight = right
-                    , axiomPatternRequires = wrapPredicate precondition
-                    }
-            )
-        )
-axiomToIdEvaluatorPair _ _ = Nothing
+    axiom
+  = case koreSentenceToAxiomPattern level (asSentence axiom) of
+        Left _ -> Nothing
+        Right (FunctionAxiomPattern axiomPat) ->
+            case fromPurePattern (axiomPatternLeft axiomPat) of
+                ApplicationPattern Application {applicationSymbolOrAlias = s} ->
+                    return
+                        ( symbolOrAliasConstructor s
+                        , ApplicationFunctionEvaluator
+                            (axiomFunctionEvaluator axiomPat)
+                        )
+                _ -> Nothing
+        Right (RewriteAxiomPattern p) ->
+            error ("Unexpected rewrite axiom " ++ show p)

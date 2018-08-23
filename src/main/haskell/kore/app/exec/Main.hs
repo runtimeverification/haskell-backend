@@ -147,8 +147,8 @@ main = do
                             $ makeKInitConfig purePattern
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
-                finalExpandedPattern =
-                    fst $ fst $ (`runIntCounter` 1)
+            finalExpandedPattern <- clockSomething "Executing"
+                    $ fst $ fst $ (`runIntCounter` 1)
                     $ do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
@@ -160,7 +160,7 @@ main = do
                                 case
                                     OrOfExpandedPattern.extractPatterns
                                         (fst simplifiedPatterns) of
-                                    [] -> expandedPattern
+                                    [] -> ExpandedPattern.bottom
                                     (config : _) -> config
                         pickFirstStepper
                             metadataTools
