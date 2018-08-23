@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Control.Monad.Except
-       ( runExceptT )
 import Data.Reflection
        ( give )
 
@@ -36,12 +34,12 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -619,9 +617,9 @@ evaluateOr
     -> Equals Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluateOr tools equals =
-    either (error . Kore.Error.printError) fst $ fst $ runIntCounter
-        (runExceptT $ simplify tools equals)
-        0
+    either (error . Kore.Error.printError) fst
+        $ evalSimplifier
+        $ simplify tools equals
 
 evaluate
     :: MetadataTools Object StepperAttributes
@@ -637,7 +635,7 @@ evaluateGeneric
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 evaluateGeneric tools first second =
-    either (error . Kore.Error.printError) fst $ fst $ runIntCounter
-        (runExceptT $ makeEvaluate tools first second)
-        0
+    either (error . Kore.Error.printError) fst
+        $ evalSimplifier
+        $ makeEvaluate tools first second
 

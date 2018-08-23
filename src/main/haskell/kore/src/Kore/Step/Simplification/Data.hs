@@ -10,13 +10,14 @@ Portability : portable
 module Kore.Step.Simplification.Data
     ( SimplificationError
     , Simplifier
+    , evalSimplifier
     , PureMLPatternSimplifier (..)
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
     ) where
 
 import Control.Monad.Except
-       ( ExceptT )
+       ( ExceptT, runExceptT )
 
 import Kore.AST.Common
        ( Variable )
@@ -27,7 +28,7 @@ import Kore.Error
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
 import Kore.Variables.Fresh.IntCounter
-       ( IntCounter )
+       ( IntCounter, runIntCounter )
 
 
 {- | A tag for errors during simplification
@@ -50,6 +51,18 @@ data SimplificationProof level = SimplificationProof
 -- the counter and the proof.
 -- TODO (thomas.tuegel): Lift the StateT to the outer level.
 type Simplifier = ExceptT (Error SimplificationError) IntCounter
+
+{- | Evaluate a simplifier computation.
+
+  Only the result (or error) is returned. The 'IntCounter' is discarded.
+
+  -}
+evalSimplifier :: Simplifier a -> Either (Error SimplificationError) a
+evalSimplifier simp =
+    let
+        (result, _) = runIntCounter (runExceptT simp) 0
+    in
+      result
 
 {-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.

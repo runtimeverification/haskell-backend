@@ -2,8 +2,6 @@ module Main (main) where
 
 import           Control.Monad
                  ( when )
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -52,6 +50,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Registry
                  ( extractEvaluators )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( MaxStepCount (AnyStepCount), pickFirstStepper )
@@ -59,8 +59,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Unparser.Unparse
                  ( unparseToString )
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
 
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,
@@ -151,8 +149,7 @@ main = do
                 expandedPattern = makeExpandedPattern runningPattern
             finalExpandedPattern <- clockSomething "Executing"
                     $ either (error . Kore.Error.printError) fst
-                    $ fst $ (`runIntCounter` 1)
-                    $ runExceptT
+                    $ evalSimplifier
                     $ do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
