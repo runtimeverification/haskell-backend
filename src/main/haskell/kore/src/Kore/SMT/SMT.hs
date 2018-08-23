@@ -13,7 +13,8 @@ module Kore.SMT.SMT
 ) where
 
 import           Data.Default
-import           Data.Set
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 import           Control.Monad
 
 import           Kore.AST.Common
@@ -60,52 +61,71 @@ provePattern = prove . translate
 translate 
     :: CommonPurePattern Object
     -> Predicate
-translate p = goBoolean p
+translate p = goTranslate
   where
-    goUnaryOp op cont x1 = 
-      do
-      tx1 <- cont x1
-      return (op tx1)
-    goBinaryOp op cont x1 x2 = 
-      do
-      tx1 <- cont x1
-      tx2 <- cont x2
-      return (tx1 `op` tx2)
-    goBoolean (And_     _ x1 x2) = goBinaryOp (&&&) goBoolean x1 x2
-    goBoolean (Or_      _ x1 x2) = goBinaryOp (|||) goBoolean x1 x2
-    goBoolean (Implies_ _ x1 x2) = goBinaryOp (==>) goBoolean x1 x2
-    goBoolean (Iff_     _ x1 x2) = goBinaryOp (<=>) goBoolean x1 x2
-    goBoolean (Not_     _ x1)    = goUnaryOp (bnot) goBoolean x1 
-    goBoolean (App_ h [x1, x2])
-     | getSymbolHook h == Hook (Just "BOOL.le")
-       = do
-         tx1 <- goInteger x1
-         tx2 <- goInteger x2
-         return (tx1 .<= tx2)
-    goBoolean (V v)
-     | getSortHook (variableSort v) == Hook (Just "BOOL.Bool")
-       = free $ getId $ variableName v
-     | otherwise = error $ "Expected variable with hook " ++ "BOOL.Bool"
-    goInteger 
-        :: CommonPurePattern Object
-        -> Symbolic SInteger
-    goInteger (App_ h [x1, x2])
-     | getSymbolHook h == Hook (Just "INT.add") 
-       = do 
-         tx1 <- goInteger x1
-         tx2 <- goInteger x2
-         return (tx1 + tx2)
-    goInteger (V v)
-     | getSortHook (variableSort v) == Hook (Just "INT.Int")
-       = free $ getId $ variableName v
-     | otherwise = error $ "Expected variable with hook " ++ "INT.Int"
-    handleFreeVars = forM (toList $ freeVars p) $ \var -> do
-      handleVar var
-    handleVar :: Variable Object -> Symbolic ()
-    handleVar var = 
-      case getSortHook (variableSort var) of
-        Hook (Just "BOOL.Bool") -> undefined
-        Hook (Just "INT.Int")   -> undefined
+    vars = Set.toList $ freeVars p
+    filterVars hookName = 
+        filter (\v -> isHook (getSortHook $ variableSort v) hookName) vars
+    boolVars = filterVars "BOOL.Bool"
+    intVars  = filterVars "INT.Int"  
+    goTranslate = do
+        boolSMTVars <- sBools $ map (getId . variableName) boolVars
+        let boolTable = Map.fromList $ zip boolVars boolSMTVars
+        intSMTVars <- sIntegers $ map (getId . variableName) intVars
+        let intTable = Map.fromList $ zip intVars intSMTVars
+        go boolTable intTable
+    go boolTable intTable = goBoolean p
+      where 
+        goUnaryOp op cont x1 = 
+          do
+          tx1 <- cont x1
+          return (op tx1)
+        goBinaryOp op cont x1 x2 = 
+          do
+          tx1 <- cont x1
+          tx2 <- cont x2
+          return (tx1 `op` tx2)
+        goBoolean (And_     _ x1 x2) = goBinaryOp (&&&) goBoolean x1 x2
+        goBoolean (Or_      _ x1 x2) = goBinaryOp (|||) goBoolean x1 x2
+        goBoolean (Implies_ _ x1 x2) = goBinaryOp (==>) goBoolean x1 x2
+        goBoolean (Iff_     _ x1 x2) = goBinaryOp (<=>) goBoolean x1 x2
+        goBoolean (Not_     _ x1)    = goUnaryOp (bnot) goBoolean x1 
+        goBoolean (App_ h [x1, x2])
+         | getSymbolHook h == Hook (Just "INT.le")
+           = do
+             tx1 <- goInteger x1
+             tx2 <- goInteger x2
+             return (tx1 .<= tx2)
+         | getSymbolHook h == Hook (Just "INT.gt") 
+           = do 
+             tx1 <- goInteger x1
+             tx2 <- goInteger x2
+             return (tx1 .> tx2)
+        goBoolean (V v)
+         | getSortHook (variableSort v) == Hook (Just "BOOL.Bool")
+           = case Map.lookup v boolTable of
+               Just var -> return var
+               _ -> error "The impossible happened"
+         | otherwise = error $ "Expected variable with hook " ++ "BOOL.Bool"
+        goInteger 
+            :: CommonPurePattern Object
+            -> Symbolic SInteger
+        goInteger (App_ h [x1, x2])
+         | getSymbolHook h == Hook (Just "INT.add") 
+           = do 
+             tx1 <- goInteger x1
+             tx2 <- goInteger x2
+             return (tx1 + tx2)
+        goInteger (V v)
+         | getSortHook (variableSort v) == Hook (Just "INT.Int")
+           = case Map.lookup v intTable of 
+               Just var -> return var
+               _ -> error "The impossible happened"
+         | otherwise = error $ "Expected variable with hook " ++ "INT.Int"
+
+
+isHook h s =
+    h == Hook (Just s)
 
 -- getId . symbolOrAliasConstructor
 
