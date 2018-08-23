@@ -491,14 +491,7 @@ binaryOperator
                 -- Apply the operator to two domain values
                 r <- op <$> get a <*> get b
                 (appliedFunction . asPattern resultSort) r
-            [_, DomainValuePattern _] ->
-                Kore.Error.withContext
-                    "In first argument"
-                    expectedDomainValue
-            [DomainValuePattern _, _] ->
-                Kore.Error.withContext
-                    "In second argument"
-                    expectedDomainValue
+            [_, _] -> return NotApplicable
             _ -> wrongArity
 
 {- | Construct a builtin unary operator.
@@ -535,10 +528,7 @@ unaryOperator
                 -- Apply the operator to a domain value
                 r <- op <$> get a
                 (appliedFunction . asPattern resultSort) r
-            [_] ->
-                Kore.Error.withContext
-                    "In first argument"
-                    expectedDomainValue
+            [_] -> return NotApplicable
             _ -> wrongArity
 
 functionEvaluator
@@ -569,9 +559,6 @@ functionEvaluator ctx impl =
                 attempt <- impl tools simplifier resultSort applicationChildren
                 return (attempt, SimplificationProof)
             )
-
-expectedDomainValue :: MonadError (Error w) m => m a
-expectedDomainValue = Kore.Error.koreFail "Expected domain value"
 
 wrongArity :: MonadError (Error w) m => m a
 wrongArity = Kore.Error.koreFail "Wrong number of arguments"
