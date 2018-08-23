@@ -306,7 +306,7 @@ intModule =
 
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
-    case evalSimplifier (Pattern.simplify tools builtinFunctions pat) of
+    case evalSimplifier (Pattern.simplify tools evaluators pat) of
         Left err -> error (Kore.Error.printError err)
         Right (epat, _) -> epat
   where
@@ -325,8 +325,8 @@ indexedModules = verify intDefinition
 indexedModule :: KoreIndexedModule StepperAttributes
 Just indexedModule = Map.lookup intModuleName indexedModules
 
-builtinFunctions :: Map (Id Object) [Builtin.Function]
-builtinFunctions = Builtin.functionContext Int.builtinFunctions indexedModule
+evaluators :: Map (Id Object) [Builtin.Function]
+evaluators = Builtin.evaluators Int.builtinFunctions indexedModule
 
 verify
     :: KoreDefinition

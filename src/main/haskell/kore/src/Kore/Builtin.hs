@@ -20,8 +20,8 @@ module Kore.Builtin
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
     , koreVerifiers
-    , koreFunctionContext
-    , functionContext
+    , koreEvaluators
+    , evaluators
     ) where
 
 import           Data.Map
@@ -70,11 +70,11 @@ koreVerifiers =
   See also: 'Data.Step.Step.step'
 
  -}
-koreFunctionContext
+koreEvaluators
     :: KoreIndexedModule StepperAttributes
     -- ^ Module under which evaluation takes place
     -> Map (Kore.Id Object) [Builtin.Function]
-koreFunctionContext = functionContext builtins
+koreEvaluators = evaluators builtins
   where
     builtins :: Map String Builtin.Function
     builtins =
@@ -85,16 +85,16 @@ koreFunctionContext = functionContext builtins
   Returns a map from symbol identifiers to builtin functions used for function
   evaluation in the context of the given module.
 
-  See also: 'Data.Step.Step.step', 'koreFunctionContext'
+  See also: 'Data.Step.Step.step', 'koreEvaluators'
 
  -}
-functionContext
+evaluators
     :: Map String Builtin.Function
     -- ^ Builtin functions indexed by name
     -> KoreIndexedModule StepperAttributes
     -- ^ Module under which evaluation takes place
     -> Map (Kore.Id Object) [Builtin.Function]
-functionContext builtins indexedModule =
+evaluators builtins indexedModule =
     Map.mapMaybe lookupBuiltins (hookedSymbolAttributes indexedModule)
   where
     hookedSymbolAttributes

@@ -184,7 +184,7 @@ boolModule =
 
 evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
-    case evalSimplifier (Pattern.simplify tools builtinFunctions pat) of
+    case evalSimplifier (Pattern.simplify tools evaluators pat) of
         Left err -> error (Kore.Error.printError err)
         Right (ExpandedPattern { term }, _) -> term
   where
@@ -203,8 +203,8 @@ Right indexedModules = verify boolDefinition
 indexedModule :: KoreIndexedModule StepperAttributes
 Just indexedModule = Map.lookup boolModuleName indexedModules
 
-builtinFunctions :: Map (Id Object) [Builtin.Function]
-builtinFunctions = Builtin.functionContext Bool.builtinFunctions indexedModule
+evaluators :: Map (Id Object) [Builtin.Function]
+evaluators = Builtin.evaluators Bool.builtinFunctions indexedModule
 
 verify
     :: KoreDefinition
