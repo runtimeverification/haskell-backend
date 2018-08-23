@@ -85,7 +85,6 @@ translate
     -> Predicate
 translate p = goTranslate
   where
-<<<<<<< c3014bd64f917856a94b15aef4ef27d329b27ec4
     vars = Set.toList $ freeVars p
     filterVars hookName =
         filter (\v -> isHook (getSortHook $ variableSort v) hookName) vars
@@ -145,11 +144,10 @@ translate p = goTranslate
                 Just var -> return var
                 _ -> error "The impossible happened"
          | otherwise = error $ "Expected variable with hook " ++ hookName
-            
+
 
 isHook h s =
     h == Hook (Just s)
-
 
 getHookString (Hook (Just s)) = s
 getHookString _ = ""
