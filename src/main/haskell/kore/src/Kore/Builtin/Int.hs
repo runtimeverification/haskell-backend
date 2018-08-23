@@ -170,7 +170,7 @@ builtinFunctions =
     , comparator "INT.eq" (==)
     , comparator "INT.le" (<=)
     , comparator "INT.lt" (<)
-    , comparator "INT.neq" (/=)
+    , comparator "INT.ne" (/=)
 
       -- Ordering operations
     , binaryOperator "INT.min" min
