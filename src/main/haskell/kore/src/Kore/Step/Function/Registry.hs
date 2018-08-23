@@ -34,8 +34,6 @@ import Kore.AST.Sentence
        ( SentenceAxiom (..) )
 import Kore.IndexedModule.IndexedModule
        ( IndexedModule (..), KoreIndexedModule )
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..), SortTools, extractMetadataTools )
 import Kore.Predicate.Predicate
        ( wrapPredicate )
 import Kore.Step.AxiomPatterns
@@ -70,7 +68,6 @@ extractEvaluators level indexedModule =
                 (mapMaybe
                     (axiomToIdEvaluatorPair
                         level
-                        (extractMetadataTools indexedModule)
                     )
                     (snd <$> indexedModuleAxioms indexedModule))
             )
@@ -78,12 +75,10 @@ extractEvaluators level indexedModule =
 axiomToIdEvaluatorPair
     :: MetaOrObject level
     => level
-    -> MetadataTools level StepperAttributes
     -> SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
     -> Maybe (Id level, CommonApplicationFunctionEvaluator level)
 axiomToIdEvaluatorPair
     level
-    metadataTools
     SentenceAxiom
         { sentenceAxiomParameters = [axiomSort]
         , sentenceAxiomPattern    = korePattern
@@ -126,4 +121,4 @@ axiomToIdEvaluatorPair
                     }
             )
         )
-axiomToIdEvaluatorPair _ _ _ = Nothing
+axiomToIdEvaluatorPair _ _ = Nothing
