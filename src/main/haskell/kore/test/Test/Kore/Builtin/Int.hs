@@ -82,6 +82,66 @@ propComparison impl symb =
         let pat = App_ symb (asPattern <$> [a, b])
         in Test.Bool.asPattern (impl a b) === evaluate pat
 
+prop_min :: Integer -> Integer -> Property
+prop_min = propBinary min minSymbol
+
+prop_max :: Integer -> Integer -> Property
+prop_max = propBinary max maxSymbol
+
+prop_add :: Integer -> Integer -> Property
+prop_add = propBinary (+) addSymbol
+
+prop_sub :: Integer -> Integer -> Property
+prop_sub = propBinary (-) subSymbol
+
+prop_mul :: Integer -> Integer -> Property
+prop_mul = propBinary (*) mulSymbol
+
+minSymbol :: SymbolOrAlias Object
+minSymbol = builtinSymbol "minInt"
+
+maxSymbol :: SymbolOrAlias Object
+maxSymbol = builtinSymbol "maxInt"
+
+addSymbol :: SymbolOrAlias Object
+addSymbol = builtinSymbol "addInt"
+
+subSymbol :: SymbolOrAlias Object
+subSymbol = builtinSymbol "subInt"
+
+mulSymbol :: SymbolOrAlias Object
+mulSymbol = builtinSymbol "mulInt"
+
+-- | Test a binary operator hooked to the given symbol.
+propBinary
+    :: (Integer -> Integer -> Integer)
+    -- ^ operator
+    -> SymbolOrAlias Object
+    -- ^ hooked symbol
+    -> (Integer -> Integer -> Property)
+propBinary impl symb =
+    \a b ->
+        let pat = App_ symb (asPattern <$> [a, b])
+        in asPattern (impl a b) === evaluate pat
+
+prop_abs :: Integer -> Property
+prop_abs = propUnary abs absSymbol
+
+absSymbol :: SymbolOrAlias Object
+absSymbol = builtinSymbol "absInt"
+
+-- | Test a unary operator hooked to the given symbol
+propUnary
+    :: (Integer -> Integer)
+    -- ^ operator
+    -> SymbolOrAlias Object
+    -- ^ hooked symbol
+    -> (Integer -> Property)
+propUnary impl symb =
+    \a ->
+        let pat = App_ symb (asPattern <$> [a])
+        in asPattern (impl a) === evaluate pat
+
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
 asPattern :: Integer -> CommonPurePattern Object
 asPattern = Int.asPattern intSort
@@ -143,7 +203,7 @@ comparisonSymbolDecl builtinName symbol =
 
 importBool :: KoreSentence
 importBool =
-    asSentence 
+    asSentence
         (SentenceImport
             { sentenceImportModuleName = Test.Bool.boolModuleName
             , sentenceImportAttributes = Attributes []
@@ -170,6 +230,12 @@ intModule =
             , comparisonSymbolDecl "INT.le" leSymbol
             , comparisonSymbolDecl "INT.lt" ltSymbol
             , comparisonSymbolDecl "INT.ne" neSymbol
+            , binarySymbolDecl "INT.min" minSymbol
+            , binarySymbolDecl "INT.max" maxSymbol
+            , binarySymbolDecl "INT.add" addSymbol
+            , binarySymbolDecl "INT.sub" subSymbol
+            , binarySymbolDecl "INT.mul" mulSymbol
+            , unarySymbolDecl "INT.abs" absSymbol
             ]
         }
 
