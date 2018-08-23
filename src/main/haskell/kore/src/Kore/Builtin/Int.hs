@@ -16,12 +16,16 @@ builtin modules.
  -}
 module Kore.Builtin.Int
     ( sort
-    , sortVerifiers
+    , assertSort
+    , sortDeclVerifiers
     , symbolVerifiers
-    , patternVerifiers
+    , patternVerifier
     ) where
 
+import           Control.Monad
+                 ( void )
 import qualified Data.HashMap.Strict as HashMap
+import qualified Text.Megaparsec.Char.Lexer as Parsec
 
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -31,13 +35,21 @@ import qualified Kore.Builtin.Builtin as Builtin
 sort :: String
 sort = "INT.Int"
 
+{- | Verify that the sort is hooked to the builtin @Int@ sort.
+
+  See also: 'sort', 'Builtin.verifySort'
+
+ -}
+assertSort :: Builtin.SortVerifier
+assertSort findSort = Builtin.verifySort findSort sort
+
 {- | Verify that hooked sort declarations are well-formed.
 
   See also: 'Builtin.verifySortDecl'
 
  -}
-sortVerifiers :: Builtin.SortVerifiers
-sortVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
+sortDeclVerifiers :: Builtin.SortDeclVerifiers
+sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -48,51 +60,64 @@ symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
     [
-      ("INT.bitRange", Builtin.verifySymbol sort [sort, sort, sort])
-    , ("INT.signExtendBitRange", Builtin.verifySymbol sort [sort, sort, sort])
+      ( "INT.bitRange"
+      , Builtin.verifySymbol assertSort [assertSort, assertSort, assertSort]
+      )
+    , ( "INT.signExtendBitRange"
+      , Builtin.verifySymbol assertSort [assertSort, assertSort, assertSort]
+      )
 
-    , ("INT.rand", Builtin.verifySymbol sort [])
-    , ("INT.srand", Builtin.verifySymbolArguments [sort])
+    , ("INT.rand", Builtin.verifySymbol assertSort [])
+    , ("INT.srand", Builtin.verifySymbolArguments [assertSort])
 
       -- TODO (thomas.tuegel): Implement builtin BOOL
-    , ("INT.gt", Builtin.verifySymbol Bool.sort [sort, sort])
-    , ("INT.ge", Builtin.verifySymbol Bool.sort [sort, sort])
-    , ("INT.eq", Builtin.verifySymbol Bool.sort [sort, sort])
-    , ("INT.le", Builtin.verifySymbol Bool.sort [sort, sort])
-    , ("INT.lt", Builtin.verifySymbol Bool.sort [sort, sort])
-    , ("INT.ne", Builtin.verifySymbol Bool.sort [sort, sort])
+    , ("INT.gt", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , ("INT.ge", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , ("INT.eq", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , ("INT.le", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , ("INT.lt", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , ("INT.ne", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
 
       -- Ordering operations
-    , ("INT.min", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.max", Builtin.verifySymbol sort [sort, sort])
+    , ("INT.min", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.max", Builtin.verifySymbol assertSort [assertSort, assertSort])
 
       -- Arithmetic operations
-    , ("INT.add", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.sub", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.mul", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.abs", Builtin.verifySymbol sort [sort])
-    , ("INT.ediv", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.emod", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.tdiv", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.tmod", Builtin.verifySymbol sort [sort, sort])
+    , ("INT.add", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.sub", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.mul", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.abs", Builtin.verifySymbol assertSort [assertSort])
+    , ("INT.ediv", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.emod", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.tdiv", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.tmod", Builtin.verifySymbol assertSort [assertSort, assertSort])
 
       -- Bitwise operations
-    , ("INT.and", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.or", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.xor", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.not", Builtin.verifySymbol sort [sort])
-    , ("INT.shl", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.shr", Builtin.verifySymbol sort [sort, sort])
+    , ("INT.and", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.or", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.xor", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.not", Builtin.verifySymbol assertSort [assertSort])
+    , ("INT.shl", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ("INT.shr", Builtin.verifySymbol assertSort [assertSort, assertSort])
 
       -- Exponential and logarithmic operations
-    , ("INT.pow", Builtin.verifySymbol sort [sort, sort])
-    , ("INT.powmod", Builtin.verifySymbol sort [sort, sort, sort])
-    , ("INT.log2", Builtin.verifySymbol sort [sort])
+    , ("INT.pow", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ( "INT.powmod"
+      , Builtin.verifySymbol assertSort [assertSort, assertSort, assertSort]
+      )
+    , ("INT.log2", Builtin.verifySymbol assertSort [assertSort])
     ]
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifiers :: Builtin.PatternVerifiers
-patternVerifiers =
-    -- TODO (thomas.tuegel): Not implemented
-    HashMap.empty
+patternVerifier :: Builtin.PatternVerifier
+patternVerifier =
+    Builtin.verifyDomainValue sort
+    (void . Builtin.parseDomainValue parse)
+
+{- | Parse an integer string literal.
+ -}
+parse :: Builtin.Parser Integer
+parse = Parsec.signed noSpace Parsec.decimal
+  where
+    noSpace = pure ()

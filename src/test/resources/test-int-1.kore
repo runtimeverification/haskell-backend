@@ -42,5 +42,7 @@ module INT
     hooked-symbol subInt{}(Int{}, Int{}) : Int{} [hook{}("INT.sub")]
     hooked-symbol maxInt{}(Int{}, Int{}) : Int{} [hook{}("INT.max")]
     hooked-symbol pow{}(Int{}, Int{}) : Int{} [hook{}("INT.pow")]
+    alias zeroInt{}() : Int{} where zeroInt{}() := \dv{Int{}}("0") []
+    alias oneInt{}() : Int{} where oneInt{}() := \dv{Int{}}("1") []
 endmodule
 []

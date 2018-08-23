@@ -10,5 +10,7 @@ module BOOL
     hooked-symbol neBool{}(Bool{}, Bool{}) : Bool{} [hook{}("BOOL.ne")]
     hooked-symbol eqBool{}(Bool{}, Bool{}) : Bool{} [hook{}("BOOL.eq")]
     hooked-symbol notBool{}(Bool{}) : Bool{} [hook{}("BOOL.not")]
+    alias trueBool{}() : Bool{} where trueBool{}() := \dv{Bool{}}("true") []
+    alias falseBool{}() : Bool{} where falseBool{}() := \dv{Bool{}}("false") []
 endmodule
 []

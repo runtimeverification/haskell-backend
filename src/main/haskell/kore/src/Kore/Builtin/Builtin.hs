@@ -19,39 +19,56 @@ module Kore.Builtin.Builtin
       -- * Using builtin verifiers
       Verifiers (..)
     , SymbolVerifier, SymbolVerifiers
-    , SortVerifier, SortVerifiers
-    , PatternVerifier, PatternVerifiers
+    , SortDeclVerifier, SortDeclVerifiers
+    , SortVerifier
+    , PatternVerifier (..)
     , Function
+    , Parser
     , symbolVerifier
-    , sortVerifier
+    , sortDeclVerifier
       -- * Declaring builtin verifiers
     , verifySortDecl
     , verifySort
     , verifySymbol
     , verifySymbolArguments
+    , verifyDomainValue
+    , verifyStringLiteral
+    , parseDomainValue
     , notImplemented
     ) where
 
 import           Control.Monad
                  ( zipWithM_ )
+import qualified Control.Monad.Except as Except
+import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.HashMap.Strict
                  ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
+import           Data.Semigroup
+                 ( Semigroup (..) )
+import Data.Void ( Void )
+import Text.Megaparsec ( Parsec )
+import qualified Text.Megaparsec as Parsec
 
 import Kore.AST.Common
-       ( Id (..), Sort (..), SortActual (..), SortVariable (..), Symbol (..),
+       ( DomainValue (..), Id (..),
+       Pattern (DomainValuePattern, StringLiteralPattern), Sort (..),
+       SortActual (..), SortVariable (..), StringLiteral (..), Symbol (..),
        Variable )
 import Kore.AST.Error
        ( withLocationAndContext )
 import Kore.AST.Kore
        ( CommonKorePattern )
 import Kore.AST.MetaOrObject
-       ( Object )
+       ( Meta, Object )
+import Kore.AST.PureML
+       ( CommonPurePattern )
 import Kore.AST.Sentence
        ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
        SentenceSymbol (..) )
+import Kore.ASTUtils.SmartPatterns ( pattern StringLiteral_ )
 import Kore.ASTVerifier.Error
-       ( VerifyError, VerifySuccess )
+       ( VerifyError )
 import Kore.Attribute.Parser
        ( parseAttributes )
 import Kore.Builtin.Hook
@@ -66,15 +83,25 @@ import Kore.Step.Function.Data
 import Kore.Step.Simplification.Data
        ( SimplificationProof (SimplificationProof) )
 
+type Parser = Parsec Void String
+
 type Function = ApplicationFunctionEvaluator Object Variable
 
-type SortVerifier =
+-- | Verify a sort declaration.
+type SortDeclVerifier =
        KoreSentenceSort Object
     -- ^ Sort declaration to verify
     -> Either (Error VerifyError) ()
 
--- | @SortVerifiers@ associates a @SortVerifier@ with its builtin sort name.
-type SortVerifiers = HashMap String SortVerifier
+type SortVerifier =
+       (Id Object -> Either (Error VerifyError) (SortDescription Object))
+    -- ^ Find a sort declaration
+    -> Sort Object
+    -- ^ Sort to verify
+    -> Either (Error VerifyError) ()
+
+-- | @SortDeclVerifiers@ associates a @SortDeclVerifier@ with its builtin sort name.
+type SortDeclVerifiers = HashMap String SortDeclVerifier
 
 type SymbolVerifier =
        (Id Object -> Either (Error VerifyError) (SortDescription Object))
@@ -88,34 +115,69 @@ type SymbolVerifier =
  -}
 type SymbolVerifiers = HashMap String SymbolVerifier
 
-type PatternVerifier =
-    CommonKorePattern -> Either (Error VerifyError) VerifySuccess
+newtype PatternVerifier =
+    PatternVerifier
+    {
+      {- | Verify object-level patterns in builtin sorts.
 
-type PatternVerifiers = HashMap String PatternVerifier
+        The first argument is a function to look up sorts.
+        The second argument is a (projected) object-level pattern to verify.
+        If the pattern is not in a builtin sort, the verifier should
+        @return ()@.
+
+        See also: 'verifyDomainValue'
+      -}
+      runPatternVerifier
+          :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
+          -> Pattern Object Variable CommonKorePattern
+          -> Either (Error VerifyError) ()
+    }
+
+instance Semigroup PatternVerifier where
+    {- | Conjunction of 'PatternVerifier's.
+
+      The resulting @PatternVerifier@ succeeds when both constituents succeed.
+
+     -}
+    (<>) a b =
+        PatternVerifier
+        { runPatternVerifier = \findSort pat -> do
+            runPatternVerifier a findSort pat
+            runPatternVerifier b findSort pat
+        }
+
+instance Monoid PatternVerifier where
+    {- | Trivial 'PatternVerifier' (always succeeds).
+     -}
+    mempty = PatternVerifier { runPatternVerifier = \_ _ -> return () }
+    mappend = (<>)
+
+type DomainValueVerifier =
+    DomainValue Object (CommonPurePattern Meta) -> Either (Error VerifyError) ()
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
 data Verifiers =
     Verifiers
-    { sortVerifiers :: SortVerifiers
+    { sortDeclVerifiers :: SortDeclVerifiers
     , symbolVerifiers :: SymbolVerifiers
-    , patternVerifiers :: PatternVerifiers
+    , patternVerifier :: PatternVerifier
     }
 
-{- | Look up and apply a builtin sort verifier.
+{- | Look up and apply a builtin sort declaration verifier.
 
   The 'Hook' name should refer to a builtin sort; if it is unset or the name is
   not recognized, verification succeeds.
 
  -}
-sortVerifier :: Verifiers -> Hook -> SortVerifier
-sortVerifier Verifiers { sortVerifiers } hook =
+sortDeclVerifier :: Verifiers -> Hook -> SortDeclVerifier
+sortDeclVerifier Verifiers { sortDeclVerifiers } hook =
     let
-        hookedSortVerifier :: Maybe SortVerifier
+        hookedSortVerifier :: Maybe SortDeclVerifier
         hookedSortVerifier = do
             -- Get the builtin sort name.
             sortName <- getHook hook
-            HashMap.lookup sortName sortVerifiers
+            HashMap.lookup sortName sortDeclVerifiers
     in
         case hookedSortVerifier of
             Nothing ->
@@ -165,7 +227,7 @@ notImplemented =
   Check that the hooked sort does not take any sort parameters.
 
  -}
-verifySortDecl :: SortVerifier
+verifySortDecl :: SortDeclVerifier
 verifySortDecl
     SentenceSort
     { sentenceSortName = sortId@Id { getId = sortName }
@@ -213,12 +275,12 @@ verifySort _ _ (SortVariableSort SortVariable { getSortVariable }) =
 
  -}
 verifySymbol
-    :: String  -- ^ Builtin result sort
-    -> [String]  -- ^ Builtin argument sorts
+    :: SortVerifier  -- ^ Builtin result sort
+    -> [SortVerifier]  -- ^ Builtin argument sorts
     -> SymbolVerifier
 verifySymbol
-    builtinResult
-    builtinSorts
+    verifyResult
+    verifyArguments
     findSort
     decl@SentenceSymbol
         { sentenceSymbolSymbol =
@@ -230,9 +292,8 @@ verifySymbol
         symbolId
         ("In symbol '" ++ symbolName ++ "' declaration")
         (do
-            withContext "In result sort"
-                (verifySort findSort builtinResult result)
-            verifySymbolArguments builtinSorts findSort decl
+            withContext "In result sort" (verifyResult findSort result)
+            verifySymbolArguments verifyArguments findSort decl
         )
 
 {- | Verify the arguments of a builtin sort declaration.
@@ -245,10 +306,10 @@ verifySymbol
 
  -}
 verifySymbolArguments
-    :: [String]  -- ^ Builtin argument sorts
+    :: [SortVerifier]  -- ^ Builtin argument sorts
     -> SymbolVerifier
 verifySymbolArguments
-    builtinSorts
+    verifyArguments
     findSort
     SentenceSymbol { sentenceSymbolSorts = sorts }
   =
@@ -257,8 +318,79 @@ verifySymbolArguments
         koreFailWhen (arity /= builtinArity)
             ("Expected " ++ show builtinArity
              ++ " arguments, found " ++ show arity)
-        zipWithM_ (verifySort findSort) builtinSorts sorts
+        zipWithM_ (\verify sort -> verify findSort sort) verifyArguments sorts
     )
   where
-    builtinArity = length builtinSorts
+    builtinArity = length verifyArguments
     arity = length sorts
+
+verifyDomainValue
+    :: String  -- ^ Builtin sort name
+    -> DomainValueVerifier
+    -- ^ Validation function
+    -> PatternVerifier
+verifyDomainValue builtinSort validate =
+    PatternVerifier { runPatternVerifier }
+  where
+    runPatternVerifier
+        :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
+        -- ^ Function to lookup sorts by identifier
+        -> Pattern Object Variable CommonKorePattern
+        -- ^ Pattern to verify
+        -> Either (Error VerifyError) ()
+    runPatternVerifier findSort =
+        \case
+            DomainValuePattern dv@DomainValue { domainValueSort } ->
+                withContext
+                    ("Verifying builtin sort '" ++ builtinSort ++ "'")
+                    (skipOtherSorts domainValueSort (validate dv))
+            _ -> return ()  -- no domain value to verify
+      where
+        -- | Run @next@ if @sort@ is hooked to @builtinSort@; do nothing
+        -- otherwise.
+        skipOtherSorts
+            :: Sort Object
+            -- ^ Sort of pattern under verification
+            -> Either (Error VerifyError) ()
+            -- ^ Verifier run iff pattern sort is hooked to designated builtin
+            -> Either (Error VerifyError) ()
+        skipOtherSorts sort next = do
+            decl <-
+                Except.catchError
+                    (Just <$> verifySort findSort builtinSort sort)
+                    (\_ -> return Nothing)
+            case decl of
+              Nothing -> return ()
+              Just () -> next
+
+verifyStringLiteral
+    :: (StringLiteral -> Either (Error VerifyError) ())
+    -> (DomainValue Object (CommonPurePattern Meta)
+    -> Either (Error VerifyError) ())
+verifyStringLiteral validate DomainValue { domainValueChild } =
+    case Functor.Foldable.project domainValueChild of
+        StringLiteralPattern lit@StringLiteral {} -> validate lit
+        _ -> return ()
+
+parseDomainValue
+    :: Parser a
+    -> DomainValue Object (CommonPurePattern Meta)
+    -> Either (Error VerifyError) a
+parseDomainValue
+    parser
+    DomainValue { domainValueChild }
+  =
+    withContext "Parsing domain value"
+        (case domainValueChild of
+            StringLiteral_ StringLiteral { getStringLiteral = lit } ->
+                let parsed =
+                        Parsec.parse
+                            (parser <* Parsec.eof)
+                            "<string literal>"
+                            lit
+                in castParseError parsed
+            _ -> Kore.Error.koreFail "Expected literal string"
+        )
+  where
+    castParseError =
+        either (Kore.Error.koreFail . Parsec.parseErrorPretty) pure

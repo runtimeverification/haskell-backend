@@ -15,16 +15,19 @@ This module is intended to be imported qualified.
  -}
 module Kore.Builtin
     ( Verifiers (..)
-    , sortVerifier
+    , PatternVerifier (..)
+    , sortDeclVerifier
     , symbolVerifier
     , koreBuiltins
     ) where
 
-import Data.Semigroup ( (<>) )
+import Data.Semigroup
+       ( (<>) )
 
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
-                 ( Verifiers (..), sortVerifier, symbolVerifier )
+                 ( PatternVerifier (..), Verifiers (..), sortDeclVerifier,
+                 symbolVerifier )
 import qualified Kore.Builtin.Int as Int
 
 {- | Verifiers for Kore builtin sorts.
@@ -35,13 +38,13 @@ import qualified Kore.Builtin.Int as Int
 koreBuiltins :: Verifiers
 koreBuiltins =
     Verifiers
-    { sortVerifiers =
-           Bool.sortVerifiers
-        <> Int.sortVerifiers
+    { sortDeclVerifiers =
+           Bool.sortDeclVerifiers
+        <> Int.sortDeclVerifiers
     , symbolVerifiers =
            Bool.symbolVerifiers
         <> Int.symbolVerifiers
-    , patternVerifiers =
-           Bool.patternVerifiers
-        <> Int.patternVerifiers
+    , patternVerifier =
+           Bool.patternVerifier
+        <> Int.patternVerifier
     }

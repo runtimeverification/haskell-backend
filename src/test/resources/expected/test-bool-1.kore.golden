@@ -332,6 +332,72 @@ Definition
                                 }))))
                             ]
                     }))
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = (Id "trueBool" AstLocationNone) :: Id Object
+                            , aliasParams = []
+                            }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceAliasLeftPattern =
+                        ApplicationPattern Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = (Id "trueBool" AstLocationNone) :: Id Object
+                                    , symbolOrAliasParams = []
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasRightPattern =
+                        DomainValuePattern DomainValue
+                            { domainValueSort =
+                                SortActualSort SortActual
+                                    { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                                    , sortActualSorts = []
+                                    }
+                            , domainValueChild =
+                                Fix (StringLiteralPattern (StringLiteral "true"))
+                            }
+                    , sentenceAliasAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = (Id "falseBool" AstLocationNone) :: Id Object
+                            , aliasParams = []
+                            }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceAliasLeftPattern =
+                        ApplicationPattern Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = (Id "falseBool" AstLocationNone) :: Id Object
+                                    , symbolOrAliasParams = []
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasRightPattern =
+                        DomainValuePattern DomainValue
+                            { domainValueSort =
+                                SortActualSort SortActual
+                                    { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                                    , sortActualSorts = []
+                                    }
+                            , domainValueChild =
+                                Fix (StringLiteralPattern (StringLiteral "false"))
+                            }
+                    , sentenceAliasAttributes = Attributes []
+                    })
                 ]
             , moduleAttributes = Attributes []
             }
