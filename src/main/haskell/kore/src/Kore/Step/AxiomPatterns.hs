@@ -31,7 +31,7 @@ import qualified Kore.Attribute.Parser as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, wrapPredicate )
+                 ( CommonPredicate, makeTruePredicate, wrapPredicate )
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -174,6 +174,7 @@ patternToAxiomPattern axiomAttributes pat =
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = makeTruePredicate
+                , axiomAttributes
                 }
         -- function axioms
         Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
@@ -189,6 +190,7 @@ patternToAxiomPattern axiomAttributes pat =
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = makeTruePredicate
+                , axiomAttributes
                 }
-        Forall_ _ _ child -> patternToAxiomPattern child
+        Forall_ _ _ child -> patternToAxiomPattern axiomAttributes child
         _ -> koreFail "Unsupported pattern type in axiom"
