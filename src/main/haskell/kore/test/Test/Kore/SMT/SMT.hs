@@ -10,6 +10,6 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
 
-test_SMT = undefined
+test_SMT = testGroup "SMT" []
 
 
