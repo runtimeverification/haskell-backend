@@ -35,35 +35,29 @@ import           Kore.Predicate.Predicate
 
 newtype AxiomPatternError = AxiomPatternError ()
 
-data HeatingCooling = Heat | Cool
-  deriving (Eq, Ord, Show)
-
 data AxiomAttributes =
     AxiomAttributes
-        { heatingCooling :: !(Maybe HeatingCooling)
+        { axiomOrdering :: !Ordering
         }
   deriving (Eq, Ord, Show)
 
 instance Default AxiomAttributes where
-    def =
-        AxiomAttributes
-            { heatingCooling = Nothing
-            }
+    def = AxiomAttributes { axiomOrdering = EQ }
 
 instance ParseAttributes AxiomAttributes where
     attributesParser =
         do
-            heatingCooling <-
-                Attribute.optional (Attribute.choose getHeat getCool)
+            axiomOrdering <-
+                Attribute.choose (Attribute.choose getHeat getCool) (pure EQ)
             return AxiomAttributes {..}
 
-getHeat :: Attribute.Parser HeatingCooling
+getHeat :: Attribute.Parser Ordering
 getHeat =
-    Attribute.assertKeyOnlyAttribute "heat" $> Heat
+    Attribute.assertKeyOnlyAttribute "heat" $> LT
 
-getCool :: Attribute.Parser HeatingCooling
+getCool :: Attribute.Parser Ordering
 getCool =
-    Attribute.assertKeyOnlyAttribute "cool" $> Cool
+    Attribute.assertKeyOnlyAttribute "cool" $> GT
 
 parseAxiomAttributes
     :: Attributes
