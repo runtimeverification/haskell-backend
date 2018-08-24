@@ -25,6 +25,8 @@ import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
+import Kore.ASTUtils.SmartPatterns
+       ( pattern StringLiteral_ )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
@@ -316,6 +318,12 @@ preTransform tools (AndPattern ap) = if left == right
 
         (_, VariablePattern vp) -> -- add commutativity here
             Left (mlProposition_5_24_3 tools vp left)
+        (DomainValuePattern dv1, DomainValuePattern dv2) ->
+            case (dv1, dv2) of
+                ( DomainValue _ (StringLiteral_ (StringLiteral sl1))
+                  , DomainValue _ (StringLiteral_ (StringLiteral sl2))) ->
+                    Left $ Left (PatternClash (DomainValueClash sl1) (DomainValueClash sl2))
+                _ -> Left $ Left $ UnsupportedPatterns
         (ApplicationPattern ap1, ApplicationPattern ap2) ->
             let
                 head1 = applicationSymbolOrAlias ap1
@@ -336,7 +344,11 @@ preTransform tools (AndPattern ap) = if left == right
                                             (applicationChildren ap2)
                                 }
                         else if isConstructor (attributes tools head2)
-                            then Left $ Left (ConstructorClash head1 head2)
+                            then Left $ Left
+                                (PatternClash
+                                    (HeadClash head1)
+                                    (HeadClash head2)
+                                )
                             else Left $ Left (NonConstructorHead head2)
                     else Left $ Left (NonConstructorHead head1)
         _ -> Left $ Left UnsupportedPatterns

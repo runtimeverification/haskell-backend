@@ -16,4 +16,4 @@ imp.kore: imp.k
 test: tests/sum.test tests/primes.test tests/collatz.test
 
 clean:
-	rm -rf imp.kore imp-kompiled test/*.imp.kore test/*.output
+	rm -rf imp.kore imp-kompiled tests/*.imp.kore tests/*.output

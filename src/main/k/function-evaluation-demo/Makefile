@@ -16,4 +16,4 @@ demo.kore: demo.k
 test: test/Nat.test test/NatList.test test/Truth.test
 
 clean:
-	rm -rf demo.kore demo-kompiled test/*.demo.kore test/*.output
+	rm -rf demo.kore demo-kompiled tests/*.demo.kore tests/*.output
