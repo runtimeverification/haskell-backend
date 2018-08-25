@@ -34,12 +34,14 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.PatternAttributes
+                 ( FunctionalProof (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Unifier
-                 ( FunctionalProof (..), UnificationProof (..) )
+                 ( UnificationProof (..) )
 import           Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()

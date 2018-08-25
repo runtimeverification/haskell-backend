@@ -1,6 +1,6 @@
 {-|
-Module      : Data.Kore.Step.Step
-Description : Single and multiple step execution
+Module      : Kore.Step.StepperAttributes
+Description : Attributes used for step execution
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com

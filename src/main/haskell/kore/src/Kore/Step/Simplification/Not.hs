@@ -8,9 +8,9 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Not
-    ( makeEvaluateNot
+    ( makeEvaluate
     , simplify
-    , simplifyEvaluatedNot
+    , simplifyEvaluated
     ) where
 
 import Data.Reflection
@@ -63,14 +63,14 @@ simplify
 simplify
     Not { notChild = child }
   =
-    simplifyEvaluatedNot child
+    simplifyEvaluated child
 
-{-|'makeEvaluateNot' simplifies a 'Not' pattern given its 'OrOfExpandedPattern'
-child.
+{-|'simplifyEvaluated' simplifies a 'Not' pattern given its
+'OrOfExpandedPattern' child.
 
 See 'simplify' for details.
 -}
-simplifyEvaluatedNot
+simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Given (SortTools level)
@@ -79,14 +79,14 @@ simplifyEvaluatedNot
         )
     => OrOfExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluatedNot simplified
+simplifyEvaluated simplified
   | OrOfExpandedPattern.isFalse simplified =
     (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
   | OrOfExpandedPattern.isTrue simplified =
     (OrOfExpandedPattern.make [], SimplificationProof)
   | otherwise =
     case OrOfExpandedPattern.extractPatterns simplified of
-        [patt] -> makeEvaluateNot patt
+        [patt] -> makeEvaluate patt
         _ ->
             ( makeFromSinglePurePattern
                 (mkNot
@@ -97,12 +97,12 @@ simplifyEvaluatedNot simplified
             , SimplificationProof
             )
 
-{-|'makeEvaluateNot' simplifies a 'Not' pattern given its 'ExpandedPattern'
+{-|'makeEvaluate' simplifies a 'Not' pattern given its 'ExpandedPattern'
 child.
 
 See 'simplify' for details.
 -}
-makeEvaluateNot
+makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Given (SortTools level)
@@ -111,7 +111,7 @@ makeEvaluateNot
         )
     => ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluateNot
+makeEvaluate
     ExpandedPattern {term, predicate, substitution}
   =
     ( OrOfExpandedPattern.make

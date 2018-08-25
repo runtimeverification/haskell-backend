@@ -8,8 +8,9 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.And
-    ( simplify
-    , makeEvaluate
+    ( makeEvaluate
+    , simplify
+    , simplifyEvaluated
     ) where
 
 import Data.Reflection
@@ -94,6 +95,10 @@ simplify
   =
     simplifyEvaluated tools first second
 
+{-| simplifies an And given its two 'OrOfExpandedPattern' children.
+
+See 'simplify' for details.
+-}
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable

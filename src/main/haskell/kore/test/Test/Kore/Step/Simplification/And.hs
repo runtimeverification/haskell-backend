@@ -44,7 +44,7 @@ import           Kore.Variables.Fresh.IntCounter
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( constructorAttributes, makeMetadataTools )
+                 ( constructorFunctionalAttributes, makeMetadataTools )
 import           Test.Tasty.HUnit.Extensions
 
 test_andSimplification :: [TestTree]
@@ -204,8 +204,8 @@ test_andSimplification =
                     , substitution = []
                     }
                 (evaluatePatternsWithAttributes
-                    [ (fSymbol, Mock.constructorAttributes)
-                    , (gSymbol, Mock.constructorAttributes)
+                    [ (fSymbol, Mock.constructorFunctionalAttributes)
+                    , (gSymbol, Mock.constructorFunctionalAttributes)
                     ]
                     ExpandedPattern
                         { term = mkTop
@@ -415,7 +415,7 @@ testSort =
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools = MetadataTools
-    { attributes = const Mock.constructorAttributes
+    { attributes = const Mock.constructorFunctionalAttributes
     , sortTools = mockSortTools
     }
 
