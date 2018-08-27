@@ -50,6 +50,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Registry
                  ( extractEvaluators )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( MaxStepCount (AnyStepCount), pickFirstStepper )
@@ -57,8 +59,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Unparser.Unparse
                  ( unparseToString )
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
 
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,
@@ -136,7 +136,11 @@ main = do
             mainPatternVerify indexedModule parsedPattern
             let
                 functionRegistry =
-                    extractEvaluators Object indexedModule
+                    Map.unionWith (++)
+                        -- user-defined functions
+                        (extractEvaluators Object indexedModule)
+                        -- builtin functions
+                        (Builtin.koreEvaluators indexedModule)
                 axiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
                 metadataTools = constructorFunctions (extractMetadataTools indexedModule)
@@ -148,7 +152,8 @@ main = do
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
             finalExpandedPattern <- clockSomething "Executing"
-                    $ fst $ fst $ (`runIntCounter` 1)
+                    $ either (error . Kore.Error.printError) fst
+                    $ evalSimplifier
                     $ do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
@@ -226,7 +231,7 @@ mainVerify willChkAttr definition =
         clockSomething "Verifying the definition"
             (verifyAndIndexDefinition
                 attributesVerification
-                Builtin.koreBuiltins
+                Builtin.koreVerifiers
                 definition
             )
       case verifyResult of
@@ -250,7 +255,7 @@ mainPatternVerify indexedModule patt =
         Left err1 -> error (printError err1)
         Right _   -> return ()
   where
-    Builtin.Verifiers { patternVerifier } = Builtin.koreBuiltins
+    Builtin.Verifiers { patternVerifier } = Builtin.koreVerifiers
 
 makePurePattern
     :: CommonKorePattern

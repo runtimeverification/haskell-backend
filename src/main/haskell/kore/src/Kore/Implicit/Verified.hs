@@ -36,7 +36,7 @@ checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
     _ <- verifyImplicitKoreDefinition
         attributesVerification
-        Builtin.koreBuiltins
+        Builtin.koreVerifiers
         (definitionPureToKore uncheckedMetaDefinition)
     return uncheckedMetaDefinition
   where
@@ -57,7 +57,7 @@ checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
     _ <- verifyImplicitKoreDefinition
         attributesVerification
-        Builtin.koreBuiltins
+        Builtin.koreVerifiers
         uncheckedKoreDefinition
     return uncheckedKoreDefinition
   where

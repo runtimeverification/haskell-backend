@@ -21,6 +21,8 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkApp, mkBottom )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
+import           Kore.Error
+                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -42,10 +44,10 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Application
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Variables.Fresh.IntCounter
 
 import           Test.Kore
                  ( testId )
@@ -438,7 +440,6 @@ evaluate
     symbolIdToEvaluator
     application
   =
-    fst $ fst $
-        runIntCounter
-            (simplify tools simplifier symbolIdToEvaluator application)
-            0
+    either (error . printError) fst
+        $ evalSimplifier
+        $ simplify tools simplifier symbolIdToEvaluator application

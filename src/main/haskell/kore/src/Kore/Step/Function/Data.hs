@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.Data
-    ( ApplicationFunctionEvaluator (..)
+    (  ApplicationFunctionEvaluator (..)
     , CommonApplicationFunctionEvaluator
     , AttemptedFunction (..)
     , CommonAttemptedFunction
@@ -25,11 +25,10 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
 import Kore.Step.Simplification.Data
-       ( PureMLPatternSimplifier, SimplificationProof (..) )
+       ( PureMLPatternSimplifier, Simplifier,
+       SimplificationProof (..) )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
-import Kore.Variables.Fresh.IntCounter
-       ( IntCounter )
 
 {-| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
 pattern. This can be either a built-in evaluator or a user-defined one.
@@ -55,7 +54,7 @@ newtype ApplicationFunctionEvaluator level variable =
         => MetadataTools level StepperAttributes
         -> PureMLPatternSimplifier level variable
         -> Application level (PureMLPattern level variable)
-        -> IntCounter
+        -> Simplifier
             ( AttemptedFunction level variable
             , SimplificationProof level
             )

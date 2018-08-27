@@ -20,6 +20,9 @@ module Kore.Builtin.Bool
     , sortDeclVerifiers
     , symbolVerifiers
     , patternVerifier
+    , builtinFunctions
+    , asPattern
+    , asExpandedPattern
     ) where
 
 import           Control.Monad
@@ -27,10 +30,22 @@ import           Control.Monad
 import           Data.Functor
                  ( ($>) )
 import qualified Data.HashMap.Strict as HashMap
+import           Data.Map
+                 ( Map )
+import qualified Data.Map as Map
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
+import qualified Kore.AST.Common as Kore
+import           Kore.AST.MetaOrObject
+                 ( Object )
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
+import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Builtin as Builtin
+import           Kore.Step.ExpandedPattern
+                 ( CommonExpandedPattern )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -86,3 +101,52 @@ parse = (Parsec.<|>) true false
   where
     true = Parsec.string "true" $> True
     false = Parsec.string "false" $> False
+
+{- | Render a 'Bool' as a domain value pattern of the given sort.
+
+  The result sort should be hooked to the builtin @Bool@ sort, but this is not
+  checked.
+
+  See also: 'sort'
+
+ -}
+asPattern
+    :: Kore.Sort Object  -- ^ resulting sort
+    -> Bool  -- ^ builtin value to render
+    -> CommonPurePattern Object
+asPattern resultSort result =
+    Kore.DV_ resultSort
+        (Kore.StringLiteral_ Kore.StringLiteral
+            { getStringLiteral = unparse result })
+  where
+    unparse :: Bool -> String
+    unparse True = "true"
+    unparse False = "false"
+
+asExpandedPattern
+    :: Kore.Sort Object  -- ^ resulting sort
+    -> Bool  -- ^ builtin value to render
+    -> CommonExpandedPattern Object
+asExpandedPattern resultSort =
+    ExpandedPattern.fromPurePattern . asPattern resultSort
+
+{- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
+ -}
+builtinFunctions :: Map String Builtin.Function
+builtinFunctions =
+    Map.fromList
+    [ ("BOOL.or", binaryOperator "BOOL.or" (||))
+    , ("BOOL.and", binaryOperator "BOOL.and" (&&))
+    , ("BOOL.xor", binaryOperator "BOOL.xor" xor)
+    , ("BOOL.ne", binaryOperator "BOOL.ne" (/=))
+    , ("BOOL.eq", binaryOperator "BOOL.eq" (==))
+    , ("BOOL.not", unaryOperator "BOOL.not" not)
+    , ("BOOL.implies", binaryOperator "BOOL.implies" implies)
+    , ("BOOL.andThen", Builtin.notImplemented)
+    , ("BOOL.orElse", Builtin.notImplemented)
+    ]
+  where
+    unaryOperator = Builtin.unaryOperator parse asExpandedPattern
+    binaryOperator = Builtin.binaryOperator parse asExpandedPattern
+    xor a b = (a && not b) || (not a && b)
+    implies a b = not a || b

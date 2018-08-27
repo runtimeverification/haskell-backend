@@ -11,8 +11,9 @@ module Kore.Step.Merging.ExpandedPattern
     ( mergeWithPredicateSubstitution
     ) where
 
-import Data.Reflection
-       ( give )
+import qualified Control.Monad.Except as Except
+import           Data.Reflection
+                 ( give )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -31,7 +32,7 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier,
+                 ( PureMLPatternSimplifier, Simplifier,
                  SimplificationProof (SimplificationProof) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -67,8 +68,7 @@ mergeWithPredicateSubstitution
     -- ^ Condition and substitution to add.
     -> ExpandedPattern level variable
     -- ^ pattern to which the above should be added.
-    -> IntCounter
-        (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
     simplifier
@@ -85,17 +85,22 @@ mergeWithPredicateSubstitution
             { predicate = mergedCondition
             , substitution = mergedSubstitution
             }
-        , _proof ) <- mergePredicatesAndSubstitutions
-            tools
-            [pattPredicate, conditionToMerge]
-            [pattSubstitution, substitutionToMerge]
+        , _proof ) <-
+            Except.lift
+                (mergePredicatesAndSubstitutions
+                    tools
+                    [pattPredicate, conditionToMerge]
+                    [pattSubstitution, substitutionToMerge]
+                )
     (evaluatedCondition, _) <-
         give (MetadataTools.sortTools tools)
             $ Predicate.evaluate simplifier mergedCondition
-    mergeWithEvaluatedCondition
-        tools
-        patt {substitution = mergedSubstitution}
-        evaluatedCondition
+    Except.lift
+        (mergeWithEvaluatedCondition
+            tools
+            patt {substitution = mergedSubstitution}
+            evaluatedCondition
+        )
 
 mergeWithEvaluatedCondition
     ::  ( MetaOrObject level

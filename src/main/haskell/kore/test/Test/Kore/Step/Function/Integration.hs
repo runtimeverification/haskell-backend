@@ -16,6 +16,8 @@ import           Kore.AST.PureML
                  ( CommonPurePattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr, mkVar )
+import           Kore.Error
+                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SortTools )
 import           Kore.Predicate.Predicate
@@ -35,12 +37,11 @@ import           Kore.Step.Function.UserDefined
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 Simplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter, runIntCounter )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -257,7 +258,8 @@ mockEvaluator
     -> MetadataTools level StepperAttributes
     -> CommonPureMLPatternSimplifier level
     -> Application level (CommonPurePattern level)
-    -> IntCounter (CommonAttemptedFunction level, SimplificationProof level)
+    -> Simplifier
+        (CommonAttemptedFunction level, SimplificationProof level)
 mockEvaluator evaluation _ _ _ =
     return (evaluation, SimplificationProof)
 
@@ -268,11 +270,9 @@ evaluate
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 evaluate metadataTools functionIdToEvaluator patt =
-    fst $ fst
-        (runIntCounter
-            (Pattern.simplify metadataTools functionIdToEvaluator patt)
-            0
-        )
+    either (error . printError) fst
+        $ evalSimplifier
+        $ Pattern.simplify metadataTools functionIdToEvaluator patt
 
 mockSortTools :: SortTools Object
 mockSortTools = Mock.makeSortTools Mock.sortToolsMapping

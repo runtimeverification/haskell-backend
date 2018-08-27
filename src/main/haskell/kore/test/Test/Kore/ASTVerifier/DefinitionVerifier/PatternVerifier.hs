@@ -510,7 +510,7 @@ test_patternVerifier =
         (ErrorStack
             [ "\\dv (<test data>)"
             , "Verifying builtin sort 'INT.Int'"
-            , "Parsing domain value"
+            , "While parsing domain value"
             ]
         )
         (DomainValuePattern DomainValue
@@ -576,7 +576,7 @@ test_patternVerifier =
         (ErrorStack
             [ "\\dv (<test data>)"
             , "Verifying builtin sort 'BOOL.Bool'"
-            , "Parsing domain value"
+            , "While parsing domain value"
             ]
         )
         (DomainValuePattern DomainValue

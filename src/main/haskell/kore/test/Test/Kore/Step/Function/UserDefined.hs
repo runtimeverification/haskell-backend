@@ -45,9 +45,9 @@ import           Kore.Step.Function.UserDefined
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 evalSimplifier )
 import           Kore.Step.StepperAttributes
-import           Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()
 import Test.Kore.Step.Simplifier
@@ -444,11 +444,10 @@ evaluateWithAxiom
             , substitution = sort substitution
             }
     evaluated =
-        fst $ fst $ runIntCounter
-            (axiomFunctionEvaluator
+        either (error . printError) fst
+            $ evalSimplifier
+            $ axiomFunctionEvaluator
                 axiom
                 metadataTools
                 simplifier
                 app
-            )
-            0

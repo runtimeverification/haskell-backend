@@ -51,7 +51,7 @@ import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( SimplificationProof (..), Simplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Not as Not
@@ -64,8 +64,6 @@ import qualified Kore.Step.StepperAttributes as StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 import           Kore.Variables.Int
                  ( IntVariable (..) )
 
@@ -137,7 +135,7 @@ simplify
         )
     => MetadataTools level StepperAttributes
     -> Equals level (OrOfExpandedPattern level variable)
-    -> IntCounter
+    -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )
@@ -163,7 +161,7 @@ simplifyEvaluated
     => MetadataTools level StepperAttributes
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
-    -> IntCounter
+    -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 simplifyEvaluated tools first second
   | first == second =
@@ -199,7 +197,7 @@ makeEvaluate
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
-    -> IntCounter
+    -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
     tools
@@ -281,7 +279,7 @@ makeEvaluateTermsAssumesNoBottom
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> IntCounter
+    -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottom
     tools first second
@@ -324,7 +322,7 @@ differentCharLiterals
     :: PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (IntCounter
+        (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
 differentCharLiterals
@@ -337,7 +335,7 @@ differentStringLiterals
     :: PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (IntCounter
+        (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
 differentStringLiterals
@@ -350,7 +348,7 @@ differentDomainValues
     :: PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (IntCounter
+        (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
 differentDomainValues
@@ -365,7 +363,7 @@ variableEqualsFunctional
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (IntCounter
+        (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
 variableEqualsFunctional
@@ -392,7 +390,7 @@ functionalEqualsVariable
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (IntCounter
+        (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
 functionalEqualsVariable
@@ -427,7 +425,7 @@ constructorAtTheTop
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (IntCounter
+        (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
 constructorAtTheTop
@@ -470,7 +468,7 @@ constructorAtTheTop
         => MetadataTools level StepperAttributes
         -> (OrOfExpandedPattern level variable, SimplificationProof level)
         -> (OrOfExpandedPattern level variable, SimplificationProof level)
-        -> IntCounter
+        -> Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
     combineWithAnd tools' (thing1, _proof1) (thing2, _proof2) =
         And.simplifyEvaluated tools' thing1 thing2
