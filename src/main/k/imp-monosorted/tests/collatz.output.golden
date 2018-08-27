@@ -1,0 +1,36 @@
+Lbl'-LT-'T'-GT-'{}(
+    Lbl'-LT-'k'-GT-'{}(dotk{}()),
+    Lbl'-LT-'state'-GT-'{}(
+        Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+            Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'Id'Unds'Int{}(
+                \dv{SortId{}}("m"),
+                \dv{SortInt{}}("2")
+            ),
+            Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+                Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'Id'Unds'Int{}(
+                    \dv{SortId{}}("n"),
+                    \dv{SortInt{}}("1")
+                ),
+                Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+                    Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'Id'Unds'Int{}(
+                        \dv{SortId{}}("q"),
+                        \dv{SortInt{}}("1")
+                    ),
+                    Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+                        Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'Id'Unds'Int{}(
+                            \dv{SortId{}}("r"),
+                            \dv{SortInt{}}("3")
+                        ),
+                        Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+                            Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'Id'Unds'Int{}(
+                                \dv{SortId{}}("s"),
+                                \dv{SortInt{}}("66")
+                            ),
+                            Lbl'Stop'State'Unds'STATE-API'Unds'{}()
+                        )
+                    )
+                )
+            )
+        )
+    )
+)

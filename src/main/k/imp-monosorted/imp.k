@@ -95,26 +95,13 @@ endmodule
 module IMP-STATE
   imports IMP-SYNTAX
   imports STATE-BASIC
-  /* this should work once we get equality simplification for domain values
+  /* this should work once we get equality simplification for domain values */
   rule get((X:Id |-> _:Int) S:State, Y:Id) => get(S, Y)
        requires X =/=K Y
   rule set((X:Id |-> V:Int) S:State, Y:Id, V':Int) => (X |-> V) set(S, Y, V')
        requires X =/=K Y
   rule inState((K:Id |-> _:Int) S:State, K':Id) => inState(S, K')
        requires K =/=K K'
- */
-
-  // this is only temporary until we can use side-conditons (see above)
-  // until then the axioms below are just encoding ids from tests/sum.imp
-  syntax Id ::= "sum" [token]
-              | "n" [token]
-
-  rule inState((n |-> _:Int) S:State, sum) => inState(S, sum)
-  rule inState((sum |-> _:Int) S:State, n) => inState(S, n)
-  rule get((n |-> _:Int) S:State, sum) => get(S, sum)
-  rule get((sum |-> _:Int) S:State, n) => get(S, n)
-  rule set((n |-> V:Int) S:State, sum, V':Int) => (n |-> V:Int) set(S, sum, V')
-  rule set((sum |-> V:Int) S:State, n, V':Int) => (sum |-> V:Int) set(S, n, V')
 
 endmodule
 
