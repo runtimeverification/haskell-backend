@@ -132,31 +132,33 @@ pickFirstStepper
     -- ^ Rewriting axioms
     -> MaxStepCount
     -- ^ The maximum number of steps to be made
-    -> CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
+    -> (CommonExpandedPattern level, StepProof level)
+    -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier (CommonExpandedPattern level, StepProof level)
-pickFirstStepper _ _ _ (MaxStepCount 0) stepperConfiguration =
-    return (stepperConfiguration, mempty)
+pickFirstStepper _ _ _ (MaxStepCount 0) configAndProof =
+    return configAndProof
 pickFirstStepper _ _ _ (MaxStepCount n) _ | n < 0 =
     error ("Negative MaxStepCount: " ++ show n)
 pickFirstStepper
-    tools symbolIdToEvaluator axioms (MaxStepCount maxStep) stepperConfiguration
+    tools symbolIdToEvaluator axioms (MaxStepCount maxStep)
+    (stepperConfiguration, prevProof)
   =
     pickFirstStepperSkipMaxCheck
         tools
         symbolIdToEvaluator
         axioms
         (MaxStepCount (maxStep - 1))
-        stepperConfiguration
+        (stepperConfiguration, prevProof)
 pickFirstStepper
-    tools symbolIdToEvaluator axioms AnyStepCount stepperConfiguration
+    tools symbolIdToEvaluator axioms AnyStepCount
+    (stepperConfiguration, prevProof)
   =
     pickFirstStepperSkipMaxCheck
         tools
         symbolIdToEvaluator
         axioms
         AnyStepCount
-        stepperConfiguration
+        (stepperConfiguration, prevProof)
 
 pickFirstStepperSkipMaxCheck
     ::  ( MetaOrObject level)
@@ -167,13 +169,14 @@ pickFirstStepperSkipMaxCheck
     -- ^ Rewriting axioms
     -> MaxStepCount
     -- ^ The maximum number of steps to be made
-    -> CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
+    -> (CommonExpandedPattern level, StepProof level)
+    -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier (CommonExpandedPattern level, StepProof level)
 pickFirstStepperSkipMaxCheck
-    tools symbolIdToEvaluator axioms maxStepCount stepperConfiguration
+    tools symbolIdToEvaluator axioms maxStepCount
+    (stepperConfiguration, prevProof)
   = do
-    (patterns, nextProof) <-
+    (patterns, thisProof) <-
         -- TODO: Perhaps use IntCounter.findState to reduce the need for
         -- intCounter values and to make this more testable.
         step
@@ -182,16 +185,11 @@ pickFirstStepperSkipMaxCheck
             axioms
             (OrOfExpandedPattern.make [stepperConfiguration])
     case OrOfExpandedPattern.extractPatterns patterns of
-        [] -> return (stepperConfiguration, mempty)
-        (nextConfiguration : _) -> do
-            (finalConfiguration, finalProof) <-
-                pickFirstStepper
-                    tools
-                    symbolIdToEvaluator
-                    axioms
-                    maxStepCount
-                    nextConfiguration
-            return
-                ( finalConfiguration
-                , nextProof <> finalProof
-                )
+        [] -> return (stepperConfiguration, prevProof)
+        (nextConfiguration : _) ->
+            pickFirstStepper
+                tools
+                symbolIdToEvaluator
+                axioms
+                maxStepCount
+                (nextConfiguration, prevProof <> thisProof)
