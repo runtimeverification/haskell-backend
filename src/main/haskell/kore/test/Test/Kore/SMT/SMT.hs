@@ -9,3 +9,4 @@ import Test.Kore.Builtin.Int as Int
 
 indexedModules :: Map ModuleName (KoreIndexedModule SMTAttributes)
 indexedModules = verify Int.intDefinition
+
