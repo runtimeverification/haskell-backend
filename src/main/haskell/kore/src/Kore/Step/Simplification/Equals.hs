@@ -58,8 +58,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
+import           Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrOfExpandedPattern's.
 
@@ -126,7 +125,7 @@ simplify
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -151,7 +150,7 @@ simplifyEvaluated
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -187,7 +186,7 @@ makeEvaluate
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -282,7 +281,7 @@ makeEvaluateTermsAssumesNoBottom
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -319,7 +318,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes

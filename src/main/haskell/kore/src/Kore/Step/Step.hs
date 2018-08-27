@@ -42,8 +42,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
+import           Kore.Variables.Fresh
 
 data MaxStepCount
     = MaxStepCount Integer
@@ -90,7 +89,7 @@ baseStepWithPattern
     -- ^ Rewriting axioms
     -> CommonExpandedPattern level
     -- ^ Configuration being rewritten.
-    -> IntCounter (CommonOrOfExpandedPattern level, StepProof level)
+    -> Counter (CommonOrOfExpandedPattern level, StepProof level)
 baseStepWithPattern tools axioms configuration = do
     stepResultsWithProofs <- sequence (stepToList tools configuration axioms)
     let (results, proofs) = unzip stepResultsWithProofs
@@ -106,7 +105,7 @@ stepToList
     -- ^ Configuration being rewritten.
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
-    ->  [ IntCounter
+    ->  [ Counter
             (CommonExpandedPattern level, StepProof level)
         ]
 stepToList tools configuration axioms =

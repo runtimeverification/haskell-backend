@@ -39,11 +39,7 @@ import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
-import           Kore.Variables.Int
-                 ( IntVariable )
-
+import           Kore.Variables.Fresh
 
 {-| 'mergeWithPredicateSubstitution' ands the given predicate-substitution
 with the given pattern.
@@ -55,7 +51,7 @@ mergeWithPredicateSubstitution
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -104,13 +100,13 @@ mergeWithEvaluatedCondition
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level variable
     -> PredicateSubstitution level variable
-    -> IntCounter (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
     ExpandedPattern
