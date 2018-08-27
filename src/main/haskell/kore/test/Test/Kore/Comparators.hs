@@ -181,15 +181,16 @@ instance
     (Eq level, Show level) =>
     SumEqualWithExplanation (StepProof level)
   where
+    sumConstructorPair (StepProof a1) (StepProof a2) =
+        SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
+
+instance
+    (Eq level, Show level) =>
+    SumEqualWithExplanation (StepProofAtom level)
+  where
     sumConstructorPair (StepProofUnification a1) (StepProofUnification a2) =
         SumConstructorSameWithArguments (EqWrap "StepProofUnification" a1 a2)
     sumConstructorPair a1@(StepProofUnification _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (StepProofCombined a1) (StepProofCombined a2) =
-        SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
-    sumConstructorPair a1@(StepProofCombined _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
@@ -210,6 +211,10 @@ instance
     sumConstructorPair a1@(StepProofSimplification _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
+
+instance (Eq level, Show level) => EqualWithExplanation (StepProofAtom level) where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
 
 instance (Eq level, Show level) => EqualWithExplanation (StepProof level) where
     compareWithExplanation = sumCompareWithExplanation

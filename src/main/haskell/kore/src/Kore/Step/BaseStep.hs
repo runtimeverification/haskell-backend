@@ -12,8 +12,9 @@ module Kore.Step.BaseStep
     , StepperConfiguration (..)
     , StepperVariable (..)
     , StepProof (..)
+    , StepProofAtom (..)
     , VariableRenaming (..)
-    , simplifyStepProof
+    , stepProof
     , stepProofSumName
     , stepWithAxiom
     ) where
@@ -22,10 +23,13 @@ import qualified Control.Arrow as Arrow
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
-import           Data.Monoid
-                 ( (<>) )
 import           Data.Reflection
                  ( Given, give )
+import           Data.Semigroup
+                 ( Semigroup (..) )
+import           Data.Sequence
+                 ( Seq )
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
@@ -82,47 +86,35 @@ data StepperConfiguration level = StepperConfiguration
     }
     deriving (Show, Eq)
 
-{-| 'StepProof' is a proof for a single execution step.
--}
-data StepProof level
-    = StepProofCombined ![StepProof level]
-    -- ^ combines multiple parts of a proof.
-    | StepProofUnification !(UnificationProof level Variable)
+{- | 'StepProof' is the proof for an execution step or steps.
+ -}
+newtype StepProof level = StepProof { getStepProof :: Seq (StepProofAtom level) }
+  deriving (Eq, Show)
+
+instance Semigroup (StepProof level) where
+    (<>) (StepProof a) (StepProof b) = StepProof (a <> b)
+
+instance Monoid (StepProof level) where
+    mempty = StepProof mempty
+    mappend = (<>)
+
+stepProof :: StepProofAtom level -> StepProof level
+stepProof atom = StepProof (Seq.singleton atom)
+
+{- | The smallest unit of a 'StepProof'.
+
+  @StepProofAtom@ encapsulates the separate proofs resulting from unification,
+  variable renaming, and simplification.
+
+ -}
+data StepProofAtom level
+    = StepProofUnification !(UnificationProof level Variable)
     -- ^ Proof for a unification that happened during the step.
     | StepProofVariableRenamings [VariableRenaming level]
     -- ^ Proof for the remanings that happened during ther proof.
-    | StepProofSimplification (SimplificationProof level)
+    | StepProofSimplification !(SimplificationProof level)
     -- ^ Proof for the simplification part of a step.
     deriving (Show, Eq)
-
-{-| 'simplifyStepProof' simplifies the representation of a 'StepProof'.
-
-As an example, it replaces a StepProofCombined with a single element with its
-contents.
--}
-simplifyStepProof :: StepProof level -> StepProof level
-simplifyStepProof (StepProofCombined things) =
-    StepProofCombined (simplifyCombinedItems things)
-simplifyStepProof a@(StepProofUnification _) = a
-simplifyStepProof (StepProofVariableRenamings []) = StepProofCombined []
-simplifyStepProof a@(StepProofVariableRenamings _) = a
-simplifyStepProof a@(StepProofSimplification _) = a
-
-{-| `simplifyCombinedItems` simplifies the representation of a list of
-    'StepProof's recursively.
-
-    As an example, it replaces a 'StepProofCombined' with its contents.
--}
-simplifyCombinedItems :: [StepProof level] -> [StepProof level]
-simplifyCombinedItems =
-    foldr (simplifyAndAdd . simplifyStepProof) []
-  where
-    simplifyAndAdd
-        :: StepProof level
-        -> [StepProof level]
-        -> [StepProof level]
-    simplifyAndAdd (StepProofCombined items) proofItems = items ++ proofItems
-    simplifyAndAdd other proofItems                     = other : proofItems
 
 {-| 'VariableRenaming' represents a renaming of a variable.
 -}
@@ -162,9 +154,8 @@ getStepperVariableVariable (AxiomVariable a)         = a
 getStepperVariableVariable (ConfigurationVariable a) = a
 
 {-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
-stepProofSumName :: StepProof level -> String
+stepProofSumName :: StepProofAtom level -> String
 stepProofSumName (StepProofUnification _)       = "StepProofUnification"
-stepProofSumName (StepProofCombined _)          = "StepProofCombined"
 stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
 stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
@@ -319,15 +310,11 @@ stepWithAxiom
                         (removeAxiomVariables normalizedSubstitution)
                     `orElse` []
                 }
-            , simplifyStepProof
-                (StepProofCombined
-                    [ StepProofVariableRenamings
-                        (map variablePairToRenaming
-                            (Map.toList variableMapping2)
-                        )
-                    , StepProofUnification substitutionProof
-                    ]
-                )
+            , (<>)
+              ((stepProof . StepProofVariableRenamings)
+               (variablePairToRenaming <$> Map.toList variableMapping2)
+              )
+              ((stepProof . StepProofUnification) substitutionProof)
             )
   where
     -- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
