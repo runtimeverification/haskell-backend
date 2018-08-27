@@ -88,6 +88,11 @@ ex2 = parameterizedVariable_ s1 "ex2" AstLocationTest
 ex3 = parameterizedVariable_ s1 "ex3" AstLocationTest
 ex4 = parameterizedVariable_ s1 "ex4" AstLocationTest
 
+
+dv1, dv2 :: CommonPurePatternStub Object
+dv1 = parameterizedDomainValue_ s1 "dv1"
+dv2 = parameterizedDomainValue_ s1 "dv2"
+
 aA :: CommonPurePatternStub Object
 aA = applyS a []
 
@@ -465,10 +470,22 @@ test_unification =
                 (extractPurePattern expY)
             ]
         )
-      , andSimplifyFailure "Unmatching constants"
+    , andSimplifyFailure "Unmatching constants"
         (UnificationTerm aA)
         (UnificationTerm a1A)
         (PatternClash (HeadClash (symbolHead a)) (HeadClash (symbolHead a1)))
+    , andSimplifyFailure "Unmatching domain values"
+        (UnificationTerm dv1)
+        (UnificationTerm dv2)
+        (PatternClash (DomainValueClash "dv1") (DomainValueClash "dv2"))
+    , andSimplifyFailure "Unmatching constant + domain value"
+        (UnificationTerm aA)
+        (UnificationTerm dv2)
+        (PatternClash (HeadClash (symbolHead a)) (DomainValueClash "dv2"))
+    , andSimplifyFailure "Unmatching domain value + constant"
+        (UnificationTerm dv1)
+        (UnificationTerm a1A)
+        (PatternClash (DomainValueClash "dv1") (HeadClash (symbolHead a1)))
     , andSimplifyFailure "non-functional pattern"
         (UnificationTerm x)
         (UnificationTerm a3A)
