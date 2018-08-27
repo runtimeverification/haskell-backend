@@ -99,11 +99,11 @@ translate p = goTranslate
         goBoolean (Implies_ _   x1 x2) = goBinaryOp (==>) goBoolean x1 x2
         goBoolean (Iff_     _   x1 x2) = goBinaryOp (<=>) goBoolean x1 x2
         goBoolean (Not_     _   x1)    = goUnaryOp (bnot) goBoolean x1
-        goBoolean (Equals_  s _ x1 x2) = c x1 x2 
-          where 
+        goBoolean (Equals_  s _ x1 x2) = c x1 x2
+          where
             c = case getHookString $ getSortHook s of
                   "BOOL.Bool" -> goBinaryOp (.==) goInteger
-                  "INT.Int"   -> goBinaryOp (<=>) goBoolean 
+                  "INT.Int"   -> goBinaryOp (<=>) goBoolean
         goBoolean (App_ h [x1, x2]) = c x1 x2
           where
             c = case getHookString $ getSymbolHook h of
@@ -131,7 +131,7 @@ translate p = goTranslate
                 Just var -> return var
                 _ -> error "The impossible happened"
          | otherwise = error $ "Expected variable with hook " ++ hookName
-            
+
 
 isHook h s =
     h == Hook (Just s)
