@@ -1,13 +1,11 @@
-module Test.Kore.SMT.SMT (test_SMT) where
+module Test.Kore.SMT.SMT where
 
-import           Test.Tasty                           (TestTree, testGroup)
-import           Test.Tasty.HUnit                     (Assertion, assertEqual,
-                                                       testCase)
+import Test.QuickCheck
+       ( Property, (===) )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import Kore.SMT.SMT
 
-import           Kore.ASTUtils.SmartConstructors
-import           Kore.ASTUtils.SmartPatterns
+import Test.Kore.Builtin.Int as Int
 
-test_SMT = testGroup "SMT" []
+indexedModules :: Map ModuleName (KoreIndexedModule SMTAttributes)
+indexedModules = verify Int.intDefinition
