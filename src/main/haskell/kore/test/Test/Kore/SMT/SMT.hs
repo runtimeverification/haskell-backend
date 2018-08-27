@@ -11,5 +11,3 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
 
 test_SMT = testGroup "SMT" []
-
-
