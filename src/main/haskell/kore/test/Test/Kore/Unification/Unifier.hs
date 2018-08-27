@@ -31,6 +31,7 @@ import Kore.ASTUtils.SmartConstructors
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.PatternAttributes
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 import Kore.Unification.UnifierImpl
@@ -467,7 +468,7 @@ test_unification =
       , andSimplifyFailure "Unmatching constants"
         (UnificationTerm aA)
         (UnificationTerm a1A)
-        (ConstructorClash (symbolHead a) (symbolHead a1))
+        (PatternClash (HeadClash (symbolHead a)) (HeadClash (symbolHead a1)))
     , andSimplifyFailure "non-functional pattern"
         (UnificationTerm x)
         (UnificationTerm a3A)
@@ -483,7 +484,7 @@ test_unification =
     , andSimplifyFailure "nested failure"
         (UnificationTerm (applyS f [aA]))
         (UnificationTerm (applyS f [a1A]))
-        (ConstructorClash (symbolHead a) (symbolHead a1))
+        (PatternClash (HeadClash (symbolHead a)) (HeadClash (symbolHead a1)))
     , andSimplifyFailure "Unsupported constructs"
         (UnificationTerm (applyS f [aA]))
         (UnificationTerm (applyS f [implies_ aA (next_ a1A)]))

@@ -30,6 +30,8 @@ import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.PatternAttributes
+       ( FunctionalProof (..), isFunctionalPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
@@ -180,59 +182,6 @@ simplifyCombinedItems =
         items ++ proofItems
     addContents other proofItems = other : proofItems
 
--- |'FunctionalProof' is used for providing arguments that a pattern is
--- functional.  Currently we only support arguments stating that a
--- pattern consists only of functional symbols and variables.
--- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
--- TODO: replace this datastructures with proper ones representing
--- both hypotheses and conclusions in the proof object.
-data FunctionalProof level variable
-    = FunctionalVariable (variable level)
-    -- ^Variables are functional as per Corollary 5.19
-    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-    -- |= ∃y . x = y
-    | FunctionalDomainValue (DomainValue level (PureMLPattern Meta Variable))
-    -- ^Domain values are functional as ther represent one value in the model.
-    | FunctionalHead (SymbolOrAlias level)
-    -- ^Head of a total function, conforming to Definition 5.21
-    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-  deriving (Eq, Show)
-
-{-| 'mapFunctionalProofVariables' replaces all variables in a 'FunctionalProof'
-using the provided mapping.
--}
-mapFunctionalProofVariables
-    :: (variableFrom level -> variableTo level)
-    -> FunctionalProof level variableFrom
-    -> FunctionalProof level variableTo
-mapFunctionalProofVariables mapper (FunctionalVariable variable) =
-    FunctionalVariable (mapper variable)
-mapFunctionalProofVariables _ (FunctionalDomainValue dv) =
-    FunctionalDomainValue dv
-mapFunctionalProofVariables _ (FunctionalHead functionalHead) =
-    FunctionalHead functionalHead
-
--- checks whether a pattern is functional or not
-isFunctionalPattern
-    :: Show (variable level)
-    => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> Either (UnificationError level) [FunctionalProof level variable]
-isFunctionalPattern tools = fixBottomUpVisitorM reduceM
-  where
-    reduceM (DomainValuePattern dv) =
-        Right [FunctionalDomainValue dv]
-    reduceM (VariablePattern v) =
-        Right [FunctionalVariable v]
-    reduceM (ApplicationPattern ap) =
-        if isFunctional (attributes tools patternHead)
-            then return (FunctionalHead patternHead : concat proofs)
-            else Left (NonFunctionalHead patternHead)
-      where
-        patternHead = applicationSymbolOrAlias ap
-        proofs = applicationChildren ap
-    reduceM _ = Left NonFunctionalPattern
-
 simplifyAnds
     :: ( Eq level
        , Ord (variable level)
@@ -318,11 +267,14 @@ preTransform tools (AndPattern ap) = if left == right
 
         (_, VariablePattern vp) -> -- add commutativity here
             Left (mlProposition_5_24_3 tools vp left)
-        (DomainValuePattern dv1, DomainValuePattern dv2) ->
-            case (dv1, dv2) of
-                ( DomainValue _ (StringLiteral_ (StringLiteral sl1))
-                  , DomainValue _ (StringLiteral_ (StringLiteral sl2))) ->
-                    Left $ Left (PatternClash (DomainValueClash sl1) (DomainValueClash sl2))
+        (DomainValuePattern (DomainValue _ dv1), DomainValuePattern (DomainValue _ dv2)) ->
+            case dv1 of
+                (StringLiteral_ (StringLiteral sl1)) ->
+                    case dv2 of
+                        (StringLiteral_ (StringLiteral sl2)) ->
+                            Left $ Left (PatternClash 
+                                (DomainValueClash sl1) (DomainValueClash sl2))
+                        _ -> Left $ Left $ UnsupportedPatterns
                 _ -> Left $ Left $ UnsupportedPatterns
         (ApplicationPattern ap1, ApplicationPattern ap2) ->
             let

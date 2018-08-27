@@ -14,23 +14,25 @@ module Test.Kore.Comparators where
 import Data.Functor.Foldable
        ( Fix )
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.Predicate.Predicate
-import Kore.Step.BaseStep
-import Kore.Step.Error
-import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( ExpandedPattern (..) )
-import Kore.Step.ExpandedPattern as PredicateSubstitution
-       ( PredicateSubstitution (..) )
-import Kore.Step.Function.Data as AttemptedFunction
-       ( AttemptedFunction (..) )
-import Kore.Step.OrOfExpandedPattern
-import Kore.Step.Simplification.Data
-       ( SimplificationProof )
-import Kore.Unification.Error
-import Kore.Unification.Unifier
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.Predicate.Predicate
+import           Kore.Step.BaseStep
+import           Kore.Step.Error
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..) )
+import           Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import           Kore.Step.Function.Data as AttemptedFunction
+                 ( AttemptedFunction (..) )
+import           Kore.Step.OrOfExpandedPattern
+import           Kore.Step.PatternAttributes
+import qualified Kore.Step.PatternAttributesError as PatternAttributesError
+import           Kore.Step.Simplification.Data
+                 ( SimplificationProof )
+import           Kore.Unification.Error
+import           Kore.Unification.Unifier
 
 import Test.Tasty.HUnit.Extensions
 
@@ -402,18 +404,59 @@ instance
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
+instance (Show child, Eq child, EqualWithExplanation child)
+  =>
+    StructEqualWithExplanation (Not level child)
+  where
+    structFieldsWithNames
+        expected@(Not _ _)
+        actual@(Not _ _)
+      = [ EqWrap
+            "notSort = "
+            (notSort expected)
+            (notSort actual)
+        , EqWrap
+            "notChild = "
+            (notChild expected)
+            (notChild actual)
+        ]
+    structConstructorName _ = "Not"
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Not level child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
+instance (Show child, Eq child, EqualWithExplanation child)
+  =>
+    StructEqualWithExplanation (Or level child)
+  where
+    structFieldsWithNames
+        expected@(Or _ _ _)
+        actual@(Or _ _ _)
+      = [ EqWrap
+            "orSort = "
+            (orSort expected)
+            (orSort actual)
+        , EqWrap
+            "orFirst = "
+            (orFirst expected)
+            (orFirst actual)
+        , EqWrap
+            "orSecond = "
+            (orSecond expected)
+            (orSecond actual)
+        ]
+    structConstructorName _ = "Or"
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Or level child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Rewrites level child)
@@ -503,10 +546,10 @@ instance EqualWithExplanation (SymbolOrAlias level)
 
 instance SumEqualWithExplanation (UnificationError level)
   where
-    sumConstructorPair (ConstructorClash a1 a2) (ConstructorClash b1 b2) =
+    sumConstructorPair (PatternClash a1 a2) (PatternClash b1 b2) =
         SumConstructorSameWithArguments
-            (EqWrap "ConstructorClash" (a1, a2) (b1, b2))
-    sumConstructorPair a1@(ConstructorClash _ _) a2 =
+            (EqWrap "PatternClash" (a1, a2) (b1, b2))
+    sumConstructorPair a1@(PatternClash _ _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
@@ -551,6 +594,11 @@ instance SumEqualWithExplanation (UnificationError level)
 instance EqualWithExplanation (UnificationError level)
   where
     compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (ClashReason level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance (Show (variable level), EqualWithExplanation (variable level))
@@ -611,6 +659,15 @@ instance
     , Show (variable level)
     )
     => EqualWithExplanation (FunctionalProof level variable)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( Eq (variable level)
+    , Show (variable level)
+    )
+    => EqualWithExplanation (FunctionProof level variable)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -890,4 +947,14 @@ instance
     => EqualWithExplanation (MultiOr a)
   where
     compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (PatternAttributesError.FunctionError level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (PatternAttributesError.FunctionalError level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

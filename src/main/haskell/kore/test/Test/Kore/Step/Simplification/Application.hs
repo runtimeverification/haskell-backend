@@ -55,7 +55,7 @@ import           Test.Kore
                  ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( constructorAttributes, functionAttributes,
+                 ( constructorFunctionalAttributes, functionAttributes,
                  makeMetadataTools, makeSortTools )
 import           Test.Kore.Step.Simplifier
                  ( mockSimplifier )
@@ -387,16 +387,16 @@ test_applicationSimplification =
         ]
     attributesMapping =
         [   ( aSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ,   ( bSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ,   ( cSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ,   ( dSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ,   ( fSymbol
             , Mock.functionAttributes
@@ -405,7 +405,7 @@ test_applicationSimplification =
             , Mock.functionAttributes
             )
         ,   ( sigmaSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ]
     mockSortTools = Mock.makeSortTools sortToolsMapping

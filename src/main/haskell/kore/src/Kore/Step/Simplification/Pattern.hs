@@ -188,15 +188,15 @@ simplifyInternal
                 symbolIdToEvaluator
                 p
         BottomPattern p -> return $ Bottom.simplify p
-        CeilPattern p -> return $ Ceil.simplify p
+        CeilPattern p -> return $ Ceil.simplify tools p
         DomainValuePattern p -> return $ DomainValue.simplify p
-        EqualsPattern p -> return $ Equals.simplify p
+        EqualsPattern p -> Equals.simplify tools p
         ExistsPattern p -> return $ Exists.simplify p
         FloorPattern p -> return $ Floor.simplify p
         ForallPattern p -> return $ Forall.simplify p
         IffPattern p -> return $ Iff.simplify p
         ImpliesPattern p -> return $ Implies.simplify p
-        InPattern p -> return $ In.simplify p
+        InPattern p -> return $ In.simplify tools p
         -- TODO(virgil): Move next up through patterns.
         NextPattern p -> return $ Next.simplify p
         NotPattern p -> return $ Not.simplify p

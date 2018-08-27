@@ -36,8 +36,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  make, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
-import           Kore.Step.Simplification.Not
-                 ( makeEvaluateNot, simplifyEvaluatedNot )
+import qualified Kore.Step.Simplification.Not as Not
+                 ( makeEvaluate, simplifyEvaluated )
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrOfExpandedPattern'
 children.
@@ -90,7 +90,7 @@ simplifyEvaluatedImplies first second
   | OrOfExpandedPattern.isTrue second =
     (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
-    simplifyEvaluatedNot first
+    Not.simplifyEvaluated first
   | otherwise =
     let
         (result, _proofs) =
@@ -118,7 +118,7 @@ simplifyEvaluateHalfImplies first second
   | ExpandedPattern.isTop second =
     (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isBottom second =
-    simplifyEvaluatedNot first
+    Not.simplifyEvaluated first
   | otherwise =
     -- TODO: Also merge predicate-only patterns for 'Or'
     case OrOfExpandedPattern.extractPatterns first of
@@ -147,7 +147,7 @@ makeEvaluateImplies
   | ExpandedPattern.isTop second =
     (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isBottom second =
-    makeEvaluateNot first
+    Not.makeEvaluate first
   | otherwise =
     makeEvaluateImpliesNonBool first second
 

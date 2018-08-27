@@ -1,9 +1,11 @@
 module Test.Kore.IndexedModule.MockMetadataTools
     ( makeMetadataTools
     , makeSortTools
+    , constructorFunctionalAttributes
     , constructorAttributes
     , defaultAttributes
     , functionAttributes
+    , functionalAttributes
     ) where
 
 import Data.Default
@@ -61,10 +63,26 @@ functionAttributes = StepperAttributes
     , hook = def
     }
 
+functionalAttributes :: StepperAttributes
+functionalAttributes = StepperAttributes
+    { isConstructor = False
+    , isFunctional = True
+    , isFunction = False
+    , hook = def
+    }
+
+constructorFunctionalAttributes :: StepperAttributes
+constructorFunctionalAttributes = StepperAttributes
+    { isConstructor = True
+    , isFunctional = True
+    , isFunction = False
+    , hook = def
+    }
+
 constructorAttributes :: StepperAttributes
 constructorAttributes = StepperAttributes
     { isConstructor = True
-    , isFunctional = True
+    , isFunctional = False
     , isFunction = False
     , hook = def
     }
