@@ -6,7 +6,6 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import           Data.Default
-                 ( Default (..) )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -57,7 +56,7 @@ axiomPatternsUnitTests =
                     { axiomPatternLeft = extractPurePattern varI1
                     , axiomPatternRight = extractPurePattern varI2
                     , axiomPatternRequires = wrapPredicate topAInt
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 )
                 ( koreSentenceToAxiomPattern Object
@@ -77,7 +76,7 @@ axiomPatternsUnitTests =
                     { axiomPatternLeft = extractPurePattern varI1
                     , axiomPatternRight = extractPurePattern varI2
                     , axiomPatternRequires = wrapPredicate topAInt
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 ]
                 ( koreIndexedModuleToAxiomPatterns Object
@@ -220,7 +219,7 @@ axiomPatternsIntegrationTests =
                           , varStateCell
                           ]
                     , axiomPatternRequires = wrapPredicate topTCell
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 )
                 (koreSentenceToAxiomPattern Object =<< parseAxiom

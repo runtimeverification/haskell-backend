@@ -4,7 +4,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Monad
                  ( when )
-import qualified Data.List as List
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -157,8 +156,7 @@ main = do
                         -- builtin functions
                         (Builtin.koreEvaluators indexedModule)
                 axiomPatterns =
-                    List.sort
-                        (koreIndexedModuleToAxiomPatterns Object indexedModule)
+                    koreIndexedModuleToAxiomPatterns Object indexedModule
                 metadataTools = constructorFunctions (extractMetadataTools indexedModule)
                 purePattern = makePurePattern parsedPattern
                 runningPattern =
