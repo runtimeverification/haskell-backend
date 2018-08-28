@@ -79,7 +79,7 @@ axiomPatternsUnitTests =
                     (verifyAndIndexDefinition
                         DoNotVerifyAttributes
                         Builtin.koreBuiltins
-                        (Definition
+                        Definition
                             { definitionAttributes = Attributes []
                             , definitionModules =
                                 [ Module
@@ -134,7 +134,6 @@ axiomPatternsUnitTests =
                                     }
                                 ]
                             }
-                        )
                     )
                 )
             )

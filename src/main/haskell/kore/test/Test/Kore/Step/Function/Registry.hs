@@ -7,7 +7,7 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 import           Data.Maybe
-                 ( isJust )
+                 ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
 
@@ -26,10 +26,23 @@ import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..), extractMetadataTools )
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
+import           Kore.Step.AxiomPatterns
+                 ( koreIndexedModuleToAxiomPatterns )
+import           Kore.Step.ExpandedPattern
+                 ( CommonExpandedPattern, ExpandedPattern (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( CommonApplicationFunctionEvaluator )
 import           Kore.Step.Function.Registry
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
+import           Kore.Variables.Fresh.IntCounter
+                 ( runIntCounter )
 
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Comparators ()
@@ -55,9 +68,11 @@ sortVarS = SortVariableSort sortVar
 sortS :: Sort level
 sortS = SortActualSort (SortActual (testId "S") [])
 
-fHead, sHead :: SymbolOrAlias level
+fHead, gHead, sHead, tHead :: SymbolOrAlias level
 fHead = groundHead "f" AstLocationTest
+gHead = groundHead "g" AstLocationTest
 sHead = groundHead "s" AstLocationTest
+tHead = groundHead "t" AstLocationTest
 
 testDef :: KoreDefinition
 testDef = simpleDefinitionFromSentences
@@ -68,6 +83,47 @@ testDef = simpleDefinitionFromSentences
             , updateAttributes
                 (Attributes [functionAttribute, constructorAttribute])
                 (simpleObjectSymbolSentence (SymbolName "f") (SortName "S"))
+            , updateAttributes
+                (Attributes [functionAttribute, constructorAttribute])
+                (simpleObjectSymbolSentence (SymbolName "g") (SortName "S"))
+            , asSentence
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [asUnified sortVar]
+                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomPattern =
+                        (patternPureToKore
+                            ( Implies_ sortVarS
+                                (Top_ sortVarS)
+                                (And_ sortVarS
+                                    (Equals_ sortS sortVarS
+                                        (App_ gHead [])
+                                        (App_ sHead [])
+                                    )
+                                    (Top_ sortVarS)
+                                )
+                            :: CommonPurePattern Object)
+                        )
+                    }
+                ::KoreSentenceAxiom)
+            , asSentence
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [asUnified sortVar]
+                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomPattern =
+                        (patternPureToKore
+                            ( Implies_ sortVarS
+                                (Top_ sortVarS)
+                                (And_ sortVarS
+                                    (Equals_ sortS sortVarS
+                                        (Top_ sortS)
+                                        (App_ fHead [])
+                                    )
+                                    (Top_ sortVarS)
+                                )
+                            :: CommonPurePattern Object)
+                        )
+                    }
+                ::KoreSentenceAxiom)
             , asSentence
                 (SentenceAxiom
                     { sentenceAxiomParameters = [asUnified sortVar]
@@ -85,8 +141,55 @@ testDef = simpleDefinitionFromSentences
                                 )
                             :: CommonPurePattern Object)
                         )
-                    }::KoreSentenceAxiom
-                )
+                    }
+                ::KoreSentenceAxiom)
+             , asSentence
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [asUnified sortVar]
+                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomPattern =
+                        (patternPureToKore
+                            ( Implies_ sortVarS
+                                (Top_ sortVarS)
+                                (And_ sortVarS
+                                    (Equals_ sortS sortVarS
+                                        (App_ fHead [])
+                                        (App_ tHead [])
+                                    )
+                                    (Top_ sortVarS)
+                                )
+                            :: CommonPurePattern Object)
+                        )
+                    }
+                ::KoreSentenceAxiom)
+            , asSentence
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [asUnified sortVar]
+                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomPattern =
+                        (patternPureToKore
+                            (Top_ sortS
+                            :: CommonPurePattern Object)
+                        )
+                    }
+                ::KoreSentenceAxiom)
+            , asSentence
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [asUnified sortVar]
+                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomPattern =
+                        (patternPureToKore
+                            (And_ sortS (Top_ sortS)
+                                (And_ sortS (Top_ sortS)
+                                    (Rewrites_ sortS
+                                        (App_ fHead [])
+                                        (App_ tHead [])
+                                    )
+                                )
+                            :: CommonPurePattern Object)
+                        )
+                    }
+                ::KoreSentenceAxiom)
             ]
 
 testIndexedModule :: KoreIndexedModule StepperAttributes
@@ -101,14 +204,14 @@ testIndexedModule =
         case verifyResult of
             Left err1            -> error (printError err1)
             Right indexedModules ->
-                case Map.lookup (ModuleName "test") indexedModules of
-                    Nothing ->
-                        error
-                            (  "The main module, '"
-                            ++ "test"
-                            ++ "', was not found. Check the --module flag."
-                            )
-                    Just m -> m
+                fromMaybe
+                    (error
+                        (  "The main module, '"
+                        ++ "test"
+                        ++ "', was not found. Check the --module flag."
+                        )
+                    )
+                    (Map.lookup (ModuleName "test") indexedModules)
 
 testId :: String -> Id level
 testId name =
@@ -121,13 +224,50 @@ testEvaluators
     :: Map.Map (Id Object) [CommonApplicationFunctionEvaluator Object]
 testEvaluators = extractEvaluators Object testIndexedModule
 
+testMetadataTools :: MetadataTools Object StepperAttributes
+testMetadataTools = extractMetadataTools testIndexedModule
+
 test_functionRegistry :: [TestTree]
 test_functionRegistry =
-    [ testCase "Checking that axiom is found"
+    [ testCase "Checking that two axioms are found for f"
         (assertEqual ""
-            True
-            (isJust
+            2
+            (length $ fromMaybe
+                (error "Should find precisely two axiom for f")
                 (Map.lookup (testId "f") testEvaluators)
             )
         )
+     , testCase "Checking that evaluator map has size 2"
+        (assertEqual ""
+            2
+            (Map.size testEvaluators)
+        )
+    , testCase "Checking that the indexed module contains a rewrite axiom"
+        (assertEqual ""
+            (1::Int)
+            (length (koreIndexedModuleToAxiomPatterns Object testIndexedModule))
+        )
+    , testCase "Checking that evaluator simplifies correctly"
+        (assertEqual ""
+            (App_ sHead [])
+            ( ExpandedPattern.term
+            $ head $ OrOfExpandedPattern.extractPatterns
+            $ fst $ fst $ (`runIntCounter` 0) $
+                ExpandedPattern.simplify
+                    testMetadataTools
+                    testEvaluators
+                    (makeExpandedPattern (App_ gHead []))
+            )
+        )
     ]
+  where
+    makeExpandedPattern
+        :: CommonPurePattern Object
+        -> CommonExpandedPattern Object
+    makeExpandedPattern pat =
+        ExpandedPattern
+        { term = pat
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+
