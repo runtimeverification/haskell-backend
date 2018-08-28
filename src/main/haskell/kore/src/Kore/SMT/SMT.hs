@@ -7,12 +7,16 @@ Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
+
 module Kore.SMT.SMT
-( translate
+( patternToSMT
 , provePatternIO
+, provePattern
+, SMTAttributes
 ) where
 
-import           Control.Monad
 import           Data.Default
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -20,15 +24,12 @@ import qualified Data.Set as Set
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
-import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 import Kore.ASTUtils.Substitution
 import Kore.Attribute.Parser
        ( ParseAttributes (..) )
 import Kore.Builtin.Hook
-import Kore.Implicit.Attributes
-       ( keyOnlyAttribute )
-import Kore.Step.StepperAttributes
+import Kore.IndexedModule.MetadataTools
 
 import Data.Reflection
 import Data.SBV
@@ -46,24 +47,13 @@ instance Default SMTAttributes where
 instance ParseAttributes SMTAttributes where
     attributesParser = do
         hook <- attributesParser
-        pure SMTAttributes {..}
-
-data SMTAttributes
-  = SMTAttributes
-  { hook :: !Hook
-  } deriving(Eq, Show)
-
-instance Default SMTAttributes where
-    def = SMTAttributes def
-
-instance ParseAttributes SMTAttributes where
-    attributesParser = do
-        hook <- attributesParser
         pure SMTAttributes {..} 
 
--- TODO: No hardcoded strings.
+-- | Returns `Just True` if the sentence is satisfied in all models,
+-- `Just False` if it has a counterexample,
+-- Nothing if timeout/undecidable.
 provePattern
-    :: Given SMTAttributes
+    :: Given (MetadataTools Object SMTAttributes)
     => CommonPurePattern Object
     -> Maybe Bool
 provePattern p =
@@ -73,21 +63,22 @@ provePattern p =
       _ -> Nothing
       where ThmResult res = unsafePerformIO $ provePatternIO p
 
+-- | Prints the result of SMT solving a pattern to the command line.
 provePatternIO
-    :: Given SMTAttributes
+    :: Given (MetadataTools Object SMTAttributes)
     => CommonPurePattern Object
     -> IO ThmResult
-provePatternIO = prove . translate
+provePatternIO = prove . patternToSMT
 
-translate
-    :: Given SMTAttributes
+patternToSMT
+    :: Given (MetadataTools Object SMTAttributes)
     => CommonPurePattern Object
     -> Predicate
-translate p = goTranslate
+patternToSMT p = goTranslate
   where
     vars = Set.toList $ freeVars p
     filterVars hookName =
-        filter (\v -> isHook (getSortHook $ variableSort v) hookName) vars
+        filter (\v -> (getSortHook $ variableSort v) == Hook (Just hookName)) vars
     boolVars = filterVars "BOOL.Bool"
     intVars  = filterVars "INT.Int"
     goTranslate = do
@@ -115,8 +106,9 @@ translate p = goTranslate
         goBoolean (Equals_  s _ x1 x2) = c x1 x2
           where
             c = case getHookString $ getSortHook s of
-                  "BOOL.Bool" -> goBinaryOp (.==) goInteger
-                  "INT.Int"   -> goBinaryOp (<=>) goBoolean
+                "BOOL.Bool" -> goBinaryOp (.==) goInteger
+                "INT.Int"   -> goBinaryOp (<=>) goBoolean
+                other -> error $ "Hook " ++ other ++ " is not supported by SMT"
         goBoolean (App_ h [x1, x2]) = c x1 x2
           where
             c = case getHookString $ getSymbolHook h of
@@ -124,20 +116,37 @@ translate p = goTranslate
                 "INT.ge" -> goBinaryOp (.>=) goInteger
                 "INT.gt" -> goBinaryOp (.>)  goInteger
                 "INT.lt" -> goBinaryOp (.<)  goInteger
+                "INT.eq" -> goBinaryOp (.==) goInteger
+                other -> error $ "Hook " ++ other ++ " is not supported by SMT"
         goBoolean (V v) = tryLookupVar v boolTable "BOOL.Bool"
+        goBoolean pat@(DV_ _ _) = goLiteral pat "BOOL.Bool" :: Symbolic SBool
+        goBoolean pat = error $ "Can't translate constructor: " ++ show pat
         goInteger
-            :: CommonPurePattern Object
+            :: Given (MetadataTools Object SMTAttributes)
+            => CommonPurePattern Object
             -> Symbolic SInteger
         goInteger (App_ h [x1, x2]) = c x1 x2
           where
             c = case getHookString $ getSymbolHook h of
-                  "INT.add" -> goBinaryOp (+) goInteger
-                  "INT.sub" -> goBinaryOp (-) goInteger
-                  "INT.mul" -> goBinaryOp (*) goInteger
-                  "INT.tdiv" -> goBinaryOp (sDiv) goInteger
-                  "INT.tmod" -> goBinaryOp (sMod) goInteger
-                  other -> error $ "Hook " ++ other ++ " is not supported by SMT"
+                "INT.add" -> goBinaryOp (+) goInteger
+                "INT.sub" -> goBinaryOp (-) goInteger
+                "INT.mul" -> goBinaryOp (*) goInteger
+                "INT.tdiv" -> goBinaryOp (sDiv) goInteger
+                "INT.tmod" -> goBinaryOp (sMod) goInteger
+                other -> error $ "Hook " ++ other ++ " is not supported by SMT"
         goInteger (V v) = tryLookupVar v intTable "INT.Int"
+        goInteger pat@(DV_ _ _) = goLiteral pat "INT.Int" :: Symbolic SInteger 
+        goInteger pat = error $ "Can't translate constructor: " ++ show pat
+        goLiteral 
+            :: (Given (MetadataTools Object SMTAttributes), Read a, SymWord a)
+            => CommonPurePattern Object 
+            -> String 
+            -> Symbolic (SBV a) 
+        goLiteral (DV_ s (StringLiteral_ (StringLiteral i))) hookName
+         | (getHookString $ getSortHook s) == hookName
+             = return $ literal $ read i
+        goLiteral pat _ = 
+          error $ "Expected a domain value literal: " ++ show pat
         tryLookupVar v table hookName
          | getHookString (getSortHook (variableSort v)) == hookName
             = case Map.lookup v table of
@@ -145,21 +154,18 @@ translate p = goTranslate
                 _ -> error "The impossible happened"
          | otherwise = error $ "Expected variable with hook " ++ hookName
 
-
-isHook h s =
-    h == Hook (Just s)
-
+getHookString :: Hook -> String
 getHookString (Hook (Just s)) = s
 getHookString _ = ""
 
 getSymbolHook
-    :: Given SMTAttributes
+    :: Given (MetadataTools Object SMTAttributes)
     => SymbolOrAlias Object
     -> Hook
-getSymbolHook sym = Hook $ Just $ getId $ symbolOrAliasConstructor sym --getSymbolHook_ given $ sym
+getSymbolHook sym = hook $ symAttributes given sym
 
 getSortHook
-    :: Given SMTAttributes
+    :: Given (MetadataTools Object SMTAttributes)
     => Sort Object
     -> Hook
-getSortHook sort = Hook $ Just $ getId $ (\s -> case s of (SortActualSort (SortActual n _)) -> n ; _ -> error (show s)) sort --getSortHook_ given $ sort
+getSortHook sort = hook $ sortAttributes given sort

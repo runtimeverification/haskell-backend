@@ -270,7 +270,7 @@ preTransform tools (AndPattern ap) = if left == right
                 head1 = applicationSymbolOrAlias ap1
                 head2 = applicationSymbolOrAlias ap2
             in
-                if isConstructor (attributes tools head1)
+                if isConstructor (symAttributes tools head1)
                     then if head1 == head2
                         then Right
                             $ ApplicationPattern Application
@@ -284,7 +284,7 @@ preTransform tools (AndPattern ap) = if left == right
                                             (applicationChildren ap1)
                                             (applicationChildren ap2)
                                 }
-                        else if isConstructor (attributes tools head2)
+                        else if isConstructor (symAttributes tools head2)
                             then Left $ Left (ConstructorClash head1 head2)
                             else Left $ Left (NonConstructorHead head2)
                     else Left $ Left (NonConstructorHead head1)

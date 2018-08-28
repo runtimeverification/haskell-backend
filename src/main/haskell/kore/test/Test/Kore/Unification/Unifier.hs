@@ -143,7 +143,8 @@ mockSortTools pHead = ApplicationSorts
 
 tools :: MetadataTools Object StepperAttributes
 tools = MetadataTools
-    { attributes = mockStepperAttributes
+    { symAttributes = mockStepperAttributes
+    , sortAttributes = undefined
     , sortTools = mockSortTools
     }
 

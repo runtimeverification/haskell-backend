@@ -1156,7 +1156,8 @@ mockSortTools = const ApplicationSorts
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { attributes = mockStepperAttributes
+    { symAttributes = mockStepperAttributes
+    , sortAttributes = undefined
     , sortTools = mockSortTools
     }
 

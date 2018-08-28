@@ -125,22 +125,22 @@ test_metadataTools =
     [ testCase "constructor object"
         (assertEqual ""
             True
-            (isConstructor (attributes metadataTools (symbolHead objectA)))
+            (isConstructor (symAttributes metadataTools (symbolHead objectA)))
         )
     , testCase "constructor meta"
         (assertEqual ""
             False
-            (isConstructor (attributes metadataTools (symbolHead metaA)))
+            (isConstructor (symAttributes metadataTools (symbolHead metaA)))
         )
     , testCase "functional object"
         (assertEqual ""
             False
-            (isFunctional (attributes metadataTools (symbolHead metaA)))
+            (isFunctional (symAttributes metadataTools (symbolHead metaA)))
         )
     , testCase "functional meta"
         (assertEqual ""
             False
-            (isFunctional (attributes metadataTools (symbolHead metaA)))
+            (isFunctional (symAttributes metadataTools (symbolHead metaA)))
         )
     , testCase "getArgumentSorts object"
         (assertEqual ""

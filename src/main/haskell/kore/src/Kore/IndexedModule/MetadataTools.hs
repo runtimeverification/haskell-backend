@@ -23,7 +23,8 @@ import Kore.IndexedModule.Resolvers
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
 data MetadataTools level attributes = MetadataTools
-    { attributes :: SymbolOrAlias level -> attributes
+    { symAttributes :: SymbolOrAlias level -> attributes
+    , sortAttributes :: Sort level -> attributes
     , sortTools  :: SortTools level
     }
 
@@ -40,6 +41,7 @@ extractMetadataTools
     -> MetadataTools level atts
 extractMetadataTools m =
   MetadataTools
-    { attributes = getHeadAttributes m
+    { symAttributes = getHeadAttributes m
+    , sortAttributes = getSortAttributes m
     , sortTools  = getHeadApplicationSorts m
     }

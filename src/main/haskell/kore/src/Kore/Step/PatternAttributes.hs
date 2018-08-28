@@ -114,7 +114,7 @@ functionalReduce _ (CharLiteralPattern str) =
 functionalReduce _ (VariablePattern v) =
     Right (FunctionalVariable v, [])
 functionalReduce tools (ApplicationPattern ap) =
-    if isFunctional (MetadataTools.attributes tools patternHead)
+    if isFunctional (MetadataTools.symAttributes tools patternHead)
         then return (FunctionalHead patternHead, concat proofs)
         else Left (NonFunctionalHead patternHead)
   where
@@ -140,7 +140,7 @@ functionReduce
     -> Pattern level variable [proof]
     -> Either (FunctionError level) (FunctionProof level variable, [proof])
 functionReduce tools (ApplicationPattern ap)
-  | isFunction (MetadataTools.attributes tools patternHead) =
+  | isFunction (MetadataTools.symAttributes tools patternHead) =
     Right (FunctionHead patternHead, concat proofs)
   where
     patternHead = applicationSymbolOrAlias ap

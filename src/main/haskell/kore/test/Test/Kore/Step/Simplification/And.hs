@@ -419,7 +419,8 @@ testSort =
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools = MetadataTools
-    { attributes = const Mock.constructorFunctionalAttributes
+    { symAttributes = const Mock.constructorFunctionalAttributes
+    , sortAttributes = undefined
     , sortTools = mockSortTools
     }
 
