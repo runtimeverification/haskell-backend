@@ -59,17 +59,11 @@ endmodule
 
 module IMP-STATE
   imports IMP-SYNTAX
-  imports STATE-BASIC
-  syntax Id ::= "sum" [token]
-              | "n" [token]
+  imports STATE
 
   syntax StateKey ::= Id
   syntax StateValue ::= Int
 
-  rule get((n |-> _:StateValue) S:State, sum) => get(S, sum)
-  rule get((sum |-> _:StateValue) S:State, n) => get(S, n)
-  rule set((n |-> V:StateValue) S:State, sum, V':StateValue) => (n |-> V:StateValue) set(S, sum, V')
-  rule set((sum |-> V:StateValue) S:State, n, V':StateValue) => (sum |-> V:StateValue) set(S, n, V')
 endmodule
 
 module IMP
@@ -108,9 +102,6 @@ module IMP
     requires notBool (inState(S, X))
   rule int .Ids; S => S  [structural]
 
-// verification ids
-  syntax Id ::= "n"     [token]
-              | "sum"   [token]
 endmodule
 
 /*

@@ -15,5 +15,10 @@ imp.kore: imp.k
 
 test: tests/sum.test tests/primes.test tests/collatz.test
 
+golden: tests/sum.output tests/primes.output tests/collatz.output
+	mv tests/sum.output tests/sum.output.golden
+	mv tests/primes.output tests/primes.output.golden
+	mv tests/collatz.output tests/collatz.output.golden
+
 clean:
 	rm -rf imp.kore imp-kompiled tests/*.imp.kore tests/*.output

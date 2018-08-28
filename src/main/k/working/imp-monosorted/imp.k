@@ -63,7 +63,7 @@ module IMP-STRICT
   rule ABool T1:Bool ~> HOLE && A2:BExp =>  T1 &&' A2
 endmodule
 
-module STATE-API
+module IMP-STATE
   imports IMP-SYNTAX
 
   syntax Assignment
@@ -74,34 +74,24 @@ module STATE-API
 
   syntax State ::= set(State, Id, Int) [function]
 
-  syntax Bool ::= inState(State, Id) [function]
-
-  syntax Int ::= get(State, Id) [function, partial]
-endmodule
-
-module STATE-BASIC
-  imports STATE-API
   rule set(.State, K:Id, V:Int) => (K |-> V) .State
   rule set((K:Id |-> _:Int) S:State, K:Id, V:Int)
        => (K |-> V) S
+  rule set((X:Id |-> V:Int) S:State, Y:Id, V':Int) => (X |-> V) set(S, Y, V')
+       requires X =/=K Y
+
+  syntax Bool ::= inState(State, Id) [function]
 
   rule inState(.State, _) => false
   rule inState((K:Id |-> _:Int) S:State, K:Id) => true
-
-  rule get((K:Id |-> V:Int) S:State, K:Id) => V
-endmodule
-
-
-module IMP-STATE
-  imports IMP-SYNTAX
-  imports STATE-BASIC
-  /* this should work once we get equality simplification for domain values */
-  rule get((X:Id |-> _:Int) S:State, Y:Id) => get(S, Y)
-       requires X =/=K Y
-  rule set((X:Id |-> V:Int) S:State, Y:Id, V':Int) => (X |-> V) set(S, Y, V')
-       requires X =/=K Y
   rule inState((K:Id |-> _:Int) S:State, K':Id) => inState(S, K')
        requires K =/=K K'
+
+  syntax Int ::= get(State, Id) [function, partial]
+
+  rule get((K:Id |-> V:Int) S:State, K:Id) => V
+  rule get((X:Id |-> _:Int) S:State, Y:Id) => get(S, Y)
+       requires X =/=K Y
 
 endmodule
 
@@ -140,8 +130,4 @@ module IMP
   rule <k> int (X,Xs => Xs);_ </k> <state> S:State => set(S, X, 0) </state>
     requires notBool (inState(S, X))
   rule int .Ids; S => S  [structural]
-
-// verification ids
-  syntax Id ::= "n"     [token]
-              | "sum"   [token]
 endmodule
