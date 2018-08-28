@@ -19,8 +19,7 @@ import           Kore.ASTUtils.SmartConstructors
                  mkStringLiteral, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
-import           Kore.Error
-                 ( printError )
+import qualified Kore.Error
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SortTools )
 import           Kore.Predicate.Predicate
@@ -618,9 +617,9 @@ evaluateOr
     -> Equals Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluateOr tools equals =
-    case evalSimplifier (simplify tools equals) of
-        Left err -> error (printError err)
-        Right (result, _) -> result
+    either (error . Kore.Error.printError) fst
+        $ evalSimplifier
+        $ simplify tools equals
 
 evaluate
     :: MetadataTools Object StepperAttributes
@@ -636,7 +635,7 @@ evaluateGeneric
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 evaluateGeneric tools first second =
-    case evalSimplifier (makeEvaluate tools first second) of
-        Left err -> error (printError err)
-        Right (result, _) -> result
+    either (error . Kore.Error.printError) fst
+        $ evalSimplifier
+        $ makeEvaluate tools first second
 

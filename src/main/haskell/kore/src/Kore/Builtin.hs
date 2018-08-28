@@ -86,8 +86,8 @@ koreEvaluators = evaluators builtins
         Map.unions
             [ Bool.builtinFunctions
             , Int.builtinFunctions
-            , Map.builtinFunctions
             , KEqual.builtinFunctions
+            , Map.builtinFunctions
             ]
 
 {- | Construct an evaluation context for the given builtin functions.

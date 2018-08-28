@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Control.Monad.Except
-       ( runExceptT )
 import Data.Reflection
        ( give )
 
@@ -41,6 +39,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.And
                  ( makeEvaluate, simplify )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Variables.Fresh.IntCounter
@@ -377,9 +377,9 @@ evaluate
     :: And Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate patt =
-    either (error . printError) fst $ fst $ runIntCounter
-        (runExceptT $ simplify mockMetadataTools patt)
-        0
+    either (error . printError) fst
+        $ evalSimplifier
+        $ simplify mockMetadataTools patt
 
 evaluatePatterns
     :: CommonExpandedPattern Object

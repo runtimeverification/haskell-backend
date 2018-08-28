@@ -5,8 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Control.Monad.Except
-                 ( runExceptT )
 import           Data.Default
                  ( def )
 import qualified Data.Map as Map
@@ -42,12 +40,10 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( CommonPureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 Simplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -277,16 +273,9 @@ evaluate
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 evaluate metadataTools functionIdToEvaluator patt =
-    case result of
-        Right (p, _) -> p
-        Left err -> error (printError err)
-  where
-    (result, _) =
-        runIntCounter
-            (runExceptT
-                (Pattern.simplify metadataTools functionIdToEvaluator patt)
-            )
-            0
+    either (error . printError) fst
+        $ evalSimplifier
+        $ Pattern.simplify metadataTools functionIdToEvaluator patt
 
 mockSortTools :: SortTools Object
 mockSortTools = Mock.makeSortTools Mock.sortToolsMapping

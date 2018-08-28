@@ -5,8 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Control.Monad.Except
-       ( runExceptT )
 import Data.Default
        ( def )
 import Data.List
@@ -47,9 +45,9 @@ import           Kore.Step.Function.UserDefined
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 evalSimplifier )
 import           Kore.Step.StepperAttributes
-import           Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()
 import Test.Kore.Step.Simplifier
@@ -455,12 +453,9 @@ evaluateWithAxiom
             }
     evaluated =
         either (error . printError) fst
-            (fst $ runIntCounter
-                (runExceptT $ axiomFunctionEvaluator
-                    axiom
-                    metadataTools
-                    simplifier
-                    app
-                )
-                0
-            )
+            $ evalSimplifier
+            $ axiomFunctionEvaluator
+                axiom
+                metadataTools
+                simplifier
+                app

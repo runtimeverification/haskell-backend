@@ -169,27 +169,27 @@ main = do
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
             finalExpandedPattern <- clockSomething "Executing"
-                $ either (error . printError) fst
-                $ evalSimplifier
-                $ do
-                    simplifiedPatterns <-
-                        ExpandedPattern.simplify
+                    $ either (error . Kore.Error.printError) fst
+                    $ evalSimplifier
+                    $ do
+                        simplifiedPatterns <-
+                            ExpandedPattern.simplify
+                                metadataTools
+                                functionRegistry
+                                expandedPattern
+                        let
+                            initialPattern =
+                                case
+                                    OrOfExpandedPattern.extractPatterns
+                                        (fst simplifiedPatterns) of
+                                    [] -> ExpandedPattern.bottom
+                                    (config : _) -> config
+                        pickFirstStepper
                             metadataTools
                             functionRegistry
-                            expandedPattern
-                    let
-                        initialPattern =
-                            case
-                                OrOfExpandedPattern.extractPatterns
-                                    (fst simplifiedPatterns) of
-                                [] -> ExpandedPattern.bottom
-                                (config : _) -> config
-                    pickFirstStepper
-                        metadataTools
-                        functionRegistry
-                        axiomPatterns
-                        maxStepCount
-                        initialPattern
+                            axiomPatterns
+                            maxStepCount
+                            initialPattern
             putStrLn $ unparseToString
                 (ExpandedPattern.term finalExpandedPattern)
 

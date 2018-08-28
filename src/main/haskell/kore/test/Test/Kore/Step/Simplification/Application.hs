@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
@@ -46,10 +44,10 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Application
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Variables.Fresh.IntCounter
 
 import           Test.Kore
                  ( testId )
@@ -442,9 +440,6 @@ evaluate
     symbolIdToEvaluator
     application
   =
-    either (error . printError) fst $ fst $
-        runIntCounter
-            (runExceptT
-                (simplify tools simplifier symbolIdToEvaluator application)
-            )
-            0
+    either (error . printError) fst
+        $ evalSimplifier
+        $ simplify tools simplifier symbolIdToEvaluator application
