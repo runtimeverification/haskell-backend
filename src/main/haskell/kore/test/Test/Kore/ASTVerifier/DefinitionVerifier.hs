@@ -83,7 +83,7 @@ expectSuccess description definition =
             verifySuccess
             (verifyDefinition
                 attributesVerificationForTests
-                Builtin.koreBuiltins
+                Builtin.koreVerifiers
                 definition
             )
         )
@@ -96,7 +96,7 @@ expectFailureWithError description expectedError definition =
         (case
             verifyDefinition
                 attributesVerificationForTests
-                Builtin.koreBuiltins
+                Builtin.koreVerifiers
                 definition
           of
             Right _ ->

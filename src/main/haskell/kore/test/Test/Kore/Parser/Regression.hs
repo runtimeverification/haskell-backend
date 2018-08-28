@@ -94,7 +94,7 @@ verify definition =
     case
         verifyDefinition
             attributesVerification
-            Builtin.koreBuiltins
+            Builtin.koreVerifiers
             definition
       of
         Left e  -> Left (printError e)

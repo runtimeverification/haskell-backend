@@ -2785,7 +2785,7 @@ defaultIndexedModuleWithError = do
         castError
         (verifyAndIndexDefinition
             DoNotVerifyAttributes
-            Builtin.koreBuiltins
+            Builtin.koreVerifiers
             definition
         )
     case Map.lookup moduleName1 modules of

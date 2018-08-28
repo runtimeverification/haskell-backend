@@ -31,6 +31,7 @@ import Kore.ASTUtils.SmartConstructors
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.PatternAttributes
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 import Kore.Unification.UnifierImpl

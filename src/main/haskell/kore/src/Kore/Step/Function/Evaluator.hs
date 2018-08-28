@@ -41,13 +41,12 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, make, merge )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..) )
+                 ( PureMLPatternSimplifier (..), Simplifier,
+                 SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 import           Kore.Variables.Int
                  ( IntVariable (..) )
 
@@ -74,8 +73,7 @@ evaluateApplication
     -- ^ Aggregated children predicate and substitution.
     -> Application level (PureMLPattern level variable)
     -- ^ The pattern to be evaluated
-    -> IntCounter
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
 evaluateApplication
     tools
     simplifier
@@ -173,8 +171,7 @@ mergeWithConditionAndSubstitution
     -- ^ Condition and substitution to add.
     -> (AttemptedFunction level variable, SimplificationProof level)
     -- ^ AttemptedFunction to which the condition should be added.
-    -> IntCounter
-        (AttemptedFunction level variable, SimplificationProof level)
+    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
 mergeWithConditionAndSubstitution
     _ _ _ (AttemptedFunction.NotApplicable, _proof)
   =

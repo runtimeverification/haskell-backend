@@ -25,13 +25,12 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..) )
+                 ( PureMLPatternSimplifier (..), Simplifier,
+                 SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 import           Kore.Variables.Int
                  ( IntVariable (..) )
 
@@ -57,8 +56,7 @@ mergeWithPredicateSubstitution
     -- ^ PredicateSubstitution to add.
     -> OrOfExpandedPattern level variable
     -- ^ Pattern to which the condition should be added.
-    -> IntCounter
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
     simplifier

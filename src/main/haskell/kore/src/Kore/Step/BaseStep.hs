@@ -46,6 +46,8 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern),
                  PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.PatternAttributes
+                 ( FunctionalProof (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
@@ -58,9 +60,8 @@ import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( UnificationError, ctorSubstitutionCycleToBottom )
 import           Kore.Unification.Unifier
-                 ( FunctionalProof (..), UnificationProof (..),
-                 UnificationSubstitution, mapSubstitutionVariables,
-                 unificationProcedure )
+                 ( UnificationProof (..), UnificationSubstitution,
+                 mapSubstitutionVariables, unificationProcedure )
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh.Class

@@ -16,6 +16,7 @@ import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.Parser.CString
        ( escapeCString )
+import Kore.Step.PatternAttributes
 import Kore.Unification.Unifier
 
 import Data.String
@@ -754,11 +755,11 @@ instance (MetaOrObject level, PrettyPrint (variable level))
   where
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v
-    prettyPrint flags (FunctionalCharLiteral cl) =
-        writeOneFieldStruct flags "FunctionalCharLiteral" cl
-    prettyPrint flags (FunctionalStringLiteral sl) =
-        writeOneFieldStruct flags "FunctionalStringLiteral" sl
     prettyPrint flags (FunctionalDomainValue dv) =
         writeOneFieldStruct flags "FunctionalDomainValue" dv
     prettyPrint flags (FunctionalHead h) =
         writeOneFieldStruct flags "FunctionalHead" h
+    prettyPrint flags (FunctionalStringLiteral l) =
+        writeOneFieldStruct flags "FunctionalStringLiteral" l
+    prettyPrint flags (FunctionalCharLiteral l) =
+        writeOneFieldStruct flags "FunctionalCharLiteral" l

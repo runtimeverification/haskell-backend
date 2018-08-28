@@ -14,14 +14,13 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
+import           Kore.Step.Simplification.Data
+                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 Simplifier )
 
 mockSimplifier
     :: (MetaOrObject level, Eq level, Eq (variable level))
@@ -66,7 +65,7 @@ mockSimplifierHelper
             )
         ]
     -> PureMLPattern level variable
-    -> IntCounter
+    -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 mockSimplifierHelper unevaluatedConverter [] patt =
     return

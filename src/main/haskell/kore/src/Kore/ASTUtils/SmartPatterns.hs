@@ -45,7 +45,7 @@ import Data.Functor.Foldable
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
-       (PureMLPattern)
+       ( PureMLPattern )
 
 
 pattern And_
@@ -151,12 +151,14 @@ pattern Var_
     -> PureMLPattern level var
 
 pattern StringLiteral_
-  :: StringLiteral
-  -> PureMLPattern Meta var
+  :: () => (level ~ Meta)
+  => StringLiteral
+  -> PureMLPattern level var
 
 pattern CharLiteral_
-  :: CharLiteral
-  -> PureMLPattern Meta var
+  :: () => (level ~ Meta)
+  => CharLiteral
+  -> PureMLPattern level var
 
 -- No way to make multiline pragma?
 -- NOTE: If you add a case to the AST type, add another synonym here.

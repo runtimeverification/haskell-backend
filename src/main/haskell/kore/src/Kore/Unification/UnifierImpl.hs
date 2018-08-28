@@ -28,6 +28,8 @@ import Kore.ASTHelpers
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.PatternAttributes
+       ( FunctionalProof (..), isFunctionalPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
@@ -177,72 +179,6 @@ simplifyCombinedItems =
     addContents (CombinedUnificationProof items) proofItems =
         items ++ proofItems
     addContents other proofItems = other : proofItems
-
--- |@FunctionalProof@ is used for providing arguments that a pattern is
--- functional.  Currently we only support arguments stating that a
--- pattern consists only of functional symbols, variables, domain values, and
--- string/char literals.
--- Hence, a proof that a pattern is functional is a list of @FunctionalProof@.
--- TODO: replace this datastructures with proper ones representing
--- both hypotheses and conclusions in the proof object.
-data FunctionalProof level variable
-    = FunctionalVariable (variable level)
-    -- ^Variables are functional as per Corollary 5.19
-    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-    -- |= ∃y . x = y
-    | FunctionalStringLiteral StringLiteral
-    -- ^String literals are functional as they represent one value in the model.
-    | FunctionalCharLiteral CharLiteral
-    -- ^Char literals are functional as they represent one value in the model.
-    | FunctionalDomainValue (DomainValue level (PureMLPattern Meta Variable))
-    -- ^Domain values are functional as they represent one value in the model.
-    | FunctionalHead (SymbolOrAlias level)
-    -- ^Head of a total function, conforming to Definition 5.21
-    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-  deriving (Eq, Show)
-
-{-| 'mapFunctionalProofVariables' replaces all variables in a 'FunctionalProof'
-using the provided mapping.
--}
-mapFunctionalProofVariables
-    :: (variableFrom level -> variableTo level)
-    -> FunctionalProof level variableFrom
-    -> FunctionalProof level variableTo
-mapFunctionalProofVariables mapper (FunctionalVariable variable) =
-    FunctionalVariable (mapper variable)
-mapFunctionalProofVariables _ (FunctionalStringLiteral sl) =
-    FunctionalStringLiteral sl
-mapFunctionalProofVariables _ (FunctionalCharLiteral cl) =
-    FunctionalCharLiteral cl
-mapFunctionalProofVariables _ (FunctionalDomainValue dv) =
-    FunctionalDomainValue dv
-mapFunctionalProofVariables _ (FunctionalHead functionalHead) =
-    FunctionalHead functionalHead
-
--- checks whether a pattern is functional or not
-isFunctionalPattern
-    :: Show (variable level)
-    => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> Either (UnificationError level) [FunctionalProof level variable]
-isFunctionalPattern tools = fixBottomUpVisitorM reduceM
-  where
-    reduceM (CharLiteralPattern cl) =
-        Right [FunctionalCharLiteral cl]
-    reduceM (StringLiteralPattern sl) =
-        Right [FunctionalStringLiteral sl]
-    reduceM (DomainValuePattern dv) =
-        Right [FunctionalDomainValue dv]
-    reduceM (VariablePattern v) =
-        Right [FunctionalVariable v]
-    reduceM (ApplicationPattern ap) =
-        if isFunctional (attributes tools patternHead)
-            then return (FunctionalHead patternHead : concat proofs)
-            else Left (NonFunctionalHead patternHead)
-      where
-        patternHead = applicationSymbolOrAlias ap
-        proofs = applicationChildren ap
-    reduceM _ = Left NonFunctionalPattern
 
 simplifyAnds
     :: ( Eq level

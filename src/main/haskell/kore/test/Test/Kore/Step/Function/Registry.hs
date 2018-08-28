@@ -39,10 +39,10 @@ import           Kore.Step.Function.Data
                  ( CommonApplicationFunctionEvaluator )
 import           Kore.Step.Function.Registry
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
 
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Comparators ()
@@ -198,7 +198,7 @@ testIndexedModule =
         attributesVerification = defaultAttributesVerification Proxy
         verifyResult = verifyAndIndexDefinition
             attributesVerification
-            Builtin.koreBuiltins
+            Builtin.koreVerifiers
             testDef
     in
         case verifyResult of
@@ -252,11 +252,12 @@ test_functionRegistry =
             (App_ sHead [])
             ( ExpandedPattern.term
             $ head $ OrOfExpandedPattern.extractPatterns
-            $ fst $ fst $ (`runIntCounter` 0) $
-                ExpandedPattern.simplify
-                    testMetadataTools
-                    testEvaluators
-                    (makeExpandedPattern (App_ gHead []))
+            $ either (error . Kore.Error.printError) fst
+            $ evalSimplifier
+            $ ExpandedPattern.simplify
+                testMetadataTools
+                testEvaluators
+                (makeExpandedPattern (App_ gHead []))
             )
         )
     ]

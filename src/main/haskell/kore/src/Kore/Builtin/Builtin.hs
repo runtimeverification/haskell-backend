@@ -35,10 +35,14 @@ module Kore.Builtin.Builtin
     , verifyStringLiteral
     , parseDomainValue
     , notImplemented
+    , binaryOperator
+    , unaryOperator
     ) where
 
 import           Control.Monad
                  ( zipWithM_ )
+import           Control.Monad.Except
+                 ( MonadError )
 import qualified Control.Monad.Except as Except
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.HashMap.Strict
@@ -46,42 +50,56 @@ import           Data.HashMap.Strict
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Semigroup
                  ( Semigroup (..) )
-import Data.Void ( Void )
-import Text.Megaparsec ( Parsec )
+import           Data.Void
+                 ( Void )
+import           Text.Megaparsec
+                 ( Parsec )
 import qualified Text.Megaparsec as Parsec
 
-import Kore.AST.Common
-       ( DomainValue (..), Id (..),
-       Pattern (DomainValuePattern, StringLiteralPattern), Sort (..),
-       SortActual (..), SortVariable (..), StringLiteral (..), Symbol (..),
-       Variable )
-import Kore.AST.Error
-       ( withLocationAndContext )
-import Kore.AST.Kore
-       ( CommonKorePattern )
-import Kore.AST.MetaOrObject
-       ( Meta, Object )
-import Kore.AST.PureML
-       ( CommonPurePattern )
-import Kore.AST.Sentence
-       ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
-       SentenceSymbol (..) )
-import Kore.ASTUtils.SmartPatterns ( pattern StringLiteral_ )
-import Kore.ASTVerifier.Error
-       ( VerifyError )
-import Kore.Attribute.Parser
-       ( parseAttributes )
-import Kore.Builtin.Hook
-       ( Hook (..) )
-import Kore.Error
-       ( Error, castError, koreFail, koreFailWhen, withContext )
-import Kore.IndexedModule.IndexedModule
-       ( SortDescription )
-import Kore.Step.Function.Data
-       ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
-       AttemptedFunction (NotApplicable) )
-import Kore.Step.Simplification.Data
-       ( SimplificationProof (SimplificationProof) )
+import           Kore.AST.Common
+                 ( Application (..), DomainValue (..), Id (..),
+                 Pattern (DomainValuePattern, StringLiteralPattern), Sort (..),
+                 SortActual (..), SortVariable (..), StringLiteral (..),
+                 Symbol (..), SymbolOrAlias, Variable )
+import           Kore.AST.Error
+                 ( withLocationAndContext )
+import           Kore.AST.Kore
+                 ( CommonKorePattern )
+import           Kore.AST.MetaOrObject
+                 ( Meta, Object )
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
+import           Kore.AST.Sentence
+                 ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
+                 SentenceSymbol (..) )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.ASTUtils.SmartPatterns
+                 ( pattern StringLiteral_ )
+import           Kore.ASTVerifier.Error
+                 ( VerifyError )
+import           Kore.Attribute.Parser
+                 ( parseAttributes )
+import           Kore.Builtin.Hook
+                 ( Hook (..) )
+import           Kore.Error
+                 ( Error )
+import qualified Kore.Error
+import           Kore.IndexedModule.IndexedModule
+                 ( SortDescription )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..) )
+import           Kore.Step.ExpandedPattern
+                 ( CommonExpandedPattern )
+import           Kore.Step.Function.Data
+                 ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
+                 AttemptedFunction (..) )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Simplification.Data
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 Simplifier )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 type Parser = Parsec Void String
 
@@ -239,8 +257,10 @@ verifySortDecl
     ("In sort '" ++ sortName ++ "' declaration")
     (case sentenceSortParameters of
         [] -> pure ()
-        _ -> koreFail ("Expected 0 sort parameters, found "
-                        ++ show (length sentenceSortParameters))
+        _ ->
+            Kore.Error.koreFail
+                ("Expected 0 sort parameters, found "
+                    ++ show (length sentenceSortParameters))
     )
 
 {- | Verify the occurrence of a builtin sort.
@@ -257,15 +277,15 @@ verifySort
 verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
     do
         SentenceSort { sentenceSortAttributes } <- findSort sortActualName
-        let
-            expectHook = Hook (Just builtinName)
-        declHook <- castError (parseAttributes sentenceSortAttributes)
-        koreFailWhen (expectHook /= declHook)
+        let expectHook = Hook (Just builtinName)
+        declHook <- Kore.Error.castError (parseAttributes sentenceSortAttributes)
+        Kore.Error.koreFailWhen (expectHook /= declHook)
             ("Sort '" ++ getId sortActualName
-             ++ "' is not hooked to builtin sort '"
-             ++ builtinName ++ "'")
+                ++ "' is not hooked to builtin sort '"
+                ++ builtinName ++ "'")
 verifySort _ _ (SortVariableSort SortVariable { getSortVariable }) =
-    koreFail ("unexpected sort variable '" ++ getId getSortVariable ++ "'")
+    Kore.Error.koreFail
+        ("unexpected sort variable '" ++ getId getSortVariable ++ "'")
 
 {- | Verify a builtin symbol declaration.
 
@@ -292,7 +312,8 @@ verifySymbol
         symbolId
         ("In symbol '" ++ symbolName ++ "' declaration")
         (do
-            withContext "In result sort" (verifyResult findSort result)
+            Kore.Error.withContext "In result sort"
+                (verifyResult findSort result)
             verifySymbolArguments verifyArguments findSort decl
         )
 
@@ -313,9 +334,9 @@ verifySymbolArguments
     findSort
     SentenceSymbol { sentenceSymbolSorts = sorts }
   =
-    withContext "In argument sorts"
+    Kore.Error.withContext "In argument sorts"
     (do
-        koreFailWhen (arity /= builtinArity)
+        Kore.Error.koreFailWhen (arity /= builtinArity)
             ("Expected " ++ show builtinArity
              ++ " arguments, found " ++ show arity)
         zipWithM_ (\verify sort -> verify findSort sort) verifyArguments sorts
@@ -324,10 +345,17 @@ verifySymbolArguments
     builtinArity = length verifyArguments
     arity = length sorts
 
+{- | Verify a domain value pattern.
+
+  If the given pattern is not a domain value, it is skipped.
+
+  See also: 'verifyStringLiteral'
+
+ -}
 verifyDomainValue
     :: String  -- ^ Builtin sort name
     -> DomainValueVerifier
-    -- ^ Validation function
+    -- ^ validation function
     -> PatternVerifier
 verifyDomainValue builtinSort validate =
     PatternVerifier { runPatternVerifier }
@@ -341,7 +369,7 @@ verifyDomainValue builtinSort validate =
     runPatternVerifier findSort =
         \case
             DomainValuePattern dv@DomainValue { domainValueSort } ->
-                withContext
+                Kore.Error.withContext
                     ("Verifying builtin sort '" ++ builtinSort ++ "'")
                     (skipOtherSorts domainValueSort (validate dv))
             _ -> return ()  -- no domain value to verify
@@ -363,15 +391,28 @@ verifyDomainValue builtinSort validate =
               Nothing -> return ()
               Just () -> next
 
+{- | Verify a literal string domain value.
+
+  If the given domain value is not a literal string, it is skipped.
+
+  See also: 'verifyDomainValue'
+
+ -}
 verifyStringLiteral
     :: (StringLiteral -> Either (Error VerifyError) ())
-    -> (DomainValue Object (CommonPurePattern Meta)
-    -> Either (Error VerifyError) ())
+    -- ^ validation function
+    -> DomainValueVerifier
 verifyStringLiteral validate DomainValue { domainValueChild } =
     case Functor.Foldable.project domainValueChild of
         StringLiteralPattern lit@StringLiteral {} -> validate lit
         _ -> return ()
 
+{- | Run a parser in a domain value pattern.
+
+  An error is thrown if the domain value does not contain a literal string.
+  The parsed value is returned.
+
+ -}
 parseDomainValue
     :: Parser a
     -> DomainValue Object (CommonPurePattern Meta)
@@ -380,7 +421,7 @@ parseDomainValue
     parser
     DomainValue { domainValueChild }
   =
-    withContext "Parsing domain value"
+    Kore.Error.withContext "While parsing domain value"
         (case domainValueChild of
             StringLiteral_ StringLiteral { getStringLiteral = lit } ->
                 let parsed =
@@ -394,3 +435,130 @@ parseDomainValue
   where
     castParseError =
         either (Kore.Error.koreFail . Parsec.parseErrorPretty) pure
+
+{- | Return the supplied pattern as an 'AttemptedFunction'.
+
+  No substitution or predicate is applied.
+
+  See also: 'ExpandedPattern'
+ -}
+appliedFunction
+    :: Monad m
+    => CommonExpandedPattern Object
+    -> m (AttemptedFunction Object Variable)
+appliedFunction epat =
+    (return . Applied . OrOfExpandedPattern.make) [epat]
+
+{- | Look up the result sort of a symbol or alias
+ -}
+getResultSort :: MetadataTools level attrs -> SymbolOrAlias level -> Sort level
+getResultSort MetadataTools { sortTools } symbol =
+    case sortTools symbol of
+        ApplicationSorts { applicationSortsResult } -> applicationSortsResult
+
+{- | Construct a builtin binary operator.
+
+  Both operands have the same builtin type, which may be different from the
+  result type.
+
+  The function is skipped if its arguments are not domain values.
+  It is an error if the wrong number of arguments is given; this must be checked
+  during verification.
+
+ -}
+binaryOperator
+    :: Parser a
+    -- ^ Parse operand
+    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -- ^ Render result as pattern with given sort
+    -> String
+    -- ^ Builtin function name (for error messages)
+    -> (a -> a -> b)
+    -- ^ Operation on builtin types
+    -> Function
+binaryOperator
+    parser
+    asPattern
+    ctx
+    op
+  =
+    functionEvaluator ctx binaryOperator0
+  where
+    get = Except.liftEither . Kore.Error.castError . parseDomainValue parser
+    binaryOperator0 _ _ resultSort children =
+        case Functor.Foldable.project <$> children of
+            [DomainValuePattern a, DomainValuePattern b] -> do
+                -- Apply the operator to two domain values
+                r <- op <$> get a <*> get b
+                (appliedFunction . asPattern resultSort) r
+            [_, _] -> return NotApplicable
+            _ -> wrongArity
+
+{- | Construct a builtin unary operator.
+
+  The operand type may differ from the result type.
+
+  The function is skipped if its arguments are not domain values.
+  It is an error if the wrong number of arguments is given; this must be checked
+  during verification.
+
+ -}
+unaryOperator
+    :: Parser a
+    -- ^ Parse operand
+    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -- ^ Render result as pattern with given sort
+    -> String
+    -- ^ Builtin function name (for error messages)
+    -> (a -> b)
+    -- ^ Operation on builtin types
+    -> Function
+unaryOperator
+    parser
+    asPattern
+    ctx
+    op
+  =
+    functionEvaluator ctx unaryOperator0
+  where
+    get = Except.liftEither . Kore.Error.castError . parseDomainValue parser
+    unaryOperator0 _ _ resultSort children =
+        case Functor.Foldable.project <$> children of
+            [DomainValuePattern a] -> do
+                -- Apply the operator to a domain value
+                r <- op <$> get a
+                (appliedFunction . asPattern resultSort) r
+            [_] -> return NotApplicable
+            _ -> wrongArity
+
+functionEvaluator
+    :: String
+       -- ^ Builtin function name (for error messages)
+    -> (  MetadataTools Object StepperAttributes
+       -> CommonPureMLPatternSimplifier Object
+       -> Sort Object
+       -> [CommonPurePattern Object]
+       -> Simplifier (AttemptedFunction Object Variable)
+       )
+    -- ^ Builtin function implementation
+    -> Function
+functionEvaluator ctx impl =
+    ApplicationFunctionEvaluator evaluator
+  where
+    evaluator
+        tools
+        simplifier
+        Application
+            { applicationSymbolOrAlias =
+                (getResultSort tools -> resultSort)
+            , applicationChildren
+            }
+      =
+        Kore.Error.withContext ctx
+            (do
+                attempt <- impl tools simplifier resultSort applicationChildren
+                return (attempt, SimplificationProof)
+            )
+
+wrongArity :: MonadError (Error w) m => m a
+wrongArity = Kore.Error.koreFail "Wrong number of arguments"

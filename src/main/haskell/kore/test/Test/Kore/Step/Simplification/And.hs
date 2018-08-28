@@ -20,6 +20,8 @@ import           Kore.ASTUtils.SmartConstructors
                  ( getSort, mkAnd, mkApp, mkBottom, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
+import           Kore.Error
+                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (MetadataTools), SortTools )
 import qualified Kore.IndexedModule.MetadataTools
@@ -37,6 +39,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.And
                  ( makeEvaluate, simplify )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Variables.Fresh.IntCounter
@@ -44,7 +48,7 @@ import           Kore.Variables.Fresh.IntCounter
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( constructorAttributes, makeMetadataTools )
+                 ( constructorFunctionalAttributes, makeMetadataTools )
 import           Test.Tasty.HUnit.Extensions
 
 test_andSimplification :: [TestTree]
@@ -204,8 +208,8 @@ test_andSimplification =
                     , substitution = []
                     }
                 (evaluatePatternsWithAttributes
-                    [ (fSymbol, Mock.constructorAttributes)
-                    , (gSymbol, Mock.constructorAttributes)
+                    [ (fSymbol, Mock.constructorFunctionalAttributes)
+                    , (gSymbol, Mock.constructorFunctionalAttributes)
                     ]
                     ExpandedPattern
                         { term = mkTop
@@ -373,9 +377,9 @@ evaluate
     :: And Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate patt =
-    fst $ fst $ runIntCounter
-        (simplify mockMetadataTools patt)
-        0
+    either (error . printError) fst
+        $ evalSimplifier
+        $ simplify mockMetadataTools patt
 
 evaluatePatterns
     :: CommonExpandedPattern Object
@@ -415,7 +419,7 @@ testSort =
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools = MetadataTools
-    { attributes = const Mock.constructorAttributes
+    { attributes = const Mock.constructorFunctionalAttributes
     , sortTools = mockSortTools
     }
 

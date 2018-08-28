@@ -21,6 +21,8 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkApp, mkBottom )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
+import           Kore.Error
+                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -42,16 +44,16 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Application
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Variables.Fresh.IntCounter
 
 import           Test.Kore
                  ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( constructorAttributes, functionAttributes,
+                 ( constructorFunctionalAttributes, functionAttributes,
                  makeMetadataTools, makeSortTools )
 import           Test.Kore.Step.Simplifier
                  ( mockSimplifier )
@@ -383,16 +385,16 @@ test_applicationSimplification =
         ]
     attributesMapping =
         [   ( aSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ,   ( bSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ,   ( cSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ,   ( dSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ,   ( fSymbol
             , Mock.functionAttributes
@@ -401,7 +403,7 @@ test_applicationSimplification =
             , Mock.functionAttributes
             )
         ,   ( sigmaSymbol
-            , Mock.constructorAttributes
+            , Mock.constructorFunctionalAttributes
             )
         ]
     mockSortTools = Mock.makeSortTools sortToolsMapping
@@ -438,7 +440,6 @@ evaluate
     symbolIdToEvaluator
     application
   =
-    fst $ fst $
-        runIntCounter
-            (simplify tools simplifier symbolIdToEvaluator application)
-            0
+    either (error . printError) fst
+        $ evalSimplifier
+        $ simplify tools simplifier symbolIdToEvaluator application

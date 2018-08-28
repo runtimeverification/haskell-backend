@@ -34,13 +34,14 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.PatternAttributes
+                 ( FunctionalProof (..) )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( SimplificationProof (..), evalSimplifier )
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Unifier
-                 ( FunctionalProof (..), UnificationProof (..) )
-import           Kore.Variables.Fresh.IntCounter
+                 ( UnificationProof (..) )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -644,14 +645,13 @@ runStep
     -> [AxiomPattern level]
     -> (CommonOrOfExpandedPattern level, StepProof level)
 runStep metadataTools configuration axioms =
-    fst $ runIntCounter
-        (step
+    either (error . printError) id
+        $ evalSimplifier
+        $ step
             metadataTools
             Map.empty
             axioms
             (OrOfExpandedPattern.make [configuration])
-        )
-        0
 
 runStepsPickFirst
     :: MetaOrObject level
@@ -663,9 +663,7 @@ runStepsPickFirst
     -> [AxiomPattern level]
     -> (CommonExpandedPattern level, StepProof level)
 runStepsPickFirst metadataTools maxStepCount configuration axioms =
-    fst $
-        runIntCounter
-            (pickFirstStepper
-                metadataTools Map.empty axioms maxStepCount configuration
-            )
-            0
+    either (error . printError) id
+        $ evalSimplifier
+        $ pickFirstStepper
+            metadataTools Map.empty axioms maxStepCount configuration

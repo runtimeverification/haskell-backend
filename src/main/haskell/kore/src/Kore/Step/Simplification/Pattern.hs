@@ -44,7 +44,8 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..) )
+                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 Simplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -79,8 +80,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 import           Kore.Variables.Int
                  ( IntVariable (..) )
 
@@ -104,7 +103,7 @@ simplify
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPattern level variable
-    -> IntCounter
+    -> Simplifier
         ( ExpandedPattern level variable
         , SimplificationProof level
         )
@@ -133,7 +132,7 @@ simplifyToOr
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPattern level variable
-    -> IntCounter
+    -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )
@@ -166,7 +165,7 @@ simplifyInternal
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
     -> Pattern level variable (PureMLPattern level variable)
-    -> IntCounter
+    -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )
@@ -189,15 +188,15 @@ simplifyInternal
                 symbolIdToEvaluator
                 p
         BottomPattern p -> return $ Bottom.simplify p
-        CeilPattern p -> return $ Ceil.simplify p
+        CeilPattern p -> return $ Ceil.simplify tools p
         DomainValuePattern p -> return $ DomainValue.simplify p
-        EqualsPattern p -> return $ Equals.simplify p
+        EqualsPattern p -> Equals.simplify tools p
         ExistsPattern p -> return $ Exists.simplify p
         FloorPattern p -> return $ Floor.simplify p
         ForallPattern p -> return $ Forall.simplify p
         IffPattern p -> return $ Iff.simplify p
         ImpliesPattern p -> return $ Implies.simplify p
-        InPattern p -> return $ In.simplify p
+        InPattern p -> return $ In.simplify tools p
         -- TODO(virgil): Move next up through patterns.
         NextPattern p -> return $ Next.simplify p
         NotPattern p -> return $ Not.simplify p
