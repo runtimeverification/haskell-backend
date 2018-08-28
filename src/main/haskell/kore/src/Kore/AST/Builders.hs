@@ -58,7 +58,7 @@ import Kore.Error
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}
-sortParameter :: level -> String -> AstLocation -> SortVariable level
+sortParameter :: Proxy level -> String -> AstLocation -> SortVariable level
 sortParameter _ name location =
     SortVariable Id
         { getId = name

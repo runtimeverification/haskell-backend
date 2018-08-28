@@ -1,7 +1,7 @@
 module Test.Kore.Unification.Unifier (test_unification) where
 
 import Test.Tasty
-       ( TestTree )
+       ( TestTree, testGroup )
 import Test.Tasty.HUnit
        ( testCase )
 import Test.Tasty.HUnit.Extensions
@@ -41,6 +41,12 @@ import Test.Kore.AST.MLPatterns
        ( extractPurePattern )
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Comparators ()
+
+applyInj
+    :: Sort Object
+    -> Sort Object
+    -> CommonPurePatternStub Object -> CommonPurePatternStub Object
+applyInj sortFrom sortTo pat = applyPS symbolInj [sortFrom, sortTo] [pat]
 
 s1, s2, s3 :: Sort Object
 s1 = simpleSort (SortName "s1")
@@ -108,6 +114,9 @@ a3A = applyS a3 []
 x :: CommonPurePatternStub Object
 x = parameterizedVariable_ s1 "x" AstLocationTest
 
+xs2 :: CommonPurePatternStub Object
+xs2 = parameterizedVariable_ s2 "xs2" AstLocationTest
+
 symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object)]
 symbols =
     map
@@ -120,25 +129,31 @@ symbols =
 
 mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
 mockStepperAttributes patternHead = StepperAttributes
-    { isConstructor = patternHead /= getSentenceSymbolOrAliasHead a2 []
+    { isConstructor =
+        patternHead /= getSentenceSymbolOrAliasHead a2 []
+        && not (isInjHead patternHead)
     , isFunctional = patternHead /= getSentenceSymbolOrAliasHead a3 []
     , isFunction = False
     , hook = def
     }
 
 mockGetArgumentSorts :: SymbolOrAlias Object -> [Sort Object]
-mockGetArgumentSorts patternHead =
-    maybe
-        (error ("Unexpected Head " ++  show patternHead))
-        getSentenceSymbolOrAliasArgumentSorts
-        (lookup patternHead symbols)
+mockGetArgumentSorts patternHead
+    | isInjHead patternHead = init (symbolOrAliasParams patternHead)
+    | otherwise =
+        maybe
+            (error ("Unexpected Head " ++  show patternHead))
+            getSentenceSymbolOrAliasArgumentSorts
+            (lookup patternHead symbols)
 
 mockGetResultSort :: SymbolOrAlias Object -> Sort Object
-mockGetResultSort patternHead =
-    maybe
-        (error ("Unexpected Head " ++  show patternHead))
-        getSentenceSymbolOrAliasResultSort
-        (lookup patternHead symbols)
+mockGetResultSort patternHead
+    | isInjHead patternHead = last (symbolOrAliasParams patternHead)
+    | otherwise =
+        maybe
+            (error ("Unexpected Head " ++  show patternHead))
+            getSentenceSymbolOrAliasResultSort
+            (lookup patternHead symbols)
 
 mockSortTools :: SortTools Object
 mockSortTools pHead = ApplicationSorts
@@ -470,6 +485,7 @@ test_unification =
                 (extractPurePattern expY)
             ]
         )
+    , testGroup "inj unification tests" injUnificationTests
     , andSimplifyFailure "Unmatching constants"
         (UnificationTerm aA)
         (UnificationTerm a1A)
@@ -520,11 +536,17 @@ test_unification =
             )
         )
     ]
-  where
-    symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
-    var ps = case project (extractPurePattern ps) of
-        VariablePattern v -> v
-        _                 -> error "Expecting a variable"
+
+var :: CommonPurePatternStub Object -> Variable Object
+var ps = case project (extractPurePattern ps) of
+    VariablePattern v -> v
+    _                 -> error "Expecting a variable"
+
+symbolHead
+    :: SentenceSymbolOrAlias s
+    => s level (Pattern level) variable
+    -> SymbolOrAlias level
+symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
 
 newtype V level = V Integer
     deriving (Show, Eq, Ord)
@@ -559,3 +581,30 @@ mockSortTools' = const ApplicationSorts
 
 sortVar :: Sort level
 sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))
+
+injUnificationTests :: [TestTree]
+injUnificationTests =
+    [ andSimplifySuccess "Injected Variable"
+        (UnificationTerm (applyInj s1 s2 x))
+        (UnificationTerm (applyInj s1 s2 aA))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("x", aA)]
+        (AndDistributionAndConstraintLifting
+            (injHead s1 s2)
+            [Proposition_5_24_3
+                [FunctionalHead (symbolHead a)]
+                (var x)
+                (extractPurePattern aA)
+            ]
+        )
+    , andSimplifySuccess "Variable"
+        (UnificationTerm xs2)
+        (UnificationTerm (applyInj s1 s2 aA))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("xs2", applyInj s1 s2 aA)]
+        (Proposition_5_24_3
+            [FunctionalHead (injHead s1 s2), FunctionalHead (symbolHead a)]
+            (var xs2)
+            (extractPurePattern (applyInj s1 s2 aA))
+        )
+    ]

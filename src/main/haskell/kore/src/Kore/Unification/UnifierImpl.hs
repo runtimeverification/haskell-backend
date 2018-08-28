@@ -10,6 +10,8 @@ Portability : portable
 -}
 module Kore.Unification.UnifierImpl where
 
+import Control.Exception
+       ( assert )
 import Control.Monad
        ( foldM )
 import Data.Function
@@ -17,16 +19,22 @@ import Data.Function
 import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
+import Data.Proxy
+       ( Proxy (..) )
 
 import Data.Functor.Traversable
+import Kore.AST.Builders
+       ( parameterizedSymbol_, sortParameter )
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
+import Kore.AST.Sentence
+       ( getSentenceSymbolOrAliasHead )
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.ASTUtils.SmartPatterns
-       ( pattern StringLiteral_ )
+       ( pattern StringLiteral_, pattern And_, pattern App_ )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
@@ -278,7 +286,11 @@ preTransform tools (AndPattern ap) = if left == right
                 in
                     if isConstructor (attributes tools head2)
                         then matchConstructor tools p1 head2 ap2
-                        else Left $ Left $ NonConstructorHead head2
+                    else if isInjHead head2
+                        then matchInj p1
+                            (symbolOrAliasParams head2)
+                            (applicationChildren ap2)
+                    else Left $ Left $ NonConstructorHead head2
             _ -> Left $ Left UnsupportedPatterns
   where
     left = andFirst ap
@@ -352,7 +364,93 @@ matchConstructor tools (ApplicationPattern ap1) head2 ap2
     | otherwise = Left $ Left $ NonConstructorHead head1
   where
     head1 = applicationSymbolOrAlias ap1
-matchConstructor _ _ _ _ = Left $ Left UnsupportedPatterns                                
+matchConstructor _ _ _ _ = Left $ Left UnsupportedPatterns
+
+matchInj
+    :: UnFixedPureMLPattern level variable
+    -> [Sort level]
+    -> [PureMLPattern level variable]
+    -> Either
+        ( Either
+            (UnificationError level)
+            ( UnificationSolution level variable
+            , UnificationProof level variable
+            )
+        )
+        (UnFixedPureMLPattern level variable)
+matchInj p1 [p2FromSort, p2ToSort] [p2Child] =
+    matchInjHelper p2FromSort p2ToSort p2Child p1
+matchInj _ _ _ = error "Invalid inj operator"
+
+matchInjHelper
+    :: Sort level
+    -> Sort level
+    -> PureMLPattern level variable
+    -> UnFixedPureMLPattern level variable
+    -> Either
+        ( Either
+            (UnificationError level)
+            ( UnificationSolution level variable
+            , UnificationProof level variable
+            )
+        )
+        (UnFixedPureMLPattern level variable)
+matchInjHelper p2FromSort p2ToSort p2Child (ApplicationPattern ap1)
+    | isInjHead head1 =
+        let
+            [p1FromSort, p1ToSort] = symbolOrAliasParams head1
+            [p1Child] = applicationChildren ap1
+        in
+            matchInjTriangle
+                p1FromSort p1ToSort p1Child p2FromSort p2ToSort p2Child
+
+    | otherwise = Left $ Left UnsupportedPatterns
+  where head1 = applicationSymbolOrAlias ap1
+matchInjHelper _ _ _ _ = Left $ Left UnsupportedPatterns
+
+matchInjTriangle
+    :: Sort level
+    -> Sort level
+    -> PureMLPattern level variable
+    -> Sort level
+    -> Sort level
+    -> PureMLPattern level variable
+    -> Either
+        ( Either
+            (UnificationError level)
+            ( UnificationSolution level variable
+            , UnificationProof level variable
+            )
+        )
+        (UnFixedPureMLPattern level variable)
+matchInjTriangle p1FromSort p1ToSort p1Child p2FromSort p2ToSort p2Child
+    | p1FromSort == p2FromSort && p1ToSort == p2ToSort =
+        Right
+        $ ApplicationPattern Application
+            { applicationSymbolOrAlias = injHead p1FromSort p1ToSort
+            , applicationChildren =
+                [ And_ p1FromSort p1Child p2Child ]
+            }
+    | otherwise = case p1Child of
+        (App_ head1 children) | isInjHead head1 ->
+            let
+                [p1FromSort', p1ToSort'] = symbolOrAliasParams head1
+                [p1Child'] = children
+            in
+                assert (p1ToSort' == p1FromSort) $
+                matchInjTriangle
+                    p1FromSort' p1ToSort p1Child' p2FromSort p2ToSort p2Child
+        _ -> case p2Child of
+            (App_ head2 children) | isInjHead head2 ->
+                let
+                    [p2FromSort', p2ToSort'] = symbolOrAliasParams head2
+                    [p2Child'] = children
+                in
+                    assert (p2ToSort' == p2FromSort) $
+                    matchInjTriangle
+                        p1FromSort p1ToSort p1Child
+                        p2FromSort' p2ToSort p2Child'
+            _ ->  Left $ Left UnsupportedPatterns
 
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
@@ -542,3 +640,26 @@ unificationProcedure tools p1 p2
         , andFirst = p1
         , andSecond = p2
         }
+
+sortParam :: String -> SortVariable level
+sortParam name = sortParameter Proxy name AstLocationTest
+
+sortParamSort :: String -> Sort level
+sortParamSort = SortVariableSort . sortParam
+
+injName :: String
+injName = "inj"
+
+symbolInj :: PureSentenceSymbol level
+symbolInj =
+    parameterizedSymbol_ injName AstLocationImplicit
+        [sortParam "From", sortParam "To"]
+        [sortParamSort "From"]
+        (sortParamSort "To")
+
+injHead :: Sort level -> Sort level -> SymbolOrAlias level
+injHead sortFrom sortTo =
+    getSentenceSymbolOrAliasHead symbolInj [sortFrom, sortTo]
+
+isInjHead :: SymbolOrAlias level -> Bool
+isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName

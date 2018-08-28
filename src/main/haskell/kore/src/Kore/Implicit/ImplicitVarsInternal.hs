@@ -10,6 +10,9 @@ Portability : POSIX
 -}
 module Kore.Implicit.ImplicitVarsInternal where
 
+import Data.Proxy
+       ( Proxy (..) )
+
 import Kore.AST.Builders
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -48,5 +51,5 @@ v2 = implicitUnparameterizedVariable "#v2"
 vx = implicitUnparameterizedVariable "#x"
 vx' = implicitUnparameterizedVariable "#x'"
 
-pS = sortParameter Meta "#sp" AstLocationImplicit
+pS = sortParameter (Proxy::Proxy Meta) "#sp" AstLocationImplicit
 spS = SortVariableSort pS
