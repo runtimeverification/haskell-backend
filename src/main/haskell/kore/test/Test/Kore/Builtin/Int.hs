@@ -312,9 +312,7 @@ intModule =
 
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
-    case evalSimplifier (Pattern.simplify tools evaluators pat) of
-        Left err -> error (Kore.Error.printError err)
-        Right (epat, _) -> epat
+    fst $ evalSimplifier $ Pattern.simplify tools evaluators pat
   where
     tools = extractMetadataTools indexedModule
 

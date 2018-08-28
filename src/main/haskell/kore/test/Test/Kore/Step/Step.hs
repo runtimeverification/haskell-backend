@@ -658,8 +658,7 @@ runStep
     -> [AxiomPattern level]
     -> (CommonOrOfExpandedPattern level, StepProof level)
 runStep metadataTools configuration axioms =
-    either (error . printError) id
-        $ evalSimplifier
+    evalSimplifier
         $ step
             metadataTools
             Map.empty
@@ -676,7 +675,6 @@ runStepsPickFirst
     -> [AxiomPattern level]
     -> (CommonExpandedPattern level, StepProof level)
 runStepsPickFirst metadataTools maxStepCount configuration axioms =
-    either (error . printError) id
-        $ evalSimplifier
+    evalSimplifier
         $ pickFirstStepper
             metadataTools Map.empty axioms maxStepCount configuration

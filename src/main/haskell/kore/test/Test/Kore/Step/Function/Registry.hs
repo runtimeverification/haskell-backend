@@ -248,8 +248,7 @@ test_functionRegistry =
         (assertEqual ""
             (App_ sHead [])
             ( ExpandedPattern.term
-            $ head $ OrOfExpandedPattern.extractPatterns
-            $ either (error . Kore.Error.printError) fst
+            $ head $ OrOfExpandedPattern.extractPatterns $ fst
             $ evalSimplifier
             $ ExpandedPattern.simplify
                 testMetadataTools

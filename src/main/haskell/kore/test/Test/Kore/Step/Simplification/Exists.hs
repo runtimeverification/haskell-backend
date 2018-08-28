@@ -17,7 +17,6 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkEquals, mkExists, mkTop, mkVar )
-import qualified Kore.Error
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SortTools )
 import           Kore.Predicate.Predicate
@@ -301,8 +300,7 @@ evaluate
     -> Exists level Variable (CommonOrOfExpandedPattern level)
     -> CommonOrOfExpandedPattern level
 evaluate tools exists =
-    either (error . Kore.Error.printError) fst
-        $ evalSimplifier
+    fst $ evalSimplifier
         $ Exists.simplify tools (Simplifier.create tools Map.empty) exists
 
 makeEvaluate
@@ -314,7 +312,6 @@ makeEvaluate
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 makeEvaluate tools variable child =
-    either (error . Kore.Error.printError) fst
-        $ evalSimplifier
+    fst $ evalSimplifier
         $ Exists.makeEvaluate tools (Simplifier.create tools Map.empty) variable child
 
