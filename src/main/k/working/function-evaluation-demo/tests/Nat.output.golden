@@ -1,5 +1,5 @@
-inj{SortNat{}, SortK{}}(
-    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+kseq{}(
+    inj{SortNat{}, SortKItem{}}(
         LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
@@ -7,7 +7,9 @@ inj{SortNat{}, SortK{}}(
                         LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                    LblZero'Unds'PEANO'Unds'{}()
+                                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                        LblZero'Unds'PEANO'Unds'{}()
+                                    )
                                 )
                             )
                         )
@@ -15,5 +17,6 @@ inj{SortNat{}, SortK{}}(
                 )
             )
         )
-    )
+    ),
+    dotk{}()
 )

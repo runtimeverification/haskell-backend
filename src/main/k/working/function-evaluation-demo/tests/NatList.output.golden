@@ -1,27 +1,16 @@
-inj{SortNatList{}, SortK{}}(
-    LblCons'LParUndsCommUndsRParUnds'NAT-LIST'UndsUnds'Nat'Unds'NatList{}(
-        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                LblZero'Unds'PEANO'Unds'{}()
-            )
-        ),
+kseq{}(
+    inj{SortNatList{}, SortKItem{}}(
         LblCons'LParUndsCommUndsRParUnds'NAT-LIST'UndsUnds'Nat'Unds'NatList{}(
             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                        LblZero'Unds'PEANO'Unds'{}()
-                    )
+                    LblZero'Unds'PEANO'Unds'{}()
                 )
             ),
             LblCons'LParUndsCommUndsRParUnds'NAT-LIST'UndsUnds'Nat'Unds'NatList{}(
                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                     LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                         LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                    LblZero'Unds'PEANO'Unds'{}()
-                                )
-                            )
+                            LblZero'Unds'PEANO'Unds'{}()
                         )
                     )
                 ),
@@ -31,11 +20,7 @@ inj{SortNatList{}, SortK{}}(
                             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                     LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                LblZero'Unds'PEANO'Unds'{}()
-                                            )
-                                        )
+                                        LblZero'Unds'PEANO'Unds'{}()
                                     )
                                 )
                             )
@@ -49,15 +34,7 @@ inj{SortNatList{}, SortK{}}(
                                         LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                    LblZero'Unds'PEANO'Unds'{}()
-                                                                )
-                                                            )
-                                                        )
-                                                    )
+                                                    LblZero'Unds'PEANO'Unds'{}()
                                                 )
                                             )
                                         )
@@ -77,11 +54,7 @@ inj{SortNatList{}, SortK{}}(
                                                             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                     LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                LblZero'Unds'PEANO'Unds'{}()
-                                                                            )
-                                                                        )
+                                                                        LblZero'Unds'PEANO'Unds'{}()
                                                                     )
                                                                 )
                                                             )
@@ -107,15 +80,7 @@ inj{SortNatList{}, SortK{}}(
                                                                         LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                                    LblZero'Unds'PEANO'Unds'{}()
-                                                                                                )
-                                                                                            )
-                                                                                        )
-                                                                                    )
+                                                                                    LblZero'Unds'PEANO'Unds'{}()
                                                                                 )
                                                                             )
                                                                         )
@@ -147,11 +112,7 @@ inj{SortNatList{}, SortK{}}(
                                                                                             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                                                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                                                     LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                                                LblZero'Unds'PEANO'Unds'{}()
-                                                                                                            )
-                                                                                                        )
+                                                                                                        LblZero'Unds'PEANO'Unds'{}()
                                                                                                     )
                                                                                                 )
                                                                                             )
@@ -189,11 +150,52 @@ inj{SortNatList{}, SortK{}}(
                                                                                                         LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                                                             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                                                                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                                                    LblZero'Unds'PEANO'Unds'{}()
+                                                                                                                )
+                                                                                                            )
+                                                                                                        )
+                                                                                                    )
+                                                                                                )
+                                                                                            )
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        ),
+                                        LblCons'LParUndsCommUndsRParUnds'NAT-LIST'UndsUnds'Nat'Unds'NatList{}(
+                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                                                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                                                                     LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                                                                         LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                                                                             LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
                                                                                                                                 LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                                                                                                                    LblZero'Unds'PEANO'Unds'{}()
+                                                                                                                                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
+                                                                                                                                        LblZero'Unds'PEANO'Unds'{}()
+                                                                                                                                    )
                                                                                                                                 )
                                                                                                                             )
                                                                                                                         )
@@ -215,9 +217,9 @@ inj{SortNatList{}, SortK{}}(
                                                         )
                                                     )
                                                 )
-                                            )
-                                        ),
-                                        LblNil'Unds'NAT-LIST'Unds'{}()
+                                            ),
+                                            LblNil'Unds'NAT-LIST'Unds'{}()
+                                        )
                                     )
                                 )
                             )
@@ -226,5 +228,6 @@ inj{SortNatList{}, SortK{}}(
                 )
             )
         )
-    )
+    ),
+    dotk{}()
 )

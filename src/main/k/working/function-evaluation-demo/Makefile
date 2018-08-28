@@ -13,7 +13,12 @@ demo.kore: demo.k
 %.test: %.output
 	diff $< $<.golden
 
-test: test/Nat.test test/NatList.test test/Truth.test
+%.output.golden: %.output
+	mv $< $<.golden
+
+test: tests/Nat.test tests/NatList.test tests/Truth.test
+
+golden: tests/Nat.output.golden tests/NatList.output.golden tests/Truth.output.golden
 
 clean:
 	rm -rf demo.kore demo-kompiled tests/*.demo.kore tests/*.output
