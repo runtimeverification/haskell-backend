@@ -30,7 +30,6 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.AST.Sentence
-import Kore.ASTTraversals
 import Kore.Error
 
 patternPureToKore

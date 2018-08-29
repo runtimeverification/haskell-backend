@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeApplications #-}
 {-|
 Module      : Kore.Substitution.Class
 Description : Defines basic interfaces and main functionality needed
@@ -16,22 +15,12 @@ module Kore.Substitution.Class
     , Hashable (..)
     ) where
 
-import Control.Arrow ((|||))
-import           Data.Functor.Identity(Identity(..))
-import           Control.Monad
-                 ( (>=>) )
-import           Control.Monad.Reader
-                 ( Reader, ReaderT(..), MonadReader(..), ask, asks, local, runReaderT, mapReaderT, MonadTrans(lift) )
-import           Data.Functor.Compose
-                 ( Compose (..) )
 import           Data.Functor.Foldable
 import           Data.Hashable
                  ( hash )
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Set as Set
-import           Data.Tuple
-                 ( swap )
 import           Prelude hiding
                  ( lookup )
 
@@ -134,11 +123,11 @@ substituteM subst p = unifiedPatternApply @pat substPattern  (project p)
                  -> m (Fix (pat var))
     substPattern (ExistsPattern e)  = binderPatternSubstitutePreprocess subst e
     substPattern (ForallPattern f) = binderPatternSubstitutePreprocess subst f
-    substPattern p@(VariablePattern v) = do
+    substPattern varPat@(VariablePattern v) = do
         return $ case lookup (asUnified v) subst of
                      Just up -> up
-                     Nothing -> Fix (unifyPattern p)
-    substPattern p = fmap (Fix . unifyPattern) (mapM (substituteM subst) p)
+                     Nothing -> Fix (unifyPattern varPat)
+    substPattern otherPat = fmap (Fix . unifyPattern) (mapM (substituteM subst) otherPat)
 
 {-
 * if the quantified variable is among the encountered free variables

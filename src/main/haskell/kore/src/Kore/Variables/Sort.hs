@@ -25,7 +25,6 @@ import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
-import Kore.ASTTraversals
 import Kore.MetaML.AST
 
 
