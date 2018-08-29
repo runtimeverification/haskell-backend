@@ -53,7 +53,6 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, isBottom, isTop, toMLPattern )
 
 {-| 'MultiOr' is a Matching logic or of its children
 
@@ -104,11 +103,7 @@ makeFromSinglePurePattern
     :: MetaOrObject level
     => PureMLPattern level variable
     -> OrOfExpandedPattern level variable
-makeFromSinglePurePattern patt =
-    make
-        [ ExpandedPattern
-            { term = patt, predicate = makeTruePredicate, substitution = [] }
-        ]
+makeFromSinglePurePattern patt = make [ ExpandedPattern.fromPurePattern patt ]
 
 {-| 'extractPatterns' particularizes 'extract' to ExpandedPattern.
 

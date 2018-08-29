@@ -25,18 +25,21 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
 
 import           Kore.AST.Common
+                 ( Application (..), SymbolOrAlias )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+                 ( Object )
 import           Kore.ASTUtils.SmartPatterns
+                 ( pattern App_ )
 import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Builtin.Hook
+                 ( Hook (..) )
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Predicate.Predicate
-import           Kore.Step.ExpandedPattern
+                 ( MetadataTools(..) )
 import           Kore.Step.Function.Data
-import           Kore.Step.OrOfExpandedPattern
-import           Kore.Step.Simplification.Data
+                 ( ApplicationFunctionEvaluator(..),
+                 notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import           Kore.Step.StepperAttributes
+                 ( StepperAttributes (..) )
 
 
 {- | Builtin name of the @Map@ sort.
@@ -114,30 +117,11 @@ isHook
 isHook tools sym hookName =
     hook (attributes tools sym) == Hook (Just hookName)
 
-trivialExpandedPattern
-    :: MetaOrObject level
-    => PureMLPattern level var
-    -> ExpandedPattern level var
-trivialExpandedPattern p =
-    ExpandedPattern p makeTruePredicate []
-
-trivialEvalResult
-    :: (Applicative f, MetaOrObject level1)
-    => PureMLPattern level1 variable
-    -> f (AttemptedFunction level1 variable, SimplificationProof level2)
-trivialEvalResult p =
-    pure (Applied (MultiOr [trivialExpandedPattern p]), SimplificationProof)
-
-failedToEval
-    :: Simplifier
-         (AttemptedFunction level1 variable, SimplificationProof level2)
-failedToEval = pure (NotApplicable, SimplificationProof)
-
 evalBind :: Builtin.Function
 evalBind =
     ApplicationFunctionEvaluator evalBind0
   where
-    evalBind0 _ _ _ = failedToEval
+    evalBind0 _ _ _ = notApplicableFunctionEvaluator
 
 -- FIXME: proper equality modulo alpha?
 evalLookup :: Builtin.Function
@@ -147,20 +131,20 @@ evalLookup =
     evalLookup0 tools _ pat =
           case pat of
               Application _ [m, k] -> goFind k m
-              _ -> failedToEval
+              _ -> notApplicableFunctionEvaluator
       where
         goFind k m = case m of
             App_ h [k', v]
               | isHook tools h "MAP.element" ->
                   if k == k'
-                      then trivialEvalResult v
-                      else failedToEval
+                      then purePatternFunctionEvaluator v
+                      else notApplicableFunctionEvaluator
             App_ h [k', v, m']
               | isHook tools h "MAP.bind" ->
                   if k == k'
-                      then trivialEvalResult v
+                      then purePatternFunctionEvaluator v
                       else goFind k m'
-            _ -> failedToEval
+            _ -> notApplicableFunctionEvaluator
 
 
 {- | Implement builtin function evaluation.
