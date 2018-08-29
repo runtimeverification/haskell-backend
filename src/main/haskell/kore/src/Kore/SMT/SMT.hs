@@ -21,20 +21,21 @@ import           Data.Default
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.ASTUtils.SmartPatterns
-import Kore.ASTUtils.Substitution
-import Kore.Attribute.Parser
-       ( ParseAttributes (..) )
-import Kore.Builtin.Hook
-import Kore.IndexedModule.MetadataTools
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.ASTUtils.Substitution
+import           Kore.Attribute.Parser
+                 ( ParseAttributes (..) )
+import           Kore.Builtin.Hook
+import           Kore.IndexedModule.MetadataTools
+import qualified Kore.Predicate.Predicate as KorePredicate
 
-import Data.Reflection
-import Data.SBV
+import           Data.Reflection
+import           Data.SBV
 
-import GHC.IO.Unsafe
+import           GHC.IO.Unsafe
 
 data SMTAttributes
   = SMTAttributes
@@ -48,6 +49,12 @@ instance ParseAttributes SMTAttributes where
     attributesParser = do
         hook <- attributesParser
         pure SMTAttributes {..} 
+
+provePredicate
+    :: Given (MetadataTools Object SMTAttributes)
+    => KorePredicate.CommonPredicate Object
+    -> Maybe Bool
+provePredicate p = provePattern $ KorePredicate.unwrapPredicate p
 
 -- | Returns `Just True` if the sentence is satisfied in all models,
 -- `Just False` if it has a counterexample,
@@ -106,8 +113,8 @@ patternToSMT p = goTranslate
         goBoolean (Equals_  s _ x1 x2) = c x1 x2
           where
             c = case getHookString $ getSortHook s of
-                "BOOL.Bool" -> goBinaryOp (.==) goInteger
-                "INT.Int"   -> goBinaryOp (<=>) goBoolean
+                "BOOL.Bool" -> goBinaryOp (<=>) goBoolean
+                "INT.Int"   -> goBinaryOp (.==) goInteger
                 other -> error $ "Hook " ++ other ++ " is not supported by SMT"
         goBoolean (App_ h [x1, x2]) = c x1 x2
           where
@@ -120,6 +127,8 @@ patternToSMT p = goTranslate
                 other -> error $ "Hook " ++ other ++ " is not supported by SMT"
         goBoolean (V v) = tryLookupVar v boolTable "BOOL.Bool"
         goBoolean pat@(DV_ _ _) = goLiteral pat "BOOL.Bool" :: Symbolic SBool
+        goBoolean (Top_ _)    = return true
+        goBoolean (Bottom_ _) = return false 
         goBoolean pat = error $ "Can't translate constructor: " ++ show pat
         goInteger
             :: Given (MetadataTools Object SMTAttributes)

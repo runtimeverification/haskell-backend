@@ -50,10 +50,10 @@ p = vBool "p"
 q = vBool "q"
 
 type Op = CommonPurePattern Object -> CommonPurePattern Object -> CommonPurePattern Object
-plus, minus, times, div :: Op
+plus, sub, mul, div :: Op
 plus  a b = App_ addSymbol  [a, b]
-minus a b = App_ subSymbol  [a, b]
-times a b = App_ mulSymbol  [a, b]
+sub a b = App_ subSymbol  [a, b]
+mul a b = App_ mulSymbol  [a, b]
 div   a b = App_ tdivSymbol [a, b]
 
 prop_1 :: Property
@@ -69,7 +69,22 @@ prop_4 :: Property
 prop_4 = run prop4
 
 prop_pierce :: Property
-prop_pierce = run pierce
+prop_pierce = run propPierce
+
+prop_tdiv :: Property
+prop_tdiv = run propDiv
+
+prop_tmod :: Property
+prop_tmod = run propMod
+
+prop_demorgan :: Property
+prop_demorgan = run propDeMorgan
+
+prop_true :: Property
+prop_true = run propTrue
+
+prop_false :: Property
+prop_false = run propFalse
 
 run :: CommonPurePattern Object -> Property
 run prop = (give tools $ provePattern prop) === Just True
@@ -97,15 +112,15 @@ prop3 = dummyEnvironment $
 prop4 :: CommonPurePattern Object
 prop4 = dummyEnvironment $ mkNot $
   App_ eqSymbol 
-  [ intLiteral 1 `plus` (intLiteral 2 `times` a)
-  , intLiteral 2 `times` b
+  [ intLiteral 1 `plus` (intLiteral 2 `mul` a)
+  , intLiteral 2 `mul` b
   ]
  
 prop5 :: CommonPurePattern Object
 prop5 = dummyEnvironment $  
   App_ eqSymbol
-  [ a `times` a `times` intLiteral (-1)
-  , b `times` b 
+  [ intLiteral 0 `sub` (a `mul` a)
+  , b `mul` b 
   ]
   `mkImplies`
   App_ eqSymbol
@@ -113,11 +128,46 @@ prop5 = dummyEnvironment $
   , intLiteral 0
   ]
 
-pierce :: CommonPurePattern Object
-pierce = dummyEnvironment $
+prop6 :: CommonPurePattern Object
+prop6 = dummyEnvironment $ 
+  (
+  App_ leSymbol [a, b]
+  `mkIff`
+  App_ gtSymbol [b, a]
+  )
+  `mkAnd`
+  (
+  App_ geSymbol [a, b]
+  `mkIff`
+  App_ ltSymbol [b, a]
+  )
+
+
+propDiv :: CommonPurePattern Object
+propDiv = dummyEnvironment $
+  App_ ltSymbol [intLiteral 0, a]
+  `mkImplies`
+  App_ ltSymbol [App_ tdivSymbol [a, intLiteral 2], a]
+
+propMod :: CommonPurePattern Object
+propMod = dummyEnvironment $ 
+  App_ eqSymbol 
+    [ App_ tmodSymbol [a `mul` intLiteral 2, intLiteral 2]
+    , intLiteral 0
+    ]
+
+propPierce :: CommonPurePattern Object
+propPierce = dummyEnvironment $
   ((p `mkImplies` q) `mkImplies` p) `mkImplies` p
 
+propDeMorgan :: CommonPurePattern Object
+propDeMorgan = dummyEnvironment $ 
+  (mkNot $ p `mkOr` q) `mkIff` (mkNot p `mkAnd` mkNot q)
 
+propTrue :: CommonPurePattern Object
+propTrue = dummyEnvironment $ mkTop
 
+propFalse :: CommonPurePattern Object
+propFalse = dummyEnvironment $ mkIff (mkNot p) (p `mkImplies` mkBottom)
 
 
