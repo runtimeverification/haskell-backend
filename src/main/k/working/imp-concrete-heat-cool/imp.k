@@ -1,4 +1,4 @@
-require "../lib/state.k"
+require "../../lib/state.k"
 
 module IMP-SYNTAX
   imports DOMAINS-SYNTAX
