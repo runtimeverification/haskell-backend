@@ -27,8 +27,6 @@ endmodule
 module IMP-STRICT
   imports IMP-SYNTAX
 
-  syntax KResult ::= Int | Bool
-
   syntax KItem ::= "if" "(" "HOLE" ")"
                    Block "else" Block         /*[strict(1)]*/
                  | "if'" "(" Bool ")"
@@ -43,6 +41,11 @@ module IMP-STRICT
                  | "HOLE" "+" AExp
                  | Int "+" "HOLE"
                  | Int "+'" Int
+                 | "HOLE" "/" AExp
+                 | Int "/" "HOLE"
+                 | Int "/'" Int
+                 | "HOLE" "&&" BExp
+                 | Bool "&&'" BExp
   rule if (B:BExp) B1:Block else B2:Block => B ~> if (HOLE) B1 else B2
   rule T:Bool ~> if (HOLE) B1 else B2 => if' (T) B1:Block else B2:Block
   rule ! B:BExp => B ~> ! HOLE
@@ -55,6 +58,11 @@ module IMP-STRICT
   rule A1:AExp + A2:AExp => A1 ~> HOLE + A2
   rule I1:Int ~> HOLE + A2:AExp => A2 ~> I1 + HOLE
   rule I2:Int ~> I1:Int + HOLE => I1 +' I2
+  rule A1:AExp / A2:AExp => A1 ~> HOLE / A2
+  rule I1:Int ~> HOLE / A2:AExp => A2 ~> I1 / HOLE
+  rule I2:Int ~> I1:Int / HOLE => I1 /' I2
+  rule A1:BExp && A2:BExp => A1 ~> HOLE && A2
+  rule T1:Bool ~> HOLE && A2:BExp =>  T1 &&' A2
 endmodule
 
 module IMP-STATE
@@ -80,14 +88,14 @@ module IMP
 // AExp
   rule <k> X:Id => get(S, X) ...</k> <state> S:State </state>
        requires inState(S, X)
-  rule I1 / I2 => I1 /Int I2  requires I2 =/=Int 0
+  rule I1 /' I2 => I1 /Int I2  requires I2 =/=Int 0
   rule I1 +' I2 => I1 +Int I2
   rule - I1 => 0 -Int I1
 // BExp
   rule I1 <=' I2 => I1 <=Int I2
   rule !' T => notBool T
-  rule true && B => B
-  rule false && _ => false
+  rule true &&' B => B
+  rule false &&' _ => false
 // Block
   rule {} => .   [structural]
   rule {S} => S  [structural]
@@ -103,43 +111,3 @@ module IMP
   rule int .Ids; S => S  [structural]
 
 endmodule
-
-/*
-
-  axiom{} \and{SortTCell{}} (
-    \top{SortTCell{}}(), \and{SortTCell{}} (
-    \top{SortTCell{}}(), \rewrites{SortTCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(
-      inj{SortAExp{},SortKItem{}}(inj{SortId{},SortAExp{}}(T:SortId{}))
-         ,VarDotVar1:SortK{})),VarDotVar0:SortStateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(
-      inj{SortId{},SortKItem{}}(T:SortId{})
-      ,VarDotVar1:SortK{})),VarDotVar0:SortStateCell{}))))
-  []
-
-  axiom{} \and{SortTCell{}} (
-    \top{SortTCell{}}(), \and{SortTCell{}} (
-    \top{SortTCell{}}(), \rewrites{SortTCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(
-      inj{SortAExp{},SortKItem{}}(inj{SortInt{},SortAExp{}}(T:SortInt{}))
-         ,VarDotVar1:SortK{})),VarDotVar0:SortStateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(
-      inj{SortInt{},SortKItem{}}(T:SortInt{})
-      ,VarDotVar1:SortK{})),VarDotVar0:SortStateCell{}))))
-  []
-
-  axiom{} \and{SortTCell{}} (
-    \top{SortTCell{}}(), \and{SortTCell{}} (
-    \top{SortTCell{}}(), \rewrites{SortTCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(
-      inj{SortStateValue{},SortKItem{}}(inj{SortInt{},SortStateValue{}}(T:SortInt{}))
-         ,VarDotVar1:SortK{})),VarDotVar0:SortStateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(
-      inj{SortInt{},SortKItem{}}(T:SortInt{})
-      ,VarDotVar1:SortK{})),VarDotVar0:SortStateCell{}))))
-  []
-
-  axiom{} \and{SortTCell{}} (
-    \top{SortTCell{}}(), \and{SortTCell{}} (
-    \top{SortTCell{}}(), \rewrites{SortTCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(
-      inj{SortStmt{},SortKItem{}}(inj{SortBlock{},SortStmt{}}(T:SortBlock{}))
-         ,VarDotVar1:SortK{})),VarDotVar0:SortStateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(
-      inj{SortBlock{},SortKItem{}}(T:SortBlock{})
-      ,VarDotVar1:SortK{})),VarDotVar0:SortStateCell{}))))
-  []
-
-*/
