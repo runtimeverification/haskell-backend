@@ -14,6 +14,7 @@ module Kore.SMT.SMT
 ( patternToSMT
 , provePatternIO
 , provePattern
+, provePredicate
 , SMTAttributes
 ) where
 
