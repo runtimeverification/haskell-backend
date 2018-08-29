@@ -9,7 +9,7 @@ Portability : portable
 -}
 
 module Kore.Step.PatternAttributesError
-    ( FunctionError(..)
+    ( FunctionError (..)
     , FunctionalError (..)
     ) where
 

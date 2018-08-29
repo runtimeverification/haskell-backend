@@ -39,7 +39,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
 import Kore.Step.PatternAttributes
-       ( FunctionalProof (..), isFunctionalPattern )
+       ( FunctionalProof (..), isConstructorTop, isFunctionalPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
@@ -287,7 +287,7 @@ preTransform tools (AndPattern ap) = if left == right
                     if isConstructor (attributes tools head2)
                         then matchConstructor tools p1 head2 ap2
                     else if isInjHead head2
-                        then matchInj p1
+                        then matchInj tools p1
                             (symbolOrAliasParams head2)
                             (applicationChildren ap2)
                     else Left $ Left $ NonConstructorHead head2
@@ -367,7 +367,8 @@ matchConstructor tools (ApplicationPattern ap1) head2 ap2
 matchConstructor _ _ _ _ = Left $ Left UnsupportedPatterns
 
 matchInj
-    :: UnFixedPureMLPattern level variable
+    :: MetadataTools level StepperAttributes
+    -> UnFixedPureMLPattern level variable
     -> [Sort level]
     -> [PureMLPattern level variable]
     -> Either
@@ -378,12 +379,13 @@ matchInj
             )
         )
         (UnFixedPureMLPattern level variable)
-matchInj p1 [p2FromSort, p2ToSort] [p2Child] =
-    matchInjHelper p2FromSort p2ToSort p2Child p1
-matchInj _ _ _ = error "Invalid inj operator"
+matchInj tools p1 [p2FromSort, p2ToSort] [p2Child] =
+    matchInjHelper tools p2FromSort p2ToSort p2Child p1
+matchInj _ _ _ _ = error "Invalid inj operator"
 
 matchInjHelper
-    :: Sort level
+    :: MetadataTools level StepperAttributes
+    -> Sort level
     -> Sort level
     -> PureMLPattern level variable
     -> UnFixedPureMLPattern level variable
@@ -395,21 +397,23 @@ matchInjHelper
             )
         )
         (UnFixedPureMLPattern level variable)
-matchInjHelper p2FromSort p2ToSort p2Child (ApplicationPattern ap1)
+matchInjHelper tools p2FromSort p2ToSort p2Child (ApplicationPattern ap1)
     | isInjHead head1 =
         let
             [p1FromSort, p1ToSort] = symbolOrAliasParams head1
             [p1Child] = applicationChildren ap1
         in
-            matchInjTriangle
+            matchInjTriangle tools
                 p1FromSort p1ToSort p1Child p2FromSort p2ToSort p2Child
 
-    | otherwise = Left $ Left UnsupportedPatterns
+    | otherwise = Left $ Left
+        (PatternClash (HeadClash head1) (InjectionClash p2FromSort p2ToSort))
   where head1 = applicationSymbolOrAlias ap1
-matchInjHelper _ _ _ _ = Left $ Left UnsupportedPatterns
+matchInjHelper _ _ _ _ _ = Left $ Left UnsupportedPatterns
 
 matchInjTriangle
-    :: Sort level
+    :: MetadataTools level StepperAttributes
+    -> Sort level
     -> Sort level
     -> PureMLPattern level variable
     -> Sort level
@@ -423,7 +427,7 @@ matchInjTriangle
             )
         )
         (UnFixedPureMLPattern level variable)
-matchInjTriangle p1FromSort p1ToSort p1Child p2FromSort p2ToSort p2Child
+matchInjTriangle tools p1FromSort p1ToSort p1Child p2FromSort p2ToSort p2Child
     | p1FromSort == p2FromSort && p1ToSort == p2ToSort =
         Right
         $ ApplicationPattern Application
@@ -438,7 +442,7 @@ matchInjTriangle p1FromSort p1ToSort p1Child p2FromSort p2ToSort p2Child
                 [p1Child'] = children
             in
                 assert (p1ToSort' == p1FromSort) $
-                matchInjTriangle
+                matchInjTriangle tools
                     p1FromSort' p1ToSort p1Child' p2FromSort p2ToSort p2Child
         _ -> case p2Child of
             (App_ head2 children) | isInjHead head2 ->
@@ -447,10 +451,18 @@ matchInjTriangle p1FromSort p1ToSort p1Child p2FromSort p2ToSort p2Child
                     [p2Child'] = children
                 in
                     assert (p2ToSort' == p2FromSort) $
-                    matchInjTriangle
+                    matchInjTriangle tools
                         p1FromSort p1ToSort p1Child
                         p2FromSort' p2ToSort p2Child'
-            _ ->  Left $ Left UnsupportedPatterns
+            _
+                | isConstructorTop tools (project p1Child)
+                  && isConstructorTop tools (project p2Child) ->
+                    Left $ Left
+                        (PatternClash
+                            (InjectionClash p1FromSort p1ToSort)
+                            (InjectionClash p2FromSort p2ToSort)
+                        )
+                | otherwise -> Left $ Left UnsupportedPatterns
 
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi

@@ -48,10 +48,11 @@ applyInj
     -> CommonPurePatternStub Object -> CommonPurePatternStub Object
 applyInj sortFrom sortTo pat = applyPS symbolInj [sortFrom, sortTo] [pat]
 
-s1, s2, s3 :: Sort Object
+s1, s2, s3, s4 :: Sort Object
 s1 = simpleSort (SortName "s1")
 s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
+s4 = simpleSort (SortName "s4")
 
 a, a1, a2, a3, b, c, f, g, h :: PureSentenceSymbol Object
 a = symbol_ "a" AstLocationTest [] s1
@@ -110,6 +111,9 @@ a2A = applyS a2 []
 
 a3A :: CommonPurePatternStub Object
 a3A = applyS a3 []
+
+bA :: CommonPurePatternStub Object
+bA = applyS b []
 
 x :: CommonPurePatternStub Object
 x = parameterizedVariable_ s1 "x" AstLocationTest
@@ -498,10 +502,18 @@ test_unification =
         (UnificationTerm aA)
         (UnificationTerm dv2)
         (PatternClash (HeadClash (symbolHead a)) (DomainValueClash "dv2"))
-    , andSimplifyFailure "Unmatching domain value + constant"
+    , andSimplifyFailure "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a1A)
         (PatternClash (DomainValueClash "dv1") (HeadClash (symbolHead a1)))
+    , andSimplifyFailure "Unmatching domain value + nonconstructor constant"
+        (UnificationTerm dv1)
+        (UnificationTerm a2A)
+        (NonConstructorHead (symbolHead a2))
+    , andSimplifyFailure "Unmatching nonconstructor constant + domain value"
+        (UnificationTerm a2A)
+        (UnificationTerm dv1)
+        (NonConstructorHead (symbolHead a2))
     , andSimplifyFailure "non-functional pattern"
         (UnificationTerm x)
         (UnificationTerm a3A)
@@ -607,4 +619,60 @@ injUnificationTests =
             (var xs2)
             (extractPurePattern (applyInj s1 s2 aA))
         )
+    , andSimplifySuccess "Injected Variable vs doubly injected term"
+        (UnificationTerm (applyInj s1 s2 x))
+        (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA)))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("x", aA)]
+        (AndDistributionAndConstraintLifting
+            (injHead s1 s2)
+            [Proposition_5_24_3
+                [FunctionalHead (symbolHead a)]
+                (var x)
+                (extractPurePattern aA)
+            ]
+        )
+    , andSimplifySuccess "doubly injected variable vs injected term"
+        (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 x)))
+        (UnificationTerm (applyInj s1 s2 aA))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("x", aA)]
+        (AndDistributionAndConstraintLifting
+            (injHead s1 s2)
+            [Proposition_5_24_3
+                [FunctionalHead (symbolHead a)]
+                (var x)
+                (extractPurePattern aA)
+            ]
+        )
+    , andSimplifySuccess "doubly injected variable vs doubly injected term"
+        (UnificationTerm (applyInj s4 s2 (applyInj s1 s4 x)))
+        (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA)))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("x", aA)]
+        (AndDistributionAndConstraintLifting
+            (injHead s1 s2)
+            [Proposition_5_24_3
+                [FunctionalHead (symbolHead a)]
+                (var x)
+                (extractPurePattern aA)
+            ]
+        )
+    , andSimplifyFailure "constant vs injection"
+        (UnificationTerm aA)
+        (UnificationTerm (applyInj s2 s1 xs2))
+        (PatternClash (HeadClash (symbolHead a)) (InjectionClash s2 s1))
+    , andSimplifyFailure "unmatching injections"
+        (UnificationTerm (applyInj s1 s3 aA))
+        (UnificationTerm (applyInj s2 s3 bA))
+        (PatternClash (InjectionClash s1 s3) (InjectionClash s2 s3))
+    , andSimplifyFailure "unmatching nested injections"
+        (UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA)))
+        (UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA)))
+        (PatternClash (InjectionClash s1 s4) (InjectionClash s2 s4))
+    , andSimplifyFailure "unmatching injections"
+        -- TODO(traiansf): this should succeed if s1 < s2 < s3
+        (UnificationTerm (applyInj s1 s3 aA))
+        (UnificationTerm (applyInj s2 s3 xs2))
+        UnsupportedPatterns
     ]
