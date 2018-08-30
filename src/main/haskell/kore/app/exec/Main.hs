@@ -364,9 +364,4 @@ constructorFunctions tools =
     }
   where
     isInj :: SymbolOrAlias Object -> Bool
-    isInj h =
-        getId (symbolOrAliasConstructor h) == "inj"
-        ||
-        getId (symbolOrAliasConstructor h) == "kseq"
-        ||
-        getId (symbolOrAliasConstructor h) == "dotk"
+    isInj h = getId (symbolOrAliasConstructor h) `elem` ["inj","kseq","dotk"]
