@@ -18,7 +18,6 @@ import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
 
-import Data.Functor.Traversable
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
@@ -232,7 +231,7 @@ simplifyAnd
         (UnificationError level)
         (UnificationSolution level variable, UnificationProof level variable)
 simplifyAnd tools =
-    fixTopDownVisitor (preTransform tools) postTransform
+    elgot postTransform (preTransform tools . project)
 
 -- Performs variable and equality checks and distributes the conjunction
 -- to the children, creating sub-unification problems

@@ -21,7 +21,6 @@ import Data.Functor.Foldable
 
 import Data.Functor.Impredicative
        ( Rotate31 (..) )
-import Data.Functor.Traversable
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
@@ -126,7 +125,7 @@ instance LiftableToMetaML (Variable Object) where
 
 -- Section 9.2.8 Lift Patterns
 instance LiftableToMetaML CommonKorePattern where
-    liftToMeta = fixBottomUpVisitor liftReducer
+    liftToMeta = cata liftReducer
 
 liftReducer
     :: UnifiedPattern Variable CommonMetaPattern
