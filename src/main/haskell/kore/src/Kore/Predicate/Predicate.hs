@@ -68,7 +68,7 @@ Should not be exported, and should be treated as an opaque entity which
 can be manipulated only by functions in this module.
 -}
 newtype GenericPredicate pat = GenericPredicate pat
-    deriving (Show, Eq, Functor, Traversable, Foldable)
+    deriving (Eq, Foldable, Functor, Ord, Show, Traversable)
 
 {-| 'Predicate' is a user-visible representation for predicates.
 -}

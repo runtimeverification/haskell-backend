@@ -60,7 +60,7 @@ import           Kore.AST.Common
                  ( Application (..), DomainValue (..), Id (..),
                  Pattern (DomainValuePattern, StringLiteralPattern), Sort (..),
                  SortActual (..), SortVariable (..), StringLiteral (..),
-                 Symbol (..), SymbolOrAlias, Variable )
+                 Symbol (..), Variable )
 import           Kore.AST.Error
                  ( withLocationAndContext )
 import           Kore.AST.Kore
@@ -72,8 +72,6 @@ import           Kore.AST.PureML
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern StringLiteral_ )
 import           Kore.ASTVerifier.Error
@@ -89,6 +87,7 @@ import           Kore.IndexedModule.IndexedModule
                  ( SortDescription )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import           Kore.Step.Function.Data
@@ -449,13 +448,6 @@ appliedFunction
 appliedFunction epat =
     (return . Applied . OrOfExpandedPattern.make) [epat]
 
-{- | Look up the result sort of a symbol or alias
- -}
-getResultSort :: MetadataTools level attrs -> SymbolOrAlias level -> Sort level
-getResultSort MetadataTools { sortTools } symbol =
-    case sortTools symbol of
-        ApplicationSorts { applicationSortsResult } -> applicationSortsResult
-
 {- | Construct a builtin binary operator.
 
   Both operands have the same builtin type, which may be different from the
@@ -550,7 +542,7 @@ functionEvaluator ctx impl =
         simplifier
         Application
             { applicationSymbolOrAlias =
-                (getResultSort tools -> resultSort)
+                (MetadataTools.getResultSort tools -> resultSort)
             , applicationChildren
             }
       =

@@ -90,12 +90,10 @@ baseStepWithPattern
     -> IntCounter (CommonOrOfExpandedPattern level, StepProof level)
 baseStepWithPattern tools axioms configuration = do
     stepResultsWithProofs <- sequence (stepToList tools configuration axioms)
+    let (results, proofs) = unzip stepResultsWithProofs
     return
-        ( OrOfExpandedPattern.make
-            -- TODO: Remove fst.
-            (map fst stepResultsWithProofs)
-            -- TODO: Remove snd.
-        , simplifyStepProof $ StepProofCombined (map snd stepResultsWithProofs)
+        ( OrOfExpandedPattern.make results
+        , simplifyStepProof $ StepProofCombined proofs
         )
 
 stepToList

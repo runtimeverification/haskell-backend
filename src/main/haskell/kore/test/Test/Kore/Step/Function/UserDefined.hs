@@ -75,6 +75,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
                 (mockSimplifier [])
                 (asApplication (metaH (x PatternSort)))
@@ -98,6 +99,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
                 (mockSimplifier [])
                 (asApplication (metaF (x PatternSort)))
@@ -114,6 +116,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeFalsePredicate
+                    , axiomAttributes = def
                     }
                 (mockSimplifier [])
                 (asApplication (metaF (x PatternSort)))
@@ -132,6 +135,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
                 (mockSimplifier
                     -- Evaluate Top to Bottom.
@@ -158,6 +162,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
                 (mockSimplifier
                     [   ( asPureMetaPattern (metaG (x PatternSort))
@@ -189,6 +194,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
                 (mockSimplifier
                     [   ( asPureMetaPattern (metaG (x PatternSort))
@@ -230,6 +236,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
                 (mockSimplifier [])
                 (asApplication (metaSigma (a PatternSort) (b PatternSort)))
@@ -263,6 +270,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
                 (mockSimplifier
                     [   ( asPureMetaPattern (metaG (b PatternSort))

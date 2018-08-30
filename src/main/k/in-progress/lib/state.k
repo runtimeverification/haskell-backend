@@ -22,10 +22,10 @@ module STATE-BASIC
   rule set(.State, K:StateKey, V:StateValue) => (K |-> V) .State
   rule set((K:StateKey |-> _:StateValue) S:State, K:StateKey, V:StateValue)
        => (K |-> V) S
-  
+
   rule inState(.State, _) => false
   rule inState((K:StateKey |-> _:StateValue) S:State, K:StateKey) => true
- 
+
   rule get((K:StateKey |-> V:StateValue) S:State, K:StateKey) => V
 endmodule
 

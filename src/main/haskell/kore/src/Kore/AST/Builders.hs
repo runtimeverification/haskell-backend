@@ -16,6 +16,7 @@ module Kore.AST.Builders
     , bottom_ -- TODO: not used yet
     , ceilS_ -- TODO: not used yet
     , ceil_ -- TODO: not used yet
+    , parameterizedDomainValue_
     , equalsAxiom_
     , equalsS_
     , equals_
@@ -408,6 +409,18 @@ next_ =
                 , nextChild  = pattern1
                 }
         )
+
+-- |Builds a 'PatternStub' representing 'DomainValue' given a 'Sort' and
+-- a'String' for its operand.
+parameterizedDomainValue_
+    :: Sort Object -> String -> CommonPurePatternStub Object
+parameterizedDomainValue_ sort str =
+    SortedPatternStub
+        SortedPattern
+        { sortedPatternSort = sort
+        , sortedPatternPattern = DomainValuePattern
+            (DomainValue sort (Fix (StringLiteralPattern (StringLiteral str))))
+        }
 
 -- |Builds a 'PatternStub' representing 'Rewrites' given 'PatternStub's for its
 -- operands.

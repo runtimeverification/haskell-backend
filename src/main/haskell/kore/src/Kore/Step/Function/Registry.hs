@@ -86,5 +86,4 @@ axiomToIdEvaluatorPair
                             (axiomFunctionEvaluator axiomPat)
                         )
                 _ -> Nothing
-        Right (RewriteAxiomPattern p) ->
-            error ("Unexpected rewrite axiom " ++ show p)
+        Right (RewriteAxiomPattern _) -> Nothing
