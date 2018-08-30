@@ -45,7 +45,8 @@
     {\par {\bfseries \color{blue} #1 \par}} %comment showed
   
   % ams math packages.
-  \usepackage{amsmath, amssymb, amsthm}
+  \usepackage{amsmath, amssymb, amsthm, mathtools,mathbbol,prftree}
+  \usepackage{txfonts}
   
   % Declare a global counter for theorem environments:
   \newcounter{thmcounter}
@@ -67,8 +68,7 @@
   
   \newtheorem{remark}     [thmcounter]{Remark}
   \newtheorem{notation}   [thmcounter]{Notation}
-  
-  
+    
   % Package for changing fonts in the Verbatim environment:
   \usepackage{fancyvrb}
   
@@ -93,6 +93,10 @@
   % Package for graphics
   \usepackage{graphicx}
   
+  \usepackage{xspace}
+  \usepackage{caption}
+  \usepackage{longtable}
+  
   % Define ceiling and flooring symbols:
   \usepackage{mathtools}
   \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
@@ -112,6 +116,45 @@
   \usepackage{prftree}
   
   \usepackage{enumitem}
+  
+  % logic connectives
+  \newcommand{\imp}{\to}
+  \newcommand{\dimp}{\leftrightarrow}
+  \newcommand{\ddd}{,\dots,}
+  
+  % contexts
+  \newcommand{\CSub}[1]{C_{#1}}
+  \newcommand{\Csigma}{\CSub{\sigma}}
+  \newcommand{\Csigmai}{\CSub{\sigma,i}}
+  \newcommand{\Csigmaapp}[1]{\CSub{\sigma}[#1]}
+  \newcommand{\Csigmaiapp}[1]{\CSub{\sigma,i}[#1]}
+  \newcommand{\Capp}[1]{C[#1]}
+  
+  % name of the proof rules
+  \newcommand{\prule}[1]{\textsc{(#1)}}
+  
+  \newcommand{\modusponens}{\prule{Modus Ponens}\xspace}
+  \newcommand{\universalgeneralization}{\prule{Universal Generalization}\xspace}
+  \newcommand{\necessitation}{\prule{Necessitation}\xspace}
+  \newcommand{\existence}{\prule{Existence}\xspace}
+  \newcommand{\singletonvariable}{\prule{Singleton Variable}\xspace}
+  \newcommand{\propagationbottom}{\prule{Propagation$_\bot$}\xspace}
+  \newcommand{\propagationvee}{\prule{Propagation$_\vee$}\xspace}
+  \newcommand{\propagationexists}{\prule{Propagation$_\exists$}\xspace}
+  \newcommand{\variablesubstitution}{\prule{Variable Substitution}\xspace}
+  \newcommand{\framing}{\prule{Framing}\xspace}
+  \newcommand{\propositionaltautology}{\prule{Propositional Tautology}\xspace}
+  \newcommand{\forallrule}{\prule{$\forall$}\xspace}
+  \newcommand{\membership}{\prule{Membership}\xspace}
+  \newcommand{\membershipintroduction}{\prule{Membership Introduction}\xspace}
+  \newcommand{\membershipelimination}{\prule{Membership Elimination}\xspace}
+  \newcommand{\membershipneg}{\prule{Membership$_\neg$}\xspace}
+  \newcommand{\membershipwedge}{\prule{Membership$_\wedge$}\xspace}
+  \newcommand{\membershipexists}{\prule{Membership$_\exists$}\xspace}
+  \newcommand{\equalityelimination}{\prule{Equality Elimination}\xspace}
+  \newcommand{\membershipsymbol}{\prule{Membership Symbol}\xspace}
+  \newcommand{\membershipvariable}{\prule{Membership Variable}\xspace}
+  \newcommand{\functionalsubstitution}{\prule{Functional Substitution}\xspace}
     
   % Package for writing BNF syntax
   \usepackage{syntax}
@@ -200,6 +243,9 @@
   \newcommand{\itceil}{\textit{ceil}}
   
   \newcommand{\Pred}{\textit{Pred}}
+  
+  \newcommand{\wnext}{{\medcirc}}
+  \newcommand{\snext}{{\medbullet}}
 
   \newcommand{\Context}{\textit{Context}}
   \newcommand{\hole}{\boxempty}
@@ -233,6 +279,13 @@
   
   \newcommand{\builtin}{\textit{builtin}}
   
+  \newcommand{\KbuiltinSort}{\texttt{\sharpsymbol builtinSort}}
+  \newcommand{\pKbuiltinSort}[1]
+  {\parametric{\texttt{\sharpsymbol builtinSort}}{#1}}
+  \newcommand{\KbuiltinSymbol}{\texttt{\sharpsymbol builtinSymbol}}
+  \newcommand{\pKbuiltinSymbol}[1]
+  {\parametric{\texttt{\sharpsymbol builtinSymbol}}{#1}}
+  
   % Define PATTERNS with ATTERNS are small capitals:
   \newcommand{\PATTERNS}{\text{P\textsc{atterns}}}
   \newcommand{\VARIABLES}{\text{V\textsc{ariables}}}
@@ -240,12 +293,17 @@
   
   \newcommand{\doubleslash}{/\!/{ }}
   
+  \newcommand{\compose}{\circ}
+  \newcommand{\strict}[1]{\textsf{strict(#1)}}
 
   \newcommand{\shp}{\includegraphics{hash-symbol}\kern-0.1em}
   \newcommand{\smallshp}{\includegraphics[scale=0.8]{hash-symbol}\kern-0.1em}
   \newcommand{\sharpsymbol}{\#}
   \newcommand{\shs}{\shp s}
+  \newcommand{\shvs}{\shp vs}
   \newcommand{\smallshs}{\smallshp s}
+  \newcommand{\sharpup}{\texttt{\sharpsymbol up}}
+  \newcommand{\sharpdown}{\texttt{\sharpsymbol down}}
   % Sec 3.1 Truth
   \newcommand{\KPred}{\mathit{\shp Pred}}
   
@@ -258,6 +316,13 @@
   
   %% We shouldn't need the follows.  
   \newcommand{\Kconcat}{\texttt{\sharpsymbol concat}}
+  
+  \newcommand{\Kconstructor}{\texttt{\sharpsymbol constructor}}
+  \newcommand{\KconstructorP}[1]{\parametric{\Kconstructor}{#1}}
+  \newcommand{\Kinjective}{\texttt{\sharpsymbol injective}}
+  \newcommand{\KinjectiveP}[1]{\parametric{\Kinjective}{#1}}
+  
+  \newcommand{\KprovableP}[1]{\parametric{\Kdeduce}{#1}}
   
   % Sec 3.3 Sorts and Symbols
   \newcommand{\KSort}{\texttt{\sharpsymbol Sort}}
@@ -301,7 +366,7 @@
   \newcommand{\KdeleteKSymbolList}{\texttt{\sharpsymbol deleteSymbolList}}
   \newcommand{\KnilKCharList}{\texttt{\sharpsymbol nilCharList}}
   \newcommand{\KconsKCharList}{\texttt{\sharpsymbol consCharList}}
-  \newcommand{\KVariableList}{\texttt{\sharpsymbol VariableList}}
+  \newcommand{\KVariableList}{\texttt{\sharpsymbol VariableList}\xspace}
   \newcommand{\KnilKVariableList}{\texttt{\sharpsymbol nilVariableList}}
   \newcommand{\KconsKVariableList}{\texttt{\sharpsymbol consVariableList}}
   \newcommand{\KinKVariableList}{\texttt{\sharpsymbol inVariableList}}
@@ -329,6 +394,13 @@
   \newcommand{\Kbottom}{\texttt{\sharpsymbol \slashsymbol  bottom}}
   \newcommand{\Kfloor}{\texttt{\sharpsymbol \slashsymbol  floor}}
   \newcommand{\Kceil}{\texttt{\sharpsymbol \slashsymbol  ceil}}
+  \newcommand{\Knext}{\texttt{\sharpsymbol \slashsymbol next}}
+  \newcommand{\Krewrites}{\texttt{\sharpsymbol \slashsymbol rewrites}}
+  
+  \newcommand{\KVariableListAsKPatternList}
+    {\texttt{\sharpsymbol variableListAsPatternList}\xspace}
+  
+  \newcommand{\Kdv}{\texttt{\sharpsymbol \slashsymbol dv}}
   
   \newcommand{\KgetFV}{\texttt{\sharpsymbol getFV}}
   \newcommand{\KgetFVFromPatterns}{\texttt{\sharpsymbol getFVFromPatterns}}
@@ -346,7 +418,8 @@
   \newcommand{\KgetSymbols}{\texttt{\sharpsymbol getSymbols}}
   \newcommand{\KsortDeclared}[1]{
   	\parametric{\texttt{\sharpsymbol sortDeclared}}{#1}}
-  \newcommand{\KsortsDeclared}{\texttt{\sharpsymbol sortsDeclared}}
+  \newcommand{\KsortsDeclared}[1]{
+        \parametric{\texttt{\sharpsymbol sortsDeclared}}{#1}}
   \newcommand{\KsymbolDeclared}[1]{
   	\parametric{\texttt{\sharpsymbol symbolDeclared}}{#1}}
   \newcommand{\KaxiomDeclared}{\texttt{\sharpsymbol axiomDeclared}}
@@ -373,6 +446,8 @@
   \newcommand{\KwellFormedTheory}{\texttt{\sharpsymbol wellFormedTheory}}
   
   \newcommand{\Kdeduce}{\textup{\texttt{\sharpsymbol provable}}}
+  
+  \newcommand{\Ksc}[1]{\parametric{\textup{\texttt{\sharpsymbol sc}}}{#1}}
   
   % The italic font of "ceil" used in math mode.
   \newcommand{\cl}{\mathit{ceil}}
@@ -430,6 +505,8 @@
   \newcommand{\slnext}{\slsh{next}}
   \newcommand{\slrewrites}{\slsh{rewrites}}
   
+  \newcommand{\sldv}{\slsh{dv}}
+  
   \newcommand{\itlogic}{\mathit{logic}}
   \newcommand{\itconnective}{\mathit{connective}}
   \newcommand{\itsort}{\mathit{sort}}
@@ -460,11 +537,13 @@
 
 \maketitle
 
-\info{Please feel free to contribute to this report in all ways.
+\info[inline]{Please feel free to contribute to this report in all ways.
 You could add new contents, remove redundant ones, refactor and
 organize the texts, and correct typos, but please follow the FSL
 rules for editing, though; e.g., $<$80 characters per line,
 each sentence on a new line, etc. }
+
+\tableofcontents
 
 \section{Introduction}
 \label{sec:introduction}
@@ -527,6 +606,7 @@ Then we discuss schematic/parametric ways to finitely define infinite
 matching logic theories.
 Finally, we introduce theoretical foundations underlying the
 notion of ``builtins''.
+
 
 \subsection{Syntax}
 \label{sec:ML-syntax}
@@ -848,6 +928,25 @@ component of any membership construct in $\varphi_1$, and any implementation of
 substitution will have to take that into account and perform an 
 ``occurs check'' for $x$ in $\varphi_1$, and this could be expensive.
 
+When writing patterns, the following precedence and associativity rules are 
+useful to reduce the 
+number of necessary parentheses.
+\begin{center}
+	\begin{tabular}{c|c|c}
+		Connective      &     Precedence & Associativity \\\hline
+		$\neg$          &     1          & 　--　　　　　　　　　　　\\\hline
+		$=$, $\in$      &     2          & 　--          　\\\hline
+		$\wedge$        &     3          &  left         \\\hline
+		$\vee$          &     4          &  left         \\\hline
+		$\to$           &     5          &  right        \\\hline
+		$\leftrightarrow$ &   6          &  --           \\\hline
+		$\exists$,$\forall$ & 7          &  --           \\\hline
+	\end{tabular}
+\end{center}
+As a convention, binders ($\forall$ and $\exists$) have a lower precedence than 
+other connectives.
+This means that the scope of a binder extends as far to the right as possible. 
+
 Since $s_1$ and $s_2$ can usually be inferred from context,
 we write $\lceil\_\rceil$ or $\lfloor\_\rfloor$ instead of
 $\lceil\_\rceil_{s_1}^{s_2}$ or $\lfloor\_\rfloor_{s_1}^{s_2}$, respectively,
@@ -944,22 +1043,6 @@ patterns~\cite{rosu-2017-lmcs}.
 \subsection{Sound and Complete Deduction}
 \label{sec:deduction}
 
-Currently, our sound and complete proof system for matching logic extends that
-of first-order logic with equality with axioms and proof rules for membership.
-In order for this to be feasible, we need equality and membership, which are
-available when the definedness symbol is available, as seen in
-Section~\ref{sec:useful}.
-Therefore, in this section we assume a matching logic theory $(S,\Sigma,A)$
-which includes all the definedness symbols discussed in Section~\ref{sec:useful}
-(and thus also totality, equality and membership).
-We conjecture that it is possible to craft a proof system that does not rely on
-the existence of definedness symbols.
-Nevertheless, that will not significantly change the \K semantics approach taken
-in this paper, because all the existing axioms and proof rules will be proven as
-lemmas in the new proof system.
-Therefore, any proofs done with the proof system below will be easily translatable
-to proofs done with the new proof system, whenever the latter will be available.
-
 \newcommand{\sequent}[2]{{#1}\vdash{#2}}
 
 Our proof system is a Hilbert-style proof system (not to be confused with a
@@ -1042,17 +1125,18 @@ regard them as proof rule schemas for matching logic.
 Note, however, that the \emph{meta-variables now range over patterns} of
 the same sort, and thus there is a schema for each sort.
 
-Matching logic also includes the proof system of first-order logic with
-equality.
-However, as explained in \cite{rosu-2017-lmcs}, we prefer to replace the
-FOL substitution proof rule with two rules, called
-\emph{functional substitution}
-and \emph{functional variable} below:
+Matching logic also includes some of the proof rules
+that deal with quantifiers from first order logic.
+Notice that as explained in \cite{rosu-2017-lmcs}, 
+the FOL substitution proof rule
+does not hold in its general form in matching logic.
+Instead, we only have
+\emph{variable substitution} in matching logic.
 
 \vspace*{2ex}
 
 \noindent
-\underline{First-order logic with equality proof rules:}
+\underline{First-order logic proof rules:}
 
 \begin{quote}
 5. $\vdash (\forall x\,.\,\varphi_1\ra\varphi_2) \ra (\varphi_1 \ra \forall x\,.\,\varphi_2)$
@@ -1066,67 +1150,123 @@ when $x\not\in\FV(\varphi_1)$
 \end{quote}
 
 \begin{quote}
-7. $\vdash (\forall x\,.\,\varphi) \wedge
-  (\exists y\,.\,\varphi'=y) \ra \varphi[\varphi'/x]$
-\hfill \textsc{(Functional Substitution)}
+7. $\vdash (\forall x\,.\,\varphi) \ra \varphi[y/x]$
+\hfill \textsc{(Variable Substitution)}
 \end{quote}
 
-\begin{quote}
-8. $\exists y\,.\,x=y$
-\hfill \textsc{(Functional Variable)}
-\end{quote}
-
-\begin{quote}
-9. $\varphi = \varphi$
-\hfill \textsc{(Equality Introduction)}
-\end{quote}
-
-\begin{quote}
-10. $\varphi_1=\varphi_2 \mathrel\wedge \varphi[\varphi_1/x] \ra \varphi[\varphi_2/x]$
-\hfill \textsc{(Equality Elimination)}
-\end{quote}
-
-In addition to the above rules borrowed from FOL with equality, matching
-logic also introduces the following rules for (reasoning about) membership.
+In addition to the above rules borrowed from FOL, matching
+logic also introduces the following rules for (reasoning about) structures.
 
 \vspace*{2ex}
 
 \noindent
-\underline{Membership rules:}
+\underline{Propagation rules:}
 
 \begin{quote}
-11. $\displaystyle\frac{\varphi}{\forall x\,.\,x\in\varphi}$
-\hfill \textsc{(Membership Introduction)}
+8. $\vdash \sigma(\varphi_1 \ddd \varphi_{i-1}, \bot,
+                  \varphi_{i+1} \ddd \varphi_n)
+           \imp \bot$
+\hfill \textsc{(Propagation$_\bot$)}
 \end{quote}
 
 \begin{quote}
-12. $\displaystyle\frac{\forall x\,.\,x\in\varphi}{\varphi}$
-\hfill \textsc{(Membership Elimination)}
+9.
+$
+\begin{array}{l}
+\sigma(
+\varphi_1 \ddd \varphi_{i-1}, 
+\varphi_i \vee \varphi'_i,
+\varphi_{i+1} \ddd \varphi_n) \imp
+\\
+\sigma(\varphi_1 \ddd \varphi_{i-1}, \varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+\\
+\vee
+\sigma(\varphi_1 \ddd \varphi_{i-1}, \varphi'_i,
+\varphi_{i+1} \ddd \varphi_n)
+\end{array}
+$
+\hfill \textsc{(Propagation$_\vee$)}
 \end{quote}
 
 \begin{quote}
-13. $x \in y = (x=y)$ when $x,y\in\Var$
-\hfill \textsc{(Membership Variable)}
+10.
+$
+\begin{array}{l}
+\sigma(
+\varphi_1 \ddd \varphi_{i-1}, 
+\exists x . \varphi_i,
+\varphi_{i+1} \ddd \varphi_n) \imp
+\\
+\exists x . 
+\sigma(\varphi_1 \ddd \varphi_{i-1}, \varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+\end{array}
+$
+when $x \not\in \bigcup_{j \neq i} \FV(\varphi_j)$
+\hfill \textsc{(Propagation$_\exists$)}
 \end{quote}
 
-\begin{quote}
-14. $x\in\neg\varphi = \neg(x\in\varphi)$
-\hfill \textsc{(Membership $\neg$)}
-\end{quote}
+\vspace*{2ex}
+
+\noindent
+\underline{Frame rule:}
 
 \begin{quote}
-15. $x\in\varphi_1\wedge\varphi_2 = (x\in\varphi_1) \wedge (x\in\varphi_2)$
-\hfill \textsc{(Membership $\wedge$)}
+	11.
+	$\displaystyle\frac{\varphi_i \imp \varphi'_i}
+	{\sigma(\varphi_1 \ddd \varphi_{i-1} ,
+		\varphi_i,
+		\varphi_{i+1} \ddd \varphi_n)
+		\imp
+		\sigma(\varphi_1 \ddd \varphi_{i-1} ,
+		\varphi'_i,
+		\varphi_{i+1} \ddd \varphi_n)
+	}$
+	\hfill \textsc{(Framing)}
 \end{quote}
 
-\begin{quote}
-16. $(x\in\exists y\,.\,\varphi) = \exists y\,.\,(x\in\varphi)$ when $x,y\in\Var$ distinct
-\hfill \textsc{(Membership $\exists$)}
-\end{quote}
+Besides the above rules, we need two more proof rules
+to make the proof system a complete one.
+These two rules are
+
+\vspace*{2ex}
+
+\noindent
+\underline{More rules:}
 
 \begin{quote}
-17. $\begin{array}{l}x\in\sigma(\varphi_1,...,\varphi_{i-1},\varphi_i,\varphi_{i+1},...,\varphi_n) = \\ \exists y\,.\, (y \in\varphi_i \mathrel\wedge x \in\sigma(\varphi_1,...,\varphi_{i-1},y,\varphi_{i+1},...,\varphi_n))\end{array}$
-\hfill \textsc{(Membership Symbol)}
+	12.
+	$\vdash \exists x . x$
+	\hfill \textsc{(Existence)}
+\end{quote}
+
+To ease our notation in writing the next proof rule,
+let us introduce \emph{symbol context}.
+We abbreviate
+$\sigma(\varphi_1 \ddd \varphi_{i-1}, \varphi_i,
+        \varphi_{i+1} \ddd \varphi_n)$
+as $\Csigmaiapp{\varphi_i}$.
+When the position $i$ is not important,
+we omit it and write $\Csigmaapp{\varphi_i}$.
+We inductively define what a \emph{symbol context} is.
+A symbol context $C$ is either the identity context, i.e.,
+$C[\varphi] = \varphi$,
+or $C[\varphi] = \Csigmaapp{C'[\varphi]}$
+where $C'$ is a symbol context.
+In other words, $C[\varphi]$ is a symbol context if
+the path of the occurrence of $\varphi$ in $C[\varphi]$
+contains only symbols and no logic connectives.
+
+Using our notation of symbol contexts, we present the last proof rule
+which captures the fact that variables are singletons:
+
+\begin{quote}
+	13.
+	$\vdash \neg ( C_1[x \wedge \varphi] 
+	 \wedge C_2[ x \wedge \neg \varphi ] )$
+	where $C_1, C_2$ are symbol contexts
+	\hfill \textsc{(Singleton Variables)}
 \end{quote}
 
 The following result establishes the soundness and completeness
@@ -1228,7 +1368,7 @@ $$
 \textrm{for any sorts $s,s'$} \\
 \end{array}
 $$
-And here are some \emph{pattern schemas}, each defining infinitely many patters:
+And here are some \emph{pattern schemas}, each defining infinitely many patterns:
 $$
 \begin{array}{rl}
 \parametric{\append}{s}(\parametric{\nil}{s},l'\cln\parametric{\List}{s})
@@ -1328,7 +1468,7 @@ $$
 $$
 
 One of the major goals of this paper is to propose a formal language
-and an implementation of it that allow us to finitely specify potentially
+and implementation that allow us to finitely specify potentially
 infinite matching logic theories presented with finitely many sort, symbol
 and pattern schemas.
 
@@ -1348,6 +1488,9 @@ Section~\ref{sec:deduction}.
 
 \subsection{Binders}
 \label{sec:binders}
+
+\info[inline]{More recent research shows that binders can be defined as 
+functional symbols. Change section 4.1--4.3 to reflect that.}
 
 The \K framework allows to define binders, such as the $\lambda$ binder in
 $\lambda$-calculus, using the attribute \texttt{binder}.
@@ -1370,7 +1513,7 @@ are in $\Var_\Exp$ and all patterns have sort $\Exp$.
 
 The key observation here is that the $\lambda\_.\_$ construct in
 $\lambda$-calculus \emph{performs two important operations}: on the one hand
-it builds a binding of its first argument into its second, and one the other
+it builds a binding of its first argument into its second, and on the other
 hand it builds a term.
 Fortunately, matching logic allows us to separate these two operations, and
 use the builtin existential quantifier for binding.
@@ -1573,9 +1716,11 @@ $$
 \parametric{\Context}{s,s'} &
 \textrm{sort schema, where $s$ (hole sort) and}
 \\ &\textrm{$s'$ (result sort) range over any sorts}
-\\ \parametric{\gamma^0}{s,s'} \in \Sigma_{s \times s', \parametricscript{\Context}{s,s'}}
+\\ \parametric{\gamma^0}{s,s'} \in \Sigma_{s \times s', 
+\parametricscript{\Context}{s,s'}}
 & \textrm{symbol schema, for all sorts $s, s'$}
-\\ \parametric{\gamma\_.\_}{s,s'}(\hole\cln s,T\cln s') \equiv \exists \hole . \parametric{\gamma^0}{s,s'}(\hole,T)
+\\ \parametric{\gamma\_.\_}{s,s'}(\hole\cln s,T\cln s') \equiv \exists \hole . 
+\parametric{\gamma^0}{s,s'}(\hole,T)
 & \textrm{here, $\hole$ is an ordinary variable}
 \\
 \parametric{\_[\_]}{s,s'} \in \Sigma_{\parametricscript{\Context}{s,s'} \times s, s'}
@@ -1585,12 +1730,35 @@ $$
 & \textrm{axiom schema for identity contexts, for all sorts $s$}
 \end{array}
 $$
+And the following axiom schema for composing nested contexts:
+\begin{align*}
+&\parametric{\_[\_]}{s',s''}(C_1 \cln \parametric{\Context}{s',s''},
+\parametric{\_[\_]}{s,s'}(C_2 \cln \parametric{\Context}{s,s'},
+T\cln s))
+\\
+= &
+\parametric{\_[\_]}{s,s''}(
+\parametric{\gamma\_.\_}{s,s''}(\hole\cln s,
+\parametric{\_[\_]}{s',s''}(
+C_1 \cln \parametric{\Context}{s',s''},
+\parametric{\_[\_]}{s,s'}(C_2 \cln \parametric{\Context}{s,s'},
+\hole\cln s))
+), T\cln s)
+\end{align*}
 The sort parameters of axiom schemas can usually be inferred from the context.
 To ease notation, from here on we assume they can be inferred and apply the
 mixfix notation for symbols containing ``$\_$'' in their names.
-With these, the last axiom schema above becomes:
+With these, the last two axiom schemas above become:
+\begin{align*}
+& (\gamma \hole .\; \hole)[T] = T \\
+& C_1[C_2[T]] = (\gamma \hole . C_1[C_2[\hole]])[T]
+\end{align*}
+We write 
+$C_1 \compose C_2 \equiv \gamma \hole . C_1[C_2[\hole]]$
+for nested context.
+Using this notation, the last axiom becomes
 $$
-(\gamma \hole .\; \hole)[T] = T
+C_1[C_2[T]] = (C_1 \compose C_2) [T]
 $$
 
 The above sort, symbol and axiom schemas are generic and tacitly assumed in
@@ -1598,7 +1766,7 @@ all definitions that make use of contexts.
 Let us now illustrate specific uses of contexts.
 
 \subsubsection{Evaluation Strategies of Language Constructs}
-
+\label{sec:evaluationstrategies}
 Suppose that a programming language has an if-then-else statement,
 say $\ite\in\Sigma_{\BExp\times\Stmt\times\Stmt,\Stmt}$,
 whose evaluation strategy is to first evaluate its first argument and then, depending
@@ -1610,9 +1778,11 @@ Assuming that all reductions/rewrites apply in context, as discussed in
 Section~\ref{sec:rewriting}, we can state that $\ite$ is given permission to
 apply reductions within its first argument with the following axiom:
 $$
-\ite(C[T],S_1,S_2) = (\gamma\hole.\;\ite(C[\hole],S_1,S_2))[T]
+\ite(T,S_1,S_2) = (\gamma\hole.\;\ite(\hole,S_1,S_2))[T]
 $$
-In particular, $C$ can be the identity context, ``$\gamma \hole .\; \hole$''.
+In practice, the above equation is often oriented as two rewrite rules.
+The rewrite rule from left to right is called \emph{heating rule},
+and the one from right to left is called \emph{cooling rule}.
 In addition to sort/parameter inference, front-ends of implementations of
 matching logic are expected to provide shortcuts for such rather boring
 axioms.
@@ -1630,23 +1800,66 @@ Using these axioms, we can infer the following:
 $$
 \begin{array}{rcll}
 \ite(1 < x,S_1,S_2) & = &
-\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
-& \textrm{\doubleslash context identity}
+(\gamma \hole . \ite(\hole, S_1, S_2))[1 < x]
+& \textrm{\doubleslash \strict{1} axiom for $\ite$}
 \\
 & = &
-\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
-& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
+(\gamma \hole . \ite(\hole, S_1, S_2))[
+(\gamma \hole . 1 < \hole)[x]
+]
+& \textrm{\doubleslash \strict{2} axiom for $\_<\_$}
 \\
 & = &
-(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$ above}
+\gamma \hole . ((\gamma \hole . \ite(\hole, S_1, S_2))[
+(\gamma \hole . 1 < \hole)[\hole]
+])[x]
+& \textrm{\doubleslash axiom for nested context}
 \end{array}
 $$
+Notice that $\gamma$ is a binder,
+so the last pattern above is alpha-equivalent to
+$$
+\gamma \hole_1 . ((\gamma \hole_2 . \ite(\hole_2, S_1, S_2))[
+(\gamma \hole_3 . 1 < \hole_3)[\hole_1]
+])[x]
+$$
+in which we rename all placeholder variables to prevent confusion.
+Again, we use strictness axioms, but this time from right to left,
+and simplify the above pattern as follows:
+$$
+\begin{array}{rcll}
+& &
+\gamma \hole_1 . ((\gamma \hole_2 . \ite(\hole_2, S_1, S_2))[
+(\gamma \hole_3 . 1 < \hole_3)[\hole_1]
+])[x]
+\\
+& = &
+\gamma \hole_1 . ((\gamma \hole_2 . \ite(\hole_2, S_1, S_2))[
+1 < \hole_1
+])[x]
+& \textrm{\doubleslash \strict{2} axiom for $\_<\_$}
+\\
+& = &
+\gamma \hole_1 . (\ite(1 < \hole_1, S_1, S_2))[x]
+& \textrm{\doubleslash \strict{1} axiom for \ite}
+\end{array}
+$$
+
 Therefore, $\ite(1 < x,S_1,S_2)$ can be matched against a pattern
-of the form $C[x]$, where $C$ is a context of sort
-$\parametric{\Context}{\AExp,\Stmt}$.
-That is, $x$ has been ``pulled'' out of the $\ite$ context;
-now other semantic rules or axioms can be applied to reduce $x$, by
+of the form $C[x]$, where $C$,
+as expected, is $\gamma \hole_1 . (\ite(1 < \hole_1, S_1, S_2))$,
+a context of sort $\parametric{\Context}{\AExp,\Stmt}$.
+That is, $x$ has been ``pulled'' out of the $\ite$ context.
+We point out that the above is a typical example of reasoning
+about contexts in matching logic.
+One applies a sequence of strictness axioms, from left to right,
+to pull out the redex.
+Then, the resulting nested contexts can be combined and merged
+to one uniform context with the axiom for nested context.
+Finally, the body of the uniform context can be simplified
+by applying the sequence of strictness axiom from right to left.
+
+Now other semantic rules or axioms can be applied to reduce $x$, by
 simply matching $x$ in a context.
 At any moment during the reduction, the axioms above can be applied
 backwards and thus whatever $x$ reduces to can be ``plugged'' back into
@@ -1663,64 +1876,65 @@ a redex to be reduced, but it can be used for matching any relevant
 data from a program configuration.
 More examples below will illustrate that.
 
-\subsubsection{Nested Contexts}
-
-Nesting of contexts comes for free in our approach, that is, nothing but
-reasoning using the deduction system of matching logic needs to be done
-in order to achieve matching with nested contexts.
-For example:
-$$
-\begin{array}{rcll}
-\ite(1 < x,S_1,S_2) & = &
-\ite((\gamma\hole.\;\hole)[1 < x],S_1,S_2)
-& \textrm{\doubleslash context identity}
-\\
-& = &
-(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
-\\
-& = &
-(\gamma\hole.\;\ite(\hole,S_1,S_2))[(\gamma\hole.\;1 < \hole)[x]]
-& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
-\end{array}
-$$
-Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
-of the form $C_1[C_2[x]]$, where $C_1$ is a context of sort
-$\parametric{\Context}{\BExp,\Stmt}$ and $C_2$ of sort
-$\parametric{\Context}{\AExp,\BExp}$.
-More interestingly,
-$$
-\begin{array}{rcll}
-\ite(1 < x,S_1,S_2) & = &
-\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
-& \textrm{\doubleslash context identity}
-\\
-& = &
-\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
-& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
-\\
-& = &
-(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
-\\
-& = &
-(\gamma\hole.\;\ite((\gamma\hole.\;\hole)[1 < \hole],S_1,S_2))[x]
-& \textrm{\doubleslash context identity}
-\\
-& = &
-(\gamma\hole.\;(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < \hole])[x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
-\end{array}
-$$
-Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
-of the form ($\gamma\hole.\;C_1[T_2])[x]$, where $C_1$ is a context of
-sort $\parametric{\Context}{\BExp,\Stmt}$ and $C_2 = \gamma\hole.\;T_2$ is
-a context of sort $\parametric{\Context}{\AExp,\BExp}$.
-Notice that we cannot naively apply a context to another context, e.g.,
-$C_1[C2]$, because the sorts do not match.
-Once the hole is explicitly mentioned as a binder in a context, what we really
-mean by $C_1[C2]$ is in fact $\gamma\hole.\;C_1[T_2]$, where
-$C_2 = \gamma\hole.\;T_2$.
+%\subsubsection{Nested Contexts}
+%
+%As we already see, the axiom for composite contexts gives us
+%nesting of contexts for free. It is nothing but
+%reasoning using the deduction system of matching logic needs to be done
+%in order to achieve matching with nested contexts.
+%For example:
+%$$
+%\begin{array}{rcll}
+%\ite(1 < x,S_1,S_2) & = &
+%\ite((\gamma\hole.\;\hole)[1 < x],S_1,S_2)
+%& \textrm{\doubleslash context identity}
+%\\
+%& = &
+%(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < x]
+%& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
+%\\
+%& = &
+%(\gamma\hole.\;\ite(\hole,S_1,S_2))[(\gamma\hole.\;1 < \hole)[x]]
+%& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
+%\end{array}
+%$$
+%Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
+%of the form $C_1[C_2[x]]$, where $C_1$ is a context of sort
+%$\parametric{\Context}{\BExp,\Stmt}$ and $C_2$ of sort
+%$\parametric{\Context}{\AExp,\BExp}$.
+%More interestingly,
+%$$
+%\begin{array}{rcll}
+%\ite(1 < x,S_1,S_2) & = &
+%\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
+%& \textrm{\doubleslash context identity}
+%\\
+%& = &
+%\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
+%& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
+%\\
+%& = &
+%(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
+%& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
+%\\
+%& = &
+%(\gamma\hole.\;\ite((\gamma\hole.\;\hole)[1 < \hole],S_1,S_2))[x]
+%& \textrm{\doubleslash context identity}
+%\\
+%& = &
+%(\gamma\hole.\;(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < \hole])[x]
+%& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
+%\end{array}
+%$$
+%Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
+%of the form ($\gamma\hole.\;C_1[T_2])[x]$, where $C_1$ is a context of
+%sort $\parametric{\Context}{\BExp,\Stmt}$ and $C_2 = \gamma\hole.\;T_2$ is
+%a context of sort $\parametric{\Context}{\AExp,\BExp}$.
+%Notice that we cannot naively apply a context to another context, e.g.,
+%$C_1[C2]$, because the sorts do not match.
+%Once the hole is explicitly mentioned as a binder in a context, what we really
+%mean by $C_1[C2]$ is in fact $\gamma\hole.\;C_1[T_2]$, where
+%$C_2 = \gamma\hole.\;T_2$.
 
 
 \subsubsection{Multi-Hole Contexts and Configuration Abstraction}
@@ -1730,7 +1944,11 @@ Contexts with multiple holes can also be easily supported by our approach,
 also without anything extra but the already existing deductive system of
 matching logic.
 A notation for multi-hole context application, however, is recommended in
-order to make patterns easier to read. Specifically,
+order to make patterns easier to read. 
+The way we define multi-hole contexts in matching logic
+is similar to how we define multi-arity functions in lambda calculus
+by curring them.
+Specifically,
 $$
 (\gamma \hole_1 \hole_2 \dots \hole_n . \; T)[T_1,T_2,\dots,T_n]
 \equiv (\gamma \hole_n .\; \dots (\gamma\hole_2.\;(\gamma\hole_1.\;T)[T_1])[T_2]\dots)[T_n]
@@ -1739,6 +1957,10 @@ Although $\gamma \hole_1 \hole_2 \dots \hole_n . \; T$ correspond to no
 patterns, we take a freedom to call them \emph{multi-hole contexts} and
 let meta-variables $C$ range over them, i.e., we take the freedom to write
 $C[T_1,T_2,\dots,T_n]$.
+Notice that we require placeholder variables
+$\hole_1 \ddd \hole_n$ to be different,
+and $T_1 \ddd T_n$ should not have free occurrences
+of any placeholder variables.
 We believe multi-hole contexts can be formalized as patterns, but we have
 not found any need for it yet.
 
@@ -1749,7 +1971,7 @@ mechanism to allow compact and modular language semantic definitions.
 The idea is to allow users to only write the parts of the program
 configuration that are necessary in semantic rules, the rest of the
 configuration being inferred automatically.
-This configuration abstracton process that is a crucial and distinctive
+This configuration abstraction process that is a crucial and distinctive
 feature of \K can be now elegantly explained with multi-hole contexts.
 
 To make the discussion concrete, suppose that we have a program configuration
@@ -1783,17 +2005,17 @@ configuration where we want to match patterns in context.
 In our case, we do that everywhere:
 $$
 \begin{array}{l}
-\textsf{cfg}(C[T],E,M) = (\gamma\hole.\;\textsf{cfg}(C[\hole],E,M))[T]
+\textsf{cfg}(T,E,M) = (\gamma\hole.\;\textsf{cfg}(\hole,E,M))[T]
 \\
-\textsf{cfg}(K,C[T],M) = (\gamma\hole.\;\textsf{cfg}(K,C[\hole],M))[T]
+\textsf{cfg}(K,T,M) = (\gamma\hole.\;\textsf{cfg}(K,\hole,M))[T]
 \\
-\textsf{cfg}(K,E,C[T]) = (\gamma\hole.\;\textsf{cfg}(K,E,C[\hole]))[T]
+\textsf{cfg}(K,E,T) = (\gamma\hole.\;\textsf{cfg}(K,E,\hole))[T]
 \\
-\textsf{k}(C[T]) = (\gamma\hole.\;\textsf{k}(\hole))[T]
+\textsf{k}(T) = (\gamma\hole.\;\textsf{k}(\hole))[T]
 \\
-\textsf{env}(C[T]) = (\gamma\hole.\;\textsf{env}(\hole))[T]
+\textsf{env}(T) = (\gamma\hole.\;\textsf{env}(\hole))[T]
 \\
-\textsf{mem}(C[T]) = (\gamma\hole.\;\textsf{mem}(\hole))[T]
+\textsf{mem}(T) = (\gamma\hole.\;\textsf{mem}(\hole))[T]
 \end{array}
 $$
 Additionally, we also give permission for contextual matchings to
@@ -1802,7 +2024,9 @@ the infix pairing construct ``$\_\mapsto\_$'' and an associative and
 commutative merge operation, here denoted as a comma ``$\_,\_$'', which
 has additional properties which are not relevant here:
 $$
-(C[M_1],M_2) = (\gamma\hole.\;(\hole,M_2))[M_1]
+(M_1,M_2) 
+= (\gamma\hole.\;(M_1,\hole))[M_2]
+= (\gamma\hole.\;(\hole,M_2))[M_1]
 $$
 The following matching logic proof shows how the configuration above
 can be transformed so that it can be matched by a multi-hole context
@@ -1819,42 +2043,12 @@ $$
 )
 &=&
 \\
-\textsf{cfg}
-(
-\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
-\ \textsf{env}(x \mapsto l, R_\textit{env})
-,
-\ \textsf{mem}((\gamma\hole_3.\;\hole_3)[l \mapsto a], R_\textit{mem})
-)
-&=&
-\\
-\textsf{cfg}
-(
-\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
-\ \textsf{env}(x \mapsto l, R_\textit{env})
-,
-\ \textsf{mem}((\gamma\hole_3.\;(\hole_3,R_\textit{mem}))[l \mapsto a])
-)
-&=&
-\\
-\textsf{cfg}
-(
-\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
-\ \textsf{env}(x \mapsto l, R_\textit{env})
-,
-\ (\gamma\hole_3.\;\textsf{mem}(\hole_3,R_\textit{mem}))[l \mapsto a]
-)
-&=&
-\\
 (\gamma\hole_3.\;\textsf{cfg}
 (
 \textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
 \ \textsf{env}(x \mapsto l, R_\textit{env})
 ,
 \ \textsf{mem}(\hole_3,R_\textit{mem})))[l \mapsto a]
-&=&
-\\
-...
 &=&
 \\
 (\gamma\hole_3.\;
@@ -1874,9 +2068,6 @@ $$
 \ \textsf{env}(\hole_2, R_\textit{env})
 ,
 \ \textsf{mem}(\hole_3,R_\textit{mem})))[x \mapsto l,l \mapsto a]
-&=&
-\\
-...
 &=&
 \\
 (\gamma\hole_2\hole_3.\;
@@ -1901,7 +2092,10 @@ $$
 [x, x \mapsto l, l \mapsto a]
 \end{array}
 $$
-
+Here, the first, the second, and the fourth equations
+are by context reasoning as in Section~\ref{sec:evaluationstrategies}
+while the third and the fifth equations are by
+multi-hole context definition.
 Therefore, the configuration pattern
 $$
 \textsf{cfg}
@@ -1948,17 +2142,17 @@ logic can serve as a standalone semantic foundation of~$\K$.
 
 Let us first note that, in matching logic, giving a binary relation
 $R_s \in M_s \times M_s$ on the carrier of sort $s$ of a model $M$
-is equivalent to interpreting a unary symbol $\circ \in \Sigma_{s,s}$ in $M$:
-indeed, for any $a,b\in M_s$, take $a\mathrel{R_s} b$ iff $a \in \circ_M(b)$.
+is equivalent to interpreting a unary symbol $\snext \in \Sigma_{s,s}$ in $M$:
+indeed, for any $a,b\in M_s$, take $a\mathrel{R_s} b$ iff $a \in \snext_M(b)$.
 If the intuition for $a \mathrel{R_s} b$ is ``state $a$ transitions to
-state $b$'', then the intuition for $\circ_M$ is that of ``transition to''
+state $b$'', then the intuition for $\snext_M$ is that of ``transition to''
 or ``next'':
-$\circ_M(b)$ is the set of states that transition to $b$, or which next go
+$\snext_M(b)$ is the set of states that transition to $b$, or which next go
 to $b$.
 Next consider two patterns $\varphi$ and $\varphi'$ of sort $s$, and the
-pattern $\varphi \ra \circ \varphi'$.
-We have $M \models \varphi \ra \circ \varphi'$ iff
-$\overline{\rho}(\varphi) \subseteq \circ_M(\overline{\rho}(\varphi'))$
+pattern $\varphi \ra \snext \varphi'$.
+We have $M \models \varphi \ra \snext \varphi'$ iff
+$\overline{\rho}(\varphi) \subseteq \snext_M(\overline{\rho}(\varphi'))$
 for any $M$-valuation $\rho$, iff for any $a\in\overline{\rho}(\varphi)$
 there is some $b \in \overline{\rho}(\varphi')$ such that $a\mathrel{R_s}b$,
 which is precisely the interpretation of a rewrite rule
@@ -1967,11 +2161,11 @@ Hence, we can add multi-sorted rewriting to a matching logic theory
 as follows:
 $$
 \begin{array}{r@{\hspace*{7ex}}l}
-\parametric{\circ}{s} \in \Sigma_{s,s}
+\parametric{\snext}{s} \in \Sigma_{s,s}
 & \textrm{\doubleslash a ``next'' symbol schema}
 \\
 \varphi\mathrel{\parametric{\Rightarrow}{s}}\varphi'
-\equiv \varphi \rightarrow \parametric{\circ}{s} \varphi'
+\equiv \varphi \rightarrow \parametric{\snext}{s} \varphi'
 & \textrm{\doubleslash a ``rewrite relation'' alias schema}
 \end{array}
 $$
@@ -2026,32 +2220,32 @@ Indeed, the rules above do not explain how an actual configuration
 that matches the lookup or the assignment pattern above transits to
 the next configuration.
 For that reason, we add axiom schemas to the matching logic theory
-that lift the $\circ$ symbol:
+that lift the $\snext$ symbol:
 %$$
 %\begin{array}{l@{\hspace*{7ex}}l}
 %\sigma(*\varphi_1,\dots,*\varphi_n) \rightarrow 
-%\circ\;\sigma(\varphi_1,\dots,\varphi_n)
+%\snext\;\sigma(\varphi_1,\dots,\varphi_n)
 %& \textrm{where $\sigma\in\Sigma_{s_1\times\cdots s_n,s}$,}
 %\\ & \textrm{$\varphi_1$ is a pattern of sort $s_1$,}
 %\\
 %& \dots,
 %\\ & \textrm{$\varphi_n$ is a pattern of sort $s_n$,}
-%\\ & \textrm{and at least one of $*$ is $\circ$}
+%\\ & \textrm{and at least one of $*$ is $\snext$}
 %\end{array}
 %$$
 $$
-C[* \varphi_1,\dots, * \varphi] \to \circ C[\varphi_1,\dots,\varphi_n]
+C[* \varphi_1,\dots, * \varphi] \to \snext C[\varphi_1,\dots,\varphi_n]
 \qquad
-\text{where at least one of $*$ is $\circ$}
+\text{where at least one of $*$ is $\snext$}
 $$
 Together with structural framing~\cite{rosu-2017-lmcs},
 these axioms allow not only to lift multiple local rewrites
 that are part of the same rule into one rewrite higher in the
 pattern, but also to combine multiple parallel rewrites into
 one rewrite, thus giving natural support for \emph{true concurrency}.
-Note that the axioms above allow to lift the $\circ$ symbol from
+Note that the axioms above allow to lift the $\snext$ symbol from
 any proper subset of orthogonal subpatterns, without enforcing
-the lifting of \emph{all} the $\circ$ symbols.
+the lifting of \emph{all} the $\snext$ symbols.
 In other words, an \emph{interleaving model of concurrency}
 is also supported.
 One can choose one or another methodologically, the underlying
@@ -2069,17 +2263,17 @@ here only showing how to define two of them which are useful to define
 and reason about reachability:
 $$
 \begin{array}{rcl@{\hspace*{7ex}}l}
-\Diamond_{\textit{Strong}} \varphi & \equiv & \mu f . (\varphi \vee \circ f)
+\Diamond_{\textit{Strong}} \varphi & \equiv & \mu f . (\varphi \vee \snext f)
 & \textrm{\doubleslash strong eventually on one path}
 \\
-\Diamond_{\textit{Weak}} \varphi & \equiv & \nu f . (\varphi \vee \circ f)
+\Diamond_{\textit{Weak}} \varphi & \equiv & \nu f . (\varphi \vee \snext f)
 & \textrm{\doubleslash weak eventually on one path}
 \end{array}
 $$
 The pattern $\Diamond_{\textit{Strong}}\varphi$ is matched by those
 states/configurations which eventually reach a state/configuration that
 matches $\varphi$, using the transition system associated to the unary
-symbol $\circ$ as described above.
+symbol $\snext$ as described above.
 The pattern $\Diamond_{\textit{weak}}\varphi$, one the other hand, is matched
 by those states/configurations which either never terminate or otherwise
 eventually reach a state/configuration that matches $\varphi$.
@@ -2093,498 +2287,514 @@ all-path reachability relation $\varphi \Rightarrow^\forall\varphi'$ and to
 prove all the proof rules of reachability logic as lemmas/theorems using the
 more basic proof system of matching logic.
 
-\subsection{Fake Order-Sorted Algebras}
-\label{sec:dealing-with-OS}
-
-There are various motivations to study order-sorted algebras.
-Goguen in~\cite{Goguen1991types} used order-sorted algebras to treat errors in 
-abstract data types.
-Many algebraic specifications use {subsorts} as a mechanism to model 
-subtypes.
-In \K, an order-sorted frontend syntax is used to allow more intuitive and 
-compact \K definitions.
-Therefore, it might appear that in order to give \K a formal semantics, 
-one has to adopt some kinds of order-sorted algebras as its mathematical 
-foundation.
-
-Decades of years of research proved that order-sorted 
-algebras are intuitive, convenient, and easy to use in many practical cases.
-However, their power does come for a cost (and sometimes a big cost).
-Algorithms and decision procedures for order-sorted algebras have been proposed 
-and implemented in languages like Maude~\cite{clavel-et-al99a}, but in general 
-order-sorted algebras 
-are hard from a theoretical point of view and reasoning in an order-sorted 
-setting is even harder.
-On one hand, we allow (and welcome) \K backends to make use of order-sorted 
-decision procedures and algorithms, but at the same time we want to have a 
-crystal clear and easier mathematical foundation for \K, and thus we restrict 
-ourselves in matching logic and many-sorted algebras.
-In other words, \emph{order-sorted syntax is just a frontend feature in \K, not 
-a backend feature}.
-In this section, we will introduce techniques\footnote{The techniques are not 
-new.  There are many research about the reduction from order-sorted 
-algebras to many-sorted algebras, for example in~\cite{GOGUEN1992217}.} to 
-\emph{decorate} a matching logic 
-theory 
-with some additional structures such that it ``fakes'' and ``behaves like'' an 
-order-sorted theory.
-The results in this section can be used directly in defining the underlying 
-matching logic theory of a \K definition.
-
-%In Section~\ref{sec:dealing-with-OS}, we have shown how to embed order-sorted 
-%signatures and algebras in a many-sorted setting such as in matching logic. 
-%In this section, we will formalize the discussion we had in 
-%Section~\ref{sec:dealing-with-OS} and give axiomatization for these embeddings.
-%The intuition is that reasoning in an order-sorted theory can be seen as 
-%reasoning in a many-sorted theory plus some symbols and axioms that capture 
-%the 
-%order-sorted structures in the order-sorted theory.
-%This observation is an analogy to the observation that reasoning in a 
-%many-sorted theory can be 
-%seen as reasoning in a unsorted theory plus some symbols (i.e. indicator 
-%predicate symbols for every sorts) and axioms that capture the many-sorted 
-%structures 
-%in the many-sorted theory. 
-\subsubsection{Fake Subsort Relation}
-A \K definition defines a sort set $S$ and a partial-order relation $\preceq 
-\subseteq S \times S$ called the \emph{subsort relation}.
-If $s \preceq s'$, we say $s$ is a \emph{subsort} of $s'$ and $s'$ is a 
-\emph{supersort} of $s$.
-%In order-sorted algebras, the set of sorts $(S, \preceq)$ forms a partial 
-%order 
-%set and the subsort relation~$\preceq$ is a partial order relation.
-%To capture the subsort relation in order-sorted algebras, we define a 
-%predicate 
-%symbol
+%
+%
+%\subsection{Fake Order-Sorted Algebras}
+%\label{sec:dealing-with-OS}
+%
+%There are various motivations to study order-sorted algebras.
+%Goguen in~\cite{Goguen1991types} used order-sorted algebras to treat errors in 
+%abstract data types.
+%Many algebraic specifications use {subsorts} as a mechanism to model 
+%subtypes.
+%In \K, an order-sorted frontend syntax is used to allow more intuitive and 
+%compact \K definitions.
+%Therefore, it might appear that in order to give \K a formal semantics, 
+%one has to adopt some kinds of order-sorted algebras as its mathematical 
+%foundation.
+%
+%Decades of years of research proved that order-sorted 
+%algebras are intuitive, convenient, and easy to use in many practical cases.
+%However, their power does come for a cost (and sometimes a big cost).
+%Algorithms and decision procedures for order-sorted algebras have been 
+%proposed 
+%and implemented in languages like Maude~\cite{clavel-et-al99a}, but in general 
+%order-sorted algebras 
+%are hard from a theoretical point of view and reasoning in an order-sorted 
+%setting is even harder.
+%On one hand, we allow (and welcome) \K backends to make use of order-sorted 
+%decision procedures and algorithms, but at the same time we want to have a 
+%crystal clear and easier mathematical foundation for \K, and thus we restrict 
+%ourselves in matching logic and many-sorted algebras.
+%In other words, \emph{order-sorted syntax is just a frontend feature in \K, 
+%not 
+%a backend feature}.
+%In this section, we will introduce techniques\footnote{The techniques are not 
+%new.  There are many research about the reduction from order-sorted 
+%algebras to many-sorted algebras, for example in~\cite{GOGUEN1992217}.} to 
+%\emph{decorate} a matching logic 
+%theory 
+%with some additional structures such that it ``fakes'' and ``behaves like'' an 
+%order-sorted theory.
+%The results in this section can be used directly in defining the underlying 
+%matching logic theory of a \K definition.
+%
+%%In Section~\ref{sec:dealing-with-OS}, we have shown how to embed order-sorted 
+%%signatures and algebras in a many-sorted setting such as in matching logic. 
+%%In this section, we will formalize the discussion we had in 
+%%Section~\ref{sec:dealing-with-OS} and give axiomatization for these 
+%%embeddings.
+%%The intuition is that reasoning in an order-sorted theory can be seen as 
+%%reasoning in a many-sorted theory plus some symbols and axioms that capture 
+%%the 
+%%order-sorted structures in the order-sorted theory.
+%%This observation is an analogy to the observation that reasoning in a 
+%%many-sorted theory can be 
+%%seen as reasoning in a unsorted theory plus some symbols (i.e. indicator 
+%%predicate symbols for every sorts) and axioms that capture the many-sorted 
+%%structures 
+%%in the many-sorted theory. 
+%\subsubsection{Fake Subsort Relation}
+%A \K definition defines a sort set $S$ and a partial-order relation $\preceq 
+%\subseteq S \times S$ called the \emph{subsort relation}.
+%If $s \preceq s'$, we say $s$ is a \emph{subsort} of $s'$ and $s'$ is a 
+%\emph{supersort} of $s$.
+%%In order-sorted algebras, the set of sorts $(S, \preceq)$ forms a partial 
+%%order 
+%%set and the subsort relation~$\preceq$ is a partial order relation.
+%%To capture the subsort relation in order-sorted algebras, we define a 
+%%predicate 
+%%symbol
+%%$$
+%%\Ksubsort{\shs} \colon \KSort \times \KSort \to \shs \qquad 
+%%\text{for any sort $\shs \in S_K$}
+%%$$
+%%with the following axioms saying that it is a partial order relation
+%%\begin{align*}
+%%& \Ksubsort{\shs}(s, s) \\
+%%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_1) \to s_1 = s_2 \\
+%%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_3) \to 
+%%\Ksubsort{\shs}(s_1, s_3)
+%%\end{align*}
+%%Various functions and predicates for partial order sets can be easily defined.
+%%For example, the sort connected component of a sort $s$ can be defined as
+%%\begin{align*}
+%%& \KSortConnectedComponent \in \Sigma_{\KSort, \KSort} \\
+%%& \KSortConnectedComponent(s) = \exists{s'} . \Ksubsort{\shs}(s, s') 
+%%\vee \Ksubsort{\shs}(s', s)
+%%\end{align*}
+%%The parametric predicate symbol $\Ksubsort{\shs}$ can be easily 
+%%element-wisely 
+%%extended to lists 
+%%of sorts.
+%%It returns $\top_{\shs}$ if its two argument are of the same length and every 
+%%corresponding pairs of sorts satisfy $\Ksubsort{\shs}$.
+%%Otherwise, it return $\bot{\shs}$.
+%%\begin{align*}
+%%& \Ksubsorts{\shs} \colon \KSortList \times \KSortList \to \shs
+%%\qquad \text{for any sort $\shs \in S_K$} \\
+%%& \Ksubsorts{\shs}(\KnilKSortList, \KnilKSortList) = \top_{\shs} \\
+%%& \Ksubsorts{\shs}(\KnilKSortList, (s, S)) = \bot_{\shs} \\
+%%& \Ksubsorts{\shs}((s, S), \KnilKSortList) = \bot_{\shs} \\
+%%& \Ksubsorts{\shs}((s, S), (s', S')) = \Ksubsort{\shs}(s, s') \wedge 
+%%\Ksubsorts{\shs}(S, S')
+%%\end{align*}
+%%where $s, s'$ are variables of sort $\KSort$ and $S, S'$ are variables of 
+%%sort 
+%%$\KSortList$.
+%The subsort relation is a congruence relation w.r.t. sort parametricity.
+%For example,
+%\begin{center}
+%\begin{tabular}{rl}
+%	$\parametric{\List}{s}$ is a subsort of $\parametric{\List}{s'}$ 
+%	& if $s$ is a subsort of $s'$ \\
+%	$\parametric{\Map}{s_1,s_2}$ is a subsort of $\parametric{\Map}{s'_1,s'_2}$
+%	& if $s_1$ is a subsort of $s'_1$ and $s_2$ is a subsort of $s'_2$
+%\end{tabular}
+%\end{center}
+%In other words, an instance of a parametric sort is the subsort of the other 
+%instance if its sort parameters are subsorts of the other's element-wisely.
+%The intuition of $s \preceq s'$ is that any element in sort $s$ is included 
+%in sort $s'$.
+%We fake this intuition of inclusion by defining an injective function 
+%called the \emph{injection function}:
+%\begin{center}
+%	\begin{tabular}{rl}
+%		$\inj{s}{s'} \colon s \to s'$
+%		& \doubleslash a parametric function \\
+%		& \doubleslash defined for any $s \preceq 
+%		s'$ \\
+%		$\inj{s}{s}(x) = x$
+%		& \doubleslash (identity) axiom \\
+%		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}(y)$
+%		& \doubleslash (injectivity) axiom \\
+%		$\inj{s}{s''}(x) = \inj{s'}{s''}(\inj{s}{s'}(x))$
+%		& \doubleslash (transitivity) axiom \\
+%	\end{tabular}
+%\end{center}
+%
+%The dual of injection functions are \emph{retracts}. 
+%They are surjective partial functions that are the inverse of injection 
+%functions, which can be defined as follows:
+%\begin{center}
+%	\begin{tabular}{rl}
+%		$\retract{s'}{s} \colon s \rightharpoonup s'$
+%		& \doubleslash a parametric partial function \\
+%		& \doubleslash defined for any $s \preceq 
+%		s'$ \\
+%		$\retract{s'}{s}(x) = x$
+%		& \doubleslash for any $x$ is a variable of sort $s'$
+%	\end{tabular}
+%\end{center}
+%
+%%Injection functions and retracts are useful.
+%%In some occasions, we may want 
+%%parsers to generate them automatically when parsing \K definitions.
+%%Retracts might not be as well known as they should be, and they deserve an 
+%%example to illustrate their importance.
+%%Consider the following \K definition fragment where we define two 
+%%sorts for naturals and rationals\footnote{This example is borrowed 
+%%from a survey of order sorted algebras by Goguen and 
+%%Diaconescu~\cite{goguen1994oxford}.}
+%%\begin{Verbatim}
+%%  syntax Nat
+%%  syntax Rat ::= Nat
+%%               | Rat "+" Rat
+%%               | Rat "/" Rat
+%%  syntax Nat ::= "factorial" "(" Nat ")"   // factorial function
+%%\end{Verbatim}
+%%The pattern $\factorial(21 / 7)$ does not parse under the above grammar, 
+%%because $21 / 7$ is parsed as a rational and {\factorial} expects a natural 
+%%number.
+%%To resolve this issue, the parser may wrap $21 / 7$ with a retract and parse 
+%%it 
+%%as $\factorial(\retract{\Rat}{\Nat}(21 / 7))$.
+%
+%
+%
+%%\begin{align*}
+%%& \Ksubsorts{\shs}(S, S') \to \Ksubsort{\shs}(\KSort(str, S), \KSort(str, S'))
+%%\end{align*}
+%%where $str$ is a variable of $\KString$.
+%%
+%%There is a special sort, denoted as $K$ in the object-level theories and 
+%%denoted as $\KqK$ in the meta-theory, which contains every sorts as its 
+%%subsorts
+%%\begin{align*}
+%%& \KqK \colon \to \KSort \\
+%%& \KqK = \KSort(\qquottt{K}, \KnilKSortList) \\
+%%& \KsortDeclared{\shs}(\KqK) \qquad \text{for any $\shs \in S_K$} \\
+%%& \Ksubsort{\shs}(s, \KqK) = \top_{\shs} \qquad \text{for any $\shs \in S_K$}
+%%\end{align*}
+%%
+% 
+%\subsubsection{Fake Overloading}
+%Overloading, or often called \emph{polymorphism} in the context of 
+%programming languages, refers to the 
+%phenomenon that we use one name for multiple operations.
+%For example,
+%\begin{enumerate}[label=(\alph*).]
+%	\item Use $\_\doublecolon\_$ as the cons operation for lists of all types;
+%	\item Use $\_+\_$ as both the addition of naturals and rationals;
+%	\item Use $\_+\_$ as both the addition of naturals and concatenation of 
+%	strings;
+%\end{enumerate}
+%In literature, especially literature on order-sorted algebras, researchers 
+%have 
+%used various terminologies for different types of overloading and polymorphism.
+%In the above example, (a)~is often called \emph{parametric 
+%overloading}; (b)~is called \emph{subsort overloading} if naturals is seen 
+%as a subsort of rationals; (c)~is called \emph{ad hoc overloading} or 
+%\emph{strong overloading}.
+%In general, overloading and polymorphism allow us to write more compact and 
+%neat 
+%expressions and help to make formal languages look ``more human'', but those 
+%benefits do not come for free.
+%\improvement{Xiaohong: We need some concrete discussion about why OS makes 
+%things harder. Not even sure it is the right claim because OS people will 
+%argue 
+%the OS makes things simpler instead of harder.}
+%
+%Our proposal is to make implicit overloading explicit, or in other words, we 
+%think that \emph{overloading is a frontend feature, not a backend feature}.
+%We have seen an example in Section~\ref{sec:finite-mechanisms} where we show 
+%how 
+%parametric overloading is dealt with by explicit writing the sort parameters.
+%In there, one can think of that there exists a smart frontend parser that 
+%allows users to write the following compact expressions in frontends
+%\begin{center}
+%\begin{tabular}{rl}
+%$1 \doublecolon 2 \doublecolon \nil$ 
+%& \doubleslash a list of two naturals $1, 2$ \\
+%$\quot{1} \doublecolon \quot{2} \doublecolon \nil$
+%& \doubleslash a list of two strings $\quot{1}, \quot{2}$ \\
+%\end{tabular}
+%\end{center}
+%while it parses those expressions as the follows for backends
+%\begin{center}
+%	\begin{tabular}{rl}
+%		$1 {\ \parametric{\doublecolon}{\Nat}\ } 2 {\ 
+%		\parametric{\doublecolon}{\Nat}\ } {\parametric{\nil}{\Nat}}$ 
+%& \doubleslash a list of two naturals $1, 2$ \\
+%$\quot{1} {\ \parametric{\doublecolon}{\String}\ } \quot{2} {\ 
+%	\parametric{\doublecolon}{\String}\ } {\parametric{\nil}{\String}}$ 
+%& \doubleslash a list of two strings $\quot{1}, \quot{2}$ 
+%	\end{tabular}
+%\end{center}
+%where we define the following parametric sorts and symbols for lists, and the 
+%{\nil} and {\cons} operations:
 %$$
-%\Ksubsort{\shs} \colon \KSort \times \KSort \to \shs \qquad 
-%\text{for any sort $\shs \in S_K$}
-%$$
-%with the following axioms saying that it is a partial order relation
-%\begin{align*}
-%& \Ksubsort{\shs}(s, s) \\
-%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_1) \to s_1 = s_2 \\
-%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_3) \to 
-%\Ksubsort{\shs}(s_1, s_3)
-%\end{align*}
-%Various functions and predicates for partial order sets can be easily defined.
-%For example, the sort connected component of a sort $s$ can be defined as
-%\begin{align*}
-%& \KSortConnectedComponent \in \Sigma_{\KSort, \KSort} \\
-%& \KSortConnectedComponent(s) = \exists{s'} . \Ksubsort{\shs}(s, s') 
-%\vee \Ksubsort{\shs}(s', s)
-%\end{align*}
-%The parametric predicate symbol $\Ksubsort{\shs}$ can be easily element-wisely 
-%extended to lists 
-%of sorts.
-%It returns $\top_{\shs}$ if its two argument are of the same length and every 
-%corresponding pairs of sorts satisfy $\Ksubsort{\shs}$.
-%Otherwise, it return $\bot{\shs}$.
-%\begin{align*}
-%& \Ksubsorts{\shs} \colon \KSortList \times \KSortList \to \shs
-%\qquad \text{for any sort $\shs \in S_K$} \\
-%& \Ksubsorts{\shs}(\KnilKSortList, \KnilKSortList) = \top_{\shs} \\
-%& \Ksubsorts{\shs}(\KnilKSortList, (s, S)) = \bot_{\shs} \\
-%& \Ksubsorts{\shs}((s, S), \KnilKSortList) = \bot_{\shs} \\
-%& \Ksubsorts{\shs}((s, S), (s', S')) = \Ksubsort{\shs}(s, s') \wedge 
-%\Ksubsorts{\shs}(S, S')
-%\end{align*}
-%where $s, s'$ are variables of sort $\KSort$ and $S, S'$ are variables of sort 
-%$\KSortList$.
-The subsort relation is a congruence relation w.r.t. sort parametricity.
-For example,
-\begin{center}
-\begin{tabular}{rl}
-	$\parametric{\List}{s}$ is a subsort of $\parametric{\List}{s'}$ 
-	& if $s$ is a subsort of $s'$ \\
-	$\parametric{\Map}{s_1,s_2}$ is a subsort of $\parametric{\Map}{s'_1,s'_2}$
-	& if $s_1$ is a subsort of $s'_1$ and $s_2$ is a subsort of $s'_2$
-\end{tabular}
-\end{center}
-In other words, an instance of a parametric sort is the a subsort of the other 
-instance if its sort parameters are subsorts of the other's element-wisely.
-The intuition of $s \preceq s'$ is that any element in sort $s$ is included 
-in sort $s'$.
-We fake this intuition of inclusion by defining an injective function 
-called the \emph{injection function}:
-\begin{center}
-	\begin{tabular}{rl}
-		$\inj{s}{s'} \colon s \to s'$
-		& \doubleslash a parametric function \\
-		& \doubleslash defined for any $s \preceq 
-		s'$ \\
-		$\inj{s}{s}(x) = x$
-		& \doubleslash (identity) axiom \\
-		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}$
-		& \doubleslash (injectivity) axiom \\
-		$\inj{s}{s''}(x) = \inj{s'}{s''}(\inj{s}{s'}(x))$
-		& \doubleslash (transitivity) axiom \\
-	\end{tabular}
-\end{center}
-
-The dual of injection functions are \emph{retracts}. 
-They are surjective partial functions that are the inverse of injection 
-functions, which can be defined as follows:
-\begin{center}
-	\begin{tabular}{rl}
-		$\retract{s'}{s} \colon s \rightharpoonup s'$
-		& \doubleslash a parametric partial function \\
-		& \doubleslash defined for any $s \preceq 
-		s'$ \\
-		$\retract{s'}{s}(x) = x$
-		& \doubleslash for any $x$ is a variable of sort $s'$
-	\end{tabular}
-\end{center}
-
-%Injection functions and retracts are useful.
-%In some occasions, we may want 
-%parsers to generate them automatically when parsing \K definitions.
-%Retracts might not be as well known as they should be, and they deserve an 
-%example to illustrate their importance.
-%Consider the following \K definition fragment where we define two 
-%sorts for naturals and rationals\footnote{This example is borrowed 
-%from a survey of order sorted algebras by Goguen and 
-%Diaconescu~\cite{goguen1994oxford}.}
-%\begin{Verbatim}
-%  syntax Nat
-%  syntax Rat ::= Nat
-%               | Rat "+" Rat
-%               | Rat "/" Rat
-%  syntax Nat ::= "factorial" "(" Nat ")"   // factorial function
-%\end{Verbatim}
-%The pattern $\factorial(21 / 7)$ does not parse under the above grammar, 
-%because $21 / 7$ is parsed as a rational and {\factorial} expects a natural 
-%number.
-%To resolve this issue, the parser may wrap $21 / 7$ with a retract and parse 
-%it 
-%as $\factorial(\retract{\Rat}{\Nat}(21 / 7))$.
-
-
-
-%\begin{align*}
-%& \Ksubsorts{\shs}(S, S') \to \Ksubsort{\shs}(\KSort(str, S), \KSort(str, S'))
-%\end{align*}
-%where $str$ is a variable of $\KString$.
-%
-%There is a special sort, denoted as $K$ in the object-level theories and 
-%denoted as $\KqK$ in the meta-theory, which contains every sorts as its 
-%subsorts
-%\begin{align*}
-%& \KqK \colon \to \KSort \\
-%& \KqK = \KSort(\qquottt{K}, \KnilKSortList) \\
-%& \KsortDeclared{\shs}(\KqK) \qquad \text{for any $\shs \in S_K$} \\
-%& \Ksubsort{\shs}(s, \KqK) = \top_{\shs} \qquad \text{for any $\shs \in S_K$}
-%\end{align*}
-%
- 
-\subsubsection{Fake Overloading}
-Overloading, or often called \emph{polymorphism} in the context of 
-programming languages, refers to the 
-phenomenon that we use one name for multiple operations.
-For example,
-\begin{enumerate}[label=(\alph*).]
-	\item Use $\_\doublecolon\_$ as the cons operation for lists of all types;
-	\item Use $\_+\_$ as both the addition of naturals and rationals;
-	\item Use $\_+\_$ as both the addition of naturals and concatenation of 
-	strings;
-\end{enumerate}
-In literature, especially literature on order-sorted algebras, researchers have 
-use various terminologies for various types of overloading and polymorphism.
-For example, in the above example, (a)~is often called \emph{parametric 
-overloading}; (b)~is called \emph{subsort overloading} if naturals is seen 
-as a subsort of rationals; (c)~is called \emph{ad hoc overloading} or 
-\emph{strong overloading}.
-In general, overloading and polymorphism allow us to write more compact and 
-neat 
-expressions and help to make formal languages look ``more human'', but those 
-benefits do not come for free.
-\improvement{Xiaohong: We need some concrete discussion about why OS makes 
-things harder. Not even sure it is the right claim because OS people will argue 
-the OS makes things simpler instead of harder.}
-
-Our proposal is to make implicit overloading explicit, or in other words, we 
-think that \emph{overloading is a frontend feature, not a backend feature}.
-We have seen an example in Section~\ref{sec:finite-mechanisms} where we show 
-how 
-parametric overloading is dealt with by explicit writing the sort parameters.
-In there, one can think of that there exists a smart frontend parser that 
-allows users to write the following compact expressions in frontends
-\begin{center}
-\begin{tabular}{rl}
-$1 \doublecolon 2 \doublecolon \nil$ 
-& \doubleslash a list of two naturals $1, 2$ \\
-$\quot{1} \doublecolon \quot{2} \doublecolon \nil$
-& \doubleslash a list of two strings $\quot{1}, \quot{2}$ \\
-\end{tabular}
-\end{center}
-while it parses those expressions as the follows for backends
-\begin{center}
-	\begin{tabular}{rl}
-		$1 {\ \parametric{\doublecolon}{\Nat}\ } 2 {\ 
-		\parametric{\doublecolon}{\Nat}\ } {\parametric{\nil}{\Nat}}$ 
-& \doubleslash a list of two naturals $1, 2$ \\
-$\quot{1} {\ \parametric{\doublecolon}{\String}\ } \quot{2} {\ 
-	\parametric{\doublecolon}{\String}\ } {\parametric{\nil}{\String}}$ 
-& \doubleslash a list of two strings $\quot{1}, \quot{2}$ 
-	\end{tabular}
-\end{center}
-where we define the following parametric sorts and symbols for lists, and the 
-{\nil} and {\cons} operations:
-$$
-\begin{array}{rl}
-\parametric{\List}{s} &
-\textrm{for any sort $s \in \{\Nat, \String\}$} \\
-\parametric{\nil}{s} \in \Sigma_{*,\parametricscript{\List}{s}} &
-\textrm{for any sort $s \in \{\Nat, \String\}$} \\
-\parametric{\cons}{s} \in 
-\Sigma_{s\times\parametricscript{\List}{s},\parametricscript{\List}{s}} &
-\textrm{for any sort $s \in \{\Nat, \String\}$}
-\end{array}
-$$
-
-In this section, we show that subsort overloading can be handled in the similar 
-way as we handle parametric overloading.
-For simplicity, we assume that every symbol $\sigma$ that is overloaded in 
-frontend syntax has their multiple instances explicitly defined using sort 
-parameters, and the sort parameters are its argument sorts plus its return sort.
-For example, we want to overload $\_+\_$ for both additions of naturals and 
-rationals. 
-Then we need to define all four instances for backend use:
-\info[inline]{Xiaohong: Alternatively, we can define just the first and the 
-last 
-instances. But 
-then the parser needs to explicitly add injection functions. It is hard to 
-argue which of the following is better to parse expression $1 + 2.5$:
-
-(A) $1 \parametric{+}{\Nat,\Rat,\Rat} 2.5$, with the homomorphism axiom saying 
-that $x \parametric{+}{\Nat,\Rat,\Rat} y = \inj{\Nat}{\Rat}(x) 
-\parametric{+}{\Rat,\Rat,\Rat} y$ for any $x$ of sort $\Nat$ and $y$ of the 
-sort $\Rat$
-
-(B) $\inj{\Nat}{\Rat}(1) \parametric{+}{\Rat,\Rat,\Rat} 2.5$
-
-Notice that (A) needs all four instances to be defined (as shown below), while 
-(B) only needs two (the first one and the last one).
-I personally am in favor of (A).
-}
-
-\begin{center}
-\begin{tabular}{rl}
-	$\_\parametric{+}{\Nat,\Nat,\Nat}\_ \colon \Nat \times \Nat \to \Nat$
-	& \doubleslash the addition for two naturals \\
-	$\_\parametric{+}{\Nat,\Rat,\Rat}\_ \colon \Nat \times \Rat \to \Rat$
-	& \doubleslash the addition for two naturals \\
-	$\_\parametric{+}{\Rat,\Nat,\Rat}\_ \colon \Rat \times \Nat \to \Rat$
-	& \doubleslash the addition for two naturals \\
-	$\_\parametric{+}{\Rat,\Rat,\Rat}\_ \colon \Rat \times \Rat \to \Rat$
-	& \doubleslash the addition for two naturals
-\end{tabular}
-\end{center}
-or more compactly defined as follows
-\begin{center}
-	\begin{tabular}{rl}
-		$\_\parametric{+}{s_1,s_2,s_3}\_ \colon s_1 \times s_2 \to s_3$
-		&  where $s_1,s_2,s_3 \in \{\Nat, \Rat\}$ \\
-		& and if one of $s_1$ and $s_2$ 
-		is $\Rat$, then $s_3$ is $\Rat$
-\end{tabular}
-\end{center}
-
-In general, it is a frontend issue to decide how to parse an expression with 
-overloading (e.g. how to calculate the least sort of an expression in an 
-order-sorted signature), and there 
-are a large volume of research about that.
-In particular, \K has a frontend syntax that is order-sorted, and thus it also 
-gets its own frontend parser, which might be different from other languages 
-with an order-sorted syntax, say Maude.
-In this section, we do not constrain ourselves in any particular frontend 
-syntax.
-Instead, we will provide \emph{a general theory of overloading} that supports 
-any order-sorted frontend syntax.
-In the following, we assume that all instances of an overloaded symbol are 
-defined properly and are ready for frontend parsers to use.
-The main technical result we will prove is that under some assumptions, 
-different parses of a frontend expression with overloading are equivalent 
-modulo injection functions.
-
-
-
-
-
-%As in order-sorted algebras,
-%we say two symbols $\sigma_1$ and $\sigma_2$ are \emph{subsort overloading}, 
-%if 
-%they have the same name and the argument sorts 
-%of $\sigma_1$ are subsorts of the argument sorts of $\sigma_2$ element-wisely.
-%\begin{align*}
-%& \KsubsortOverloading{\shs}(
-%\underbrace{\KSymbol(f, S_1, S'_1, s_1)}_{\sigma_1},
-%\underbrace{\KSymbol(f, S_2, S'_2, s_2)}_{\sigma_2}) 
-%=  \Ksubsorts{\shs}(S'_1, S'_2) 
-%\end{align*}
-%
-%If $\sigma_1$ and $\sigma_2$ are subsort overloading and the argument sorts of 
-%$\sigma_1$ are subsorts of the argument sorts of $\sigma_2$, then the return 
-%sort of $\sigma_1$ is a subsort of the return sort of $\sigma_2$.
-%It is known as the \emph{monotone property}.
-%\begin{align*}
-%& \KsubsortOverloading{\shs}(\sigma_1, \sigma_2) \to 
-%\Ksubsort{\shs}(\KgetReturnSort(\sigma_1), \KgetReturnSort(\sigma_2))
-%\end{align*}
-%
-%\subsubsection{Injective Functions}
-%Given $s_1$ is a subsort of $s_2$, there exists naturally an injective 
-%function\footnote{These injective functions are called inclusion operations 
-%	in~\cite{GOGUEN1992217}.}
-%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
-%We denote these injective functions as $\Kqinj$ in the meta-theory and define
-%\begin{align*}
-%& \Kqinj \colon \KSort \times \KSort \to \KSymbol \\
-%& \Kqinj(s_1, s_2) = \KSymbol(\qquottt{inj}, (s_1, s_2), (s_1), s_2) \\
-%& \Ksubsort{\shs}(s_1, s_2) \to \KsymbolDeclared{\shs}(\Kqinj(s_1, s_2))
-%\end{align*}
-%Let us introduce the following notation
-%\begin{align*}
-%\inj{s_1}{s_2}(\varphi) \equiv \Kapplication(\Kqinj(s_1,s_2), \varphi)
-%\end{align*}
-%Injective functions satisfy the following properties
-%\begin{align*}
-%& \inj{s}{s}()
-%\end{align*}
-
-%\subsubsection{Order-Sorted Algebras}
-%
-%An order-sorted signature has a poset of the form $(S, \preceq)$. 
-%Matching logic is a many-sorted logic and all sorts in a matching logic 
-%signature forms a set which is often denoted as $S$.
-%Another popular and commonly used type of logic is \emph{order-sorted logic}.
-%In an order-sorted logic, all sorts of a signature forms a partial order set 
-%(poset) which is often denoted as $(S, \preceq)$. 
-%The binary relation $\preceq$ is called the \emph{subsort relation}. 
-%If $s_1 \preceq s_2$ we say $s_1$ is a subsort of $s_2$.
-%We denote the connected component of a sort $s$ as $[s]$.
-%Operators $f \colon s_1 \times \dots \times s_n \to s$ and $f \colon t_1 
-%\times \dots \times t_n \to t$ are called \emph{subsort overloading} if 
-%$[t_i] = [t'_i]$ for $i = 1,\dots,n$ and $[t] = [t']$.
-%Otherwise, they are called \emph{ad-hoc overloading}. 
-%Subsort overloading is the main focus when it comes to order-sorted signatures 
-%and algebras as ad-hoc overloading can be recognized and dealt with easily by 
-%calculating connected components of the poset of sorts.
-%
-%In order-sorted algebras, there is a standard approach that introduces for 
-%each 
-%connected component $[s]$ a top sort (or called a \emph{kind}), often denoted 
-%as just $[s]$.
-%Therefore for any $s \in [s]$, $s \preceq [s]$.
-%And for each operator $f \colon s_1 \times \dots \times s_n \to s$, we define 
-%a 
-%subsort overloading $f \colon [s_1] \times \dots \times [s_n] \to [s]$.
-%Intuitively, it allows us to parse (meaningful) terms and rules that are not 
-%guaranteed to be always well-formed syntactically.
-%One such example is $succ(pred(X)) \Rightarrow X$, where the term 
-%$succ(pred(X))$ does not have sort $Int$ but only have the kind $[Int]$.
-%Runtime checks will be made in order to make sure rules are applied to terms 
-%with expected sorts.
-
-%In matching logic we decided not to have order-sorted signatures because 
-%it makes reasoning a lot harder.
-%Instead, we mimic order-sorted signatures by multi-sorted signatures with 
-%explicit injection functions plus axioms that capture properties about these 
-%injection functions.
-%For any $s_1 \preceq s_2$, we define an injective function 
-%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
-%Properties about subsorts are axiomatized.
-%For example, if $s_1 \preceq s_2 \preceq s_3$, 
-%the three injective functions
-%\begin{align*}
-%& \inj{s_1}{s_2} \colon s_1 \to s_2 \\
-%& \inj{s_2}{s_3} \colon s_2 \to s_3 \\
-%& \inj{s_1}{s_3} \colon s_1 \to s_3
-%\end{align*}
-%have property
-%$$
-%\inj{s_1}{s_3}(x) = \inj{s_2}{s_3}(\inj{s_1}{s_2}(x))
+%\begin{array}{rl}
+%\parametric{\List}{s} &
+%\textrm{for any sort $s \in \{\Nat, \String\}$} \\
+%\parametric{\nil}{s} \in \Sigma_{*,\parametricscript{\List}{s}} &
+%\textrm{for any sort $s \in \{\Nat, \String\}$} \\
+%\parametric{\cons}{s} \in 
+%\Sigma_{s\times\parametricscript{\List}{s},\parametricscript{\List}{s}} &
+%\textrm{for any sort $s \in \{\Nat, \String\}$}
+%\end{array}
 %$$
 %
-%For any operator $f \colon s_1 \times \dots \times s_n \to s$ in an 
-%order-sorted signature that might be subsort overloaded, we define for each 
-%$s'_1 \in [s_1], \dots, s'_n \in [s_n]$, a matching logic symbol
-%$$\parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'}$$
-%where $s'$ is the \emph{least sort} of the term $f(x_1 \cln s'_1, \dots, x_n 
-%\cln x'_n)$ in the order-sorted signature.
-%Suppose $s'_1 \preceq s''_1 \in [s_1], \dots, s'_n \preceq s''_n \in [s_n]$ and
-%\begin{align*}
-%& \parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'} \\
-%& \parametric{f}{s''_1,\dots,s''_n} \in \Sigma_{s''_1,\dots,s''_n,s''}
-%\end{align*}
-%By definition, $s' \preceq s'' \in [s]$ and thus there is an injection 
-%function 
-%$\inj{s'}{s''} \colon s' \to s''$.
-The following homomorphism axiom should hold for all symbols $\sigma$ that is 
-overloaded in frontend:
-$$
-\inj{s'}{s''}(
-\parametric{\sigma}{s'_1,\dots,s'_n,s'}(x_1 \cln s'_1,\dots,x_n \cln s'_n))
-=
-\parametric{\sigma}{s''_1,\dots,s''_n,s''}(
-  \inj{s'_1}{s''_1}(x_1\cln s'_1), \dots, \inj{s'_n}{s''_n}(x_n\cln s'_n))
-$$
-where $s'_i \preceq s''_i$ for any $i = 1, \dots, n$ and $s' \preceq s''$.
-
-\todo[inline]{The following needs revised.}
-The above property is especially useful.
-It allows us to do \emph{sort casting} however we want to.
-Together with the strictness axioms for injection functions which we introduce 
-later, it provides us full reasoning power of dealing with order-sorted 
-signatures in a multi-sorted setting.
-In other words, it tells us how to generate proof objects about sort casting 
-and etc. 
-How to design algorithms and data structures that make doing sort casting and 
-sort inference (introduced below) more efficient is of course another important 
-question.
-
-Notice that any term $t$ in an order-sorted signature is also a well-formed 
-pattern in the corresponding matching logic signature except that the sort 
-parameters of symbols (that correspond to the operators in the order-sorted 
-signature) are not yet decided.
-\emph{Sort inference in order-sorted signature} is the process of finding a 
-term $t$ its least sort $s$ in an order-sorted signature.
-We overload the terminology \emph{sort inference} here to 
-mean the process of finding sort parameters for symbols (that correspond to 
-the order-sorted operators) in a pattern $t$ (that correspond to the term $t$ 
-in the order-sorted signature) so that $t$ is well-formed.
-Suppose $f(t_1,\dots,t_n)$ is a term in an order-sorted signature.
-We want to find sort parameters $s_1,\dots,s_n$ such that
-$\parametric{f}{s_1,\dots,s_n}(t_1,\dots,t_n)$ is a well-formed pattern in 
-matching logic.
-In fact, we only need to pick $s_i$ to be the least sort of $t_i$ in the 
-order-sorted signature obtained by the sort inference in order-sorted signature.
-
-The same sort inference procedure works not only for symbols but also for logic 
-connectives.
-Suppose $l \Rightarrow r$ is a rewrite rule where the least sorts of $l$ and 
-$r$ are $s_l$ and $s_r$ respectively.
-Notice that in front-ends, we may not necessarily ask that $s_l$ and $s_r$ are 
-the same sort but just ask they belong to the same connected component.
-We denote $s$ as the lub of the least sorts of $l$ and $r$.
-Then $l \Rightarrow r$ is the syntactic sugar of the following axiom
-$$
-\inj{s_l}{s}(l) \to_s \parametric{\circ}{s} \inj{s_r}{s}(r)
-$$
-
-Injection function are strict.
-For any $s_1 \preceq s_2$ and the injection function $\inj{s_1}{s_2}$, the 
-following property holds
-$$
-\inj{s_1}{s_2}(C[T]) = (\gamma \square . \inj{s_1}{s_2}(C[\square]))[T]
-$$
-
-It is often convenient to assume that $(S,\preceq)$ is not just a poset but a  
-lattice.
-There are standard techniques that extend the poset $(S,\preceq)$ to a lattice 
-by introducing new sorts to $S$ if needed.
-It is orthogonal to what we have discussed.
-
+%In this section, we show that subsort overloading can be handled in the 
+%similar 
+%way as we handle parametric overloading.
+%For simplicity, we assume that every symbol $\sigma$ that is overloaded in 
+%frontend syntax has their multiple instances explicitly defined using sort 
+%parameters, and the sort parameters are its argument sorts plus its return 
+%sort.
+%For example, we want to overload $\_+\_$ for both additions of naturals and 
+%rationals. 
+%Then we need to define all four instances for backend use:
+%\info[inline]{Xiaohong: Alternatively, we can define just the first and the 
+%last 
+%instances. But 
+%then the parser needs to explicitly add injection functions. It is hard to 
+%argue which of the following is better to parse expression $1 + 2.5$:
+%
+%(A) $1 \parametric{+}{\Nat,\Rat,\Rat} 2.5$, with the homomorphism axiom saying 
+%that $x \parametric{+}{\Nat,\Rat,\Rat} y = \inj{\Nat}{\Rat}(x) 
+%\parametric{+}{\Rat,\Rat,\Rat} y$ for any $x$ of sort $\Nat$ and $y$ of the 
+%sort $\Rat$
+%
+%(B) $\inj{\Nat}{\Rat}(1) \parametric{+}{\Rat,\Rat,\Rat} 2.5$
+%
+%Notice that (A) needs all four instances to be defined (as shown below), while 
+%(B) only needs two (the first one and the last one).
+%I personally am in favor of (A).
+%}
+%
+%\begin{center}
+%\begin{tabular}{rl}
+%	$\_\parametric{+}{\Nat,\Nat,\Nat}\_ \colon \Nat \times \Nat \to \Nat$
+%	& \doubleslash the addition for two naturals \\
+%	$\_\parametric{+}{\Nat,\Rat,\Rat}\_ \colon \Nat \times \Rat \to \Rat$
+%	& \doubleslash the addition for two naturals \\
+%	$\_\parametric{+}{\Rat,\Nat,\Rat}\_ \colon \Rat \times \Nat \to \Rat$
+%	& \doubleslash the addition for two naturals \\
+%	$\_\parametric{+}{\Rat,\Rat,\Rat}\_ \colon \Rat \times \Rat \to \Rat$
+%	& \doubleslash the addition for two naturals
+%\end{tabular}
+%\end{center}
+%or more compactly defined as follows
+%\begin{center}
+%	\begin{tabular}{rl}
+%		$\_\parametric{+}{s_1,s_2,s_3}\_ \colon s_1 \times s_2 \to s_3$
+%		&  where $s_1,s_2,s_3 \in \{\Nat, \Rat\}$ \\
+%		& and if one of $s_1$ and $s_2$ 
+%		is $\Rat$, then $s_3$ is $\Rat$
+%\end{tabular}
+%\end{center}
+%
+%In general, it is a frontend issue to decide how to parse an expression with 
+%overloading (e.g. how to calculate the least sort of an expression in an 
+%order-sorted signature), and there 
+%are a large volume of research about that.
+%In particular, \K has a frontend syntax that is order-sorted, and thus it also 
+%gets its own frontend parser, which might be different from other languages 
+%with an order-sorted syntax, say Maude.
+%In this section, we do not constrain ourselves in any particular frontend 
+%syntax.
+%Instead, we will provide \emph{a general theory of overloading} that supports 
+%any order-sorted frontend syntax.
+%In the following, we assume that all instances of an overloaded symbol are 
+%defined properly and are ready for frontend parsers to use.
+%The main technical result we will prove is that under some assumptions, 
+%different parses of a frontend expression with overloading are equivalent 
+%modulo injection functions.
+%
+%
+%
+%
+%
+%%As in order-sorted algebras,
+%%we say two symbols $\sigma_1$ and $\sigma_2$ are \emph{subsort overloading}, 
+%%if 
+%%they have the same name and the argument sorts 
+%%of $\sigma_1$ are subsorts of the argument sorts of $\sigma_2$ element-wisely.
+%%\begin{align*}
+%%& \KsubsortOverloading{\shs}(
+%%\underbrace{\KSymbol(f, S_1, S'_1, s_1)}_{\sigma_1},
+%%\underbrace{\KSymbol(f, S_2, S'_2, s_2)}_{\sigma_2}) 
+%%=  \Ksubsorts{\shs}(S'_1, S'_2) 
+%%\end{align*}
+%%
+%%If $\sigma_1$ and $\sigma_2$ are subsort overloading and the argument sorts 
+%%of 
+%%$\sigma_1$ are subsorts of the argument sorts of $\sigma_2$, then the return 
+%%sort of $\sigma_1$ is a subsort of the return sort of $\sigma_2$.
+%%It is known as the \emph{monotone property}.
+%%\begin{align*}
+%%& \KsubsortOverloading{\shs}(\sigma_1, \sigma_2) \to 
+%%\Ksubsort{\shs}(\KgetReturnSort(\sigma_1), \KgetReturnSort(\sigma_2))
+%%\end{align*}
+%%
+%%\subsubsection{Injective Functions}
+%%Given $s_1$ is a subsort of $s_2$, there exists naturally an injective 
+%%function\footnote{These injective functions are called inclusion operations 
+%%	in~\cite{GOGUEN1992217}.}
+%%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
+%%We denote these injective functions as $\Kqinj$ in the meta-theory and define
+%%\begin{align*}
+%%& \Kqinj \colon \KSort \times \KSort \to \KSymbol \\
+%%& \Kqinj(s_1, s_2) = \KSymbol(\qquottt{inj}, (s_1, s_2), (s_1), s_2) \\
+%%& \Ksubsort{\shs}(s_1, s_2) \to \KsymbolDeclared{\shs}(\Kqinj(s_1, s_2))
+%%\end{align*}
+%%Let us introduce the following notation
+%%\begin{align*}
+%%\inj{s_1}{s_2}(\varphi) \equiv \Kapplication(\Kqinj(s_1,s_2), \varphi)
+%%\end{align*}
+%%Injective functions satisfy the following properties
+%%\begin{align*}
+%%& \inj{s}{s}()
+%%\end{align*}
+%
+%%\subsubsection{Order-Sorted Algebras}
+%%
+%%An order-sorted signature has a poset of the form $(S, \preceq)$. 
+%%Matching logic is a many-sorted logic and all sorts in a matching logic 
+%%signature forms a set which is often denoted as $S$.
+%%Another popular and commonly used type of logic is \emph{order-sorted logic}.
+%%In an order-sorted logic, all sorts of a signature forms a partial order set 
+%%(poset) which is often denoted as $(S, \preceq)$. 
+%%The binary relation $\preceq$ is called the \emph{subsort relation}. 
+%%If $s_1 \preceq s_2$ we say $s_1$ is a subsort of $s_2$.
+%%We denote the connected component of a sort $s$ as $[s]$.
+%%Operators $f \colon s_1 \times \dots \times s_n \to s$ and $f \colon t_1 
+%%\times \dots \times t_n \to t$ are called \emph{subsort overloading} if 
+%%$[t_i] = [t'_i]$ for $i = 1,\dots,n$ and $[t] = [t']$.
+%%Otherwise, they are called \emph{ad-hoc overloading}. 
+%%Subsort overloading is the main focus when it comes to order-sorted 
+%%signatures 
+%%and algebras as ad-hoc overloading can be recognized and dealt with easily by 
+%%calculating connected components of the poset of sorts.
+%%
+%%In order-sorted algebras, there is a standard approach that introduces for 
+%%each 
+%%connected component $[s]$ a top sort (or called a \emph{kind}), often denoted 
+%%as just $[s]$.
+%%Therefore for any $s \in [s]$, $s \preceq [s]$.
+%%And for each operator $f \colon s_1 \times \dots \times s_n \to s$, we define 
+%%a 
+%%subsort overloading $f \colon [s_1] \times \dots \times [s_n] \to [s]$.
+%%Intuitively, it allows us to parse (meaningful) terms and rules that are not 
+%%guaranteed to be always well-formed syntactically.
+%%One such example is $succ(pred(X)) \Rightarrow X$, where the term 
+%%$succ(pred(X))$ does not have sort $Int$ but only have the kind $[Int]$.
+%%Runtime checks will be made in order to make sure rules are applied to terms 
+%%with expected sorts.
+%
+%%In matching logic we decided not to have order-sorted signatures because 
+%%it makes reasoning a lot harder.
+%%Instead, we mimic order-sorted signatures by multi-sorted signatures with 
+%%explicit injection functions plus axioms that capture properties about these 
+%%injection functions.
+%%For any $s_1 \preceq s_2$, we define an injective function 
+%%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
+%%Properties about subsorts are axiomatized.
+%%For example, if $s_1 \preceq s_2 \preceq s_3$, 
+%%the three injective functions
+%%\begin{align*}
+%%& \inj{s_1}{s_2} \colon s_1 \to s_2 \\
+%%& \inj{s_2}{s_3} \colon s_2 \to s_3 \\
+%%& \inj{s_1}{s_3} \colon s_1 \to s_3
+%%\end{align*}
+%%have property
+%%$$
+%%\inj{s_1}{s_3}(x) = \inj{s_2}{s_3}(\inj{s_1}{s_2}(x))
+%%$$
+%%
+%%For any operator $f \colon s_1 \times \dots \times s_n \to s$ in an 
+%%order-sorted signature that might be subsort overloaded, we define for each 
+%%$s'_1 \in [s_1], \dots, s'_n \in [s_n]$, a matching logic symbol
+%%$$\parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'}$$
+%%where $s'$ is the \emph{least sort} of the term $f(x_1 \cln s'_1, \dots, x_n 
+%%\cln x'_n)$ in the order-sorted signature.
+%%Suppose $s'_1 \preceq s''_1 \in [s_1], \dots, s'_n \preceq s''_n \in [s_n]$ 
+%%and
+%%\begin{align*}
+%%& \parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'} \\
+%%& \parametric{f}{s''_1,\dots,s''_n} \in \Sigma_{s''_1,\dots,s''_n,s''}
+%%\end{align*}
+%%By definition, $s' \preceq s'' \in [s]$ and thus there is an injection 
+%%function 
+%%$\inj{s'}{s''} \colon s' \to s''$.
+%The following homomorphism axiom should hold for all symbols $\sigma$ that is 
+%overloaded in frontend:
+%$$
+%\inj{s'}{s''}(
+%\parametric{\sigma}{s'_1,\dots,s'_n,s'}(x_1 \cln s'_1,\dots,x_n \cln s'_n))
+%=
+%\parametric{\sigma}{s''_1,\dots,s''_n,s''}(
+%  \inj{s'_1}{s''_1}(x_1\cln s'_1), \dots, \inj{s'_n}{s''_n}(x_n\cln s'_n))
+%$$
+%where $s'_i \preceq s''_i$ for any $i = 1, \dots, n$ and $s' \preceq s''$.
+%
+%\todo[inline]{The following needs revised.}
+%The above property is especially useful.
+%It allows us to do \emph{sort casting} however we want to.
+%Together with the strictness axioms for injection functions which we introduce 
+%later, it provides us full reasoning power of dealing with order-sorted 
+%signatures in a multi-sorted setting.
+%In other words, it tells us how to generate proof objects about sort casting 
+%and etc. 
+%How to design algorithms and data structures that make doing sort casting and 
+%sort inference (introduced below) more efficient is of course another 
+%important 
+%question.
+%
+%Notice that any term $t$ in an order-sorted signature is also a well-formed 
+%pattern in the corresponding matching logic signature except that the sort 
+%parameters of symbols (that correspond to the operators in the order-sorted 
+%signature) are not yet decided.
+%\emph{Sort inference in order-sorted signature} is the process of finding a 
+%term $t$ its least sort $s$ in an order-sorted signature.
+%We overload the terminology \emph{sort inference} here to 
+%mean the process of finding sort parameters for symbols (that correspond to 
+%the order-sorted operators) in a pattern $t$ (that correspond to the term $t$ 
+%in the order-sorted signature) so that $t$ is well-formed.
+%Suppose $f(t_1,\dots,t_n)$ is a term in an order-sorted signature.
+%We want to find sort parameters $s_1,\dots,s_n$ such that
+%$\parametric{f}{s_1,\dots,s_n}(t_1,\dots,t_n)$ is a well-formed pattern in 
+%matching logic.
+%In fact, we only need to pick $s_i$ to be the least sort of $t_i$ in the 
+%order-sorted signature obtained by the sort inference in order-sorted 
+%signature.
+%
+%The same sort inference procedure works not only for symbols but also for 
+%logic 
+%connectives.
+%Suppose $l \Rightarrow r$ is a rewrite rule where the least sorts of $l$ and 
+%$r$ are $s_l$ and $s_r$ respectively.
+%Notice that in front-ends, we may not necessarily ask that $s_l$ and $s_r$ are 
+%the same sort but just ask they belong to the same connected component.
+%We denote $s$ as the lub of the least sorts of $l$ and $r$.
+%Then $l \Rightarrow r$ is the syntactic sugar of the following axiom
+%$$
+%\inj{s_l}{s}(l) \to_s \parametric{\circ}{s} \inj{s_r}{s}(r)
+%$$
+%
+%Injection function are strict.
+%For any $s_1 \preceq s_2$ and the injection function $\inj{s_1}{s_2}$, the 
+%following property holds
+%$$
+%\inj{s_1}{s_2}(C[T]) = (\gamma \square . \inj{s_1}{s_2}(C[\square]))[T]
+%$$
+%
+%It is often convenient to assume that $(S,\preceq)$ is not just a poset but a  
+%lattice.
+%There are standard techniques that extend the poset $(S,\preceq)$ to a lattice 
+%by introducing new sorts to $S$ if needed.
+%It is orthogonal to what we have discussed.
 
 
 \section{Built-ins}
@@ -2608,7 +2818,7 @@ or Agda.
 Recall from Section~\ref{sec:semantics} that the semantics of a matching
 logic theory $(\Sigma,A)$ was loosely defined as the collection of all
 $\Sigma$-models satisfying its axioms: $\denote{(\Sigma,A)} =
-\{M \ \mid \ M \in \Mod_{\Sigma},\ M \models_{\Sigma} A \}$.
+\{M \mid M \in \Mod_{\Sigma},\ M \models_{\Sigma} A \}$.
 To allow all the builtin scenarios above and stay as abstract as possible
 w.r.t.~builtins, we generalize matching logic theories and their semantics
 as follows.
@@ -3238,6 +3448,7 @@ The last two shorthands are defined in Notation~\ref{notation:lists}.
     meta-theory symbols.
 \end{remark}
 
+
 \subsection{Finite Lists}
 \label{sec:finite-lists}
 
@@ -3394,6 +3605,17 @@ It has axiom
 $$
 \KvariablePattern(x,s) = \KVariableAsKPattern(\Kvariable(x,s))
 $$
+It is useful to have an injective function from
+\KVariableList to \KPatternList, too:
+$$
+\KVariableListAsKPatternList \colon \KVariableList \to \KPatternList
+$$
+defined as
+\begin{align*}
+&\KVariableListAsKPatternList(\KnilKVariableList) = \KnilKPatternList \\
+&\KVariableListAsKPatternList(v, L) =
+ \KVariableAsKPattern(v), \KVariableListAsKPatternList(L)
+\end{align*}
 
 
 
@@ -3479,7 +3701,10 @@ Derived connectives have axioms
   = \Knot(s, \Kexists(s, v, \Knot(s, \varphi)))
   \\
   & \Kceil(s_1, s_2, \varphi) =
-    \Kapplication(\KSymbolceil(s_1, s_2), \varphi)
+    \Kapplication(\KSymbolceil(s_1, s_2),
+    \underbrace{(\varphi)}_{
+    	\mathclap{
+    		\text{the singleton list that contains only $\varphi$}}})
   \\
   & \Kfloor(s_1, s_2, \varphi) 
   = \Knot(s_2, \Kceil(s_1, s_2, \Knot(s_1, \varphi)))
@@ -3490,7 +3715,8 @@ Derived connectives have axioms
   & \Kmembership(s_1, s_2, \varphi, \psi) 
   = \Kceil(s_1, s_2, \Kand(s_1, \varphi, \psi))
   \\
-  & \Ktop(s) = \Kexists(s, \Kvariable(x, s), \Kvariable(x, s))
+  & \Ktop(s) = \Kexists(s, \Kvariable(x, s), 
+    \KvariablePattern(x, s))
   \\
   & \Kbottom(s) = \Knot(s, \Ktop(s))
 \end{align*}
@@ -3537,7 +3763,16 @@ Derived connectives have axioms
 	\end{align*}
 \end{notation}
 
-Apart from the five constructors and ten derived connectives introduced above, 
+\paragraph{Domain Values.}
+We provide a construct for representing domain values using their string 
+representation.
+
+$$
+\Kdv \colon \KSort \times \KString \to \KPattern
+$$
+
+Apart from the five constructors and ten derived connectives, and the domain 
+value construct that we introduced above, 
 the sort $\KPattern$ also gets some common utility functions.
 Those utility functions are defined in the following subsections.
 
@@ -3569,7 +3804,9 @@ $\KgetFVFromPatterns$
 & \KgetFV(\overline{\exists_s v . \varphi}) = \KdeleteKVariableList(v, 
 \KgetFV(\varphi))
 \\
-& \KgetFVFromPatterns(\KnilKPatternList) = \KnilKPatternList
+& \KgetFV(\Kdv(s, str)) = \KnilKVariableList
+\\
+& \KgetFVFromPatterns(\KnilKPatternList) = \KnilKVariableList
 \\
 & \KgetFVFromPatterns(\KconsKPatternList(\varphi, L))
 \\
@@ -3583,7 +3820,7 @@ $$ \parametric{\KoccursFree}{\shs} \colon \KVariable \times \KPattern \to \shs
 decides whether a variable occurs free in a given pattern. It has axiom
 \begin{align*}
   \parametric{\KoccursFree}{\shs}(v, \varphi) = 
-  \parametric{\KinKPatternList}{\shs}(v, 
+  \parametric{\KinKVariableList}{\shs}(v, 
   \KgetFV(\varphi))
 \end{align*}
 
@@ -3627,7 +3864,7 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
 \begin{align*}
   & \overline{u [\psi / v]} 
   = ((u = v) \wedge \psi)
-  \vee ((u \neq v) \wedge u)
+  \vee ((u \neq v) \wedge \KVariableAsKPattern(u))
   \\
   & \overline{\sigma(L)[\psi / v]} =
   \overline{\sigma(L[\psi / v])}
@@ -3638,12 +3875,15 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   & \overline{(\neg_{s} \varphi)[\psi / v]} = \overline{\neg_{s} \varphi[\psi 
   / v]}
   \\
-  & \overline{(\exists_s x \cln s . \varphi)[\psi/v]} 
+  & \overline{(\exists_{s'} x \cln s . \varphi)[\psi/v]} 
   \qquad \text{\doubleslash this complex axiom is needed to 
-  	prevent \emph{free variable capturing}}\\
+  	prevent {free variable capturing}}\\
   & = \exists x' . \left(x' = \KfreshName(\varphi, \psi, 
-  v) \wedge \overline{\exists_s x' \cln s . 
+  \KVariableAsKPattern(v)) \wedge \overline{\exists_{s'} x' \cln s . 
   (\varphi[x' \cln s / x \cln s][\psi/v])}\right)
+  \\
+  & \overline{\Kdv(s,str)[\psi/v]} =
+    \Kdv(s,str)
   \\
   & \overline{\KnilKPatternList[\psi / v]} = \KnilKPatternList
   \\
@@ -3671,7 +3911,7 @@ $$
 We have defined a universe of meta-representations of matching logic sorts, 
 symbols, and patterns, with which we represent all possible sorts, symbols, and 
 patterns coming from all kinds of matching logic theories.
-When fix a theory $T$, the meta-representations of sorts, symbols, and patterns 
+When we fix a theory $T$, the meta-representations of sorts, symbols, and patterns 
 in the theory $T$ only stand for a small portion of the universe of sort, 
 symbol, and pattern meta-representations in $K$.
 For example, $\Nat$ is a sort in Presburger arithmetic, but not in lambda 
@@ -3691,16 +3931,13 @@ They are
 \end{align*}
 A related predicate symbol
 \begin{equation}
-	\parametric{\KsortsDeclared}{\shs} \colon \KSortList \to \shs
+	\KsortsDeclared{\shs} \colon \KSortList \to \shs
 \end{equation}
 checks whether a list of sorts are declared:
 \begin{align*}
-& \KsortsDeclared{\shs} \colon \KSortList \to \shs \\
 & \KsortsDeclared{\shs}(\KnilKSortList) \\
 & \KsortsDeclared{\shs}(\KconsKSortList(s,S)) \\
-& = 
-\KsortDeclared{\shs}(s) \wedge 
-\parametric{\KsortsDeclared}{\shs}(S)
+& = \KsortDeclared{\shs}(s) \wedge \KsortsDeclared{\shs}(S)
 \end{align*}
 
 These predicate symbols give us what we call an \emph{intensional definition} 
@@ -3802,6 +4039,8 @@ defined by the following axioms
   = \KsymbolDeclared{\shs}(\sigma) 
   \wedge \parametric{\KwellFormedPatterns}{\shs}(L)
   \\
+  & \quad \wedge \parametric{\KsortDeclared{\shs}}{\KgetReturnSort(\sigma)}
+  \\
   & \quad \wedge (\KgetSortsFromPatterns(L) = \KgetArgumentSorts(\sigma))
   \\
   & \parametric{\KwellFormed}{\shs}(\overline{\varphi \wedge_s \psi}) 
@@ -3815,7 +4054,8 @@ defined by the following axioms
     \wedge (\KgetSort(\varphi) = s)
   \\
   & \parametric{\KwellFormed}{\shs}(\overline{\exists_s v . \varphi}) =
-  \parametric{\KwellFormed}{\shs}(v) \wedge 
+  \parametric{\KwellFormed}{\shs}(\KVariableAsKPattern(v)) \\
+  & \quad \wedge 
   \parametric{\KwellFormed}{\shs}(\varphi) \wedge (\KgetSort(\varphi) = s)
   \\
   & \KgetSort(\overline{x \cln s}) =
@@ -3834,14 +4074,16 @@ defined by the following axioms
   \\
   & \KgetSort(\overline{\exists_s v . \varphi}) =
   \parametric{\KwellFormed}{\KSort}(\overline{\exists_s v . \varphi}) \wedge s
+  \\
+  & \KgetSort(\Kdv(s,str)) = s
 \end{align*}
 
 
 \subsection{Matching Logic Proof System}
 \label{sec:ML-proof-system}
 
-A sound and complete proof system of matching logic is firstly proposed 
-in~\cite{rosu-2017-lmcs} and reviewed in Section~\ref{sec:deduction}.
+A sound and complete proof system of matching logic is proposed 
+in an unpublished paper and is reviewed in Section~\ref{sec:deduction}.
 The proof system inductively defines a \emph{provability} relation of patterns.
 It consists of several inference rule schemas which are of the form
 $$
@@ -3976,9 +4218,9 @@ $$
 $$
 When we use them in the inference rule schema, they are mathematical variables 
 or the so-called meta-variables for wellformed matching logic patterns.
-When we use then in the meta-theory axiom, they are $\KPattern$ variables and 
+When we use them in the meta-theory axiom, they are $\KPattern$ variables and 
 thus can be quantified.
-This abuse use of notations is intended because \emph{meta-variables in 
+This abuse of notations is intended because \emph{meta-variables in 
 object theories are variables in the meta-theory}.
 
 Let us move on and define the axioms for the other two propositional logic 
@@ -4019,7 +4261,7 @@ From now on, we will quickly list all the inference rule schemas of matching
 logic and their corresponding axioms in the meta-theory, and only add 
 explanations by need.
 
-\paragraph{First-Order Logic with Equality Inference Rules.} \quad
+\paragraph{First-Order Logic Rules.} \quad
 \\
 
 (\textsc{$\forall$}).\quad
@@ -4039,14 +4281,220 @@ If $\vdash \varphi$, then $\vdash \forall v . \varphi$.
 \parametric{\Kdeduce}{\shs}(\overline{\forall_s v . \varphi}).
 \end{equation*}
 
+(\textsc{Variable Substitution}).\quad
+$\vdash \forall v . \varphi \to \varphi[u/v]$ 
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+  \overline{
+	\forall_{s_1} v . \varphi \to_{s_1} \varphi[u/v]}).
+\end{equation*}
+
+\paragraph{Rules about Structures}\quad
+\\
+
+(\textsc{Propagation$_\bot$}).\quad
+$\vdash 
+ \sigma(
+ \varphi_1 \ddd \varphi_{i-1},
+ \bot,
+ \varphi_{i+1} \ddd \varphi_n) \imp \bot$ 
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+\overline{
+\sigma(L,\bot_s,R) \imp_s \bot_s
+}).
+\end{equation*}
+Here we remind readers that we omit 
+the wellformedness premise (see the discussion
+after we axiomatize (\textsc{Propositional$_1$})).
+In the case of (\textsc{Propagation$_\bot$}),
+the omitted wellformedness premise is
+$$
+\parametric{\KwellFormed}{\shs}
+(
+\overline{
+\sigma(L,\bot_s,R) \imp_s \bot_s
+}
+)
+$$
+which will make sure that the sort $s$ is appropriate for the symbol application
+$\sigma(L,\bot_s,R)$.
+To ease our notation, we will omit the subscript sort $s$.
+
+(\textsc{Propagation$_\vee$}).\quad
+$\vdash 
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi_i \vee \varphi'_i,
+\varphi_{i+1} \ddd \varphi_n) \imp
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+\vee
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi'_i,
+\varphi_{i+1} \ddd \varphi_n)
+$ 
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+\overline{
+	\sigma(L,\varphi_i \vee \varphi'_i,R) \imp
+	\sigma(L, \varphi_i, R) \vee \sigma(L, \varphi'_i, R)
+}).
+\end{equation*}
+
+(\textsc{Propagation$_\exists$}).\quad
+$\vdash 
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\exists x . \varphi_i,
+\varphi_{i+1} \ddd \varphi_n) \imp
+\exists x .
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+$
+if $x \not\in \bigcup_{j \neq i}\FV(\varphi_j)$
+\begin{equation*}
+\parametric{\KoccursFree}{\shs}(
+u,
+\overline{\sigma(L,\exists u . \varphi_i,R)}
+)
+\imp
+\parametric{\Kdeduce}{\shs}(
+\overline{
+	\sigma(L,\exists u . \varphi_i,R) \imp
+	\exists u . \sigma(L, \varphi_i, R)
+}).
+\end{equation*}
+
+(\textsc{Framing}).\quad
+If $\vdash \varphi_i \imp \varphi'_i$,
+then 
+$\vdash
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+\imp
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi'_i,
+\varphi_{i+1} \ddd \varphi_n)
+$
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+\overline{
+\varphi_i \imp \varphi'_i
+}
+)
+\imp
+\parametric{\Kdeduce}{\shs}(
+\overline{
+\sigma(L,\varphi_i,R) \imp
+\sigma(L,\varphi'_i,R)
+}).
+\end{equation*}
+
+\paragraph{Existence Rule}\quad
+\\
+
+(\textsc{Existence}).\quad
+$\vdash
+\exists x . x
+$
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+\overline{
+	\exists x . x
+}
+).
+\end{equation*}
+
+
+
+\paragraph{Singleton Variables Rule}\quad
+
+To axiomatize the (\textsc{Singleton Variables}) rule,
+we need an auxiliary symbol that allows us to check
+if certain patterns appear in a symbol context.
+More specifically, we define a (parametric) binary symbol $\Ksc{\shs}$
+such that $\Ksc{\shs}(\psi,\varphi)$ returns $\top_{\shs}$
+iff there exists an occurrence of $\varphi$ in $\psi$,
+and the path of that occurrence contains only symbols.
+
+\begin{align*}
+& \Ksc{\shs} \colon \KPattern \times \KPattern \to \shs
+\\
+& \Ksc{\shs}(\varphi, \varphi)
+\\
+& \Ksc{\shs}(\overline{\sigma(L)}, \varphi)
+  = \exists \varphi' . 
+    \parametric{\KinKPatternList}{\shs}( \varphi', L )
+    \wedge
+    \Ksc{\shs}( \varphi', \varphi )
+\end{align*}
+
+Now we are ready for the (\textsc{Singleton Variables}) rule.
+\\
+
+(\textsc{Singleton Variables}).\quad
+$\vdash
+\neg(
+C_1[x \wedge \varphi] \wedge C_2[x \wedge \neg \varphi]
+)
+$
+if $C_1,C_2$ are symbol contexts (see Section~\ref{sec:deduction}).
+\begin{equation*}
+\Ksc{\shs}(C_1, \overline{x \wedge \varphi})
+\wedge
+\Ksc{\shs}(C_2, \overline{x \wedge \neg \varphi})
+\imp
+\parametric{\Kdeduce}{\shs}(
+\overline{
+	\neg(
+	C_1 \wedge C_2
+	)
+}
+).
+\end{equation*}
+
+\paragraph{The Axiom Rule.}\quad
+\\
+
+(\textsc{Axiom}).\quad
+$A \vdash \varphi$ if $\varphi \in A$.
+\begin{equation*}
+\underbrace{\parametric{\KaxiomDeclared}{\shs}(\varphi)}_\text{if $\varphi$ is 
+	an axiom in the current theory} \to 
+\underbrace{\parametric{\Kdeduce}{\shs}(\varphi)}_\text{then $\varphi$ is 
+	provable 
+	in the current theory}
+\end{equation*}
+
+\subsubsection{Derived Proof Rules about Membership and Equality}
+
+When the definedness symbols are declared,
+we can define membership and equality
+as derived constructs.
+In~\cite{rosu-2017-lmcs},
+a sound and complete proof system using
+membership and equality is presented,
+which contains the following proof rules.
+We list them here and show how we can axiomatize them in
+the same way we axiomatize the others proof rules.
+
 (\textsc{Functional Substitution}).\quad
 $\vdash \exists u . u = \psi \wedge \forall v . \varphi \to \varphi[\psi/v]$ if 
 $u$ does not occur free in $\psi$.
 \begin{equation*}
 \parametric{\KoccursFree}{\shs}(u, \psi) \to
 \parametric{\Kdeduce}{\shs}(\overline{\exists_{s_2} u . u =_{s_1}^{s_2} \psi 
-\wedge_{s_2} 
-\forall_{s_2} v . \varphi \to_{s_2} \varphi[\psi/v]}).
+	\wedge_{s_2} 
+	\forall_{s_2} v . \varphi \to_{s_2} \varphi[\psi/v]}).
 \end{equation*}
 
 (\textsc{Functional Variable}). \quad
@@ -4063,8 +4511,8 @@ $$\parametric{\Kdeduce}{\shs}(\overline{\varphi =_{s_1}^{s_2} \varphi})$$
 $\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/v] \to \psi[\varphi_2/v])$.
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2) 
-\to_{s_2} 
-(\psi[\varphi_1/v] \to_{s_2} \psi[\varphi_2/v])}).
+	\to_{s_2} 
+	(\psi[\varphi_1/v] \to_{s_2} \psi[\varphi_2/v])}).
 \end{equation*}
 
 \paragraph{Definedness Axioms.}\quad
@@ -4087,7 +4535,7 @@ If $\vdash \varphi$, and $v$ does not occur free in $\varphi$, then $\vdash v
 \parametric{\Kdeduce}{\shs}(\varphi) \wedge \neg 
 \parametric{\KoccursFree}{\shs}(v, \varphi) \to 
 \parametric{\Kdeduce}{\shs}(\overline{v 
-\in_{s_1}^{s_2} \varphi}).
+	\in_{s_1}^{s_2} \varphi}).
 \end{equation*}
 
 (\textsc{Membership Elimination}).
@@ -4103,23 +4551,23 @@ $\vdash \varphi$.
 $\vdash (v \in u) = (v = u)$.
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{(v \in_{s_1}^{s_2} u) =_{s_2}^{s_3} (v 
-=_{s_1}^{s_2} u)}).
+	=_{s_1}^{s_2} u)}).
 \end{equation*}
 
 (\textsc{Membership $\wedge$}).
 $\vdash v \in (\varphi \wedge \psi) = (v \in \varphi) \wedge (v \in \psi).$
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{v \in_{s_1}^{s_2} (\varphi \wedge_{s_1} 
-\psi) =_{s_2}^{s_3} 
-(v \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (v \in_{s_1}^{s_2} \psi)}).
+	\psi) =_{s_2}^{s_3} 
+	(v \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (v \in_{s_1}^{s_2} \psi)}).
 \end{equation*}
 
 (\textsc{Membership $\neg$}).
 $\vdash v \in \neg \varphi = \neg (v \in \varphi)$.
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{v \in_{s_1}^{s_2} \neg_{s_1} \varphi 
-=_{s_2}^{s_3} 
-\neg_{s_2} (v \in_{s_1}^{s_2} \varphi)}).
+	=_{s_2}^{s_3} 
+	\neg_{s_2} (v \in_{s_1}^{s_2} \varphi)}).
 \end{equation*}
 
 (\textsc{Membership $\forall$}).
@@ -4127,9 +4575,9 @@ $\vdash v \in \forall u . \varphi = \forall u . v \in \varphi$ if $v$ is
 distinct from $u$.
 \begin{equation*}
 (v \neq u)  \to \parametric{\Kdeduce}{\shs}(\overline{(v \in_{s_1}^{s_2} 
-\forall_{s_1} u . 
-\varphi) =_{s_2}^{s_3} 
-(\forall_{s_2} u . (v \in_{s_1}^{s_2} \varphi))}).
+	\forall_{s_1} u . 
+	\varphi) =_{s_2}^{s_3} 
+	(\forall_{s_2} u . (v \in_{s_1}^{s_2} \varphi))}).
 \end{equation*}
 
 (\textsc{Membership Symbol}).
@@ -4138,27 +4586,115 @@ $\vdash v \in \sigma(\dots \varphi_i \dots) = \exists u . u \in \varphi_i
 not occur free in $\sigma(\dots \varphi_i \dots)$.
 \begin{align*}
 & (u \neq v) 
-  \wedge \neg \parametric{\KoccursFree}{\shs}(u, \overline{\sigma(L, \varphi_i, 
-  R)})
+\wedge \neg \parametric{\KoccursFree}{\shs}(u, \overline{\sigma(L, \varphi_i, 
+	R)})
 \\
 \to & \parametric{\Kdeduce}{\shs}(\overline{v \in_{s_1}^{s_2} \sigma(L, 
-\varphi_i, R) 
-=_{s_2}^{s_3} \exists_{s_2} u . (u \in_{s_4}^{s_2} \varphi_i \wedge_{s_2} v 
-\in_{s_1}^{s_2} \sigma(L, u, R))}),
+	\varphi_i, R) 
+	=_{s_2}^{s_3} \exists_{s_2} u . (u \in_{s_4}^{s_2} \varphi_i \wedge_{s_2} v 
+	\in_{s_1}^{s_2} \sigma(L, u, R))}),
 \end{align*}
 
-\paragraph{The Axiom Rule.}\quad
-\\
+\subsection{More about Symbols}
 
-(\textsc{Axiom}).\quad
-$A \vdash \varphi$ if $\varphi \in A$.
-\begin{equation*}
-\underbrace{\parametric{\KaxiomDeclared}{\shs}(\varphi)}_\text{if $\varphi$ is 
-	an axiom in the current theory} \to 
-\underbrace{\parametric{\Kdeduce}{\shs}(\varphi)}_\text{then $\varphi$ is 
-	provable 
-	in the current theory}
-\end{equation*}
+Symbols are important in matching logic.
+In practice, symbols may have various properties
+such as injectivity, commutative, associations, and more.
+In this section, we provide various predicates about symbols.
+These predicates will ease our specification of a matching logic theory.
+In particular, users can use these predicates to define their theories
+in the Kore language (see Section~\ref{sec:kore}).
+
+The predicate symbol
+$$
+\KinjectiveP{\shs} \colon \KSymbol \to \shs
+$$
+tells if a symbol $\sigma$ is an injective symbol.
+It has the axiom
+$$
+\KinjectiveP{\shs}(\sigma) \to
+\KprovableP{\shs}( 
+\overline{
+\sigma(L, \varphi, R) \wedge \sigma(L, \psi, R)
+\to
+\sigma(L, (\varphi \wedge \psi), R)
+}
+ )
+$$
+
+The predicate symbol
+$$
+\KconstructorP{\shs} \colon \KSymbol \to \shs
+$$
+tells if a symbol $\sigma$ is a constructor symbol of the sort $s$.
+If $\sigma$ is a constructor symbol,
+it is injective:
+$$
+\KconstructorP{\shs}(\sigma) \to \KinjectiveP{\shs}(\sigma) 
+$$
+If $\sigma_1$ and $\sigma_2$ are different constructors,
+they construct different things:
+\begin{align*}
+&
+\KconstructorP{\shs}(\sigma_1) \wedge
+\KconstructorP{\shs}(\sigma_2) \wedge
+\sigma_1 \neq \sigma_2 \to 
+\\
+&
+\KprovableP{\shs}(
+\overline{\neg (
+  \sigma_1(\KVariableListAsKPatternList(L_1)) \wedge 
+  \sigma_2(\KVariableListAsKPatternList(L_2)))}
+)
+\end{align*}
+where $L_1$ and $L_2$ are variables of sort $\KVariableList$.
+Recall that \KVariableListAsKPatternList takes a list of \KVariableList
+and map it to \KPatternList, defined in Section~\ref{sec:ML-patterns}.
+
+\subsection{Built-ins in the Meta-Theory}
+
+Recall that in Section~\ref{sec:builtins},
+we define matching logic theories \emph{with built-ins} as a tuple
+$(S_\builtin, \Sigma_\builtin, S, \Sigma, A)$,
+where $S_\builtin$ contains built-in sorts
+and $\Sigma_\builtin$ contains built-in symbols.
+Unlike $S$ and $\Sigma$ whose semantics is axiomatized by
+a set $A$ of axioms, the the axiomatization of the
+semantics of built-ins are given
+by an implementation/oracle.
+Recall that as we discussed in Section~\ref{sec:builtins},
+different tools use the built-ins differently and have different oracles.
+An interpreter may use an external library for fast implementation
+as an oracle, while a symbolic execution engine may use an SMT solver like Z3.
+Whether a pattern $\varphi_\builtin$ over the syntax of built-in sorts 
+and symbols belongs to the theory $(S_\builtin, \Sigma_\builtin, S, \Sigma, A)$
+is told by the oracle; 
+notice the set of patterns $\varphi_\builtin$ that are in the theory
+may not even be recursively enumerable.
+
+We claim that there is nothing special needed for built-ins in the meta-theory.
+In the same way how object-level axioms 
+turn into meta-level axioms about \Kdeduce, 
+we can regard all the properties that the built-in oracle recognizes 
+at the object-level as meta-level axioms about \Kdeduce.
+Specifically, 
+whenever we need a property $\varphi_\builtin$ 
+about built-ins, say, natural numbers,
+the corresponding claim
+$\KprovableP{\shs}(\denote{\varphi_\builtin})$
+is added to the meta-theory as an axiom, where
+$\denote{\varphi_\builtin}$ is the meta-representation of $\varphi_\builtin$.
+In other words,
+Any reasoning conducted in the meta-theory with all axioms about built-ins added
+remains sound, because 
+Section~\ref{sec:ML-proof-system}
+gives a faithful axiomatization of the proof system of matching 
+logic~(see Theorem~\ref{thm:faithfulness-finite}),
+and that proof system is a sound proof system.
+
+
+
+
 
 \subsection{A Summary of the Meta-Theory}
 \label{sec:K-summary}
@@ -4277,7 +4813,7 @@ There are in total 10 sorts in the meta-theory.
 	    \KsortDeclared{$\shs$} & Check whether a sort is declared 
 	    in the current theory 
 	    \\
-	    \parametric{\KsortsDeclared}{$\shs$}  & Check whether a list of sorts 
+	    \KsortsDeclared{$\shs$}  & Check whether a list of sorts 
 	    are declared in the current theory 
 	    \\
 	    \KsymbolDeclared{$\shs$} & Check whether a symbol is 
@@ -5407,8 +5943,8 @@ that could ever be implemented.
 The Kore language is a formal specification language that allows one to specify 
 (both finite and recursively enumerable infinite) theories using a finite 
 number of characters and space.
-Before we present the syntax and semantics of Kore, we would like to recall 
-the readers again of the reflection property that we firstly introduced 
+Before we present the syntax and semantics of Kore, we would like to remind 
+readers of the reflection property that we first introduced 
 in Section~\ref{sec:meta-theory-reflection}
 \begin{center}
 $T \vdash \varphi$ \quad iff \quad 
@@ -5431,8 +5967,8 @@ used to, and are always able to write meta-level definitions and specifications
 to use the full power of the meta-theory and the faithful reflection relation.
 Object-level declarations and specifications are seen as just syntactic sugar 
 of the more verbose meta-level declarations.
-This process of ``desugaring object specifications to meta-specifications'' are 
-called \emph{lifting process}, which is giving Kore a semantics as a 
+This process of ``desugaring object specifications to meta-specifications'' is 
+called the \emph{lifting process}, which gives Kore a semantics as a 
 specification 
 language (Section~\ref{sec:kore-semantics}).
 
@@ -5484,6 +6020,8 @@ Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
 		\\\hline
 		\texttt{:} & Colon % & Variables and Declarations
 		\\
+		\texttt{:=} & Colon Equal % & Aliases declarations
+		\\
 		\texttt{\string{ \string}} & Curly Braces % & Sort Parameters
 		\\
 		\texttt{( )} & Parenthesis % & Kore Expressions
@@ -5500,14 +6038,26 @@ Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
 Identifiers are mostly used as symbols, sorts, and variable names.
 An \syntacc{identifier} is either of the following two cases:
 \begin{itemize}
-\item An \syntacc{object-identifier}, which is a nonempty sequence of letters,
-digits, the character~``\verb|'|'', and the character~``\verb|-|'' that starts 
-with a
-letter and is not a \syntacc{keyword}.
+\item An \syntacc{object-identifier},
+      which is either of the following two cases:
+      \begin{itemize}
+      \item An \syntacc{object-nonslash-identifier},
+            which is a nonempty sequence of letters, digits, the 
+            character~``\verb|'|'', and the character~``\verb|-|'' that starts 
+            with a letter and is not a \syntacc{keyword}.
+      \item An \syntacc{object-slash-identifier},
+            which is
+            the character \qquottt{\slashsymbol} followed
+            by an \syntacc{object-nonslash-identifier}
+      \end{itemize}
 \item A \syntacc{meta-identifier},
-which is either the character ``\verb|#|'' followed by an 
-\syntacc{object-identifier},
-or the string ``\verb|#`|'' followed by an \syntacc{object-identifier}.
+      which is either of the following two cases:
+      \begin{itemize}
+      \item The character \qquottt{\sharpsymbol}
+            followed by an \syntacc{object-identifier}
+      \item The string \qquottt{\sharpsymbol`}
+            followed by an \syntacc{object-nonslash-identifier}
+      \end{itemize}
 \end{itemize}
 
 Identifiers are building blocks of many syntactic categories in Kore,
@@ -5550,11 +6100,16 @@ They are used to signify the begin and end of a declaration.
 			alias & \textrm{Initiate an alias declaration}
 			\\
 			axiom & \textrm{Initiate an axiom declaration}
+      \\
+      hooked-sort & \textrm{Initiate a hooked sort declaration}
+      \\
+      hooked-symbol & \textrm{Initiate a hooked symbol declaration}
 	\end{tabular}}
 \end{center}
 
 
 \subsubsection{Sorts}
+\label{sec:kore-syntax-sorts}
 A sort is either a \emph{sort variable} or a \emph{sort constructor} applied to 
 a list of \emph{sort parameters}.
 Sorts include object-level sorts and meta-level sorts, which are syntactically 
@@ -5768,7 +6323,7 @@ respectively, as shown in the next grammar.
 	<meta-head-constructor> ::= <meta-identifier>
 \end{grammar}
 A head is of the form \texttt{$C$\{$s_1,\dots,s_n$\}} for some $n \ge 0$, where 
-$C$ is head constructor and $s_1,\dots,s_n$ are sort parameters.
+$C$ is a head constructor and $s_1,\dots,s_n$ are sort parameters.
 In the case when $n = 0$, we say the head constructor $C$ is a non-parametric 
 head constructor and the head \texttt{$C$\{\}} is a non-parametric head.
 Notice that an object head constructor can only take object sorts as 
@@ -5837,7 +6392,7 @@ parameters.
 %String literals are meta-patterns.
 
 Apart from a few exceptions, patterns in Kore have a highly unified 
-prefix form representations.
+prefix form representation.
 Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
  
 \begin{grammar}
@@ -5874,6 +6429,9 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <object-sort> `}' `(' `)'
 	\alt `\\bottom' `{' <object-sort> `}' `(' `)'
+	\alt `\\dv' `{' <object-sort> `}' `(' <meta-pattern> `)'
+	\doubleslash where <meta-pattern> has sort {\KString} (see wellformedness 
+	conditions)
 	
 	<object-variable> ::= <object-identifier> `:' <object-sort>
 	
@@ -5948,6 +6506,97 @@ The meta-theory does not have these constructs defined, (see
 Section~\ref{sec:meta-theory} for details about the meta-theory), and thus do 
 not need a syntax for these constructs.
 
+\paragraph{No {\sharpup}, no {\sharpdown}, no 
+problem.}
+In Kore, we adopt a syntax for \syntacc{pattern} that allows a mixed-use of 
+both \syntacc{object-pattern} and \syntacc{meta-pattern}.
+The intended semantics of such a mixed syntax, as we will define in detail in 
+Section~\ref{sec:kore-semantics}, is that \syntacc{object-pattern} are just 
+syntactic sugar for things at the meta-level (in fact, their abstract syntax 
+trees), and they will all be automatically lifted to the meta-level.
+Compared to this implicit-level-shifting manner, an alternative approach is to 
+use {\sharpup} and {\sharpdown} to explicitly shift 
+levels.
+However, we found this alternative approach less favorable than our approach, 
+for the following reasons.
+
+Firstly, it is not clear what {\sharpup} and {\sharpdown} really are from a 
+mathematical point of view. 
+Therefore it is at risk to introduce them because of their lack of clear 
+mathematical meaning: users might think of them to be what they are not.
+They are external to the logic and thus none of 
+the logical 
+proof rules or semantics applies to them.
+For example, one cannot do any 
+reasoning in the argument of {\sharpup}, because two things that are logically 
+equivalent may have different abstract syntax trees, and thus will be taken to 
+two different things by {\sharpup}.
+Similarly for {\sharpdown}, one would have to do just "enough" reasoning in its 
+argument until it becomes the meta-level representation of an object pattern, 
+which is risky and possibly lead to inconsistencies.
+
+Secondly, {\sharpup} and {\sharpdown} provide no real benefit for the users; on 
+the contrary, they make them type more.
+For example in lambda calculus, we have the $\beta$-reduction axiom (side 
+conditions omitted because they are not important for this discussion)
+$$(\lambda x . e)e' = e[e'/x]$$
+Notice that $e$ and $e'$ have to be meta-variables, and therefore one would 
+write in Kore {\texttt{\sharpsymbol E:\KPattern}} and {\texttt{\sharpsymbol 
+E':\KPattern}} for each of them, resp.
+Now, in order to plug these two meta-variables in place, we need to wrap them 
+with an explicit {\sharpdown}, to bring them from the meta-level to the object 
+level, and end up with something (that we do not want) as follows
+\begin{lstlisting}[language=kore]
+axiom
+   \equals{Exp,Exp}(
+     app{}(lambda{}(X:Exp,#down(#E:#Pattern)),
+           #down(#E':#Pattern)),
+     #down(#substitute{}(#down(#E:#Pattern), #down(#E':#Pattern), #up(X:Exp))))
+\end{lstlisting}
+In fact, by having our current convention that all concrete syntax is 
+automatically lifted, there is nothing to stop users from writing
+\begin{lstlisting}[language=kore]
+    #inVariableList{}(X:S, #getFV{}(mult{}(X:S, zero{}()))
+\end{lstlisting}
+There is no need for 
+{\sharpup} and {\sharpdown} in order for users to not be exposed 
+to the meta-level.  That 
+is, they can already do that methodologically. And backends like K-2-LLVM will 
+still only know a few "meta-level" constructs, like \texttt{\sharpsymbol 
+inVariableList{}}, and can still only 
+accept definitions that make no explicit use of meta-level notation.
+
+%Finally, 
+%there is the issue of checking well-sortedness and guaranteeing a 
+%sort-preservation kind of result.
+%We know that we can screw things up massively at the meta-level.
+%For example, when using
+%$$\KgetFV \colon \KPattern \to \KVariableList$$
+%\todo{Xiaohong: I need to understand this example better in order to phrase 
+%this 
+%discussion for well-sortedness and runtime checking.}
+%`FV : KPattern -> KPattern` like 
+%this `... andBool X inSet FV(X * 0)`, you are assuming that the `KPattern` it 
+%returns is the meta-level representation of some `Set` core pattern.
+%But if you implement `FV` at the meta-level in a way where it gives a 
+%meta-level representation of a `List`, or even worse, some pure meta-level 
+%`KPatternList`, then the well-sortedness is broken
+%We were hoping that with explicit `\sharpsymbol up` and `\sharpsymbol down` we 
+%can prevent violations of sortedness, where we write
+%`andBool X inSet \sharpsymbol down{Set}(FV(\sharpsymbol up(X * 0)))`
+%and then we can have `\sharpsymbol down` do a sort checking at runtime
+%this way, we can statically sort-check the core definition, modulo the claims 
+%made by `\sharpsymbol down` which are checked at runtime, so we are sort-safe 
+%(edited)
+%Well, this runtime check for well-sortedness of meta-stuff may or may not be a 
+%good thing in itself, but it is toally orthogonal to having `\sharpsymbol up` 
+%and `\sharpsymbol down` in KORE.  That is, there is nothing to stop you from 
+%adding it around all meta-level patterns that occur in core-level contexts.  
+%We 
+%may add it as a kompilation option, for example.  But you do not need any 
+%`\sharpsymbol down` for that, and sort inference is super-trivial, because we 
+%do not have implicit subsorting (but only explicit injection symbols).
+
 %
 %
 %The following are all logic connective constructors in Kore, including both 
@@ -6004,10 +6653,21 @@ Back-ends that care more about proving and want to have \emph{certificates} for
 whatever they do need to use axioms instead of attributes to generate proof 
 objects and prove them in matching logic provers.
 
-Attributes are written as comma-separated patterns wrapped with brackets 
-``\texttt{[}'' and ``\texttt{]}''.
+Attributes are written as comma-separated object-level application patterns
+wrapped with brackets ``\texttt{[}'' and ``\texttt{]}''.
+The order of attributes in the list is never significant.
+Back-ends may place restrictions on recognized attributes, such as restricting
+the number or sort of arguments or the number of times an attribute may appear
+in the list.
 \begin{grammar}
-<attribute> ::= `[' <pattern-list> `]'
+<attributes> ::= `[' <attribute-list> `]'
+
+<attribute-list> ::= \quad
+\alt $\epsilon$ 
+\alt <attribute>
+\alt <attribute> `,' <attribute-list>
+
+<attribute> ::= <object-head> `(' <pattern-list> `)'
 \end{grammar}
 
 
@@ -6022,7 +6682,7 @@ axiom.
 
 <module> ::= \quad
 \alt `module' <module-name> <declaration>$^*$ 
-`endmodule' <attribute>
+`endmodule' <attributes>
 
 <declaration> ::= \quad
 \alt <import-declaration>
@@ -6030,12 +6690,13 @@ axiom.
 \alt <symbol-declaration>
 \alt <alias-declaration>
 \alt <axiom-declaration>
+\alt <hook-declaration>
 
-<import-declaration> ::= `import' <module-name> <attribute>
+<import-declaration> ::= `import' <module-name> <attributes>
 
 <sort-declaration> ::= `sort'
 <object-sort-constructor>  `{' <object-sort-variable-list> `}' 
-<attribute>
+<attributes>
 
 <symbol-declaration> ::= <object-symbol-declaration> | 
 <meta-symbol-declaration>
@@ -6043,27 +6704,48 @@ axiom.
 <object-symbol-declaration> ::= \quad
 \alt `symbol' <object-head-constructor> 
 `{' <object-sort-variable-list> `}' 
-`(' <object-sort-list> `)' `:' <object-sort> <attribute>
+`(' <object-sort-list> `)' `:' <object-sort> <attributes>
 
 <meta-symbol-declaration> ::= \quad
 \alt `symbol' <meta-head-constructor>
 `{'	<meta-sort-variable-list> `}'
- `(' <meta-sort-list> `)' `:' <meta-sort> <attribute>
+ `(' <meta-sort-list> `)' `:' <meta-sort> <attributes>
 
 <alias-declaration> ::= <object-alias-declaration> | <meta-alias-declaration> 
 
 <object-alias-declaration> ::= \quad
 \alt `alias' <object-head-constructor> 
 `{' <object-sort-variable-list> `}' 
-`(' <object-sort-list> `)' `:' <object-sort> <attribute>
+`(' <object-sort-list> `)' `:' <object-sort> 
+`where' 
+<object-head-constructor> 
+`{' <object-sort-variable-list> `}'
+`(' <object-variable-list> `)' 
+`:='
+<object-pattern>
+<attributes>
 
 <meta-alias-declaration> ::= \quad
 \alt `alias' <meta-head-constructor> 
 `{'	<meta-sort-variable-list> `}'
-`(' <meta-sort-list> `)' `:' <meta-sort> <attribute>
+`(' <meta-sort-list> `)' `:' <meta-sort> 
+`where' 
+<meta-head-constructor> 
+`{' <meta-sort-variable-list> `}'
+`(' <meta-variable-list> `)' 
+`:='
+<meta-pattern>
+<attributes>
 
 <axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern> 
-<attribute>
+<attributes>
+
+<hook-declaration> ::= \quad
+\alt `hooked-sort' <object-sort-constructor>  `{' <object-sort-variable-list> 
+`}' <attributes>
+\alt `hooked-symbol' <object-head-constructor> 
+`{' <object-sort-variable-list> `}' 
+`(' <object-sort-list> `)' `:' <object-sort> <attributes>
 
 <sort-variable-list> ::= \quad
 \alt $\epsilon$
@@ -6082,7 +6764,7 @@ axiom.
 \alt <meta-sort-variable>
 \alt <meta-sort-variable> `,' <meta-sort-variable-list>
 
-<module-name> ::= <object-identifier>
+<module-name> ::= <object-nonslash-identifier>
 \end{grammar}
 
 Every declaration has a list of sort variables wrapped in curly brackets, also 
@@ -6096,13 +6778,56 @@ if an identifier is a sort variable or something else.
 All sort variables used in a declaration have to be declared in the sort 
 variable declaration (see Section~\ref{sec:kore-syntax-wellformedness}).
 
+\paragraph{Alias Declarations and Proof Rules}
+For every alias declaration
+\begin{center}
+\begin{tabular}{l}
+\texttt{
+alias $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$
+}\\
+\texttt{
+where $C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln s_n$)
+:= $\varphi$ [$att$]
+}
+\end{tabular}
+\end{center}
+there are two generated proof rules:
+the (Sugar) and (Desugar) rules.
+\begin{center}
+\begin{tabular}{cc}
+$
+\prftree[r]
+{$C$-Sugar}
+{
+\varphi
+}
+{
+\parametric{C}{v_1 ,\dots, v_n}(\varphi_1 ,\dots, \varphi_n)
+}
+$
+&
+$
+\prftree[r]
+{$C$-Desugar}
+{
+\parametric{C}{v_1 ,\dots, v_n}(\varphi_1 ,\dots, \varphi_n)
+}
+{
+\varphi
+}
+$
+\end{tabular}
+\end{center}
+
+
+
 \subsubsection{Kore Definitions}
 
 A Kore definition contains an attribute and a sequence of modules.
 A Kore definition contains at least a module.
 
 \begin{grammar}\small
-<definition> ::= <attribute> <module>$^+$
+<definition> ::= <attributes> <module>$^+$
 \end{grammar}
 
 %Here are some examples of sort declarations in Kore.
@@ -6206,18 +6931,43 @@ wellformedness conditions.
 sort variable list; The sort variable lists should contain only distinct sort 
 variables (no duplicates);
 \item In any symbol or alias declaration, the head being declared should be of 
-the form \texttt{$C$\{$s_1,\dots,s_n$\}} where $C$ is a head constructor and 
-$s_1,\dots,s_n$ are $n$ distinct sort variables;
+the form \texttt{$C$\{$v_1,\dots,v_n$\}} where $C$ is a head constructor and 
+$v_1,\dots,v_n$ are $n$ distinct sort variables;
 \item Every declared symbol or alias should have their argument sorts and 
 return sorts declared;
 \item In any pattern that is a head being applied to a list of argument 
 patterns, the number and sorts of argument patterns should match with the head 
 declaration;
-\item Every sorts, symbols, and aliases should be declared to be used;
-\item Every sorts, symbols, and aliases should all have unique constructor 
+\item All sorts, symbols, and aliases should be declared before being used;
+\item Every sorts, symbols, and aliases, even if they are in different modules, 
+should all have unique constructor 
 names; One cannot use the same name for a sort and a symbol, for example. 
 Similarly, any meta-symbol cannot have the same name as a meta-sort.
 \item Every sort constructor can be declared only once;
+\item In domain value pattern $\Kdv\{s\}(str)$, the meta-level pattern $str$ 
+should have sort $\KString$.
+\item In every alias declaration
+      \begin{center}
+      \begin{tabular}{l}
+      \texttt{
+      alias $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$
+      }\\
+      \texttt{
+      where $C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln s_n$)
+      := $\varphi$ [$att$]
+      }
+      \end{tabular}
+      \end{center}
+      the variables $x_1 \cln s_1,\dots,x_n \cln s_n$ are distinct, and
+      their number and sorts should match with the sorts
+      $s_1 ,\dots, s_n$.
+      The pattern $\varphi$ should  not contain any other free variables
+      other than $x_1 \cln s_1,\dots,x_n \cln s_n$.
+      The pattern $\varphi$ should be well-formed, and it must not
+      contain aliases that are not declared yet.
+      In other words, $\varphi$ can only use aliases that are declared
+      in prior to the current declaration. 
+      The sort of $\varphi$ must be the same as $s$.
 \end{enumerate}
 
 Besides the above wellformedness conditions for patterns, we have the following 
@@ -6515,7 +7265,7 @@ axiom\{$\shs$\} \\
 \qquad 
 \slimplies\{\shs\}( \\
 \ttfamily
-\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+\qquad\qquad\KsortsDeclared{\shs}($\denote{
 	s_1,\dots,s_n}_\llist$),\\
 \ttfamily
 \qquad\qquad\KsortDeclared{\shs}($\denote{
@@ -6523,6 +7273,14 @@ axiom\{$\shs$\} \\
 \end{tabular}
 \end{center}
 where $\shs$ is a fresh meta-level sort variable.
+
+The declaration of a hooked sort
+\begin{center}
+	\ttfamily
+	hooked-sort $C$\{$s_1,\dots,s_n$\} [$\att$]
+\end{center}
+is lifted in the same way as
+a normal sort declaration.
 
 \subsubsection{Lift Object Head Constructors to Meta Symbols}
 Object symbol constructors are lifted to non-parametric meta-symbols as
@@ -6634,29 +7392,43 @@ $v_1,\dots,v_m$ are declared.
 		\qquad 
 		\slimplies\{\shs\}( \\
 		\ttfamily
-		\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+		\qquad\qquad\KsortsDeclared{\shs}($\denote{
 			v_1,\dots,v_m}_\llist$),\\
 		\ttfamily
-		\qquad\qquad\KsymbolDeclared\{\shs\}($\sigma$))
+		\qquad\qquad\KsymbolDeclared{\shs}($\sigma$))
 		[]
 	\end{tabular}
 \end{center}
 where $\shs$ is a fresh meta-level sort variable.
 
+The declaration of a hooked symbol is lifted in the same way
+as a normal symbol declaration.
+
 \subsubsection{Lift Object Alias Declarations}
-An object alias declaration is lifted to a symbol declaration.
+An object alias declaration is lifted to a symbol declaration
+and an axiom declaration.
 $$ \denote{\_} \colon \syntacc{object-alias-declaration} \to 
+\syntacc{declaration} \times
 \syntacc{declaration}$$
 Consider the alias declaration
 \begin{center}
-	\ttfamily
-	alias $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$ [$\att$]
+\begin{tabular}{l}
+\texttt{
+alias $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$
+}\\
+\texttt{
+where $C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln s_n$)
+:= $\varphi$ [$att$]
+}
+\end{tabular}
 \end{center}
 where $C$ is an object alias constructor, $v_1,\dots,v_m$ are sort variables, 
 $s_1,\dots,s_n$ and $s$ are argument sorts and return sort which possibly use 
 sort variables $v_1,\dots,v_m$.
+$x_1 \cln s_1,\dots,x_n \cln s_n$ are $n$ distinct variables, and
+$\varphi$ is a pattern.
 
-The alias declaration is lifted to a symbol declaration for the corresponding 
+The symbol declaration is about the corresponding 
 helper function $\denote{C}$ of the alias constructor $C$.
 Since $C$ takes $m$ sort parameters and $n$ arguments, the helper function 
 $\denote{C}$ takes in total $m+n$ arguments.
@@ -6669,6 +7441,19 @@ $\denote{C}$ takes in total $m+n$ arguments.
 		times}$):\parametric{\KPattern}{}
 	[]
 \end{center}
+
+The axiom declaration is about the definition of the alias
+\texttt{$C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln s_n$)
+:= $\varphi$},
+which is lifted in the same way as an object axiom
+(see Section~\ref{sec:lift-axiom-decl})
+\begin{center}
+\texttt{axiom\{$s',v_1,\dots,v_n$\}
+\Kequals\{s,s'\}($C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln 
+s_n$),$\varphi$)}
+\end{center}
+where $s$ is the sort of the pattern $\varphi$ and $s'$ is an object sort 
+variable.
 
 %\subsubsection{Lift Connective Constructors To Meta Symbols}
 %Connective constructors are lifted to non-parametric meta-symbols as 
@@ -6858,7 +7643,31 @@ $\denote{\texttt{\slbottom\{$s$\}()}}
 =
 \texttt{\slbottom\{$s$\}()}$
 & if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slnext\{$s$\}($\varphi$)}}
+=
+\texttt{\Knext\{\}($\denote{s}$,$\denote{\varphi}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\slrewrites\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\Krewrites\{\}($\denote{s}$,$\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{object-sort}
 \end{longtable}
+
+\paragraph{String Literals and Domain Value Patterns.}
+
+\begin{center}
+\begin{tabular}{ll}
+$\denote{str} = str$
+& if $str$ is \syntacc{string}
+\\
+$\denote{\texttt{\sldv\{$s$\}($str$)}}
+= \texttt{\sharpsymbol\slashsymbol dv\{\}($\denote{s}, \denote{str}$)}$
+&if $s$ is \syntacc{object-sort}
+  and $str$ is a \syntacc{meta-pattern} of sort \KString
+\end{tabular}
+\end{center}
 
 %\subsubsection{Lift Patterns To Meta Patterns of Sort \KPattern}
 %One of the main part of the lifting operation is lifting patterns to meta-
@@ -6940,22 +7749,48 @@ $\denote{\texttt{\slbottom\{$s$\}()}}
 %\end{align*}
 
 \subsubsection{Lift Axiom Declarations}
+\label{sec:lift-axiom-decl}
 In Kore, an axiom declaration is lifted as follows.
 \begin{align*}
-  &\denote{\_} \colon \syntacc{object-axiom-declaration} \to 
+  &\denote{\_} \colon \syntacc{axiom-declaration} \to 
   \syntacc{axiom-declaration}
   \\
   &\denote{\texttt{\parametric{axiom}{$s_1,\dots,s_n$}
   		$\varphi$}} =
   	\begin{cases*}
-  	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} 
-  	\Kdeduce($\denote{\varphi}$)} & 
-  if $\varphi$ is \syntacc{object-pattern} \\
-  \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} $\denote{\varphi}$} & if
-  $\varphi$ is \syntacc{meta-pattern}
+  	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$}}
+  	\texttt{ \parametric{\slimplies}{$s'$}(} \\
+  	\qquad\qquad\quad\ \texttt{
+  	\KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)}, \texttt{
+  	\parametric{\Kdeduce}{$s'$}($\denote{\varphi}$))} 
+  \\
+ 	\qquad\qquad\qquad\qquad\qquad\qquad\qquad\quad\qquad\qquad\quad \text{if 
+ 	$\varphi$ is 
+ 	\syntacc{object-pattern}} \\
+  \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$}}
+    	\texttt{ \parametric{\slimplies}{$s'$}(} \\
+    	\qquad\qquad\quad\ \texttt{
+    	\KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)}, 
+    	\denote{\varphi} \texttt{)}
+    	\\
+ 	\qquad\qquad\qquad\qquad\qquad\qquad\qquad\quad\qquad\qquad\quad
+ 	\text{if 
+ 	$\varphi$ is 
+ 	\syntacc{meta-pattern}} \\
   	\end{cases*}
 \end{align*}
-where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in $s_1,\dots,s_n$.
+where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in 
+$s_1,\dots,s_n$,
+$s_1'',\dots,s_k''$ are all \syntacc{object-sort-variable} in 
+$s_1,\dots,s_n$, and $s'$ is a \syntacc{meta-sort-variable}.
+In the case when $\varphi$ is a \syntacc{object-pattern},
+$s'$ is a fresh \syntacc{meta-sort-variable} that is 
+different from $s_1',\dots,s_m'$.
+In the case when $\varphi$ is a \syntacc{meta-pattern},
+$s'$ is the sort of the \syntacc{meta-pattern} $\denote{\varphi}$.
+Depending on the the concrete form of $\denote{\varphi}$, $s'$ may be one of 
+the parameters $s_1',\dots,s_m'$, or the one built using one of the 
+\syntacc{meta-sort-constructor} defined in Section~\ref{sec:kore-syntax-sorts}.
 
 %\subsection{Example A: Presburger Arithmetic}
 %\begin{lstlisting}[language=kore]

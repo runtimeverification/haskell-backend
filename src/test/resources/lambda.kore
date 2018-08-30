@@ -1,6 +1,6 @@
 []
 
-module LAMBDA 
+module LAMBDA
 
   sort Exp{} []
 
@@ -8,24 +8,24 @@ module LAMBDA
 
   symbol app{}(Exp{},Exp{}) : Exp{} []
 
-  alias lambda{}(Exp{},Exp{}) : Exp{} []
+  symbol lambda{}(Exp{},Exp{}) : Exp{} []
 
   axiom{R}
     \equals{Exp{},R}(
       lambda{}(
-        #variableToPattern{}(#X:#Variable{}),
+        #variableAsPattern{}(#X:#Variable{}),
         #E:#Pattern{}),
-      \exists{Exp}(
+      #\exists{}(#Exp:#Sort{},
         #X:#Variable{},
         lambda0{}(
-          #variableToPattern{}(#X:#Variable{}),
+          #variableAsPattern{}(#X:#Variable{}),
           #E:#Pattern{}))) []
 
   symbol #isExp{#S}(#Pattern{}) : #S []
 
   axiom{#S,#R}
     \equals{#S,#R}(
-      #isExp{#S}(#variableToPattern{}(#variable{}(#NAME:#String{},#SORT:#Sort{}))),
+      #isExp{#S}(#variableAsPattern{}(#variable{}(#NAME:#String{},#SORT:#Sort{}))),
       \equals{#Sort{},#S}(#SORT:#Sort{}, #`Exp{}())) []
 
 
@@ -40,9 +40,9 @@ module LAMBDA
     \equals{#S,#R}(
       #isExp{#S}(
         lambda{}(
-          #variableToPattern{}(
-            #variable{}(#NAME:#String{},#SORT:#Sort{}),
-            #E:#Pattern{}))),
+          #variableAsPattern{}(
+            #variable{}(#NAME:#String{},#SORT:#Sort{})),
+            #E:#Pattern{})),
       \and{#S}(
         \equals{#Sort{},#S}(#SORT:#Sort{}, #`Exp{}()),
         #isExp{#S}(#E:#Pattern{}))) []
@@ -58,7 +58,10 @@ module LAMBDA
           app{}(
             lambda{}(X:Exp{},#E:#Pattern{}),
             #E':#Pattern{}),
-          #substitute{}(#E:#Pattern{}, #E':#Pattern{}, X:Exp{})))) []
+          #substitute{}(
+            #E:#Pattern{}, 
+            #E':#Pattern{}, 
+            #variable{}("X", #`Exp{}()))))) []
 
 
 

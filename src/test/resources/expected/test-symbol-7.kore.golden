@@ -4,29 +4,29 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-SYMBOL-7"
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id Object "Nat"
+                [ ObjectSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "Nat" AstLocationNone) :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = Id Object "f"
+                            { symbolConstructor = (Id "f" AstLocationNone) :: Id Object
                             , symbolParams =
-                                [ SortVariable (Id Object "S")
+                                [ SortVariable ((Id "S" AstLocationNone) :: Id Object)
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Nat"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortVariableSort (SortVariable (Id Object "S"))
+                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                     , sentenceSymbolAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

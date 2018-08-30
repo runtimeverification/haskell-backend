@@ -1,0 +1,12 @@
+// This program calculates in sum
+// the sum of numbers from 1 to n.
+
+int n, sum;
+n = AInt 5;
+sum = AInt 0;
+while (!(AId n <= AInt 0)) {
+  sum = AId sum + AId n;
+  n = AId n + (- 1);
+}
+
+// sum should be 15 when n is 5

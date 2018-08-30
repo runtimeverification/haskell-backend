@@ -1,0 +1,62 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-HOOKSORT-1"
+            , moduleSentences =
+                [ ObjectSentence (SentenceHookSentence (SentenceHookedSort SentenceSort
+                    { sentenceSortName = (Id "S" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }))
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "g" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "S" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = (Id "f" AstLocationNone) :: Id Object
+                            , aliasParams = []
+                            }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "S" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceAliasLeftPattern =
+                        ApplicationPattern Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = (Id "f" AstLocationNone) :: Id Object
+                                    , symbolOrAliasParams = []
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasRightPattern =
+                        ApplicationPattern Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = (Id "g" AstLocationNone) :: Id Object
+                                    , symbolOrAliasParams = []
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }

@@ -1,1 +1,3 @@
-Parse error: {: Failed reading: satisfyWith.
+Parse error: ../../../test/resources//outdated/kool-typed-dynamic.kore:1:13:
+unexpected '('
+expecting '{'

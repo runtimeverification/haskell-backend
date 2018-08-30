@@ -1,1 +1,1 @@
-Parse error: Failed reading: metaSortConverter: Non empty parameter sorts..
+Parse error: Error in module 'TEST-EXCEPTION-10' -> axiom declaration -> \implies (../../../test/resources//test-exception-10.kore 6:8) -> sort '#S' (../../../test/resources//test-exception-10.kore 6:8) -> (../../../test/resources//test-exception-10.kore 6:8): Sort '#S' not declared.

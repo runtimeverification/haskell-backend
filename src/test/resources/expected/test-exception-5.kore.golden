@@ -1,1 +1,2 @@
-Parse error: Failed reading: genericIdRawParser: Invalid first character '-'..
+Parse error: ../../../test/resources//test-exception-5.kore:6:5:
+genericIdRawParser: Invalid first character '-'.

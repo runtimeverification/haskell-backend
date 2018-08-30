@@ -1,0 +1,8 @@
+[]
+module TEST-ALIAS-10
+
+  alias f{s}() : s
+  where f{s}() := \dv{s}("f") []
+
+endmodule
+[]

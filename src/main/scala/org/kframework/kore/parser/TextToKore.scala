@@ -74,11 +74,13 @@ class TextToKore(b: Builders) {
   @throws(classOf[java.io.IOException])
   def canonicalString(src: io.Source): String = {
     def loop(s: StringBuilder): String = {
-      while (!scanner.isEOF()) { // skipWhitespaces is called
-        s += scanner.next() // must be a nonwhitespace character
-        loop(s)
+      if (scanner.isEOF()) {
+        return s.toString()
       }
-      return s.toString()
+      else {
+        s += scanner.next() // s must be a nonwhitespace character
+        loop(s)             // tail recursive
+      }
     }
     try {
       scanner.init(src)
@@ -92,8 +94,8 @@ class TextToKore(b: Builders) {
   // Definition = Attributes Module
   private def parseDefinition(): Definition = {
     val att = parseAttributes()
-    val module = parseModule()
-    b.Definition(att, module)
+    val modules = parseModules()
+    b.Definition(att, modules)
   }
 
   // Attributes = [ List{Pattern, ',', ']'} ]
@@ -124,12 +126,28 @@ class TextToKore(b: Builders) {
     b.Module(name, decls, att)
   }
 
+  private def parseModules() : Seq[Module] = {
+    var ms = Seq.empty[Module]
+    while(!scanner.isEOF()) {
+      val leading_char = scanner.nextWithSkippingWhitespaces()
+      if (leading_char == 'm') { // a module starts
+        scanner.putback('m')
+        val m = parseModule()
+        ms = ms :+ m
+      }
+      else
+        throw error('m', leading_char)
+    }
+    ms
+  }
+
   // Declarations = <lookahead>(e) // <empty>
   //              | Declaration Declarations
   // Declaration = sort { SortVariableList } Sort Attributes
   //             | symbol Symbol ( SortList ) : Sort Attributes
   //             | alias Alias ( SortList ) : Sort Attributes
   //             | axiom { SortVariableList } Axiom
+  //             | import Id Attributes
   private def parseDeclarations(decls: Seq[Declaration]): Seq[Declaration] = {
     val c1 = scanner.nextWithSkippingWhitespaces()
     if (c1 == 'e') { // endmodule
@@ -139,13 +157,12 @@ class TextToKore(b: Builders) {
     else {
       val c2 = scanner.nextWithSkippingWhitespaces()
       (c1, c2) match {
-        // case ('i', 'm') => // import
-        //   consume("port")
-        //   val nameStr = parseModuleName()
-        //   val att = parseAttributes()
-        //   val decl = b.Import(b.ModuleName(nameStr), att)
-        //   parseDeclarations(decls :+ decl)
-        // TODO:: Read two chars only if needed.
+         case ('i', 'm') => // import
+           consume("port")
+           val nameStr = parseId()
+           val att = parseAttributes()
+           val decl = b.Import(nameStr, att)
+           parseDeclarations(decls :+ decl)
         case ('s', 'o') => // sort declaration
           consume("rt")
           val ctr = parseId(parsingLevel = objt)
@@ -170,6 +187,38 @@ class TextToKore(b: Builders) {
           val att = parseAttributes()
           val decl = b.SymbolDeclaration(symbol, argSorts, returnSort, att)
           parseDeclarations(decls :+ decl)
+        case ('h', 'o') => // hook-sort or hook-symbol declaration
+          consume("oked-")
+          val c1 = scanner.next()
+          val c2 = scanner.next()
+          (c1, c2) match {
+            case ('s', 'o') => // hook-sort
+              consume("rt")
+              val ctr = parseId(parsingLevel = objt)
+              consumeWithLeadingWhitespaces("{")
+              val params = parseList(() => parseSortVariable(parsingLevel = objt), ',', '}')
+              consumeWithLeadingWhitespaces("}")
+              val att = parseAttributes()
+              val decl = b.HookSortDeclaration(params, b.CompoundSort(ctr, params), att)
+              parseDeclarations(decls :+ decl)
+            case ('s', 'y') => // hook-symbol
+              consume("mbol")
+              val ctr = parseId() // previousParsingLevel is set here
+              consumeWithLeadingWhitespaces("{")
+              val params = parseList(() => parseSortVariable(parsingLevel = previousParsingLevel), ',', '}')
+              consumeWithLeadingWhitespaces("}")
+              val symbol = b.Symbol(ctr, params)
+              consumeWithLeadingWhitespaces("(")
+              val argSorts = parseList(() => parseSort(parsingLevel = previousParsingLevel), ',', ')')
+              consumeWithLeadingWhitespaces(")")
+              consumeWithLeadingWhitespaces(":")
+              val returnSort = parseSort(parsingLevel = previousParsingLevel)
+              val att = parseAttributes()
+              val decl = b.HookSymbolDeclaration(symbol, argSorts, returnSort, att)
+              parseDeclarations(decls :+ decl)
+            case (e1, e2) => // error
+              throw error("sort, symbol", e1)
+          }
         case ('a', 'l') => // alias declaration
           consume("ias")
           val ctr = parseId() // previousParsingLevel is set here
@@ -182,8 +231,12 @@ class TextToKore(b: Builders) {
           consumeWithLeadingWhitespaces(")")
           consumeWithLeadingWhitespaces(":")
           val returnSort = parseSort(parsingLevel = previousParsingLevel)
+          consumeWithLeadingWhitespaces("where")
+          val leftPattern = parsePattern()
+          consumeWithLeadingWhitespaces(":=")
+          val rightPattern = parsePattern()
           val att = parseAttributes()
-          val decl = b.AliasDeclaration(alias, argSorts, returnSort, att)
+          val decl = b.AliasDeclaration(alias, argSorts, returnSort, leftPattern, rightPattern, att)
           parseDeclarations(decls :+ decl)
         case ('a', 'x') => // axiom declaration
           consume("iom")
@@ -334,19 +387,17 @@ class TextToKore(b: Builders) {
           //   val p = parsePattern()
           //   consumeWithLeadingWhitespaces(")")
           //   b.Next(s, p)
-          // case ('r', 'e') => // rewrites
-          //   consume("writes")
-          //   consumeWithLeadingWhitespaces("{")
-          //   val s = parseSort()
-          //   consumeWithLeadingWhitespaces(",")
-          //   val rs = parseSort()
-          //   consumeWithLeadingWhitespaces("}")
-          //   consumeWithLeadingWhitespaces("(")
-          //   val p1 = parsePattern()
-          //   consumeWithLeadingWhitespaces(",")
-          //   val p2 = parsePattern()
-          //   consumeWithLeadingWhitespaces(")")
-          //   b.Rewrites(s, rs, p1, p2)
+          case ('r', 'e') => // rewrites
+            consume("writes")
+            consumeWithLeadingWhitespaces("{")
+            val s = parseSort()
+            consumeWithLeadingWhitespaces("}")
+            consumeWithLeadingWhitespaces("(")
+            val p1 = parsePattern()
+            consumeWithLeadingWhitespaces(",")
+            val p2 = parsePattern()
+            consumeWithLeadingWhitespaces(")")
+            b.Rewrites(s, p1, p2)
           case ('c', 'e') => // ceil
             consume("il")
             consumeWithLeadingWhitespaces("{")
@@ -394,6 +445,14 @@ class TextToKore(b: Builders) {
             val q = parsePattern()
             consumeWithLeadingWhitespaces(")")
             b.Mem(s, rs, p, q)
+          case ('d', 'v') => // dv
+            consumeWithLeadingWhitespaces("{")
+            val s = parseSort() // previousParsingLevel is set here
+            consumeWithLeadingWhitespaces("}")
+            consumeWithLeadingWhitespaces("(")
+            val str = parseString()
+            consumeWithLeadingWhitespaces(")")
+            b.DomainValue(s, str)
           // case ('s', 'u') => // subset
           //   consume("bset")
           //   consumeWithLeadingWhitespaces("{")
@@ -562,6 +621,12 @@ class TextToKore(b: Builders) {
               scanner.next() match {
                 case c if isLetter(c) =>
                   "#`" + loop(new StringBuilder(c.toString()))
+                case c => throw error("Meta-Identifier>", c)
+              }
+            case '\\' => // #\ID
+              scanner.next() match {
+                case c if isLetter(c) =>
+                  "#\\" + loop(new StringBuilder(c.toString()))
                 case c => throw error("Meta-Identifier>", c)
               }
             case c if isLetter(c) => // #ID

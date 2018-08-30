@@ -28,6 +28,7 @@ class TextToKoreTest {
     parseFromFile("test-sort-4.kore")
   }
 
+
   /**
     * Tests for parsing symbols.
     */
@@ -54,6 +55,21 @@ class TextToKoreTest {
   }
   @Test def test_symbol_8(): Unit = {
     parseFromFile("test-symbol-8.kore")
+  }
+
+  /**
+    * Tests for hooks.
+    */
+  @Test def test_hooks_1(): Unit = {
+    parseFromFile("test-hooks-1.kore")
+  }
+
+  @Test def test_hooks_2(): Unit = {
+    parseFromFile("test-hooks-2.kore")
+  }
+
+  @Test def test_hooks_3(): Unit = {
+    parseFromFile("test-hooks-3.kore")
   }
 
   /**
@@ -191,7 +207,7 @@ class TextToKoreTest {
     * Tests for exception and error handling.
     */
   @Test def test_exception_1(): Unit = {
-    parseFromFileExpectParseException("test-exception-1.kore")
+    parseFromFileExpectParseException("test-sort-5.kore")
   }
   @Test def test_exception_2(): Unit = {
     parseFromFileExpectParseException("test-exception-2.kore")
@@ -254,7 +270,7 @@ class TextToKoreTest {
     parseFromFileExpectParseException("test-exception-21.kore")
   }
   @Test def test_exception_22(): Unit = {
-    parseFromFileExpectParseException("test-exception-22.kore")
+    parseFromFileExpectParseException("test-sort-6.kore")
   }
   @Test def test_exception_23(): Unit = {
     parseFromFileExpectParseException("test-exception-23.kore")
@@ -298,6 +314,9 @@ class TextToKoreTest {
   }
   @Test def test_imp(): Unit = {
     parseFromFile("imp.kore")
+  }
+  @Test def test_imp2(): Unit = {
+    parseFromFile("imp2.kore")
   }
 
 

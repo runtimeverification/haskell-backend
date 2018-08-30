@@ -4,19 +4,19 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-SYMBOL-4"
             , moduleSentences =
-                [ ObjectSentenceSymbolSentence SentenceSymbol
+                [ ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = Id Object "f"
+                            { symbolConstructor = (Id "f" AstLocationNone) :: Id Object
                             , symbolParams =
-                                [ SortVariable (Id Object "S")
+                                [ SortVariable ((Id "S" AstLocationNone) :: Id Object)
                                 ]
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortVariableSort (SortVariable (Id Object "S"))
+                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                     , sentenceSymbolAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

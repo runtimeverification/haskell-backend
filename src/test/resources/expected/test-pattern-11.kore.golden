@@ -4,31 +4,31 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-PATTERN-11"
             , moduleSentences =
-                [ SentenceAxiomSentence SentenceAxiom
+                [ MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (InPattern In
+                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (InPattern In
                             { inOperandSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
+                                SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , inResultSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
+                                SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , inContainedChild =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                    { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
+                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                    }))))
                             , inContainingChild =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                    { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            })
+                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                    }))))
+                            }))))
                     , sentenceAxiomAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

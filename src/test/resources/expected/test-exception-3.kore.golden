@@ -1,1 +1,3 @@
-Parse error: Failed reading: genericIdRawParser: Invalid first character '''..
+Parse error: ../../../test/resources//test-exception-3.kore:6:7:
+unexpected ':'
+expecting '''

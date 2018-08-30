@@ -4,23 +4,23 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-PATTERN-14"
             , moduleSentences =
-                [ SentenceAxiomSentence SentenceAxiom
+                [ MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (NextPattern Next
+                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (NextPattern Next
                             { nextSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
+                                SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , nextChild =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                    { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            })
+                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                    }))))
+                            }))))
                     , sentenceAxiomAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

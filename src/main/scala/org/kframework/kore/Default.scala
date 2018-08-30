@@ -6,17 +6,21 @@ object implementation {
 
   private object ConcreteClasses {
 
-    case class Definition(att: i.Attributes, module: i.Module) extends i.Definition
+    case class Definition(att: i.Attributes, modules: Seq[i.Module]) extends i.Definition
 
     case class Module(name: String, decls: Seq[i.Declaration], att: i.Attributes) extends i.Module
 
-    // case class Import(name: i.ModuleName, att: i.Attributes) extends i.Import
+    case class Import(name: String, att: i.Attributes) extends i.Import
 
     case class SortDeclaration(params: Seq[i.SortVariable], sort: i.Sort, att: i.Attributes) extends i.SortDeclaration
 
+    case class HookSortDeclaration(params: Seq[i.SortVariable], sort: i.Sort, att: i.Attributes) extends i.HookSortDeclaration
+
     case class SymbolDeclaration(symbol: i.Symbol, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes) extends i.SymbolDeclaration
 
-    case class AliasDeclaration(alias: i.Alias, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes) extends i.AliasDeclaration
+    case class HookSymbolDeclaration(symbol: i.Symbol, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes) extends i.HookSymbolDeclaration
+
+    case class AliasDeclaration(alias: i.Alias, argSorts: Seq[i.Sort], returnSort: i.Sort, leftPattern: i.Pattern, rightPattern: i.Pattern, att: i.Attributes) extends i.AliasDeclaration
 
     case class AxiomDeclaration(params: Seq[i.SortVariable], pattern: i.Pattern, att: i.Attributes) extends i.AxiomDeclaration
 
@@ -46,7 +50,7 @@ object implementation {
 
     // case class Next(s: i.Sort, _1: i.Pattern) extends i.Next
 
-    // case class Rewrites(s: Sort, rs: Sort, _1: i.Pattern, _2: i.Pattern) extends i.Rewrites
+    case class Rewrites(s: Sort, _1: i.Pattern, _2: i.Pattern) extends i.Rewrites
 
     case class Ceil(s: i.Sort, rs: i.Sort, p: i.Pattern) extends i.Ceil
 
@@ -56,11 +60,11 @@ object implementation {
 
     case class Mem(s: i.Sort, rs: i.Sort, p: i.Pattern, q: i.Pattern) extends i.Mem
 
+    case class DomainValue(s: i.Sort, str: String) extends i.DomainValue
+
     // case class Subset(s: i.Sort, rs: i.Sort,_1: i.Pattern,_2: i.Pattern) extends i.Subset
 
     case class StringLiteral(str: String) extends i.StringLiteral
-
-    // case class DomainValue(sortStr: String, valueStr: String) extends i.DomainValue
 
     case class SortVariable(name: String) extends i.SortVariable
 
@@ -77,17 +81,21 @@ object implementation {
 
     import org.kframework.kore.implementation.{ConcreteClasses => d}
 
-    def Definition(att: i.Attributes, module: i.Module): i.Definition = d.Definition(att, module)
+    def Definition(att: i.Attributes, modules: Seq[i.Module]): i.Definition = d.Definition(att, modules)
 
     def Module(name: String, decls: Seq[i.Declaration], att: i.Attributes): i.Module = d.Module(name, decls, att)
 
-    // def Import(name: i.ModuleName, att: i.Attributes): i.Declaration = d.Import(name, att)
+    def Import(name: String, att: i.Attributes): i.Declaration = d.Import(name, att)
 
     def SortDeclaration(params: Seq[i.SortVariable], sort: i.Sort, att: i.Attributes): i.Declaration = d.SortDeclaration(params, sort, att)
 
+    def HookSortDeclaration(params: Seq[i.SortVariable], sort: i.Sort, att: i.Attributes): i.Declaration = d.HookSortDeclaration(params, sort, att)
+
     def SymbolDeclaration(symbol: i.Symbol, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes): i.Declaration = d.SymbolDeclaration(symbol, argSorts, returnSort, att)
 
-    def AliasDeclaration(alias: i.Alias, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes): i.Declaration = d.AliasDeclaration(alias, argSorts, returnSort, att)
+    def HookSymbolDeclaration(symbol: i.Symbol, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes): i.Declaration = d.HookSymbolDeclaration(symbol, argSorts, returnSort, att)
+
+    def AliasDeclaration(alias: i.Alias, argSorts: Seq[i.Sort], returnSort: i.Sort, leftPattern: i.Pattern, rightPattern: i.Pattern, att: i.Attributes): i.Declaration = d.AliasDeclaration(alias, argSorts, returnSort, leftPattern, rightPattern, att)
 
     def AxiomDeclaration(params: Seq[i.SortVariable], _1: i.Pattern, att: i.Attributes): i.Declaration = d.AxiomDeclaration(params, _1, att)
 
@@ -117,7 +125,7 @@ object implementation {
 
     // def Next(s: i.Sort, _1: i.Pattern): i.Pattern = d.Next(s, _1)
 
-    // def Rewrites(s: i.Sort, rs: i.Sort, _1: i.Pattern, _2: i.Pattern): i.Pattern = d.Rewrites(s, rs, _1, _2)
+    def Rewrites(s: i.Sort, _1: i.Pattern, _2: i.Pattern): i.Pattern = d.Rewrites(s, _1, _2)
 
     def Ceil(s: i.Sort, rs: i.Sort, p: Pattern): i.Pattern = d.Ceil(s, rs, p)
 
@@ -126,6 +134,8 @@ object implementation {
     def Equals(s: i.Sort, rs: i.Sort, _1: i.Pattern, _2: i.Pattern): i.Pattern = d.Equals(s, rs, _1, _2)
 
     def Mem(s: i.Sort, rs: i.Sort, p: i.Pattern, q: i.Pattern): i.Pattern = d.Mem(s, rs, p, q)
+
+    def DomainValue(s: i.Sort, str: String): i.Pattern = d.DomainValue(s, str)
 
     // def Subset(s: i.Sort, rs: i.Sort, _1: Pattern, _2: Pattern): i.Pattern = d.Subset(s, rs, _1, _2)
 

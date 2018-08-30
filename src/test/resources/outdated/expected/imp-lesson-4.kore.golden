@@ -1,1 +1,3 @@
-Parse error: {: Failed reading: satisfyWith.
+Parse error: ../../../test/resources//outdated/imp-lesson-4.kore:1:13:
+unexpected '('
+expecting '{'

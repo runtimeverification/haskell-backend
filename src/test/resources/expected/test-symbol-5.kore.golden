@@ -4,21 +4,21 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-SYMBOL-5"
             , moduleSentences =
-                [ ObjectSentenceSymbolSentence SentenceSymbol
+                [ ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = Id Object "f"
+                            { symbolConstructor = (Id "f" AstLocationNone) :: Id Object
                             , symbolParams =
-                                [ SortVariable (Id Object "S")
+                                [ SortVariable ((Id "S" AstLocationNone) :: Id Object)
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortVariableSort (SortVariable (Id Object "S"))
+                        [ SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceSymbolReturnSort =
-                        SortVariableSort (SortVariable (Id Object "S"))
+                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                     , sentenceSymbolAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

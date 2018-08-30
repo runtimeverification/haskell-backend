@@ -2,8 +2,12 @@
 
 module TEST-ATTRIBUTE-2
 
-  sort Nat{} [#hook{}("Nat")]
+  sort Nat{} [hook{}("Nat")]
 
-  symbol plus{}(Nat{},Nat{}) : Nat{} [#hook{}("plus"), #assoc{}(), #comm{}()]
+  symbol plus{}(Nat{},Nat{}) : Nat{}
+    [ hook{}("Nat")
+    , associative{}()
+    , commutative{}()
+    ]
 
 endmodule []

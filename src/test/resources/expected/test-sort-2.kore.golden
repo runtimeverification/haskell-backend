@@ -4,13 +4,13 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-SORT-2"
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id Object "List"
+                [ ObjectSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "List" AstLocationNone) :: Id Object
                     , sentenceSortParameters =
-                        [ SortVariable (Id Object "S")
+                        [ SortVariable ((Id "S" AstLocationNone) :: Id Object)
                         ]
                     , sentenceSortAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

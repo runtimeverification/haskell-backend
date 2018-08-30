@@ -4,11 +4,11 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-COMMENT-6"
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id Object "Nat"
+                [ ObjectSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "Nat" AstLocationNone) :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

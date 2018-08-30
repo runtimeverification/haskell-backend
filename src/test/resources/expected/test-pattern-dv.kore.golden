@@ -1,0 +1,30 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-PATTERN-15"
+            , moduleSentences =
+                [ ObjectSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "Int" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                            { domainValueSort =
+                                SortActualSort SortActual
+                                    { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                                    , sortActualSorts = []
+                                    }
+                            , domainValueChild =
+                                Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "10")))))
+                            }))))
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }
