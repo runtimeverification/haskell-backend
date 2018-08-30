@@ -17,6 +17,7 @@ import Kore.AST.PureML
 import Kore.AST.PureToKore
 import Kore.AST.Sentence
 import Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.Implicit.Attributes
 import Kore.Implicit.ImplicitSorts
@@ -104,7 +105,12 @@ testDefinition =
 
 testIndexedModule :: KoreIndexedModule StepperAttributes
 testIndexedModule =
-    case verifyAndIndexDefinition DoNotVerifyAttributes testDefinition of
+    case
+        verifyAndIndexDefinition
+            DoNotVerifyAttributes
+            Builtin.koreVerifiers
+            testDefinition
+      of
         Right modulesMap ->
             fromMaybe
                 (error "This should not have happened")

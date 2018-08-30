@@ -2,16 +2,18 @@ module Main where
 
 import Criterion.Main
 
-import Data.Proxy ( Proxy (Proxy) )
+import Data.Proxy
+       ( Proxy (Proxy) )
 import System.FilePath
        ( takeFileName )
 
-import Kore.ASTVerifier.DefinitionVerifier
-       ( defaultAttributesVerification, verifyDefinition )
-import Kore.Parser.Parser
-       ( fromKore )
-import Kore.Step.StepperAttributes
-       ( StepperAttributes )
+import           Kore.ASTVerifier.DefinitionVerifier
+                 ( defaultAttributesVerification, verifyDefinition )
+import qualified Kore.Builtin as Builtin
+import           Kore.Parser.Parser
+                 ( fromKore )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 import qualified Paths
 
@@ -92,7 +94,12 @@ verify filename =
     -- | Verify the Kore definition.
     -- Runs once per benchmark iteration.
     verify1 defn =
-        case verifyDefinition attributesVerification defn of
+        case
+            verifyDefinition
+                attributesVerification
+                Builtin.koreBuiltins
+                defn
+          of
             Left err -> error (show err)
             Right _ -> ()
       where

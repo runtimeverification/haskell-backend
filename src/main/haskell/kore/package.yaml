@@ -46,6 +46,7 @@ dependencies:
   - reflection
   - text
   - time
+  - unordered-containers
 
 build-tools:
   - tasty-discover
@@ -89,7 +90,7 @@ library:
 
 executables:
   kore-parser:
-    main:                Main.hs
+    main: Main.hs
     source-dirs:
       - app/parser
       - app/share
@@ -99,6 +100,18 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - kore
+
+  kore-exec:
+    main: Main.hs
+    source-dirs:
+      - app/exec
+      - app/share
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - kore
 
   kore-format:
     main: Main.hs

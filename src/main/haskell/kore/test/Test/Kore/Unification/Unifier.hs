@@ -7,6 +7,8 @@ import Test.Tasty.HUnit
 import Test.Tasty.HUnit.Extensions
 
 import Data.CallStack
+import Data.Default
+       ( def )
 import Data.Function
        ( on )
 import Data.Functor.Foldable
@@ -22,13 +24,14 @@ import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
+       ( ApplicationSorts (..) )
 import Kore.ASTPrettyPrint
 import Kore.ASTUtils.SmartConstructors
        ( mkVar )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.PatternAttributes
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 import Kore.Unification.UnifierImpl
@@ -85,6 +88,11 @@ ex2 = parameterizedVariable_ s1 "ex2" AstLocationTest
 ex3 = parameterizedVariable_ s1 "ex3" AstLocationTest
 ex4 = parameterizedVariable_ s1 "ex4" AstLocationTest
 
+
+dv1, dv2 :: CommonPurePatternStub Object
+dv1 = parameterizedDomainValue_ s1 "dv1"
+dv2 = parameterizedDomainValue_ s1 "dv2"
+
 aA :: CommonPurePatternStub Object
 aA = applyS a []
 
@@ -115,6 +123,7 @@ mockStepperAttributes patternHead = StepperAttributes
     { isConstructor = patternHead /= getSentenceSymbolOrAliasHead a2 []
     , isFunctional = patternHead /= getSentenceSymbolOrAliasHead a3 []
     , isFunction = False
+    , hook = def
     }
 
 mockGetArgumentSorts :: SymbolOrAlias Object -> [Sort Object]
@@ -461,10 +470,22 @@ test_unification =
                 (extractPurePattern expY)
             ]
         )
-      , andSimplifyFailure "Unmatching constants"
+    , andSimplifyFailure "Unmatching constants"
         (UnificationTerm aA)
         (UnificationTerm a1A)
-        (ConstructorClash (symbolHead a) (symbolHead a1))
+        (PatternClash (HeadClash (symbolHead a)) (HeadClash (symbolHead a1)))
+    , andSimplifyFailure "Unmatching domain values"
+        (UnificationTerm dv1)
+        (UnificationTerm dv2)
+        (PatternClash (DomainValueClash "dv1") (DomainValueClash "dv2"))
+    , andSimplifyFailure "Unmatching constant + domain value"
+        (UnificationTerm aA)
+        (UnificationTerm dv2)
+        (PatternClash (HeadClash (symbolHead a)) (DomainValueClash "dv2"))
+    , andSimplifyFailure "Unmatching domain value + constant"
+        (UnificationTerm dv1)
+        (UnificationTerm a1A)
+        (PatternClash (DomainValueClash "dv1") (HeadClash (symbolHead a1)))
     , andSimplifyFailure "non-functional pattern"
         (UnificationTerm x)
         (UnificationTerm a3A)
@@ -480,7 +501,7 @@ test_unification =
     , andSimplifyFailure "nested failure"
         (UnificationTerm (applyS f [aA]))
         (UnificationTerm (applyS f [a1A]))
-        (ConstructorClash (symbolHead a) (symbolHead a1))
+        (PatternClash (HeadClash (symbolHead a)) (HeadClash (symbolHead a1)))
     , andSimplifyFailure "Unsupported constructs"
         (UnificationTerm (applyS f [aA]))
         (UnificationTerm (applyS f [implies_ aA (next_ a1A)]))

@@ -58,10 +58,11 @@ formulaVerifier
 formulaVerifier indexedModule formula = do
     castError
         (verifyPattern
-            unifiedFormula
-            Nothing
+            mempty -- Kore.Builtin.Verifiers: don't validate builtin patterns
             indexedModule
             (sortVariables unifiedFormula)
+            Nothing
+            unifiedFormula
         )
     return ()
   where

@@ -1,0 +1,7 @@
+n = Zero (Zero (Zero (One .AInt))) ;
+i = One .AInt;
+sum = Zero .AInt;
+while (i <= n) {
+  sum = sum + i;
+  i = i + (One .AInt);
+}

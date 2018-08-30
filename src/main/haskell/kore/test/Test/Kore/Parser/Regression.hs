@@ -31,6 +31,7 @@ import Kore.AST.PureToKore
 import Kore.AST.Sentence
 import Kore.ASTPrettyPrint
 import Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.Implicit.Attributes
        ( ImplicitAttributes )
@@ -90,7 +91,12 @@ toByteString (Right definition) =
 
 verify :: KoreDefinition -> Either String KoreDefinition
 verify definition =
-    case verifyDefinition attributesVerification definition of
+    case
+        verifyDefinition
+            attributesVerification
+            Builtin.koreVerifiers
+            definition
+      of
         Left e  -> Left (printError e)
         Right _ -> Right definition
   where

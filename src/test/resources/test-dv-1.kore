@@ -1,0 +1,5 @@
+[]
+module DV-1
+    axiom {s} \dv{s}("0") []
+endmodule
+[]

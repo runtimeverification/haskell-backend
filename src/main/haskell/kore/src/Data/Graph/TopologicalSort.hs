@@ -19,13 +19,13 @@ import qualified Data.Map as Map
 newtype ToplogicalSortCycles node = ToplogicalSortCycles [node]
     deriving (Show, Eq)
 
-{--| 'topologicalSort' sorts a graph topologically, starting with nodes which
+{-| 'topologicalSort' sorts a graph topologically, starting with nodes which
 have no 'next' nodes.
 The graph is provided as a map form nodes to the list of their adjacent 'next'
 nodes. All nodes must be present as keys in the map, even if they have no 'next'
 nodes.
 Returns an error for graphs that have cycles.
---}
+-}
 topologicalSort
     :: (Ord node, Show node)
     => Map.Map node [node]

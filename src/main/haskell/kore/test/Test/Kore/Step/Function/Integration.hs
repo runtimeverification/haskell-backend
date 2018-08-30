@@ -1,231 +1,242 @@
 module Test.Kore.Step.Function.Integration (test_functionIntegration) where
 
-import qualified Data.Map as Map
-import           Data.Reflection
-                 ( give )
-
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( testCase )
 
-import Kore.AST.Common
-       ( Application (..), AstLocation (..), Id (..), Pattern (..),
-       SymbolOrAlias (..) )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( CommonPurePattern )
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
-import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts
-import Kore.Error
-       ( printError )
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..), SortTools )
-import Kore.MetaML.AST
-       ( CommonMetaPattern )
-import Kore.Predicate.Predicate
-       ( CommonPredicate, makeAndPredicate, makeCeilPredicate,
-       makeEqualsPredicate, makeTruePredicate )
-import Kore.Step.BaseStep
-       ( AxiomPattern (..) )
-import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( CommonExpandedPattern, ExpandedPattern (..) )
-import Kore.Step.Function.Data
-       ( ApplicationFunctionEvaluator (..), CommonApplicationFunctionEvaluator,
-       CommonAttemptedFunction, CommonConditionEvaluator,
-       CommonPurePatternFunctionEvaluator, FunctionResultProof (..) )
-import Kore.Step.Function.Data as AttemptedFunction
-       ( AttemptedFunction (..) )
-import Kore.Step.Function.Evaluator
-       ( evaluateFunctions )
-import Kore.Step.Function.UserDefined
-       ( axiomFunctionEvaluator )
-import Kore.Step.StepperAttributes
-import Kore.Variables.Fresh.IntCounter
-       ( IntCounter, runIntCounter )
+import           Data.Default
+                 ( def )
+import qualified Data.Map as Map
+import           Data.Reflection
+                 ( give )
 
-import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
+import           Kore.AST.Common
+                 ( Application (..), Id (..) )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkOr, mkVar )
+import           Kore.Error
+                 ( printError )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..), SortTools )
+import           Kore.Predicate.Predicate
+                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
+                 makeTruePredicate )
+import           Kore.Step.BaseStep
+                 ( AxiomPattern (..) )
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( CommonExpandedPattern, ExpandedPattern (..) )
+import           Kore.Step.Function.Data
+                 ( ApplicationFunctionEvaluator (..),
+                 CommonApplicationFunctionEvaluator, CommonAttemptedFunction )
+import           Kore.Step.Function.Data as AttemptedFunction
+                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.UserDefined
+                 ( axiomFunctionEvaluator )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( make )
+import           Kore.Step.Simplification.Data
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 Simplifier, evalSimplifier )
+import qualified Kore.Step.Simplification.Pattern as Pattern
+                 ( simplify )
+import           Kore.Step.StepperAttributes
+
+import           Test.Kore.Comparators ()
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+                 ( makeMetadataTools, makeSortTools )
+import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Tasty.HUnit.Extensions
 
 test_functionIntegration :: [TestTree]
-test_functionIntegration =
+test_functionIntegration = give mockSortTools
     [ testCase "Simple evaluation"
         (assertEqualWithExplanation ""
             ExpandedPattern
-                { term = asPureMetaPattern (metaG metaC)
+                { term = Mock.g Mock.c
                 , predicate = makeTruePredicate
                 , substitution = []
                 }
             (evaluate
                 mockMetadataTools
-                (Map.singleton fId
+                (Map.singleton Mock.functionalConstr10Id
                     [ axiomEvaluator
-                        (asPureMetaPattern (metaF (v1 PatternSort)))
-                        (asPureMetaPattern (metaG (v1 PatternSort)))
+                        (Mock.functionalConstr10 (mkVar Mock.x))
+                        (Mock.g (mkVar Mock.x))
                     ]
                 )
-                (asPureMetaPattern (metaF metaC))
+                (Mock.functionalConstr10 Mock.c)
             )
         )
     , testCase "Evaluates inside functions"
         (assertEqualWithExplanation ""
             ExpandedPattern
-                { term =
-                    asPureMetaPattern (metaG (metaG metaC))
+                { term = Mock.functional10 (Mock.functional10 Mock.c)
                 , predicate = makeTruePredicate
                 , substitution = []
                 }
             (evaluate
                 mockMetadataTools
-                (Map.singleton fId
+                (Map.singleton Mock.functionalConstr10Id
                     [ axiomEvaluator
-                        (asPureMetaPattern (metaF (v1 PatternSort)))
-                        (asPureMetaPattern (metaG (v1 PatternSort)))
+                        (Mock.functionalConstr10 (mkVar Mock.x))
+                        (Mock.functional10 (mkVar Mock.x))
                     ]
                 )
-                (asPureMetaPattern (metaF (metaF metaC)))
+                (Mock.functionalConstr10 (Mock.functionalConstr10 Mock.c))
             )
         )
-    , testCase "Does not evaluate with 'or' - may chage in the future"
+    , testCase "Evaluates 'or'"
         (assertEqualWithExplanation ""
             ExpandedPattern
-                { term = asPureMetaPattern
-                    (metaF (metaOr PatternSort (metaF metaC) (metaF metaC)))
+                { term =
+                    mkOr
+                        (Mock.functional10 (Mock.functional10 Mock.c))
+                        (Mock.functional10 (Mock.functional10 Mock.d))
                 , predicate = makeTruePredicate
                 , substitution = []
                 }
             (evaluate
                 mockMetadataTools
-                (Map.singleton fId
+                (Map.singleton Mock.functionalConstr10Id
                     [ axiomEvaluator
-                        (asPureMetaPattern (metaF (v1 PatternSort)))
-                        (asPureMetaPattern (metaG (v1 PatternSort)))
+                        (Mock.functionalConstr10 (mkVar Mock.x))
+                        (Mock.functional10 (mkVar Mock.x))
                     ]
                 )
-                (asPureMetaPattern
-                    (metaF (metaOr PatternSort (metaF metaC) (metaF metaC)))
+                (Mock.functionalConstr10
+                    (mkOr
+                        (Mock.functionalConstr10 Mock.c)
+                        (Mock.functionalConstr10 Mock.d)
+                    )
                 )
             )
         )
     , testCase "Evaluates on multiple branches"
         (assertEqualWithExplanation ""
             ExpandedPattern
-                { term = asPureMetaPattern
-                    (metaG (metaSigma (metaG metaC) (metaG metaC)))
+                { term =
+                    Mock.functional10
+                        (Mock.functional20
+                            (Mock.functional10 Mock.c)
+                            (Mock.functional10 Mock.c)
+                        )
                 , predicate = makeTruePredicate
                 , substitution = []
                 }
             (evaluate
                 mockMetadataTools
-                (Map.singleton fId
+                (Map.singleton Mock.functionalConstr10Id
                     [ axiomEvaluator
-                        (asPureMetaPattern (metaF (v1 PatternSort)))
-                        (asPureMetaPattern (metaG (v1 PatternSort)))
+                        (Mock.functionalConstr10 (mkVar Mock.x))
+                        (Mock.functional10 (mkVar Mock.x))
                     ]
                 )
-                (asPureMetaPattern
-                    (metaF (metaSigma (metaF metaC) (metaF metaC)))
+                (Mock.functionalConstr10
+                    (Mock.functional20
+                        (Mock.functionalConstr10 Mock.c)
+                        (Mock.functionalConstr10 Mock.c)
+                    )
                 )
             )
         )
     , testCase "Returns conditions"
         (assertEqualWithExplanation ""
             ExpandedPattern
-                { term = asPureMetaPattern (metaF metaD)
-                , predicate = makeCeil metaC
+                { term = Mock.f Mock.d
+                , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
                 , substitution = []
                 }
             (evaluate
                 mockMetadataTools
-                (Map.singleton cId
+                (Map.singleton Mock.cId
                     [ appliedMockEvaluator ExpandedPattern
-                        { term   = asPureMetaPattern metaD
-                        , predicate = makeCeil metaC
+                        { term   = Mock.d
+                        , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
                         , substitution = []
                         }
                     ]
                 )
-                (asPureMetaPattern (metaF metaC))
+                (Mock.f Mock.c)
             )
         )
     , testCase "Merges conditions"
         (assertEqualWithExplanation ""
             ExpandedPattern
-                { term = asPureMetaPattern (metaG (metaSigma metaE metaE))
-                , predicate = makeAnd (makeCeil metaC) (makeCeil metaD)
+                { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
+                , predicate =
+                    fst $ makeAndPredicate
+                        (makeCeilPredicate Mock.cg)
+                        (makeCeilPredicate Mock.cf)
                 , substitution = []
                 }
             (evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( cId
+                    [   ( Mock.cId
                         ,   [ appliedMockEvaluator ExpandedPattern
-                                { term = asPureMetaPattern metaE
-                                , predicate = makeCeil metaC
+                                { term = Mock.e
+                                , predicate = makeCeilPredicate Mock.cg
                                 , substitution = []
                                 }
                             ]
                         )
-                    ,   ( dId
+                    ,   ( Mock.dId
                         ,   [ appliedMockEvaluator ExpandedPattern
-                                { term = asPureMetaPattern metaE
-                                , predicate = makeCeil metaD
+                                { term = Mock.e
+                                , predicate = makeCeilPredicate Mock.cf
                                 , substitution = []
                                 }
                             ]
                         )
-                    ,   (fId
+                    ,   (Mock.functionalConstr10Id
                         ,   [ axiomEvaluator
-                                (asPureMetaPattern (metaF (v1 PatternSort)))
-                                (asPureMetaPattern (metaG (v1 PatternSort)))
+                                (Mock.functionalConstr10 (mkVar Mock.x))
+                                (Mock.functional11 (mkVar Mock.x))
                             ]
                         )
                     ]
                 )
-                (asPureMetaPattern (metaF (metaSigma metaC metaD)))
+                (Mock.functionalConstr10 (Mock.functional20 Mock.c Mock.d))
             )
         )
     , testCase "Reevaluates user-defined function results."
         (assertEqualWithExplanation ""
             ExpandedPattern
-                { term = asPureMetaPattern (metaF metaE)
-                , predicate = makeEquals (metaF metaE) metaE
+                { term = Mock.f Mock.e
+                , predicate = makeEqualsPredicate (Mock.f Mock.e) Mock.e
                 , substitution = []
                 }
             (evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( cId
-                        ,   [ axiomEvaluator
-                                (asPureMetaPattern metaC)
-                                (asPureMetaPattern metaD)
-                            ]
+                    [   ( Mock.cId
+                        ,   [ axiomEvaluator Mock.c Mock.d ]
                         )
-                    ,   ( dId
+                    ,   ( Mock.dId
                         ,   [ appliedMockEvaluator ExpandedPattern
-                                { term = asPureMetaPattern metaE
-                                , predicate = makeEquals (metaF metaE) metaE
+                                { term = Mock.e
+                                , predicate =
+                                    makeEqualsPredicate (Mock.f Mock.e) Mock.e
                                 , substitution = []
                                 }
                             ]
                         )
                     ]
                 )
-                (asPureMetaPattern (metaF metaC))
+                (Mock.f Mock.c)
             )
         )
     ]
 
 
 axiomEvaluator
-    :: CommonPurePattern Meta
-    -> CommonPurePattern Meta
-    -> CommonApplicationFunctionEvaluator Meta
+    :: CommonPurePattern Object
+    -> CommonPurePattern Object
+    -> CommonApplicationFunctionEvaluator Object
 axiomEvaluator left right =
     ApplicationFunctionEvaluator
         (axiomFunctionEvaluator
@@ -233,6 +244,7 @@ axiomEvaluator left right =
                 { axiomPatternLeft  = left
                 , axiomPatternRight = right
                 , axiomPatternRequires = makeTruePredicate
+                , axiomAttributes = def
                 }
         )
 
@@ -240,17 +252,19 @@ appliedMockEvaluator
     :: CommonExpandedPattern level -> CommonApplicationFunctionEvaluator level
 appliedMockEvaluator result =
     ApplicationFunctionEvaluator
-        (mockEvaluator (AttemptedFunction.Applied result))
+        (mockEvaluator
+            (AttemptedFunction.Applied (OrOfExpandedPattern.make [result]))
+        )
 
 mockEvaluator
     :: CommonAttemptedFunction level
     -> MetadataTools level StepperAttributes
-    -> CommonConditionEvaluator level
-    -> CommonPurePatternFunctionEvaluator level
+    -> CommonPureMLPatternSimplifier level
     -> Application level (CommonPurePattern level)
-    -> IntCounter (CommonAttemptedFunction level, FunctionResultProof level)
-mockEvaluator evaluation _ _ _ _ =
-    return (evaluation, FunctionResultProof)
+    -> Simplifier
+        (CommonAttemptedFunction level, SimplificationProof level)
+mockEvaluator evaluation _ _ _ =
+    return (evaluation, SimplificationProof)
 
 evaluate
     :: MetaOrObject level
@@ -259,189 +273,12 @@ evaluate
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 evaluate metadataTools functionIdToEvaluator patt =
-    fst $ fst
-        (runIntCounter
-            (evaluateFunctions metadataTools functionIdToEvaluator patt)
-            0
-        )
+    either (error . printError) fst
+        $ evalSimplifier
+        $ Pattern.simplify metadataTools functionIdToEvaluator patt
 
-v1 :: MetaSort sort => sort -> MetaVariable sort
-v1 = metaVariable "#v1" AstLocationTest
+mockSortTools :: SortTools Object
+mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
 
-asPureMetaPattern
-    :: ProperPattern Meta sort patt => patt -> CommonMetaPattern
-asPureMetaPattern patt =
-    case patternKoreToPure Meta (asAst patt) of
-        Left err -> error (printError err)
-        Right p  -> p
-
-makeEquals
-    :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
-    => patt1 -> patt2 -> CommonPredicate Meta
-makeEquals patt1 patt2 =
-    give (sortTools mockMetadataTools)
-        (makeEqualsPredicate
-            (asPureMetaPattern patt1)
-            (asPureMetaPattern patt2)
-        )
-
-makeCeil
-    :: ProperPattern Meta sort patt
-    => patt -> CommonPredicate Meta
-makeCeil patt =
-    give (sortTools mockMetadataTools)
-        (makeCeilPredicate (asPureMetaPattern patt))
-
-makeAnd :: CommonPredicate Meta -> CommonPredicate Meta -> CommonPredicate Meta
-makeAnd p1 p2 =
-    give (sortTools mockMetadataTools) (fst $ makeAndPredicate p1 p2)
-
-mockSortTools :: SortTools Meta
-mockSortTools = const
-    ApplicationSorts
-    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
-    , applicationSortsResult = (asAst PatternSort)
-    }
-
-
-mockStepperAttributes :: StepperAttributes
-mockStepperAttributes = StepperAttributes
-    { isConstructor = True
-    , isFunctional = True
-    , isFunction = True
-    }
-
-mockMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetadataTools = MetadataTools
-    { attributes = const mockStepperAttributes
-    , sortTools = mockSortTools
-    }
-
-fId :: Id Meta
-fId = Id "#f" AstLocationTest
-
-fSymbol :: SymbolOrAlias Meta
-fSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = fId
-    , symbolOrAliasParams = []
-    }
-
-newtype MetaF p1 = MetaF p1
-instance (MetaPattern PatternSort p1)
-    => ProperPattern Meta PatternSort (MetaF p1)
-  where
-    asProperPattern (MetaF p1) =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = fSymbol
-            , applicationChildren = [asAst p1]
-            }
-metaF
-    :: (MetaPattern PatternSort p1)
-    => p1 -> MetaF p1
-metaF = MetaF
-
-gId :: Id Meta
-gId = Id "#g" AstLocationTest
-
-gSymbol :: SymbolOrAlias Meta
-gSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = gId
-    , symbolOrAliasParams = []
-    }
-
-newtype MetaG p1 = MetaG p1
-instance (MetaPattern PatternSort p1)
-    => ProperPattern Meta PatternSort (MetaG p1)
-  where
-    asProperPattern (MetaG p1) =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = gSymbol
-            , applicationChildren = [asAst p1]
-            }
-metaG
-    :: (MetaPattern PatternSort p1)
-    => p1 -> MetaG p1
-metaG = MetaG
-
-cId :: Id Meta
-cId = Id "#c" AstLocationTest
-
-cSymbol :: SymbolOrAlias Meta
-cSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = cId
-    , symbolOrAliasParams = []
-    }
-
-data MetaC = MetaC
-
-instance ProperPattern Meta PatternSort MetaC
-  where
-    asProperPattern MetaC =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = cSymbol
-            , applicationChildren = []
-            }
-metaC :: MetaC
-metaC = MetaC
-
-dId :: Id Meta
-dId = Id "#d" AstLocationTest
-
-dSymbol :: SymbolOrAlias Meta
-dSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = dId
-    , symbolOrAliasParams = []
-    }
-
-data MetaD = MetaD
-
-instance ProperPattern Meta PatternSort MetaD
-  where
-    asProperPattern MetaD =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = dSymbol
-            , applicationChildren = []
-            }
-metaD :: MetaD
-metaD = MetaD
-
-eId :: Id Meta
-eId = Id "#e" AstLocationTest
-
-eSymbol :: SymbolOrAlias Meta
-eSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = eId
-    , symbolOrAliasParams = []
-    }
-
-data MetaE = MetaE
-
-instance ProperPattern Meta PatternSort MetaE
-  where
-    asProperPattern MetaE =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = eSymbol
-            , applicationChildren = []
-            }
-metaE :: MetaE
-metaE = MetaE
-
-sigmaSymbol :: SymbolOrAlias Meta
-sigmaSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#sigma" AstLocationTest
-    , symbolOrAliasParams = []
-    }
-
-data MetaSigma p1 p2 = MetaSigma p1 p2
-instance (MetaPattern PatternSort p1, MetaPattern PatternSort p2)
-    => ProperPattern Meta PatternSort (MetaSigma p1 p2)
-  where
-    asProperPattern (MetaSigma p1 p2) =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = sigmaSymbol
-            , applicationChildren = [asAst p1, asAst p2]
-            }
-metaSigma
-    :: (MetaPattern PatternSort p1, MetaPattern PatternSort p2)
-    => p1 -> p2 -> MetaSigma p1 p2
-metaSigma = MetaSigma
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools = Mock.makeMetadataTools mockSortTools Mock.attributesMapping

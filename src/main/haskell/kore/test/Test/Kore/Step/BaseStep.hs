@@ -5,6 +5,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import Data.Default
+       ( def )
 import Data.Reflection
        ( give )
 
@@ -35,11 +37,13 @@ import Kore.Step.ExpandedPattern as ExpandedPattern
        ( ExpandedPattern (..) )
 import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
+import Kore.Step.PatternAttributes
+       ( FunctionalProof (..) )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
        ( SubstitutionError (..) )
 import Kore.Unification.Unifier
-       ( FunctionalProof (..), UnificationProof (..) )
+       ( UnificationProof (..) )
 import Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()
@@ -80,6 +84,7 @@ test_baseStep =
                     { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -116,6 +121,7 @@ test_baseStep =
                     { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -167,6 +173,7 @@ test_baseStep =
                             (metaSigma (x1 PatternSort) (x1 PatternSort))
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -235,6 +242,7 @@ test_baseStep =
                             (metaSigma (x1 PatternSort) (x1 PatternSort))
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -305,6 +313,7 @@ test_baseStep =
                             (metaSigma (x1 PatternSort) (x1 PatternSort))
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -423,6 +432,7 @@ test_baseStep =
                         asPureMetaPattern
                             (metaSigma (x1 PatternSort) (y1 PatternSort))
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -477,6 +487,7 @@ test_baseStep =
                                 (x1 PatternSort)
                             )
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -509,6 +520,7 @@ test_baseStep =
                     , axiomPatternRight =
                         asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -558,6 +570,7 @@ test_baseStep =
                                     (x1 PatternSort) (y1 PatternSort)
                                 )
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -600,6 +613,7 @@ test_baseStep =
                         asPureMetaPattern
                             (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -641,6 +655,7 @@ test_baseStep =
                         asPureMetaPattern
                             (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -733,6 +748,7 @@ test_baseStep =
                             asPureMetaPattern
                                 (metaSigma (x1 PatternSort) (y1 PatternSort))
                         , axiomPatternRequires = makeTruePredicate
+                        , axiomAttributes = def
                         }
                 )
             )
@@ -833,6 +849,7 @@ test_baseStep =
                             asPureMetaPattern
                                 (metaSigma (x1 PatternSort) (y1 PatternSort))
                         , axiomPatternRequires = makeTruePredicate
+                        , axiomAttributes = def
                         }
                 )
             )
@@ -879,6 +896,7 @@ test_baseStep =
                     { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
         )
@@ -977,6 +995,7 @@ test_baseStep =
                             asPureMetaPattern
                                 (metaSigma (x1 PatternSort) (y1 PatternSort))
                         , axiomPatternRequires = makeTruePredicate
+                        , axiomAttributes = def
                         }
                 )
             )
@@ -1023,6 +1042,7 @@ test_baseStep =
                       { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                       , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                       , axiomPatternRequires = preCondition x1
+                      , axiomAttributes = def
                       }
               )
           )
@@ -1132,6 +1152,7 @@ test_baseStep =
                             (metaSigma (x1 PatternSort) (x1 PatternSort))
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
+                    , axiomAttributes = def
                     }
             )
 
@@ -1141,6 +1162,7 @@ mockStepperAttributes patternHead =
     { isConstructor = patternHead /= hSymbol
     , isFunctional  = True
     , isFunction    = True
+    , hook          = def
     }
 
 mockSortTools :: SortTools Meta

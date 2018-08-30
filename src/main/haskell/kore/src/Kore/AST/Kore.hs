@@ -22,6 +22,8 @@ Please refer to Section 9 (The Kore Language) of the
 module Kore.AST.Kore
     ( CommonKorePattern
     , KorePattern
+    , pattern KoreMetaPattern
+    , pattern KoreObjectPattern
     , asKorePattern
     , asMetaKorePattern
     , asObjectKorePattern
@@ -29,6 +31,8 @@ module Kore.AST.Kore
     , UnifiedSortVariable
     , UnifiedSort
     , UnifiedPattern (..)
+    , pattern UnifiedMetaPattern
+    , pattern UnifiedObjectPattern
     , asUnifiedPattern
     , transformUnifiedPattern
     ) where
@@ -55,6 +59,14 @@ allow using toghether both 'Meta' and 'Object' patterns.
 newtype UnifiedPattern variable child = UnifiedPattern
     { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
   deriving ( Generic )
+
+pattern UnifiedMetaPattern :: Pattern Meta var child -> UnifiedPattern var child
+pattern UnifiedMetaPattern pat = UnifiedPattern (UnifiedMeta (Rotate31 pat))
+
+pattern UnifiedObjectPattern :: Pattern Object var child -> UnifiedPattern var child
+pattern UnifiedObjectPattern pat = UnifiedPattern (UnifiedObject (Rotate31 pat))
+
+{-# COMPLETE UnifiedMetaPattern, UnifiedObjectPattern #-}
 
 instance
     ( NFData child
@@ -141,6 +153,16 @@ instance Traversable (UnifiedPattern variable) where
 -- 'KorePattern' corresponds to the @pattern@ syntactic category from
 -- the Semantics of K, Section 9.1.4 (Patterns).
 type KorePattern variable = (Fix (UnifiedPattern variable))
+
+pattern KoreMetaPattern
+    :: Pattern Meta var (KorePattern var) -> KorePattern var
+pattern KoreMetaPattern pat = Fix (UnifiedMetaPattern pat)
+
+pattern KoreObjectPattern
+    :: Pattern Object var (KorePattern var) -> KorePattern var
+pattern KoreObjectPattern pat = Fix (UnifiedObjectPattern pat)
+
+{-# COMPLETE KoreMetaPattern, KoreObjectPattern #-}
 
 -- |View a 'Meta' or an 'Object' 'Pattern' as a 'KorePattern'
 asKorePattern

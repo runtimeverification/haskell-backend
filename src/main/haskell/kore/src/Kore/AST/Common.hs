@@ -31,7 +31,7 @@ import Data.Deriving
        makeLiftShowsPrec )
 import Data.Functor.Classes
 import Data.Functor.Foldable
-       ( Fix (..) )
+       ( Fix (..), cata )
 import Data.Hashable
 import Data.Proxy
 import Data.String
@@ -1296,3 +1296,11 @@ instance
             IsObject -> p
             IsMeta   -> error "Expecting Object pattern"
     unifiedPatternApply = id
+
+-- |'patternBottomUpVisitor' is @cata . unifiedPatternApply@
+patternBottomUpVisitor
+    :: (UnifiedPatternInterface pat, Functor (pat variable))
+    => (forall level . MetaOrObject level
+        => Pattern level variable result -> result)
+    -> (Fix (pat variable) -> result)
+patternBottomUpVisitor reduce = cata (unifiedPatternApply reduce)

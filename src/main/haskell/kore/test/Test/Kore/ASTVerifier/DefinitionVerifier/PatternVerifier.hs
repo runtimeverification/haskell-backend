@@ -9,15 +9,18 @@ import Test.Tasty.HUnit
 
 import qualified Data.List as List
 
-import Kore.AST.AstWithLocation
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.Sentence
-import Kore.Building.Implicit
-import Kore.Building.Patterns as Patterns
-import Kore.Error
-import Kore.Implicit.ImplicitSorts
+import           Kore.AST.AstWithLocation
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( asPurePattern )
+import           Kore.AST.Sentence
+import           Kore.Building.Implicit
+import           Kore.Building.Patterns as Patterns
+import qualified Kore.Builtin.Hook as Builtin.Hook
+import           Kore.Error
+import           Kore.Implicit.ImplicitSorts
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
@@ -471,6 +474,152 @@ test_patternVerifier =
         , anotherSortSentence
         ]
         NeedsInternalDefinitions
+    , failureTestsForObjectPattern "Domain value - complex argument"
+        (ExpectedErrorMessage
+            "Domain value argument must be a literal string.")
+        (ErrorStack
+            [ "\\dv (<test data>)" ]
+        )
+        (DomainValuePattern DomainValue
+            { domainValueSort = objectSort
+            , domainValueChild =
+                (asPurePattern . AndPattern)
+                    And
+                        { andSort =
+                            updateAstLocation stringMetaSort AstLocationTest
+                        , andFirst =
+                            (asPurePattern . StringLiteralPattern)
+                                (StringLiteral "first")
+                        , andSecond =
+                            (asPurePattern . StringLiteralPattern)
+                                (StringLiteral "second")
+                        }
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort (updateAstLocation objectSort AstLocationTest))
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort objectSort)
+        [objectSortSentence]
+        NeedsInternalDefinitions
+    , failureTestsForObjectPattern "Domain value - INT.Int"
+        (ExpectedErrorMessage
+            "<string literal>:1:1:\n\
+            \unexpected 'a'\n\
+            \expecting '+', '-', or integer\n")
+        (ErrorStack
+            [ "\\dv (<test data>)"
+            , "Verifying builtin sort 'INT.Int'"
+            , "While parsing domain value"
+            ]
+        )
+        (DomainValuePattern DomainValue
+            { domainValueSort = intSort
+            , domainValueChild =
+                (asPurePattern . StringLiteralPattern)
+                    (StringLiteral "abcd")  -- Not a decimal integer
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort (updateAstLocation intSort AstLocationTest))
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort intSort)
+        [ asSentence intSortSentence ]
+        NeedsInternalDefinitions
+    , successTestsForObjectPattern "Domain value - INT.Int - Negative"
+        (DomainValuePattern DomainValue
+            { domainValueSort = intSort
+            , domainValueChild =
+                (asPurePattern . StringLiteralPattern)
+                    (StringLiteral "-256")
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort intSort)
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort intSort)
+        [ asSentence intSortSentence ]
+        NeedsInternalDefinitions
+    , successTestsForObjectPattern "Domain value - INT.Int - Positive (unsigned)"
+        (DomainValuePattern DomainValue
+            { domainValueSort = intSort
+            , domainValueChild =
+                (asPurePattern . StringLiteralPattern)
+                    (StringLiteral "1024")
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort intSort)
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort intSort)
+        [ asSentence intSortSentence ]
+        NeedsInternalDefinitions
+    , successTestsForObjectPattern "Domain value - INT.Int - Positive (signed)"
+        (DomainValuePattern DomainValue
+            { domainValueSort = intSort
+            , domainValueChild =
+                (asPurePattern . StringLiteralPattern)
+                    (StringLiteral "+128")
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort intSort)
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort intSort)
+        [ asSentence intSortSentence ]
+        NeedsInternalDefinitions
+    , failureTestsForObjectPattern "Domain value - BOOL.Bool"
+        (ExpectedErrorMessage
+            "<string literal>:1:1:\n\
+            \unexpected \"untru\"\n\
+            \expecting \"false\" or \"true\"\n")
+        (ErrorStack
+            [ "\\dv (<test data>)"
+            , "Verifying builtin sort 'BOOL.Bool'"
+            , "While parsing domain value"
+            ]
+        )
+        (DomainValuePattern DomainValue
+            { domainValueSort = boolSort
+            , domainValueChild =
+                (asPurePattern . StringLiteralPattern)
+                    (StringLiteral "untrue")  -- Not a BOOL.Bool
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort boolSort)
+        [ asSentence boolSortSentence ]
+        NeedsInternalDefinitions
+    , successTestsForObjectPattern "Domain value - BOOL.Bool - true"
+        (DomainValuePattern DomainValue
+            { domainValueSort = boolSort
+            , domainValueChild =
+                (asPurePattern . StringLiteralPattern)
+                    (StringLiteral "true")
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort boolSort)
+        [ asSentence boolSortSentence ]
+        NeedsInternalDefinitions
+    , successTestsForObjectPattern "Domain value - BOOL.Bool - false"
+        (DomainValuePattern DomainValue
+            { domainValueSort = boolSort
+            , domainValueChild =
+                (asPurePattern . StringLiteralPattern)
+                    (StringLiteral "false")
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort boolSort)
+        [ asSentence boolSortSentence ]
+        NeedsInternalDefinitions
     ]
   where
     objectSortName = SortName "ObjectSort"
@@ -529,6 +678,32 @@ test_patternVerifier =
                     Attributes []
                 }
             :: KoreSentenceSymbol Object)
+    intSortName = SortName "Int"
+    intSort :: Sort Object
+    intSort = simpleSort intSortName
+    intSortSentence :: KoreSentenceSort Object
+    intSortSentence =
+        SentenceSort
+            { sentenceSortName = testId name
+            , sentenceSortParameters = []
+            , sentenceSortAttributes =
+                Attributes [ Builtin.Hook.hookAttribute "INT.Int" ]
+            }
+      where
+        SortName name = intSortName
+    boolSortName = SortName "Int"
+    boolSort :: Sort Object
+    boolSort = simpleSort boolSortName
+    boolSortSentence :: KoreSentenceSort Object
+    boolSortSentence =
+        SentenceSort
+            { sentenceSortName = testId name
+            , sentenceSortParameters = []
+            , sentenceSortAttributes =
+                Attributes [ Builtin.Hook.hookAttribute "BOOL.Bool" ]
+            }
+      where
+        SortName name = boolSortName
 
 dummyVariableAndSentences :: NamePrefix -> (Variable Object, [KoreSentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =

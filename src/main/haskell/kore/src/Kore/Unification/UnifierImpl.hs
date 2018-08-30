@@ -18,16 +18,19 @@ import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
 
-import Data.Functor.Traversable
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.ASTHelpers
-       (ApplicationSorts (..))
+       ( ApplicationSorts (..) )
+import Kore.ASTUtils.SmartPatterns
+       ( pattern StringLiteral_ )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.PatternAttributes
+       ( FunctionalProof (..), isFunctionalPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
@@ -178,54 +181,12 @@ simplifyCombinedItems =
         items ++ proofItems
     addContents other proofItems = other : proofItems
 
--- |'FunctionalProof' is used for providing arguments that a pattern is
--- functional.  Currently we only support arguments stating that a
--- pattern consists only of functional symbols and variables.
--- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
--- TODO: replace this datastructures with proper ones representing
--- both hypotheses and conclusions in the proof object.
-data FunctionalProof level variable
-    = FunctionalVariable (variable level)
-    -- ^Variables are functional as per Corollary 5.19
-    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-    -- |= ∃y . x = y
-    | FunctionalHead (SymbolOrAlias level)
-    -- ^Head of a total function, conforming to Definition 5.21
-    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-  deriving (Eq, Show)
-
-{--| 'mapFunctionalProofVariables' replaces all variables in a 'FunctionalProof'
-using the provided mapping.
---}
-mapFunctionalProofVariables
-    :: (variableFrom level -> variableTo level)
-    -> FunctionalProof level variableFrom
-    -> FunctionalProof level variableTo
-mapFunctionalProofVariables mapper (FunctionalVariable variable) =
-    FunctionalVariable (mapper variable)
-mapFunctionalProofVariables _ (FunctionalHead functionalHead) =
-    FunctionalHead functionalHead
-
--- checks whether a pattern is functional or not
-isFunctionalPattern
-    :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> Either (UnificationError level) [FunctionalProof level variable]
-isFunctionalPattern tools = fixBottomUpVisitorM reduceM
-  where
-    reduceM (VariablePattern v) =
-        Right [FunctionalVariable v]
-    reduceM (ApplicationPattern ap) =
-        if isFunctional (attributes tools patternHead)
-            then return (FunctionalHead patternHead : concat proofs)
-            else Left (NonFunctionalHead patternHead)
-      where
-        patternHead = applicationSymbolOrAlias ap
-        proofs = applicationChildren ap
-    reduceM _ = Left NonFunctionalPattern
-
 simplifyAnds
-    :: (Eq level, Ord (variable level), SortedVariable variable)
+    :: ( Eq level
+       , Ord (variable level)
+       , SortedVariable variable
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> [PureMLPattern level variable]
     -> Either
@@ -262,19 +223,25 @@ simplifyAnds tools (p:ps) =
             )
 
 simplifyAnd
-    :: (Eq level, Ord (variable level))
+    :: ( Eq level
+       , Ord (variable level)
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either
         (UnificationError level)
         (UnificationSolution level variable, UnificationProof level variable)
 simplifyAnd tools =
-    fixTopDownVisitor (preTransform tools) postTransform
+    elgot postTransform (preTransform tools . project)
 
 -- Performs variable and equality checks and distributes the conjunction
 -- to the children, creating sub-unification problems
 preTransform
-    :: (Eq level, Ord (variable level))
+    :: ( Eq level
+       , Ord (variable level)
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> UnFixedPureMLPattern level variable
     -> Either
@@ -293,45 +260,105 @@ preTransform tools (AndPattern ap) = if left == right
             }
         , ConjunctionIdempotency left
         )
-    else case (project left, project right) of
-        (VariablePattern vp, _) ->
+    else case project left of
+        VariablePattern vp ->
             Left (mlProposition_5_24_3 tools vp right)
-
-        (_, VariablePattern vp) -> -- add commutativity here
-            Left (mlProposition_5_24_3 tools vp left)
-        (ApplicationPattern ap1, ApplicationPattern ap2) ->
-            let
-                head1 = applicationSymbolOrAlias ap1
-                head2 = applicationSymbolOrAlias ap2
-            in
-                if isConstructor (attributes tools head1)
-                    then if head1 == head2
-                        then Right
-                            $ ApplicationPattern Application
-                                { applicationSymbolOrAlias = head1
-                                , applicationChildren =
-                                    Fix . AndPattern
-                                        <$> zipWith3 And
-                                            (applicationSortsOperands
-                                                (sortTools tools head1)
-                                            )
-                                            (applicationChildren ap1)
-                                            (applicationChildren ap2)
-                                }
-                        else if isConstructor (attributes tools head2)
-                            then Left $ Left (ConstructorClash head1 head2)
-                            else Left $ Left (NonConstructorHead head2)
-                    else Left $ Left (NonConstructorHead head1)
-        _ -> Left $ Left UnsupportedPatterns
+        p1 -> case project right of
+            VariablePattern vp -> -- add commutativity here
+                Left (mlProposition_5_24_3 tools vp left)
+            DomainValuePattern (DomainValue _ dv2) ->
+                case dv2 of
+                    StringLiteral_ (StringLiteral sl2) ->
+                        matchDomainValue tools p1 sl2
+                    _ -> Left $ Left UnsupportedPatterns
+            ApplicationPattern ap2 ->
+                let
+                    head2 = applicationSymbolOrAlias ap2
+                in
+                    if isConstructor (attributes tools head2)
+                        then matchConstructor tools p1 head2 ap2
+                        else Left $ Left $ NonConstructorHead head2
+            _ -> Left $ Left UnsupportedPatterns
   where
     left = andFirst ap
     right = andSecond ap
 preTransform _ _ = Left $ Left UnsupportedPatterns
 
+matchDomainValue
+    :: MetadataTools level StepperAttributes
+    -> UnFixedPureMLPattern level variable
+    -> String
+    -> Either
+        ( Either
+            (UnificationError level)
+            ( UnificationSolution level variable
+            , UnificationProof level variable
+            )
+        )
+        (UnFixedPureMLPattern level variable)
+matchDomainValue _ (DomainValuePattern (DomainValue _ dv1)) sl2 =
+    case dv1 of
+        StringLiteral_ (StringLiteral sl1) ->
+            Left $ Left
+                (PatternClash (DomainValueClash sl1) (DomainValueClash sl2))
+        _ ->  Left $ Left UnsupportedPatterns
+matchDomainValue tools (ApplicationPattern ap1) sl2
+    | isConstructor (attributes tools head1) =
+        Left $ Left (PatternClash (HeadClash head1) (DomainValueClash sl2))
+    | otherwise = Left $ Left $ NonConstructorHead head1
+  where
+    head1 = applicationSymbolOrAlias ap1
+matchDomainValue _ _ _ = Left $ Left UnsupportedPatterns
+
+matchConstructor
+    :: MetadataTools level StepperAttributes
+    -> UnFixedPureMLPattern level variable
+    -> SymbolOrAlias level
+    -> Application level (PureMLPattern level variable)
+    -> Either
+        ( Either
+            (UnificationError level)
+            ( UnificationSolution level variable
+            , UnificationProof level variable
+            )
+        )
+        (UnFixedPureMLPattern level variable)
+matchConstructor _ (DomainValuePattern (DomainValue _ dv1)) head2 _ =
+    case dv1 of
+        (StringLiteral_ (StringLiteral sl1)) ->
+            Left $ Left (PatternClash (DomainValueClash sl1) (HeadClash head2))
+        _ -> Left $ Left UnsupportedPatterns
+matchConstructor tools (ApplicationPattern ap1) head2 ap2
+    | isConstructor (attributes tools head1) =
+        if head1 == head2
+            then Right
+                $ ApplicationPattern Application
+                    { applicationSymbolOrAlias = head1
+                    , applicationChildren =
+                        Fix . AndPattern
+                            <$> zipWith3 And
+                                (applicationSortsOperands
+                                    (sortTools tools head1)
+                                )
+                                (applicationChildren ap1)
+                                (applicationChildren ap2)
+                    }
+            else Left $ Left
+                    (PatternClash
+                        (HeadClash head1)
+                        (HeadClash head2)
+                    )
+    | otherwise = Left $ Left $ NonConstructorHead head1
+  where
+    head1 = applicationSymbolOrAlias ap1
+matchConstructor _ _ _ _ = Left $ Left UnsupportedPatterns                                
+
+
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
 -- if phi is a functional pattern.
 mlProposition_5_24_3
-    :: MetadataTools level StepperAttributes
+    :: Show (variable level)
+    => MetadataTools level StepperAttributes
     -> variable level
     -- ^variable pattern
     -> PureMLPattern level variable
@@ -401,7 +428,11 @@ groupSubstitutionByVariable =
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: (Eq level, Ord (variable level), SortedVariable variable)
+    :: ( Eq level
+       , Ord (variable level)
+       , SortedVariable variable
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
@@ -427,7 +458,11 @@ instance Monoid (UnificationProof level variable) where
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: (Eq level, Ord (variable level), SortedVariable variable)
+    :: ( Eq level
+       , Ord (variable level)
+       , SortedVariable variable
+       , Show (variable level)
+       )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
@@ -467,7 +502,9 @@ normalizeSubstitutionDuplication tools subst =
 unificationProcedure
     ::  ( SortedVariable variable
         , Ord (variable level)
-        , MetaOrObject level)
+        , MetaOrObject level
+        , Show (variable level)
+        )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> PureMLPattern level variable

@@ -14,8 +14,8 @@ module Kore.Unification.Unifier
     ) where
 
 import Kore.Unification.Error as Error
-       ( UnificationError (..) )
+       ( ClashReason (..), UnificationError (..) )
 import Kore.Unification.UnifierImpl as UnifierImpl
-       ( FunctionalProof (..), UnificationProof (..), UnificationSolution (..),
+       ( UnificationProof (..), UnificationSolution (..),
        UnificationSubstitution, mapSubstitutionVariables,
        normalizeSubstitutionDuplication, unificationProcedure )

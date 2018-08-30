@@ -8,15 +8,12 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.Data
-    ( ApplicationFunctionEvaluator (..)
+    (  ApplicationFunctionEvaluator (..)
     , CommonApplicationFunctionEvaluator
-    , PureMLPatternFunctionEvaluator (..)
-    , CommonPurePatternFunctionEvaluator
-    , ConditionEvaluator (..)
-    , CommonConditionEvaluator
-    , FunctionResultProof (..)
     , AttemptedFunction (..)
     , CommonAttemptedFunction
+    , notApplicableFunctionEvaluator
+    , purePatternFunctionEvaluator
     ) where
 
 import Kore.AST.Common
@@ -27,75 +24,78 @@ import Kore.AST.PureML
        ( PureMLPattern )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
-import Kore.Predicate.Predicate
-       ( Predicate, PredicateProof )
-import Kore.Step.ExpandedPattern
-       ( ExpandedPattern )
+import Kore.Step.OrOfExpandedPattern
+       ( OrOfExpandedPattern, makeFromSinglePurePattern )
+import Kore.Step.Simplification.Data
+       ( PureMLPatternSimplifier, Simplifier,
+       SimplificationProof (..) )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
-import Kore.Variables.Fresh.IntCounter
-       ( IntCounter )
 
-{--| 'FunctionResultProof' is a placeholder for proofs showing that a Kore
-function evaluation was correct.
---}
-data FunctionResultProof level = FunctionResultProof
-    deriving (Show, Eq)
-
-{--| 'PureMLPatternFunctionEvaluator' wraps a function that evaluates
-Kore functions on PureMLPatterns.
---}
-newtype PureMLPatternFunctionEvaluator level variable =
-    PureMLPatternFunctionEvaluator
-        ( PureMLPattern level variable
-        -> IntCounter
-            ( ExpandedPattern level variable
-            , FunctionResultProof level
-            )
-        )
-{--| 'CommonPurePatternFunctionEvaluator' wraps a function that evaluates
-Kore functions on CommonPurePatterns.
---}
-type CommonPurePatternFunctionEvaluator level =
-    PureMLPatternFunctionEvaluator level Variable
-
-{--| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
+{-| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
 pattern. This can be either a built-in evaluator or a user-defined one.
---}
+
+Arguments:
+
+* 'MetadataTools' are tools for finding additional information about
+patterns such as their sorts, whether they are constructors or hooked.
+
+* 'PureMLPatternSimplifier' is a Function for simplifying patterns, used for
+the post-processing of the function application results.
+
+* 'Application' is the pattern to be evaluated.
+
+Return value:
+
+It returns the result of appling the function, together with a proof certifying
+that the function was applied correctly (which is only a placeholder right now).
+-}
 newtype ApplicationFunctionEvaluator level variable =
     ApplicationFunctionEvaluator
         (forall . ( MetaOrObject level)
         => MetadataTools level StepperAttributes
-        -> ConditionEvaluator level variable
-        -> PureMLPatternFunctionEvaluator level variable
+        -> PureMLPatternSimplifier level variable
         -> Application level (PureMLPattern level variable)
-        -> IntCounter
+        -> Simplifier
             ( AttemptedFunction level variable
-            , FunctionResultProof level
+            , SimplificationProof level
             )
         )
 
+{-| 'CommonApplicationFunctionEvaluator' particularizes
+'ApplicationFunctionEvaluator' to 'Variable', following the same pattern as
+the other `Common*` types.
+-}
 type CommonApplicationFunctionEvaluator level =
     ApplicationFunctionEvaluator level Variable
 
-{--| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
+{-| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
 cases where the function can't be fully evaluated.
---}
+-}
 data AttemptedFunction level variable
     = NotApplicable
-    | Applied !(ExpandedPattern level variable)
+    | Applied !(OrOfExpandedPattern level variable)
   deriving (Show, Eq)
 
-{--| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
+{-| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
 following the same pattern as the other `Common*` types.
---}
+-}
 type CommonAttemptedFunction level = AttemptedFunction level Variable
 
-{--| 'ConditionEvaluator' is a wrapper for a function that evaluates conditions.
---}
-newtype ConditionEvaluator level variable = ConditionEvaluator
-    (  Predicate level variable
-    -> IntCounter (Predicate level variable, PredicateProof level)
-    )
+-- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
+notApplicableFunctionEvaluator
+    :: Simplifier
+         (AttemptedFunction level1 variable, SimplificationProof level2)
+notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
 
-type CommonConditionEvaluator level = ConditionEvaluator level Variable
+-- |Yields a pure 'Simplifier' which produces a given 'PureMLPattern'
+purePatternFunctionEvaluator
+    :: (MetaOrObject level)
+    => PureMLPattern level variable
+    -> Simplifier (AttemptedFunction level variable, SimplificationProof level')
+purePatternFunctionEvaluator p =
+    pure
+        (Applied (makeFromSinglePurePattern p)
+        , SimplificationProof
+        )
+

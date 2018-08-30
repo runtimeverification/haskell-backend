@@ -5,29 +5,33 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
+import           Data.Default
+                 ( Default (..) )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
 
-import Kore.AST.Builders
-import Kore.AST.Common
-import Kore.AST.Kore
-       ( asKorePattern )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.PureToKore
-import Kore.AST.Sentence
-import Kore.ASTUtils.SmartPatterns
-import Kore.ASTVerifier.DefinitionVerifier
-       ( AttributesVerification (..), verifyAndIndexDefinition )
-import Kore.Error
-import Kore.IndexedModule.IndexedModule
-       ( KoreIndexedModule )
-import Kore.Implicit.Attributes
-import Kore.Parser.ParserImpl
-import Kore.Parser.ParserUtils
-import Kore.Predicate.Predicate ( wrapPredicate )
-import Kore.Step.AxiomPatterns
+import           Kore.AST.Builders
+import           Kore.AST.Common
+import           Kore.AST.Kore
+                 ( asKorePattern )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.AST.PureToKore
+import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.ASTVerifier.DefinitionVerifier
+                 ( AttributesVerification (..), verifyAndIndexDefinition )
+import qualified Kore.Builtin as Builtin
+import           Kore.Error
+import           Kore.Implicit.Attributes
+import           Kore.IndexedModule.IndexedModule
+                 ( KoreIndexedModule )
+import           Kore.Parser.ParserImpl
+import           Kore.Parser.ParserUtils
+import           Kore.Predicate.Predicate
+                 ( wrapPredicate )
+import           Kore.Step.AxiomPatterns
 
 import Test.Kore
        ( testId )
@@ -47,10 +51,11 @@ axiomPatternsUnitTests =
         "AxiomPatterns Unit Tests"
         [ testCase "I1:AInt => I2:AInt"
             (assertEqual ""
-                (Right AxiomPattern
+                (Right $ RewriteAxiomPattern AxiomPattern
                     { axiomPatternLeft = extractPurePattern varI1
                     , axiomPatternRight = extractPurePattern varI2
                     , axiomPatternRequires = wrapPredicate topAInt
+                    , axiomAttributes = def
                     }
                 )
                 ( koreSentenceToAxiomPattern Object
@@ -70,12 +75,15 @@ axiomPatternsUnitTests =
                     { axiomPatternLeft = extractPurePattern varI1
                     , axiomPatternRight = extractPurePattern varI2
                     , axiomPatternRequires = wrapPredicate topAInt
+                    , axiomAttributes = def
                     }
                 ]
                 ( koreIndexedModuleToAxiomPatterns Object
                 $ extractIndexedModule "TEST"
-                    (verifyAndIndexDefinition DoNotVerifyAttributes
-                        (Definition
+                    (verifyAndIndexDefinition
+                        DoNotVerifyAttributes
+                        Builtin.koreVerifiers
+                        Definition
                             { definitionAttributes = Attributes []
                             , definitionModules =
                                 [ Module
@@ -130,7 +138,6 @@ axiomPatternsUnitTests =
                                     }
                                 ]
                             }
-                        )
                     )
                 )
             )
@@ -181,7 +188,7 @@ axiomPatternsIntegrationTests =
         "AxiomPatterns Unit Tests"
         [ testCase "I1 <= I2 => I1 <=Int I2 (generated)"
             (assertEqual ""
-                (Right AxiomPattern
+                (Right $ RewriteAxiomPattern AxiomPattern
                     { axiomPatternLeft = extractPurePattern $
                         applyS symbolTCell
                           [ applyS symbolKCell
@@ -211,6 +218,7 @@ axiomPatternsIntegrationTests =
                           , varStateCell
                           ]
                     , axiomPatternRequires = wrapPredicate topTCell
+                    , axiomAttributes = def
                     }
                 )
                 (koreSentenceToAxiomPattern Object =<< parseAxiom
