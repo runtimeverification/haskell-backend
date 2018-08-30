@@ -367,7 +367,4 @@ constructorFunctions tools =
     isInj h =
         getId (symbolOrAliasConstructor h) == "inj"
     isCons :: SymbolOrAlias Object -> Bool
-    isCons h =
-        getId (symbolOrAliasConstructor h) == "kseq"
-        ||
-        getId (symbolOrAliasConstructor h) == "dotk"
+    isCons h = getId (symbolOrAliasConstructor h) `elem` ["kseq", "dotk"]

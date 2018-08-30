@@ -22,7 +22,6 @@ import Data.List
 import Data.Proxy
        ( Proxy (..) )
 
-import Data.Functor.Traversable
 import Kore.AST.Builders
        ( parameterizedSymbol_, sortParameter )
 import Kore.AST.Common
@@ -34,7 +33,7 @@ import Kore.AST.Sentence
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.ASTUtils.SmartPatterns
-       ( pattern StringLiteral_, pattern And_, pattern App_ )
+       ( pattern And_, pattern App_, pattern StringLiteral_ )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
@@ -242,7 +241,7 @@ simplifyAnd
         (UnificationError level)
         (UnificationSolution level variable, UnificationProof level variable)
 simplifyAnd tools =
-    fixTopDownVisitor (preTransform tools) postTransform
+    elgot postTransform (preTransform tools . project)
 
 -- Performs variable and equality checks and distributes the conjunction
 -- to the children, creating sub-unification problems
