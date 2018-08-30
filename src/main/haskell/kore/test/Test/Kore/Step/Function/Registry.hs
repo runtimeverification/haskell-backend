@@ -205,12 +205,7 @@ testIndexedModule =
             Left err1            -> error (printError err1)
             Right indexedModules ->
                 fromMaybe
-                    (error
-                        (  "The main module, '"
-                        ++ "test"
-                        ++ "', was not found. Check the --module flag."
-                        )
-                    )
+                    (error "Module not found. Should not be possible.")
                     (Map.lookup (ModuleName "test") indexedModules)
 
 testId :: String -> Id level
@@ -233,7 +228,7 @@ test_functionRegistry =
         (assertEqual ""
             2
             (length $ fromMaybe
-                (error "Should find precisely two axiom for f")
+                (error "Should find precisely two axioms for f")
                 (Map.lookup (testId "f") testEvaluators)
             )
         )
