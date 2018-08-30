@@ -511,12 +511,12 @@ functionalProofStepVariablesToCommon
     return (newMapping, FunctionalVariable mappedVariable)
 functionalProofStepVariablesToCommon _ mapping (FunctionalHead f) =
     return (mapping, FunctionalHead f)
+functionalProofStepVariablesToCommon _ mapping (FunctionalStringLiteral sl) =
+    return (mapping, FunctionalStringLiteral sl)
+functionalProofStepVariablesToCommon _ mapping (FunctionalCharLiteral cl) =
+    return (mapping, FunctionalCharLiteral cl)
 functionalProofStepVariablesToCommon _ mapping (FunctionalDomainValue dv) =
     return (mapping, FunctionalDomainValue dv)
-functionalProofStepVariablesToCommon _ mapping (FunctionalStringLiteral dv) =
-    return (mapping, FunctionalStringLiteral dv)
-functionalProofStepVariablesToCommon _ mapping (FunctionalCharLiteral dv) =
-    return (mapping, FunctionalCharLiteral dv)
 
 variableStepVariablesToCommon
     :: MetaOrObject level

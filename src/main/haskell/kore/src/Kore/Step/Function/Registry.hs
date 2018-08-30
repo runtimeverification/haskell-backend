@@ -11,13 +11,13 @@ module Kore.Step.Function.Registry
     ( extractEvaluators
     ) where
 
+import           Data.Function
+                 ( on )
 import           Data.List
                  ( groupBy, sortBy )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( mapMaybe )
-import           Data.Ord
-                 ( comparing )
 
 import Kore.AST.Common
 import Kore.AST.Kore
@@ -57,9 +57,9 @@ extractEvaluators level indexedModule =
     extractPrefix ((a, b) : reminder) = (a, b : map snd reminder)
     groupedEvaluators =
         groupBy
-            (\ (a, _) (c, _) -> a == c)
+            ((==) `on` fst)
             (sortBy
-                (comparing fst)
+                (compare `on` fst)
                 (mapMaybe
                     (axiomToIdEvaluatorPair
                         level
