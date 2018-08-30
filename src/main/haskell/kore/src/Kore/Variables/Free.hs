@@ -26,7 +26,6 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern )
-import Kore.ASTTraversals
 
 {-| 'freeVariables' extracts the set of free variables of a pattern. -}
 freeVariables

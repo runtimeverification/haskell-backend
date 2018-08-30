@@ -11,6 +11,7 @@ module Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationError (..)
     , UnificationOrSubstitutionError (..)
+    , ClashReason (..)
     , mapSubstitutionErrorVariables
     , substitutionErrorVariables
     , substitutionToUnifyOrSubError
@@ -30,13 +31,19 @@ data UnificationOrSubstitutionError level variable
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
 data UnificationError level
-    = ConstructorClash (SymbolOrAlias level) (SymbolOrAlias level)
+    = PatternClash (ClashReason level) (ClashReason level)
     | SortClash (Sort level) (Sort level)
     | NonConstructorHead (SymbolOrAlias level)
     | NonFunctionalHead (SymbolOrAlias level)
     | NonFunctionalPattern
     | UnsupportedPatterns
     | EmptyPatternList
+    deriving (Eq, Show)
+
+-- |@ClashReason@ describes the head of a pattern involved in a clash.
+data ClashReason level
+    = HeadClash (SymbolOrAlias level)
+    | DomainValueClash String
     deriving (Eq, Show)
 
 {-| 'SubstitutionError' specifies the various error cases related to
