@@ -115,7 +115,7 @@ isHook
     -> String
     -> Bool
 isHook tools sym hookName =
-    hook (attributes tools sym) == Hook (Just hookName)
+    hook (symAttributes tools sym) == Hook (Just hookName)
 
 evalBind :: Builtin.Function
 evalBind =
