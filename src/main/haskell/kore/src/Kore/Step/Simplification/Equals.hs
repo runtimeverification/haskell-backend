@@ -454,7 +454,7 @@ constructorAtTheTop
     -- TODO: Extract this somewhere.
     isConstructor' symbolHead =
         StepperAttributes.isConstructor
-            (MetadataTools.attributes tools symbolHead)
+            (MetadataTools.symAttributes tools symbolHead)
     combineWithAnd
         ::  ( MetaOrObject level
             , SortedVariable variable

@@ -10,6 +10,7 @@ Portability : POSIX
 module Kore.IndexedModule.Resolvers
     ( getHeadApplicationSorts
     , getHeadAttributes
+    , getSortAttributes
     , resolveSort
     , resolveAlias
     , resolveSymbol
@@ -118,6 +119,18 @@ getHeadAttributes m patternHead =
                     error ("Head " ++ show patternHead ++ " not defined.")
   where
     headName = symbolOrAliasConstructor patternHead
+
+
+getSortAttributes
+    :: MetaOrObject level
+    => KoreIndexedModule atts
+    -> Sort level
+    -> atts
+getSortAttributes m (SortActualSort (SortActual sortId _)) = 
+  case resolveSort m sortId of
+    Right (atts, _) -> atts
+    Left _ -> error $ "Sort " ++ show sortId ++ " not defined."
+getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
 
 
 {-|'resolveThing' looks up an id in an 'IndexedModule', also searching in the

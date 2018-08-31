@@ -233,7 +233,8 @@ mockSortTools = const ApplicationSorts
 
 mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
 mockMetadataTools = MetadataTools
-    { attributes = const mockStepperAttributes
+    { symAttributes = const mockStepperAttributes
+    , sortAttributes = const mockStepperAttributes
     , sortTools = mockSortTools
     }
 

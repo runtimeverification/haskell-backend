@@ -191,7 +191,7 @@ makeTermCeil
     in
         (result, SimplificationProof)
   where
-    headAttributes = MetadataTools.attributes tools patternHead
+    headAttributes = MetadataTools.symAttributes tools patternHead
 makeTermCeil
     tools term
   =

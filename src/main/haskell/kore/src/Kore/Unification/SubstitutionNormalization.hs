@@ -139,7 +139,7 @@ checkApplicationConstructor
     -> Pattern level variable ()
     -> Either checkError ()
 checkApplicationConstructor tools err (ApplicationPattern (Application h _))
-    | isConstructor (attributes tools h) = return ()
+    | isConstructor (symAttributes tools h) = return ()
     | otherwise = Left err
 checkApplicationConstructor _ _ _ = return ()
 

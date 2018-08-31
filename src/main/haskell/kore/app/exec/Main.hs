@@ -356,7 +356,7 @@ kItemSort = groundObjectSort "SortKItem"
 constructorFunctions :: MetadataTools Object StepperAttributes -> MetadataTools Object StepperAttributes
 constructorFunctions tools =
     tools
-    { attributes = \h -> let atts = attributes tools h in
+    { symAttributes = \h -> let atts = symAttributes tools h in
         atts
         { isConstructor = isConstructor atts || isFunction atts || isInj h
         , isFunctional = isFunctional atts || isInj h

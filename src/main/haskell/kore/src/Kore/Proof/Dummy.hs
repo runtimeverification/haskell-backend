@@ -51,8 +51,7 @@ defaultSort = mkSort "*"
 
 
 dummyEnvironment
-  :: forall r . MetaOrObject Object
-  => (Given (SortTools Object) => r)
+  :: forall r . (Given (SortTools Object) => r)
   -> r
 dummyEnvironment = give (dummySortTools @Object)
 
