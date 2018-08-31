@@ -47,7 +47,7 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.Pretty
        ( Pretty (..) )
-import Data.Proxy
+
 
 
 
@@ -80,21 +80,16 @@ instance (ShowMetaOrObject variable) => Show1 (UnifiedPattern variable) where
                      (Int -> a -> ShowS) -> ([a] -> ShowS)
                   -> Int -> UnifiedPattern variable a
                   -> ShowS
-    liftShowsPrec showsPrec_ showList_ _ up = undefined
-      --   showString "UnifiedPattern { getUnifiedPattern = "
-      --   . applyUnified
-      --       (\t -> showString "UnifiedMeta " . liftShowsPrecRotate31 t)
-      --       (\t -> showString "UnifiedObject " . liftShowsPrecRotate31 t)
-      --       (getUnifiedPattern up)
-      --   . showString " }"
-      -- where
-      --   liftShowsPrecRotate31 :: (Show level, Show (variable level))
-      --                         => Rotate31 Pattern variable a level
-      --                         -> ShowS
-      --   liftShowsPrecRotate31 r =
-      --       showString "Rotate31 { unRotate31 = "
-      --       . liftShowsPrec showsPrec_ showList_ 0 (unRotate31 r)
-      --       . showString " }"
+    liftShowsPrec showsPrec_ showList_ _ p =
+        applyUnifiedPattern
+            (\t -> showString "UnifiedMetaPattern "   . go t)
+            (\t -> showString "UnifiedObjectPattern " . go t)
+            p
+        where go 
+                  :: (Show level, Show (variable level)) 
+                  => Pattern level variable a 
+                  -> ShowS
+              go = liftShowsPrec showsPrec_ showList_ 0
 
 instance (Pretty child, Pretty (variable Meta), Pretty (variable Object)) =>
     Pretty (UnifiedPattern variable child) where
@@ -138,17 +133,6 @@ instance Foldable (UnifiedPattern variable) where
 
 instance Traversable (UnifiedPattern variable) where
     sequenceA = transformUnifiedPattern (fmap asUnifiedPattern . sequenceA)
-        -- fmap UnifiedPattern
-        -- . sequenceUnified
-        --     (fmap Rotate31 . sequenceA . unRotate31)
-        -- . getUnifiedPattern
-
--- instance Traversable (UnifiedPattern variable) where
---     sequenceA =
---         fmap UnifiedPattern
---         . sequenceUnified
---             (fmap Rotate31 . sequenceA . unRotate31)
---         . getUnifiedPattern
 
 -- |'KorePattern' is a 'Fix' point of 'Pattern' comprising both
 -- 'Meta' and 'Object' 'Pattern's
@@ -195,17 +179,18 @@ instance
 -- 'Variable's.
 type CommonKorePattern = KorePattern Variable
 
+applyUnifiedPattern
+     :: (Pattern Meta variable child -> b)
+     -> (Pattern Object variable child -> b)
+     -> UnifiedPattern variable child
+     -> b
+applyUnifiedPattern metaT objectT p' = case p' of
+    UnifiedObjectPattern p -> objectT p
+    UnifiedMetaPattern   p -> metaT p
+
+
 -- |Given functions appliable to 'Meta' 'Pattern's and 'Object' 'Pattern's,
 -- builds a combined function which can be applied on an 'KorePattern'.
--- applyKorePattern
---     :: (Pattern Meta variable (KorePattern variable) -> b)
---     -> (Pattern Object variable (KorePattern variable) -> b)
---     -> (KorePattern variable -> b)
--- applyKorePattern metaT objectT korePattern =
---     case getUnifiedPattern (project korePattern) of
---         UnifiedMeta rp   -> metaT (unRotate31 rp)
---         UnifiedObject rp -> objectT (unRotate31 rp)
-
 applyKorePattern
     :: (Pattern Meta variable (KorePattern variable) -> b)
     -> (Pattern Object variable (KorePattern variable) -> b)

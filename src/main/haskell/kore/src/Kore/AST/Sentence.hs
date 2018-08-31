@@ -32,8 +32,6 @@ import GHC.Generics
        ( Generic )
 
 import           Data.Functor.Foldable.Orphans ()
-import           Data.Functor.Impredicative
-                 ( Rotate41 (..) )
 import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject

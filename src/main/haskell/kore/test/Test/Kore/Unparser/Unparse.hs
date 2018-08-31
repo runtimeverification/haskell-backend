@@ -8,7 +8,6 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
        ( forAll, testProperty )
 
-import Data.Functor.Impredicative
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
@@ -37,9 +36,8 @@ test_unparse =
             )
             "sort x{} []"
         , unparseTest
-            (UnifiedSentence
-                { getUnifiedSentence = UnifiedObject (Rotate41
-                    { unRotate41 = SentenceAliasSentence (SentenceAlias
+            (UnifiedObjectSentence $
+                SentenceAliasSentence (SentenceAlias
                         { sentenceAliasAlias = Alias
                             { aliasConstructor = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
                             , aliasParams = []
@@ -58,9 +56,9 @@ test_unparse =
                             })
                         , sentenceAliasAttributes = Attributes {getAttributes = []}
                         })
-                    })
-                } :: KoreSentence)
-                "alias i{}() : z where \\top{i{}}() := \\top{q}() []"
+            :: KoreSentence 
+            )
+            "alias i{}() : z where \\top{i{}}() := \\top{q}() []"
         , unparseTest
             Attributes
                 { getAttributes =

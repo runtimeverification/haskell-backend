@@ -8,7 +8,6 @@ import Data.Functor.Foldable
 import Data.List
        ( intersperse )
 
-import Data.Functor.Impredicative
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject

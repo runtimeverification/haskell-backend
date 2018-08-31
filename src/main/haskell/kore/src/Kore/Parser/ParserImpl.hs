@@ -913,7 +913,7 @@ sentenceConstructorRemainderParser sentenceType
                 symbolSentenceRemainderParser
                     Meta
                     (symbolParser Meta)
-                    (\a b c d -> Rotate31 $ SentenceSymbol a b c d)
+                    (\x y z w -> Rotate31 $ SentenceSymbol x y z w)
             (_, AliasSentenceType) ->
                 constructUnifiedSentence SentenceAliasSentence . unRotate31
                 <$>
@@ -924,7 +924,7 @@ sentenceConstructorRemainderParser sentenceType
                 symbolSentenceRemainderParser
                     Object
                     (symbolParser Object)
-                    (\a b c d -> Rotate31 $ SentenceSymbol a b c d)
+                    (\x y z w -> Rotate31 $ SentenceSymbol x y z w)
 
 sentenceSortRemainderParser :: Parser KoreSentence
 sentenceSortRemainderParser = do
