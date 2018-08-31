@@ -649,10 +649,10 @@ instance
     , PrettyPrint (variable Meta)
     ) => PrettyPrint (UnifiedSentence sortParam pat variable)
   where
-    prettyPrint flags (UnifiedSentence (UnifiedMeta rs)) =
-        writeOneFieldStruct flags "MetaSentence" (unRotate41 rs)
-    prettyPrint flags (UnifiedSentence (UnifiedObject rs)) =
-        writeOneFieldStruct flags "ObjectSentence" (unRotate41 rs)
+    prettyPrint flags (UnifiedMetaSentence rs) =
+        writeOneFieldStruct flags "MetaSentence" rs
+    prettyPrint flags (UnifiedObjectSentence rs) =
+        writeOneFieldStruct flags "ObjectSentence" rs
 
 instance
     (PrettyPrint (sentence sortParam pat variable)

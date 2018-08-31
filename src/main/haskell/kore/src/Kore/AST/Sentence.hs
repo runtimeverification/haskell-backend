@@ -40,7 +40,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Pretty
                  ( Pretty (..), (<+>), (<>) )
 import qualified Kore.AST.Pretty as Pretty
-
+import           Data.Proxy
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
 It is parameterized by the types of Patterns, @pat@.
@@ -420,9 +420,28 @@ type KoreSentenceHook = SentenceHook Object UnifiedPattern Variable
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Sentence',
 to allow using toghether both 'Meta' and 'Object' sentences.
 -}
-newtype UnifiedSentence sortParam pat variable = UnifiedSentence
-    { getUnifiedSentence :: Unified (Rotate41 Sentence sortParam pat variable) }
-  deriving (Generic)
+-- newtype UnifiedSentence sortParam pat variable = UnifiedSentence
+--     { getUnifiedSentence :: Unified (Rotate41 Sentence sortParam pat variable) }
+--   deriving (Generic)
+
+data UnifiedSentence sortParam pat variable 
+  = UnifiedObjectSentence (Sentence Object sortParam pat variable)
+  | UnifiedMetaSentence   (Sentence Meta   sortParam pat variable)
+      deriving (Generic)
+
+getMetaOrObjectSentenceType
+    :: forall level sortParam pat variable .
+       MetaOrObject level
+    => Sentence level sortParam pat variable -> IsMetaOrObject level
+getMetaOrObjectSentenceType _ = isMetaOrObject (Proxy :: Proxy level)
+
+asUnifiedSentence
+    :: MetaOrObject level
+    => Sentence level sortParam pat variable
+    -> UnifiedSentence sortParam pat variable
+asUnifiedSentence sentence = case getMetaOrObjectSentenceType sentence of
+    IsMeta   -> UnifiedMetaSentence   sentence
+    IsObject -> UnifiedObjectSentence sentence
 
 deriving instance
     ( Eq1 (pat variable), Eq (pat variable (Fix (pat variable)))
@@ -462,7 +481,7 @@ constructUnifiedSentence
     :: (MetaOrObject level)
     => (a -> Sentence level sortParam pat variable)
     -> (a -> UnifiedSentence sortParam pat variable)
-constructUnifiedSentence ctor = UnifiedSentence . asUnified . Rotate41 . ctor
+constructUnifiedSentence ctor = asUnifiedSentence . ctor
 
 -- |Given functions appliable to 'Meta' 'Sentence's and 'Object' 'Sentences's,
 -- builds a combined function which can be applied on 'UnifiedSentence's.
@@ -470,10 +489,10 @@ applyUnifiedSentence
     :: (Sentence Meta sortParam pat variable -> b)
     -> (Sentence Object sortParam pat variable -> b)
     -> (UnifiedSentence sortParam pat variable -> b)
-applyUnifiedSentence metaT _ (UnifiedSentence (UnifiedMeta rs)) =
-    metaT (unRotate41 rs)
-applyUnifiedSentence _ objectT (UnifiedSentence (UnifiedObject rs)) =
-    objectT (unRotate41 rs)
+applyUnifiedSentence metaT _ (UnifiedMetaSentence rs) =
+    metaT rs
+applyUnifiedSentence _ objectT (UnifiedObjectSentence rs) =
+    objectT rs
 
 
 -- |'KoreModule' fully instantiates 'Module' to correspond to the second, third,
@@ -489,24 +508,24 @@ instance
     ( MetaOrObject level
     ) => AsSentence KoreSentence (KoreSentenceAlias level)
   where
-    asSentence = constructUnifiedSentence SentenceAliasSentence
+    asSentence = asUnifiedSentence . SentenceAliasSentence
 
 instance
     ( MetaOrObject level
     ) => AsSentence KoreSentence (KoreSentenceSymbol level)
   where
-    asSentence = constructUnifiedSentence SentenceSymbolSentence
+    asSentence = asUnifiedSentence . SentenceSymbolSentence
 
 instance AsSentence KoreSentence KoreSentenceImport where
-    asSentence = constructUnifiedSentence SentenceImportSentence
+    asSentence = asUnifiedSentence . SentenceImportSentence
 
 instance AsSentence KoreSentence KoreSentenceAxiom where
-    asSentence = constructUnifiedSentence SentenceAxiomSentence
+    asSentence = asUnifiedSentence . SentenceAxiomSentence
 
 instance
   ( MetaOrObject level
   ) => AsSentence KoreSentence (KoreSentenceSort level) where
-    asSentence = constructUnifiedSentence SentenceSortSentence
+    asSentence = asUnifiedSentence . SentenceSortSentence
 
 instance AsSentence KoreSentence KoreSentenceHook where
-    asSentence = constructUnifiedSentence SentenceHookSentence
+    asSentence = asUnifiedSentence . SentenceHookSentence

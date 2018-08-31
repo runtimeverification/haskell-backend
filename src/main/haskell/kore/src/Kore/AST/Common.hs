@@ -128,6 +128,8 @@ instance Eq (Id level) where
     first == second = compare first second == EQ
 
 instance Hashable (Id level)
+-- instance Hashable (Id level) where
+     -- hashWithSalt (Id i _) s = i `hashWithSalt` s
 
 instance NFData (Id level)
 
@@ -1253,7 +1255,8 @@ dummySort proxy =
 whether a 'Pattern' is 'Object' or 'Meta'.
 -}
 getMetaOrObjectPatternType
-    :: MetaOrObject level
+    :: forall level variable child .
+       MetaOrObject level
     => Pattern level variable child -> IsMetaOrObject level
 getMetaOrObjectPatternType _ = isMetaOrObject (Proxy :: Proxy level)
 
