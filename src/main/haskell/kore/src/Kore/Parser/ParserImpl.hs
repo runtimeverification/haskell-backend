@@ -49,8 +49,6 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec.Char as Parser
                  ( char )
 
-import           Data.Function.Compose
-                 ( (<....>) )
 import           Data.Functor.Impredicative
                  ( Rotate31 (..) )
 import           Kore.AST.Common
@@ -916,7 +914,7 @@ sentenceConstructorRemainderParser sentenceType
                 symbolSentenceRemainderParser
                     Meta
                     (symbolParser Meta)
-                    (Rotate31 <....> SentenceSymbol)
+                    (\a b c d -> Rotate31 $ SentenceSymbol a b c d)
             (_, AliasSentenceType) ->
                 constructUnifiedSentence SentenceAliasSentence . unRotate31
                 <$>
@@ -927,7 +925,7 @@ sentenceConstructorRemainderParser sentenceType
                 symbolSentenceRemainderParser
                     Object
                     (symbolParser Object)
-                    (Rotate31 <....> SentenceSymbol)
+                    (\a b c d -> Rotate31 $ SentenceSymbol a b c d)
 
 sentenceSortRemainderParser :: Parser KoreSentence
 sentenceSortRemainderParser = do
@@ -1071,7 +1069,7 @@ hookedSymbolSentenceRemainderParser =
     <$> symbolSentenceRemainderParser
     Object
     (symbolParser Object)
-    (Rotate31 <....> SentenceSymbol)
+    (\a b c d -> Rotate31 $ SentenceSymbol a b c d)
 
 {-|'hookedSortSentenceRemainderParser' parses the part after the starting
 'hooked-sort@ keyword of a sort-declaration as a 'SentenceSort' and constructs

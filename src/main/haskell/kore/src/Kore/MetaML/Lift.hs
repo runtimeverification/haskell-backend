@@ -130,10 +130,10 @@ instance LiftableToMetaML CommonKorePattern where
 liftReducer
     :: UnifiedPattern Variable CommonMetaPattern
     -> CommonMetaPattern
-liftReducer up =
-    case getUnifiedPattern up of
-        UnifiedObject (Rotate31 p) -> liftObjectReducer p
-        UnifiedMeta (Rotate31 p)   -> Fix p
+liftReducer p' =
+    case p' of
+        UnifiedObjectPattern p -> liftObjectReducer p
+        UnifiedMetaPattern   p -> Fix p
 
 liftObjectReducer
     :: Pattern Object Variable CommonMetaPattern
@@ -420,16 +420,16 @@ liftMetaSentence (SentenceAxiomSentence as) =
     metaParameters =
         [sv | UnifiedMeta sv <- sentenceAxiomParameters as]
     originalPattern = sentenceAxiomPattern as
-    axiomSort = case getUnifiedPattern (project originalPattern) of
-        UnifiedObject _ -> patternMetaSort
-        UnifiedMeta p   -> getPatternResultSort undefinedHeadSort (unRotate31 p)
+    axiomSort = case project originalPattern of
+        UnifiedObjectPattern _ -> patternMetaSort
+        UnifiedMetaPattern   p -> getPatternResultSort undefinedHeadSort p
     objectParameters =
         [sv | UnifiedObject sv <- sentenceAxiomParameters as]
     liftedPattern = liftToMeta originalPattern
     provableLiftedPattern =
-        case getUnifiedPattern (project originalPattern) of
-            UnifiedMeta _   -> liftedPattern
-            UnifiedObject _ ->
+        case project originalPattern of
+            UnifiedMetaPattern   _ -> liftedPattern
+            UnifiedObjectPattern _ ->
                 Fix (apply (provableHead axiomSort) [liftedPattern])
 liftMetaSentence (SentenceImportSentence is) =
     [ SentenceImportSentence is

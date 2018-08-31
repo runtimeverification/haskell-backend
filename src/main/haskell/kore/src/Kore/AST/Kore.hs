@@ -31,8 +31,8 @@ module Kore.AST.Kore
     , UnifiedSortVariable
     , UnifiedSort
     , UnifiedPattern (..)
-    , pattern UnifiedMetaPattern
-    , pattern UnifiedObjectPattern
+    -- , pattern UnifiedMetaPattern
+    -- , pattern UnifiedObjectPattern
     , asUnifiedPattern
     , transformUnifiedPattern
     ) where
@@ -50,23 +50,29 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.Pretty
        ( Pretty (..) )
+import Data.Proxy
 
 
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
 allow using toghether both 'Meta' and 'Object' patterns.
 -}
-newtype UnifiedPattern variable child = UnifiedPattern
-    { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
-  deriving ( Generic )
+-- newtype UnifiedPattern variable child = UnifiedPattern
+--     { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
+--   deriving ( Generic )
 
-pattern UnifiedMetaPattern :: Pattern Meta var child -> UnifiedPattern var child
-pattern UnifiedMetaPattern pat = UnifiedPattern (UnifiedMeta (Rotate31 pat))
+data UnifiedPattern variable child
+ = UnifiedMetaPattern   (Pattern Meta variable child)
+ | UnifiedObjectPattern (Pattern Object variable child)
+     deriving ( Generic )
 
-pattern UnifiedObjectPattern :: Pattern Object var child -> UnifiedPattern var child
-pattern UnifiedObjectPattern pat = UnifiedPattern (UnifiedObject (Rotate31 pat))
+-- pattern UnifiedMetaPattern :: Pattern Meta var child -> UnifiedPattern var child
+-- pattern UnifiedMetaPattern pat = UnifiedPattern (UnifiedMeta (Rotate31 pat))
 
-{-# COMPLETE UnifiedMetaPattern, UnifiedObjectPattern #-}
+-- pattern UnifiedObjectPattern :: Pattern Object var child -> UnifiedPattern var child
+-- pattern UnifiedObjectPattern pat = UnifiedPattern (UnifiedObject (Rotate31 pat))
+
+-- {-# COMPLETE UnifiedMetaPattern, UnifiedObjectPattern #-}
 
 instance
     ( NFData child
@@ -75,12 +81,12 @@ instance
     NFData (UnifiedPattern variable child)
 
 instance (EqMetaOrObject variable) => Eq1 (UnifiedPattern variable) where
-    liftEq liftedEq (UnifiedPattern a) (UnifiedPattern b) =
+    liftEq liftedEq a b =
        case (a, b) of
-          (UnifiedMeta a', UnifiedMeta b') ->
-              liftEq liftedEq (unRotate31 a') (unRotate31 b')
-          (UnifiedObject a', UnifiedObject b') ->
-              liftEq liftedEq (unRotate31 a') (unRotate31 b')
+          (UnifiedMetaPattern a', UnifiedMetaPattern b') ->
+              liftEq liftedEq a' b'
+          (UnifiedObjectPattern a', UnifiedObjectPattern b') ->
+              liftEq liftedEq a' b'
           _ -> False
 
 instance (ShowMetaOrObject variable) => Show1 (UnifiedPattern variable) where
@@ -88,39 +94,45 @@ instance (ShowMetaOrObject variable) => Show1 (UnifiedPattern variable) where
                      (Int -> a -> ShowS) -> ([a] -> ShowS)
                   -> Int -> UnifiedPattern variable a
                   -> ShowS
-    liftShowsPrec showsPrec_ showList_ _ up =
-        showString "UnifiedPattern { getUnifiedPattern = "
-        . applyUnified
-            (\t -> showString "UnifiedMeta " . liftShowsPrecRotate31 t)
-            (\t -> showString "UnifiedObject " . liftShowsPrecRotate31 t)
-            (getUnifiedPattern up)
-        . showString " }"
-      where
-        liftShowsPrecRotate31 :: (Show level, Show (variable level))
-                              => Rotate31 Pattern variable a level
-                              -> ShowS
-        liftShowsPrecRotate31 r =
-            showString "Rotate31 { unRotate31 = "
-            . liftShowsPrec showsPrec_ showList_ 0 (unRotate31 r)
-            . showString " }"
+    liftShowsPrec showsPrec_ showList_ _ up = undefined
+      --   showString "UnifiedPattern { getUnifiedPattern = "
+      --   . applyUnified
+      --       (\t -> showString "UnifiedMeta " . liftShowsPrecRotate31 t)
+      --       (\t -> showString "UnifiedObject " . liftShowsPrecRotate31 t)
+      --       (getUnifiedPattern up)
+      --   . showString " }"
+      -- where
+      --   liftShowsPrecRotate31 :: (Show level, Show (variable level))
+      --                         => Rotate31 Pattern variable a level
+      --                         -> ShowS
+      --   liftShowsPrecRotate31 r =
+      --       showString "Rotate31 { unRotate31 = "
+      --       . liftShowsPrec showsPrec_ showList_ 0 (unRotate31 r)
+      --       . showString " }"
 
 instance (Pretty child, Pretty (variable Meta), Pretty (variable Object)) =>
     Pretty (UnifiedPattern variable child) where
-    pretty = applyUnified (pretty . unRotate31) (pretty . unRotate31) . getUnifiedPattern
+    pretty (UnifiedObjectPattern a) = pretty a 
+    pretty (UnifiedMetaPattern   a) = pretty a
+
 
 -- |View a 'Meta' or an 'Object' 'Pattern' as an 'UnifiedPattern'
 asUnifiedPattern
     :: (MetaOrObject level)
     => Pattern level variable child -> UnifiedPattern variable child
-asUnifiedPattern = UnifiedPattern . asUnified . Rotate31
+asUnifiedPattern p = case getMetaOrObjectPatternType p of 
+    IsObject -> UnifiedObjectPattern p
+    IsMeta   -> UnifiedMetaPattern   p
 
 -- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
 -- apply it on an 'UnifiedPattern'.
 transformUnifiedPattern
     :: (forall level . MetaOrObject level => Pattern level variable a -> b)
-    -> (UnifiedPattern variable a -> b)
-transformUnifiedPattern f =
-    transformUnified (f . unRotate31) . getUnifiedPattern
+    -> UnifiedPattern variable a 
+    -> b
+transformUnifiedPattern f p' = case p' of 
+    UnifiedObjectPattern p -> f @Object p
+    UnifiedMetaPattern   p -> f @Meta   p
 
 deriving instance
     ( Eq child
@@ -133,20 +145,24 @@ deriving instance
     ) => Show (UnifiedPattern variable child)
 
 instance Functor (UnifiedPattern variable) where
-    fmap f =
-        UnifiedPattern
-        . mapUnified (Rotate31 . fmap f . unRotate31)
-        . getUnifiedPattern
+    fmap f = transformUnifiedPattern (asUnifiedPattern . fmap f)
+
 instance Foldable (UnifiedPattern variable) where
-    foldMap f =
-        transformUnified (foldMap f . unRotate31)
-        . getUnifiedPattern
+    foldMap f = transformUnifiedPattern (foldMap f)
+
 instance Traversable (UnifiedPattern variable) where
-    sequenceA =
-        fmap UnifiedPattern
-        . sequenceUnified
-            (fmap Rotate31 . sequenceA . unRotate31)
-        . getUnifiedPattern
+    sequenceA = transformUnifiedPattern (fmap asUnifiedPattern . sequenceA)
+        -- fmap UnifiedPattern
+        -- . sequenceUnified
+        --     (fmap Rotate31 . sequenceA . unRotate31)
+        -- . getUnifiedPattern
+
+-- instance Traversable (UnifiedPattern variable) where
+--     sequenceA =
+--         fmap UnifiedPattern
+--         . sequenceUnified
+--             (fmap Rotate31 . sequenceA . unRotate31)
+--         . getUnifiedPattern
 
 -- |'KorePattern' is a 'Fix' point of 'Pattern' comprising both
 -- 'Meta' and 'Object' 'Pattern's
@@ -195,14 +211,23 @@ type CommonKorePattern = KorePattern Variable
 
 -- |Given functions appliable to 'Meta' 'Pattern's and 'Object' 'Pattern's,
 -- builds a combined function which can be applied on an 'KorePattern'.
+-- applyKorePattern
+--     :: (Pattern Meta variable (KorePattern variable) -> b)
+--     -> (Pattern Object variable (KorePattern variable) -> b)
+--     -> (KorePattern variable -> b)
+-- applyKorePattern metaT objectT korePattern =
+--     case getUnifiedPattern (project korePattern) of
+--         UnifiedMeta rp   -> metaT (unRotate31 rp)
+--         UnifiedObject rp -> objectT (unRotate31 rp)
+
 applyKorePattern
     :: (Pattern Meta variable (KorePattern variable) -> b)
     -> (Pattern Object variable (KorePattern variable) -> b)
     -> (KorePattern variable -> b)
-applyKorePattern metaT objectT korePattern =
-    case getUnifiedPattern (project korePattern) of
-        UnifiedMeta rp   -> metaT (unRotate31 rp)
-        UnifiedObject rp -> objectT (unRotate31 rp)
+applyKorePattern metaT objectT (Fix p') = 
+    case p' of
+      UnifiedObjectPattern p -> objectT p
+      UnifiedMetaPattern   p -> metaT   p
 
 type UnifiedSortVariable = Unified SortVariable
 type UnifiedSort = Unified Sort

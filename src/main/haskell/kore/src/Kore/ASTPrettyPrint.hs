@@ -513,13 +513,13 @@ instance PrettyPrint CommonKorePattern where
     prettyPrint flags korePattern =
         writeOneFieldStructK flags "Fix"
         $ writeOneFieldStructK NeedsParentheses "UnifiedPattern"
-        $ case getUnifiedPattern (project korePattern) of
-            UnifiedMeta p ->
+        $ case project korePattern of
+            UnifiedMetaPattern p ->
                 writeOneFieldStructK NeedsParentheses "UnifiedMeta"
-                $ writeOneFieldStruct NeedsParentheses "Rotate31" (unRotate31 p)
-            UnifiedObject p ->
+                $ writeOneFieldStruct NeedsParentheses "Rotate31" p
+            UnifiedObjectPattern p ->
                 writeOneFieldStructK NeedsParentheses "UnifiedObject"
-                $ writeOneFieldStruct NeedsParentheses "Rotate31" (unRotate31 p)
+                $ writeOneFieldStruct NeedsParentheses "Rotate31" p
 
 instance (MetaOrObject level, PrettyPrint (variable level))
     => PrettyPrint (PureMLPattern level variable)
