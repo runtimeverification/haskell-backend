@@ -1,0 +1,26 @@
+// This program counts in s all the prime numbers up to m.
+
+int i, m, n, q, r, s, t, x, y, z;
+m = AInt 10;  n = AInt 2;
+while (AId n <= AId m) {
+  // checking primality of n and writing t to 1 or 0
+  i = AInt 2;  q = AId n/AId i;  t = AInt 1;
+  while (AId i<=AId q && AInt 1<=AId t) {
+    x = AId i;
+    y = AId q;
+    // fast multiplication (base 2) algorithm
+    z = AInt 0;
+    while (!(AId x <= AInt 0)) {
+      q = AId x/AInt 2;
+      r = AId q+AId q+AInt 1;
+      if (AId r <= AId x) { z = AId z+AId y; } else {}
+      x = AId q;
+      y = AId y+AId y;
+    } // end fast multiplication
+    if (AId n <= AId z) { t = AInt 0; } else { i = AId i+AInt 1;  q = AId n/AId i; }
+  } // end checking primality
+  if (AInt 1 <= AId t) { s = AId s+AInt 1; } else {}
+  n = AId n+AInt 1;
+}
+
+// s should be 4 when m = 10.

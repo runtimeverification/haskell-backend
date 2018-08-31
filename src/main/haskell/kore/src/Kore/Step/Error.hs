@@ -48,7 +48,7 @@ unificationToStepError
     :: a
     -> Either (UnificationError level) a
     -> Either (StepError level variable) a
-unificationToStepError bottom (Left (ConstructorClash _ _)) = Right bottom
+unificationToStepError bottom (Left (PatternClash _ _)) = Right bottom
 unificationToStepError _ (Left err)     = Left (StepErrorUnification err)
 unificationToStepError _ (Right result) = Right result
 

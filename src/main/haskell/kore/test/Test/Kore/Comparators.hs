@@ -546,10 +546,10 @@ instance EqualWithExplanation (SymbolOrAlias level)
 
 instance SumEqualWithExplanation (UnificationError level)
   where
-    sumConstructorPair (ConstructorClash a1 a2) (ConstructorClash b1 b2) =
+    sumConstructorPair (PatternClash a1 a2) (PatternClash b1 b2) =
         SumConstructorSameWithArguments
-            (EqWrap "ConstructorClash" (a1, a2) (b1, b2))
-    sumConstructorPair a1@(ConstructorClash _ _) a2 =
+            (EqWrap "PatternClash" (a1, a2) (b1, b2))
+    sumConstructorPair a1@(PatternClash _ _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
@@ -594,6 +594,11 @@ instance SumEqualWithExplanation (UnificationError level)
 instance EqualWithExplanation (UnificationError level)
   where
     compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (ClashReason level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance (Show (variable level), EqualWithExplanation (variable level))

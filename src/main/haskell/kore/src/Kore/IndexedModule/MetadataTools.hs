@@ -12,6 +12,7 @@ module Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
     , SortTools
     , extractMetadataTools
+    , getResultSort
     ) where
 
 import Kore.AST.Common
@@ -45,3 +46,11 @@ extractMetadataTools m =
     , sortAttributes = getSortAttributes m
     , sortTools  = getHeadApplicationSorts m
     }
+
+{- | Look up the result sort of a symbol or alias
+ -}
+getResultSort :: MetadataTools level attrs -> SymbolOrAlias level -> Sort level
+getResultSort MetadataTools { sortTools } symbol =
+    case sortTools symbol of
+        ApplicationSorts { applicationSortsResult } -> applicationSortsResult
+

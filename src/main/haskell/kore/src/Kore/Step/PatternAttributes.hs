@@ -16,8 +16,10 @@ module Kore.Step.PatternAttributes
     , mapFunctionalProofVariables
     ) where
 
-import           Data.Functor.Traversable
-                 ( fixBottomUpVisitorM )
+import Control.Lens
+import Data.Functor.Foldable
+       ( cata )
+
 import           Kore.AST.Common
                  ( Application (..), CharLiteral, DomainValue, Pattern (..),
                  StringLiteral, SymbolOrAlias, Variable )
@@ -56,6 +58,20 @@ data FunctionalProof level variable
     -- ^A char literal is a functional constructor without arguments.
   deriving (Eq, Show)
 
+functionalProofVars
+    :: Prism
+         (FunctionalProof level variableFrom)
+         (FunctionalProof level variableTo)
+         (variableFrom level)
+         (variableTo level)
+functionalProofVars = prism FunctionalVariable isVar
+  where
+    isVar (FunctionalVariable v) = Right v
+    isVar (FunctionalDomainValue dv) = Left (FunctionalDomainValue dv)
+    isVar (FunctionalHead sym) = Left (FunctionalHead sym)
+    isVar (FunctionalStringLiteral str) = Left (FunctionalStringLiteral str)
+    isVar (FunctionalCharLiteral char) = Left (FunctionalCharLiteral char)
+
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
 -- pattern consists of domain values, functional and function symbols and
@@ -77,16 +93,7 @@ mapFunctionalProofVariables
     :: (variableFrom level -> variableTo level)
     -> FunctionalProof level variableFrom
     -> FunctionalProof level variableTo
-mapFunctionalProofVariables mapper (FunctionalVariable variable) =
-    FunctionalVariable (mapper variable)
-mapFunctionalProofVariables _ (FunctionalDomainValue dv) =
-    FunctionalDomainValue dv
-mapFunctionalProofVariables _ (FunctionalHead functionalHead) =
-    FunctionalHead functionalHead
-mapFunctionalProofVariables _ (FunctionalStringLiteral literal) =
-    FunctionalStringLiteral literal
-mapFunctionalProofVariables _ (FunctionalCharLiteral literal) =
-    FunctionalCharLiteral literal
+mapFunctionalProofVariables mapper = functionalProofVars %~ mapper
 
 {-| checks whether a pattern is functional or not and, if it is, returns a proof
     certifying that.
@@ -95,32 +102,32 @@ isFunctionalPattern
     :: MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either (FunctionalError level) [FunctionalProof level variable]
-isFunctionalPattern tools = fixBottomUpVisitorM reduceM
+isFunctionalPattern tools = cata  reduceM
   where
     reduceM patt = do
-        (proof, proofs) <- functionalReduce tools patt
+        proof <- checkFunctionalHead tools patt
+        proofs <- concat <$> sequence patt
         return (proof : proofs)
 
-functionalReduce
+checkFunctionalHead
     :: MetadataTools level StepperAttributes
-    -> Pattern level variable [proof]
-    -> Either (FunctionalError level) (FunctionalProof level variable, [proof])
-functionalReduce _ (DomainValuePattern dv) =
-    Right (FunctionalDomainValue dv, [])
-functionalReduce _ (StringLiteralPattern str) =
-    Right (FunctionalStringLiteral str, [])
-functionalReduce _ (CharLiteralPattern str) =
-    Right (FunctionalCharLiteral str, [])
-functionalReduce _ (VariablePattern v) =
-    Right (FunctionalVariable v, [])
-functionalReduce tools (ApplicationPattern ap) =
-    if isFunctional (MetadataTools.symAttributes tools patternHead)
-        then return (FunctionalHead patternHead, concat proofs)
+    -> Pattern level variable a
+    -> Either (FunctionalError level) (FunctionalProof level variable)
+checkFunctionalHead _ (DomainValuePattern dv) =
+    Right (FunctionalDomainValue dv)
+checkFunctionalHead _ (StringLiteralPattern str) =
+    Right (FunctionalStringLiteral str)
+checkFunctionalHead _ (CharLiteralPattern str) =
+    Right (FunctionalCharLiteral str)
+checkFunctionalHead _ (VariablePattern v) =
+    Right (FunctionalVariable v)
+checkFunctionalHead tools (ApplicationPattern ap) =
+    if isFunctional (MetadataTools.attributes tools patternHead)
+        then return (FunctionalHead patternHead)
         else Left (NonFunctionalHead patternHead)
   where
     patternHead = applicationSymbolOrAlias ap
-    proofs = applicationChildren ap
-functionalReduce _ _ = Left NonFunctionalPattern
+checkFunctionalHead _ _ = Left NonFunctionalPattern
 
 {-| checks whether a pattern is function-like or not and, if it is, returns
     a proof certifying that.
@@ -129,25 +136,25 @@ isFunctionPattern
     :: MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either (FunctionError level) [FunctionProof level variable]
-isFunctionPattern tools = fixBottomUpVisitorM reduceM
+isFunctionPattern tools = cata reduceM
   where
     reduceM patt = do
-        (proof, proofs) <- functionReduce tools patt
+        proof <- checkFunctionHead tools patt
+        proofs <- concat <$> sequence patt
         return (proof : proofs)
 
-functionReduce
+checkFunctionHead
     :: MetadataTools level StepperAttributes
-    -> Pattern level variable [proof]
-    -> Either (FunctionError level) (FunctionProof level variable, [proof])
-functionReduce tools (ApplicationPattern ap)
-  | isFunction (MetadataTools.symAttributes tools patternHead) =
-    Right (FunctionHead patternHead, concat proofs)
+    -> Pattern level variable a
+    -> Either (FunctionError level) (FunctionProof level variable)
+checkFunctionHead tools (ApplicationPattern ap)
+  | isFunction (MetadataTools.attributes tools patternHead) =
+    Right (FunctionHead patternHead)
   where
     patternHead = applicationSymbolOrAlias ap
-    proofs = applicationChildren ap
-functionReduce tools patt =
-    case functionalReduce tools patt of
-        Right (proof, proofs) -> Right (FunctionProofFunctional proof, proofs)
+checkFunctionHead tools patt =
+    case checkFunctionalHead tools patt of
+        Right proof -> Right (FunctionProofFunctional proof)
         Left (NonFunctionalHead patternHead) ->
             Left (NonFunctionHead patternHead)
         Left NonFunctionalPattern -> Left NonFunctionPattern

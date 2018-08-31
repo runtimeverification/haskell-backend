@@ -5,6 +5,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import           Data.Default
+                 ( def )
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
@@ -242,6 +244,7 @@ axiomEvaluator left right =
                 { axiomPatternLeft  = left
                 , axiomPatternRight = right
                 , axiomPatternRequires = makeTruePredicate
+                , axiomAttributes = def
                 }
         )
 
