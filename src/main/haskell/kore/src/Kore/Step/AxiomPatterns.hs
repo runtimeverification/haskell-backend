@@ -49,6 +49,7 @@ data AxiomPatternAttributes =
     AxiomPatternAttributes
     { axiomPatternHeatCool :: !(Maybe HeatCool)
       -- ^ An axiom may be denoted as a heating or cooling rule.
+    , axiomPatternProductionID :: !(Maybe String)
     }
   deriving (Eq, Ord, Show)
 
@@ -56,12 +57,14 @@ instance Default AxiomPatternAttributes where
     def =
         AxiomPatternAttributes
         { axiomPatternHeatCool = Nothing
+        , axiomPatternProductionID = Nothing
         }
 
 instance ParseAttributes AxiomPatternAttributes where
     attributesParser =
         AxiomPatternAttributes
             <$> Attribute.choose (Just <$> getHeatCool) (getNormal $> Nothing)
+            <*> Attribute.optional (Attribute.parseStringAttribute "productionID")
       where
         getHeat = do
             Attribute.assertNoAttribute "cool"
