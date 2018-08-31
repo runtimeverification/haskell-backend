@@ -50,7 +50,6 @@ import qualified Text.Megaparsec.Char as Parser
                  ( char )
 
 import           Data.Functor.Impredicative
-                 ( Rotate31 (..) )
 import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject

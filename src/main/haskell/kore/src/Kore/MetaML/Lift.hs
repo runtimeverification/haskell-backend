@@ -19,8 +19,6 @@ module Kore.MetaML.Lift
 
 import Data.Functor.Foldable
 
-import Data.Functor.Impredicative
-       ( Rotate31 (..) )
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject

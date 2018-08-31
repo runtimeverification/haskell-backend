@@ -43,9 +43,6 @@ import Data.Functor.Classes
 import Data.Functor.Foldable
 import GHC.Generics
        ( Generic )
-
-import Data.Functor.Impredicative
-       ( Rotate31 (..) )
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.Pretty
@@ -57,22 +54,11 @@ import Data.Proxy
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
 allow using toghether both 'Meta' and 'Object' patterns.
 -}
--- newtype UnifiedPattern variable child = UnifiedPattern
---     { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
---   deriving ( Generic )
 
 data UnifiedPattern variable child
  = UnifiedMetaPattern   (Pattern Meta variable child)
  | UnifiedObjectPattern (Pattern Object variable child)
      deriving ( Generic )
-
--- pattern UnifiedMetaPattern :: Pattern Meta var child -> UnifiedPattern var child
--- pattern UnifiedMetaPattern pat = UnifiedPattern (UnifiedMeta (Rotate31 pat))
-
--- pattern UnifiedObjectPattern :: Pattern Object var child -> UnifiedPattern var child
--- pattern UnifiedObjectPattern pat = UnifiedPattern (UnifiedObject (Rotate31 pat))
-
--- {-# COMPLETE UnifiedMetaPattern, UnifiedObjectPattern #-}
 
 instance
     ( NFData child

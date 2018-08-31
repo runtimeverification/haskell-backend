@@ -23,8 +23,6 @@ module Kore.AST.PureToKore
 
 import Data.Functor.Foldable
 
-import Data.Functor.Impredicative
-       ( Rotate31 (..) )
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
@@ -54,7 +52,7 @@ extractPurePattern
     -> Pattern level1 Variable (Either (Error a) (CommonPurePattern level))
     -> Either (Error a) (CommonPurePattern level)
 extractPurePattern level p =
-    case (isMetaOrObject (Rotate31 p), isMetaOrObject (toProxy level)) of
+    case (getMetaOrObjectPatternType p, isMetaOrObject (toProxy level)) of
         (IsMeta, IsMeta) -> fmap Fix (sequence p)
         (IsObject, IsObject) -> fmap Fix (sequence p)
         _ -> koreFail ("Unexpected non-" ++ show level ++ " pattern")
