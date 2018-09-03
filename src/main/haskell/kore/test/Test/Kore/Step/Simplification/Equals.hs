@@ -406,9 +406,37 @@ test_equalsSimplification = give mockSortTools
                 [ ExpandedPattern
                     { term = mkTop
                     , predicate =
-                        fst $ makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
-                            (makeEqualsPredicate fOfB gOfB)
+                        fst $ makeOrPredicate
+                            (fst $ makeAndPredicate
+                                (fst $ makeAndPredicate
+                                    (makeEqualsPredicate fOfA gOfA)
+                                    (makeEqualsPredicate fOfB gOfB)
+                                )
+                                (fst $ makeAndPredicate
+                                    (fst $ makeAndPredicate
+                                        (makeCeilPredicate fOfA)
+                                        (makeCeilPredicate fOfB)
+                                    )
+                                    (fst $ makeAndPredicate
+                                        (makeCeilPredicate gOfA)
+                                        (makeCeilPredicate gOfB)
+                                    )
+                                )
+                            )
+                            (fst $ makeAndPredicate
+                                (fst $ makeNotPredicate
+                                    (fst $ makeAndPredicate
+                                        (makeCeilPredicate fOfA)
+                                        (makeCeilPredicate fOfB)
+                                    )
+                                )
+                                (fst $ makeNotPredicate
+                                    (fst $ makeAndPredicate
+                                        (makeCeilPredicate gOfA)
+                                        (makeCeilPredicate gOfB)
+                                    )
+                                )
+                            )
                     , substitution = []
                     }
                 ]
@@ -506,7 +534,7 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "equals(Mock.x, functional) becomes a substitution"
+    , testCase "equals(x, functional) becomes a substitution"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
@@ -544,6 +572,104 @@ test_equalsSimplification = give mockSortTools
                 mockMetadataTools
                 ExpandedPattern
                     { term = functionalOfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = mkVar Mock.x
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "equals(x, function) becomes a substitution + ceil"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate = makeCeilPredicate fOfA
+                    , substitution = [(Mock.x, fOfA)]
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = mkVar Mock.x
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = fOfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "equals(function, x) becomes a substitution + ceil"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate = makeCeilPredicate fOfA
+                    , substitution = [(Mock.x, fOfA)]
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = fOfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = mkVar Mock.x
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "equals(x, constructor) becomes a predicate"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate =
+                        makeEqualsPredicate (mkVar Mock.x) constructor1OfA
+                    , substitution = []
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = mkVar Mock.x
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = constructor1OfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "equals(something, x) becomes a predicate"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate =
+                        makeEqualsPredicate constructor1OfA (mkVar Mock.x)
+                    , substitution = []
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = constructor1OfA
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
