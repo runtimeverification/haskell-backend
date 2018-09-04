@@ -35,13 +35,13 @@ import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
 type UnificationSubstitution level variable
-    = [(variable level, PureMLPattern level variable)]
+    = [(variable level, PureMLPattern level domain variable)]
 
 -- |'UnificationSolution' describes the solution of an unification problem,
 -- consisting of the unified term and the set of constraints (equalities)
 -- obtained during unification.
 data UnificationSolution level variable = UnificationSolution
-    { unificationSolutionTerm        :: !(PureMLPattern level variable)
+    { unificationSolutionTerm        :: !(PureMLPattern level domain variable)
     , unificationSolutionConstraints :: !(UnificationSubstitution level variable)
     }
   deriving (Eq, Show)
@@ -57,8 +57,8 @@ mapSubstitutionVariables variableMapper =
   where
     mapVariable
         :: (variableFrom level -> variableTo level)
-        -> (variableFrom level, PureMLPattern level variableFrom)
-        -> (variableTo level, PureMLPattern level variableTo)
+        -> (variableFrom level, PureMLPattern level domain variableFrom)
+        -> (variableTo level, PureMLPattern level domain variableTo)
     mapVariable
         mapper
         (variable, patt)
@@ -73,7 +73,7 @@ unificationSolutionToPurePattern
     :: SortedVariable variable
     => MetadataTools level StepperAttributes
     -> UnificationSolution level variable
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
 unificationSolutionToPurePattern tools ucp =
     case unificationSolutionConstraints ucp of
         [] -> unifiedTerm
@@ -94,7 +94,7 @@ unificationSolutionToPurePattern tools ucp =
         Fix $ EqualsPattern Equals
             { equalsOperandSort = sortedVariableSort var
             , equalsResultSort = resultSort
-            , equalsFirst = Fix $ VariablePattern var
+            , equalsFirst = Fix $ VariablePattern domain var
             , equalsSecond = p
             }
 
@@ -107,12 +107,12 @@ data UnificationProof level variable
     -- ^Empty proof (nothing to prove)
     | CombinedUnificationProof [UnificationProof level variable]
     -- ^Putting multiple proofs together
-    | ConjunctionIdempotency (PureMLPattern level variable)
+    | ConjunctionIdempotency (PureMLPattern level domain variable)
     -- ^Used to specify the reduction a/\a <-> a
     | Proposition_5_24_3
         [FunctionalProof level variable]
         (variable level)
-        (PureMLPattern level variable)
+        (PureMLPattern level domain variable)
     -- ^Used to specify the application of Proposition 5.24 (3)
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- if ϕ and ϕ' are functional patterns, then
@@ -128,8 +128,8 @@ data UnificationProof level variable
     -- |= c(ϕ1, ..., ϕi /\ ϕ, ..., ϕn) = c(ϕ1, ..., ϕi, ..., ϕn) /\ ϕ
     | SubstitutionMerge
         (variable level)
-        (PureMLPattern level variable)
-        (PureMLPattern level variable)
+        (PureMLPattern level domain variable)
+        (PureMLPattern level domain variable)
     -- ^Specifies the merging of (x = t1) /\ (x = t2) into x = (t1 /\ t2)
     -- Semantics of K, 7.7.1:
     -- (Equality Elimination). |- (ϕ1 = ϕ2) → (ψ[ϕ1/v] → ψ[ϕ2/v])
@@ -188,7 +188,7 @@ simplifyAnds
        , Show (variable level)
        )
     => MetadataTools level StepperAttributes
-    -> [PureMLPattern level variable]
+    -> [PureMLPattern level domain variable]
     -> Either
         (UnificationError level)
         (UnificationSolution level variable, UnificationProof level variable)
@@ -228,7 +228,7 @@ simplifyAnd
        , Show (variable level)
        )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Either
         (UnificationError level)
         (UnificationSolution level variable, UnificationProof level variable)
@@ -243,7 +243,7 @@ preTransform
        , Show (variable level)
        )
     => MetadataTools level StepperAttributes
-    -> UnFixedPureMLPattern level variable
+    -> UnFixedPureMLPattern level domain variable
     -> Either
         ( Either
             (UnificationError level)
@@ -251,7 +251,7 @@ preTransform
             , UnificationProof level variable
             )
         )
-        (UnFixedPureMLPattern level variable)
+        (UnFixedPureMLPattern level domain variable)
 preTransform tools (AndPattern ap) = if left == right
     then Left $ Right
         ( UnificationSolution
@@ -261,10 +261,10 @@ preTransform tools (AndPattern ap) = if left == right
         , ConjunctionIdempotency left
         )
     else case project left of
-        VariablePattern vp ->
+        VariablePattern domain vp ->
             Left (mlProposition_5_24_3 tools vp right)
         p1 -> case project right of
-            VariablePattern vp -> -- add commutativity here
+            VariablePattern domain vp -> -- add commutativity here
                 Left (mlProposition_5_24_3 tools vp left)
             DomainValuePattern (DomainValue _ dv2) ->
                 case dv2 of
@@ -286,7 +286,7 @@ preTransform _ _ = Left $ Left UnsupportedPatterns
 
 matchDomainValue
     :: MetadataTools level StepperAttributes
-    -> UnFixedPureMLPattern level variable
+    -> UnFixedPureMLPattern level domain variable
     -> String
     -> Either
         ( Either
@@ -295,7 +295,7 @@ matchDomainValue
             , UnificationProof level variable
             )
         )
-        (UnFixedPureMLPattern level variable)
+        (UnFixedPureMLPattern level domain variable)
 matchDomainValue _ (DomainValuePattern (DomainValue _ dv1)) sl2 =
     case dv1 of
         StringLiteral_ (StringLiteral sl1) ->
@@ -312,9 +312,9 @@ matchDomainValue _ _ _ = Left $ Left UnsupportedPatterns
 
 matchConstructor
     :: MetadataTools level StepperAttributes
-    -> UnFixedPureMLPattern level variable
+    -> UnFixedPureMLPattern level domain variable
     -> SymbolOrAlias level
-    -> Application level (PureMLPattern level variable)
+    -> Application level (PureMLPattern level domain variable)
     -> Either
         ( Either
             (UnificationError level)
@@ -322,7 +322,7 @@ matchConstructor
             , UnificationProof level variable
             )
         )
-        (UnFixedPureMLPattern level variable)
+        (UnFixedPureMLPattern level domain variable)
 matchConstructor _ (DomainValuePattern (DomainValue _ dv1)) head2 _ =
     case dv1 of
         (StringLiteral_ (StringLiteral sl1)) ->
@@ -361,7 +361,7 @@ mlProposition_5_24_3
     => MetadataTools level StepperAttributes
     -> variable level
     -- ^variable pattern
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -- ^functional (term) pattern
     -> Either
         (UnificationError level)
@@ -383,7 +383,7 @@ mlProposition_5_24_3
 -- returns from the recursion, building the unified term and
 -- pushing up the constraints (substitution)
 postTransform
-    :: Pattern level variable
+    :: Pattern level domain variable
         (Either
             (UnificationError level)
             ( UnificationSolution level variable
@@ -420,8 +420,8 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Fix (VariablePattern var'))
-        | var' < var = (var', Fix (VariablePattern var))
+    sortRenaming (var, Fix (VariablePattern domain var'))
+        | var' < var = (var', Fix (VariablePattern domain var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
@@ -507,9 +507,9 @@ unificationProcedure
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -- ^left-hand-side of unification
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Either
         -- TODO: Consider using a false predicate instead of a Left error
         (UnificationError level)

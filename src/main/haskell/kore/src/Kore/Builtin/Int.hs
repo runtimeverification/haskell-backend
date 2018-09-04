@@ -148,7 +148,7 @@ parse = Parsec.signed noSpace Parsec.decimal
 asPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> CommonPurePattern Object
+    -> CommonPurePattern Object domain
 asPattern resultSort result =
     Kore.DV_ resultSort
         (Kore.StringLiteral_ Kore.StringLiteral
@@ -157,14 +157,14 @@ asPattern resultSort result =
 asExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> CommonExpandedPattern Object
+    -> CommonExpandedPattern Object domain
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asPattern resultSort
 
 asPartialExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
-    -> CommonExpandedPattern Object
+    -> CommonExpandedPattern Object domain
 asPartialExpandedPattern resultSort =
     maybe ExpandedPattern.bottom (asExpandedPattern resultSort)
 

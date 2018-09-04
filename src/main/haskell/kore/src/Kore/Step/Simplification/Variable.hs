@@ -35,13 +35,13 @@ an or containing a term made of that variable.
 simplify
     :: MetaOrObject level
     => variable level
-    -> ( OrOfExpandedPattern level variable
+    -> ( OrOfExpandedPattern level domain variable
        , SimplificationProof level
        )
 simplify var =
     ( OrOfExpandedPattern.make
         [ExpandedPattern
-            { term = asPurePattern (VariablePattern var)
+            { term = asPurePattern (VariablePattern domain var)
             , predicate = makeTruePredicate
             , substitution = []
             }

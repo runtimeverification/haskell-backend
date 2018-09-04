@@ -65,7 +65,7 @@ asPredicateSubstitution
         , SortedVariable variable
         , Show (variable level)
         )
-    => ExpandedPattern level variable
+    => ExpandedPattern level domain variable
     -> (PredicateSubstitution level variable, SimplificationProof level)
 asPredicateSubstitution
     ExpandedPattern {term, predicate, substitution}

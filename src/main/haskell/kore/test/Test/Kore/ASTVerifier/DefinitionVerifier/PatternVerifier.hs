@@ -29,22 +29,22 @@ data PatternRestrict
     = NeedsInternalDefinitions
     | NeedsSortedParent
 
-data TestPattern level = TestPattern
-    { testPatternPattern    :: !(Pattern level Variable CommonKorePattern)
+data TestPattern level domain = TestPattern
+    { testPatternPattern    :: !(Pattern level domain Variable CommonKorePattern)
     , testPatternSort       :: !(Sort level)
     , testPatternErrorStack :: !ErrorStack
     }
 
 newtype VariableOfDeclaredSort level = VariableOfDeclaredSort (Variable level)
 
-testPatternErrorStackStrings :: TestPattern level -> [String]
+testPatternErrorStackStrings :: TestPattern level domain -> [String]
 testPatternErrorStackStrings
     TestPattern {testPatternErrorStack = ErrorStack strings}
   =
     strings
 
 testPatternUnifiedPattern
-    :: MetaOrObject level => TestPattern level -> CommonKorePattern
+    :: MetaOrObject level => TestPattern level domain -> CommonKorePattern
 testPatternUnifiedPattern
     TestPattern {testPatternPattern = p}
   =
@@ -717,7 +717,7 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> Pattern Object Variable CommonKorePattern
+    -> Pattern Object domain Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -762,7 +762,7 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> Pattern Meta Variable CommonKorePattern
+    -> Pattern Meta domain Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -804,7 +804,7 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Object Variable CommonKorePattern
+    -> Pattern Object domain Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -861,7 +861,7 @@ failureTestsForMetaPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Meta Variable CommonKorePattern
+    -> Pattern Meta domain Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -907,7 +907,7 @@ failureTestsForMetaPattern
 genericPatternInAllContexts
     :: MetaOrObject level
     => level
-    -> Pattern level Variable CommonKorePattern
+    -> Pattern level domain Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort level
     -> SortVariablesThatMustBeDeclared level
@@ -974,7 +974,7 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: Pattern Object Variable CommonKorePattern
+    :: Pattern Object domain Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -1017,7 +1017,7 @@ objectPatternInAllContexts
 patternsInAllContexts
     :: MetaOrObject level
     => level
-    -> [TestPattern level]
+    -> [TestPattern level domain]
     -> NamePrefix
     -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
@@ -1086,15 +1086,15 @@ patternsInAllContexts
 
 genericPatternInPatterns
     :: MetaOrObject level
-    => Pattern level Variable CommonKorePattern
-    -> Pattern level Variable CommonKorePattern
+    => Pattern level domain Variable CommonKorePattern
+    -> Pattern level domain Variable CommonKorePattern
     -> OperandSort level
     -> Helpers.ResultSort level
     -> VariableOfDeclaredSort level
     -> SymbolOrAlias level
     -> SymbolOrAlias level
     -> PatternRestrict
-    -> [TestPattern level]
+    -> [TestPattern level domain]
 genericPatternInPatterns
     testedPattern
     anotherPattern
@@ -1147,18 +1147,18 @@ genericPatternInPatterns
         ]
 
 objectPatternInPatterns
-    :: Pattern Object Variable CommonKorePattern
-    -> Pattern Object Variable CommonKorePattern
+    :: Pattern Object domain Variable CommonKorePattern
+    -> Pattern Object domain Variable CommonKorePattern
     -> OperandSort Object
-    -> [TestPattern Object]
+    -> [TestPattern Object domain]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
     :: MetaOrObject level
-    => Pattern level Variable CommonKorePattern
+    => Pattern level domain Variable CommonKorePattern
     -> Sort level
     -> Variable level
-    -> [TestPattern level]
+    -> [TestPattern level domain]
 patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     [ TestPattern
         { testPatternPattern = ExistsPattern Exists
@@ -1192,11 +1192,11 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
 
 patternInUnquantifiedGenericPatterns
     :: MetaOrObject level
-    => Pattern level Variable CommonKorePattern
-    -> Pattern level Variable CommonKorePattern
+    => Pattern level domain Variable CommonKorePattern
+    -> Pattern level domain Variable CommonKorePattern
     -> OperandSort level
     -> Helpers.ResultSort level
-    -> [TestPattern level]
+    -> [TestPattern level domain]
 patternInUnquantifiedGenericPatterns
     testedPattern
     anotherPattern
@@ -1347,10 +1347,10 @@ patternInUnquantifiedGenericPatterns
     testedUnifiedPattern = asKorePattern testedPattern
 
 patternInUnquantifiedObjectPatterns
-    :: Pattern Object Variable CommonKorePattern
-    -> Pattern Object Variable CommonKorePattern
+    :: Pattern Object domain Variable CommonKorePattern
+    -> Pattern Object domain Variable CommonKorePattern
     -> OperandSort Object
-    -> [TestPattern Object]
+    -> [TestPattern Object domain]
 patternInUnquantifiedObjectPatterns
     testedPattern
     anotherPattern
@@ -1397,7 +1397,7 @@ testsForUnifiedPatternInTopLevelContext
     -> SortVariablesThatMustBeDeclared Object
     -> [KoreSentence]
     -> PatternRestrict
-    -> [TestPattern level -> TestData]
+    -> [TestPattern level domain -> TestData]
 testsForUnifiedPatternInTopLevelContext
     x
     namePrefix
@@ -1419,7 +1419,7 @@ testsForUnifiedPatternInTopLevelGenericContext
     -> SortVariablesThatMustBeDeclared level
     -> [KoreSentence]
     -> PatternRestrict
-    -> [TestPattern level -> TestData]
+    -> [TestPattern level domain -> TestData]
 testsForUnifiedPatternInTopLevelGenericContext
     _
     (NamePrefix _)

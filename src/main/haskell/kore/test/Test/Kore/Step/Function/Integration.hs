@@ -234,8 +234,8 @@ test_functionIntegration = give mockSortTools
 
 
 axiomEvaluator
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonPurePattern Object domain
+    -> CommonPurePattern Object domain
     -> CommonApplicationFunctionEvaluator Object
 axiomEvaluator left right =
     ApplicationFunctionEvaluator
@@ -249,7 +249,7 @@ axiomEvaluator left right =
         )
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level -> CommonApplicationFunctionEvaluator level
+    :: CommonExpandedPattern level domain -> CommonApplicationFunctionEvaluator level
 appliedMockEvaluator result =
     ApplicationFunctionEvaluator
         (mockEvaluator
@@ -260,7 +260,7 @@ mockEvaluator
     :: CommonAttemptedFunction level
     -> MetadataTools level StepperAttributes
     -> CommonPureMLPatternSimplifier level
-    -> Application level (CommonPurePattern level)
+    -> Application level (CommonPurePattern level domain)
     -> Simplifier
         (CommonAttemptedFunction level, SimplificationProof level)
 mockEvaluator evaluation _ _ _ =
@@ -270,8 +270,8 @@ evaluate
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
-    -> CommonPurePattern level
-    -> CommonExpandedPattern level
+    -> CommonPurePattern level domain
+    -> CommonExpandedPattern level domain
 evaluate metadataTools functionIdToEvaluator patt =
     either (error . printError) fst
         $ evalSimplifier

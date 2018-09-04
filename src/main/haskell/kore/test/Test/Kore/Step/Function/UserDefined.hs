@@ -430,9 +430,9 @@ asApplication patt =
 evaluateWithAxiom
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> AxiomPattern level
+    -> AxiomPattern level domain
     -> CommonPureMLPatternSimplifier level
-    -> Application level (CommonPurePattern level)
+    -> Application level (CommonPurePattern level domain)
     -> CommonAttemptedFunction level
 evaluateWithAxiom
     metadataTools

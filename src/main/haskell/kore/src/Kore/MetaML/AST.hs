@@ -33,41 +33,41 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 
 'var' is the type of variables.
 -}
-type MetaMLPattern variable = PureMLPattern Meta variable
+type MetaMLPattern domain variable = PureMLPattern Meta domain variable
 
 -- |'MetaSentenceAxiom' is the 'Meta'-only version of 'SentenceAxiom'
-type MetaSentenceAxiom = PureSentenceAxiom Meta
+type MetaSentenceAxiom domain = PureSentenceAxiom Meta domain
 -- |'MetaSentenceAlias' is the 'Meta'-only version of 'SentenceAlias'
-type MetaSentenceAlias = PureSentenceAlias Meta
+type MetaSentenceAlias domain = PureSentenceAlias Meta domain
 -- |'MetaSentenceSymbol' is the 'Meta'-only version of 'SentenceSymbol'
-type MetaSentenceSymbol = PureSentenceSymbol Meta
+type MetaSentenceSymbol domain = PureSentenceSymbol Meta domain
 -- |'MetaSentenceImport' is the 'Meta'-only version of 'SentenceImport'
-type MetaSentenceImport = PureSentenceImport Meta
+type MetaSentenceImport domain = PureSentenceImport Meta domain
 
 -- |'MetaSentence' is the 'Meta'-only version of 'Sentence'
-type MetaSentence = PureSentence Meta
+type MetaSentence domain = PureSentence Meta domain
 
-instance AsSentence MetaSentence MetaSentenceImport where
+instance AsSentence (MetaSentence domain) (MetaSentenceImport domain) where
     asSentence = SentenceImportSentence
 
-instance AsSentence MetaSentence MetaSentenceAxiom where
+instance AsSentence (MetaSentence domain) (MetaSentenceAxiom domain) where
     asSentence = SentenceAxiomSentence
 
 -- |'MetaModule' is the 'Meta'-only version of 'Module'.
-type MetaModule = PureModule Meta
+type MetaModule domain = PureModule Meta domain
 
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
-type MetaDefinition = PureDefinition Meta
+type MetaDefinition domain = PureDefinition Meta domain
 
 -- |'CommonMetaPattern' is the instantiation of 'MetaPattern' with common
 -- 'Variable's.
-type CommonMetaPattern = MetaMLPattern Variable
-type PatternMetaType = Pattern Meta Variable CommonMetaPattern
+type CommonMetaPattern domain = MetaMLPattern domain Variable
+type PatternMetaType domain = Pattern Meta domain Variable (CommonMetaPattern domain)
 
-type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
+type MetaPatternStub domain = PatternStub Meta domain Variable (CommonMetaPattern domain)
 
 -- |'metaFreeVariables' collects the free variables of a 'CommonMetaPattern'.
-metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)
+metaFreeVariables :: CommonMetaPattern domain -> Set (Variable Meta)
 metaFreeVariables = pureFreeVariables (toProxy Meta)
 
 nilSortListHead :: SymbolOrAlias Meta
@@ -76,7 +76,7 @@ nilSortListHead = groundHead "#nilSortList" AstLocationImplicit
 consSortListHead :: SymbolOrAlias Meta
 consSortListHead = groundHead "#consSortList" AstLocationImplicit
 
-nilSortListMetaPattern :: MetaMLPattern v
+nilSortListMetaPattern :: MetaMLPattern domain v
 nilSortListMetaPattern = asPurePattern $ constant nilSortListHead
 
 nilPatternListHead :: SymbolOrAlias Meta
@@ -85,7 +85,7 @@ nilPatternListHead = groundHead "#nilPatternList" AstLocationImplicit
 consPatternListHead :: SymbolOrAlias Meta
 consPatternListHead = groundHead "#consPatternList" AstLocationImplicit
 
-nilPatternListMetaPattern :: MetaMLPattern v
+nilPatternListMetaPattern :: MetaMLPattern domain v
 nilPatternListMetaPattern = asPurePattern $ constant nilPatternListHead
 
 variableHead :: SymbolOrAlias Meta

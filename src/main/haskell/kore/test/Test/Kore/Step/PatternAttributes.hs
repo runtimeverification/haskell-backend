@@ -92,7 +92,7 @@ test_patternAttributes = give mockSortTools
                     (mkVar Mock.x)
                 )
             let
-                functionalConstant :: CommonPurePattern Object
+                functionalConstant :: CommonPurePattern Object domain
                 functionalConstant = Mock.functional00
             assertEqualWithExplanation "functional symbols are functional"
                 (Right [FunctionalHead Mock.functional00Symbol])
@@ -119,7 +119,7 @@ test_patternAttributes = give mockSortTools
                     chr
                 )
             let
-                functionConstant :: CommonPurePattern Object
+                functionConstant :: CommonPurePattern Object domain
                 functionConstant = Mock.cf
             assertEqualWithExplanation "function symbols are not functional"
                 (Left (NonFunctionalHead Mock.cfSymbol))
@@ -128,7 +128,7 @@ test_patternAttributes = give mockSortTools
                     functionConstant
                 )
             let
-                plainConstant :: CommonPurePattern Object
+                plainConstant :: CommonPurePattern Object domain
                 plainConstant = Mock.plain00
             assertEqualWithExplanation "plain symbols are not functional"
                 (Left (NonFunctionalHead Mock.plain00Symbol))
@@ -137,7 +137,7 @@ test_patternAttributes = give mockSortTools
                     plainConstant
                 )
             let
-                functionalPatt :: CommonPurePattern Object
+                functionalPatt :: CommonPurePattern Object domain
                 functionalPatt = Mock.functional10 Mock.a
             assertEqualWithExplanation "functional composition is functional"
                 (Right
@@ -150,7 +150,7 @@ test_patternAttributes = give mockSortTools
                     functionalPatt
                 )
             let
-                nonFunctionalPatt :: CommonPurePattern Object
+                nonFunctionalPatt :: CommonPurePattern Object domain
                 nonFunctionalPatt =
                     mkOr Mock.a Mock.b
             assertEqualWithExplanation "or is not functional"
@@ -169,7 +169,7 @@ test_patternAttributes = give mockSortTools
                     (mkVar Mock.x)
                 )
             let
-                functionalConstant :: CommonPurePattern Object
+                functionalConstant :: CommonPurePattern Object domain
                 functionalConstant = Mock.functional00
             assertEqualWithExplanation "functional symbols are function-like"
                 (Right
@@ -208,7 +208,7 @@ test_patternAttributes = give mockSortTools
                     chr
                 )
             let
-                functionConstant :: CommonPurePattern Object
+                functionConstant :: CommonPurePattern Object domain
                 functionConstant = Mock.cf
             assertEqualWithExplanation "function symbols are function-like"
                 (Right [FunctionHead Mock.cfSymbol])
@@ -217,7 +217,7 @@ test_patternAttributes = give mockSortTools
                     functionConstant
                 )
             let
-                plainConstant :: CommonPurePattern Object
+                plainConstant :: CommonPurePattern Object domain
                 plainConstant = Mock.plain00
             assertEqualWithExplanation "plain symbols are not function-like"
                 (Left (NonFunctionHead Mock.plain00Symbol))
@@ -226,7 +226,7 @@ test_patternAttributes = give mockSortTools
                     plainConstant
                 )
             let
-                functionalPatt :: CommonPurePattern Object
+                functionalPatt :: CommonPurePattern Object domain
                 functionalPatt = Mock.functional10 Mock.a
             assertEqualWithExplanation "functional composition is function-like"
                 (Right
@@ -241,7 +241,7 @@ test_patternAttributes = give mockSortTools
                     functionalPatt
                 )
             let
-                nonFunctionPatt :: CommonPurePattern Object
+                nonFunctionPatt :: CommonPurePattern Object domain
                 nonFunctionPatt =
                     mkOr Mock.a Mock.a
             assertEqualWithExplanation "or is not function-like"

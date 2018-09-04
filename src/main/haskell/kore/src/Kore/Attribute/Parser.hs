@@ -278,7 +278,7 @@ parseStringAttribute key = do
             _ -> Kore.Error.koreFail "Expected meta pattern"
 
     expectLiteralString
-        :: Pattern Meta Variable CommonKorePattern -> Parser String
+        :: Pattern Meta domain Variable CommonKorePattern -> Parser String
     expectLiteralString =
         \case
             StringLiteralPattern (StringLiteral arg) -> pure arg

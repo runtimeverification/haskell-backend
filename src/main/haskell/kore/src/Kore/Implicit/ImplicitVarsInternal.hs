@@ -18,9 +18,9 @@ import Kore.AST.PureML
 import Kore.MetaML.AST
 
 vf, vL, vphi, vphi1, vphi2, vphi3, vphii, vpsi, vR, vS, vS', vs, vs1, vs2, vs3
-    , vs', vsigma, vu, v1, v2, vx, vx' :: MetaPatternStub
+    , vs', vsigma, vu, v1, v2, vx, vx' :: MetaPatternStub domain
 
-implicitUnparameterizedVariable :: String -> CommonPurePatternStub level
+implicitUnparameterizedVariable :: String -> CommonPurePatternStub level domain
 implicitUnparameterizedVariable name =
     unparameterizedVariable_ name AstLocationImplicit
 

@@ -70,12 +70,12 @@ extractEvaluators level indexedModule =
 axiomToIdEvaluatorPair
     :: MetaOrObject level
     => level
-    -> SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
+    -> SentenceAxiom UnifiedSortVariable UnifiedPattern domain Variable
     -> Maybe (Id level, CommonApplicationFunctionEvaluator level)
 axiomToIdEvaluatorPair
     level
     axiom
-  = case koreSentenceToAxiomPattern level (asSentence axiom) of
+  = case koreSentenceToAxiomPattern level domain (asSentence axiom) of
         Left _ -> Nothing
         Right (FunctionAxiomPattern axiomPat) ->
             case fromPurePattern (axiomPatternLeft axiomPat) of

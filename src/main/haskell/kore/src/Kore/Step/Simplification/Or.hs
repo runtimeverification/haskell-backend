@@ -45,8 +45,8 @@ simplify
         , Show (variable level)
         , Ord (variable level)
         )
-    => Or level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Or level (OrOfExpandedPattern level domain variable)
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -68,9 +68,9 @@ simplifyEvaluated
         , Show (variable level)
         , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    ->  ( OrOfExpandedPattern level variable
+    => OrOfExpandedPattern level domain variable
+    -> OrOfExpandedPattern level domain variable
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplifyEvaluated first second =
@@ -94,9 +94,9 @@ halfSimplifyEvaluated
         , Show (variable level)
         , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    ->  ( OrOfExpandedPattern level variable
+    => ExpandedPattern level domain variable
+    -> OrOfExpandedPattern level domain variable
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 halfSimplifyEvaluated

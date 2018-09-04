@@ -79,7 +79,7 @@ import Kore.IndexedModule.MetadataTools
 -- Usage: give metadatatools (... computation with Given Metadatatools ..)
 getSort
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
-    => PureMLPattern level var
+    => PureMLPattern level domain var
     -> Sort level
 getSort x = getPatternResultSort given $ project x
 
@@ -99,8 +99,8 @@ patternLens
     => (Sort level -> f (Sort level))
     -> (Sort level -> f (Sort level))
     -> (var level -> f (var level))
-    -> (PureMLPattern level var -> f (PureMLPattern level var))
-    -> (PureMLPattern level var -> f (PureMLPattern level var))
+    -> (PureMLPattern level domain var -> f (PureMLPattern level domain var))
+    -> (PureMLPattern level domain var -> f (PureMLPattern level domain var))
 patternLens
   i   -- input sort
   o   -- result sort
@@ -157,9 +157,9 @@ allChildren      f = patternLens pure pure pure f
 localInPattern
     :: MetaOrObject level
     => [Int]
-    -> (PureMLPattern level var -> PureMLPattern level var)
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> (PureMLPattern level domain var -> PureMLPattern level domain var)
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 localInPattern path f pat = pat & inPath path %~ f
 
 
@@ -169,8 +169,8 @@ localInPattern path f pat = pat & inPath path %~ f
 inPath
     :: (MetaOrObject level, Applicative f)
     => [Int]
-    -> (PureMLPattern level var -> f (PureMLPattern level var))
-    -> (PureMLPattern level var -> f (PureMLPattern level var))
+    -> (PureMLPattern level domain var -> f (PureMLPattern level domain var))
+    -> (PureMLPattern level domain var -> f (PureMLPattern level domain var))
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 
@@ -179,7 +179,7 @@ inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 -- which we can't change.
 isRigid
     :: MetaOrObject level
-    => PureMLPattern level var
+    => PureMLPattern level domain var
     -> Bool
 isRigid p = case project p of
     ApplicationPattern   _ -> True
@@ -198,7 +198,7 @@ isRigid p = case project p of
 -- \and, \or, \implies, etc.
 isFlexible
     :: MetaOrObject level
-    => PureMLPattern level var
+    => PureMLPattern level domain var
     -> Bool
 isFlexible p = case project p of
     BottomPattern _ -> True
@@ -213,8 +213,8 @@ isFlexible p = case project p of
 forceSort
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => Sort level
-    -> PureMLPattern level var
-    -> Maybe (PureMLPattern level var)
+    -> PureMLPattern level domain var
+    -> Maybe (PureMLPattern level domain var)
 forceSort s p
    | isRigid    p = checkIfAlreadyCorrectSort s p
    | isFlexible p = Just $ p & resultSort .~ s
@@ -223,8 +223,8 @@ forceSort s p
 checkIfAlreadyCorrectSort
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => Sort level
-    -> PureMLPattern level var
-    -> Maybe (PureMLPattern level var)
+    -> PureMLPattern level domain var
+    -> Maybe (PureMLPattern level domain var)
 checkIfAlreadyCorrectSort s p
    | getSort p == s = Just p
    | otherwise = Nothing
@@ -232,8 +232,8 @@ checkIfAlreadyCorrectSort s p
 -- | Modify all patterns in a list to have the same sort.
 makeSortsAgree
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
-    => [PureMLPattern level var]
-    -> Maybe [PureMLPattern level var]
+    => [PureMLPattern level domain var]
+    -> Maybe [PureMLPattern level domain var]
 makeSortsAgree ps =
     forM ps $ forceSort $
         case asum $ getRigidSort <$> ps of
@@ -242,7 +242,7 @@ makeSortsAgree ps =
 
 getRigidSort
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
-    => PureMLPattern level var
+    => PureMLPattern level domain var
     -> Maybe (Sort level)
 getRigidSort p =
     case forceSort flexibleSort p of
@@ -258,8 +258,8 @@ ensureSortAgreement
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
 ensureSortAgreement p =
   case makeSortsAgree $ p ^. partsOf allChildren of
     Just []    -> p & resultSort .~ flexibleSort
@@ -281,34 +281,34 @@ mkAnd
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkAnd a b = ensureSortAgreement $ And_ fixmeSort a b
 
 mkApp
     :: (MetaOrObject level, Given (SortTools level))
     => SymbolOrAlias level
-    -> [PureMLPattern level var]
-    -> PureMLPattern level var
+    -> [PureMLPattern level domain var]
+    -> PureMLPattern level domain var
 mkApp = App_
 
 mkBottom
     :: MetaOrObject level
-    => PureMLPattern level var
+    => PureMLPattern level domain var
 mkBottom = Bottom_ flexibleSort
 
 mkCeil
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
-    => PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkCeil a = Ceil_ (getSort a) flexibleSort a
 
 mkDomainValue
     :: (MetaOrObject Object, Given (SortTools Object))
     => Sort Object
-    -> PureMLPattern Meta Variable
-    -> PureMLPattern Object var
+    -> PureMLPattern Meta domain Variable
+    -> PureMLPattern Object domain var
 mkDomainValue = DV_
 
 mkEquals
@@ -316,9 +316,9 @@ mkEquals
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkEquals a b = ensureSortAgreement $ Equals_ fixmeSort fixmeSort a b
 
 mkExists
@@ -327,8 +327,8 @@ mkExists
         , SortedVariable var
         , Show (var level))
     => var level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkExists v a = ensureSortAgreement $ Exists_ fixmeSort v a
 
 mkFloor
@@ -336,8 +336,8 @@ mkFloor
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkFloor a = ensureSortAgreement $ Floor_ fixmeSort fixmeSort a
 
 mkForall
@@ -346,8 +346,8 @@ mkForall
         , SortedVariable var
         , Show (var level))
     => var level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkForall v a = ensureSortAgreement $ Forall_ fixmeSort v a
 
 mkIff
@@ -355,9 +355,9 @@ mkIff
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkIff a b = ensureSortAgreement $ Iff_ fixmeSort a b
 
 mkImplies
@@ -365,9 +365,9 @@ mkImplies
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkImplies a b = ensureSortAgreement $ Implies_ fixmeSort a b
 
 mkIn
@@ -375,9 +375,9 @@ mkIn
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkIn a b = ensureSortAgreement $ In_ fixmeSort fixmeSort a b
 
 mkNext
@@ -385,8 +385,8 @@ mkNext
         , Given (SortTools Object)
         , SortedVariable var
         , Show (var Object))
-    => PureMLPattern Object var
-    -> PureMLPattern Object var
+    => PureMLPattern Object domain var
+    -> PureMLPattern Object domain var
 mkNext a = ensureSortAgreement $ Next_ fixmeSort a
 
 mkNot
@@ -394,8 +394,8 @@ mkNot
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkNot a = ensureSortAgreement $ Not_ fixmeSort a
 
 mkOr
@@ -403,9 +403,9 @@ mkOr
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 mkOr a b = ensureSortAgreement $ Or_ fixmeSort a b
 
 mkRewrites
@@ -413,20 +413,20 @@ mkRewrites
         , Given (SortTools Object)
         , SortedVariable var
         , Show (var Object))
-    => PureMLPattern Object var
-    -> PureMLPattern Object var
-    -> PureMLPattern Object var
+    => PureMLPattern Object domain var
+    -> PureMLPattern Object domain var
+    -> PureMLPattern Object domain var
 mkRewrites a b = ensureSortAgreement $ Rewrites_ fixmeSort a b
 
 mkTop
     :: MetaOrObject level
-    => PureMLPattern level var
+    => PureMLPattern level domain var
 mkTop = Top_ flexibleSort
 
 mkVar
     :: (MetaOrObject level, Given (SortTools level))
     => var level
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
 mkVar = Var_
 
 mkStringLiteral = StringLiteral_

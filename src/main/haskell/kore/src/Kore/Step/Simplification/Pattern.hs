@@ -86,7 +86,7 @@ import           Kore.Variables.Int
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
 
-{-|'simplify' simplifies a PureMLPattern level variable, returning an
+{-|'simplify' simplifies a PureMLPattern level domain variable, returning an
 'ExpandedPattern'.
 -}
 simplify
@@ -102,9 +102,9 @@ simplify
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Simplifier
-        ( ExpandedPattern level variable
+        ( ExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify tools symbolIdToEvaluator patt = do
@@ -115,7 +115,7 @@ simplify tools symbolIdToEvaluator patt = do
         , proof
         )
 
-{-|'simplifyToOr' simplifies a PureMLPattern level variable, returning an
+{-|'simplifyToOr' simplifies a PureMLPattern level domain variable, returning an
 'OrOfExpandedPattern'.
 -}
 simplifyToOr
@@ -131,9 +131,9 @@ simplifyToOr
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplifyToOr tools symbolIdToEvaluator patt =
@@ -164,9 +164,9 @@ simplifyInternal
     -> PureMLPatternSimplifier level variable
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern level variable (PureMLPattern level variable)
+    -> Pattern level domain variable (PureMLPattern level domain variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplifyInternal

@@ -80,12 +80,12 @@ test_astPrettyPrint =
             )
             (prettyPrintToString
                 (Fix (TopPattern (Top charMetaSort))
-                :: MetaMLPattern Variable
+                :: MetaMLPattern domain Variable
                 )
             )
         )
     ]
 
 prettyPrintPattern
-    :: MetaOrObject level => Pattern level Variable CommonKorePattern -> String
+    :: MetaOrObject level => Pattern level domain Variable CommonKorePattern -> String
 prettyPrintPattern = prettyPrintToString

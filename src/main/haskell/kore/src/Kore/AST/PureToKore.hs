@@ -31,7 +31,7 @@ import Kore.AST.Sentence
 import Kore.Error
 
 patternPureToKore
-    :: MetaOrObject level => CommonPurePattern level -> CommonKorePattern
+    :: MetaOrObject level => CommonPurePattern level KoreDomain -> CommonKorePattern
 patternPureToKore = cata asKorePattern
 
 -- |Given a level, this function attempts to extract a pure patten
@@ -43,14 +43,14 @@ patternKoreToPure
     :: MetaOrObject level
     => level
     -> CommonKorePattern
-    -> Either (Error a) (CommonPurePattern level)
+    -> Either (Error a) (CommonPurePattern level KoreDomain)
 patternKoreToPure level = patternBottomUpVisitor (extractPurePattern level)
 
 extractPurePattern
     :: (MetaOrObject level, MetaOrObject level1)
     => level
-    -> Pattern level1 Variable (Either (Error a) (CommonPurePattern level))
-    -> Either (Error a) (CommonPurePattern level)
+    -> Pattern level1 domain Variable (Either (Error a) (CommonPurePattern level domain))
+    -> Either (Error a) (CommonPurePattern level domain)
 extractPurePattern level p =
     case (getMetaOrObjectPatternType p, isMetaOrObject (toProxy level)) of
         (IsMeta, IsMeta) -> fmap Fix (sequence p)
@@ -60,7 +60,7 @@ extractPurePattern level p =
 -- FIXME : all of this attribute record syntax stuff
 -- Should be temporary measure
 sentencePureToKore
-    :: MetaOrObject level => PureSentence level -> KoreSentence
+    :: MetaOrObject level => PureSentence level KoreDomain -> KoreSentence
 sentencePureToKore (SentenceAliasSentence sa) =
     asSentence $ aliasSentencePureToKore sa
 sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) =
@@ -84,7 +84,7 @@ sentencePureToKore (SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol a
 
 aliasSentencePureToKore
     :: MetaOrObject level
-    => PureSentenceAlias level
+    => PureSentenceAlias level KoreDomain
     -> KoreSentenceAlias level
 aliasSentencePureToKore msx = msx
     { sentenceAliasLeftPattern =
@@ -95,7 +95,7 @@ aliasSentencePureToKore msx = msx
 
 axiomSentencePureToKore
     :: MetaOrObject level
-    => PureSentenceAxiom level
+    => PureSentenceAxiom level KoreDomain
     -> KoreSentenceAxiom
 axiomSentencePureToKore msx = msx
     { sentenceAxiomPattern =
@@ -105,7 +105,7 @@ axiomSentencePureToKore msx = msx
     }
 
 modulePureToKore
-    :: MetaOrObject level => PureModule level -> KoreModule
+    :: MetaOrObject level => PureModule level KoreDomain -> KoreModule
 modulePureToKore mm = Module
     { moduleName = moduleName mm
     , moduleSentences = map sentencePureToKore (moduleSentences mm)
@@ -113,7 +113,7 @@ modulePureToKore mm = Module
     }
 
 definitionPureToKore
-    :: MetaOrObject level => PureDefinition level -> KoreDefinition
+    :: MetaOrObject level => PureDefinition level KoreDomain -> KoreDefinition
 definitionPureToKore dm = Definition
     { definitionAttributes = definitionAttributes dm
     , definitionModules = map modulePureToKore (definitionModules dm)

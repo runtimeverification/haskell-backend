@@ -58,8 +58,8 @@ import           Kore.Variables.Free
 to use when executing Kore. It consists of an "and" between a term, a
 predicate and a substitution
 -}
-data ExpandedPattern level variable = ExpandedPattern
-    { term         :: !(PureMLPattern level variable)
+data ExpandedPattern level domain variable = ExpandedPattern
+    { term         :: !(PureMLPattern level domain variable)
     -- ^ Free-form pattern.
     , predicate    :: !(Predicate level variable)
     -- ^ pattern that only evaluates to Top or Bottom.
@@ -83,7 +83,7 @@ data PredicateSubstitution level variable = PredicateSubstitution
 
 {-|'CommonExpandedPattern' particularizes ExpandedPattern to Variable.
 -}
-type CommonExpandedPattern level = ExpandedPattern level Variable
+type CommonExpandedPattern level domain = ExpandedPattern level domain Variable
 
 {-| 'CommonPredicateSubstitution' particularizes PredicateSubstitution to
 Variable.
@@ -95,8 +95,8 @@ in an ExpandedPattern.
 -}
 mapVariables
     :: (variableFrom level -> variableTo level)
-    -> ExpandedPattern level variableFrom
-    -> ExpandedPattern level variableTo
+    -> ExpandedPattern level domain variableFrom
+    -> ExpandedPattern level domain variableTo
 mapVariables
     variableMapper
     ExpandedPattern { term, predicate, substitution }
@@ -112,7 +112,7 @@ from an ExpandedPattern.
 -}
 allVariables
     ::  Ord (variable level)
-    => ExpandedPattern level variable
+    => ExpandedPattern level domain variable
     -> Set.Set (variable level)
 allVariables
     ExpandedPattern { term, predicate, substitution }
@@ -138,7 +138,7 @@ toMLPattern
         , Given (SortTools level)
         , SortedVariable variable
         , Show (variable level))
-    => ExpandedPattern level variable -> PureMLPattern level variable
+    => ExpandedPattern level domain variable -> PureMLPattern level domain variable
 toMLPattern
     ExpandedPattern { term, predicate, substitution }
   =
@@ -152,9 +152,9 @@ toMLPattern
             , Given (SortTools level)
             , SortedVariable variable
             , Show (variable level))
-        => PureMLPattern level variable
+        => PureMLPattern level domain variable
         -> Predicate level variable
-        -> PureMLPattern level variable
+        -> PureMLPattern level domain variable
     simpleAnd (Top_ _)      predicate'     = unwrapPredicate predicate'
     simpleAnd patt          PredicateTrue  = patt
     simpleAnd b@(Bottom_ _) _              = b
@@ -169,7 +169,7 @@ substitutionToPredicate
         , Given (SortTools level)
         , SortedVariable variable
         , Show (variable level))
-    => [(variable level, PureMLPattern level variable)]
+    => [(variable level, PureMLPattern level domain variable)]
     -> Predicate level variable
 substitutionToPredicate =
     foldl'
@@ -185,7 +185,7 @@ singleSubstitutionToPredicate
         , Given (SortTools level)
         , SortedVariable variable
         , Show (variable level))
-    => (variable level, PureMLPattern level variable)
+    => (variable level, PureMLPattern level domain variable)
     -> Predicate level variable
 singleSubstitutionToPredicate (var, patt) =
     makeEqualsPredicate (mkVar var) patt
@@ -194,7 +194,7 @@ singleSubstitutionToPredicate (var, patt) =
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
 -}
-bottom :: MetaOrObject level => ExpandedPattern level variable
+bottom :: MetaOrObject level => ExpandedPattern level domain variable
 bottom =
     ExpandedPattern
         { term      = mkBottom
@@ -205,7 +205,7 @@ bottom =
 {-|'top' is an expanded pattern that has a top condition and that
 should become Top when transformed to a ML pattern.
 -}
-top :: MetaOrObject level => ExpandedPattern level variable
+top :: MetaOrObject level => ExpandedPattern level domain variable
 top =
     ExpandedPattern
         { term      = mkTop
@@ -215,7 +215,7 @@ top =
 
 {-| 'isTop' checks whether an ExpandedPattern is equivalent to a top Pattern.
 -}
-isTop :: ExpandedPattern level variable -> Bool
+isTop :: ExpandedPattern level domain variable -> Bool
 isTop
     ExpandedPattern
         { term = Top_ _, predicate = PredicateTrue, substitution = [] }
@@ -225,7 +225,7 @@ isTop _ = False
 {-| 'isBottom' checks whether an ExpandedPattern is equivalent to a bottom
 Pattern.
 -}
-isBottom :: ExpandedPattern level variable -> Bool
+isBottom :: ExpandedPattern level domain variable -> Bool
 isBottom
     ExpandedPattern {term = Bottom_ _}
   = True
@@ -243,8 +243,8 @@ isBottom _ = False
  -}
 fromPurePattern
     :: MetaOrObject level
-    => PureMLPattern level variable
-    -> ExpandedPattern level variable
+    => PureMLPattern level domain variable
+    -> ExpandedPattern level domain variable
 fromPurePattern term =
     ExpandedPattern
         { term

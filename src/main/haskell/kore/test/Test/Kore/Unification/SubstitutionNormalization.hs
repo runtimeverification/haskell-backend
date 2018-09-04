@@ -197,7 +197,7 @@ test_substitutionNormalization =
     x1 = metaVariable "x1" AstLocationTest
     f = groundHead "f" AstLocationTest
     asPureMetaPattern
-        :: ProperPattern level sort patt => patt -> CommonMetaPattern
+        :: ProperPattern level domain sort patt => patt -> CommonMetaPattern
     asPureMetaPattern patt =
         case patternKoreToPure Meta (asAst patt) of
             Left err  -> error (printError err)

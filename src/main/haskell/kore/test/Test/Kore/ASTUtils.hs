@@ -73,66 +73,66 @@ test_sortAgreement = testGroup "Sort agreement"
     ]
 
 
-subTrivial :: CommonPurePattern Object
+subTrivial :: CommonPurePattern Object domain
 subTrivial = dummyEnvironment $
     subst (Var_ $ var "a") (Var_ $ var "b") $
     mkExists (var "p") (Var_ $ var "a")
 
-subTrivialSolution :: CommonPurePattern Object
+subTrivialSolution :: CommonPurePattern Object domain
 subTrivialSolution = dummyEnvironment $
     mkExists (var "p") (Var_ $ var "b")
 
-subShadow :: CommonPurePattern Object
+subShadow :: CommonPurePattern Object domain
 subShadow = dummyEnvironment $
     subst (Var_ $ var "a") (Var_ $ var "b") $
     mkExists (var "a") (Var_ $ var "q")
 
-subShadowSolution :: CommonPurePattern Object
+subShadowSolution :: CommonPurePattern Object domain
 subShadowSolution = dummyEnvironment $
     mkExists (var "a") (Var_ $ var "q")
 
-subAlphaRename1 :: CommonPurePattern Object
+subAlphaRename1 :: CommonPurePattern Object domain
 subAlphaRename1 = dummyEnvironment $
     subst (Var_ $ var "a") (Var_ $ var "b") $
     mkExists (var "b") (Var_ $ var "q")
 
-subAlphaRename1Solution :: CommonPurePattern Object
+subAlphaRename1Solution :: CommonPurePattern Object domain
 subAlphaRename1Solution = dummyEnvironment $
     mkExists (var "b0") (Var_ $ var "q")
 
-subAlphaRename2 :: CommonPurePattern Object
+subAlphaRename2 :: CommonPurePattern Object domain
 subAlphaRename2 = dummyEnvironment $
     subst (Var_ $ var "a") (Var_ $ var "b") $
     mkExists (var "b") (Var_ $ var "a")
 
-subTermForTerm :: CommonPurePattern Object
+subTermForTerm :: CommonPurePattern Object domain
 subTermForTerm = dummyEnvironment $
     subst (mkOr mkTop mkBottom) (mkAnd mkTop mkBottom) $
     mkImplies (mkOr mkTop mkBottom) mkTop
 
-subTermForTermSolution :: CommonPurePattern Object
+subTermForTermSolution :: CommonPurePattern Object domain
 subTermForTermSolution = dummyEnvironment $
     mkImplies (mkAnd mkTop mkBottom) mkTop
 
--- subAlphaRename2Solution :: CommonPurePattern Object
+-- subAlphaRename2Solution :: CommonPurePattern Object domain
 -- subAlphaRename2Solution = dummyEnvironment @Object $
 --   subst (Var_ $ var "a") (Var_ $ var "b") $
 --   mkExists (var "b0") (Var_ $ var "b")
 
 -- the a : X forces bottom : X
-sortAgreement1 :: CommonPurePattern Object
+sortAgreement1 :: CommonPurePattern Object domain
 sortAgreement1 = dummyEnvironment $
     mkOr (Var_ $ var_ "a" "X") mkBottom
 
 -- the y : Y should force everything else to be Y
-sortAgreement2 :: CommonPurePattern Object
+sortAgreement2 :: CommonPurePattern Object domain
 sortAgreement2 = dummyEnvironment $
     mkImplies mkBottom $
     mkIff
         (mkEquals (Var_ $ var_ "foo" "X") (Var_ $ var_ "bar" "X"))
         (Var_ $ var_ "y" "Y")
 
-varX :: (Given (SortTools Object)) => CommonPurePattern Object
+varX :: (Given (SortTools Object)) => CommonPurePattern Object domain
 varX = mkVar $ var_ "x" "X"
 
 sortAgreementManySimplePatterns
@@ -184,12 +184,12 @@ substitutionGetSetIdentity a b pat =
 generatePatterns
   :: Given (SortTools Object)
   => Int
-  -> [CommonPurePattern Object]
+  -> [CommonPurePattern Object domain]
 generatePatterns size = genBinaryPatterns size ++ genUnaryPatterns size
 genBinaryPatterns
   :: Given (SortTools Object)
   => Int
-  -> [CommonPurePattern Object]
+  -> [CommonPurePattern Object domain]
 genBinaryPatterns 0 = []
 genBinaryPatterns size = do
   sa <- [1..size-1]
@@ -200,7 +200,7 @@ genBinaryPatterns size = do
 genUnaryPatterns
   :: Given (SortTools Object)
   => Int
-  -> [CommonPurePattern Object]
+  -> [CommonPurePattern Object domain]
 genUnaryPatterns 0 = []
 genUnaryPatterns 1 = [Var_ $ var_ "x" "X"]
 genUnaryPatterns size = do

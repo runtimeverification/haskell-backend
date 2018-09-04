@@ -7717,16 +7717,16 @@ $\denote{\texttt{\sldv\{$s$\}($str$)}}
 %its argument to be a variable instead of an arbitrary pattern, and we want to 
 %reflect that fact in the lifting and the meta-theory.
 %In Section~\ref{sec:kore-syntax-wellformedness} we have defined for all head 
-%constructors $C$ a \emph{variable-pattern vector} $\nu_C$.
+%constructors $C$ a \emph{variable-pattern domain vector} $\nu_C$.
 %The vector is of the same length as the arity of $C$, and each of its 
 %component 
 %is from a set of two flags: $\{ \ttv, \ttp \}$.
 %We use $\nu_C^i$ to denote the $i$th component of the vector $\nu_C$.
-%The lifting operation replies on such variable-pattern vectors.
+%The lifting operation replies on such variable-pattern domain vectors.
 %
 %Given any headed pattern 
 %$\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)$, its 
-%variable-pattern vector $\nu_C$, and one sub-pattern $\varphi_i$,
+%variable-pattern domain vector $\nu_C$, and one sub-pattern $\varphi_i$,
 %define the customized lifting for $\denote{\varphi_i}_{\itvp}$ 
 %as follows
 %\begin{align*}

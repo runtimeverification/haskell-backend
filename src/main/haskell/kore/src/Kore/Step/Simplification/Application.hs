@@ -53,7 +53,7 @@ import           Kore.Variables.Int
                  ( IntVariable (..) )
 
 data ExpandedApplication level variable = ExpandedApplication
-    { term         :: !(Application level (PureMLPattern level variable))
+    { term         :: !(Application level (PureMLPattern level domain variable))
     , predicate    :: !(Predicate level variable)
     , substitution :: !(UnificationSubstitution level variable)
     }
@@ -84,9 +84,9 @@ simplify
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
-    -> Application level (OrOfExpandedPattern level variable)
+    -> Application level (OrOfExpandedPattern level domain variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -130,9 +130,9 @@ makeAndEvaluateApplications
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
     -> SymbolOrAlias level
-    -> [ExpandedPattern level variable]
+    -> [ExpandedPattern level domain variable]
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeAndEvaluateApplications
     tools
     simplifier
@@ -166,7 +166,7 @@ evaluateApplicationFunction
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, SimplificationProof level)
 evaluateApplicationFunction
     tools
     simplifier
@@ -197,7 +197,7 @@ makeExpandedApplication
         )
     => MetadataTools level StepperAttributes
     -> SymbolOrAlias level
-    -> [ExpandedPattern level variable]
+    -> [ExpandedPattern level domain variable]
     -> Simplifier
         (ExpandedApplication level variable, SimplificationProof level)
 makeExpandedApplication tools symbol children

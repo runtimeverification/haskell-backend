@@ -202,11 +202,11 @@ propPartialBinaryZero impl symb =
         maybe ExpandedPattern.bottom asExpandedPattern
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asPattern :: Integer -> CommonPurePattern Object
+asPattern :: Integer -> CommonPurePattern Object domain
 asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asExpandedPattern :: Integer -> CommonExpandedPattern Object
+asExpandedPattern :: Integer -> CommonExpandedPattern Object domain
 asExpandedPattern = Int.asExpandedPattern intSort
 
 -- | A sort to hook to the builtin @INT.Int@.
@@ -304,7 +304,7 @@ intModule =
             ]
         }
 
-evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
+evaluate :: CommonPurePattern Object domain -> CommonExpandedPattern Object domain
 evaluate pat =
     case evalSimplifier (Pattern.simplify tools evaluators pat) of
         Left err -> error (Kore.Error.printError err)

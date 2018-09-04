@@ -60,9 +60,9 @@ simplify
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level domain variable
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify

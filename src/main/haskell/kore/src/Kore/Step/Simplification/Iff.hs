@@ -53,8 +53,8 @@ simplify
         , Show (variable level)
         , Ord (variable level)
         )
-    => Iff level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Iff level (OrOfExpandedPattern level domain variable)
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -76,9 +76,9 @@ simplifyEvaluated
         , Show (variable level)
         , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrOfExpandedPattern level domain variable
+    -> OrOfExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluated first second
   | OrOfExpandedPattern.isTrue first =
     (second, SimplificationProof)
@@ -111,9 +111,9 @@ makeEvaluate
         , Show (variable level)
         , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluate first second
   | ExpandedPattern.isTop first =
     (OrOfExpandedPattern.make [second], SimplificationProof)
@@ -133,9 +133,9 @@ makeEvaluateNonBoolIff
         , Show (variable level)
         , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateNonBoolIff
     ExpandedPattern
         { term = t@(Top_ _)

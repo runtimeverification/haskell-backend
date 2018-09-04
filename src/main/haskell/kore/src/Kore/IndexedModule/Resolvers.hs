@@ -40,7 +40,7 @@ symbolSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceSymbol level UnifiedPattern Variable)
+        (atts, SentenceSymbol level UnifiedPattern domain Variable)
 symbolSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSymbolSentences m
@@ -52,7 +52,7 @@ aliasSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceAlias level UnifiedPattern Variable)
+        (atts, SentenceAlias level UnifiedPattern domain Variable)
 aliasSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaAliasSentences m
@@ -124,12 +124,12 @@ getHeadAttributes m patternHead =
 imported modules.
 -}
 resolveThing
-    :: (IndexedModule sortParam pat variable atts
-        -> Map.Map (Id level) (atts, thing level pat variable))
+    :: (IndexedModule sortParam pat domain variable atts
+        -> Map.Map (Id level) (atts, thing level pat domain variable))
     -- ^ extracts the map into which to look up the id
-    -> IndexedModule sortParam pat variable atts
+    -> IndexedModule sortParam pat domain variable atts
     -> Id level
-    -> Maybe (atts, thing level pat variable)
+    -> Maybe (atts, thing level pat domain variable)
 resolveThing
     mapExtractor
     indexedModule
@@ -141,12 +141,12 @@ resolveThing
         )
 
 resolveThingInternal
-    :: (Maybe (atts, thing level pat variable), Set.Set ModuleName)
-    -> (IndexedModule sortParam pat variable atts
-        -> Map.Map (Id level) (atts, thing level pat variable))
-    -> IndexedModule sortParam pat variable atts
+    :: (Maybe (atts, thing level pat domain variable), Set.Set ModuleName)
+    -> (IndexedModule sortParam pat domain variable atts
+        -> Map.Map (Id level) (atts, thing level pat domain variable))
+    -> IndexedModule sortParam pat domain variable atts
     -> Id level
-    -> (Maybe (atts, thing level pat variable), Set.Set ModuleName)
+    -> (Maybe (atts, thing level pat domain variable), Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
 resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
     | indexedModuleName indexedModule `Set.member` searchedModules = x

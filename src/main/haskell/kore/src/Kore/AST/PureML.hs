@@ -23,47 +23,47 @@ of the 'Pattern' class where the level is fixed to a given @level@.
 
 @var@ is the type of variables.
 -}
-type PureMLPattern level var = Fix (Pattern level var)
+type PureMLPattern level domain var = Fix (Pattern level domain var)
 
 asPurePattern
-    :: Pattern level var (PureMLPattern level var) -> PureMLPattern level var
+    :: Pattern level domain var (PureMLPattern level domain var) -> PureMLPattern level domain var
 asPurePattern = embed
 
 fromPurePattern
-    :: PureMLPattern level var -> Pattern level var (PureMLPattern level var)
+    :: PureMLPattern level domain var -> Pattern level domain var (PureMLPattern level domain var)
 fromPurePattern = project
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
-type PureSentenceAxiom level =
-    SentenceAxiom (SortVariable level) (Pattern level) Variable
+type PureSentenceAxiom level domain =
+    SentenceAxiom (SortVariable level) (Pattern level) domain Variable
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
-type PureSentenceAlias level =
-    SentenceAlias level (Pattern level) Variable
+type PureSentenceAlias level domain =
+    SentenceAlias level (Pattern level) domain Variable
 -- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
-type PureSentenceSymbol level =
-    SentenceSymbol level (Pattern level) Variable
+type PureSentenceSymbol level domain =
+    SentenceSymbol level (Pattern level) domain Variable
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
-type PureSentenceImport level =
-    SentenceImport (Pattern level) Variable
+type PureSentenceImport level domain =
+    SentenceImport (Pattern level) domain Variable
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
-type PureSentence level =
-    Sentence level (SortVariable level) (Pattern level) Variable
+type PureSentence level domain =
+    Sentence level (SortVariable level) (Pattern level) domain Variable
 
-instance AsSentence (PureSentence level) (PureSentenceAlias level) where
+instance AsSentence (PureSentence level domain) (PureSentenceAlias level domain) where
     asSentence = SentenceAliasSentence
 
-instance AsSentence (PureSentence level) (PureSentenceSymbol level) where
+instance AsSentence (PureSentence level domain) (PureSentenceSymbol level domain) where
     asSentence = SentenceSymbolSentence
 
 -- |'PureModule' is the pure (fixed-@level@) version of 'Module'
-type PureModule level =
-    Module (Sentence level) (SortVariable level) (Pattern level) Variable
+type PureModule level domain =
+    Module (Sentence level) (SortVariable level) (Pattern level) domain Variable
 
 -- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
-type PureDefinition level =
+type PureDefinition level domain =
     Definition
-        (Sentence level) (SortVariable level) (Pattern level) Variable
+        (Sentence level) (SortVariable level) (Pattern level) domain Variable
 
 -- |Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.
@@ -86,7 +86,7 @@ groundSymbol ctor = Symbol
 
 -- |Given a head and a list of children, produces an 'ApplicationPattern'
 --  applying the given head to the children
-apply :: SymbolOrAlias level -> [child] -> Pattern level variable child
+apply :: SymbolOrAlias level -> [child] -> Pattern level domain variable child
 apply patternHead patterns = ApplicationPattern Application
     { applicationSymbolOrAlias = patternHead
     , applicationChildren = patterns
@@ -95,29 +95,29 @@ apply patternHead patterns = ApplicationPattern Application
 -- |Applies the given head to the empty list of children to obtain a
 -- constant 'ApplicationPattern'
 constant
-    :: SymbolOrAlias level -> Pattern level variable child
+    :: SymbolOrAlias level -> Pattern level domain variable child
 constant patternHead = apply patternHead []
 
 -- |'CommonPurePattern' is the instantiation of 'PureMLPattern' with common
 -- 'Variable's.
-type CommonPurePattern level = PureMLPattern level Variable
-type UnFixedPureMLPattern level variable =
-    Pattern level variable (PureMLPattern level variable)
-type UnfixedCommonPurePattern level = UnFixedPureMLPattern level Variable
+type CommonPurePattern level domain = PureMLPattern level domain Variable
+type UnFixedPureMLPattern level domain variable =
+    Pattern level domain variable (PureMLPattern level domain variable)
+type UnfixedCommonPurePattern level domain = UnFixedPureMLPattern level domain Variable
 
-type PurePatternStub level variable =
-    PatternStub level variable (PureMLPattern level variable)
+type PurePatternStub level domain variable =
+    PatternStub level domain variable (PureMLPattern level domain variable)
 
-type CommonPurePatternStub level =
-    PurePatternStub level Variable
+type CommonPurePatternStub level domain =
+    PurePatternStub level domain Variable
 
 {-| 'mapPatternVariables' replaces all variables in a 'PureMLPattern'
 using the provided mapping.
 -}
 mapPatternVariables
     :: (variableFrom level -> variableTo level)
-    -> PureMLPattern level variableFrom
-    -> PureMLPattern level variableTo
+    -> PureMLPattern level domain variableFrom
+    -> PureMLPattern level domain variableTo
 mapPatternVariables mapper = cata (Fix . mapPatternVariable mapper)
 
 {-| 'mapPatternVariables' replaces the variables occurring directly
@@ -125,8 +125,8 @@ mapPatternVariables mapper = cata (Fix . mapPatternVariable mapper)
 -}
 mapPatternVariable
     :: (variableFrom level -> variableTo level)
-    -> Pattern level variableFrom child
-    -> Pattern level variableTo child
+    -> Pattern level domain variableFrom child
+    -> Pattern level domain variableTo child
 mapPatternVariable _ (AndPattern (And a b c)) =
     AndPattern (And a b c)
 mapPatternVariable _ (ApplicationPattern (Application a b)) =

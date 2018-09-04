@@ -211,7 +211,7 @@ equalsGen childGen x = equalsInGen childGen x Equals
 
 domainValueGen
     :: MetaOrObject level
-    => level -> Gen (DomainValue level (Fix (Pattern Meta Variable)))
+    => level -> Gen (DomainValue level (Fix (Pattern Meta domain Variable)))
 domainValueGen x = pure DomainValue
     <*> scale (`div` 2) (sortGen x)
     <*> (Fix . StringLiteralPattern <$> stringLiteralGen)
@@ -262,7 +262,7 @@ patternGen
     :: MetaOrObject level
     => Gen child
     -> level
-    -> Gen (Pattern level Variable child)
+    -> Gen (Pattern level domain Variable child)
 patternGen childGen x =
     oneof
         [ AndPattern <$> andGen childGen x
@@ -318,7 +318,7 @@ sentenceAliasGen x patGen = pure SentenceAlias
 sentenceSymbolGen
     :: MetaOrObject level
     => level
-    -> Gen (SentenceSymbol level pat variable)
+    -> Gen (SentenceSymbol level pat domain variable)
 sentenceSymbolGen x = pure SentenceSymbol
     <*> scale (`div` 2) (symbolGen x)
     <*> couple (scale (`div` 2) (sortGen x))
@@ -326,15 +326,15 @@ sentenceSymbolGen x = pure SentenceSymbol
     <*> scale (`div` 2) attributesGen
 
 sentenceImportGen
-    :: Gen (SentenceImport pat variable)
+    :: Gen (SentenceImport pat domain variable)
 sentenceImportGen = pure SentenceImport
     <*> scale (`div` 2) moduleNameGen
     <*> scale (`div` 2) attributesGen
 
 sentenceAxiomGen
    :: Gen sortParam
-   -> Gen (Fix (pat var))
-   -> Gen (SentenceAxiom sortParam pat var)
+   -> Gen (Fix (pat domain var))
+   -> Gen (SentenceAxiom sortParam pat domain var)
 sentenceAxiomGen sortParamGen patGen =
     pure SentenceAxiom
         <*> couple (scale (`div` 2) sortParamGen)
@@ -343,7 +343,7 @@ sentenceAxiomGen sortParamGen patGen =
 
 sentenceSortGen
     :: MetaOrObject level
-    => level -> Gen (SentenceSort level pat var)
+    => level -> Gen (SentenceSort level pat domain var)
 sentenceSortGen level =
     pure SentenceSort
         <*> scale (`div` 2) (idGen level)
@@ -375,26 +375,26 @@ koreSentenceGen = oneof
     ]
 
 moduleGen
-    :: Gen (sentence sortParam pat variable)
-    -> Gen (Module sentence sortParam pat variable)
+    :: Gen (sentence sortParam pat domain variable)
+    -> Gen (Module sentence sortParam pat domain variable)
 moduleGen senGen = pure Module
     <*> scale (`div` 2) moduleNameGen
     <*> couple (scale (`div` 2) senGen)
     <*> scale (`div` 2) attributesGen
 
 modulesGen
-    :: Gen (sentence sortParam pat variable)
-    -> Gen [Module sentence sortParam pat variable]
+    :: Gen (sentence sortParam pat domain variable)
+    -> Gen [Module sentence sortParam pat domain variable]
 modulesGen senGen = couple1 (scale (`div` 2) (moduleGen senGen))
 
 definitionGen
-    :: Gen (sentence sortParam pat variable)
-    -> Gen (Definition sentence sortParam pat variable)
+    :: Gen (sentence sortParam pat domain variable)
+    -> Gen (Definition sentence sortParam pat domain variable)
 definitionGen senGen = pure Definition
     <*> scale (`div` 2) attributesGen
     <*> scale (`div` 2) (modulesGen senGen)
 
-metaMLPatternGen :: Gen (MetaMLPattern Variable)
+metaMLPatternGen :: Gen (MetaMLPattern domain Variable)
 metaMLPatternGen = Fix <$> sized (\n ->
     if n<=0
         then oneof

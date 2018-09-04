@@ -104,7 +104,7 @@ test_floorSimplification =
                     ]
                 )
                 (give mockSortTools $ makeEvaluate
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
+                    (ExpandedPattern.top :: CommonExpandedPattern Object domain)
                 )
             -- floor(bottom) = bottom
             assertEqualWithExplanation "floor(bottom)"
@@ -112,7 +112,7 @@ test_floorSimplification =
                     []
                 )
                 (give mockSortTools $ makeEvaluate
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
+                    (ExpandedPattern.bottom :: CommonExpandedPattern Object domain)
                 )
         )
     , testCase "floor with predicates and substitutions"
@@ -204,8 +204,8 @@ test_floorSimplification =
     mockSortTools = Mock.makeSortTools sortToolsMapping
 
 makeFloor
-    :: [ExpandedPattern Object variable]
-    -> Floor Object (OrOfExpandedPattern Object variable)
+    :: [ExpandedPattern Object domain variable]
+    -> Floor Object (OrOfExpandedPattern Object domain variable)
 makeFloor patterns =
     Floor
         { floorOperandSort = testSort
@@ -223,8 +223,8 @@ evaluate
     ::  ( MetaOrObject level
         , Given (SortTools level)
         )
-    => Floor level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    => Floor level (CommonOrOfExpandedPattern level domain)
+    -> CommonOrOfExpandedPattern level domain
 evaluate floor' =
     case simplify floor' of
         (result, _proof) -> result
@@ -234,8 +234,8 @@ makeEvaluate
     ::  ( MetaOrObject level
         , Given (SortTools level)
         )
-    => CommonExpandedPattern level
-    -> CommonOrOfExpandedPattern level
+    => CommonExpandedPattern level domain
+    -> CommonOrOfExpandedPattern level domain
 makeEvaluate child =
     case makeEvaluateFloor child of
         (result, _proof) -> result

@@ -52,13 +52,13 @@ axiomPatternsUnitTests =
         [ testCase "I1:AInt => I2:AInt"
             (assertEqual ""
                 (Right $ RewriteAxiomPattern AxiomPattern
-                    { axiomPatternLeft = extractPurePattern varI1
-                    , axiomPatternRight = extractPurePattern varI2
+                    { axiomPatternLeft = extractPurePattern domain varI1
+                    , axiomPatternRight = extractPurePattern domain varI2
                     , axiomPatternRequires = wrapPredicate topAInt
                     , axiomAttributes = def
                     }
                 )
-                ( koreSentenceToAxiomPattern Object
+                ( koreSentenceToAxiomPattern Object domain
                 $ asSentence $ axiomSentencePureToKore
                     (axiom_
                         (and_ top_
@@ -72,8 +72,8 @@ axiomPatternsUnitTests =
         , testCase "definition containing I1:AInt => I2:AInt"
             (assertEqual ""
                 [AxiomPattern
-                    { axiomPatternLeft = extractPurePattern varI1
-                    , axiomPatternRight = extractPurePattern varI2
+                    { axiomPatternLeft = extractPurePattern domain varI1
+                    , axiomPatternRight = extractPurePattern domain varI2
                     , axiomPatternRequires = wrapPredicate topAInt
                     , axiomAttributes = def
                     }
@@ -144,7 +144,7 @@ axiomPatternsUnitTests =
         , testCase "\"a\" => \"b\""
             (assertEqual ""
                 (koreFail "Unexpected non-Object pattern")
-                ( koreSentenceToAxiomPattern Object
+                ( koreSentenceToAxiomPattern Object domain
                 $ asSentence
                     (SentenceAxiom
                         { sentenceAxiomPattern =
@@ -167,7 +167,7 @@ axiomPatternsUnitTests =
         , testCase "(I1:AInt => I2:AInt)::KItem"
             (assertEqual ""
                 (koreFail "Unsupported pattern type in axiom")
-                (koreSentenceToAxiomPattern Object
+                (koreSentenceToAxiomPattern Object domain
                 $ asSentence $ axiomSentencePureToKore
                     (axiom_
                         (and_ top_
@@ -221,7 +221,7 @@ axiomPatternsIntegrationTests =
                     , axiomAttributes = def
                     }
                 )
-                (koreSentenceToAxiomPattern Object =<< parseAxiom
+                (koreSentenceToAxiomPattern Object domain =<< parseAxiom
                     "axiom{}\\and{TCell{}}(\n\
                     \    \\top{TCell{}}(),\n\
                     \    \\and{TCell{}}(\n\
@@ -313,7 +313,7 @@ symbolLeqAInt =
     symbol_ "leqAInt"
         AstLocationTest [sortAInt, sortAInt] sortABool
 
-varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object
+varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object domain
 varI1 = parameterizedVariable_ sortAInt "VarI1" AstLocationTest
 varI2 = parameterizedVariable_ sortAInt "VarI2" AstLocationTest
 varKRemainder = parameterizedVariable_ sortK "VarDotVar1" AstLocationTest
@@ -336,8 +336,8 @@ extractIndexedModule name eModules =
             (error ("Module " ++ name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
 
-topAInt :: CommonPurePattern Object
+topAInt :: CommonPurePattern Object domain
 topAInt = Top_ sortAInt
 
-topTCell :: CommonPurePattern Object
+topTCell :: CommonPurePattern Object domain
 topTCell = Top_ sortTCell

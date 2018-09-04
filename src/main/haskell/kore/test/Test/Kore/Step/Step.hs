@@ -652,10 +652,10 @@ runStep
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> CommonExpandedPattern level
+    -> CommonExpandedPattern level domain
     -- ^left-hand-side of unification
-    -> [AxiomPattern level]
-    -> (CommonOrOfExpandedPattern level, StepProof level)
+    -> [AxiomPattern level domain]
+    -> (CommonOrOfExpandedPattern level domain, StepProof level)
 runStep metadataTools configuration axioms =
     either (error . printError) id
         $ evalSimplifier
@@ -670,10 +670,10 @@ runStepsPickFirst
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> MaxStepCount
-    -> CommonExpandedPattern level
+    -> CommonExpandedPattern level domain
     -- ^left-hand-side of unification
-    -> [AxiomPattern level]
-    -> (CommonExpandedPattern level, StepProof level)
+    -> [AxiomPattern level domain]
+    -> (CommonExpandedPattern level domain, StepProof level)
 runStepsPickFirst metadataTools maxStepCount configuration axioms =
     either (error . printError) id
         $ evalSimplifier

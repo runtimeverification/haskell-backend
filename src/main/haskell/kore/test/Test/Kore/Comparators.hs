@@ -44,7 +44,7 @@ instance
     , Show child
     , EqualWithExplanation (variable level)
     , Show (variable level))
-    => SumEqualWithExplanation (Pattern level variable child)
+    => SumEqualWithExplanation (Pattern level domain variable child)
   where
     sumConstructorPair (AndPattern a1) (AndPattern a2) =
         SumConstructorSameWithArguments (EqWrap "AndPattern" a1 a2)
@@ -172,7 +172,7 @@ instance
     , Show child
     , EqualWithExplanation (variable level)
     , Show (variable level)
-    ) => EqualWithExplanation (Pattern level variable child)
+    ) => EqualWithExplanation (Pattern level domain variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -297,7 +297,7 @@ instance (EqualWithExplanation child, Show child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (DomainValue level (Fix (Pattern Meta Variable)))
+instance EqualWithExplanation (DomainValue level (Fix (Pattern Meta domain Variable)))
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -812,7 +812,7 @@ instance
     , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
-    => StructEqualWithExplanation (ExpandedPattern level variable)
+    => StructEqualWithExplanation (ExpandedPattern level domain variable)
   where
     structFieldsWithNames
         expected@(ExpandedPattern _ _ _)
@@ -837,7 +837,7 @@ instance
     , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
-    => EqualWithExplanation (ExpandedPattern level variable)
+    => EqualWithExplanation (ExpandedPattern level domain variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -874,7 +874,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( EqualWithExplanation (PureMLPattern level variable)
+    ( EqualWithExplanation (PureMLPattern level domain variable)
     , Show level, Show (variable level)
     )
     => EqualWithExplanation (Predicate level variable)

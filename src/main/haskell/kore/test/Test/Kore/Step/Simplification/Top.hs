@@ -56,8 +56,8 @@ testSort =
 
 evaluate
     ::  ( MetaOrObject level)
-    => Top level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    => Top level (CommonOrOfExpandedPattern level domain)
+    -> CommonOrOfExpandedPattern level domain
 evaluate top =
     case simplify top of
         (result, _proof) -> result

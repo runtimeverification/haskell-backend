@@ -71,9 +71,9 @@ evaluateApplication
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
-    -> Application level (PureMLPattern level variable)
+    -> Application level (PureMLPattern level domain variable)
     -- ^ The pattern to be evaluated
-    -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (OrOfExpandedPattern level domain variable, SimplificationProof level)
 evaluateApplication
     tools
     simplifier
@@ -121,7 +121,7 @@ evaluateApplication
 
     unwrapApplied
         :: (AttemptedFunction level variable, proof)
-        -> OrOfExpandedPattern level variable
+        -> OrOfExpandedPattern level domain variable
     unwrapApplied (AttemptedFunction.Applied term, _proof) = term
     unwrapApplied _ = error "Can only unwrap 'Applied' terms."
 

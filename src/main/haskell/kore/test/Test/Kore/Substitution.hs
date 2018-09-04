@@ -18,7 +18,7 @@ objectVariable = Variable
 unifiedObjectVariable :: Unified Variable
 unifiedObjectVariable = UnifiedObject objectVariable
 
-objectVariablePattern :: Pattern Object Variable CommonKorePattern
+objectVariablePattern :: Pattern Object domain Variable CommonKorePattern
 objectVariablePattern = VariablePattern objectVariable
 
 objectVariableUnifiedPattern :: CommonKorePattern
@@ -36,7 +36,7 @@ metaVariable = Variable
 unifiedMetaVariable :: Unified Variable
 unifiedMetaVariable = UnifiedMeta metaVariable
 
-metaVariablePattern :: Pattern Meta Variable CommonKorePattern
+metaVariablePattern :: Pattern Meta domain Variable CommonKorePattern
 metaVariablePattern = VariablePattern metaVariable
 
 metaVariableUnifiedPattern :: CommonKorePattern

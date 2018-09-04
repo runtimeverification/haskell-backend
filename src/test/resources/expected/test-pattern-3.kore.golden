@@ -13,13 +13,13 @@ Definition
                             { andSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , andFirst =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     }))))
                             , andSecond =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))

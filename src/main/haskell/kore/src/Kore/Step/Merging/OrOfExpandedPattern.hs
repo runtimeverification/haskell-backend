@@ -54,9 +54,9 @@ mergeWithPredicateSubstitution
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
     -- ^ PredicateSubstitution to add.
-    -> OrOfExpandedPattern level variable
+    -> OrOfExpandedPattern level domain variable
     -- ^ Pattern to which the condition should be added.
-    -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (OrOfExpandedPattern level domain variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
     simplifier

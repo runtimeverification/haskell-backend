@@ -86,11 +86,11 @@ propUnary impl symb =
         in asPattern (impl a) === evaluate pat
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> CommonPurePattern Object
+asPattern :: Bool -> CommonPurePattern Object domain
 asPattern = Bool.asPattern boolSort
 
 -- | Specialize 'Bool.asExpandedPattern' to the builtin sort 'boolSort'.
-asExpandedPattern :: Bool -> CommonExpandedPattern Object
+asExpandedPattern :: Bool -> CommonExpandedPattern Object domain
 asExpandedPattern = Bool.asExpandedPattern boolSort
 
 -- | A sort to hook to the builtin @BOOL.Bool@.
@@ -182,7 +182,7 @@ boolModule =
             ]
         }
 
-evaluate :: CommonPurePattern Object -> CommonPurePattern Object
+evaluate :: CommonPurePattern Object domain -> CommonPurePattern Object domain
 evaluate pat =
     case evalSimplifier (Pattern.simplify tools evaluators pat) of
         Left err -> error (Kore.Error.printError err)

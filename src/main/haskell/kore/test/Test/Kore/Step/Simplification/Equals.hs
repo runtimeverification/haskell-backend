@@ -614,8 +614,8 @@ testSort2 =
 
 evaluateOr
     :: MetadataTools Object StepperAttributes
-    -> Equals Object (CommonOrOfExpandedPattern Object)
-    -> CommonOrOfExpandedPattern Object
+    -> Equals Object (CommonOrOfExpandedPattern Object domain)
+    -> CommonOrOfExpandedPattern Object domain
 evaluateOr tools equals =
     either (error . Kore.Error.printError) fst
         $ evalSimplifier
@@ -623,17 +623,17 @@ evaluateOr tools equals =
 
 evaluate
     :: MetadataTools Object StepperAttributes
-    -> CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
-    -> CommonOrOfExpandedPattern Object
+    -> CommonExpandedPattern Object domain
+    -> CommonExpandedPattern Object domain
+    -> CommonOrOfExpandedPattern Object domain
 evaluate = evaluateGeneric
 
 evaluateGeneric
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> CommonExpandedPattern level
-    -> CommonExpandedPattern level
-    -> CommonOrOfExpandedPattern level
+    -> CommonExpandedPattern level domain
+    -> CommonExpandedPattern level domain
+    -> CommonOrOfExpandedPattern level domain
 evaluateGeneric tools first second =
     either (error . Kore.Error.printError) fst
         $ evalSimplifier

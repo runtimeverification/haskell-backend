@@ -92,7 +92,7 @@ instance AstWithLocation (Symbol level) where
 
 instance
     AstWithLocation (variable level)
-    => AstWithLocation (Pattern level variable child)
+    => AstWithLocation (Pattern level domain variable child)
   where
     locationFromAst = applyPatternFunction PatternFunction
         { patternFunctionML = locationFromAst . getMLPatternResultSort

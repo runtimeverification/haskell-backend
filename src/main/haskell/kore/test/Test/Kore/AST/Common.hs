@@ -71,8 +71,8 @@ test_withSort =
         ]
   where
     assertSortedStub
-        :: SortedPattern Meta Variable CommonKorePattern
-        -> PatternStub Meta Variable CommonKorePattern
+        :: SortedPattern Meta domain Variable CommonKorePattern
+        -> PatternStub Meta domain Variable CommonKorePattern
         -> IO ()
     assertSortedStub expectedSorted stub =
         case stub of

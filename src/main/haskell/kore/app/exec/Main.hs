@@ -273,15 +273,15 @@ mainPatternVerify indexedModule patt =
 
 makePurePattern
     :: CommonKorePattern
-    -> CommonPurePattern Object
+    -> CommonPurePattern Object domain
 makePurePattern pat =
     case patternKoreToPure Object pat of
         Left err -> error (printError err)
         Right objPat -> objPat
 
 makeExpandedPattern
-    :: CommonPurePattern Object
-    -> CommonExpandedPattern Object
+    :: CommonPurePattern Object domain
+    -> CommonExpandedPattern Object domain
 makeExpandedPattern pat =
     ExpandedPattern
     { term = pat
@@ -291,8 +291,8 @@ makeExpandedPattern pat =
 
 makeKInitConfig
     :: (Given (SortTools Object))
-    => CommonPurePattern Object
-    -> CommonPurePattern Object
+    => CommonPurePattern Object domain
+    -> CommonPurePattern Object domain
 makeKInitConfig pat =
     mkApp initTCellHead
         [ mkApp mapElementHead

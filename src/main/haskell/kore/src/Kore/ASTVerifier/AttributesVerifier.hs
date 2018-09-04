@@ -54,7 +54,7 @@ verifyAttributes _ DoNotVerifyAttributes =
     verifySuccess
 
 verifyAttributePattern
-    :: Pattern Object variable (KorePattern variable)
+    :: Pattern Object domain variable (KorePattern domain variable)
     -> Either (Error VerifyError) VerifySuccess
 verifyAttributePattern (ApplicationPattern _) = verifySuccess
 verifyAttributePattern _

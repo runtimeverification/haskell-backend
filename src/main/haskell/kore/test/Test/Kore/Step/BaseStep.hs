@@ -1280,12 +1280,12 @@ runStep
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> CommonExpandedPattern level
+    -> CommonExpandedPattern level domain
     -- ^left-hand-side of unification
-    -> AxiomPattern level
+    -> AxiomPattern level domain
     -> Either
         (StepError level Variable)
-        (CommonExpandedPattern level, StepProof level)
+        (CommonExpandedPattern level domain, StepProof level)
 runStep metadataTools configuration axiom =
     case give metadataTools (stepWithAxiom metadataTools configuration axiom) of
         Left err            -> Left (fst (runIntCounter err 0))

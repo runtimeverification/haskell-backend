@@ -411,8 +411,8 @@ test_applicationSimplification =
 
 makeApplication
     :: SymbolOrAlias level
-    -> [[ExpandedPattern level variable]]
-    -> Application level (OrOfExpandedPattern level variable)
+    -> [[ExpandedPattern level domain variable]]
+    -> Application level (OrOfExpandedPattern level domain variable)
 makeApplication symbol patterns =
     Application
         { applicationSymbolOrAlias = symbol
@@ -432,8 +432,8 @@ evaluate
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
-    -> Application level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    -> Application level (CommonOrOfExpandedPattern level domain)
+    -> CommonOrOfExpandedPattern level domain
 evaluate
     tools
     simplifier

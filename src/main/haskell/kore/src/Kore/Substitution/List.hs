@@ -32,10 +32,10 @@ newtype Substitution var pat = Substitution { getSubstitution :: [(var, pat)] }
 
 instance
     ( UnifiedPatternInterface pat
-    , Functor (pat var)
+    , Functor (pat domain var)
     , Ord (var Object)
     , Ord (var Meta)
-    ) => SubstitutionClass Substitution (Unified var) (Fix (pat var))
+    ) => SubstitutionClass Substitution (Unified var) (Fix (pat domain var))
   where
     substitutionTermsFreeVars = foldMap (freeVariables . snd) . getSubstitution
 

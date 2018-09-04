@@ -50,115 +50,115 @@ import Kore.AST.PureML
 
 pattern And_
     :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern App_
     :: SymbolOrAlias level
-    -> [PureMLPattern level var]
-    -> PureMLPattern level var
+    -> [PureMLPattern level domain var]
+    -> PureMLPattern level domain var
 
 pattern Bottom_
     :: Sort level
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
 
 pattern Ceil_
     :: Sort level
     -> Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern DV_
   :: () => (level ~ Object) =>
      Sort level
-  -> PureMLPattern Meta Variable
-  -> PureMLPattern level var
+  -> PureMLPattern Meta domain Variable
+  -> PureMLPattern level domain var
 
 pattern Equals_
     :: Sort level
     -> Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern Exists_
     :: Sort level
     -> var level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern Floor_
     :: Sort level
     -> Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern Forall_
     :: Sort level
     -> var level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 pattern Iff_
     :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern Implies_
     :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern In_
     :: Sort level
     -> Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern Next_
     :: () => (level ~ Object) =>
        Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern Not_
     :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern Or_
     :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
+    -> PureMLPattern level domain var
 
 pattern Rewrites_
   :: () => (level ~ Object) =>
      Sort level
-  -> PureMLPattern level var
-  -> PureMLPattern level var
-  -> PureMLPattern level var
+  -> PureMLPattern level domain var
+  -> PureMLPattern level domain var
+  -> PureMLPattern level domain var
 
 pattern Top_
     :: Sort level
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
 
 pattern Var_
     :: var level
-    -> PureMLPattern level var
+    -> PureMLPattern level domain var
 
 pattern StringLiteral_
   :: () => (level ~ Meta)
   => StringLiteral
-  -> PureMLPattern level var
+  -> PureMLPattern level domain var
 
 pattern CharLiteral_
   :: () => (level ~ Meta)
   => CharLiteral
-  -> PureMLPattern level var
+  -> PureMLPattern level domain var
 
 -- No way to make multiline pragma?
 -- NOTE: If you add a case to the AST type, add another synonym here.
@@ -183,7 +183,7 @@ pattern Rewrites_     s2   a b = Fix (RewritesPattern (Rewrites s2 a b))
 pattern Top_          s2       = Fix (TopPattern (Top s2))
 pattern Var_             v     = Fix (VariablePattern v)
 
-pattern V :: var level -> PureMLPattern level var
+pattern V :: var level -> PureMLPattern level domain var
 pattern V x = Var_ x
 
 pattern StringLiteral_ s = Fix (StringLiteralPattern s)

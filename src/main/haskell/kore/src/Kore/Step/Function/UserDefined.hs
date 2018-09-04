@@ -63,14 +63,14 @@ The function is assumed to be defined through an axiom.
 -}
 axiomFunctionEvaluator
     ::  ( MetaOrObject level)
-    => AxiomPattern level
+    => AxiomPattern level domain
     -- ^ Axiom defining the current function.
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> CommonPureMLPatternSimplifier level
     -- ^ Evaluates functions in patterns
-    -> Application level (CommonPurePattern level)
+    -> Application level (CommonPurePattern level domain)
     -- ^ The function on which to evaluate the current function.
     -> Simplifier (CommonAttemptedFunction level, SimplificationProof level)
 axiomFunctionEvaluator
@@ -109,8 +109,8 @@ axiomFunctionEvaluator
             axiom
     stepperConfiguration
         :: MetaOrObject level
-        => Application level (PureMLPattern level variable)
-        -> ExpandedPattern level variable
+        => Application level (PureMLPattern level domain variable)
+        -> ExpandedPattern level domain variable
     stepperConfiguration app' =
         ExpandedPattern
             { term = asPurePattern $ ApplicationPattern app'
@@ -136,7 +136,7 @@ reevaluateFunctions
     -- such as their sorts, whether they are constructors or hooked.
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns.
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level domain variable
     -- ^ Function evaluation result.
     -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
 reevaluateFunctions
@@ -187,9 +187,9 @@ evaluatePredicate
     -- such as their sorts, whether they are constructors or hooked.
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level domain variable
     -- ^ The condition to be evaluated.
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level domain variable, SimplificationProof level)
 evaluatePredicate
     tools
     simplifier

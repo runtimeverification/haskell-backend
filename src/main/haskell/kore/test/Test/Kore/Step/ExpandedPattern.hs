@@ -164,7 +164,7 @@ instance EqualWithExplanation (W level)
 showVar :: V level -> W level
 showVar (V i) = W (show i)
 
-var :: Integer -> PureMLPattern Meta V
+var :: Integer -> PureMLPattern Meta domain V
 var i = give mockSortTools (mkVar (V i))
 
 war :: String -> PureMLPattern Meta W
@@ -172,23 +172,23 @@ war s = give mockSortTools (mkVar (W s))
 
 makeEq
     :: (SortedVariable var, Show (var Meta))
-    => PureMLPattern Meta var
-    -> PureMLPattern Meta var
-    -> PureMLPattern Meta var
+    => PureMLPattern Meta domain var
+    -> PureMLPattern Meta domain var
+    -> PureMLPattern Meta domain var
 makeEq p1 p2 =
     give mockSortTools (mkEquals p1 p2)
 
 makeAnd
     :: (SortedVariable var, Show (var Meta))
-    => PureMLPattern Meta var
-    -> PureMLPattern Meta var
-    -> PureMLPattern Meta var
+    => PureMLPattern Meta domain var
+    -> PureMLPattern Meta domain var
+    -> PureMLPattern Meta domain var
 makeAnd p1 p2 =
     give mockSortTools (mkAnd p1 p2)
 
 makeEquals
     :: (SortedVariable var, Show (var Meta))
-    => PureMLPattern Meta var -> PureMLPattern Meta var -> Predicate Meta var
+    => PureMLPattern Meta domain var -> PureMLPattern Meta domain var -> Predicate Meta var
 makeEquals p1 p2 =
     give mockSortTools (makeEqualsPredicate p1 p2)
 

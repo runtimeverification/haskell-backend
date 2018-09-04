@@ -48,8 +48,8 @@ simplify
         , Show (variable Object)
         , Ord (variable Object)
         )
-    => Rewrites Object (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Rewrites Object (OrOfExpandedPattern Object domain variable)
+    ->  ( OrOfExpandedPattern Object domain variable
         , SimplificationProof Object
         )
 simplify
@@ -67,9 +67,9 @@ simplifyEvaluatedRewrites
         , Show (variable Object)
         , Ord (variable Object)
         )
-    => OrOfExpandedPattern Object variable
-    -> OrOfExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => OrOfExpandedPattern Object domain variable
+    -> OrOfExpandedPattern Object domain variable
+    -> (OrOfExpandedPattern Object domain variable, SimplificationProof Object)
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
         (OrOfExpandedPattern.toExpandedPattern first)
@@ -82,9 +82,9 @@ makeEvaluateRewrites
         , Show (variable Object)
         , Ord (variable Object)
         )
-    => ExpandedPattern Object variable
-    -> ExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => ExpandedPattern Object domain variable
+    -> ExpandedPattern Object domain variable
+    -> (OrOfExpandedPattern Object domain variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern

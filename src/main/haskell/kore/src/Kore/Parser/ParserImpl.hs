@@ -394,7 +394,7 @@ symbolOrAliasPatternRemainderParser
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Id level  -- ^ The already parsed prefix.
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level domain Variable child)
 symbolOrAliasPatternRemainderParser childParser x identifier =
     ApplicationPattern
     <$> (   Application
@@ -487,7 +487,7 @@ variableOrTermPatternParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level domain Variable child)
 variableOrTermPatternParser childParser x = do
     identifier <- idParser x
     c <- ParserUtils.peekChar'
@@ -631,7 +631,7 @@ leveledMLConstructorParser
     :: MetaOrObject level
     => Parser child
     -> level
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level domain Variable child)
 leveledMLConstructorParser childParser level = do
     void (Parser.char '\\')
     keywordBasedParsers
@@ -669,7 +669,7 @@ mlConstructorRemainderParser
     => Parser child
     -> level
     -> MLPatternType
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level domain Variable child)
 mlConstructorRemainderParser childParser x patternType =
     case patternType of
         AndPatternType -> AndPattern <$>
@@ -828,8 +828,8 @@ koreDefinitionParser :: Parser KoreDefinition
 koreDefinitionParser = definitionParser koreSentenceParser
 
 definitionParser
-    :: Parser (sentence sortParam pat variable)
-    -> Parser (Definition sentence sortParam pat variable)
+    :: Parser (sentence sortParam pat domain variable)
+    -> Parser (Definition sentence sortParam pat domain variable)
 definitionParser sentenceParser =
   Definition
   <$> attributesParser
@@ -843,8 +843,8 @@ BNF definition fragment:
 @
 -}
 moduleParser
-    :: Parser (sentence sortParam pat variable)
-    -> Parser (Module sentence sortParam pat variable)
+    :: Parser (sentence sortParam pat domain variable)
+    -> Parser (Module sentence sortParam pat domain variable)
 moduleParser sentenceParser = do
     mlLexemeParser "module"
     name <- moduleNameParser
@@ -985,7 +985,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 aliasSentenceRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser ((Rotate31 SentenceAlias UnifiedPattern Variable) level)
+    -> Parser ((Rotate31 SentenceAlias UnifiedPattern KoreDomain Variable) level)
 aliasSentenceRemainderParser x
   = do
     aliasSymbol <- (aliasParser x)
@@ -1082,7 +1082,7 @@ leveledPatternParser
     :: MetaOrObject level
     => Parser child
     -> level
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level domain Variable child)
 leveledPatternParser patternParser level = do
     c <- ParserUtils.peekChar'
     case c of
@@ -1097,9 +1097,9 @@ leveledPatternParser patternParser level = do
 purePatternParser
     :: MetaOrObject level
     => level
-    -> Parser (CommonPurePattern level)
+    -> Parser (CommonPurePattern level domain)
 purePatternParser level =
     Fix <$> leveledPatternParser (purePatternParser level) level
 
-metaPatternParser :: Parser CommonMetaPattern
+metaPatternParser :: Parser (CommonMetaPattern domain)
 metaPatternParser = purePatternParser Meta

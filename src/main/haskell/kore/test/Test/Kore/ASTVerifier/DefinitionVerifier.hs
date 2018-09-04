@@ -179,8 +179,8 @@ simpleObjectAliasSentence alias sort =
 simpleAliasSentence
     :: AliasName
     -> SortName
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
     -> KoreSentenceAlias level
 simpleAliasSentence (AliasName name) (SortName sort) l r =
     SentenceAlias
@@ -294,8 +294,8 @@ aliasSentenceWithSortParameters
     :: AliasName
     -> SortName
     -> [SortVariable level]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
     -> KoreSentenceAlias level
 aliasSentenceWithSortParameters
     (AliasName name) (SortName sort) parameters l r
@@ -321,8 +321,8 @@ sentenceAliasWithSortArgument
     -> Sort level
     -> Sort level
     -> [SortVariable level]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
     -> KoreSentenceAlias level
 sentenceAliasWithSortArgument
     (AliasName name) sortArgument resultSort parameters l r
@@ -344,8 +344,8 @@ sentenceAliasWithAttributes
     -> [SortVariable level]
     -> Sort level
     -> [CommonKorePattern]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
     -> KoreSentenceAlias level
 sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
     SentenceAlias
@@ -445,8 +445,8 @@ sentenceAliasWithResultSort
     :: AliasName
     -> Sort level
     -> [SortVariable level]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
     -> KoreSentenceAlias level
 sentenceAliasWithResultSort
     (AliasName name) sort parameters l r
@@ -516,8 +516,8 @@ aliasSentenceWithArguments
     => AliasName
     -> Sort level
     -> [Sort level]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
     -> KoreSentence
 aliasSentenceWithArguments
     (AliasName name) sort operandSorts l r
@@ -578,7 +578,7 @@ unifiedVariable
 unifiedVariable name sort =
     asUnified (variable name sort)
 
-variablePattern :: VariableName -> Sort level -> Pattern level Variable p
+variablePattern :: VariableName -> Sort level -> Pattern level domain Variable p
 variablePattern name sort =
     VariablePattern (variable name sort)
 
@@ -589,7 +589,7 @@ unifiedVariablePattern name sort =
 
 simpleExistsPattern
     :: MetaOrObject level
-    => Variable level -> Sort level -> Pattern level Variable CommonKorePattern
+    => Variable level -> Sort level -> Pattern level domain Variable CommonKorePattern
 simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
         { existsSort = resultSort
@@ -648,10 +648,10 @@ applicationObjectUnifiedPatternWithChildren
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
     asKorePattern
         ( applicationPatternWithChildren name unifiedPatterns
-        :: Pattern Meta Variable CommonKorePattern)
+        :: Pattern Meta domain Variable CommonKorePattern)
 
 applicationPatternWithChildren
-    :: SymbolName -> [CommonKorePattern] -> Pattern level v CommonKorePattern
+    :: SymbolName -> [CommonKorePattern] -> Pattern level domain v CommonKorePattern
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
     ApplicationPattern Application
         { applicationSymbolOrAlias = SymbolOrAlias

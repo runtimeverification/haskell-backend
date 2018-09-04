@@ -55,7 +55,7 @@ newtype ApplicationFunctionEvaluator level variable =
         (forall . ( MetaOrObject level)
         => MetadataTools level StepperAttributes
         -> PureMLPatternSimplifier level variable
-        -> Application level (PureMLPattern level variable)
+        -> Application level (PureMLPattern level domain variable)
         -> Simplifier
             ( AttemptedFunction level variable
             , SimplificationProof level
@@ -74,7 +74,7 @@ cases where the function can't be fully evaluated.
 -}
 data AttemptedFunction level variable
     = NotApplicable
-    | Applied !(OrOfExpandedPattern level variable)
+    | Applied !(OrOfExpandedPattern level domain variable)
   deriving (Show, Eq)
 
 {-| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
@@ -91,7 +91,7 @@ notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
 -- |Yields a pure 'Simplifier' which produces a given 'PureMLPattern'
 purePatternFunctionEvaluator
     :: (MetaOrObject level)
-    => PureMLPattern level variable
+    => PureMLPattern level domain variable
     -> Simplifier (AttemptedFunction level variable, SimplificationProof level')
 purePatternFunctionEvaluator p =
     pure

@@ -49,8 +49,8 @@ simplify
         , Show (variable level)
         , Ord (variable level)
         )
-    => Forall level variable (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Forall level variable (OrOfExpandedPattern level domain variable)
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -66,8 +66,8 @@ simplifyEvaluatedForall
         , Ord (variable level)
         )
     => variable level
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluatedForall variable simplified
   | OrOfExpandedPattern.isTrue simplified = (simplified, SimplificationProof)
   | OrOfExpandedPattern.isFalse simplified = (simplified, SimplificationProof)

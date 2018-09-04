@@ -113,7 +113,7 @@ parse = (Parsec.<|>) true false
 asPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> CommonPurePattern Object
+    -> CommonPurePattern Object domain
 asPattern resultSort result =
     Kore.DV_ resultSort
         (Kore.StringLiteral_ Kore.StringLiteral
@@ -126,7 +126,7 @@ asPattern resultSort result =
 asExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> CommonExpandedPattern Object
+    -> CommonExpandedPattern Object domain
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asPattern resultSort
 

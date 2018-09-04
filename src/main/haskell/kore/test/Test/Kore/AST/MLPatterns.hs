@@ -30,7 +30,7 @@ import Test.Kore
 
 extractPurePattern
     :: MetaOrObject level
-    => CommonPurePatternStub level -> CommonPurePattern level
+    => CommonPurePatternStub level domain -> CommonPurePattern level domain
 extractPurePattern (SortedPatternStub sp) =
     asPurePattern $ sortedPatternPattern sp
 extractPurePattern (UnsortedPatternStub ups) =
@@ -88,7 +88,7 @@ test_mlPattern =
                 (getPatternResultSort
                     undefinedHeadSort
                     (StringLiteralPattern (StringLiteral "Hello!")
-                    :: UnFixedPureMLPattern Meta Variable
+                    :: UnFixedPureMLPattern Meta domain Variable
                     )
                 )
             )
@@ -98,7 +98,7 @@ test_mlPattern =
                 (getPatternResultSort
                     undefinedHeadSort
                     (CharLiteralPattern (CharLiteral 'h')
-                    :: UnFixedPureMLPattern Meta Variable
+                    :: UnFixedPureMLPattern Meta domain Variable
                     )
                 )
             )
@@ -311,7 +311,7 @@ applyPatternFunctionTests =
     mVariable = metaVariable "#x" AstLocationTest sort
     oVariable = objectVariable "x" AstLocationTest objectSort
 
-metaLeveledFunctionApplier :: Pattern level Variable CommonKorePattern -> Sort level
+metaLeveledFunctionApplier :: Pattern level domain Variable CommonKorePattern -> Sort level
 metaLeveledFunctionApplier =
     applyPatternLeveledFunction
         PatternLeveledFunction

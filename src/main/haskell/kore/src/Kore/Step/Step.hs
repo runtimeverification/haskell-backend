@@ -58,12 +58,12 @@ step
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level]
+    -> [AxiomPattern level domain]
     -- ^ Rewriting axioms
-    -> CommonOrOfExpandedPattern level
+    -> CommonOrOfExpandedPattern level domain
     -- ^ Configuration being rewritten.
     -> Simplifier
-        (CommonOrOfExpandedPattern level, StepProof level)
+        (CommonOrOfExpandedPattern level domain, StepProof level)
 step tools symbolIdToEvaluator axioms configuration = do
     (stepPattern, stepProofs) <- Monad.Trans.lift
         (OrOfExpandedPattern.traverseFlattenWithPairs
@@ -83,11 +83,11 @@ step tools symbolIdToEvaluator axioms configuration = do
 baseStepWithPattern
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> [AxiomPattern level]
+    -> [AxiomPattern level domain]
     -- ^ Rewriting axioms
-    -> CommonExpandedPattern level
+    -> CommonExpandedPattern level domain
     -- ^ Configuration being rewritten.
-    -> IntCounter (CommonOrOfExpandedPattern level, StepProof level)
+    -> IntCounter (CommonOrOfExpandedPattern level domain, StepProof level)
 baseStepWithPattern tools axioms configuration = do
     stepResultsWithProofs <- sequence (stepToList tools configuration axioms)
     let (results, proofs) = unzip stepResultsWithProofs
@@ -99,12 +99,12 @@ baseStepWithPattern tools axioms configuration = do
 stepToList
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> CommonExpandedPattern level
+    -> CommonExpandedPattern level domain
     -- ^ Configuration being rewritten.
-    -> [AxiomPattern level]
+    -> [AxiomPattern level domain]
     -- ^ Rewriting axioms
     ->  [ IntCounter
-            (CommonExpandedPattern level, StepProof level)
+            (CommonExpandedPattern level domain, StepProof level)
         ]
 stepToList tools configuration axioms =
     -- TODO: Stop ignoring Left results. Also, how would a result
@@ -124,13 +124,13 @@ pickFirstStepper
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level]
+    -> [AxiomPattern level domain]
     -- ^ Rewriting axioms
     -> MaxStepCount
     -- ^ The maximum number of steps to be made
-    -> CommonExpandedPattern level
+    -> CommonExpandedPattern level domain
     -- ^ Configuration being rewritten.
-    -> Simplifier (CommonExpandedPattern level, StepProof level)
+    -> Simplifier (CommonExpandedPattern level domain, StepProof level)
 pickFirstStepper _ _ _ (MaxStepCount 0) stepperConfiguration =
     return (stepperConfiguration, StepProofCombined [])
 pickFirstStepper _ _ _ (MaxStepCount n) _ | n < 0 =
@@ -159,13 +159,13 @@ pickFirstStepperSkipMaxCheck
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level]
+    -> [AxiomPattern level domain]
     -- ^ Rewriting axioms
     -> MaxStepCount
     -- ^ The maximum number of steps to be made
-    -> CommonExpandedPattern level
+    -> CommonExpandedPattern level domain
     -- ^ Configuration being rewritten.
-    -> Simplifier (CommonExpandedPattern level, StepProof level)
+    -> Simplifier (CommonExpandedPattern level domain, StepProof level)
 pickFirstStepperSkipMaxCheck
     tools symbolIdToEvaluator axioms maxStepCount stepperConfiguration
   = do

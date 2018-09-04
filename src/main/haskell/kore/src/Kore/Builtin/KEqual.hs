@@ -78,7 +78,7 @@ evalKEq
     -> Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
     -> PureMLPatternSimplifier Object Variable
-    -> Application Object (PureMLPattern Object Variable)
+    -> Application Object (PureMLPattern Object domain Variable)
     -> Simplifier
         ( AttemptedFunction Object Variable
         , SimplificationProof Object

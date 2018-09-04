@@ -106,7 +106,7 @@ test_ceilSimplification = give mockSortTools
                     ]
                 )
                 (makeEvaluate mockMetadataTools
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
+                    (ExpandedPattern.top :: CommonExpandedPattern Object domain)
                 )
             -- ceil(bottom) = bottom
             assertEqualWithExplanation "ceil(bottom)"
@@ -114,7 +114,7 @@ test_ceilSimplification = give mockSortTools
                     []
                 )
                 (makeEvaluate mockMetadataTools
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
+                    (ExpandedPattern.bottom :: CommonExpandedPattern Object domain)
                 )
         )
     , testCase "ceil with predicates and substitutions"
@@ -302,8 +302,8 @@ test_ceilSimplification = give mockSortTools
         Mock.makeMetadataTools mockSortTools Mock.attributesMapping
 
 makeCeil
-    :: [ExpandedPattern Object variable]
-    -> Ceil Object (OrOfExpandedPattern Object variable)
+    :: [ExpandedPattern Object domain variable]
+    -> Ceil Object (OrOfExpandedPattern Object domain variable)
 makeCeil patterns =
     Ceil
         { ceilOperandSort = testSort
@@ -321,8 +321,8 @@ evaluate
     ::  ( MetaOrObject level
         )
     => MetadataTools level StepperAttributes
-    -> Ceil level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    -> Ceil level (CommonOrOfExpandedPattern level domain)
+    -> CommonOrOfExpandedPattern level domain
 evaluate tools ceil =
     case Ceil.simplify tools ceil of
         (result, _proof) -> result
@@ -332,8 +332,8 @@ makeEvaluate
     ::  ( MetaOrObject level
         )
     => MetadataTools level StepperAttributes
-    -> CommonExpandedPattern level
-    -> CommonOrOfExpandedPattern level
+    -> CommonExpandedPattern level domain
+    -> CommonOrOfExpandedPattern level domain
 makeEvaluate tools child =
     case Ceil.makeEvaluate tools child of
         (result, _proof) -> result

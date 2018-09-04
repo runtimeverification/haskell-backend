@@ -182,7 +182,7 @@ test_lift =
                     }
                 , forallChild =
                     asKorePattern
-                        (VariablePattern Variable
+                        (VariablePattern domain Variable
                             { variableName = testId "x" :: Id Object
                             , variableSort = SortVariableSort
                                 (SortVariable (testId "a"))
@@ -228,7 +228,7 @@ test_lift =
                     }
                 , existsChild =
                     asKorePattern
-                        (VariablePattern Variable
+                        (VariablePattern domain Variable
                             { variableName = testId "x" :: Id Object
                             , variableSort = SortVariableSort
                                 (SortVariable (testId "a"))
@@ -250,7 +250,7 @@ test_lift =
             )
         )
         (asKorePattern
-            (VariablePattern Variable
+            (VariablePattern domain Variable
                 { variableName = testId "x" :: Id Object
                 , variableSort = SortVariableSort
                     (SortVariable (testId "a"))
@@ -1024,7 +1024,7 @@ prettyAssertEqual
     -> IO ()
 prettyAssertEqual = assertEqualWithPrinter prettyPrintToString
 
-stringPattern :: Pattern Meta Variable child
+stringPattern :: Pattern Meta domain Variable child
 stringPattern = StringLiteralPattern (StringLiteral "a")
 
 unifiedStringPattern :: CommonKorePattern
@@ -1033,7 +1033,7 @@ unifiedStringPattern = asKorePattern stringPattern
 metaStringPattern :: CommonMetaPattern
 metaStringPattern = Fix stringPattern
 
-sentenceImport :: SentenceImport pat variable
+sentenceImport :: SentenceImport pat domain variable
 sentenceImport =
     SentenceImport
         { sentenceImportModuleName = ModuleName "MODULE"

@@ -82,9 +82,9 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> And level (OrOfExpandedPattern level variable)
+    -> And level (OrOfExpandedPattern level domain variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -111,10 +111,10 @@ simplifyEvaluated
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    -> OrOfExpandedPattern level domain variable
+    -> OrOfExpandedPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluated tools first second
   | OrOfExpandedPattern.isFalse first =
     return (OrOfExpandedPattern.make [], SimplificationProof)
@@ -154,9 +154,9 @@ makeEvaluate
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> IntCounter (ExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
+    -> IntCounter (ExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluate
     tools first second
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
@@ -179,9 +179,9 @@ makeEvaluateNonBool
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> IntCounter (ExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
+    -> IntCounter (ExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateNonBool
     tools
     ExpandedPattern
@@ -222,9 +222,9 @@ makeTermAnd
         , Show (variable level)
         , Ord (variable level)
         )
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    => PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
 makeTermAnd b@(Bottom_ _) _ = b
 makeTermAnd (Top_ _) term = term
 -- TODO: (partial) unification / other simplifications
@@ -237,9 +237,9 @@ makeTermAndSecond
         , Show (variable level)
         , Ord (variable level)
         )
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    => PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
 makeTermAndSecond _ b@(Bottom_ _) = b
 makeTermAndSecond term (Top_ _) = term
 -- TODO: (partial) unification / other simplifications

@@ -59,8 +59,8 @@ simplify
         , Show (variable level)
         , Ord (variable level)
         )
-    => Implies level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Implies level (OrOfExpandedPattern level domain variable)
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -79,9 +79,9 @@ simplifyEvaluatedImplies
         , Show (variable level)
         , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrOfExpandedPattern level domain variable
+    -> OrOfExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluatedImplies first second
   | OrOfExpandedPattern.isTrue first =
     (second, SimplificationProof)
@@ -107,9 +107,9 @@ simplifyEvaluateHalfImplies
         , Show (variable level)
         , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrOfExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluateHalfImplies first second
   | OrOfExpandedPattern.isTrue first =
     (OrOfExpandedPattern.make [second], SimplificationProof)
@@ -135,9 +135,9 @@ makeEvaluateImplies
         , Show (variable level)
         , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateImplies
     first second
   | ExpandedPattern.isTop first =
@@ -158,9 +158,9 @@ makeEvaluateImpliesNonBool
         , Show (variable level)
         , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateImpliesNonBool
     ExpandedPattern
         { term = t@(Top_ _)

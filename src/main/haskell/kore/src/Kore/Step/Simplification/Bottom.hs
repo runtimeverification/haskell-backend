@@ -24,7 +24,7 @@ import           Kore.Step.Simplification.Data
 -}
 simplify
     :: Bottom level child
-    -> ( OrOfExpandedPattern level variable
+    -> ( OrOfExpandedPattern level domain variable
        , SimplificationProof level
        )
 simplify Bottom {} =

@@ -34,7 +34,7 @@ an or containing a term made of that literal.
 -}
 simplify
     :: CharLiteral
-    -> ( OrOfExpandedPattern Meta variable
+    -> ( OrOfExpandedPattern Meta domain variable
        , SimplificationProof Meta
        )
 simplify str =

@@ -49,8 +49,8 @@ simplify
         , Show (variable Object)
         , Ord (variable Object)
         )
-    => Next Object (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Next Object (OrOfExpandedPattern Object domain variable)
+    ->  ( OrOfExpandedPattern Object domain variable
         , SimplificationProof Object
         )
 simplify
@@ -65,8 +65,8 @@ simplifyEvaluatedNext
         , Show (variable Object)
         , Ord (variable Object)
         )
-    => OrOfExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => OrOfExpandedPattern Object domain variable
+    -> (OrOfExpandedPattern Object domain variable, SimplificationProof Object)
 simplifyEvaluatedNext simplified =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern

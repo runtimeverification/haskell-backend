@@ -24,8 +24,8 @@ import           Kore.Step.Simplification.Data
 
 mockSimplifier
     :: (MetaOrObject level, Eq level, Eq (variable level))
-    =>  [   ( PureMLPattern level variable
-            , ([ExpandedPattern level variable], SimplificationProof level)
+    =>  [   ( PureMLPattern level domain variable
+            , ([ExpandedPattern level domain variable], SimplificationProof level)
             )
         ]
     -> PureMLPatternSimplifier level variable
@@ -40,8 +40,8 @@ mockSimplifier values =
 
 mockPredicateSimplifier
     :: (MetaOrObject level, Eq level, Eq (variable level))
-    =>  [   ( PureMLPattern level variable
-            , ([ExpandedPattern level variable], SimplificationProof level)
+    =>  [   ( PureMLPattern level domain variable
+            , ([ExpandedPattern level domain variable], SimplificationProof level)
             )
         ]
     -> PureMLPatternSimplifier level variable
@@ -59,14 +59,14 @@ mockPredicateSimplifier values =
 
 mockSimplifierHelper
     ::  (MetaOrObject level, Eq level, Eq (variable level))
-    =>  (PureMLPattern level variable -> ExpandedPattern level variable)
-    ->  [   ( PureMLPattern level variable
-            , ([ExpandedPattern level variable], SimplificationProof level)
+    =>  (PureMLPattern level domain variable -> ExpandedPattern level domain variable)
+    ->  [   ( PureMLPattern level domain variable
+            , ([ExpandedPattern level domain variable], SimplificationProof level)
             )
         ]
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, SimplificationProof level)
 mockSimplifierHelper unevaluatedConverter [] patt =
     return
         ( OrOfExpandedPattern.make [ unevaluatedConverter patt ]

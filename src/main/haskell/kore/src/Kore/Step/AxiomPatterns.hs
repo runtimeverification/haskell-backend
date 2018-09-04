@@ -72,15 +72,15 @@ Currently @AxiomPattern@ can only represent axioms of the form
   axiomPatternLeft => axiomPatternRight requires axiomPatternRequires
 @
 --}
-data AxiomPattern level = AxiomPattern
-    { axiomPatternLeft  :: !(CommonPurePattern level)
-    , axiomPatternRight :: !(CommonPurePattern level)
+data AxiomPattern level domain = AxiomPattern
+    { axiomPatternLeft  :: !(CommonPurePattern level domain)
+    , axiomPatternRight :: !(CommonPurePattern level domain)
     , axiomPatternRequires :: !(CommonPredicate level)
     , axiomAttributes :: !AxiomAttributes
     }
     deriving (Eq, Show)
 
-instance Ord level => Ord (AxiomPattern level) where
+instance Ord level => Ord (AxiomPattern level domain) where
     compare a b =
         comparing axiomAttributes a b
         <> comparing axiomPatternLeft a b
@@ -90,9 +90,9 @@ instance Ord level => Ord (AxiomPattern level) where
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
-data QualifiedAxiomPattern level
-    = RewriteAxiomPattern (AxiomPattern level)
-    | FunctionAxiomPattern (AxiomPattern level)
+data QualifiedAxiomPattern level domain
+    = RewriteAxiomPattern (AxiomPattern level domain)
+    | FunctionAxiomPattern (AxiomPattern level domain)
     deriving (Eq, Ord, Show)
 
 
@@ -102,11 +102,11 @@ koreIndexedModuleToAxiomPatterns
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
     -> KoreIndexedModule atts -- ^'IndexedModule' containing the definition
-    -> [AxiomPattern level]
+    -> [AxiomPattern level domain]
 koreIndexedModuleToAxiomPatterns level idxMod =
     [ axiomPat | RewriteAxiomPattern axiomPat <-
         rights $ map
-            (koreSentenceToAxiomPattern level)
+            (koreSentenceToAxiomPattern level domain)
             (indexedModuleRawSentences idxMod)
     ]
 
@@ -116,17 +116,17 @@ koreSentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> KoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
-koreSentenceToAxiomPattern level =
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level domain)
+koreSentenceToAxiomPattern level domain =
     applyUnifiedSentence
-        (sentenceToAxiomPattern level)
-        (sentenceToAxiomPattern level)
+        (sentenceToAxiomPattern level domain)
+        (sentenceToAxiomPattern level domain)
 
 sentenceToAxiomPattern
     :: MetaOrObject level
     => level
-    -> Sentence level' UnifiedSortVariable UnifiedPattern Variable
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> Sentence level' UnifiedSortVariable UnifiedPattern domain Variable
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level domain)
 sentenceToAxiomPattern
     level
     (SentenceAxiomSentence SentenceAxiom
@@ -150,8 +150,8 @@ not encode a normal rewrite or function axiom.
 patternToAxiomPattern
     :: MetaOrObject level
     => AxiomAttributes
-    -> CommonPurePattern level
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> CommonPurePattern level domain
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level domain)
 patternToAxiomPattern axiomAttributes pat =
     case pat of
         -- normal rewrite axioms

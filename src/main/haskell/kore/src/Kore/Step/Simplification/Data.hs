@@ -69,9 +69,9 @@ Kore functions on PureMLPatterns.
 -}
 newtype PureMLPatternSimplifier level variable =
     PureMLPatternSimplifier
-        ( PureMLPattern level variable
+        ( PureMLPattern level domain variable
         -> Simplifier
-            ( OrOfExpandedPattern level variable
+            ( OrOfExpandedPattern level domain variable
             , SimplificationProof level
             )
         )

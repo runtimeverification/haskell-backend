@@ -66,9 +66,9 @@ mergeWithPredicateSubstitution
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
     -- ^ Condition and substitution to add.
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level domain variable
     -- ^ pattern to which the above should be added.
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level domain variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
     simplifier
@@ -113,9 +113,9 @@ mergeWithEvaluatedCondition
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level domain variable
     -> PredicateSubstitution level variable
-    -> IntCounter (ExpandedPattern level variable, SimplificationProof level)
+    -> IntCounter (ExpandedPattern level domain variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
     ExpandedPattern

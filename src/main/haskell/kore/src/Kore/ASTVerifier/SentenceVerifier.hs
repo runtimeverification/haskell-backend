@@ -76,7 +76,7 @@ definedNamesForSentence =
         definedNamesForObjectSentence
 
 definedNamesForMetaSentence
-    :: Sentence Meta sortParam pat variable -> [UnparameterizedId]
+    :: Sentence Meta sortParam pat domain variable -> [UnparameterizedId]
 definedNamesForMetaSentence (SentenceAliasSentence sentenceAlias) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
 definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
@@ -86,7 +86,7 @@ definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
 definedNamesForMetaSentence (SentenceSortSentence _)   = []
 
 definedNamesForObjectSentence
-    :: Sentence Object sortParam pat variable -> [UnparameterizedId]
+    :: Sentence Object sortParam pat domain variable -> [UnparameterizedId]
 definedNamesForObjectSentence (SentenceAliasSentence sentenceAlias) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
 definedNamesForObjectSentence (SentenceSymbolSentence sentenceSymbol) =
@@ -149,7 +149,7 @@ verifyMetaSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern domain Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyMetaSentence
     builtinVerifiers
@@ -206,7 +206,7 @@ verifyObjectSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
+    -> Sentence Object UnifiedSortVariable UnifiedPattern domain Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyObjectSentence
     builtinVerifiers

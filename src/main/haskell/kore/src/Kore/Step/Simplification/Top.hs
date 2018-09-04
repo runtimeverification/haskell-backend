@@ -28,7 +28,7 @@ import           Kore.Step.Simplification.Data
 simplify
     :: MetaOrObject level
     => Top level child
-    -> ( OrOfExpandedPattern level variable
+    -> ( OrOfExpandedPattern level domain variable
        , SimplificationProof level
        )
 simplify _ =

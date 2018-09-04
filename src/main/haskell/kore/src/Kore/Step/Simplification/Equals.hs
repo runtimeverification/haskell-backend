@@ -134,9 +134,9 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Equals level (OrOfExpandedPattern level variable)
+    -> Equals level (OrOfExpandedPattern level domain variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -159,10 +159,10 @@ simplifyEvaluated
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    -> OrOfExpandedPattern level domain variable
+    -> OrOfExpandedPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluated tools first second
   | first == second =
     return (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
@@ -195,10 +195,10 @@ makeEvaluate
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluate
     tools
     first@ExpandedPattern
@@ -277,10 +277,10 @@ makeEvaluateTermsAssumesNoBottom
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottom
     tools first second
   | first == second =
@@ -319,11 +319,11 @@ makeEvaluateTermsAssumesNoBottom
         )
 
 differentCharLiterals
-    :: PureMLPattern level variable
-    -> PureMLPattern level variable
+    :: PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, SimplificationProof level)
         )
 differentCharLiterals
     (CharLiteral_ _) (CharLiteral_ _)
@@ -332,11 +332,11 @@ differentCharLiterals
 differentCharLiterals _ _ = Nothing
 
 differentStringLiterals
-    :: PureMLPattern level variable
-    -> PureMLPattern level variable
+    :: PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, SimplificationProof level)
         )
 differentStringLiterals
     (StringLiteral_ _) (StringLiteral_ _)
@@ -345,11 +345,11 @@ differentStringLiterals
 differentStringLiterals _ _ = Nothing
 
 differentDomainValues
-    :: PureMLPattern level variable
-    -> PureMLPattern level variable
+    :: PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, SimplificationProof level)
         )
 differentDomainValues
     (DV_ _ (StringLiteral_ _))
@@ -360,11 +360,11 @@ differentDomainValues _ _ = Nothing
 variableEqualsFunctional
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, SimplificationProof level)
         )
 variableEqualsFunctional
     tools (Var_ var) term
@@ -387,11 +387,11 @@ variableEqualsFunctional _ _ _ = Nothing
 functionalEqualsVariable
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, SimplificationProof level)
         )
 functionalEqualsVariable
     tools term (Var_ var)
@@ -422,11 +422,11 @@ constructorAtTheTop
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, SimplificationProof level)
         )
 constructorAtTheTop
     tools
@@ -466,10 +466,10 @@ constructorAtTheTop
             , Hashable variable
             )
         => MetadataTools level StepperAttributes
-        -> (OrOfExpandedPattern level variable, SimplificationProof level)
-        -> (OrOfExpandedPattern level variable, SimplificationProof level)
+        -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+        -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
         -> Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, SimplificationProof level)
     combineWithAnd tools' (thing1, _proof1) (thing2, _proof2) =
         And.simplifyEvaluated tools' thing1 thing2
 constructorAtTheTop _ _ _ = Nothing
@@ -484,14 +484,14 @@ firstMaybe (_ : xs) x = firstMaybe xs x
 -- definitions.
 isFunction
     :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Bool
 isFunction tools term =
     isRight (isFunctionPattern tools term)
 
 isFunctional
     :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Bool
 isFunctional tools term =
     isRight (isFunctionalPattern tools term)

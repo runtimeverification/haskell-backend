@@ -98,11 +98,11 @@ import GHC.Generics
 impossible :: a
 impossible = error "The impossible happened."
 
-type Term = CommonPurePattern Object
+type Term = CommonPurePattern Object domain
 type Var = Variable Object
 
 -- | Fix-able functor representing a single deduction step
--- `formula` is a matching logic formula, for now CommonPurePattern Object.
+-- `formula` is a matching logic formula, for now CommonPurePattern Object domain.
 -- `rules` is a datatype encoding the valid deductions.
 -- The rule type contains other subproofs as its children,
 -- and should be `Functor`/`Traversable` over them.

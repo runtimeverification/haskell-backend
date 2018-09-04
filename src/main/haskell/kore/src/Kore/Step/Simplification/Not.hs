@@ -56,8 +56,8 @@ simplify
         , Show (variable level)
         , Ord (variable level)
         )
-    => Not level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Not level (OrOfExpandedPattern level domain variable)
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -77,8 +77,8 @@ simplifyEvaluated
         , Show (variable level)
         , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrOfExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluated simplified
   | OrOfExpandedPattern.isFalse simplified =
     (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
@@ -109,8 +109,8 @@ makeEvaluate
         , Show (variable level)
         , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluate
     ExpandedPattern {term, predicate, substitution}
   =
@@ -142,8 +142,8 @@ makeTermNot
         , Show (variable level)
         , Ord (variable level)
         )
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
+    => PureMLPattern level domain variable
+    -> PureMLPattern level domain variable
 makeTermNot (Bottom_ _) = mkTop
 makeTermNot (Top_ _) = mkBottom
 -- TODO: maybe other simplifications like

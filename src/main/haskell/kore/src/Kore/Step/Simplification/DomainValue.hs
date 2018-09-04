@@ -33,8 +33,8 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that value.
 -}
 simplify
-    :: DomainValue Object (PureMLPattern Meta Variable)
-    -> ( OrOfExpandedPattern Object variable
+    :: DomainValue Object (PureMLPattern Meta domain Variable)
+    -> ( OrOfExpandedPattern Object domain variable
        , SimplificationProof Object
        )
 simplify dv =

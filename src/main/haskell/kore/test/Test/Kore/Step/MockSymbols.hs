@@ -216,120 +216,120 @@ z :: Variable Object
 z = Variable (testId "z") testSort
 
 a   :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 a = mkApp aSymbol []
 
 b   :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 b = mkApp bSymbol []
 
 c   :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 c = mkApp cSymbol []
 
 d   :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 d = mkApp dSymbol []
 
 e   :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 e = mkApp eSymbol []
 
 f   :: Given (SortTools Object)
-    => PureMLPattern Object variable -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable -> PureMLPattern Object domain variable
 f arg = mkApp fSymbol [arg]
 
 g   :: Given (SortTools Object)
-    => PureMLPattern Object variable -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable -> PureMLPattern Object domain variable
 g arg = mkApp gSymbol [arg]
 
 h   :: Given (SortTools Object)
-    => PureMLPattern Object variable -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable -> PureMLPattern Object domain variable
 h arg = mkApp hSymbol [arg]
 
 cf  :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 cf = mkApp cfSymbol []
 
 cg  :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 cg = mkApp cgSymbol []
 
 ch  :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 ch = mkApp chSymbol []
 
 plain00
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 plain00 = mkApp plain00Symbol []
 
 plain10
     :: Given (SortTools Object)
-    => PureMLPattern Object variable -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable -> PureMLPattern Object domain variable
 plain10 arg = mkApp plain10Symbol [arg]
 
 plain20
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
-    -> PureMLPattern Object variable
-    -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
 plain20 arg1 arg2 = mkApp plain20Symbol [arg1, arg2]
 
 constr10
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
-    -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
 constr10 arg = mkApp constr10Symbol [arg]
 
 constr11
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
-    -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
 constr11 arg = mkApp constr11Symbol [arg]
 
 constr20
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
-    -> PureMLPattern Object variable
-    -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
 constr20 arg1 arg2 = mkApp constr20Symbol [arg1, arg2]
 
 functional00
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
+    => PureMLPattern Object domain variable
 functional00 = mkApp functional00Symbol []
 
 functional10
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
-    -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
 functional10 arg = mkApp functional10Symbol [arg]
 
 functional11
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
-    -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
 functional11 arg = mkApp functional11Symbol [arg]
 
 functional20
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
-    -> PureMLPattern Object variable
-    -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
 functional20 arg1 arg2 = mkApp functional20Symbol [arg1, arg2]
 
 functionalConstr10
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
-    -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
 functionalConstr10 arg = mkApp functionalConstr10Symbol [arg]
 
 functionalConstr20
     :: Given (SortTools Object)
-    => PureMLPattern Object variable
-    -> PureMLPattern Object variable
-    -> PureMLPattern Object variable
+    => PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
+    -> PureMLPattern Object domain variable
 functionalConstr20 arg1 arg2 = mkApp functionalConstr20Symbol [arg1, arg2]
 
 sortToolsMapping :: [(SymbolOrAlias Object, ApplicationSorts Object)]

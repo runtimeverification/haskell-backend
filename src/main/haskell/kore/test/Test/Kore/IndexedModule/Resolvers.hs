@@ -33,10 +33,10 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-topPatMeta :: Pattern Meta variable (Fix (pat variable))
+topPatMeta :: Pattern Meta domain variable (Fix (pat domain variable))
 topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
 
-topPatObj :: Pattern Object variable (Fix (pat variable))
+topPatObj :: Pattern Object domain variable (Fix (pat domain variable))
 topPatObj  = TopPattern $ Top { topSort = objectS1 }
 
 objectA :: PureSentenceSymbol Object
@@ -77,7 +77,7 @@ testObjectModule =
                             [patternPureToKore
                                 (App_ (groundHead "strict" AstLocationTest)
                                     []
-                                ::CommonPurePattern Object)
+                                ::CommonPurePattern Object domain)
                             ]
                     }
             , asSentence objectA
@@ -88,7 +88,7 @@ testObjectModule =
                 [patternPureToKore
                     (App_ (groundHead "strict" AstLocationTest)
                         []
-                    ::CommonPurePattern Object)
+                    ::CommonPurePattern Object domain)
                 ]
         }
 
@@ -116,7 +116,7 @@ subMainModule =
                 [patternPureToKore
                     (App_ (groundHead "strict" AstLocationTest)
                         []
-                    ::CommonPurePattern Object)
+                    ::CommonPurePattern Object domain)
                 ]
         }
 
@@ -140,7 +140,7 @@ testDefinition =
             [patternPureToKore
                 (App_ (groundHead "strict" AstLocationTest)
                     []
-                ::CommonPurePattern Object)
+                ::CommonPurePattern Object domain)
             ]
         , definitionModules =
             [ modulePureToKore testObjectModule
@@ -176,7 +176,7 @@ test_resolvers =
                         [patternPureToKore
                             (App_ (groundHead "strict" AstLocationTest)
                                 []
-                            ::CommonPurePattern Object)
+                            ::CommonPurePattern Object domain)
                         ]
                 })
             )

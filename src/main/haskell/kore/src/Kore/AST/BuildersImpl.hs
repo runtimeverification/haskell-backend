@@ -27,8 +27,8 @@ the provided sort otherwise.
 fillCheckSorts
     :: (Show level, Show (variable level))
     => [Sort level]
-    -> [PurePatternStub level variable]
-    -> [PureMLPattern level variable]
+    -> [PurePatternStub level domain variable]
+    -> [PureMLPattern level domain variable]
 fillCheckSorts [] []         = []
 fillCheckSorts [] _          = error "Not enough sorts!"
 fillCheckSorts _ []          = error "Not enough patterns!"
@@ -41,8 +41,8 @@ provided sort otherwise.
 fillCheckSort
     :: (Show level, Show (variable level))
     => Sort level
-    -> PurePatternStub level variable
-    -> PureMLPattern level variable
+    -> PurePatternStub level domain variable
+    -> PureMLPattern level domain variable
 fillCheckSort
     desiredSort
     ( SortedPatternStub SortedPattern
@@ -68,13 +68,13 @@ they must have the same sort, and tries to build 'CommonKorePattern's from them
 if possible, otherwise it returns functions that can build 'CommonKorePattern's.
 -}
 fillCheckPairSorts
-    :: PurePatternStub level variable
-    -> PurePatternStub level variable
+    :: PurePatternStub level domain variable
+    -> PurePatternStub level domain variable
     -> Either
-        ( Sort level -> PureMLPattern level variable
-        , Sort level -> PureMLPattern level variable
+        ( Sort level -> PureMLPattern level domain variable
+        , Sort level -> PureMLPattern level domain variable
         )
-        (Sort level, PureMLPattern level variable, PureMLPattern level variable)
+        (Sort level, PureMLPattern level domain variable, PureMLPattern level domain variable)
 fillCheckPairSorts (UnsortedPatternStub first) (UnsortedPatternStub second) =
     Left (Fix . first, Fix . second)
 fillCheckPairSorts
@@ -127,11 +127,11 @@ operators, like @\not@.
 -}
 unaryPattern
     :: (Sort level
-        -> PureMLPattern level variable
-        -> UnFixedPureMLPattern level variable
+        -> PureMLPattern level domain variable
+        -> UnFixedPureMLPattern level domain variable
        )
-    -> PurePatternStub level variable
-    -> PurePatternStub level variable
+    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable
 unaryPattern
     constructor
     ( SortedPatternStub SortedPattern
@@ -152,11 +152,11 @@ unarySortedPattern
     :: (MetaOrObject level, Show (variable level))
     => (ResultSort level
         -> ChildSort level
-        -> PureMLPattern level variable
-        -> UnFixedPureMLPattern level variable)
+        -> PureMLPattern level domain variable
+        -> UnFixedPureMLPattern level domain variable)
     -> Maybe (ChildSort level)
-    -> PurePatternStub level variable
-    -> PurePatternStub level variable
+    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable
 unarySortedPattern constructor maybeSort patternStub =
     UnsortedPatternStub
         (\sortS ->
@@ -179,12 +179,12 @@ operators, like @\and@.
 -}
 binaryPattern
     :: (Sort level
-        -> PureMLPattern level variable
-        -> PureMLPattern level variable
-        -> UnFixedPureMLPattern level variable)
-    -> PurePatternStub level variable
-    -> PurePatternStub level variable
-    -> PurePatternStub level variable
+        -> PureMLPattern level domain variable
+        -> PureMLPattern level domain variable
+        -> UnFixedPureMLPattern level domain variable)
+    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable
 binaryPattern constructor first second =
     case fillCheckPairSorts first second of
         Left (firstPattern, secondPattern) ->
@@ -207,13 +207,13 @@ binarySortedPattern
     :: (MetaOrObject level, Show (variable level))
     => (ResultSort level
         -> ChildSort level
-        -> PureMLPattern level variable
-        -> PureMLPattern level variable
-        -> UnFixedPureMLPattern level variable)
+        -> PureMLPattern level domain variable
+        -> PureMLPattern level domain variable
+        -> UnFixedPureMLPattern level domain variable)
     -> Maybe (ChildSort level)
-    -> PurePatternStub level variable
-    -> PurePatternStub level variable
-    -> PurePatternStub level variable
+    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable
 binarySortedPattern constructor maybeSort first second =
     case fillCheckPairSorts first second of
         Left (firstPattern, secondPattern) ->
@@ -261,9 +261,9 @@ binarySortedPattern constructor maybeSort first second =
 equalsM_
     :: (MetaOrObject level, Show (variable level))
     => Maybe (Sort level)
-    -> (PurePatternStub level variable
-        -> PurePatternStub level variable
-        -> PurePatternStub level variable
+    -> (PurePatternStub level domain variable
+        -> PurePatternStub level domain variable
+        -> PurePatternStub level domain variable
        )
 equalsM_ s =
     binarySortedPattern
@@ -284,9 +284,9 @@ equalsM_ s =
 inM_
     :: (MetaOrObject level, Show (variable level))
     =>  Maybe (Sort level)
-    -> (PurePatternStub level variable
-        -> PurePatternStub level variable
-        -> PurePatternStub level variable
+    -> (PurePatternStub level domain variable
+        -> PurePatternStub level domain variable
+        -> PurePatternStub level domain variable
        )
 inM_ s =
     binarySortedPattern
@@ -307,8 +307,8 @@ inM_ s =
 ceilM_
     :: (MetaOrObject level, Show (variable level))
     => Maybe (Sort level)
-    -> PurePatternStub level variable
-    -> PurePatternStub level variable
+    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable
 ceilM_ s =
     unarySortedPattern
         (\(ResultSort resultSort)
@@ -326,8 +326,8 @@ ceilM_ s =
 floorM_
     :: (MetaOrObject level, Show (variable level))
     => Maybe (Sort level)
-    -> PurePatternStub level variable
-    -> PurePatternStub level variable
+    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable
 floorM_ s =
     unarySortedPattern
         (\(ResultSort resultSort)

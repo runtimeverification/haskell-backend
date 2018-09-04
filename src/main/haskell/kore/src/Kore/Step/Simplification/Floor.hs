@@ -55,8 +55,8 @@ simplify
         , Show (variable level)
         , Ord (variable level)
         )
-    => Floor level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Floor level (OrOfExpandedPattern level domain variable)
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -71,8 +71,8 @@ simplifyEvaluatedFloor
         , Show (variable level)
         , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrOfExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluatedFloor child =
     case OrOfExpandedPattern.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
@@ -91,8 +91,8 @@ makeEvaluateFloor
         , Show (variable level)
         , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateFloor child
   | ExpandedPattern.isTop child =
     (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
@@ -108,8 +108,8 @@ makeEvaluateNonBoolFloor
         , Show (variable level)
         , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateNonBoolFloor
     patt@ExpandedPattern { term = Top_ _ }
   =

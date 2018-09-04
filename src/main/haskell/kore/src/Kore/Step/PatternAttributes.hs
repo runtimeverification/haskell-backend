@@ -47,7 +47,7 @@ data FunctionalProof level variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
-    | FunctionalDomainValue (DomainValue level (PureMLPattern Meta Variable))
+    | FunctionalDomainValue (DomainValue level (PureMLPattern Meta domain Variable))
     -- ^Domain values are functional as ther represent one value in the model.
     | FunctionalHead (SymbolOrAlias level)
     -- ^Head of a total function, conforming to Definition 5.21
@@ -100,7 +100,7 @@ mapFunctionalProofVariables mapper = functionalProofVars %~ mapper
 -}
 isFunctionalPattern
     :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Either (FunctionalError level) [FunctionalProof level variable]
 isFunctionalPattern tools = cata  reduceM
   where
@@ -111,7 +111,7 @@ isFunctionalPattern tools = cata  reduceM
 
 checkFunctionalHead
     :: MetadataTools level StepperAttributes
-    -> Pattern level variable a
+    -> Pattern level domain variable a
     -> Either (FunctionalError level) (FunctionalProof level variable)
 checkFunctionalHead _ (DomainValuePattern dv) =
     Right (FunctionalDomainValue dv)
@@ -119,7 +119,7 @@ checkFunctionalHead _ (StringLiteralPattern str) =
     Right (FunctionalStringLiteral str)
 checkFunctionalHead _ (CharLiteralPattern str) =
     Right (FunctionalCharLiteral str)
-checkFunctionalHead _ (VariablePattern v) =
+checkFunctionalHead _ (VariablePattern domain v) =
     Right (FunctionalVariable v)
 checkFunctionalHead tools (ApplicationPattern ap) =
     if isFunctional (MetadataTools.attributes tools patternHead)
@@ -134,7 +134,7 @@ checkFunctionalHead _ _ = Left NonFunctionalPattern
 -}
 isFunctionPattern
     :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Either (FunctionError level) [FunctionProof level variable]
 isFunctionPattern tools = cata reduceM
   where
@@ -145,7 +145,7 @@ isFunctionPattern tools = cata reduceM
 
 checkFunctionHead
     :: MetadataTools level StepperAttributes
-    -> Pattern level variable a
+    -> Pattern level domain variable a
     -> Either (FunctionError level) (FunctionProof level variable)
 checkFunctionHead tools (ApplicationPattern ap)
   | isFunction (MetadataTools.attributes tools patternHead) =

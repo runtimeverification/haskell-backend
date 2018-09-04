@@ -763,7 +763,7 @@ checkExistence variable conclusion
             Fix
                 ( ExistsPattern Exists
                     { existsVariable = v1
-                    , existsChild = Fix (VariablePattern v2)
+                    , existsChild = Fix (VariablePattern domain v2)
                     }
                 )
                 -> return (v1, v2)
@@ -841,7 +841,7 @@ checkSingvarContext
         case formula of
             Fix
                 (AndPattern And
-                    { andFirst = Fix (VariablePattern v)
+                    { andFirst = Fix (VariablePattern domain v)
                     , andSecond = p
                     }
                 )
@@ -864,7 +864,7 @@ checkSingvarContext
         case formula of
             Fix
                 (AndPattern And
-                    { andFirst = Fix (VariablePattern v)
+                    { andFirst = Fix (VariablePattern domain v)
                     , andSecond = Fix
                         (NotPattern Not { notChild = p })
                     }

@@ -2143,9 +2143,9 @@ type MLProof =
         (MLRule
             (SymbolOrAlias Meta)
             (Variable Meta)
-            (MetaMLPattern Variable)
+            (MetaMLPattern domain Variable)
         )
-        (MetaMLPattern Variable)
+        (MetaMLPattern domain Variable)
 
 data GoalMLProofState
     = GoalUnproven
@@ -2419,13 +2419,13 @@ goalState goalId proof =
         (idx, Just (GoalPartlyProven (GoalNeeds (childIdx:idxs))))
     combineStates _ _ = error "`goalState` helper `combineStates` case not implemented"
 
-lookupGoal :: GoalId -> MLProof -> Maybe (MetaMLPattern Variable)
+lookupGoal :: GoalId -> MLProof -> Maybe (MetaMLPattern domain Variable)
 lookupGoal goalId proof = snd <$> Map.lookup goalId (index proof)
 
 lookupFormula
     :: GoalId
     -> MLProof
-    -> Either (Error MLError) (MetaMLPattern Variable)
+    -> Either (Error MLError) (MetaMLPattern domain Variable)
 lookupFormula goalId proof =
     case Map.lookup goalId (index proof) of
         Nothing ->

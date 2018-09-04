@@ -67,8 +67,8 @@ simplify
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> Ceil level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    -> Ceil level (OrOfExpandedPattern level domain variable)
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -87,8 +87,8 @@ simplifyEvaluated
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluated tools child =
     ( evaluated, SimplificationProof )
   where
@@ -105,8 +105,8 @@ makeEvaluate
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluate tools child
   | ExpandedPattern.isTop child =
     (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
@@ -122,8 +122,8 @@ makeEvaluateNonBoolCeil
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateNonBoolCeil
     _
     patt@ExpandedPattern { term = Top_ _ }
@@ -160,7 +160,7 @@ makeTermCeil
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> (Predicate level variable, SimplificationProof level)
 makeTermCeil
     _
@@ -203,7 +203,7 @@ makeTermCeil
 -- definitions.
 isFunctional
     :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> PureMLPattern level domain variable
     -> Bool
 isFunctional tools term =
     isRight (isFunctionalPattern tools term)

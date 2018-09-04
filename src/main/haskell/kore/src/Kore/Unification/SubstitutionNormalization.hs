@@ -58,7 +58,7 @@ instance
     => PatternSubstitutionClass
         ListSubstitution.Substitution
         variable
-        (Pattern level)
+        (Pattern level domain)
         IntCounter
   where
 
@@ -122,7 +122,7 @@ checkThatApplicationUsesConstructors
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> checkError
-    -> Maybe (PureMLPattern level variable)
+    -> Maybe (PureMLPattern level domain variable)
     -> Either checkError ()
 checkThatApplicationUsesConstructors tools err (Just t) =
     cataM (checkApplicationConstructor tools err) t
@@ -136,7 +136,7 @@ checkApplicationConstructor
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> checkError
-    -> Pattern level variable ()
+    -> Pattern level domain variable ()
     -> Either checkError ()
 checkApplicationConstructor tools err (ApplicationPattern (Application h _))
     | isConstructor (attributes tools h) = return ()
@@ -145,10 +145,10 @@ checkApplicationConstructor _ _ _ = return ()
 
 variableToSubstitution
     :: (Ord (variable level), Show (variable level))
-    => Map.Map (variable level) (PureMLPattern level variable)
+    => Map.Map (variable level) (PureMLPattern level domain variable)
     -> variable level
-    -> (variable level, PureMLPattern level variable)
-variableToSubstitution varToPattern var =
+    -> (variable level, PureMLPattern level domain variable)
+variableToSubstitution varToPattern domain var =
     case Map.lookup var varToPattern of
         Just patt -> (var, patt)
         Nothing   -> error ("variable " ++ show var ++ " not found.")
@@ -162,7 +162,7 @@ normalizeSortedSubstitution
         )
     => UnificationSubstitution level variable
     -> UnificationSubstitution level variable
-    -> [(Unified variable, PureMLPattern level variable)]
+    -> [(Unified variable, PureMLPattern level domain variable)]
     -> IntCounter (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
     return PredicateSubstitution

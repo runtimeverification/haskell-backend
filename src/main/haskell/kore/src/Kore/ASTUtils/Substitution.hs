@@ -38,10 +38,10 @@ import Kore.ASTUtils.SmartPatterns
 -- and `phi_2` is the new pattern that replaces it.
 subst
     :: MetaOrObject level
-    => CommonPurePattern level
-    -> CommonPurePattern level
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    => CommonPurePattern level domain
+    -> CommonPurePattern level domain
+    -> CommonPurePattern level domain
+    -> CommonPurePattern level domain
 subst old new = \case
     Forall_ s1 v p -> handleBinder old new Forall_ s1 v p
     Exists_ s1 v p -> handleBinder old new Exists_ s1 v p
@@ -65,7 +65,7 @@ handleBinder old new binder s1 v p
 
 freeVars
     :: MetaOrObject level
-    => CommonPurePattern level
+    => CommonPurePattern level domain
     -> S.Set (Variable level)
 freeVars = \case
     Forall_ s1 v p -> S.delete v $ freeVars p
@@ -79,11 +79,11 @@ freeVars = \case
 -- but it doesn't matter in practice.
 localSubst
     :: MetaOrObject level
-    => CommonPurePattern level
-    -> CommonPurePattern level
+    => CommonPurePattern level domain
+    -> CommonPurePattern level domain
     -> [Int]
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    -> CommonPurePattern level domain
+    -> CommonPurePattern level domain
 localSubst a b path pat = localInPattern path (subst a b) pat
 
 

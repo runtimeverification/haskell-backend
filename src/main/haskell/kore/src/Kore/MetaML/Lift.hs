@@ -46,7 +46,7 @@ instance LiftableToMetaML (Id Object) where
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortVariable Object) where
-    liftToMeta sv = Fix $ VariablePattern Variable
+    liftToMeta sv = Fix $ VariablePattern domain Variable
         { variableName = Id
             { getId = ('#' :) $ getId $ getSortVariable sv
             , idLocation = AstLocationLifted $ idLocation $ getSortVariable sv
@@ -126,7 +126,7 @@ instance LiftableToMetaML CommonKorePattern where
     liftToMeta = cata liftReducer
 
 liftReducer
-    :: UnifiedPattern Variable CommonMetaPattern
+    :: UnifiedPattern domain Variable CommonMetaPattern
     -> CommonMetaPattern
 liftReducer p' =
     case p' of
@@ -134,7 +134,7 @@ liftReducer p' =
         UnifiedMetaPattern   p -> Fix p
 
 liftObjectReducer
-    :: Pattern Object Variable CommonMetaPattern
+    :: Pattern Object domain Variable CommonMetaPattern
     -> CommonMetaPattern
 liftObjectReducer p = case p of
     AndPattern ap -> applyMetaMLPatternHead AndPatternType
@@ -204,7 +204,7 @@ liftObjectReducer p = case p of
         (liftToMeta (rewritesSort ap) : getPatternChildren ap)
     TopPattern bp -> applyMetaMLPatternHead TopPatternType
         [liftToMeta (topSort bp)]
-    VariablePattern vp ->
+    VariablePattern domain vp ->
         Fix $ apply variableAsPatternHead [liftToMeta vp]
   where
     applyMetaMLPatternHead patternType =
@@ -283,7 +283,7 @@ liftSymbolDeclaration sd =
         , liftToMeta sorts
         , liftToMeta (sentenceSymbolResultSort sd)
         ]
-    freshVariable n s = Fix $ VariablePattern Variable
+    freshVariable n s = Fix $ VariablePattern domain Variable
         { variableName = Id ("#P" ++ show (n::Int)) liftedSymbolLocation
         , variableSort = s
         }
@@ -319,7 +319,7 @@ liftSymbolDeclaration sd =
 
 symbolOrAliasLiftedDeclaration
     :: SentenceSymbolOrAlias sa
-    => sa Object pat variable
+    => sa Object pat domain variable
     -> MetaSentenceSymbol
 symbolOrAliasLiftedDeclaration sa = symbolDeclaration
   where
@@ -373,7 +373,7 @@ liftSentence :: KoreSentence -> [MetaSentence]
 liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
 
 liftMetaSentence
-    :: Sentence Meta UnifiedSortVariable UnifiedPattern Variable
+    :: Sentence Meta UnifiedSortVariable UnifiedPattern domain Variable
     -> [MetaSentence]
 liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
@@ -437,7 +437,7 @@ liftMetaSentence (SentenceImportSentence is) =
     ]
 
 liftObjectSentence
-    :: Sentence Object UnifiedSortVariable UnifiedPattern Variable
+    :: Sentence Object UnifiedSortVariable UnifiedPattern domain Variable
     -> [MetaSentence]
 liftObjectSentence (SentenceAliasSentence osa) =
     let (mas, axiom) = liftAliasDeclaration osa in

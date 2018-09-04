@@ -1,6 +1,6 @@
 {- |
 Module      : Kore.Builtin.Builtin
-Description : Built-in sort, symbol, and pattern verifiers
+Description : Built-in sort, symbol, and pattern domain verifiers
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
@@ -146,7 +146,7 @@ newtype PatternVerifier =
       -}
       runPatternVerifier
           :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
-          -> Pattern Object Variable CommonKorePattern
+          -> Pattern Object domain Variable CommonKorePattern
           -> Either (Error VerifyError) ()
     }
 
@@ -362,7 +362,7 @@ verifyDomainValue builtinSort validate =
     runPatternVerifier
         :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
         -- ^ Function to lookup sorts by identifier
-        -> Pattern Object Variable CommonKorePattern
+        -> Pattern Object domain Variable CommonKorePattern
         -- ^ Pattern to verify
         -> Either (Error VerifyError) ()
     runPatternVerifier findSort =
@@ -443,7 +443,7 @@ parseDomainValue
  -}
 appliedFunction
     :: Monad m
-    => CommonExpandedPattern Object
+    => CommonExpandedPattern Object domain
     -> m (AttemptedFunction Object Variable)
 appliedFunction epat =
     (return . Applied . OrOfExpandedPattern.make) [epat]
@@ -461,7 +461,7 @@ appliedFunction epat =
 binaryOperator
     :: Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -> (Sort Object -> b -> CommonExpandedPattern Object domain)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -498,7 +498,7 @@ binaryOperator
 unaryOperator
     :: Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -> (Sort Object -> b -> CommonExpandedPattern Object domain)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -529,7 +529,7 @@ functionEvaluator
     -> (  MetadataTools Object StepperAttributes
        -> CommonPureMLPatternSimplifier Object
        -> Sort Object
-       -> [CommonPurePattern Object]
+       -> [CommonPurePattern Object domain]
        -> Simplifier (AttemptedFunction Object Variable)
        )
     -- ^ Builtin function implementation

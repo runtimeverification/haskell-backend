@@ -89,7 +89,7 @@ fromKorePattern = parseOnly korePatternParser
 ---------------------------------
 -- Matching Logic Kore Parsers --
 -- | parses formulae for ML proofs
-metaPatternParser :: Parser CommonMetaPattern
+metaPatternParser :: Parser (CommonMetaPattern domain)
 metaPatternParser = KoreParser.metaPatternParser
 
 -- | parses meta variables in ML proofs

@@ -356,9 +356,9 @@ test_andSimplification =
         }
 
 makeAnd
-    :: [CommonExpandedPattern Object]
-    -> [CommonExpandedPattern Object]
-    -> And Object (CommonOrOfExpandedPattern Object)
+    :: [CommonExpandedPattern Object domain]
+    -> [CommonExpandedPattern Object domain]
+    -> And Object (CommonOrOfExpandedPattern Object domain)
 makeAnd first second =
     And
         { andSort = findSort (first ++ second)
@@ -366,7 +366,7 @@ makeAnd first second =
         , andSecond = OrOfExpandedPattern.make second
         }
 
-findSort :: [CommonExpandedPattern Object] -> Sort Object
+findSort :: [CommonExpandedPattern Object domain] -> Sort Object
 findSort [] = testSort
 findSort
     ( ExpandedPattern {term} : _ )
@@ -374,17 +374,17 @@ findSort
     give mockSortTools $ getSort term
 
 evaluate
-    :: And Object (CommonOrOfExpandedPattern Object)
-    -> CommonOrOfExpandedPattern Object
+    :: And Object (CommonOrOfExpandedPattern Object domain)
+    -> CommonOrOfExpandedPattern Object domain
 evaluate patt =
     either (error . printError) fst
         $ evalSimplifier
         $ simplify mockMetadataTools patt
 
 evaluatePatterns
-    :: CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
+    :: CommonExpandedPattern Object domain
+    -> CommonExpandedPattern Object domain
+    -> CommonExpandedPattern Object domain
 evaluatePatterns first second =
     fst $ fst $ runIntCounter
         (makeEvaluate mockMetadataTools first second)
@@ -392,9 +392,9 @@ evaluatePatterns first second =
 
 evaluatePatternsWithAttributes
     :: [(SymbolOrAlias Object, StepperAttributes)]
-    -> CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
+    -> CommonExpandedPattern Object domain
+    -> CommonExpandedPattern Object domain
+    -> CommonExpandedPattern Object domain
 evaluatePatternsWithAttributes attributes first second =
     fst $ fst $ runIntCounter
         (makeEvaluate

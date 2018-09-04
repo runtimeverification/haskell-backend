@@ -77,10 +77,10 @@ A configuration consists of a pattern and a condition predicate, and would be
 represented as pattern /\ condition-predicate in Kore.
 --}
 data StepperConfiguration level = StepperConfiguration
-    { stepperConfigurationPattern       :: !(CommonPurePattern level)
+    { stepperConfigurationPattern       :: !(CommonPurePattern level domain)
     -- ^ The pattern being rewritten.
 
-    , stepperConfigurationCondition     :: !(CommonPurePattern level)
+    , stepperConfigurationCondition     :: !(CommonPurePattern level domain)
     -- ^ The condition predicate.
     -- TODO(virgil): Make this an EvaluatedCondition.
     }
@@ -181,14 +181,14 @@ TODO: Decide if Left here also includes bottom results or only impossibilities.
 stepWithAxiom
     ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern.CommonExpandedPattern level
+    -> ExpandedPattern.CommonExpandedPattern level domain
     -- ^ Configuration being rewritten.
-    -> AxiomPattern level
+    -> AxiomPattern level domain
     -- ^ Rewriting axiom
     -> Either
         (IntCounter (StepError level Variable))
         (IntCounter
-            (ExpandedPattern.CommonExpandedPattern level, StepProof level)
+            (ExpandedPattern.CommonExpandedPattern level domain, StepProof level)
         )
 stepWithAxiom
     tools
@@ -575,10 +575,10 @@ patternStepVariablesToCommon
     :: MetaOrObject level
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
-    -> PureMLPattern level StepperVariable
+    -> PureMLPattern level domain StepperVariable
     -> IntCounter
         ( Map.Map (StepperVariable level) (StepperVariable level)
-        , PureMLPattern level Variable
+        , PureMLPattern level domain Variable
         )
 patternStepVariablesToCommon existingVars mapped patt = do
     let axiomVars = pureAllVariables patt
@@ -600,8 +600,8 @@ configurationVariableToCommon (ConfigurationVariable v) = v
 replacePatternVariables
     :: MetaOrObject level
     => Map.Map (StepperVariable level) (StepperVariable level)
-    -> PureMLPattern level StepperVariable
-    -> PureMLPattern level StepperVariable
+    -> PureMLPattern level domain StepperVariable
+    -> PureMLPattern level domain StepperVariable
 replacePatternVariables mapping =
     mapPatternVariables
         (\var -> fromMaybe var (Map.lookup var mapping))
@@ -645,7 +645,7 @@ removeAxiomVariables =
 
 makeUnifiedSubstitution
     :: MetaOrObject level
-    => [(StepperVariable level, PureMLPattern level StepperVariable)]
-    -> [(Unified StepperVariable, PureMLPattern level StepperVariable)]
+    => [(StepperVariable level, PureMLPattern level domain StepperVariable)]
+    -> [(Unified StepperVariable, PureMLPattern level domain StepperVariable)]
 makeUnifiedSubstitution =
     map (Arrow.first asUnified)

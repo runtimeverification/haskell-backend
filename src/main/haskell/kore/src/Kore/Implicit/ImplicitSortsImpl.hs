@@ -17,17 +17,17 @@ import Kore.MetaML.AST
 
 parameterizedEqualsAxiom
     :: [SortVariable Meta]
-    -> MetaPatternStub
-    -> MetaPatternStub
-    -> MetaSentenceAxiom
+    -> MetaPatternStub domain
+    -> MetaPatternStub domain
+    -> MetaSentenceAxiom domain
 parameterizedEqualsAxiom parameters =
     parameterizedEqualsAxiom_ parameters
         (sortParameter Meta "#esp" AstLocationImplicit)
 
 equalsAxiom
-    :: MetaPatternStub
-    -> MetaPatternStub
-    -> MetaSentenceAxiom
+    :: MetaPatternStub domain
+    -> MetaPatternStub domain
+    -> MetaSentenceAxiom domain
 equalsAxiom = parameterizedEqualsAxiom []
 
 {-|'defineMetaSort' is a helper function for defining meta sorts together
@@ -37,17 +37,17 @@ defineMetaSort
     :: MetaBasicSortType
     -> ( Sort Meta
        , Sort Meta
-       , MetaSentenceSymbol
-       , MetaPatternStub
-       , MetaSentenceSymbol
-       , [MetaPatternStub] -> MetaPatternStub
-       , MetaSentenceSymbol
-       , [MetaPatternStub] -> MetaPatternStub
-       , MetaSentenceSymbol
-       , [Sort Meta] -> [MetaPatternStub] -> MetaPatternStub
-       , MetaSentenceSymbol
-       , [MetaPatternStub] -> MetaPatternStub
-       , [MetaSentenceAxiom]
+       , MetaSentenceSymbol KoreDomain
+       , MetaPatternStub KoreDomain
+       , MetaSentenceSymbol KoreDomain
+       , [MetaPatternStub KoreDomain] -> MetaPatternStub KoreDomain
+       , MetaSentenceSymbol KoreDomain
+       , [MetaPatternStub KoreDomain] -> MetaPatternStub KoreDomain
+       , MetaSentenceSymbol KoreDomain
+       , [Sort Meta] -> [MetaPatternStub KoreDomain] -> MetaPatternStub KoreDomain
+       , MetaSentenceSymbol KoreDomain
+       , [MetaPatternStub KoreDomain] -> MetaPatternStub KoreDomain
+       , [MetaSentenceAxiom KoreDomain]
        )
 defineMetaSort sortType =
     ( objectSort

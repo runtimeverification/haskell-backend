@@ -76,7 +76,7 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asKorePattern $ VariablePattern Variable
+                            asKorePattern $ VariablePattern domain Variable
                                 { variableName = testId "T" :: Id Object
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }

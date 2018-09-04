@@ -59,8 +59,8 @@ simplify
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> In level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    -> In level (OrOfExpandedPattern level domain variable)
+    ->  ( OrOfExpandedPattern level domain variable
         , SimplificationProof level
         )
 simplify
@@ -79,9 +79,9 @@ simplifyEvaluatedIn
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level domain variable
+    -> OrOfExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 simplifyEvaluatedIn tools first second
   | OrOfExpandedPattern.isFalse first =
     (OrOfExpandedPattern.make [], SimplificationProof)
@@ -110,9 +110,9 @@ makeEvaluateIn
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateIn tools first second
   | ExpandedPattern.isTop first =
     Ceil.makeEvaluate tools second
@@ -129,9 +129,9 @@ makeEvaluateNonBoolIn
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level domain variable
+    -> ExpandedPattern level domain variable
+    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
 makeEvaluateNonBoolIn tools patt1 patt2 =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern

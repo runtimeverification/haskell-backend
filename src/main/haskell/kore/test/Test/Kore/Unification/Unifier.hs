@@ -68,7 +68,7 @@ nonLinF = symbol_ "nonLinF" AstLocationTest [s1, s1] s1
 nonLinG = symbol_ "nonLinG" AstLocationTest [s1] s1
 nonLinAS = symbol_ "nonLinA" AstLocationTest [] s1
 
-nonLinA, nonLinX, nonLinY :: CommonPurePatternStub Object
+nonLinA, nonLinX, nonLinY :: CommonPurePatternStub Object domain
 nonLinX = parameterizedVariable_ s1 "x" AstLocationTest
 nonLinY = parameterizedVariable_ s1 "y" AstLocationTest
 
@@ -77,35 +77,35 @@ nonLinA = applyS nonLinAS []
 expBin :: PureSentenceSymbol Object
 expBin = symbol_ "times" AstLocationTest [s1, s1] s1
 
-expA, expX, expY :: CommonPurePatternStub Object
+expA, expX, expY :: CommonPurePatternStub Object domain
 expA = parameterizedVariable_ s1 "a" AstLocationTest
 expX = parameterizedVariable_ s1 "x" AstLocationTest
 expY = parameterizedVariable_ s1 "y" AstLocationTest
 
-ex1, ex2, ex3, ex4 :: CommonPurePatternStub Object
+ex1, ex2, ex3, ex4 :: CommonPurePatternStub Object domain
 ex1 = parameterizedVariable_ s1 "ex1" AstLocationTest
 ex2 = parameterizedVariable_ s1 "ex2" AstLocationTest
 ex3 = parameterizedVariable_ s1 "ex3" AstLocationTest
 ex4 = parameterizedVariable_ s1 "ex4" AstLocationTest
 
 
-dv1, dv2 :: CommonPurePatternStub Object
+dv1, dv2 :: CommonPurePatternStub Object domain
 dv1 = parameterizedDomainValue_ s1 "dv1"
 dv2 = parameterizedDomainValue_ s1 "dv2"
 
-aA :: CommonPurePatternStub Object
+aA :: CommonPurePatternStub Object domain
 aA = applyS a []
 
-a1A :: CommonPurePatternStub Object
+a1A :: CommonPurePatternStub Object domain
 a1A = applyS a1 []
 
-a2A :: CommonPurePatternStub Object
+a2A :: CommonPurePatternStub Object domain
 a2A = applyS a2 []
 
-a3A :: CommonPurePatternStub Object
+a3A :: CommonPurePatternStub Object domain
 a3A = applyS a3 []
 
-x :: CommonPurePatternStub Object
+x :: CommonPurePatternStub Object domain
 x = parameterizedVariable_ s1 "x" AstLocationTest
 
 symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object)]
@@ -156,15 +156,15 @@ unificationProblem
     :: MetaOrObject level
     => UnificationTerm level
     -> UnificationTerm level
-    -> CommonPurePattern level
+    -> CommonPurePattern level domain
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     extractPurePattern (and_ term1 term2)
 
-type Substitution level =  [(String, CommonPurePatternStub level)]
+type Substitution level =  [(String, CommonPurePatternStub level domain)]
 
 unificationSubstitution
     :: Substitution Object
-    -> [ (Variable Object, CommonPurePattern Object) ]
+    -> [ (Variable Object, CommonPurePattern Object domain) ]
 unificationSubstitution = map trans
   where
     trans (v, p) =
@@ -187,9 +187,9 @@ unificationResult (UnificationResultTerm pat) sub = UnificationSolution
     }
 
 newtype UnificationTerm level =
-    UnificationTerm (CommonPurePatternStub level)
+    UnificationTerm (CommonPurePatternStub level domain)
 newtype UnificationResultTerm level =
-    UnificationResultTerm (CommonPurePatternStub level)
+    UnificationResultTerm (CommonPurePatternStub level domain)
 
 andSimplifySuccess
     :: (HasCallStack)
@@ -523,7 +523,7 @@ test_unification =
   where
     symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
     var ps = case project (extractPurePattern ps) of
-        VariablePattern v -> v
+        VariablePattern domain v -> v
         _                 -> error "Expecting a variable"
 
 newtype V level = V Integer
@@ -545,7 +545,7 @@ instance EqualWithExplanation (W level)
 showVar :: V level -> W level
 showVar (V i) = W (show i)
 
-var' :: Integer -> PureMLPattern Meta V
+var' :: Integer -> PureMLPattern Meta domain V
 var' i = give mockSortTools' (mkVar (V i))
 
 war' :: String -> PureMLPattern Meta W

@@ -72,7 +72,7 @@ newtype GenericPredicate pat = GenericPredicate pat
 
 {-| 'Predicate' is a user-visible representation for predicates.
 -}
-type Predicate level var = GenericPredicate (PureMLPattern level var)
+type Predicate level var = GenericPredicate (PureMLPattern level domain var)
 
 {-| 'CommonPredicate' follows the generic convention of particularizing types
 to Variable.
@@ -98,7 +98,7 @@ predicate evaluation and tests and should not be used outside of that.
 
 We should consider deleting this and implementing the functionality otherwise.
 -}
-wrapPredicate :: PureMLPattern level var -> Predicate level var
+wrapPredicate :: PureMLPattern level domain var -> Predicate level var
 wrapPredicate = GenericPredicate
 
 {- 'unwrapPredicate' wraps a pattern in a GenericPredicate. This should be
@@ -106,7 +106,7 @@ not be used outside of that.
 
 We should consider deleting this and implementing the functionality otherwise.
 -}
-unwrapPredicate :: Predicate level var -> PureMLPattern level var
+unwrapPredicate :: Predicate level var -> PureMLPattern level domain var
 unwrapPredicate (GenericPredicate p) = p
 
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
@@ -266,8 +266,8 @@ makeEqualsPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
     -> Predicate level var
 makeEqualsPredicate first second =
     GenericPredicate $ mkEquals first second
@@ -280,8 +280,8 @@ makeInPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
+    => PureMLPattern level domain var
+    -> PureMLPattern level domain var
     -> Predicate level var
 makeInPredicate first second =
     GenericPredicate $ mkIn first second
@@ -294,7 +294,7 @@ makeCeilPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
+    => PureMLPattern level domain var
     -> Predicate level var
 makeCeilPredicate patt =
     GenericPredicate $ mkCeil patt
@@ -307,7 +307,7 @@ makeFloorPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => PureMLPattern level var
+    => PureMLPattern level domain var
     -> Predicate level var
 makeFloorPredicate patt =
     GenericPredicate $ mkFloor patt

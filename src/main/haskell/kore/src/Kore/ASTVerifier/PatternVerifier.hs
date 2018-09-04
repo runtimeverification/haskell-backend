@@ -200,7 +200,7 @@ internalVerifyMetaPattern
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Maybe UnifiedSort
-    -> Pattern Meta Variable CommonKorePattern
+    -> Pattern Meta domain Variable CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyMetaPattern
     builtinVerifier
@@ -234,7 +234,7 @@ internalVerifyObjectPattern
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Maybe UnifiedSort
-    -> Pattern Object Variable CommonKorePattern
+    -> Pattern Object domain Variable CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyObjectPattern
     builtinVerifier
@@ -269,7 +269,7 @@ newtype SortOrError level =
 
 verifyParameterizedPattern
     :: MetaOrObject level
-    => Pattern level Variable CommonKorePattern
+    => Pattern level domain Variable CommonKorePattern
     -> Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> VerifyHelpers level
@@ -457,7 +457,7 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
 
 verifyDomainValue
     :: (MetaOrObject level)
-    => DomainValue Object (Fix (Pattern Meta Variable))
+    => DomainValue Object (Fix (Pattern Meta domain Variable))
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (Sort Object)
@@ -559,7 +559,7 @@ verifySymbolOrAlias symbolOrAlias verifyHelpers declaredSortVariables =
 applicationSortsFromSymbolOrAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias sa)
     => SymbolOrAlias level
-    -> sa level pat variable
+    -> sa level pat domain variable
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (ApplicationSorts level)
@@ -669,7 +669,7 @@ checkVariable var vars =
                   <+> pretty v <+> "and" <+> pretty var <> Pretty.dot)
                 )
 
-patternNameForContext :: Pattern level Variable p -> String
+patternNameForContext :: Pattern level domain Variable p -> String
 patternNameForContext (AndPattern _) = "\\and"
 patternNameForContext (ApplicationPattern application) =
     "symbol or alias '"
@@ -698,7 +698,7 @@ patternNameForContext (RewritesPattern _) = "\\rewrites"
 patternNameForContext (StringLiteralPattern _) = "<string>"
 patternNameForContext (CharLiteralPattern _) = "<char>"
 patternNameForContext (TopPattern _) = "\\top"
-patternNameForContext (VariablePattern variable) =
+patternNameForContext (VariablePattern domain variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
 
 variableNameForContext :: Variable level -> String
