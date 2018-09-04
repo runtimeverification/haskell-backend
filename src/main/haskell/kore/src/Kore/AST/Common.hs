@@ -127,9 +127,8 @@ instance Ord (Id level) where
 instance Eq (Id level) where
     first == second = compare first second == EQ
 
-instance Hashable (Id level)
--- instance Hashable (Id level) where
-     -- hashWithSalt (Id i _) s = i `hashWithSalt` s
+instance Hashable (Id level) where
+     hashWithSalt s (Id i _) = s `hashWithSalt` i
 
 instance NFData (Id level)
 
