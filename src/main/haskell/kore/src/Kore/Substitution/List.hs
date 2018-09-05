@@ -26,6 +26,10 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Substitution.Class
 import Kore.Variables.Free
+import Kore.Variables.Fresh.IntCounter
+       ( IntCounter )
+import Kore.Variables.Int
+       ( IntVariable )
 
 -- |A very simple substitution represented as a list of pairs
 newtype Substitution var pat = Substitution { getSubstitution :: [(var, pat)] }
@@ -46,6 +50,20 @@ instance Eq v => MapClass Substitution v t where
     delete v = Substitution . filter ((v /=) . fst) . getSubstitution
     insert v t  =
         Substitution . ((v,t) :) . filter ((v /=) . fst) . getSubstitution
+
+instance
+    ( MetaOrObject level
+    , Ord (variable Object)
+    , Ord (variable Meta)
+    , Hashable variable
+    , IntVariable variable
+    )
+    => PatternSubstitutionClass
+        Substitution
+        variable
+        (Pattern level)
+        IntCounter
+  where
 
 fromList :: Eq k => [(k,v)] -> Substitution k v
 fromList = Substitution . nubBy (\x y -> fst x == fst y)

@@ -351,7 +351,7 @@ matchConstructor tools (ApplicationPattern ap1) head2 ap2
     | otherwise = Left $ Left $ NonConstructorHead head1
   where
     head1 = applicationSymbolOrAlias ap1
-matchConstructor _ _ _ _ = Left $ Left UnsupportedPatterns                                
+matchConstructor _ _ _ _ = Left $ Left UnsupportedPatterns
 
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi

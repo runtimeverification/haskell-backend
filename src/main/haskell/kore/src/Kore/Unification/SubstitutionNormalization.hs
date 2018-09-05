@@ -48,20 +48,6 @@ import           Kore.Variables.Fresh.IntCounter
 import           Kore.Variables.Int
                  ( IntVariable )
 
-instance
-    ( MetaOrObject level
-    , Ord (variable Object)
-    , Ord (variable Meta)
-    , Hashable variable
-    , IntVariable variable
-    )
-    => PatternSubstitutionClass
-        ListSubstitution.Substitution
-        variable
-        (Pattern level)
-        IntCounter
-  where
-
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
 in which no variable that occurs on the left hand side also occurs on the
 right side.

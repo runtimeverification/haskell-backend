@@ -39,6 +39,8 @@ import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Variables.Fresh.IntCounter
@@ -72,7 +74,10 @@ step tools symbolIdToEvaluator axioms configuration = do
         )
     (simplifiedPattern, simplificationProofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairs
-            (ExpandedPattern.simplify tools symbolIdToEvaluator)
+            (ExpandedPattern.simplify
+                tools
+                (Simplifier.create tools symbolIdToEvaluator)
+            )
             stepPattern
     return
         ( simplifiedPattern
