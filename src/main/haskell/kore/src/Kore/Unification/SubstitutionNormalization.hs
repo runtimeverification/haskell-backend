@@ -82,7 +82,7 @@ normalizeSubstitution
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
+    -> UnificationSubstitution level domain variable
     -> Either
         (SubstitutionError level variable)
         (IntCounter (PredicateSubstitution level variable))
@@ -106,7 +106,7 @@ normalizeSubstitution tools substitution = do
 checkCircularVariableDependency
     :: (MetaOrObject level, Eq (variable level))
     =>  MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
+    -> UnificationSubstitution level domain variable
     -> [variable level]
     -> Either (SubstitutionError level variable) ()
 checkCircularVariableDependency tools substitution vars = do
@@ -160,8 +160,8 @@ normalizeSortedSubstitution
         , Hashable variable
         , IntVariable variable
         )
-    => UnificationSubstitution level variable
-    -> UnificationSubstitution level variable
+    => UnificationSubstitution level domain variable
+    -> UnificationSubstitution level domain variable
     -> [(Unified variable, PureMLPattern level domain variable)]
     -> IntCounter (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
@@ -186,7 +186,7 @@ extractVariables
         , Ord (variable Meta)
         , Ord (variable Object)
         )
-    => UnificationSubstitution level variable
+    => UnificationSubstitution level domain variable
     -> Map.Map (Unified variable) (variable level)
 extractVariables unification =
     Map.fromList
@@ -201,7 +201,7 @@ buildDependencies
         , Ord (variable Meta)
         , Ord (variable Object)
         )
-    => UnificationSubstitution level variable
+    => UnificationSubstitution level domain variable
     -> Map.Map (Unified variable) (variable level)
     -> Map.Map (variable level) [variable level]
 buildDependencies [] _ = Map.empty

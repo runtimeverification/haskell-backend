@@ -161,7 +161,7 @@ makeTermCeil
         )
     => MetadataTools level StepperAttributes
     -> PureMLPattern level domain variable
-    -> (Predicate level variable, SimplificationProof level)
+    -> (Predicate level domain variable, SimplificationProof level)
 makeTermCeil
     _
     (Top_ _)

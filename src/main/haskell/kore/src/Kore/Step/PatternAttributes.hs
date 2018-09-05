@@ -42,7 +42,7 @@ import           Kore.Step.StepperAttributes
 -- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
-data FunctionalProof level variable
+data FunctionalProof level domain variable
     = FunctionalVariable (variable level)
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
@@ -60,8 +60,8 @@ data FunctionalProof level variable
 
 functionalProofVars
     :: Prism
-         (FunctionalProof level variableFrom)
-         (FunctionalProof level variableTo)
+         (FunctionalProof level domain variableFrom)
+         (FunctionalProof level domain variableTo)
          (variableFrom level)
          (variableTo level)
 functionalProofVars = prism FunctionalVariable isVar
@@ -79,8 +79,8 @@ functionalProofVars = prism FunctionalVariable isVar
 -- Hence, a proof that a pattern is function-like is a list of 'FunctionProof'.
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
-data FunctionProof level variable
-    = FunctionProofFunctional (FunctionalProof level variable)
+data FunctionProof level domain variable
+    = FunctionProofFunctional (FunctionalProof level domain variable)
     -- ^ A functional component is also function-like.
     | FunctionHead (SymbolOrAlias level)
     -- ^Head of a partial function.
@@ -91,8 +91,8 @@ using the provided mapping.
 -}
 mapFunctionalProofVariables
     :: (variableFrom level -> variableTo level)
-    -> FunctionalProof level variableFrom
-    -> FunctionalProof level variableTo
+    -> FunctionalProof level domain variableFrom
+    -> FunctionalProof level domain variableTo
 mapFunctionalProofVariables mapper = functionalProofVars %~ mapper
 
 {-| checks whether a pattern is functional or not and, if it is, returns a proof
@@ -101,7 +101,7 @@ mapFunctionalProofVariables mapper = functionalProofVars %~ mapper
 isFunctionalPattern
     :: MetadataTools level StepperAttributes
     -> PureMLPattern level domain variable
-    -> Either (FunctionalError level) [FunctionalProof level variable]
+    -> Either (FunctionalError level) [FunctionalProof level domain variable]
 isFunctionalPattern tools = cata  reduceM
   where
     reduceM patt = do
@@ -112,14 +112,14 @@ isFunctionalPattern tools = cata  reduceM
 checkFunctionalHead
     :: MetadataTools level StepperAttributes
     -> Pattern level domain variable a
-    -> Either (FunctionalError level) (FunctionalProof level variable)
+    -> Either (FunctionalError level) (FunctionalProof level domain variable)
 checkFunctionalHead _ (DomainValuePattern dv) =
     Right (FunctionalDomainValue dv)
 checkFunctionalHead _ (StringLiteralPattern str) =
     Right (FunctionalStringLiteral str)
 checkFunctionalHead _ (CharLiteralPattern str) =
     Right (FunctionalCharLiteral str)
-checkFunctionalHead _ (VariablePattern domain v) =
+checkFunctionalHead _ (VariablePattern v) =
     Right (FunctionalVariable v)
 checkFunctionalHead tools (ApplicationPattern ap) =
     if isFunctional (MetadataTools.attributes tools patternHead)
@@ -135,7 +135,7 @@ checkFunctionalHead _ _ = Left NonFunctionalPattern
 isFunctionPattern
     :: MetadataTools level StepperAttributes
     -> PureMLPattern level domain variable
-    -> Either (FunctionError level) [FunctionProof level variable]
+    -> Either (FunctionError level) [FunctionProof level domain variable]
 isFunctionPattern tools = cata reduceM
   where
     reduceM patt = do
@@ -146,7 +146,7 @@ isFunctionPattern tools = cata reduceM
 checkFunctionHead
     :: MetadataTools level StepperAttributes
     -> Pattern level domain variable a
-    -> Either (FunctionError level) (FunctionProof level variable)
+    -> Either (FunctionError level) (FunctionProof level domain variable)
 checkFunctionHead tools (ApplicationPattern ap)
   | isFunction (MetadataTools.attributes tools patternHead) =
     Right (FunctionHead patternHead)

@@ -51,7 +51,7 @@ import Kore.Attribute.Parser
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
 
-type SortDescription level = SentenceSort level UnifiedPattern domain Variable
+type SortDescription level domain = SentenceSort level UnifiedPattern domain Variable
 
 data IndexModuleError
 
@@ -111,7 +111,7 @@ deriving instance
     ) => Show (IndexedModule sortParam pat domain variable parsedAttributes)
 
 type KoreIndexedModule =
-    IndexedModule UnifiedSortVariable UnifiedPattern domain Variable
+    IndexedModule UnifiedSortVariable UnifiedPattern KoreDomain Variable
 
 indexedModuleRawSentences  :: KoreIndexedModule atts -> [KoreSentence]
 indexedModuleRawSentences im =
@@ -143,7 +143,7 @@ indexedModuleRawSentences im =
     hookedIds :: Set.Set (Id Object)
     hookedIds = indexedModuleHookedIdentifiers im
     hookSortIfNeeded
-        :: (Id Object, (atts, SortDescription Object)) -> KoreSentence
+        :: (Id Object, (atts, SortDescription Object KoreDomain)) -> KoreSentence
     hookSortIfNeeded (x, (_, sortDescription))
         | x `Set.member` hookedIds =
             asSentence (SentenceHookedSort sortDescription)
@@ -163,7 +163,7 @@ newtype ImplicitIndexedModule sortParam pat domain variable atts =
         (IndexedModule sortParam pat domain variable atts)
 
 type KoreImplicitIndexedModule =
-    ImplicitIndexedModule UnifiedSortVariable UnifiedPattern domain Variable
+    ImplicitIndexedModule UnifiedSortVariable UnifiedPattern KoreDomain Variable
 
 emptyIndexedModule
     :: Default parsedAttributes
@@ -375,7 +375,7 @@ indexModuleMetaSentence
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
-    -> Sentence Meta UnifiedSortVariable UnifiedPattern domain Variable
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern KoreDomain Variable
     -> Either
         (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
@@ -493,7 +493,7 @@ indexModuleObjectSentence
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
-    -> Sentence Object UnifiedSortVariable UnifiedPattern domain Variable
+    -> Sentence Object UnifiedSortVariable UnifiedPattern KoreDomain Variable
     -> Either
         (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)

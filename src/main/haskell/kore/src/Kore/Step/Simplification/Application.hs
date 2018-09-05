@@ -54,8 +54,8 @@ import           Kore.Variables.Int
 
 data ExpandedApplication level variable = ExpandedApplication
     { term         :: !(Application level (PureMLPattern level domain variable))
-    , predicate    :: !(Predicate level variable)
-    , substitution :: !(UnificationSubstitution level variable)
+    , predicate    :: !(Predicate level domain variable)
+    , substitution :: !(UnificationSubstitution level domain variable)
     }
     deriving (Eq, Show)
 

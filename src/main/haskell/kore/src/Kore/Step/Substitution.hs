@@ -56,12 +56,12 @@ mergeSubstitutions
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
-    -> UnificationSubstitution level variable
+    -> UnificationSubstitution level domain variable
+    -> UnificationSubstitution level domain variable
     -> Either
           (UnificationError level)
-          ( Predicate level variable
-          , UnificationSubstitution level variable
+          ( Predicate level domain variable
+          , UnificationSubstitution level domain variable
           , UnificationProof level variable
           )
 mergeSubstitutions tools first second = do
@@ -81,8 +81,8 @@ mergeAndNormalizeSubstitutions
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
-    -> UnificationSubstitution level variable
+    -> UnificationSubstitution level domain variable
+    -> UnificationSubstitution level domain variable
     -> Either
           ( UnificationOrSubstitutionError level variable )
           ( IntCounter
@@ -103,7 +103,7 @@ normalizeSubstitutionAfterMerge
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
+    -> UnificationSubstitution level domain variable
     -> Either
           ( UnificationOrSubstitutionError level variable )
           ( IntCounter
@@ -144,8 +144,8 @@ mergePredicatesAndSubstitutions
        , Hashable variable
        )
     => MetadataTools level StepperAttributes
-    -> [Predicate level variable]
-    -> [UnificationSubstitution level variable]
+    -> [Predicate level domain variable]
+    -> [UnificationSubstitution level domain variable]
     -> IntCounter
         ( PredicateSubstitution level variable
         , UnificationProof level variable
@@ -197,9 +197,9 @@ mergeSubstitutionWithPredicate
        , Show (variable level)
        )
     => MetadataTools level StepperAttributes
-    -> ([Predicate level variable], UnificationSubstitution level variable)
-    -> UnificationSubstitution level variable
-    -> ([Predicate level variable], UnificationSubstitution level variable)
+    -> ([Predicate level domain variable], UnificationSubstitution level domain variable)
+    -> UnificationSubstitution level domain variable
+    -> ([Predicate level domain variable], UnificationSubstitution level domain variable)
 mergeSubstitutionWithPredicate
     tools
     (predicates, subst1)

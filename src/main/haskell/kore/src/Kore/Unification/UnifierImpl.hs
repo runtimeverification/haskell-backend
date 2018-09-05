@@ -34,15 +34,15 @@ import Kore.Step.PatternAttributes
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
-type UnificationSubstitution level variable
+type UnificationSubstitution level domain variable
     = [(variable level, PureMLPattern level domain variable)]
 
 -- |'UnificationSolution' describes the solution of an unification problem,
 -- consisting of the unified term and the set of constraints (equalities)
 -- obtained during unification.
-data UnificationSolution level variable = UnificationSolution
+data UnificationSolution level domain variable = UnificationSolution
     { unificationSolutionTerm        :: !(PureMLPattern level domain variable)
-    , unificationSolutionConstraints :: !(UnificationSubstitution level variable)
+    , unificationSolutionConstraints :: !(UnificationSubstitution level domain variable)
     }
   deriving (Eq, Show)
 
@@ -50,8 +50,8 @@ data UnificationSolution level variable = UnificationSolution
 -- with the given function.
 mapSubstitutionVariables
     :: (variableFrom level -> variableTo level)
-    -> UnificationSubstitution level variableFrom
-    -> UnificationSubstitution level variableTo
+    -> UnificationSubstitution level domain variableFrom
+    -> UnificationSubstitution level domain variableTo
 mapSubstitutionVariables variableMapper =
     map (mapVariable variableMapper)
   where
@@ -72,7 +72,7 @@ mapSubstitutionVariables variableMapper =
 unificationSolutionToPurePattern
     :: SortedVariable variable
     => MetadataTools level StepperAttributes
-    -> UnificationSolution level variable
+    -> UnificationSolution level domain variable
     -> PureMLPattern level domain variable
 unificationSolutionToPurePattern tools ucp =
     case unificationSolutionConstraints ucp of
@@ -110,7 +110,7 @@ data UnificationProof level variable
     | ConjunctionIdempotency (PureMLPattern level domain variable)
     -- ^Used to specify the reduction a/\a <-> a
     | Proposition_5_24_3
-        [FunctionalProof level variable]
+        [FunctionalProof level domain variable]
         (variable level)
         (PureMLPattern level domain variable)
     -- ^Used to specify the application of Proposition 5.24 (3)
@@ -191,7 +191,7 @@ simplifyAnds
     -> [PureMLPattern level domain variable]
     -> Either
         (UnificationError level)
-        (UnificationSolution level variable, UnificationProof level variable)
+        (UnificationSolution level domain variable, UnificationProof level variable)
 simplifyAnds _ [] = Left EmptyPatternList
 simplifyAnds tools (p:ps) =
     foldM
@@ -231,7 +231,7 @@ simplifyAnd
     -> PureMLPattern level domain variable
     -> Either
         (UnificationError level)
-        (UnificationSolution level variable, UnificationProof level variable)
+        (UnificationSolution level domain variable, UnificationProof level variable)
 simplifyAnd tools =
     elgot postTransform (preTransform tools . project)
 
@@ -247,7 +247,7 @@ preTransform
     -> Either
         ( Either
             (UnificationError level)
-            ( UnificationSolution level variable
+            ( UnificationSolution level domain variable
             , UnificationProof level variable
             )
         )
@@ -291,7 +291,7 @@ matchDomainValue
     -> Either
         ( Either
             (UnificationError level)
-            ( UnificationSolution level variable
+            ( UnificationSolution level domain variable
             , UnificationProof level variable
             )
         )
@@ -318,7 +318,7 @@ matchConstructor
     -> Either
         ( Either
             (UnificationError level)
-            ( UnificationSolution level variable
+            ( UnificationSolution level domain variable
             , UnificationProof level variable
             )
         )
@@ -365,7 +365,7 @@ mlProposition_5_24_3
     -- ^functional (term) pattern
     -> Either
         (UnificationError level)
-        (UnificationSolution level variable, UnificationProof level variable)
+        (UnificationSolution level domain variable, UnificationProof level variable)
 mlProposition_5_24_3
     tools
     v
@@ -386,13 +386,13 @@ postTransform
     :: Pattern level domain variable
         (Either
             (UnificationError level)
-            ( UnificationSolution level variable
+            ( UnificationSolution level domain variable
             , UnificationProof level variable
             )
         )
     -> Either
         (UnificationError level)
-        (UnificationSolution level variable, UnificationProof level variable)
+        (UnificationSolution level domain variable, UnificationProof level variable)
 postTransform (ApplicationPattern ap) = do
     children <- sequenceA (applicationChildren ap)
     let (subSolutions, subProofs) = unzip children
@@ -415,8 +415,8 @@ postTransform _ = error "Unexpected, non-application, pattern."
 
 groupSubstitutionByVariable
     :: Ord (variable level)
-    => UnificationSubstitution level variable
-    -> [UnificationSubstitution level variable]
+    => UnificationSubstitution level domain variable
+    -> [UnificationSubstitution level domain variable]
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
@@ -434,10 +434,10 @@ solveGroupedSubstitution
        , Show (variable level)
        )
     => MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
+    -> UnificationSubstitution level domain variable
     -> Either
         (UnificationError level)
-        (UnificationSubstitution level variable, UnificationProof level variable)
+        (UnificationSubstitution level domain variable, UnificationProof level variable)
 solveGroupedSubstitution _ [] = Left EmptyPatternList
 solveGroupedSubstitution tools ((x,p):subst) = do
     (solution, proof) <- simplifyAnds tools (p : map snd subst)
@@ -464,10 +464,10 @@ normalizeSubstitutionDuplication
        , Show (variable level)
        )
     => MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
+    -> UnificationSubstitution level domain variable
     -> Either
         (UnificationError level)
-        ( UnificationSubstitution level variable
+        ( UnificationSubstitution level domain variable
         , UnificationProof level variable
         )
 normalizeSubstitutionDuplication tools subst =
@@ -513,8 +513,8 @@ unificationProcedure
     -> Either
         -- TODO: Consider using a false predicate instead of a Left error
         (UnificationError level)
-        ( UnificationSubstitution level variable
-        , Predicate level variable
+        ( UnificationSubstitution level domain variable
+        , Predicate level domain variable
         , UnificationProof level variable
         )
 unificationProcedure tools p1 p2

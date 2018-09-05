@@ -368,8 +368,8 @@ mergeConditionsWithAnd
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => [Predicate level var]
-    -> (IntCounter (Predicate level var), PredicateProof level)
+    => [Predicate level domain var]
+    -> (IntCounter (Predicate level domain var), PredicateProof level)
 mergeConditionsWithAnd conditions =
     let
         (predicate, proof) = makeMultipleAndPredicate conditions

@@ -32,13 +32,13 @@ import Kore.MetaML.AST
 'Object' and 'Meta' constructs to pure 'Meta' constructs.
 -}
 class LiftableToMetaML mixed where
-    liftToMeta :: mixed -> CommonMetaPattern
+    liftToMeta :: mixed -> CommonMetaPattern KoreDomain
 
 {-|'VerboseLiftableToMetaML' describes functionality to verbosely
 lift mixed Kore 'Object' and 'Meta' constructs to pure 'Meta' constructs.
 -}
 class VerboseLiftableToMetaML mixed where
-    verboseLiftToMeta :: mixed -> CommonMetaPattern
+    verboseLiftToMeta :: mixed -> CommonMetaPattern KoreDomain
 
 -- Section 9.2.1 Lift Object Identifiers to String Literals
 instance LiftableToMetaML (Id Object) where
@@ -46,7 +46,7 @@ instance LiftableToMetaML (Id Object) where
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortVariable Object) where
-    liftToMeta sv = Fix $ VariablePattern domain Variable
+    liftToMeta sv = Fix $ VariablePattern Variable
         { variableName = Id
             { getId = ('#' :) $ getId $ getSortVariable sv
             , idLocation = AstLocationLifted $ idLocation $ getSortVariable sv
@@ -92,8 +92,8 @@ instance VerboseLiftableToMetaML (Sort Object) where
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 liftSortListToMeta
-    :: (Sort Object -> CommonMetaPattern)
-    -> ([Sort Object] -> CommonMetaPattern)
+    :: (Sort Object -> CommonMetaPattern domain)
+    -> ([Sort Object] -> CommonMetaPattern domain)
 liftSortListToMeta sortLifter =
     foldr
         (applyConsSortList . sortLifter)
@@ -108,7 +108,7 @@ instance VerboseLiftableToMetaML [Sort Object] where
 instance LiftableToMetaML [Sort Object] where
     liftToMeta = liftSortListToMeta liftToMeta
 
-instance LiftableToMetaML [CommonMetaPattern] where
+instance LiftableToMetaML [CommonMetaPattern KoreDomain] where
     liftToMeta =
         foldr applyConsPatternList nilPatternListMetaPattern
       where
@@ -126,16 +126,16 @@ instance LiftableToMetaML CommonKorePattern where
     liftToMeta = cata liftReducer
 
 liftReducer
-    :: UnifiedPattern domain Variable CommonMetaPattern
-    -> CommonMetaPattern
+    :: UnifiedPattern KoreDomain Variable (CommonMetaPattern KoreDomain)
+    -> CommonMetaPattern KoreDomain
 liftReducer p' =
     case p' of
         UnifiedObjectPattern p -> liftObjectReducer p
         UnifiedMetaPattern   p -> Fix p
 
 liftObjectReducer
-    :: Pattern Object domain Variable CommonMetaPattern
-    -> CommonMetaPattern
+    :: Pattern Object KoreDomain Variable (CommonMetaPattern KoreDomain)
+    -> CommonMetaPattern KoreDomain
 liftObjectReducer p = case p of
     AndPattern ap -> applyMetaMLPatternHead AndPatternType
         (liftToMeta (andSort ap) : getPatternChildren ap)
@@ -204,7 +204,7 @@ liftObjectReducer p = case p of
         (liftToMeta (rewritesSort ap) : getPatternChildren ap)
     TopPattern bp -> applyMetaMLPatternHead TopPatternType
         [liftToMeta (topSort bp)]
-    VariablePattern domain vp ->
+    VariablePattern vp ->
         Fix $ apply variableAsPatternHead [liftToMeta vp]
   where
     applyMetaMLPatternHead patternType =
@@ -217,7 +217,7 @@ liftObjectReducer p = case p of
 -- Section 9.2.4 Lift Sort Declarations
 liftSortDeclaration
     :: KoreSentenceSort Object
-    -> (MetaSentenceSymbol, MetaSentenceAxiom, MetaSentenceAxiom)
+    -> (MetaSentenceSymbol KoreDomain, MetaSentenceAxiom KoreDomain, MetaSentenceAxiom KoreDomain)
 liftSortDeclaration ss =
     (symbolDeclaration, helperFunctionAxiom, declaredAxiom)
   where
@@ -265,7 +265,7 @@ liftSortDeclaration ss =
 -- Section 9.2.6 Lift Object Symbol Declarations
 liftSymbolDeclaration
     :: KoreSentenceSymbol Object
-    -> (MetaSentenceSymbol, MetaSentenceAxiom, MetaSentenceAxiom)
+    -> (MetaSentenceSymbol KoreDomain, MetaSentenceAxiom KoreDomain, MetaSentenceAxiom KoreDomain)
 liftSymbolDeclaration sd =
     (symbolOrAliasLiftedDeclaration sd, helperFunctionAxiom, declaredAxiom)
   where
@@ -283,7 +283,7 @@ liftSymbolDeclaration sd =
         , liftToMeta sorts
         , liftToMeta (sentenceSymbolResultSort sd)
         ]
-    freshVariable n s = Fix $ VariablePattern domain Variable
+    freshVariable n s = Fix $ VariablePattern Variable
         { variableName = Id ("#P" ++ show (n::Int)) liftedSymbolLocation
         , variableSort = s
         }
@@ -320,7 +320,7 @@ liftSymbolDeclaration sd =
 symbolOrAliasLiftedDeclaration
     :: SentenceSymbolOrAlias sa
     => sa Object pat domain variable
-    -> MetaSentenceSymbol
+    -> MetaSentenceSymbol domain
 symbolOrAliasLiftedDeclaration sa = symbolDeclaration
   where
     sortParameters = getSentenceSymbolOrAliasSortParams sa
@@ -345,7 +345,7 @@ symbolOrAliasLiftedDeclaration sa = symbolDeclaration
 -- Section 9.2.7 Lift Object Alias Declarations
 liftAliasDeclaration
     :: KoreSentenceAlias Object
-    -> (MetaSentenceSymbol, MetaSentenceAxiom)
+    -> (MetaSentenceSymbol KoreDomain, MetaSentenceAxiom KoreDomain)
 liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom)
   where
     axiom = SentenceAxiom
@@ -369,12 +369,12 @@ liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom)
 {-|'liftSentence' transforms a 'Sentence' in one or more 'MetaSentences'
 encoding it.
 -}
-liftSentence :: KoreSentence -> [MetaSentence]
+liftSentence :: KoreSentence -> [MetaSentence KoreDomain]
 liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
 
 liftMetaSentence
-    :: Sentence Meta UnifiedSortVariable UnifiedPattern domain Variable
-    -> [MetaSentence]
+    :: Sentence Meta UnifiedSortVariable UnifiedPattern KoreDomain Variable
+    -> [MetaSentence KoreDomain]
 liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
         { sentenceAliasAttributes = sentenceAliasAttributes msa
@@ -437,8 +437,8 @@ liftMetaSentence (SentenceImportSentence is) =
     ]
 
 liftObjectSentence
-    :: Sentence Object UnifiedSortVariable UnifiedPattern domain Variable
-    -> [MetaSentence]
+    :: Sentence Object UnifiedSortVariable UnifiedPattern KoreDomain Variable
+    -> [MetaSentence KoreDomain]
 liftObjectSentence (SentenceAliasSentence osa) =
     let (mas, axiom) = liftAliasDeclaration osa in
         [ SentenceSymbolSentence mas
@@ -465,7 +465,7 @@ liftObjectSentence (SentenceHookSentence (SentenceHookedSymbol hss)) =
 
 
 -- |'liftModule' transforms a 'KoreModule' into a 'MetaModule'
-liftModule :: KoreModule -> MetaModule
+liftModule :: KoreModule -> MetaModule KoreDomain
 liftModule m = Module
     { moduleName = moduleName m
     , moduleAttributes = moduleAttributes m
@@ -473,7 +473,7 @@ liftModule m = Module
     }
 
 -- |'liftDefinition' transforms a 'KoreDefinition' into a 'MetaDefinition'
-liftDefinition :: KoreDefinition -> MetaDefinition
+liftDefinition :: KoreDefinition -> MetaDefinition KoreDomain
 liftDefinition d = Definition
     { definitionAttributes = definitionAttributes d
     , definitionModules = map liftModule (definitionModules d)

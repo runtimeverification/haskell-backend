@@ -56,24 +56,24 @@ way, e.g. sort_.
 
 parameterizedEqualsAxiom
     :: [SortVariable Meta]
-    -> MetaPatternStub
-    -> MetaPatternStub
-    -> MetaSentenceAxiom
+    -> MetaPatternStub domain
+    -> MetaPatternStub domain
+    -> MetaSentenceAxiom domain
 parameterizedEqualsAxiom parameters =
     parameterizedEqualsAxiom_ parameters
         (sortParameter Meta "#esp" AstLocationImplicit)
 
 equalsAxiom
-    :: MetaPatternStub
-    -> MetaPatternStub
-    -> MetaSentenceAxiom
+    :: MetaPatternStub domain
+    -> MetaPatternStub domain
+    -> MetaSentenceAxiom domain
 equalsAxiom = parameterizedEqualsAxiom []
 
 implicitSymbol
     :: String
     -> [Sort level]
     -> Sort level
-    -> PureSentenceSymbol level
+    -> PureSentenceSymbol level domain
 implicitSymbol name = symbol_ name AstLocationImplicit
 
 implicitParameterizedSymbol
@@ -81,7 +81,7 @@ implicitParameterizedSymbol
     -> [SortVariable level]
     -> [Sort level]
     -> Sort level
-    -> PureSentenceSymbol level
+    -> PureSentenceSymbol level domain
 implicitParameterizedSymbol name = parameterizedSymbol_ name AstLocationImplicit
 
 epsilon = implicitSymbol "#epsilon" [] stringMetaSort
@@ -118,10 +118,10 @@ applicationP =
         "#application" [symbolMetaSort, patternListMetaSort] patternMetaSort
 applicationA = applyS applicationP
 
-mlPatternA :: MLPatternType -> ([MetaPatternStub] -> MetaPatternStub)
+mlPatternA :: MLPatternType -> ([MetaPatternStub domain] -> MetaPatternStub domain)
 mlPatternA patternType = applyS (mlPatternP patternType)
 
-mlPatternP :: MLPatternType -> MetaSentenceSymbol
+mlPatternP :: MLPatternType -> MetaSentenceSymbol domain
 mlPatternP AndPatternType =
     implicitSymbol
         "#\\and"
@@ -537,7 +537,7 @@ wellFormedGetSortAxioms =
 #wellFormed(phi) -> #provable(phi), which covers most axioms encoded in the
 meta-theory of K.
 -}
-wellFormedImpliesProvableAxiom :: MetaPatternStub -> MetaSentenceAxiom
+wellFormedImpliesProvableAxiom :: MetaPatternStub domain -> MetaSentenceAxiom domain
 wellFormedImpliesProvableAxiom pattern1 =
     parameterizedAxiom_ [pS]
         (implies_
@@ -549,24 +549,24 @@ wellFormed =
     implicitParameterizedSymbol "#wellFormed" [pS] [patternMetaSort] spS
 wellFormedA = applyPS wellFormed
 
-char_ :: Char -> MetaPatternStub
+char_ :: Char -> MetaPatternStub domain
 char_ c =
     SortedPatternStub SortedPattern
         { sortedPatternPattern = CharLiteralPattern (CharLiteral c)
         , sortedPatternSort    = charMetaSort
         }
 
-str_ :: String -> MetaPatternStub
+str_ :: String -> MetaPatternStub domain
 str_ s =
     SortedPatternStub SortedPattern
         { sortedPatternPattern = StringLiteralPattern (StringLiteral s)
         , sortedPatternSort    = stringMetaSort
         }
 
-sortList_ :: [MetaPatternStub] -> MetaPatternStub
+sortList_ :: [MetaPatternStub domain] -> MetaPatternStub domain
 sortList_ = foldr (\p ps -> consSortListA [p, ps]) nilSortListA
 
-patternList_ :: [MetaPatternStub] -> MetaPatternStub
+patternList_ :: [MetaPatternStub domain] -> MetaPatternStub domain
 patternList_ = foldr (\p ps -> consPatternListA [p, ps]) nilPatternListA
 
 stringVariable_ :: String -> Variable Meta

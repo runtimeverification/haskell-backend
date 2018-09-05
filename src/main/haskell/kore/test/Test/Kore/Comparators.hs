@@ -658,7 +658,7 @@ instance
     ( Eq (variable level)
     , Show (variable level)
     )
-    => EqualWithExplanation (FunctionalProof level variable)
+    => EqualWithExplanation (FunctionalProof level domain variable)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -667,7 +667,7 @@ instance
     ( Eq (variable level)
     , Show (variable level)
     )
-    => EqualWithExplanation (FunctionProof level variable)
+    => EqualWithExplanation (FunctionProof level domain variable)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -742,7 +742,7 @@ instance
     , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
     )
-    => StructEqualWithExplanation (UnificationSolution level variable)
+    => StructEqualWithExplanation (UnificationSolution level domain variable)
   where
     structFieldsWithNames
         expected@(UnificationSolution _ _)
@@ -763,7 +763,7 @@ instance
     , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
     )
-    => EqualWithExplanation (UnificationSolution level variable)
+    => EqualWithExplanation (UnificationSolution level domain variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -877,7 +877,7 @@ instance
     ( EqualWithExplanation (PureMLPattern level domain variable)
     , Show level, Show (variable level)
     )
-    => EqualWithExplanation (Predicate level variable)
+    => EqualWithExplanation (Predicate level domain variable)
   where
     compareWithExplanation p1 p2 = do
         compared <- traverse (\x -> traverse (compareWithExplanation x) p2) p1

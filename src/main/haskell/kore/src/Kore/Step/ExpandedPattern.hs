@@ -61,9 +61,9 @@ predicate and a substitution
 data ExpandedPattern level domain variable = ExpandedPattern
     { term         :: !(PureMLPattern level domain variable)
     -- ^ Free-form pattern.
-    , predicate    :: !(Predicate level variable)
+    , predicate    :: !(Predicate level domain variable)
     -- ^ pattern that only evaluates to Top or Bottom.
-    , substitution :: !(UnificationSubstitution level variable)
+    , substitution :: !(UnificationSubstitution level domain variable)
     -- ^ special kind of predicate of the type
     -- variable1 = term1 /\ variable2 = term2 /\ ...
     }
@@ -73,9 +73,9 @@ data ExpandedPattern level domain variable = ExpandedPattern
 PureMLPattern that occurs in certain cases when executing Kore.
 -}
 data PredicateSubstitution level variable = PredicateSubstitution
-    { predicate    :: !(Predicate level variable)
+    { predicate    :: !(Predicate level domain variable)
     -- ^ pattern that only evaluates to Top or Bottom.
-    , substitution :: !(UnificationSubstitution level variable)
+    , substitution :: !(UnificationSubstitution level domain variable)
     -- ^ special kind of predicate of the type
     -- variable1 = term1 /\ variable2 = term2 /\ ...
     }
@@ -153,7 +153,7 @@ toMLPattern
             , SortedVariable variable
             , Show (variable level))
         => PureMLPattern level domain variable
-        -> Predicate level variable
+        -> Predicate level domain variable
         -> PureMLPattern level domain variable
     simpleAnd (Top_ _)      predicate'     = unwrapPredicate predicate'
     simpleAnd patt          PredicateTrue  = patt
@@ -170,7 +170,7 @@ substitutionToPredicate
         , SortedVariable variable
         , Show (variable level))
     => [(variable level, PureMLPattern level domain variable)]
-    -> Predicate level variable
+    -> Predicate level domain variable
 substitutionToPredicate =
     foldl'
         (\predicate subst ->
@@ -186,7 +186,7 @@ singleSubstitutionToPredicate
         , SortedVariable variable
         , Show (variable level))
     => (variable level, PureMLPattern level domain variable)
-    -> Predicate level variable
+    -> Predicate level domain variable
 singleSubstitutionToPredicate (var, patt) =
     makeEqualsPredicate (mkVar var) patt
 

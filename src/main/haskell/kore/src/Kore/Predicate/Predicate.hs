@@ -72,12 +72,12 @@ newtype GenericPredicate pat = GenericPredicate pat
 
 {-| 'Predicate' is a user-visible representation for predicates.
 -}
-type Predicate level var = GenericPredicate (PureMLPattern level domain var)
+type Predicate level domain var = GenericPredicate (PureMLPattern level domain var)
 
 {-| 'CommonPredicate' follows the generic convention of particularizing types
 to Variable.
 -}
-type CommonPredicate level = Predicate level Variable
+type CommonPredicate level domain = Predicate level domain Variable
 
 {- 'compactPredicatePredicate' removes one level of 'GenericPredicate' which
 sometimes occurs when, say, using Predicates as Traversable.
@@ -98,7 +98,7 @@ predicate evaluation and tests and should not be used outside of that.
 
 We should consider deleting this and implementing the functionality otherwise.
 -}
-wrapPredicate :: PureMLPattern level domain var -> Predicate level var
+wrapPredicate :: PureMLPattern level domain var -> Predicate level domain var
 wrapPredicate = GenericPredicate
 
 {- 'unwrapPredicate' wraps a pattern in a GenericPredicate. This should be
@@ -106,23 +106,23 @@ not be used outside of that.
 
 We should consider deleting this and implementing the functionality otherwise.
 -}
-unwrapPredicate :: Predicate level var -> PureMLPattern level domain var
+unwrapPredicate :: Predicate level domain var -> PureMLPattern level domain var
 unwrapPredicate (GenericPredicate p) = p
 
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}
-pattern PredicateFalse :: Predicate level var
+pattern PredicateFalse :: Predicate level domain var
 
 {-|'PredicateTrue' is a pattern for matching 'top' predicates.
 -}
-pattern PredicateTrue :: Predicate level var
+pattern PredicateTrue :: Predicate level domain var
 
 pattern PredicateFalse <- GenericPredicate(Bottom_ _)
 pattern PredicateTrue <- GenericPredicate(Top_ _)
 
 {-|'isFalse' checks whether a predicate matches 'PredicateFalse'.
 -}
-isFalse :: Predicate level var -> Bool
+isFalse :: Predicate level domain var -> Bool
 isFalse PredicateFalse = True
 isFalse _ = False
 
@@ -134,8 +134,8 @@ makeMultipleAndPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => [Predicate level var]
-    -> (Predicate level var, PredicateProof level)
+    => [Predicate level domain var]
+    -> (Predicate level domain var, PredicateProof level)
 makeMultipleAndPredicate =
     foldl'
         (\(cond1, _) cond2 -> makeAndPredicate cond1 cond2)
@@ -149,8 +149,8 @@ makeMultipleOrPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => [Predicate level var]
-    -> (Predicate level var, PredicateProof level)
+    => [Predicate level domain var]
+    -> (Predicate level domain var, PredicateProof level)
 makeMultipleOrPredicate =
     foldl'
         (\(cond1, _) cond2 -> makeOrPredicate cond1 cond2)
@@ -166,9 +166,9 @@ makeAndPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => Predicate level var
-    -> Predicate level var
-    -> (Predicate level var, PredicateProof level)
+    => Predicate level domain var
+    -> Predicate level domain var
+    -> (Predicate level domain var, PredicateProof level)
 makeAndPredicate b@PredicateFalse _ = (b, PredicateProof)
 makeAndPredicate _ b@PredicateFalse = (b, PredicateProof)
 makeAndPredicate PredicateTrue second = (second, PredicateProof)
@@ -186,9 +186,9 @@ makeOrPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => Predicate level var
-    -> Predicate level var
-    -> (Predicate level var, PredicateProof level)
+    => Predicate level domain var
+    -> Predicate level domain var
+    -> (Predicate level domain var, PredicateProof level)
 makeOrPredicate t@PredicateTrue _ = (t, PredicateProof)
 makeOrPredicate _ t@PredicateTrue = (t, PredicateProof)
 makeOrPredicate PredicateFalse second = (second, PredicateProof)
@@ -206,9 +206,9 @@ makeImpliesPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => Predicate level var
-    -> Predicate level var
-    -> (Predicate level var, PredicateProof level)
+    => Predicate level domain var
+    -> Predicate level domain var
+    -> (Predicate level domain var, PredicateProof level)
 makeImpliesPredicate PredicateFalse _ = (GenericPredicate mkTop, PredicateProof)
 makeImpliesPredicate _ t@PredicateTrue = (t, PredicateProof)
 makeImpliesPredicate PredicateTrue second = (second, PredicateProof)
@@ -227,9 +227,9 @@ makeIffPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => Predicate level var
-    -> Predicate level var
-    -> (Predicate level var, PredicateProof level)
+    => Predicate level domain var
+    -> Predicate level domain var
+    -> (Predicate level domain var, PredicateProof level)
 makeIffPredicate PredicateFalse second =
     (fst $ makeNotPredicate second, PredicateProof)
 makeIffPredicate PredicateTrue second = (second, PredicateProof)
@@ -249,8 +249,8 @@ makeNotPredicate
         , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
-    => Predicate level var
-    -> (Predicate level var, PredicateProof level)
+    => Predicate level domain var
+    -> (Predicate level domain var, PredicateProof level)
 makeNotPredicate PredicateFalse = (GenericPredicate mkTop, PredicateProof)
 makeNotPredicate PredicateTrue  = (GenericPredicate mkBottom, PredicateProof)
 makeNotPredicate (GenericPredicate predicate) =
@@ -268,7 +268,7 @@ makeEqualsPredicate
         , Show (var level))
     => PureMLPattern level domain var
     -> PureMLPattern level domain var
-    -> Predicate level var
+    -> Predicate level domain var
 makeEqualsPredicate first second =
     GenericPredicate $ mkEquals first second
 
@@ -282,7 +282,7 @@ makeInPredicate
         , Show (var level))
     => PureMLPattern level domain var
     -> PureMLPattern level domain var
-    -> Predicate level var
+    -> Predicate level domain var
 makeInPredicate first second =
     GenericPredicate $ mkIn first second
 
@@ -295,7 +295,7 @@ makeCeilPredicate
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level domain var
-    -> Predicate level var
+    -> Predicate level domain var
 makeCeilPredicate patt =
     GenericPredicate $ mkCeil patt
 
@@ -308,7 +308,7 @@ makeFloorPredicate
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level domain var
-    -> Predicate level var
+    -> Predicate level domain var
 makeFloorPredicate patt =
     GenericPredicate $ mkFloor patt
 
@@ -316,7 +316,7 @@ makeFloorPredicate patt =
 -}
 makeTruePredicate
     ::  (MetaOrObject level)
-    => Predicate level var
+    => Predicate level domain var
 makeTruePredicate =
     GenericPredicate mkTop
 
@@ -324,16 +324,16 @@ makeTruePredicate =
 -}
 makeFalsePredicate
     ::  (MetaOrObject level)
-    => Predicate level var
+    => Predicate level domain var
 makeFalsePredicate =
     GenericPredicate mkBottom
 
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
-mapVariables :: (from level -> to level) -> Predicate level from -> Predicate level to
+mapVariables :: (from level -> to level) -> Predicate level domain from -> Predicate level domain to
 mapVariables f = fmap (mapPatternVariables f)
 
 {- | Extract the set of all (free and bound) variables from a @Predicate@.
 -}
-allVariables :: Ord (var level) => Predicate level var -> Set (var level)
+allVariables :: Ord (var level) => Predicate level domain var -> Set (var level)
 allVariables = pureAllVariables . unwrapPredicate

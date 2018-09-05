@@ -24,7 +24,7 @@ import Kore.IndexedModule.IndexedModule
 {-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
 verifySort
     :: MetaOrObject level
-    => (Id level -> Either (Error VerifyError) (SortDescription level))
+    => (Id level -> Either (Error VerifyError) (SortDescription level KoreDomain))
     -- ^ Provides a sortMetaSorts description.
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables visible here.
@@ -64,10 +64,10 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
     
 verifySortMatchesDeclaration
     :: MetaOrObject level
-    => (Id level -> Either (Error VerifyError) (SortDescription level))
+    => (Id level -> Either (Error VerifyError) (SortDescription level domain))
     -> Set.Set UnifiedSortVariable
     -> SortActual level
-    -> SortDescription level
+    -> SortDescription level domain
     -> Either (Error VerifyError) VerifySuccess
 verifySortMatchesDeclaration
     findSortDescription declaredSortVariables sort sortDescription

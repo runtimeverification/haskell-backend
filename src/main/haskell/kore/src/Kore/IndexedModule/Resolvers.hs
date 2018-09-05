@@ -40,7 +40,7 @@ symbolSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceSymbol level UnifiedPattern domain Variable)
+        (atts, SentenceSymbol level UnifiedPattern KoreDomain Variable)
 symbolSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSymbolSentences m
@@ -52,7 +52,7 @@ aliasSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceAlias level UnifiedPattern domain Variable)
+        (atts, SentenceAlias level UnifiedPattern KoreDomain Variable)
 aliasSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaAliasSentences m
@@ -64,7 +64,7 @@ sortSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SortDescription level)
+        (atts, SortDescription level KoreDomain)
 sortSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSortDescriptions m
@@ -213,7 +213,7 @@ resolveSort
     :: MetaOrObject level
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error a) (atts, SortDescription level)
+    -> Either (Error a) (atts, SortDescription level KoreDomain)
 resolveSort m sortId =
     case resolveThing (sortSentencesMap (Proxy :: Proxy level)) m sortId of
         Nothing ->

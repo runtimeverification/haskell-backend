@@ -701,7 +701,7 @@ instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
                 ])
 
 instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (UnificationSolution level variable)
+    => PrettyPrint (UnificationSolution level domain variable)
   where
     prettyPrint _ us@(UnificationSolution _ _) =
         writeStructure
@@ -761,7 +761,7 @@ instance MetaOrObject level => PrettyPrint (ClashReason level) where
         writeOneFieldStruct flags "HeadClash" h
 
 instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (FunctionalProof level variable)
+    => PrettyPrint (FunctionalProof level domain variable)
   where
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v

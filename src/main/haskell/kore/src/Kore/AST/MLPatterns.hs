@@ -193,7 +193,7 @@ can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
 with `applyPatternLeveledFunction` they form a function on patterns, hence the name.
 -}
 -- TODO: consider parameterizing on variable also
-data PatternLeveledFunction level variable child result = PatternLeveledFunction
+data PatternLeveledFunction level domain variable child result = PatternLeveledFunction
     { patternLeveledFunctionML
         :: !(forall patt . MLPatternClass patt level
             => patt level child -> result level)
@@ -213,7 +213,7 @@ data PatternLeveledFunction level variable child result = PatternLeveledFunction
 `Pattern`, returning the result.
 -}
 applyPatternLeveledFunction
-    :: PatternLeveledFunction level variable child result
+    :: PatternLeveledFunction level domain variable child result
     -> Pattern level domain variable child
     -> result level
 applyPatternLeveledFunction function (AndPattern a) =
@@ -262,7 +262,7 @@ can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
 with `applyPatternFunction` they form a function on patterns, hence the name.
 -}
 -- TODO: consider parameterizing on variable also
-data PatternFunction level variable child result = PatternFunction
+data PatternFunction level domain variable child result = PatternFunction
     { patternFunctionML
         :: !(forall patt . MLPatternClass patt level => patt level child -> result)
     , patternFunctionMLBinder
@@ -284,7 +284,7 @@ newtype ParameterizedProxy result level = ParameterizedProxy
 `Pattern`, returning the result.
 -}
 applyPatternFunction
-    :: PatternFunction level variable child result
+    :: PatternFunction level domain variable child result
     -> Pattern level domain variable child
     -> result
 applyPatternFunction patternFunction =

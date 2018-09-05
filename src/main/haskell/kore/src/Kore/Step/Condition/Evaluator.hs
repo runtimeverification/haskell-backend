@@ -43,7 +43,7 @@ evaluate
         )
     => PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
-    -> Predicate level variable
+    -> Predicate level domain variable
     -- ^ The condition to be evaluated.
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
