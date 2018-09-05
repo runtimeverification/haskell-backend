@@ -283,7 +283,7 @@ preTransform tools (AndPattern ap) = if left == right
                 let
                     head2 = applicationSymbolOrAlias ap2
                 in
-                    if isConstructor (attributes tools head2)
+                    if isConstructor (symAttributes tools head2)
                         then matchConstructor tools p1 head2 ap2
                     else if isInjHead head2
                         then matchInj tools p1
@@ -315,7 +315,7 @@ matchDomainValue _ (DomainValuePattern (DomainValue _ dv1)) sl2 =
                 (PatternClash (DomainValueClash sl1) (DomainValueClash sl2))
         _ ->  Left $ Left UnsupportedPatterns
 matchDomainValue tools (ApplicationPattern ap1) sl2
-    | isConstructor (attributes tools head1) =
+    | isConstructor (symAttributes tools head1) =
         Left $ Left (PatternClash (HeadClash head1) (DomainValueClash sl2))
     | otherwise = Left $ Left $ NonConstructorHead head1
   where
@@ -341,7 +341,7 @@ matchConstructor _ (DomainValuePattern (DomainValue _ dv1)) head2 _ =
             Left $ Left (PatternClash (DomainValueClash sl1) (HeadClash head2))
         _ -> Left $ Left UnsupportedPatterns
 matchConstructor tools (ApplicationPattern ap1) head2 ap2
-    | isConstructor (attributes tools head1) =
+    | isConstructor (symAttributes tools head1) =
         if head1 == head2
             then Right
                 $ ApplicationPattern Application

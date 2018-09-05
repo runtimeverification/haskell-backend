@@ -90,9 +90,7 @@ getSort x = getPatternResultSort given $ project x
 flexibleSort
     :: MetaOrObject level
     => Sort level
-flexibleSort =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId "*" } --FIXME
+flexibleSort = mkSort "*"
 
 patternLens
     :: (Applicative f, MetaOrObject level)
@@ -437,8 +435,7 @@ mkSort
   => String
   -> Sort level
 mkSort name =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId name }
+    SortActualSort $ SortActual (noLocationId name) []
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s

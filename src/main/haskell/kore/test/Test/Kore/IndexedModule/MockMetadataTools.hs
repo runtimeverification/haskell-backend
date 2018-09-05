@@ -32,7 +32,8 @@ makeMetadataTools
     -> MetadataTools level StepperAttributes
 makeMetadataTools sortTools attr =
     MetadataTools
-        { attributes = attributesFunction attr
+        { symAttributes = attributesFunction attr
+        , sortAttributes = const functionAttributes
         , sortTools = sortTools
         }
 

@@ -131,7 +131,7 @@ checkFunctionalHead
 checkFunctionalHead _ (VariablePattern v) =
     Right (FunctionalVariable v)
 checkFunctionalHead tools (ApplicationPattern ap) =
-    if isFunctional (MetadataTools.attributes tools patternHead)
+    if isFunctional (MetadataTools.symAttributes tools patternHead)
         then return (FunctionalHead patternHead)
         else Left (NonFunctionalHead patternHead)
   where
@@ -170,7 +170,7 @@ checkFunctionHead
     -> Pattern level variable a
     -> Either (FunctionError level) (FunctionProof level variable)
 checkFunctionHead tools (ApplicationPattern ap)
-  | isFunction (MetadataTools.attributes tools patternHead) =
+  | isFunction (MetadataTools.symAttributes tools patternHead) =
     Right (FunctionHead patternHead)
   where
     patternHead = applicationSymbolOrAlias ap

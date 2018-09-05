@@ -17,6 +17,8 @@ import           Kore.AST.PureML
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
+import           Kore.Attribute.Parser
+                 ( ParseAttributes (..) )
 import qualified Kore.Builtin as Builtin
 import           Kore.Builtin.Hook
                  ( hookAttribute )
@@ -112,6 +114,10 @@ subSymbol = builtinSymbol "subInt"
 
 mulSymbol :: SymbolOrAlias Object
 mulSymbol = builtinSymbol "mulInt"
+
+intLiteral :: Integer -> CommonPurePattern Object
+intLiteral n = DV_ intSort (StringLiteral_ $ StringLiteral $ show n)
+
 
 -- | Test a binary operator hooked to the given symbol.
 propBinary
@@ -329,8 +335,9 @@ evaluators :: Map (Id Object) [Builtin.Function]
 evaluators = Builtin.evaluators Int.builtinFunctions indexedModule
 
 verify
-    :: KoreDefinition
-    -> Map ModuleName (KoreIndexedModule StepperAttributes)
+    :: ParseAttributes a
+    => KoreDefinition
+    -> Map ModuleName (KoreIndexedModule a)
 verify defn =
     either (error . Kore.Error.printError) id
         (verifyAndIndexDefinition attrVerify builtinVerifiers defn)

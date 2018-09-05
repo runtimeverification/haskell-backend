@@ -457,6 +457,7 @@ isObviouslyPredicate = \case
   Equals_ _ _ _ _  -> True
   Ceil_ _ _ _      -> True
   Floor_ _ _ _     -> True
+  In_ _ _ _ _      -> True
   _ -> False
 
 floorIfNotPredicate
