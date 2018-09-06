@@ -8,188 +8,125 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Step
-    ( step
-    , pickFirstStepper
-    , MaxStepCount(..)
+    ( simpleStrategy
+    , simpleStepper
+    , stepStrategy
+    , stepStepper
+    , simpleRule
+    , Limit (..)
+    , Natural
     ) where
 
-import           Data.Either
-                 ( rights )
-import qualified Data.Map as Map
+import           Data.Foldable
+                 ( toList )
 import           Data.Semigroup
                  ( (<>) )
 
-import           Kore.AST.Common
-                 ( Id )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.BaseStep
-                 ( AxiomPattern, StepProof (..), StepProofAtom (..), stepProof,
-                 stepWithAxiom )
+                 (AxiomPattern, StepProof (..), simplificationProof, stepWithAxiom )
+
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
-import           Kore.Step.Function.Data
-                 ( CommonApplicationFunctionEvaluator )
-import           Kore.Step.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, traverseFlattenWithPairs )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( CommonPureMLPatternSimplifier, Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Step.Strategy
+                 ( Limit (..), Prim (..), Strategy, runStrategy )
+import qualified Kore.Step.Strategy as Strategy
 import           Kore.Variables.Fresh
 
-data MaxStepCount
-    = MaxStepCount Integer
-    | AnyStepCount
+stepStrategy
+    :: MetaOrObject level
+    => [AxiomPattern level]
+    -> Strategy (Prim (AxiomPattern level))
+stepStrategy axioms =
+    Strategy.all (applyAxiom <$> axioms)
+  where
+    applyAxiom a = axiomStep a Strategy.stuck
 
-{-| 'step' executes a single rewriting step using the provided axioms.
+axiomStep :: axiom -> Strategy (Prim axiom) -> Strategy (Prim axiom)
+axiomStep a =
+    Strategy.apply (Strategy.axiom a) . Strategy.apply Strategy.builtin
 
-Does not handle properly various cases, among which:
-sigma(x, y) => y    vs    a
--}
-step
-    ::  ( MetaOrObject level)
+stepStepper
+    :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -> CommonPureMLPatternSimplifier level
     -- ^ Map from symbol IDs to defined functions
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
-    -> CommonOrOfExpandedPattern level
-    -- ^ Configuration being rewritten.
-    -> Simplifier
-        (CommonOrOfExpandedPattern level, StepProof level)
-step tools symbolIdToEvaluator axioms configuration = do
-    (stepPattern, stepProofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairs
-            (baseStepWithPattern tools axioms)
-            configuration
-    (simplifiedPattern, simplificationProofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairs
-            (ExpandedPattern.simplify
-                tools
-                (Simplifier.create tools symbolIdToEvaluator)
-            )
-            stepPattern
-    return
-        ( simplifiedPattern
-        , mconcat (stepProof . StepProofSimplification <$> simplificationProofs)
-            <> mconcat stepProofs
-        )
+    -> (CommonExpandedPattern level, StepProof level)
+    -- ^ Configuration being rewritten and its accompanying proof
+    -> Simplifier [(CommonExpandedPattern level, StepProof level)]
+stepStepper tools simplifier axioms =
+    (<$>) Strategy.pickStuck . runStrategy rule strategy Unlimited
+  where
+    rule = simpleRule tools simplifier
+    strategy = stepStrategy axioms
 
-baseStepWithPattern
-    ::  ( MetaOrObject level)
+simpleRule
+    :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
-    -> CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
-    -> Counter (CommonOrOfExpandedPattern level, StepProof level)
-baseStepWithPattern tools axioms configuration = do
-    stepResultsWithProofs <- sequence (stepToList tools configuration axioms)
-    let (results, proofs) = unzip stepResultsWithProofs
-    return
-        ( OrOfExpandedPattern.make results
-        , mconcat proofs
-        )
+    -> CommonPureMLPatternSimplifier level
+    -- ^ Map from symbol IDs to defined functions
+    -> Prim (AxiomPattern level)
+    -> (CommonExpandedPattern level, StepProof level)
+    -- ^ Configuration being rewritten and its accompanying proof
+    -> Simplifier [(CommonExpandedPattern level, StepProof level)]
+simpleRule tools simplifier =
+    \case
+        Builtin -> \(config, proof) ->
+            do
+                (configs, proof') <-
+                    ExpandedPattern.simplify tools simplifier config
+                let
+                    proof'' = proof <> simplificationProof proof'
+                    prove config' = (config', proof'')
+                    -- Filter out ⊥ patterns
+                    nonEmptyConfigs = ExpandedPattern.filterOr configs
+                return (prove <$> toList nonEmptyConfigs)
+        Axiom axiom -> \(config, proof) ->
+            do
+                case stepWithAxiom tools config axiom of
+                    Left _ -> pure []
+                    Right apply -> do
+                        (config', proof') <- apply
+                        if ExpandedPattern.isBottom config'
+                            then return []
+                            else return [(config', proof <> proof')]
 
-stepToList
-    ::  ( MetaOrObject level)
+simpleStrategy
+    :: MetaOrObject level
+    => [AxiomPattern level]
+    -> Strategy (Prim (AxiomPattern level))
+simpleStrategy axioms =
+    Strategy.many applyAxioms Strategy.stuck
+  where
+    applyAxioms next = Strategy.all (axiomStep <$> axioms <*> pure next)
+
+simpleStepper
+    :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
-    ->  [ Counter
-            (CommonExpandedPattern level, StepProof level)
-        ]
-stepToList tools configuration axioms =
-    -- TODO: Stop ignoring Left results. Also, how would a result
-    -- to which I can't apply an axiom look like?
-    rights $ map (stepWithAxiom tools configuration) axioms
-
-{-| 'pickFirstStepper' rewrites a configuration using the provided axioms
-until it cannot be rewritten anymore or until the step limit has been reached.
-Whenever multiple axioms can be applied, it picks the first one whose
-'Predicate' is not false and continues with that.
-
-Does not handle properly various cases, among which:
-sigma(x, y) => y    vs    a
--}
-pickFirstStepper
-    ::  ( MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -> CommonPureMLPatternSimplifier level
     -- ^ Map from symbol IDs to defined functions
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
-    -> MaxStepCount
+    -> Limit Natural
     -- ^ The maximum number of steps to be made
     -> (CommonExpandedPattern level, StepProof level)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier (CommonExpandedPattern level, StepProof level)
-pickFirstStepper _ _ _ (MaxStepCount 0) configAndProof =
-    return configAndProof
-pickFirstStepper _ _ _ (MaxStepCount n) _ | n < 0 =
-    error ("Negative MaxStepCount: " ++ show n)
-pickFirstStepper
-    tools symbolIdToEvaluator axioms (MaxStepCount maxStep)
-    (stepperConfiguration, prevProof)
-  =
-    pickFirstStepperSkipMaxCheck
-        tools
-        symbolIdToEvaluator
-        axioms
-        (MaxStepCount (maxStep - 1))
-        (stepperConfiguration, prevProof)
-pickFirstStepper
-    tools symbolIdToEvaluator axioms AnyStepCount
-    (stepperConfiguration, prevProof)
-  =
-    pickFirstStepperSkipMaxCheck
-        tools
-        symbolIdToEvaluator
-        axioms
-        AnyStepCount
-        (stepperConfiguration, prevProof)
-
-pickFirstStepperSkipMaxCheck
-    ::  ( MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
-    -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
-    -> MaxStepCount
-    -- ^ The maximum number of steps to be made
-    -> (CommonExpandedPattern level, StepProof level)
-    -- ^ Configuration being rewritten and its accompanying proof
-    -> Simplifier (CommonExpandedPattern level, StepProof level)
-pickFirstStepperSkipMaxCheck
-    tools symbolIdToEvaluator axioms maxStepCount
-    (stepperConfiguration, prevProof)
-  = do
-    (patterns, thisProof) <-
-        -- TODO: Perhaps use IntCounter.findState to reduce the need for
-        -- intCounter values and to make this more testable.
-        step
-            tools
-            symbolIdToEvaluator
-            axioms
-            (OrOfExpandedPattern.make [stepperConfiguration])
-    case OrOfExpandedPattern.extractPatterns patterns of
-        [] -> return (stepperConfiguration, prevProof)
-        (nextConfiguration : _) ->
-            pickFirstStepper
-                tools
-                symbolIdToEvaluator
-                axioms
-                maxStepCount
-                (nextConfiguration, prevProof <> thisProof)
+simpleStepper tools simplifier axioms stepLimit =
+    (<$>) Strategy.pickLongest . runStrategy rule strategy stepLimit
+  where
+    rule = simpleRule tools simplifier
+    strategy = simpleStrategy axioms

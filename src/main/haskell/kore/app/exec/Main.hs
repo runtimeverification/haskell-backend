@@ -58,7 +58,6 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step
-                 ( MaxStepCount (..), pickFirstStepper )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Unparser.Unparse
@@ -84,7 +83,7 @@ data KoreExecOptions = KoreExecOptions
     , isKProgram          :: !Bool
     -- ^ Whether the pattern file represents a program to be put in the
     -- initial configuration before execution
-    , maxStepCount        :: !MaxStepCount
+    , stepLimit           :: !(Limit Natural)
     }
 
 -- | Command Line Argument Parser
@@ -107,7 +106,7 @@ commandLineParser =
     <*> enableDisableFlag "is-program"
         True False False
         "Whether the pattern represents a program."
-    <*> (MaxStepCount <$> depth <|> pure AnyStepCount)
+    <*> (Limit <$> depth <|> pure Unlimited)
   where
     depth =
         option auto
@@ -138,7 +137,7 @@ main = do
         , patternFileName
         , mainModuleName
         , isKProgram
-        , maxStepCount
+        , stepLimit
         }
       -> do
         parsedDefinition <- mainDefinitionParse definitionFileName
@@ -158,6 +157,7 @@ main = do
                 axiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
                 metadataTools = constructorFunctions (extractMetadataTools indexedModule)
+                simplifier = Simplifier.create metadataTools functionRegistry
                 purePattern = makePurePattern parsedPattern
                 runningPattern =
                     if isKProgram
@@ -165,9 +165,9 @@ main = do
                             $ makeKInitConfig purePattern
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
-            finalExpandedPattern <-
+            (finalExpandedPattern, _) <-
                 clockSomething "Executing"
-                    $ fst $ evalSimplifier
+                    $ evalSimplifier
                     $ do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
@@ -183,11 +183,11 @@ main = do
                                         (fst simplifiedPatterns) of
                                     [] -> ExpandedPattern.bottom
                                     (config : _) -> config
-                        pickFirstStepper
+                        simpleStepper
                             metadataTools
-                            functionRegistry
+                            simplifier
                             axiomPatterns
-                            maxStepCount
+                            stepLimit
                             (initialPattern, mempty)
             putStrLn $ unparseToString
                 (ExpandedPattern.term finalExpandedPattern)
