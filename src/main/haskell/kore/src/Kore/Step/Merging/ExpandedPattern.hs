@@ -62,9 +62,9 @@ mergeWithPredicateSubstitution
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
     -- ^ Evaluates functions in a pattern.
-    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level domain variable
     -- ^ Condition and substitution to add.
     -> ExpandedPattern level domain variable
     -- ^ pattern to which the above should be added.
@@ -114,7 +114,7 @@ mergeWithEvaluatedCondition
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level domain variable
-    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level domain variable
     -> IntCounter (ExpandedPattern level domain variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools

@@ -75,7 +75,7 @@ Currently @AxiomPattern@ can only represent axioms of the form
 data AxiomPattern level domain = AxiomPattern
     { axiomPatternLeft  :: !(CommonPurePattern level domain)
     , axiomPatternRight :: !(CommonPurePattern level domain)
-    , axiomPatternRequires :: !(CommonPredicate level)
+    , axiomPatternRequires :: !(CommonPredicate level domain)
     , axiomAttributes :: !AxiomAttributes
     }
     deriving (Eq, Show)
@@ -102,11 +102,11 @@ koreIndexedModuleToAxiomPatterns
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
     -> KoreIndexedModule atts -- ^'IndexedModule' containing the definition
-    -> [AxiomPattern level domain]
+    -> [AxiomPattern level KoreDomain]
 koreIndexedModuleToAxiomPatterns level idxMod =
     [ axiomPat | RewriteAxiomPattern axiomPat <-
         rights $ map
-            (koreSentenceToAxiomPattern level domain)
+            (koreSentenceToAxiomPattern level)
             (indexedModuleRawSentences idxMod)
     ]
 
@@ -116,17 +116,17 @@ koreSentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> KoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level domain)
-koreSentenceToAxiomPattern level domain =
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level KoreDomain)
+koreSentenceToAxiomPattern level =
     applyUnifiedSentence
-        (sentenceToAxiomPattern level domain)
-        (sentenceToAxiomPattern level domain)
+        (sentenceToAxiomPattern level)
+        (sentenceToAxiomPattern level)
 
 sentenceToAxiomPattern
     :: MetaOrObject level
     => level
-    -> Sentence level' UnifiedSortVariable UnifiedPattern domain Variable
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level domain)
+    -> Sentence level' UnifiedSortVariable UnifiedPattern KoreDomain Variable
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level KoreDomain)
 sentenceToAxiomPattern
     level
     (SentenceAxiomSentence SentenceAxiom

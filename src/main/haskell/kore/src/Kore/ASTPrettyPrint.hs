@@ -717,7 +717,7 @@ instance (MetaOrObject level, PrettyPrint (variable level))
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 -- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
 instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (UnificationProof level variable)
+    => PrettyPrint (UnificationProof level domain variable)
   where
     prettyPrint _ EmptyUnificationProof = "EmptyUnificationProof"
     prettyPrint flags (CombinedUnificationProof p) =

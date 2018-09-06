@@ -62,7 +62,7 @@ mergeSubstitutions
           (UnificationError level)
           ( Predicate level domain variable
           , UnificationSubstitution level domain variable
-          , UnificationProof level variable
+          , UnificationProof level domain variable
           )
 mergeSubstitutions tools first second = do
     (substitution, proof) <-
@@ -86,8 +86,8 @@ mergeAndNormalizeSubstitutions
     -> Either
           ( UnificationOrSubstitutionError level variable )
           ( IntCounter
-              ( PredicateSubstitution level variable
-              , UnificationProof level variable
+              ( PredicateSubstitution level domain variable
+              , UnificationProof level domain variable
               )
           )
 mergeAndNormalizeSubstitutions tools first second =
@@ -107,8 +107,8 @@ normalizeSubstitutionAfterMerge
     -> Either
           ( UnificationOrSubstitutionError level variable )
           ( IntCounter
-              ( PredicateSubstitution level variable
-              , UnificationProof level variable
+              ( PredicateSubstitution level domain variable
+              , UnificationProof level domain variable
               )
           )
 normalizeSubstitutionAfterMerge tools substit = do
@@ -147,8 +147,8 @@ mergePredicatesAndSubstitutions
     -> [Predicate level domain variable]
     -> [UnificationSubstitution level domain variable]
     -> IntCounter
-        ( PredicateSubstitution level variable
-        , UnificationProof level variable
+        ( PredicateSubstitution level domain variable
+        , UnificationProof level domain variable
         )
 mergePredicatesAndSubstitutions tools predicates substitutions =
     let

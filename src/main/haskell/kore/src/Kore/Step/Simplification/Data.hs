@@ -67,7 +67,7 @@ evalSimplifier simp =
 {-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.
 -}
-newtype PureMLPatternSimplifier level variable =
+newtype PureMLPatternSimplifier level domain variable =
     PureMLPatternSimplifier
         ( PureMLPattern level domain variable
         -> Simplifier
@@ -79,5 +79,5 @@ newtype PureMLPatternSimplifier level variable =
 {-| 'CommonPurePatternFunctionEvaluator' wraps a function that evaluates
 Kore functions on CommonPurePatterns.
 -}
-type CommonPureMLPatternSimplifier level =
-    PureMLPatternSimplifier level Variable
+type CommonPureMLPatternSimplifier level domain =
+    PureMLPatternSimplifier level domain Variable

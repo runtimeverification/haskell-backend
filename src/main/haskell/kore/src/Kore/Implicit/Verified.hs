@@ -17,6 +17,7 @@ module Kore.Implicit.Verified
 import Data.Proxy
        ( Proxy (..) )
 
+import Kore.AST.Common
 import Kore.AST.PureToKore
 import Kore.AST.Sentence
 import Kore.ASTVerifier.DefinitionVerifier
@@ -32,7 +33,7 @@ import Kore.Implicit.Definitions
        ( uncheckedKoreDefinition, uncheckedMetaDefinition )
 import Kore.MetaML.AST
 
-checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
+checkedMetaDefinition :: Either (Error VerifyError) (MetaDefinition KoreDomain)
 checkedMetaDefinition = do
     _ <- verifyImplicitKoreDefinition
         attributesVerification
@@ -47,7 +48,7 @@ checkedMetaDefinition = do
 that is implicitly defined and visible everywhere. This definition passes
 validation checks.
 -}
-implicitMetaDefinition :: MetaDefinition
+implicitMetaDefinition :: MetaDefinition KoreDomain
 implicitMetaDefinition =
     case checkedMetaDefinition of
         Left err -> error (printError err)

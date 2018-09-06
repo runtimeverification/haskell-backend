@@ -677,7 +677,7 @@ instance
     , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
     )
-    => SumEqualWithExplanation (UnificationProof level variable)
+    => SumEqualWithExplanation (UnificationProof level domain variable)
   where
     sumConstructorPair EmptyUnificationProof EmptyUnificationProof =
         SumConstructorSameNoArguments
@@ -732,7 +732,7 @@ instance
     , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
     )
-    => EqualWithExplanation (UnificationProof level variable)
+    => EqualWithExplanation (UnificationProof level domain variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -847,7 +847,7 @@ instance
     , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
-    => StructEqualWithExplanation (PredicateSubstitution level variable)
+    => StructEqualWithExplanation (PredicateSubstitution level domain variable)
   where
     structFieldsWithNames
         expected@(PredicateSubstitution _ _)
@@ -868,7 +868,7 @@ instance
     , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
-    => EqualWithExplanation (PredicateSubstitution level variable)
+    => EqualWithExplanation (PredicateSubstitution level domain variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -893,7 +893,7 @@ instance
     , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
-    => SumEqualWithExplanation (AttemptedFunction level variable)
+    => SumEqualWithExplanation (AttemptedFunction level domain variable)
   where
     sumConstructorPair
         AttemptedFunction.NotApplicable
@@ -918,7 +918,7 @@ instance
     , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
-    => EqualWithExplanation (AttemptedFunction level variable)
+    => EqualWithExplanation (AttemptedFunction level domain variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

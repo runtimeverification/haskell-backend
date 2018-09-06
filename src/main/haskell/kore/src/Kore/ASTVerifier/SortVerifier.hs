@@ -64,10 +64,10 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
     
 verifySortMatchesDeclaration
     :: MetaOrObject level
-    => (Id level -> Either (Error VerifyError) (SortDescription level domain))
+    => (Id level -> Either (Error VerifyError) (SortDescription level KoreDomain))
     -> Set.Set UnifiedSortVariable
     -> SortActual level
-    -> SortDescription level domain
+    -> SortDescription level KoreDomain
     -> Either (Error VerifyError) VerifySuccess
 verifySortMatchesDeclaration
     findSortDescription declaredSortVariables sort sortDescription

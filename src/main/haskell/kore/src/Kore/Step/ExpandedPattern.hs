@@ -72,7 +72,7 @@ data ExpandedPattern level domain variable = ExpandedPattern
 {-|'PredicateSubstitution' is a representation of a specific type of
 PureMLPattern that occurs in certain cases when executing Kore.
 -}
-data PredicateSubstitution level variable = PredicateSubstitution
+data PredicateSubstitution level domain variable = PredicateSubstitution
     { predicate    :: !(Predicate level domain variable)
     -- ^ pattern that only evaluates to Top or Bottom.
     , substitution :: !(UnificationSubstitution level domain variable)
@@ -88,7 +88,7 @@ type CommonExpandedPattern level domain = ExpandedPattern level domain Variable
 {-| 'CommonPredicateSubstitution' particularizes PredicateSubstitution to
 Variable.
 -}
-type CommonPredicateSubstitution level = PredicateSubstitution level Variable
+type CommonPredicateSubstitution level domain = PredicateSubstitution level domain Variable
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
 in an ExpandedPattern.

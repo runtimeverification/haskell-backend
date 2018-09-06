@@ -94,7 +94,7 @@ unificationSolutionToPurePattern tools ucp =
         Fix $ EqualsPattern Equals
             { equalsOperandSort = sortedVariableSort var
             , equalsResultSort = resultSort
-            , equalsFirst = Fix $ VariablePattern domain var
+            , equalsFirst = Fix $ VariablePattern var
             , equalsSecond = p
             }
 
@@ -102,10 +102,10 @@ unificationSolutionToPurePattern tools ucp =
 -- steps performed during unification
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
-data UnificationProof level variable
+data UnificationProof level domain variable
     = EmptyUnificationProof
     -- ^Empty proof (nothing to prove)
-    | CombinedUnificationProof [UnificationProof level variable]
+    | CombinedUnificationProof [UnificationProof level domain variable]
     -- ^Putting multiple proofs together
     | ConjunctionIdempotency (PureMLPattern level domain variable)
     -- ^Used to specify the reduction a/\a <-> a
@@ -119,7 +119,7 @@ data UnificationProof level variable
     -- |= (ϕ ∧ ϕ') = (ϕ ∧ (ϕ = ϕ'))
     | AndDistributionAndConstraintLifting
         (SymbolOrAlias level)
-        [UnificationProof level variable]
+        [UnificationProof level domain variable]
     -- ^Used to specify both the application of the constructor axiom
     -- c(x1, .., xn) /\ c(y1, ..., yn) -> c(x1 /\ y1, ..., xn /\ yn)
     -- and of Proposition 5.12 (Constraint propagation) after unification:
@@ -145,8 +145,8 @@ data UnificationProof level variable
 
 {-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
-    :: UnificationProof level variable
-    -> UnificationProof level variable
+    :: UnificationProof level domain variable
+    -> UnificationProof level domain variable
 simplifyUnificationProof EmptyUnificationProof = EmptyUnificationProof
 simplifyUnificationProof (CombinedUnificationProof []) =
     EmptyUnificationProof
@@ -168,14 +168,14 @@ simplifyUnificationProof
 simplifyUnificationProof a@(SubstitutionMerge _ _ _) = a
 
 simplifyCombinedItems
-    :: [UnificationProof level variable] -> [UnificationProof level variable]
+    :: [UnificationProof level domain variable] -> [UnificationProof level domain variable]
 simplifyCombinedItems =
     foldr (addContents . simplifyUnificationProof) []
   where
     addContents
-        :: UnificationProof level variable
-        -> [UnificationProof level variable]
-        -> [UnificationProof level variable]
+        :: UnificationProof level domain variable
+        -> [UnificationProof level domain variable]
+        -> [UnificationProof level domain variable]
     addContents EmptyUnificationProof  proofItems           = proofItems
     addContents (CombinedUnificationProof items) proofItems =
         items ++ proofItems
@@ -191,7 +191,7 @@ simplifyAnds
     -> [PureMLPattern level domain variable]
     -> Either
         (UnificationError level)
-        (UnificationSolution level domain variable, UnificationProof level variable)
+        (UnificationSolution level domain variable, UnificationProof level domain variable)
 simplifyAnds _ [] = Left EmptyPatternList
 simplifyAnds tools (p:ps) =
     foldM
@@ -231,7 +231,7 @@ simplifyAnd
     -> PureMLPattern level domain variable
     -> Either
         (UnificationError level)
-        (UnificationSolution level domain variable, UnificationProof level variable)
+        (UnificationSolution level domain variable, UnificationProof level domain variable)
 simplifyAnd tools =
     elgot postTransform (preTransform tools . project)
 
@@ -248,7 +248,7 @@ preTransform
         ( Either
             (UnificationError level)
             ( UnificationSolution level domain variable
-            , UnificationProof level variable
+            , UnificationProof level domain variable
             )
         )
         (UnFixedPureMLPattern level domain variable)
@@ -261,10 +261,10 @@ preTransform tools (AndPattern ap) = if left == right
         , ConjunctionIdempotency left
         )
     else case project left of
-        VariablePattern domain vp ->
+        VariablePattern vp ->
             Left (mlProposition_5_24_3 tools vp right)
         p1 -> case project right of
-            VariablePattern domain vp -> -- add commutativity here
+            VariablePattern vp -> -- add commutativity here
                 Left (mlProposition_5_24_3 tools vp left)
             DomainValuePattern (DomainValue _ dv2) ->
                 case dv2 of
@@ -292,7 +292,7 @@ matchDomainValue
         ( Either
             (UnificationError level)
             ( UnificationSolution level domain variable
-            , UnificationProof level variable
+            , UnificationProof level domain variable
             )
         )
         (UnFixedPureMLPattern level domain variable)
@@ -319,7 +319,7 @@ matchConstructor
         ( Either
             (UnificationError level)
             ( UnificationSolution level domain variable
-            , UnificationProof level variable
+            , UnificationProof level domain variable
             )
         )
         (UnFixedPureMLPattern level domain variable)
@@ -365,7 +365,7 @@ mlProposition_5_24_3
     -- ^functional (term) pattern
     -> Either
         (UnificationError level)
-        (UnificationSolution level domain variable, UnificationProof level variable)
+        (UnificationSolution level domain variable, UnificationProof level domain variable)
 mlProposition_5_24_3
     tools
     v
@@ -387,12 +387,12 @@ postTransform
         (Either
             (UnificationError level)
             ( UnificationSolution level domain variable
-            , UnificationProof level variable
+            , UnificationProof level domain variable
             )
         )
     -> Either
         (UnificationError level)
-        (UnificationSolution level domain variable, UnificationProof level variable)
+        (UnificationSolution level domain variable, UnificationProof level domain variable)
 postTransform (ApplicationPattern ap) = do
     children <- sequenceA (applicationChildren ap)
     let (subSolutions, subProofs) = unzip children
@@ -420,8 +420,8 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Fix (VariablePattern domain var'))
-        | var' < var = (var', Fix (VariablePattern domain var))
+    sortRenaming (var, Fix (VariablePattern var'))
+        | var' < var = (var', Fix (VariablePattern var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
@@ -437,7 +437,7 @@ solveGroupedSubstitution
     -> UnificationSubstitution level domain variable
     -> Either
         (UnificationError level)
-        (UnificationSubstitution level domain variable, UnificationProof level variable)
+        (UnificationSubstitution level domain variable, UnificationProof level domain variable)
 solveGroupedSubstitution _ [] = Left EmptyPatternList
 solveGroupedSubstitution tools ((x,p):subst) = do
     (solution, proof) <- simplifyAnds tools (p : map snd subst)
@@ -446,7 +446,7 @@ solveGroupedSubstitution tools ((x,p):subst) = do
           : unificationSolutionConstraints solution
         , proof)
 
-instance Monoid (UnificationProof level variable) where
+instance Monoid (UnificationProof level domain variable) where
     mempty = EmptyUnificationProof
     mappend proof1 proof2 = CombinedUnificationProof [proof1, proof2]
     mconcat = CombinedUnificationProof
@@ -468,7 +468,7 @@ normalizeSubstitutionDuplication
     -> Either
         (UnificationError level)
         ( UnificationSubstitution level domain variable
-        , UnificationProof level variable
+        , UnificationProof level domain variable
         )
 normalizeSubstitutionDuplication tools subst =
     if null nonSingletonSubstitutions
@@ -515,7 +515,7 @@ unificationProcedure
         (UnificationError level)
         ( UnificationSubstitution level domain variable
         , Predicate level domain variable
-        , UnificationProof level variable
+        , UnificationProof level domain variable
         )
 unificationProcedure tools p1 p2
     | p1Sort /= p2Sort =

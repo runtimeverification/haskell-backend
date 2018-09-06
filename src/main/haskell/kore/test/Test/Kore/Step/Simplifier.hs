@@ -28,7 +28,7 @@ mockSimplifier
             , ([ExpandedPattern level domain variable], SimplificationProof level)
             )
         ]
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
 mockSimplifier values =
     PureMLPatternSimplifier
         ( mockSimplifierHelper
@@ -44,7 +44,7 @@ mockPredicateSimplifier
             , ([ExpandedPattern level domain variable], SimplificationProof level)
             )
         ]
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
 mockPredicateSimplifier values =
     PureMLPatternSimplifier
         (mockSimplifierHelper

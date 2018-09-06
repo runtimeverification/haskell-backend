@@ -80,9 +80,9 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
     -- ^ Map from symbol IDs to defined functions
     -> Application level (OrOfExpandedPattern level domain variable)
     -> Simplifier
@@ -125,9 +125,9 @@ makeAndEvaluateApplications
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
     -- ^ Map from symbol IDs to defined functions
     -> SymbolOrAlias level
     -> [ExpandedPattern level domain variable]
@@ -159,9 +159,9 @@ evaluateApplicationFunction
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
     -- ^ Map from symbol IDs to defined functions
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated

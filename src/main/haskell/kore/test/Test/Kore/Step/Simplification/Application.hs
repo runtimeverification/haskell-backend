@@ -428,9 +428,9 @@ testSort =
 evaluate
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier level
+    -> CommonPureMLPatternSimplifier domain level
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
     -- ^ Map from symbol IDs to defined functions
     -> Application level (CommonOrOfExpandedPattern level domain)
     -> CommonOrOfExpandedPattern level domain

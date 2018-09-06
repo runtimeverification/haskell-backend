@@ -98,7 +98,7 @@ import GHC.Generics
 impossible :: a
 impossible = error "The impossible happened."
 
-type Term = CommonPurePattern Object domain
+type Term = CommonPurePattern Object KoreDomain
 type Var = Variable Object
 
 -- | Fix-able functor representing a single deduction step

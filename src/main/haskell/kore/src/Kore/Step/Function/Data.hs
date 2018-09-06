@@ -50,14 +50,14 @@ Return value:
 It returns the result of appling the function, together with a proof certifying
 that the function was applied correctly (which is only a placeholder right now).
 -}
-newtype ApplicationFunctionEvaluator level variable =
+newtype ApplicationFunctionEvaluator level domain variable =
     ApplicationFunctionEvaluator
         (forall . ( MetaOrObject level)
         => MetadataTools level StepperAttributes
-        -> PureMLPatternSimplifier level variable
+        -> PureMLPatternSimplifier level domain variable
         -> Application level (PureMLPattern level domain variable)
         -> Simplifier
-            ( AttemptedFunction level variable
+            ( AttemptedFunction level domain variable
             , SimplificationProof level
             )
         )
@@ -66,13 +66,13 @@ newtype ApplicationFunctionEvaluator level variable =
 'ApplicationFunctionEvaluator' to 'Variable', following the same pattern as
 the other `Common*` types.
 -}
-type CommonApplicationFunctionEvaluator level =
-    ApplicationFunctionEvaluator level Variable
+type CommonApplicationFunctionEvaluator level domain =
+    ApplicationFunctionEvaluator level domain Variable
 
 {-| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
 cases where the function can't be fully evaluated.
 -}
-data AttemptedFunction level variable
+data AttemptedFunction level domain variable
     = NotApplicable
     | Applied !(OrOfExpandedPattern level domain variable)
   deriving (Show, Eq)
@@ -80,19 +80,19 @@ data AttemptedFunction level variable
 {-| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
 following the same pattern as the other `Common*` types.
 -}
-type CommonAttemptedFunction level = AttemptedFunction level Variable
+type CommonAttemptedFunction level domain = AttemptedFunction level domain Variable
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableFunctionEvaluator
     :: Simplifier
-         (AttemptedFunction level1 variable, SimplificationProof level2)
+         (AttemptedFunction level1 domain variable, SimplificationProof level2)
 notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
 
 -- |Yields a pure 'Simplifier' which produces a given 'PureMLPattern'
 purePatternFunctionEvaluator
     :: (MetaOrObject level)
     => PureMLPattern level domain variable
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level')
+    -> Simplifier (AttemptedFunction level domain variable, SimplificationProof level')
 purePatternFunctionEvaluator p =
     pure
         (Applied (makeFromSinglePurePattern p)

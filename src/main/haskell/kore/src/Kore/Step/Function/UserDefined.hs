@@ -68,11 +68,11 @@ axiomFunctionEvaluator
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> CommonPureMLPatternSimplifier level
+    -> CommonPureMLPatternSimplifier domain level
     -- ^ Evaluates functions in patterns
     -> Application level (CommonPurePattern level domain)
     -- ^ The function on which to evaluate the current function.
-    -> Simplifier (CommonAttemptedFunction level, SimplificationProof level)
+    -> Simplifier (CommonAttemptedFunction level domain, SimplificationProof level)
 axiomFunctionEvaluator
     axiom
     tools
@@ -134,11 +134,11 @@ reevaluateFunctions
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level domain variable
     -- ^ Function evaluation result.
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
+    -> Simplifier (AttemptedFunction level domain variable, SimplificationProof level)
 reevaluateFunctions
     tools
     wrappedSimplifier@(PureMLPatternSimplifier simplifier)
@@ -185,7 +185,7 @@ evaluatePredicate
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
     -- ^ Evaluates functions in a pattern.
     -> ExpandedPattern level domain variable
     -- ^ The condition to be evaluated.

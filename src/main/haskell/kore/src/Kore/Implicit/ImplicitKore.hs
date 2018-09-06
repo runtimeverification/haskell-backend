@@ -73,7 +73,7 @@ implicitSymbol
     :: String
     -> [Sort level]
     -> Sort level
-    -> PureSentenceSymbol level domain
+    -> PureSentenceSymbol level KoreDomain
 implicitSymbol name = symbol_ name AstLocationImplicit
 
 implicitParameterizedSymbol
@@ -81,7 +81,7 @@ implicitParameterizedSymbol
     -> [SortVariable level]
     -> [Sort level]
     -> Sort level
-    -> PureSentenceSymbol level domain
+    -> PureSentenceSymbol level KoreDomain
 implicitParameterizedSymbol name = parameterizedSymbol_ name AstLocationImplicit
 
 epsilon = implicitSymbol "#epsilon" [] stringMetaSort
@@ -118,10 +118,10 @@ applicationP =
         "#application" [symbolMetaSort, patternListMetaSort] patternMetaSort
 applicationA = applyS applicationP
 
-mlPatternA :: MLPatternType -> ([MetaPatternStub domain] -> MetaPatternStub domain)
+mlPatternA :: MLPatternType -> ([MetaPatternStub KoreDomain] -> MetaPatternStub KoreDomain)
 mlPatternA patternType = applyS (mlPatternP patternType)
 
-mlPatternP :: MLPatternType -> MetaSentenceSymbol domain
+mlPatternP :: MLPatternType -> MetaSentenceSymbol KoreDomain
 mlPatternP AndPatternType =
     implicitSymbol
         "#\\and"
@@ -537,7 +537,7 @@ wellFormedGetSortAxioms =
 #wellFormed(phi) -> #provable(phi), which covers most axioms encoded in the
 meta-theory of K.
 -}
-wellFormedImpliesProvableAxiom :: MetaPatternStub domain -> MetaSentenceAxiom domain
+wellFormedImpliesProvableAxiom :: MetaPatternStub KoreDomain -> MetaSentenceAxiom KoreDomain
 wellFormedImpliesProvableAxiom pattern1 =
     parameterizedAxiom_ [pS]
         (implies_
@@ -563,10 +563,10 @@ str_ s =
         , sortedPatternSort    = stringMetaSort
         }
 
-sortList_ :: [MetaPatternStub domain] -> MetaPatternStub domain
+sortList_ :: [MetaPatternStub KoreDomain] -> MetaPatternStub KoreDomain
 sortList_ = foldr (\p ps -> consSortListA [p, ps]) nilSortListA
 
-patternList_ :: [MetaPatternStub domain] -> MetaPatternStub domain
+patternList_ :: [MetaPatternStub KoreDomain] -> MetaPatternStub KoreDomain
 patternList_ = foldr (\p ps -> consPatternListA [p, ps]) nilPatternListA
 
 stringVariable_ :: String -> Variable Meta
@@ -871,7 +871,7 @@ ceilBTAxiom =
         (ceilBTA [vs, vs'])
         (symbolA [str_ "ceil", sortList_ [vs, vs'], sortList_ [vs], vs'])
 
-uncheckedKoreModule :: MetaModule
+uncheckedKoreModule :: MetaModule KoreDomain
 uncheckedKoreModule =
     Module
         { moduleName       = ModuleName "kore"

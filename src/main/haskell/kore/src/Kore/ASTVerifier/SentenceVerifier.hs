@@ -149,7 +149,7 @@ verifyMetaSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Sentence Meta UnifiedSortVariable UnifiedPattern domain Variable
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern KoreDomain Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyMetaSentence
     builtinVerifiers
@@ -206,7 +206,7 @@ verifyObjectSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Sentence Object UnifiedSortVariable UnifiedPattern domain Variable
+    -> Sentence Object UnifiedSortVariable UnifiedPattern KoreDomain Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyObjectSentence
     builtinVerifiers
@@ -272,7 +272,7 @@ verifyObjectSentence
 
 verifySymbolSentence
     :: (MetaOrObject level)
-    => (Id level -> Either (Error VerifyError) (SortDescription level))
+    => (Id level -> Either (Error VerifyError) (SortDescription level KoreDomain))
     -> KoreIndexedModule atts
     -> AttributesVerification atts
     -> KoreSentenceSymbol level
@@ -305,7 +305,7 @@ verifySymbolSentence
 
 verifyAliasSentence
     :: (MetaOrObject level)
-    => (Id level -> Either (Error VerifyError) (SortDescription level))
+    => (Id level -> Either (Error VerifyError) (SortDescription level KoreDomain))
     -> Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts

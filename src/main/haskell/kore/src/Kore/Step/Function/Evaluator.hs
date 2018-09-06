@@ -65,11 +65,11 @@ evaluateApplication
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level domain variable
     -- ^ Aggregated children predicate and substitution.
     -> Application level (PureMLPattern level domain variable)
     -- ^ The pattern to be evaluated
@@ -115,12 +115,12 @@ evaluateApplication
                 , SimplificationProof
                 )
   where
-    notApplicable :: (AttemptedFunction level variable, x) -> Bool
+    notApplicable :: (AttemptedFunction level domain variable, x) -> Bool
     notApplicable (AttemptedFunction.NotApplicable, _) = True
     notApplicable _ = False
 
     unwrapApplied
-        :: (AttemptedFunction level variable, proof)
+        :: (AttemptedFunction level domain variable, proof)
         -> OrOfExpandedPattern level domain variable
     unwrapApplied (AttemptedFunction.Applied term, _proof) = term
     unwrapApplied _ = error "Can only unwrap 'Applied' terms."
@@ -165,13 +165,13 @@ mergeWithConditionAndSubstitution
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level domain variable
     -- ^ Evaluates functions in a pattern.
-    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level domain variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedFunction level variable, SimplificationProof level)
+    -> (AttemptedFunction level domain variable, SimplificationProof level)
     -- ^ AttemptedFunction to which the condition should be added.
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
+    -> Simplifier (AttemptedFunction level domain variable, SimplificationProof level)
 mergeWithConditionAndSubstitution
     _ _ _ (AttemptedFunction.NotApplicable, _proof)
   =

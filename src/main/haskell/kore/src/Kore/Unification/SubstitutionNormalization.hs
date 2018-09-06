@@ -85,7 +85,7 @@ normalizeSubstitution
     -> UnificationSubstitution level domain variable
     -> Either
         (SubstitutionError level variable)
-        (IntCounter (PredicateSubstitution level variable))
+        (IntCounter (PredicateSubstitution level domain variable))
 normalizeSubstitution tools substitution = do
     sorted <- topologicalSortConverted
     let
@@ -163,7 +163,7 @@ normalizeSortedSubstitution
     => UnificationSubstitution level domain variable
     -> UnificationSubstitution level domain variable
     -> [(Unified variable, PureMLPattern level domain variable)]
-    -> IntCounter (PredicateSubstitution level variable)
+    -> IntCounter (PredicateSubstitution level domain variable)
 normalizeSortedSubstitution [] result _ =
     return PredicateSubstitution
         { predicate = makeTruePredicate

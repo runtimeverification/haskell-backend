@@ -25,7 +25,10 @@ import           Data.Map
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Application(..), Variable (..) )
+                 ( Application(..)
+                 , Variable (..)
+                 , KoreDomain
+                 )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.PureML
@@ -77,10 +80,10 @@ evalKEq
     :: Bool
     -> Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
-    -> PureMLPatternSimplifier Object Variable
-    -> Application Object (PureMLPattern Object domain Variable)
+    -> PureMLPatternSimplifier Object KoreDomain Variable
+    -> Application Object (PureMLPattern Object KoreDomain Variable)
     -> Simplifier
-        ( AttemptedFunction Object Variable
+        ( AttemptedFunction Object KoreDomain Variable
         , SimplificationProof Object
         )
 evalKEq true false tools _ pat =

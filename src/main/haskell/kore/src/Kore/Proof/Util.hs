@@ -113,7 +113,7 @@ mkForallN
     -> Term
     -> Term
 mkForallN vars pat =
-    foldr mkForall pat domain vars
+    foldr mkForall pat vars
 
 forallIntroN
     :: Given (SortTools Object)
@@ -121,7 +121,7 @@ forallIntroN
     -> Proof
     -> Proof
 forallIntroN vars pat =
-    foldr (\var p -> useRule $ Abstract var p) pat domain vars
+    foldr (\var p -> useRule $ Abstract var p) pat vars
 
 
 forallElimN
@@ -140,7 +140,7 @@ mkExistsN
     -> Term
     -> Term
 mkExistsN vars pat =
-    foldr mkExists pat domain vars
+    foldr mkExists pat vars
 
 existsIntroN
     :: Given (SortTools Object)

@@ -14,6 +14,7 @@ module Kore.Implicit.Definitions
     , uncheckedMetaDefinition
     ) where
 
+import Kore.AST.Common
 import Kore.AST.PureToKore
        ( modulePureToKore )
 import Kore.AST.Sentence
@@ -21,13 +22,13 @@ import Kore.Implicit.ImplicitKore
        ( uncheckedKoreModule )
 import Kore.MetaML.AST
 
-metaModules :: [MetaModule]
+metaModules :: [MetaModule KoreDomain]
 metaModules = [uncheckedKoreModule]
 
 {-| 'uncheckedMetaDefinition' contains all the implicit modules as 'MetaModule'.
 Does not do any validation for these modules.
 -}
-uncheckedMetaDefinition :: MetaDefinition
+uncheckedMetaDefinition :: MetaDefinition KoreDomain
 uncheckedMetaDefinition =
     Definition
         { definitionAttributes = Attributes []

@@ -56,7 +56,7 @@ sigma(x, y) => y    vs    a
 step
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
     -- ^ Map from symbol IDs to defined functions
     -> [AxiomPattern level domain]
     -- ^ Rewriting axioms
@@ -122,7 +122,7 @@ sigma(x, y) => y    vs    a
 pickFirstStepper
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
     -- ^ Map from symbol IDs to defined functions
     -> [AxiomPattern level domain]
     -- ^ Rewriting axioms
@@ -157,7 +157,7 @@ pickFirstStepper
 pickFirstStepperSkipMaxCheck
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
     -- ^ Map from symbol IDs to defined functions
     -> [AxiomPattern level domain]
     -- ^ Rewriting axioms

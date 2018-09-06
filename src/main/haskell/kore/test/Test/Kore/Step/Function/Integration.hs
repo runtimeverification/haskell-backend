@@ -249,7 +249,7 @@ axiomEvaluator left right =
         )
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level domain -> CommonApplicationFunctionEvaluator level
+    :: CommonExpandedPattern level domain -> CommonApplicationFunctionEvaluator level domain
 appliedMockEvaluator result =
     ApplicationFunctionEvaluator
         (mockEvaluator
@@ -257,19 +257,19 @@ appliedMockEvaluator result =
         )
 
 mockEvaluator
-    :: CommonAttemptedFunction level
+    :: CommonAttemptedFunction level domain
     -> MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier level
+    -> CommonPureMLPatternSimplifier domain level
     -> Application level (CommonPurePattern level domain)
     -> Simplifier
-        (CommonAttemptedFunction level, SimplificationProof level)
+        (CommonAttemptedFunction level domain, SimplificationProof level)
 mockEvaluator evaluation _ _ _ =
     return (evaluation, SimplificationProof)
 
 evaluate
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
     -> CommonPurePattern level domain
     -> CommonExpandedPattern level domain
 evaluate metadataTools functionIdToEvaluator patt =

@@ -41,7 +41,7 @@ simplify
 simplify var =
     ( OrOfExpandedPattern.make
         [ExpandedPattern
-            { term = asPurePattern (VariablePattern domain var)
+            { term = asPurePattern (VariablePattern var)
             , predicate = makeTruePredicate
             , substitution = []
             }

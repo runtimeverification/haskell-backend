@@ -60,7 +60,7 @@ import           Kore.AST.Common
                  ( Application (..), DomainValue (..), Id (..),
                  Pattern (DomainValuePattern, StringLiteralPattern), Sort (..),
                  SortActual (..), SortVariable (..), StringLiteral (..),
-                 Symbol (..), Variable )
+                 Symbol (..), Variable, KoreDomain )
 import           Kore.AST.Error
                  ( withLocationAndContext )
 import           Kore.AST.Kore
@@ -102,7 +102,7 @@ import           Kore.Step.StepperAttributes
 
 type Parser = Parsec Void String
 
-type Function = ApplicationFunctionEvaluator Object Variable
+type Function = ApplicationFunctionEvaluator Object KoreDomain Variable
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
@@ -111,7 +111,7 @@ type SortDeclVerifier =
     -> Either (Error VerifyError) ()
 
 type SortVerifier =
-       (Id Object -> Either (Error VerifyError) (SortDescription Object))
+       (Id Object -> Either (Error VerifyError) (SortDescription Object KoreDomain))
     -- ^ Find a sort declaration
     -> Sort Object
     -- ^ Sort to verify
@@ -121,7 +121,7 @@ type SortVerifier =
 type SortDeclVerifiers = HashMap String SortDeclVerifier
 
 type SymbolVerifier =
-       (Id Object -> Either (Error VerifyError) (SortDescription Object))
+       (Id Object -> Either (Error VerifyError) (SortDescription Object KoreDomain))
     -- ^ Find a sort declaration
     -> KoreSentenceSymbol Object
     -- ^ Symbol declaration to verify
@@ -145,8 +145,8 @@ newtype PatternVerifier =
         See also: 'verifyDomainValue'
       -}
       runPatternVerifier
-          :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
-          -> Pattern Object domain Variable CommonKorePattern
+          :: (Id Object -> Either (Error VerifyError) (SortDescription Object KoreDomain))
+          -> Pattern Object KoreDomain Variable CommonKorePattern
           -> Either (Error VerifyError) ()
     }
 
@@ -170,7 +170,7 @@ instance Monoid PatternVerifier where
     mappend = (<>)
 
 type DomainValueVerifier =
-    DomainValue Object (CommonPurePattern Meta) -> Either (Error VerifyError) ()
+    DomainValue Object (CommonPurePattern Meta KoreDomain) -> Either (Error VerifyError) ()
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
@@ -269,7 +269,7 @@ verifySortDecl
 
  -}
 verifySort
-    :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
+    :: (Id Object -> Either (Error VerifyError) (SortDescription Object KoreDomain))
     -> String
     -> Sort Object
     -> Either (Error VerifyError) ()
@@ -360,9 +360,9 @@ verifyDomainValue builtinSort validate =
     PatternVerifier { runPatternVerifier }
   where
     runPatternVerifier
-        :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
+        :: (Id Object -> Either (Error VerifyError) (SortDescription Object KoreDomain))
         -- ^ Function to lookup sorts by identifier
-        -> Pattern Object domain Variable CommonKorePattern
+        -> Pattern Object KoreDomain Variable CommonKorePattern
         -- ^ Pattern to verify
         -> Either (Error VerifyError) ()
     runPatternVerifier findSort =
@@ -414,7 +414,7 @@ verifyStringLiteral validate DomainValue { domainValueChild } =
  -}
 parseDomainValue
     :: Parser a
-    -> DomainValue Object (CommonPurePattern Meta)
+    -> DomainValue Object (CommonPurePattern Meta KoreDomain)
     -> Either (Error VerifyError) a
 parseDomainValue
     parser
@@ -443,8 +443,8 @@ parseDomainValue
  -}
 appliedFunction
     :: Monad m
-    => CommonExpandedPattern Object domain
-    -> m (AttemptedFunction Object Variable)
+    => CommonExpandedPattern Object KoreDomain
+    -> m (AttemptedFunction Object KoreDomain Variable)
 appliedFunction epat =
     (return . Applied . OrOfExpandedPattern.make) [epat]
 
@@ -461,7 +461,7 @@ appliedFunction epat =
 binaryOperator
     :: Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonExpandedPattern Object domain)
+    -> (Sort Object -> b -> CommonExpandedPattern Object KoreDomain)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -498,7 +498,7 @@ binaryOperator
 unaryOperator
     :: Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonExpandedPattern Object domain)
+    -> (Sort Object -> b -> CommonExpandedPattern Object KoreDomain)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -527,10 +527,10 @@ functionEvaluator
     :: String
        -- ^ Builtin function name (for error messages)
     -> (  MetadataTools Object StepperAttributes
-       -> CommonPureMLPatternSimplifier Object
+       -> CommonPureMLPatternSimplifier Object KoreDomain
        -> Sort Object
-       -> [CommonPurePattern Object domain]
-       -> Simplifier (AttemptedFunction Object Variable)
+       -> [CommonPurePattern Object KoreDomain]
+       -> Simplifier (AttemptedFunction Object KoreDomain Variable)
        )
     -- ^ Builtin function implementation
     -> Function

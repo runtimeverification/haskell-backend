@@ -56,7 +56,7 @@ emptyDeclaredVariables = DeclaredVariables
 
 data VerifyHelpers level = VerifyHelpers
     { verifyHelpersFindSort
-        :: !(Id level -> Either (Error VerifyError) (SortDescription level))
+        :: !(Id level -> Either (Error VerifyError) (SortDescription level KoreDomain))
     , verifyHelpersLookupAliasDeclaration
         :: !(Id level -> Either (Error VerifyError) (KoreSentenceAlias level))
     , verifyHelpersLookupSymbolDeclaration
@@ -234,7 +234,7 @@ internalVerifyObjectPattern
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Maybe UnifiedSort
-    -> Pattern Object domain Variable CommonKorePattern
+    -> Pattern Object KoreDomain Variable CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyObjectPattern
     builtinVerifier
@@ -503,7 +503,7 @@ verifyVariableDeclaration
 verifyVariableDeclarationUsing
     :: MetaOrObject level
     => Set.Set UnifiedSortVariable
-    -> (Id level -> Either (Error VerifyError) (SortDescription level))
+    -> (Id level -> Either (Error VerifyError) (SortDescription level KoreDomain))
     -> Variable level
     -> Either (Error VerifyError) VerifySuccess
 verifyVariableDeclarationUsing declaredSortVariables f v =
@@ -698,7 +698,7 @@ patternNameForContext (RewritesPattern _) = "\\rewrites"
 patternNameForContext (StringLiteralPattern _) = "<string>"
 patternNameForContext (CharLiteralPattern _) = "<char>"
 patternNameForContext (TopPattern _) = "\\top"
-patternNameForContext (VariablePattern domain variable) =
+patternNameForContext (VariablePattern variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
 
 variableNameForContext :: Variable level -> String

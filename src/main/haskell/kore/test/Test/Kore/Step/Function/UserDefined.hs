@@ -431,9 +431,9 @@ evaluateWithAxiom
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -> AxiomPattern level domain
-    -> CommonPureMLPatternSimplifier level
+    -> CommonPureMLPatternSimplifier domain level
     -> Application level (CommonPurePattern level domain)
-    -> CommonAttemptedFunction level
+    -> CommonAttemptedFunction level domain
 evaluateWithAxiom
     metadataTools
     axiom

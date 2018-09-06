@@ -58,7 +58,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
     -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level domain variable
     -> Simplifier

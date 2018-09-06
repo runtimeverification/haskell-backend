@@ -41,14 +41,14 @@ evaluate
         , SortedVariable variable
         , Show (variable level)
         )
-    => PureMLPatternSimplifier level variable
+    => PureMLPatternSimplifier level domain variable
     -- ^ Evaluates functions in a pattern.
     -> Predicate level domain variable
     -- ^ The condition to be evaluated.
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
     -> Simplifier
-        (PredicateSubstitution level variable, SimplificationProof level)
+        (PredicateSubstitution level domain variable, SimplificationProof level)
 evaluate
     (PureMLPatternSimplifier simplifier)
     predicate'
@@ -66,7 +66,7 @@ asPredicateSubstitution
         , Show (variable level)
         )
     => ExpandedPattern level domain variable
-    -> (PredicateSubstitution level variable, SimplificationProof level)
+    -> (PredicateSubstitution level domain variable, SimplificationProof level)
 asPredicateSubstitution
     ExpandedPattern {term, predicate, substitution}
   =
