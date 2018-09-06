@@ -17,7 +17,7 @@ import Control.Monad
 import Data.Either
        ( isRight )
 import Data.Maybe
-       ( fromMaybe, isNothing )
+       ( catMaybes, fromMaybe, isNothing, listToMaybe )
 import Data.Reflection
        ( give )
 
@@ -518,9 +518,7 @@ constructorAtTheTopAssumesNoBottom _ _ _ = Nothing
 
 
 firstMaybe :: [Maybe a] -> Maybe a
-firstMaybe [] = Nothing
-firstMaybe (Just x : _) = Just x
-firstMaybe (_ : xs) = firstMaybe xs
+firstMaybe = listToMaybe . catMaybes
 
 -- TODO: Move these somewhere reasonable and remove all of their other
 -- definitions.
