@@ -9,6 +9,8 @@ import           Data.Default
                  ( def )
 import qualified Data.Map as Map
 
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+
 import           Kore.AST.Common
                  ( Application (..), AstLocation (..), Id (..),
                  Pattern (ApplicationPattern), SymbolOrAlias (..), Variable )
@@ -511,14 +513,6 @@ test_multiple =
             )
         ]
 
-mockStepperAttributes :: StepperAttributes
-mockStepperAttributes = StepperAttributes
-    { isConstructor = True
-    , isFunctional = True
-    , isFunction = False
-    , hook = def
-    }
-
 mockSortTools :: SortTools Meta
 mockSortTools = const ApplicationSorts
     { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
@@ -527,8 +521,8 @@ mockSortTools = const ApplicationSorts
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { symAttributes = const mockStepperAttributes
-    , sortAttributes = const mockStepperAttributes
+    { symAttributes = const Mock.constructorFunctionalAttributes
+    , sortAttributes = const Mock.constructorFunctionalAttributes
     , sortTools = mockSortTools
     }
 

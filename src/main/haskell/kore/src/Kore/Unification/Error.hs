@@ -44,7 +44,7 @@ data UnificationError level
 data ClashReason level
     = HeadClash (SymbolOrAlias level)
     | DomainValueClash String
-    | InjectionClash (Sort level) (Sort level)
+    | SortInjectionClash (Sort level) (Sort level)
     deriving (Eq, Show)
 
 {-| 'SubstitutionError' specifies the various error cases related to

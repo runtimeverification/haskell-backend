@@ -14,6 +14,8 @@ import Data.Function
 import Data.Functor.Foldable
 import Data.List
        ( sortBy )
+import Data.Proxy
+       ( Proxy (..) )
 import Data.Reflection
        ( give )
 
@@ -131,6 +133,29 @@ symbols =
         , expBin
         ]
 
+sortParam :: String -> SortVariable level
+sortParam name = sortParameter Proxy name AstLocationTest
+
+sortParamSort :: String -> Sort level
+sortParamSort = SortVariableSort . sortParam
+
+injName :: String
+injName = "inj"
+
+symbolInj :: PureSentenceSymbol level
+symbolInj =
+    parameterizedSymbol_ injName AstLocationImplicit
+        [sortParam "From", sortParam "To"]
+        [sortParamSort "From"]
+        (sortParamSort "To")
+
+injHead :: Sort level -> Sort level -> SymbolOrAlias level
+injHead sortFrom sortTo =
+    getSentenceSymbolOrAliasHead symbolInj [sortFrom, sortTo]
+
+isInjHead :: SymbolOrAlias level -> Bool
+isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
+
 mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
 mockStepperAttributes patternHead = StepperAttributes
     { isConstructor =
@@ -138,6 +163,10 @@ mockStepperAttributes patternHead = StepperAttributes
         && not (isInjHead patternHead)
     , isFunctional = patternHead /= getSentenceSymbolOrAliasHead a3 []
     , isFunction = False
+    , isInjective =
+        patternHead /= getSentenceSymbolOrAliasHead a2 []
+        || isInjHead patternHead
+    , isSortInjection = isInjHead patternHead
     , hook = def
     }
 
@@ -662,15 +691,15 @@ injUnificationTests =
     , andSimplifyFailure "constant vs injection"
         (UnificationTerm aA)
         (UnificationTerm (applyInj s2 s1 xs2))
-        (PatternClash (HeadClash (symbolHead a)) (InjectionClash s2 s1))
+        (PatternClash (HeadClash (symbolHead a)) (SortInjectionClash s2 s1))
     , andSimplifyFailure "unmatching injections"
         (UnificationTerm (applyInj s1 s3 aA))
         (UnificationTerm (applyInj s2 s3 bA))
-        (PatternClash (InjectionClash s1 s3) (InjectionClash s2 s3))
+        (PatternClash (SortInjectionClash s1 s3) (SortInjectionClash s2 s3))
     , andSimplifyFailure "unmatching nested injections"
         (UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA)))
         (UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA)))
-        (PatternClash (InjectionClash s1 s4) (InjectionClash s2 s4))
+        (PatternClash (SortInjectionClash s1 s4) (SortInjectionClash s2 s4))
     , andSimplifyFailure "unmatching injections"
         -- TODO(traiansf): this should succeed if s1 < s2 < s3
         (UnificationTerm (applyInj s1 s3 aA))

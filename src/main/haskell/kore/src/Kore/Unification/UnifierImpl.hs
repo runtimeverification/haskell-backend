@@ -19,21 +19,15 @@ import Data.Function
 import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
-import Data.Proxy
-       ( Proxy (..) )
 
-import Kore.AST.Builders
-       ( parameterizedSymbol_, sortParameter )
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
-import Kore.AST.Sentence
-       ( getSentenceSymbolOrAliasHead )
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.ASTUtils.SmartPatterns
-       ( pattern And_, pattern App_, pattern StringLiteral_ )
+       ( pattern App_, pattern StringLiteral_ )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
@@ -280,21 +274,89 @@ preTransform tools (AndPattern ap) = if left == right
                         matchDomainValue tools p1 sl2
                     _ -> Left $ Left UnsupportedPatterns
             ApplicationPattern ap2 ->
-                let
-                    head2 = applicationSymbolOrAlias ap2
-                in
-                    if isConstructor (symAttributes tools head2)
-                        then matchConstructor tools p1 head2 ap2
-                    else if isInjHead head2
-                        then matchInj tools p1
-                            (symbolOrAliasParams head2)
-                            (applicationChildren ap2)
-                    else Left $ Left $ NonConstructorHead head2
+                matchApplicationPattern tools p1 ap2
             _ -> Left $ Left UnsupportedPatterns
   where
     left = andFirst ap
     right = andSecond ap
 preTransform _ _ = Left $ Left UnsupportedPatterns
+
+matchApplicationPattern
+    :: MetadataTools level StepperAttributes
+    -> UnFixedPureMLPattern level variable
+    -> Application level (PureMLPattern level variable)
+    -> Either
+        ( Either
+            (UnificationError level)
+            ( UnificationSolution level variable
+            , UnificationProof level variable
+            )
+        )
+        (UnFixedPureMLPattern level variable)
+matchApplicationPattern tools (DomainValuePattern (DomainValue _ dv1)) ap2
+    | isConstructor (symAttributes tools head2) = case dv1 of
+        StringLiteral_ (StringLiteral sl1) ->
+            Left $ Left (PatternClash (DomainValueClash sl1) (HeadClash head2))
+        _ ->  Left $ Left UnsupportedPatterns
+    | otherwise = Left $ Left $ NonConstructorHead head2
+  where
+    head2 = applicationSymbolOrAlias ap2
+matchApplicationPattern tools (ApplicationPattern ap1) ap2
+    | head1 == head2 =
+        if isInjective (symAttributes tools head1)
+            then matchEqualInjectiveHeads tools head1 ap1 ap2
+        else if isConstructor (symAttributes tools head1)
+            then error (show head1 ++ " is constructor but not injective.")
+        else Left $ Left $ NonConstructorHead head1
+    --Assuming head1 /= head2 in the sequel
+    | isConstructor (symAttributes tools head1) =
+        if isConstructor (symAttributes tools head2)
+            then Left $ Left (PatternClash (HeadClash head1) (HeadClash head2))
+        else if isSortInjection (symAttributes tools head2)
+            then Left $ Left
+                (PatternClash (HeadClash head1) (mkSortInjectionClash head2))
+        else Left $ Left $ NonConstructorHead head2
+    --head1 /= head2 && head1 is not constructor
+    | isConstructor (symAttributes tools head2) =
+        if isSortInjection (symAttributes tools head1)
+            then Left $ Left
+                (PatternClash (mkSortInjectionClash head1) (HeadClash head2))
+            else Left $ Left $ NonConstructorHead head1
+    --head1 /= head2 && neither is a constructor
+    | all (isSortInjection . symAttributes tools) [head1, head2] =
+            matchInjTriangle tools head1 ap1 head2 ap2
+    --head1 /= head2 && neither is a constructor
+    -- && they are not both sort injections
+    | otherwise = Left $ Left UnsupportedPatterns
+  where
+    head1 = applicationSymbolOrAlias ap1
+    head2 = applicationSymbolOrAlias ap2
+matchApplicationPattern _ _ _ = Left $ Left UnsupportedPatterns
+
+matchEqualInjectiveHeads
+    :: MetadataTools level StepperAttributes
+    -> SymbolOrAlias level
+    -> Application level (PureMLPattern level variable)
+    -> Application level (PureMLPattern level variable)
+    -> Either err (UnFixedPureMLPattern level variable)
+matchEqualInjectiveHeads tools head1 ap1 ap2 = Right $
+    ApplicationPattern Application
+        { applicationSymbolOrAlias = head1
+        , applicationChildren =
+            Fix . AndPattern
+                <$> zipWith3 And
+                    (applicationSortsOperands
+                        (sortTools tools head1)
+                    )
+                    (applicationChildren ap1)
+                    (applicationChildren ap2)
+        }
+
+mkSortInjectionClash :: SymbolOrAlias level -> ClashReason level
+mkSortInjectionClash head1 = SortInjectionClash p1FromSort p1ToSort
+  where
+    [p1FromSort, p1ToSort] = symbolOrAliasParams head1
+
 
 matchDomainValue
     :: MetadataTools level StepperAttributes
@@ -322,9 +384,10 @@ matchDomainValue tools (ApplicationPattern ap1) sl2
     head1 = applicationSymbolOrAlias ap1
 matchDomainValue _ _ _ = Left $ Left UnsupportedPatterns
 
-matchConstructor
+matchInjTriangle
     :: MetadataTools level StepperAttributes
-    -> UnFixedPureMLPattern level variable
+    -> SymbolOrAlias level
+    -> Application level (PureMLPattern level variable)
     -> SymbolOrAlias level
     -> Application level (PureMLPattern level variable)
     -> Either
@@ -335,134 +398,47 @@ matchConstructor
             )
         )
         (UnFixedPureMLPattern level variable)
-matchConstructor _ (DomainValuePattern (DomainValue _ dv1)) head2 _ =
-    case dv1 of
-        (StringLiteral_ (StringLiteral sl1)) ->
-            Left $ Left (PatternClash (DomainValueClash sl1) (HeadClash head2))
-        _ -> Left $ Left UnsupportedPatterns
-matchConstructor tools (ApplicationPattern ap1) head2 ap2
-    | isConstructor (symAttributes tools head1) =
-        if head1 == head2
-            then Right
-                $ ApplicationPattern Application
-                    { applicationSymbolOrAlias = head1
-                    , applicationChildren =
-                        Fix . AndPattern
-                            <$> zipWith3 And
-                                (applicationSortsOperands
-                                    (sortTools tools head1)
-                                )
-                                (applicationChildren ap1)
-                                (applicationChildren ap2)
-                    }
-            else Left $ Left
-                    (PatternClash
-                        (HeadClash head1)
-                        (HeadClash head2)
-                    )
-    | otherwise = Left $ Left $ NonConstructorHead head1
-  where
-    head1 = applicationSymbolOrAlias ap1
-matchConstructor _ _ _ _ = Left $ Left UnsupportedPatterns
-
-matchInj
-    :: MetadataTools level StepperAttributes
-    -> UnFixedPureMLPattern level variable
-    -> [Sort level]
-    -> [PureMLPattern level variable]
-    -> Either
-        ( Either
-            (UnificationError level)
-            ( UnificationSolution level variable
-            , UnificationProof level variable
-            )
-        )
-        (UnFixedPureMLPattern level variable)
-matchInj tools p1 [p2FromSort, p2ToSort] [p2Child] =
-    matchInjHelper tools p2FromSort p2ToSort p2Child p1
-matchInj _ _ _ _ = error "Invalid inj operator"
-
-matchInjHelper
-    :: MetadataTools level StepperAttributes
-    -> Sort level
-    -> Sort level
-    -> PureMLPattern level variable
-    -> UnFixedPureMLPattern level variable
-    -> Either
-        ( Either
-            (UnificationError level)
-            ( UnificationSolution level variable
-            , UnificationProof level variable
-            )
-        )
-        (UnFixedPureMLPattern level variable)
-matchInjHelper tools p2FromSort p2ToSort p2Child (ApplicationPattern ap1)
-    | isInjHead head1 =
-        let
-            [p1FromSort, p1ToSort] = symbolOrAliasParams head1
-            [p1Child] = applicationChildren ap1
-        in
-            matchInjTriangle tools
-                p1FromSort p1ToSort p1Child p2FromSort p2ToSort p2Child
-
-    | otherwise = Left $ Left
-        (PatternClash (HeadClash head1) (InjectionClash p2FromSort p2ToSort))
-  where head1 = applicationSymbolOrAlias ap1
-matchInjHelper _ _ _ _ _ = Left $ Left UnsupportedPatterns
-
-matchInjTriangle
-    :: MetadataTools level StepperAttributes
-    -> Sort level
-    -> Sort level
-    -> PureMLPattern level variable
-    -> Sort level
-    -> Sort level
-    -> PureMLPattern level variable
-    -> Either
-        ( Either
-            (UnificationError level)
-            ( UnificationSolution level variable
-            , UnificationProof level variable
-            )
-        )
-        (UnFixedPureMLPattern level variable)
-matchInjTriangle tools p1FromSort p1ToSort p1Child p2FromSort p2ToSort p2Child
-    | p1FromSort == p2FromSort && p1ToSort == p2ToSort =
-        Right
-        $ ApplicationPattern Application
-            { applicationSymbolOrAlias = injHead p1FromSort p1ToSort
-            , applicationChildren =
-                [ And_ p1FromSort p1Child p2Child ]
-            }
+matchInjTriangle tools head1 ap1 head2 ap2
+    | head1 == head2 = matchEqualInjectiveHeads tools head1 ap1 ap2
     | otherwise = case p1Child of
-        (App_ head1 children) | isInjHead head1 ->
+        (App_ head1' children) | isSortInjection (symAttributes tools head1') ->
             let
-                [p1FromSort', p1ToSort'] = symbolOrAliasParams head1
-                [p1Child'] = children
+                [p1FromSort', p1ToSort'] = symbolOrAliasParams head1'
+                head1'' = updateSortInjectionSource head1 p1FromSort'
+                ap1'' = Application head1'' children
             in
                 assert (p1ToSort' == p1FromSort) $
-                matchInjTriangle tools
-                    p1FromSort' p1ToSort p1Child' p2FromSort p2ToSort p2Child
+                matchInjTriangle tools head1'' ap1'' head2 ap2
         _ -> case p2Child of
-            (App_ head2 children) | isInjHead head2 ->
-                let
-                    [p2FromSort', p2ToSort'] = symbolOrAliasParams head2
-                    [p2Child'] = children
+            (App_ head2' children) | isSortInjection (symAttributes tools head2')
+             -> let
+                    [p2FromSort', p2ToSort'] = symbolOrAliasParams head2'
+                    head2'' = updateSortInjectionSource head2 p2FromSort'
+                    ap2'' = Application head2'' children
                 in
                     assert (p2ToSort' == p2FromSort) $
-                    matchInjTriangle tools
-                        p1FromSort p1ToSort p1Child
-                        p2FromSort' p2ToSort p2Child'
+                    matchInjTriangle tools head1 ap1 head2'' ap2''
             _
                 | isConstructorTop tools (project p1Child)
                   && isConstructorTop tools (project p2Child) ->
                     Left $ Left
                         (PatternClash
-                            (InjectionClash p1FromSort p1ToSort)
-                            (InjectionClash p2FromSort p2ToSort)
+                            (SortInjectionClash p1FromSort p1ToSort)
+                            (SortInjectionClash p2FromSort p2ToSort)
                         )
                 | otherwise -> Left $ Left UnsupportedPatterns
+  where
+    [p1FromSort, p1ToSort] = symbolOrAliasParams head1
+    [p1Child] = applicationChildren ap1
+    [p2FromSort, p2ToSort] = symbolOrAliasParams head2
+    [p2Child] = applicationChildren ap2
 
+updateSortInjectionSource
+    :: SymbolOrAlias level -> Sort level -> SymbolOrAlias level
+updateSortInjectionSource head1 fromSort =
+    head1 { symbolOrAliasParams = [fromSort, toSort] }
+  where
+    [_, toSort] = symbolOrAliasParams head1
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
 -- if phi is a functional pattern.
@@ -651,26 +627,3 @@ unificationProcedure tools p1 p2
         , andFirst = p1
         , andSecond = p2
         }
-
-sortParam :: String -> SortVariable level
-sortParam name = sortParameter Proxy name AstLocationTest
-
-sortParamSort :: String -> Sort level
-sortParamSort = SortVariableSort . sortParam
-
-injName :: String
-injName = "inj"
-
-symbolInj :: PureSentenceSymbol level
-symbolInj =
-    parameterizedSymbol_ injName AstLocationImplicit
-        [sortParam "From", sortParam "To"]
-        [sortParamSort "From"]
-        (sortParamSort "To")
-
-injHead :: Sort level -> Sort level -> SymbolOrAlias level
-injHead sortFrom sortTo =
-    getSentenceSymbolOrAliasHead symbolInj [sortFrom, sortTo]
-
-isInjHead :: SymbolOrAlias level -> Bool
-isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
