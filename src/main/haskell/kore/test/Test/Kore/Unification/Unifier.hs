@@ -6,37 +6,47 @@ import Test.Tasty.HUnit
        ( testCase )
 import Test.Tasty.HUnit.Extensions
 
-import Data.CallStack
-import Data.Default
-       ( def )
-import Data.Function
-       ( on )
-import Data.Functor.Foldable
-import Data.List
-       ( sortBy )
-import Data.Proxy
-       ( Proxy (..) )
-import Data.Reflection
-       ( give )
+import           Data.CallStack
+import           Data.Default
+                 ( def )
+import           Data.Function
+                 ( on )
+import           Data.Functor.Foldable
+import           Data.List
+                 ( sortBy )
+import qualified Data.Map as Map
+import           Data.Proxy
+                 ( Proxy (..) )
+import           Data.Reflection
+                 ( give )
 
-import Kore.AST.Builders
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.MLPatterns
-import Kore.AST.PureML
-import Kore.AST.Sentence
-import Kore.ASTHelpers
-       ( ApplicationSorts (..) )
-import Kore.ASTPrettyPrint
-import Kore.ASTUtils.SmartConstructors
-       ( mkVar )
-import Kore.IndexedModule.MetadataTools
-import Kore.Predicate.Predicate
-       ( Predicate, makeTruePredicate )
-import Kore.Step.PatternAttributes
-import Kore.Step.StepperAttributes
-import Kore.Unification.Error
-import Kore.Unification.UnifierImpl
+import           Kore.AST.Builders
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.MLPatterns
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.ASTPrettyPrint
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkVar )
+import qualified Kore.Error
+                 ( printError )
+import           Kore.IndexedModule.MetadataTools
+import           Kore.Predicate.Predicate
+                 ( Predicate, makeTruePredicate )
+import           Kore.Step.ExpandedPattern
+                 ( ExpandedPattern (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.PatternAttributes
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
+import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import           Kore.Step.StepperAttributes
+import           Kore.Unification.Error
+import           Kore.Unification.UnifierImpl
 
 import Test.Kore
 import Test.Kore.AST.MLPatterns
@@ -651,7 +661,7 @@ injUnificationTests =
         )
     , andSimplifySuccess "Injected Variable vs doubly injected term"
         (UnificationTerm (applyInj s1 s2 x))
-        (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA)))
+        (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
         (AndDistributionAndConstraintLifting
@@ -663,7 +673,7 @@ injUnificationTests =
             ]
         )
     , andSimplifySuccess "doubly injected variable vs injected term"
-        (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 x)))
+        (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 x))))
         (UnificationTerm (applyInj s1 s2 aA))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
@@ -676,8 +686,8 @@ injUnificationTests =
             ]
         )
     , andSimplifySuccess "doubly injected variable vs doubly injected term"
-        (UnificationTerm (applyInj s4 s2 (applyInj s1 s4 x)))
-        (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA)))
+        (simplifyPattern (UnificationTerm (applyInj s4 s2 (applyInj s1 s4 x))))
+        (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
         (AndDistributionAndConstraintLifting
@@ -697,8 +707,8 @@ injUnificationTests =
         (UnificationTerm (applyInj s2 s3 bA))
         (PatternClash (SortInjectionClash s1 s3) (SortInjectionClash s2 s3))
     , andSimplifyFailure "unmatching nested injections"
-        (UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA)))
-        (UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA)))
+        (simplifyPattern (UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA))))
+        (simplifyPattern (UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA))))
         (PatternClash (SortInjectionClash s1 s4) (SortInjectionClash s2 s4))
     , andSimplifyFailure "unmatching injections"
         -- TODO(traiansf): this should succeed if s1 < s2 < s3
@@ -706,3 +716,31 @@ injUnificationTests =
         (UnificationTerm (applyInj s2 s3 xs2))
         UnsupportedPatterns
     ]
+
+simplifyPattern :: UnificationTerm Object -> UnificationTerm Object
+simplifyPattern (UnificationTerm pStub) =
+    let pat =
+            project
+            $ ExpandedPattern.term
+            $ either (error . Kore.Error.printError) id
+            $ evalSimplifier
+            $ do
+                simplifiedPatterns <-
+                    ExpandedPattern.simplify
+                        tools
+                        functionRegistry
+                        expandedPattern
+                case
+                    OrOfExpandedPattern.extractPatterns
+                        (fst simplifiedPatterns) of
+                    [] -> return ExpandedPattern.bottom
+                    (config : _) -> return config
+        resultSort = getPatternResultSort mockSortTools pat
+    in UnificationTerm (SortedPatternStub (SortedPattern pat resultSort))
+  where
+    functionRegistry = Map.empty
+    expandedPattern = ExpandedPattern
+        { term = extractPurePattern pStub
+        , predicate = makeTruePredicate
+        , substitution = []
+        }

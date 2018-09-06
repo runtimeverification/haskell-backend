@@ -1,7 +1,7 @@
 // This program counts in s all the prime numbers up to m.
 
 int i, m, n, q, r, s, t, x, y, z;
-m = 5;  n = 2;
+m = 10;  n = 2;
 while (n <= m) {
   // checking primality of n and writing t to 1 or 0
   i = 2;  q = n/i;  t = 1;
@@ -23,4 +23,4 @@ while (n <= m) {
   n = n + 1;
 }
 
-// s should be 2 when m = 5.
+// s should be 4 when m = 10.

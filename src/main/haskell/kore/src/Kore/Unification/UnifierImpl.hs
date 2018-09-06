@@ -10,8 +10,6 @@ Portability : portable
 -}
 module Kore.Unification.UnifierImpl where
 
-import Control.Exception
-       ( assert )
 import Control.Monad
        ( foldM )
 import Data.Function
@@ -27,7 +25,7 @@ import Kore.AST.PureML
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.ASTUtils.SmartPatterns
-       ( pattern App_, pattern StringLiteral_ )
+       ( pattern StringLiteral_ )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
@@ -323,14 +321,23 @@ matchApplicationPattern tools (ApplicationPattern ap1) ap2
                 (PatternClash (mkSortInjectionClash head1) (HeadClash head2))
             else Left $ Left $ NonConstructorHead head1
     --head1 /= head2 && neither is a constructor
-    | all (isSortInjection . symAttributes tools) [head1, head2] =
-            matchInjTriangle tools head1 ap1 head2 ap2
+    | all (isSortInjection . symAttributes tools) [head1, head2]
+      && all (isConstructorTop tools . project) [child1, child2] =
+        Left $ Left
+            (PatternClash
+                (SortInjectionClash p1FromSort p1ToSort)
+                (SortInjectionClash p2FromSort p2ToSort)
+            )
     --head1 /= head2 && neither is a constructor
     -- && they are not both sort injections
     | otherwise = Left $ Left UnsupportedPatterns
   where
     head1 = applicationSymbolOrAlias ap1
     head2 = applicationSymbolOrAlias ap2
+    [p1FromSort, p1ToSort] = symbolOrAliasParams head1
+    [child1] = applicationChildren ap1
+    [p2FromSort, p2ToSort] = symbolOrAliasParams head2
+    [child2] = applicationChildren ap2
 matchApplicationPattern _ _ _ = Left $ Left UnsupportedPatterns
 
 matchEqualInjectiveHeads
@@ -383,62 +390,6 @@ matchDomainValue tools (ApplicationPattern ap1) sl2
   where
     head1 = applicationSymbolOrAlias ap1
 matchDomainValue _ _ _ = Left $ Left UnsupportedPatterns
-
-matchInjTriangle
-    :: MetadataTools level StepperAttributes
-    -> SymbolOrAlias level
-    -> Application level (PureMLPattern level variable)
-    -> SymbolOrAlias level
-    -> Application level (PureMLPattern level variable)
-    -> Either
-        ( Either
-            (UnificationError level)
-            ( UnificationSolution level variable
-            , UnificationProof level variable
-            )
-        )
-        (UnFixedPureMLPattern level variable)
-matchInjTriangle tools head1 ap1 head2 ap2
-    | head1 == head2 = matchEqualInjectiveHeads tools head1 ap1 ap2
-    | otherwise = case p1Child of
-        (App_ head1' children) | isSortInjection (symAttributes tools head1') ->
-            let
-                [p1FromSort', p1ToSort'] = symbolOrAliasParams head1'
-                head1'' = updateSortInjectionSource head1 p1FromSort'
-                ap1'' = Application head1'' children
-            in
-                assert (p1ToSort' == p1FromSort) $
-                matchInjTriangle tools head1'' ap1'' head2 ap2
-        _ -> case p2Child of
-            (App_ head2' children) | isSortInjection (symAttributes tools head2')
-             -> let
-                    [p2FromSort', p2ToSort'] = symbolOrAliasParams head2'
-                    head2'' = updateSortInjectionSource head2 p2FromSort'
-                    ap2'' = Application head2'' children
-                in
-                    assert (p2ToSort' == p2FromSort) $
-                    matchInjTriangle tools head1 ap1 head2'' ap2''
-            _
-                | isConstructorTop tools (project p1Child)
-                  && isConstructorTop tools (project p2Child) ->
-                    Left $ Left
-                        (PatternClash
-                            (SortInjectionClash p1FromSort p1ToSort)
-                            (SortInjectionClash p2FromSort p2ToSort)
-                        )
-                | otherwise -> Left $ Left UnsupportedPatterns
-  where
-    [p1FromSort, p1ToSort] = symbolOrAliasParams head1
-    [p1Child] = applicationChildren ap1
-    [p2FromSort, p2ToSort] = symbolOrAliasParams head2
-    [p2Child] = applicationChildren ap2
-
-updateSortInjectionSource
-    :: SymbolOrAlias level -> Sort level -> SymbolOrAlias level
-updateSortInjectionSource head1 fromSort =
-    head1 { symbolOrAliasParams = [fromSort, toSort] }
-  where
-    [_, toSort] = symbolOrAliasParams head1
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
 -- if phi is a functional pattern.

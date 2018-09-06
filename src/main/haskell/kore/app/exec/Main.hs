@@ -166,7 +166,7 @@ main = do
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
             finalExpandedPattern <- clockSomething "Executing"
-                    $ either (error . Kore.Error.printError) fst
+                    $ either (error . printError) fst
                     $ evalSimplifier
                     $ do
                         simplifiedPatterns <-
