@@ -14,6 +14,7 @@ module Kore.Step.BaseStep
     , StepProof (..)
     , StepProofAtom (..)
     , VariableRenaming (..)
+    , simplificationProof
     , stepProof
     , stepProofSumName
     , stepWithAxiom
@@ -100,6 +101,9 @@ instance Monoid (StepProof level) where
 
 stepProof :: StepProofAtom level -> StepProof level
 stepProof atom = StepProof (Seq.singleton atom)
+
+simplificationProof :: SimplificationProof level -> StepProof level
+simplificationProof = stepProof . StepProofSimplification
 
 {- | The smallest unit of a 'StepProof'.
 
