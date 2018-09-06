@@ -197,6 +197,31 @@ test_ceilSimplification = give mockSortTools
                     }
             )
         )
+    , testCase "ceil with function symbols"
+        -- if term is a functional(params), then
+        -- ceil(term and predicate and subst)
+        --     = top and (ceil(params) and predicate) and subst
+        (assertEqualWithExplanation
+            "ceil(f(a)) and eq(f(a), g(a)))"
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate =
+                        fst $ makeAndPredicate
+                            (makeEqualsPredicate fOfA gOfA)
+                            (makeCeilPredicate fOfA)
+                    , substitution = [(Mock.x, fOfB)]
+                    }
+                ]
+            )
+            (makeEvaluate mockMetadataTools
+                ExpandedPattern
+                    { term = fOfA
+                    , predicate = makeEqualsPredicate fOfA gOfA
+                    , substitution = [(Mock.x, fOfB)]
+                    }
+            )
+        )
     , testCase "ceil with functional terms"
         -- if term is functional, then
         -- ceil(term and predicate and subst)
