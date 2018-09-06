@@ -15,7 +15,7 @@ import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Application (..), Id, SortedVariable, SymbolOrAlias )
+                 ( Application (..), Id, SortedVariable, SymbolOrAlias, KoreDomain )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
@@ -53,9 +53,9 @@ import           Kore.Variables.Int
                  ( IntVariable (..) )
 
 data ExpandedApplication level variable = ExpandedApplication
-    { term         :: !(Application level (PureMLPattern level domain variable))
-    , predicate    :: !(Predicate level domain variable)
-    , substitution :: !(UnificationSubstitution level domain variable)
+    { term         :: !(Application level (PureMLPattern level KoreDomain variable))
+    , predicate    :: !(Predicate level KoreDomain variable)
+    , substitution :: !(UnificationSubstitution level KoreDomain variable)
     }
     deriving (Eq, Show)
 
@@ -80,13 +80,13 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level domain variable
+    -> PureMLPatternSimplifier level KoreDomain variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level KoreDomain variable]
     -- ^ Map from symbol IDs to defined functions
-    -> Application level (OrOfExpandedPattern level domain variable)
+    -> Application level (OrOfExpandedPattern level KoreDomain variable)
     -> Simplifier
-        ( OrOfExpandedPattern level domain variable
+        ( OrOfExpandedPattern level KoreDomain variable
         , SimplificationProof level
         )
 simplify
@@ -125,14 +125,14 @@ makeAndEvaluateApplications
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level domain variable
+    -> PureMLPatternSimplifier level KoreDomain variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level KoreDomain variable]
     -- ^ Map from symbol IDs to defined functions
     -> SymbolOrAlias level
-    -> [ExpandedPattern level domain variable]
+    -> [ExpandedPattern level KoreDomain variable]
     -> Simplifier
-        (OrOfExpandedPattern level domain variable, SimplificationProof level)
+        (OrOfExpandedPattern level KoreDomain variable, SimplificationProof level)
 makeAndEvaluateApplications
     tools
     simplifier
@@ -159,14 +159,14 @@ evaluateApplicationFunction
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level domain variable
+    -> PureMLPatternSimplifier level KoreDomain variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level KoreDomain variable]
     -- ^ Map from symbol IDs to defined functions
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (OrOfExpandedPattern level domain variable, SimplificationProof level)
+        (OrOfExpandedPattern level KoreDomain variable, SimplificationProof level)
 evaluateApplicationFunction
     tools
     simplifier
@@ -197,7 +197,7 @@ makeExpandedApplication
         )
     => MetadataTools level StepperAttributes
     -> SymbolOrAlias level
-    -> [ExpandedPattern level domain variable]
+    -> [ExpandedPattern level KoreDomain variable]
     -> Simplifier
         (ExpandedApplication level variable, SimplificationProof level)
 makeExpandedApplication tools symbol children

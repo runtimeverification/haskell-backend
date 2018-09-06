@@ -17,7 +17,7 @@ import           Data.Reflection
                  ( Given, give )
 
 import           Kore.AST.Common
-                 ( Id, Pattern (..), SortedVariable )
+                 ( Id, Pattern (..), SortedVariable, KoreDomain )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern, fromPurePattern )
@@ -100,11 +100,11 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level KoreDomain variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPattern level domain variable
+    -> PureMLPattern level KoreDomain variable
     -> Simplifier
-        ( ExpandedPattern level domain variable
+        ( ExpandedPattern level KoreDomain variable
         , SimplificationProof level
         )
 simplify tools symbolIdToEvaluator patt = do
@@ -129,11 +129,11 @@ simplifyToOr
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level KoreDomain variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPattern level domain variable
+    -> PureMLPattern level KoreDomain variable
     -> Simplifier
-        ( OrOfExpandedPattern level domain variable
+        ( OrOfExpandedPattern level KoreDomain variable
         , SimplificationProof level
         )
 simplifyToOr tools symbolIdToEvaluator patt =
@@ -161,12 +161,12 @@ simplifyInternal
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level domain variable
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
+    -> PureMLPatternSimplifier level KoreDomain variable
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level KoreDomain variable]
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern level domain variable (PureMLPattern level domain variable)
+    -> Pattern level KoreDomain variable (PureMLPattern level KoreDomain variable)
     -> Simplifier
-        ( OrOfExpandedPattern level domain variable
+        ( OrOfExpandedPattern level KoreDomain variable
         , SimplificationProof level
         )
 simplifyInternal

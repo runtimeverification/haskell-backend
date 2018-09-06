@@ -77,10 +77,10 @@ A configuration consists of a pattern and a condition predicate, and would be
 represented as pattern /\ condition-predicate in Kore.
 --}
 data StepperConfiguration level = StepperConfiguration
-    { stepperConfigurationPattern       :: !(CommonPurePattern level domain)
+    { stepperConfigurationPattern       :: !(CommonPurePattern level KoreDomain)
     -- ^ The pattern being rewritten.
 
-    , stepperConfigurationCondition     :: !(CommonPurePattern level domain)
+    , stepperConfigurationCondition     :: !(CommonPurePattern level KoreDomain)
     -- ^ The condition predicate.
     -- TODO(virgil): Make this an EvaluatedCondition.
     }
@@ -91,7 +91,7 @@ data StepperConfiguration level = StepperConfiguration
 data StepProof level
     = StepProofCombined ![StepProof level]
     -- ^ combines multiple parts of a proof.
-    | StepProofUnification !(UnificationProof level Variable)
+    | StepProofUnification !(UnificationProof level KoreDomain Variable)
     -- ^ Proof for a unification that happened during the step.
     | StepProofVariableRenamings [VariableRenaming level]
     -- ^ Proof for the remanings that happened during ther proof.
@@ -380,10 +380,10 @@ unificationProofStepVariablesToCommon
     :: MetaOrObject level
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
-    -> UnificationProof level StepperVariable
+    -> UnificationProof level KoreDomain StepperVariable
     -> IntCounter
         ( Map.Map (StepperVariable level) (StepperVariable level)
-        , UnificationProof level Variable
+        , UnificationProof level KoreDomain Variable
         )
 unificationProofStepVariablesToCommon _ mapping EmptyUnificationProof =
     return (mapping, EmptyUnificationProof)

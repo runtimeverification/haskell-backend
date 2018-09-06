@@ -57,8 +57,9 @@ instance
     )
     => PatternSubstitutionClass
         ListSubstitution.Substitution
+        domain
         variable
-        (Pattern level domain)
+        (Pattern level)
         IntCounter
   where
 
@@ -148,7 +149,7 @@ variableToSubstitution
     => Map.Map (variable level) (PureMLPattern level domain variable)
     -> variable level
     -> (variable level, PureMLPattern level domain variable)
-variableToSubstitution varToPattern domain var =
+variableToSubstitution varToPattern var =
     case Map.lookup var varToPattern of
         Just patt -> (var, patt)
         Nothing   -> error ("variable " ++ show var ++ " not found.")

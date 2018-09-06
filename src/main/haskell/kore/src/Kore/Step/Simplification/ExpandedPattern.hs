@@ -14,7 +14,7 @@ module Kore.Step.Simplification.ExpandedPattern
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Id, SortedVariable )
+                 ( Id, SortedVariable, KoreDomain )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -58,11 +58,11 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level domain variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level KoreDomain variable]
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level domain variable
+    -> ExpandedPattern level KoreDomain variable
     -> Simplifier
-        ( OrOfExpandedPattern level domain variable
+        ( OrOfExpandedPattern level KoreDomain variable
         , SimplificationProof level
         )
 simplify

@@ -52,7 +52,7 @@ data SubstitutionAndQuantifiedVars s var pat = SubstitutionAndQuantifiedVars
     }
 
 type FixedSubstitutionAndQuantifiedVars s var pat =
-    SubstitutionAndQuantifiedVars s (Unified var) (Fix (pat domain var))
+    SubstitutionAndQuantifiedVars s (Unified var) (Fix (pat var))
 
 addFreeVariable
     :: (Ord var)
@@ -98,7 +98,7 @@ class ( UnifiedPatternInterface pat
       , Ord (var Object)
       , Hashable var
       )
-    => PatternSubstitutionClass s var pat m
+    => PatternSubstitutionClass s domain var pat m
   where
     substitute
         :: Fix (pat domain var)
@@ -110,8 +110,8 @@ class ( UnifiedPatternInterface pat
         }) p
 
 substituteM
-    :: forall s var pat m .
-       PatternSubstitutionClass s var pat m
+    :: forall s domain var pat m .
+       PatternSubstitutionClass s domain var pat m
     => SubstitutionAndQuantifiedVars s (Unified var) (Fix (pat domain var))
     -> Fix (pat domain var)
     -> m (Fix (pat domain var))
@@ -119,14 +119,14 @@ substituteM subst p | isEmpty subst = return p
 substituteM subst p = unifiedPatternApply @pat substPattern  (project p)
   where
     substPattern :: (MetaOrObject level')
-                 => Pattern level domain' var (Fix (pat domain var))
+                 => Pattern level' domain var (Fix (pat domain var))
                  -> m (Fix (pat domain var))
     substPattern (ExistsPattern e)  = binderPatternSubstitutePreprocess subst e
     substPattern (ForallPattern f) = binderPatternSubstitutePreprocess subst f
-    substPattern domain varPat@(VariablePattern domain v) = do
+    substPattern varPat@(VariablePattern v) = do
         return $ case lookup (asUnified v) subst of
                      Just up -> up
-                     Nothing -> Fix (unifyPattern domain varPat)
+                     Nothing -> Fix (unifyPattern varPat)
     substPattern otherPat = fmap (Fix . unifyPattern) (mapM (substituteM subst) otherPat)
 
 {-
@@ -139,9 +139,9 @@ substituteM subst p = unifiedPatternApply @pat substPattern  (project p)
 -}
 binderPatternSubstitutePreprocess
     :: ( MLBinderPatternClass q
-       , PatternSubstitutionClass s var pat m
+       , PatternSubstitutionClass s domain var pat m
        , MetaOrObject level)
-    => FixedSubstitutionAndQuantifiedVars s var pat
+    => FixedSubstitutionAndQuantifiedVars s var (pat domain)
     -> q level var (Fix (pat domain var))
     -> m (Fix (pat domain var))
 binderPatternSubstitutePreprocess s q
@@ -153,7 +153,7 @@ binderPatternSubstitutePreprocess s q
             . (`Set.member` allFreeVars)
             . asUnified
             )
-        let s' = insert unifiedVar (toPat $ VariablePattern domain var') s
+        let s' = insert unifiedVar (toPat $ VariablePattern var') s
         pat' <- substituteM s' pat
         return $ toPat $
             binderPatternConstructor q sort var' pat'
