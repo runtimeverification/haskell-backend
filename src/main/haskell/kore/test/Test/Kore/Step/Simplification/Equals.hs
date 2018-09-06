@@ -357,10 +357,42 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "constructor1(a) vs constructor2(a) for patterns"
+    , testCase
+        "functionalconstructor1(a) vs functionalconstructor2(a) for patterns"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 []
+            )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = functionalConstructor1OfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = functionalConstructor2OfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "constructor1(a) vs constructor2(a) for patterns"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate =
+                        fst $ makeAndPredicate
+                            (fst $ makeNotPredicate
+                                (makeCeilPredicate constructor1OfA)
+                            )
+                            (fst $ makeNotPredicate
+                                (makeCeilPredicate constructor2OfA)
+                            )
+                    , substitution = []
+                    }
+                ]
             )
             (evaluate
                 mockMetadataTools
@@ -444,12 +476,12 @@ test_equalsSimplification = give mockSortTools
             (evaluate
                 mockMetadataTools
                 ExpandedPattern
-                    { term = Mock.constr20 fOfA fOfB
+                    { term = Mock.functionalConstr20 fOfA fOfB
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 ExpandedPattern
-                    { term = Mock.constr20 gOfA gOfB
+                    { term = Mock.functionalConstr20 gOfA gOfB
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -523,12 +555,12 @@ test_equalsSimplification = give mockSortTools
             (evaluate
                 mockMetadataTools
                 ExpandedPattern
-                    { term = constructor1OfHOfA
+                    { term = Mock.functionalConstr10 hOfA
                     , predicate = makeEqualsPredicate fOfA fOfB
                     , substitution = []
                     }
                 ExpandedPattern
-                    { term = constructor1OfHOfB
+                    { term = Mock.functionalConstr10 hOfB
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = []
                     }
@@ -714,9 +746,11 @@ test_equalsSimplification = give mockSortTools
     hOfB = give mockSortTools $ Mock.h Mock.b
     functionalOfA = give mockSortTools $ Mock.functional10 Mock.a
     constructor1OfA = give mockSortTools $ Mock.constr10 Mock.a
-    constructor1OfHOfA = give mockSortTools $ Mock.constr10 hOfA
-    constructor1OfHOfB = give mockSortTools $ Mock.constr10 hOfB
     constructor2OfA = give mockSortTools $ Mock.constr11 Mock.a
+    functionalConstructor1OfA =
+        give mockSortTools $ Mock.functionalConstr10 Mock.a
+    functionalConstructor2OfA =
+        give mockSortTools $ Mock.functionalConstr11 Mock.a
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
         Mock.makeMetadataTools mockSortTools Mock.attributesMapping

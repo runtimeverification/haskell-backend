@@ -141,34 +141,34 @@ test_ceilSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "ceil with constructors"
-        -- if term is a constructor(params), then
-        -- ceil(term and predicate and subst)
-        --     = top and (ceil(params) and predicate) and subst
-        (assertEqualWithExplanation
-            "ceil(constr(something(a), something(b)) and equals(f(a), g(a)))"
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate =
-                        fst $ makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
-                            (fst $ makeAndPredicate
-                                (makeCeilPredicate somethingOfA)
-                                (makeCeilPredicate somethingOfB)
-                            )
-                    , substitution = [(Mock.x, fOfB)]
-                    }
-                ]
+    , let
+        constructorTerm = Mock.constr20 somethingOfA somethingOfB
+      in
+        testCase "ceil with constructors"
+            -- if term is a non-functional-constructor(params), then
+            -- ceil(term and predicate and subst)
+            --     = top and (ceil(term) and predicate) and subst
+            (assertEqualWithExplanation
+                "ceil(constr(something(a), something(b)) and eq(f(a), g(a)))"
+                (OrOfExpandedPattern.make
+                    [ ExpandedPattern
+                        { term = mkTop
+                        , predicate =
+                            fst $ makeAndPredicate
+                                (makeEqualsPredicate fOfA gOfA)
+                                (makeCeilPredicate constructorTerm)
+                        , substitution = [(Mock.x, fOfB)]
+                        }
+                    ]
+                )
+                (makeEvaluate mockMetadataTools
+                    ExpandedPattern
+                        { term = constructorTerm
+                        , predicate = makeEqualsPredicate fOfA gOfA
+                        , substitution = [(Mock.x, fOfB)]
+                        }
+                )
             )
-            (makeEvaluate mockMetadataTools
-                ExpandedPattern
-                    { term = Mock.constr20 somethingOfA somethingOfB
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(Mock.x, fOfB)]
-                    }
-            )
-        )
     , testCase "ceil with functional symbols"
         -- if term is a functional(params), then
         -- ceil(term and predicate and subst)
@@ -192,6 +192,31 @@ test_ceilSimplification = give mockSortTools
             (makeEvaluate mockMetadataTools
                 ExpandedPattern
                     { term = Mock.functional20 somethingOfA somethingOfB
+                    , predicate = makeEqualsPredicate fOfA gOfA
+                    , substitution = [(Mock.x, fOfB)]
+                    }
+            )
+        )
+    , testCase "ceil with function symbols"
+        -- if term is a function(params), then
+        -- ceil(term and predicate and subst)
+        --     = top and (ceil(term) and predicate) and subst
+        (assertEqualWithExplanation
+            "ceil(f(a)) and eq(f(a), g(a)))"
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate =
+                        fst $ makeAndPredicate
+                            (makeEqualsPredicate fOfA gOfA)
+                            (makeCeilPredicate fOfA)
+                    , substitution = [(Mock.x, fOfB)]
+                    }
+                ]
+            )
+            (makeEvaluate mockMetadataTools
+                ExpandedPattern
+                    { term = fOfA
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = [(Mock.x, fOfB)]
                     }
@@ -274,37 +299,6 @@ test_ceilSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "ceil with constructor composition"
-        -- if term is constr(non-funct, non-funct), then
-        -- ceil(term and predicate and subst)
-        --     = top and
-        --       ceil(non-funct) and ceil(non-funct) and predicate and
-        --       subst
-        (assertEqualWithExplanation
-            "ceil(constr(non-funct, non-funct) and eq(f(a), g(a)))"
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate =
-                        fst $ makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
-                            (fst $ makeAndPredicate
-                                (makeCeilPredicate fOfA)
-                                (makeCeilPredicate fOfB)
-                            )
-                    , substitution = [(Mock.x, fOfB)]
-                    }
-                ]
-            )
-            (makeEvaluate mockMetadataTools
-                ExpandedPattern
-                    { term = Mock.constr20 fOfA fOfB
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(Mock.x, fOfB)]
-                    }
-            )
-        )
-    -- ceil moves predicates and substitutions up
     ]
   where
     fOfA = give mockSortTools $ Mock.f Mock.a
