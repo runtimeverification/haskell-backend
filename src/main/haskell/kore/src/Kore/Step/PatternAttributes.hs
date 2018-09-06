@@ -146,7 +146,7 @@ isConstructorTop
     -> Pattern level variable pat
     -> Bool
 isConstructorTop tools (ApplicationPattern ap) =
-    isConstructor (MetadataTools.attributes tools patternHead)
+    isConstructor (MetadataTools.symAttributes tools patternHead)
   where
     patternHead = applicationSymbolOrAlias ap
 isConstructorTop _ p = isRight (isPreconstructedPattern undefined p)
