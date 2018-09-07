@@ -16,6 +16,8 @@ import Control.Monad
        ( foldM, zipWithM )
 import Data.Either
        ( isRight )
+import Data.Maybe
+       ( catMaybes, fromMaybe, isNothing, listToMaybe )
 import Data.Reflection
        ( give )
 
@@ -223,8 +225,21 @@ makeEvaluate
         , predicate = PredicateTrue
         , substitution = []
         }
-  =
-    makeEvaluateTermsAssumesNoBottom tools firstTerm secondTerm
+  | isNothing maybeSimplified
+  = return
+        (OrOfExpandedPattern.make
+            [ ExpandedPattern
+                { term = mkTop
+                , predicate = give (MetadataTools.sortTools tools)
+                    $ makeEqualsPredicate firstTerm secondTerm
+                , substitution = []
+                }
+            ]
+        , SimplificationProof
+        )
+  where
+    maybeSimplified =
+        makeEvaluateTermsAssumesNoBottomMaybe tools firstTerm secondTerm
 makeEvaluate
     tools
     first@ExpandedPattern
@@ -282,9 +297,48 @@ makeEvaluateTermsAssumesNoBottom
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottom
+    tools
+    firstTerm
+    secondTerm
+  =
+    fromMaybe
+        (return
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate = give (MetadataTools.sortTools tools)
+                        $ makeEqualsPredicate firstTerm secondTerm
+                    , substitution = []
+                    }
+                ]
+            , SimplificationProof
+            )
+        )
+        (makeEvaluateTermsAssumesNoBottomMaybe tools firstTerm secondTerm)
+
+-- Do not export this. This not valid as a standalone function, it
+-- assumes that some extra conditions will be added on the outside
+makeEvaluateTermsAssumesNoBottomMaybe
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , IntVariable variable
+        , Hashable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> Maybe
+        (Simplifier
+            (OrOfExpandedPattern level variable, SimplificationProof level)
+        )
+makeEvaluateTermsAssumesNoBottomMaybe
     tools first second
   | first == second =
-    return
+    Just $ return
         ( OrOfExpandedPattern.make
             [ ExpandedPattern
                 { term = mkTop
@@ -301,22 +355,10 @@ makeEvaluateTermsAssumesNoBottom
         [ differentCharLiterals first second
         , differentStringLiterals first second
         , differentDomainValues first second
-        , variableEqualsFunctional tools first second
-        , functionalEqualsVariable tools first second
-        , constructorAtTheTop tools first second
+        , variableEqualsFunctionalAssumesNoBottom tools first second
+        , functionalEqualsVariableAssumesNoBottom tools first second
+        , constructorAtTheTopAssumesNoBottom tools first second
         ]
-        ( return
-            ( OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = give (MetadataTools.sortTools tools)
-                        $ makeEqualsPredicate first second
-                    , substitution = []
-                    }
-                ]
-            , SimplificationProof
-            )
-        )
 
 differentCharLiterals
     :: PureMLPattern level variable
@@ -357,7 +399,7 @@ differentDomainValues
     = Just (return (OrOfExpandedPattern.make [], SimplificationProof))
 differentDomainValues _ _ = Nothing
 
-variableEqualsFunctional
+variableEqualsFunctionalAssumesNoBottom
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
@@ -366,7 +408,7 @@ variableEqualsFunctional
         (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
-variableEqualsFunctional
+variableEqualsFunctionalAssumesNoBottom
     tools (Var_ var) term
   | isFunctional tools term || isFunction tools term
   =
@@ -382,9 +424,9 @@ variableEqualsFunctional
             , SimplificationProof
             )
         )
-variableEqualsFunctional _ _ _ = Nothing
+variableEqualsFunctionalAssumesNoBottom _ _ _ = Nothing
 
-functionalEqualsVariable
+functionalEqualsVariableAssumesNoBottom
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
@@ -393,7 +435,7 @@ functionalEqualsVariable
         (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
-functionalEqualsVariable
+functionalEqualsVariableAssumesNoBottom
     tools term (Var_ var)
   | isFunctional tools term || isFunction tools term
   =
@@ -409,9 +451,9 @@ functionalEqualsVariable
             , SimplificationProof
             )
         )
-functionalEqualsVariable _ _ _ = Nothing
+functionalEqualsVariableAssumesNoBottom _ _ _ = Nothing
 
-constructorAtTheTop
+constructorAtTheTopAssumesNoBottom
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
@@ -428,7 +470,7 @@ constructorAtTheTop
         (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
-constructorAtTheTop
+constructorAtTheTopAssumesNoBottom
     tools
     (App_ firstSymbol firstChildren)
     (App_ secondSymbol secondChildren)
@@ -472,13 +514,11 @@ constructorAtTheTop
             (OrOfExpandedPattern level variable, SimplificationProof level)
     combineWithAnd tools' (thing1, _proof1) (thing2, _proof2) =
         And.simplifyEvaluated tools' thing1 thing2
-constructorAtTheTop _ _ _ = Nothing
+constructorAtTheTopAssumesNoBottom _ _ _ = Nothing
 
 
-firstMaybe :: [Maybe a] -> a -> a
-firstMaybe [] x = x
-firstMaybe (Just x : _) _ = x
-firstMaybe (_ : xs) x = firstMaybe xs x
+firstMaybe :: [Maybe a] -> Maybe a
+firstMaybe = listToMaybe . catMaybes
 
 -- TODO: Move these somewhere reasonable and remove all of their other
 -- definitions.
