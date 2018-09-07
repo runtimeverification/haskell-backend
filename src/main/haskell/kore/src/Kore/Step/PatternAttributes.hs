@@ -118,7 +118,7 @@ isPreconstructedPattern
     -> Pattern level variable pat
     -> Either err (FunctionalProof level variable)
 isPreconstructedPattern _ (DomainValuePattern dv) =
-    return (FunctionalDomainValue dv)
+    Right (FunctionalDomainValue dv)
 isPreconstructedPattern _ (StringLiteralPattern str) =
     Right (FunctionalStringLiteral str)
 isPreconstructedPattern _ (CharLiteralPattern str) =

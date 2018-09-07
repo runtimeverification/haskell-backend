@@ -352,7 +352,7 @@ kItemSort = groundObjectSort "SortKItem"
 -- The function below works around several limitations of
 -- the current tool by tricking the tool into believing that
 -- functions are constructors (so that function patterns can match)
--- and that @kseq@ and $dotk@ are both functional and constructor.
+-- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions :: MetadataTools Object StepperAttributes -> MetadataTools Object StepperAttributes
 constructorFunctions tools =
     tools

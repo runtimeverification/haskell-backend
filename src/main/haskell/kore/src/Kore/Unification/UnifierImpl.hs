@@ -17,6 +17,8 @@ import Data.Function
 import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
+import Data.Reflection
+       ( Given, give, given )
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -272,7 +274,7 @@ preTransform tools (AndPattern ap) = if left == right
                         matchDomainValue tools p1 sl2
                     _ -> Left $ Left UnsupportedPatterns
             ApplicationPattern ap2 ->
-                matchApplicationPattern tools p1 ap2
+                give tools matchApplicationPattern p1 ap2
             _ -> Left $ Left UnsupportedPatterns
   where
     left = andFirst ap
@@ -280,8 +282,8 @@ preTransform tools (AndPattern ap) = if left == right
 preTransform _ _ = Left $ Left UnsupportedPatterns
 
 matchApplicationPattern
-    :: MetadataTools level StepperAttributes
-    -> UnFixedPureMLPattern level variable
+    :: (Given (MetadataTools level StepperAttributes))
+    => UnFixedPureMLPattern level variable
     -> Application level (PureMLPattern level variable)
     -> Either
         ( Either
@@ -291,38 +293,39 @@ matchApplicationPattern
             )
         )
         (UnFixedPureMLPattern level variable)
-matchApplicationPattern tools (DomainValuePattern (DomainValue _ dv1)) ap2
-    | isConstructor (symAttributes tools head2) = case dv1 of
+matchApplicationPattern (DomainValuePattern (DomainValue _ dv1)) ap2
+    | isConstructor_ head2 = case dv1 of
         StringLiteral_ (StringLiteral sl1) ->
             Left $ Left (PatternClash (DomainValueClash sl1) (HeadClash head2))
         _ ->  Left $ Left UnsupportedPatterns
     | otherwise = Left $ Left $ NonConstructorHead head2
   where
     head2 = applicationSymbolOrAlias ap2
-matchApplicationPattern tools (ApplicationPattern ap1) ap2
+matchApplicationPattern (ApplicationPattern ap1) ap2
     | head1 == head2 =
-        if isInjective (symAttributes tools head1)
-            then matchEqualInjectiveHeads tools head1 ap1 ap2
-        else if isConstructor (symAttributes tools head1)
+        if isInjective_ head1
+            then matchEqualInjectiveHeads given head1 ap1 ap2
+        else if isConstructor_ head1
             then error (show head1 ++ " is constructor but not injective.")
         else Left $ Left $ NonConstructorHead head1
     --Assuming head1 /= head2 in the sequel
-    | isConstructor (symAttributes tools head1) =
-        if isConstructor (symAttributes tools head2)
+    | isConstructor_ head1 =
+        if isConstructor_ head2
             then Left $ Left (PatternClash (HeadClash head1) (HeadClash head2))
-        else if isSortInjection (symAttributes tools head2)
+        else if isSortInjection_ head2
             then Left $ Left
                 (PatternClash (HeadClash head1) (mkSortInjectionClash head2))
         else Left $ Left $ NonConstructorHead head2
     --head1 /= head2 && head1 is not constructor
-    | isConstructor (symAttributes tools head2) =
-        if isSortInjection (symAttributes tools head1)
+    | isConstructor_ head2 =
+        if isSortInjection_ head1
             then Left $ Left
                 (PatternClash (mkSortInjectionClash head1) (HeadClash head2))
             else Left $ Left $ NonConstructorHead head1
     --head1 /= head2 && neither is a constructor
-    | all (isSortInjection . symAttributes tools) [head1, head2]
-      && all (isConstructorTop tools . project) [child1, child2] =
+    | isSortInjection_ head1 && isSortInjection_ head2
+      && isConstructorTop given (project child1)
+      && isConstructorTop given (project child2) =
         Left $ Left
             (PatternClash
                 (SortInjectionClash p1FromSort p1ToSort)
@@ -338,7 +341,7 @@ matchApplicationPattern tools (ApplicationPattern ap1) ap2
     [child1] = applicationChildren ap1
     [p2FromSort, p2ToSort] = symbolOrAliasParams head2
     [child2] = applicationChildren ap2
-matchApplicationPattern _ _ _ = Left $ Left UnsupportedPatterns
+matchApplicationPattern _ _ = Left $ Left UnsupportedPatterns
 
 matchEqualInjectiveHeads
     :: MetadataTools level StepperAttributes

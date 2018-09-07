@@ -9,6 +9,11 @@ Portability : portable
 -}
 module Kore.Step.StepperAttributes
   ( StepperAttributes (..)
+  , isFunction_
+  , isFunctional_
+  , isConstructor_
+  , isInjective_
+  , isSortInjection_
   , functionalAttribute
   , functionAttribute
   , constructorAttribute
@@ -18,7 +23,11 @@ module Kore.Step.StepperAttributes
   ) where
 
 import Data.Default
+import Data.Reflection
+       ( Given, given )
 
+import           Kore.AST.Common
+                 ( SymbolOrAlias )
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.Attribute.Parser
@@ -27,6 +36,8 @@ import qualified Kore.Attribute.Parser as Attribute
 import           Kore.Builtin.Hook
 import           Kore.Implicit.Attributes
                  ( keyOnlyAttribute )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..) )
 
 {- | @constructorAttribute@ represents a @constructor@ attribute Kore pattern.
 
@@ -112,6 +123,36 @@ defaultStepperAttributes =
     , hook             = def
     }
 
+isFunction_
+    :: (Given (MetadataTools level StepperAttributes))
+    => SymbolOrAlias level
+    -> Bool
+isFunction_ pHead = isFunction (symAttributes given pHead)
+
+isFunctional_
+    :: (Given (MetadataTools level StepperAttributes))
+    => SymbolOrAlias level
+    -> Bool
+isFunctional_ pHead = isFunctional (symAttributes given pHead)
+
+isConstructor_
+    :: (Given (MetadataTools level StepperAttributes))
+    => SymbolOrAlias level
+    -> Bool
+isConstructor_ pHead = isConstructor (symAttributes given pHead)
+
+isInjective_
+    :: (Given (MetadataTools level StepperAttributes))
+    => SymbolOrAlias level
+    -> Bool
+isInjective_ pHead = isInjective (symAttributes given pHead)
+
+isSortInjection_
+    :: (Given (MetadataTools level StepperAttributes))
+    => SymbolOrAlias level
+    -> Bool
+isSortInjection_ pHead = isSortInjection (symAttributes given pHead)
+
 -- | See also: 'defaultStepperAttributes'
 instance Default StepperAttributes where
     def = defaultStepperAttributes
@@ -167,8 +208,7 @@ hasSortInjectionAttribute :: Attribute.Parser Bool
 hasSortInjectionAttribute = Attribute.hasKeyOnlyAttribute "sortInjection"
 
 instance ParseAttributes StepperAttributes where
-    attributesParser =
-        do
+    attributesParser = do
         isFunctional <- hasFunctionalAttribute
         isFunction <- hasFunctionAttribute
         isConstructor <- hasConstructorAttribute
