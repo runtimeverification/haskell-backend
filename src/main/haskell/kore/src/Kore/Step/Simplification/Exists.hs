@@ -74,7 +74,7 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
   (pat and pred and subst)
 * Otherwise, if x does not occur free in pat, return
   (pat and (exists x . pred) and subst)
-* Otherwise, if x does not occur free in pat, return
+* Otherwise, if x does not occur free in pred, return
   ((exists x . pat) and pred and subst)
 * Otherwise return
   ((exists x . pat and pred) and subst)
