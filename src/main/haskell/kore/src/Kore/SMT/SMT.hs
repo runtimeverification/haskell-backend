@@ -49,7 +49,7 @@ instance Default SMTAttributes where
 instance ParseAttributes SMTAttributes where
     attributesParser = do
         hook <- attributesParser
-        pure SMTAttributes {..} 
+        pure SMTAttributes { hook }
 
 provePredicate
     :: Given (MetadataTools Object SMTAttributes)

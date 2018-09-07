@@ -63,7 +63,7 @@ The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SentenceAlias level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
- = SentenceAlias
+  = SentenceAlias
     { sentenceAliasAlias        :: !(Alias level)
     , sentenceAliasSorts        :: ![Sort level]
     , sentenceAliasResultSort   :: !(Sort level)
@@ -80,7 +80,15 @@ instance
 
 instance (Pretty (variable level), Pretty (Fix (pat variable))) =>
     Pretty (SentenceAlias level pat variable) where
-    pretty SentenceAlias {..} =
+    pretty SentenceAlias
+        { sentenceAliasAlias
+        , sentenceAliasSorts
+        , sentenceAliasResultSort
+        , sentenceAliasLeftPattern
+        , sentenceAliasRightPattern
+        , sentenceAliasAttributes
+        }
+      =
         Pretty.fillSep
         [ "alias"
         , pretty sentenceAliasAlias <> Pretty.arguments sentenceAliasSorts
@@ -101,7 +109,7 @@ The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SentenceSymbol level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
- = SentenceSymbol
+  = SentenceSymbol
     { sentenceSymbolSymbol     :: !(Symbol level)
     , sentenceSymbolSorts      :: ![Sort level]
     , sentenceSymbolResultSort :: !(Sort level)
@@ -113,7 +121,13 @@ instance NFData (SentenceSymbol level pat variable)
 
 instance Pretty (Fix (pat variable)) =>
     Pretty (SentenceSymbol level pat variable) where
-    pretty SentenceSymbol {..} =
+    pretty SentenceSymbol
+        { sentenceSymbolSymbol
+        , sentenceSymbolSorts
+        , sentenceSymbolResultSort
+        , sentenceSymbolAttributes
+        }
+      =
         Pretty.fillSep
         [ "symbol"
         , pretty sentenceSymbolSymbol <> Pretty.arguments sentenceSymbolSorts
@@ -137,7 +151,7 @@ instance Pretty ModuleName where
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 data SentenceImport (pat :: (* -> *) -> * -> *) (variable :: * -> *)
- = SentenceImport
+  = SentenceImport
     { sentenceImportModuleName :: !ModuleName
     , sentenceImportAttributes :: !Attributes
     }
@@ -147,7 +161,8 @@ instance NFData (SentenceImport pat variable)
 
 instance Pretty (Fix (pat variable)) =>
     Pretty (SentenceImport pat variable) where
-    pretty SentenceImport {..} =
+    pretty SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
+      =
         Pretty.fillSep
         [ "import", pretty sentenceImportModuleName
         , pretty sentenceImportAttributes
@@ -157,7 +172,7 @@ instance Pretty (Fix (pat variable)) =>
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 data SentenceSort level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
- = SentenceSort
+  = SentenceSort
     { sentenceSortName       :: !(Id level)
     , sentenceSortParameters :: ![SortVariable level]
     , sentenceSortAttributes :: !Attributes
@@ -168,7 +183,12 @@ instance NFData (SentenceSort level pat variable)
 
 instance Pretty (Fix (pat variable)) =>
     Pretty (SentenceSort level pat variable) where
-    pretty SentenceSort {..} =
+    pretty SentenceSort
+        { sentenceSortName
+        , sentenceSortParameters
+        , sentenceSortAttributes
+        }
+      =
         Pretty.fillSep
         [ "sort"
         , pretty sentenceSortName <> Pretty.parameters sentenceSortParameters
@@ -179,7 +199,7 @@ instance Pretty (Fix (pat variable)) =>
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 data SentenceAxiom sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
- = SentenceAxiom
+  = SentenceAxiom
     { sentenceAxiomParameters :: ![sortParam]
     , sentenceAxiomPattern    :: !(Fix (pat variable))
     , sentenceAxiomAttributes :: !Attributes
@@ -197,7 +217,12 @@ instance
     , Pretty (Fix (pat variable))
     ) => Pretty (SentenceAxiom param pat variable)
   where
-    pretty SentenceAxiom {..} =
+    pretty SentenceAxiom
+        { sentenceAxiomParameters
+        , sentenceAxiomPattern
+        , sentenceAxiomAttributes
+        }
+      =
         Pretty.fillSep
         [ "axiom"
         , Pretty.parameters sentenceAxiomParameters
@@ -303,7 +328,7 @@ syntactic category from the Semantics of K, Section 9.1.6
 (Declaration and Definitions).
 -}
 data Module sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
- = Module
+  = Module
     { moduleName       :: !ModuleName
     , moduleSentences  :: ![sentence sortParam pat variable]
     , moduleAttributes :: !Attributes
@@ -319,7 +344,7 @@ instance
     , Pretty (Fix (pat variable))
     ) => Pretty (Module sentence sort pat variable)
   where
-    pretty Module {..} =
+    pretty Module { moduleName, moduleSentences, moduleAttributes } =
         (Pretty.vsep . catMaybes)
         [ Just ("module" <+> pretty moduleName)
         , case moduleSentences of
@@ -339,7 +364,7 @@ syntactic category from the Semantics of K, Section 9.1.6
 while the remaining three are grouped into 'definitionModules'.
 -}
 data Definition sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
- = Definition
+  = Definition
     { definitionAttributes :: !Attributes
     , definitionModules    :: ![Module sentence sortParam pat variable]
     }
@@ -354,7 +379,7 @@ instance
     , Pretty (Fix (pat variable))
     ) => Pretty (Definition sentence sort pat variable)
   where
-    pretty Definition {..} =
+    pretty Definition { definitionAttributes, definitionModules } =
         Pretty.vsep (pretty definitionAttributes : map pretty definitionModules)
 
 class SentenceSymbolOrAlias (sentence :: * -> ((* -> *) -> * -> *) -> (* -> *) -> *) where

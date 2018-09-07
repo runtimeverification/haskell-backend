@@ -123,4 +123,5 @@ instance ParseAttributes StepperAttributes where
             isFunction <- hasFunctionAttribute
             isConstructor <- hasConstructorAttribute
             hook <- attributesParser
-            pure StepperAttributes {..}
+            pure StepperAttributes
+                { isFunction, isFunctional, isConstructor, hook }
