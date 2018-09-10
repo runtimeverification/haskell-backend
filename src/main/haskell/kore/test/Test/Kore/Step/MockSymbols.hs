@@ -71,6 +71,8 @@ plain00Id :: Id Object
 plain00Id = testId "plain00"
 plain10Id :: Id Object
 plain10Id = testId "plain10"
+plain11Id :: Id Object
+plain11Id = testId "plain11"
 plain20Id :: Id Object
 plain20Id = testId "plain20"
 constr10Id :: Id Object
@@ -157,6 +159,11 @@ plain00Symbol = SymbolOrAlias
 plain10Symbol :: SymbolOrAlias Object
 plain10Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = plain10Id
+    , symbolOrAliasParams      = []
+    }
+plain11Symbol :: SymbolOrAlias Object
+plain11Symbol = SymbolOrAlias
+    { symbolOrAliasConstructor = plain11Id
     , symbolOrAliasParams      = []
     }
 plain20Symbol :: SymbolOrAlias Object
@@ -275,6 +282,11 @@ plain10
     :: Given (SortTools Object)
     => PureMLPattern Object variable -> PureMLPattern Object variable
 plain10 arg = mkApp plain10Symbol [arg]
+
+plain11
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable -> PureMLPattern Object variable
+plain11 arg = mkApp plain11Symbol [arg]
 
 plain20
     :: Given (SortTools Object)
@@ -425,6 +437,12 @@ sortToolsMapping =
             , applicationSortsResult = testSort
             }
         )
+    ,   ( plain11Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult = testSort
+            }
+        )
     ,   ( plain20Symbol
         , ApplicationSorts
             { applicationSortsOperands = [testSort, testSort]
@@ -532,6 +550,9 @@ attributesMapping =
         , Mock.defaultAttributes
         )
     ,   ( plain10Symbol
+        , Mock.defaultAttributes
+        )
+    ,   ( plain11Symbol
         , Mock.defaultAttributes
         )
     ,   ( plain20Symbol

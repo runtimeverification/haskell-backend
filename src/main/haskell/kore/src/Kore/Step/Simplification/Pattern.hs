@@ -96,6 +96,8 @@ simplify
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
+        , Show (variable Meta)
+        , Show (variable Object)
         , IntVariable variable
         , Hashable variable
         )
@@ -125,6 +127,8 @@ simplifyToOr
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
+        , Show (variable Meta)
+        , Show (variable Object)
         , IntVariable variable
         , Hashable variable
         )
@@ -157,6 +161,8 @@ simplifyInternal
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
+        , Show (variable Meta)
+        , Show (variable Object)
         , IntVariable variable
         , Hashable variable
         )
@@ -191,7 +197,7 @@ simplifyInternal
         CeilPattern p -> return $ Ceil.simplify tools p
         DomainValuePattern p -> return $ DomainValue.simplify p
         EqualsPattern p -> Equals.simplify tools p
-        ExistsPattern p -> return $ Exists.simplify p
+        ExistsPattern p -> Exists.simplify tools simplifier p
         FloorPattern p -> return $ Floor.simplify p
         ForallPattern p -> return $ Forall.simplify p
         IffPattern p -> return $ Iff.simplify p

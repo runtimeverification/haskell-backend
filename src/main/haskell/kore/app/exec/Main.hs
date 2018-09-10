@@ -56,6 +56,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.Step
                  ( MaxStepCount (..), pickFirstStepper )
 import           Kore.Step.StepperAttributes
@@ -172,7 +174,9 @@ main = do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
                                 metadataTools
-                                functionRegistry
+                                (Simplifier.create
+                                    metadataTools functionRegistry
+                                )
                                 expandedPattern
                         let
                             initialPattern =

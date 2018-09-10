@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.ExpandedPattern
+Module      : Kore.Step.Simplification.ExpandedPattern
 Description : Tools for ExpandedPattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -11,10 +11,8 @@ module Kore.Step.Simplification.ExpandedPattern
     ( simplify
     ) where
 
-import qualified Data.Map as Map
-
 import           Kore.AST.Common
-                 ( Id, SortedVariable )
+                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -25,8 +23,6 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..) )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
-import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator )
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import           Kore.Step.OrOfExpandedPattern
@@ -36,8 +32,6 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplifyToOr )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
@@ -54,12 +48,14 @@ simplify
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
+        , Show (variable Meta)
+        , Show (variable Object)
         , IntVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
-    -- ^ Map from symbol IDs to defined functions
+    -> PureMLPatternSimplifier level variable
+    -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -67,18 +63,16 @@ simplify
         )
 simplify
     tools
-    symbolIdToEvaluator
+    wrappedSimplifier@(PureMLPatternSimplifier simplifier)
     ExpandedPattern {term, predicate, substitution}
   = do
     (simplifiedTerm, _)
-        <- Pattern.simplifyToOr tools symbolIdToEvaluator term
+        <- simplifier term
     (simplifiedPatt, _) <-
         OrOfExpandedPattern.traverseWithPairs
             (ExpandedPattern.mergeWithPredicateSubstitution
                 tools
-                -- TODO: refactor.
-                (PureMLPatternSimplifier
-                    (Pattern.simplifyToOr tools symbolIdToEvaluator))
+                wrappedSimplifier
                 PredicateSubstitution
                     { predicate = predicate
                     , substitution = substitution
