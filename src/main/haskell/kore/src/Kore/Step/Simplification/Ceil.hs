@@ -182,7 +182,7 @@ makeTermCeil
     tools
     (App_ patternHead children)
   | StepperAttributes.isFunctional headAttributes
-      || StepperAttributes.isConstructor headAttributes
+  -- Not including non-functional constructors here since they can be bottom.
   =
     let
         (ceils, _proofs) = unzip (map (makeTermCeil tools) children)
