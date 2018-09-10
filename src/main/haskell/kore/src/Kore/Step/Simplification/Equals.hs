@@ -357,7 +357,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , differentDomainValues first second
         , variableEqualsFunctionalAssumesNoBottom tools first second
         , functionalEqualsVariableAssumesNoBottom tools first second
-        , constructorAtTheTopAssumesNoBottom tools first second
+        , constructorOrInjectiveAtTheTopAssumesNoBottom tools first second
         ]
 
 differentCharLiterals
@@ -453,7 +453,7 @@ functionalEqualsVariableAssumesNoBottom
         )
 functionalEqualsVariableAssumesNoBottom _ _ _ = Nothing
 
-constructorAtTheTopAssumesNoBottom
+constructorOrInjectiveAtTheTopAssumesNoBottom
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
@@ -470,33 +470,42 @@ constructorAtTheTopAssumesNoBottom
         (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
-constructorAtTheTopAssumesNoBottom
+constructorOrInjectiveAtTheTopAssumesNoBottom
     tools
     (App_ firstSymbol firstChildren)
     (App_ secondSymbol secondChildren)
   | isConstructor' firstSymbol && isConstructor' secondSymbol
   = Just $
     if firstSymbol == secondSymbol
-        then do -- IntCounter monad
-            childrenEquals <-
-                zipWithM
-                    (makeEvaluateTermsAssumesNoBottom tools)
-                    firstChildren
-                    secondChildren
-            (childrenAnd, _proof) <-
-                foldM
-                    (combineWithAnd tools)
-                    ( OrOfExpandedPattern.make [ExpandedPattern.top]
-                    , SimplificationProof
-                    )
-                    childrenEquals
-            return (childrenAnd, SimplificationProof)
+        then propagateEqualsToChildren
         else return (OrOfExpandedPattern.make [], SimplificationProof)
+  | isInjective' firstSymbol
+    && isInjective' secondSymbol
+    && firstSymbol == secondSymbol
+  = Just $ propagateEqualsToChildren
   where
     -- TODO: Extract this somewhere.
     isConstructor' symbolHead =
         StepperAttributes.isConstructor
             (MetadataTools.symAttributes tools symbolHead)
+    isInjective' symbolHead =
+        StepperAttributes.isInjective
+            (MetadataTools.symAttributes tools symbolHead)
+    propagateEqualsToChildren = do -- IntCounter monad
+        childrenEquals <-
+            zipWithM
+                (makeEvaluateTermsAssumesNoBottom tools)
+                firstChildren
+                secondChildren
+        (childrenAnd, _proof) <-
+            foldM
+                (combineWithAnd tools)
+                ( OrOfExpandedPattern.make [ExpandedPattern.top]
+                , SimplificationProof
+                )
+                childrenEquals
+        return (childrenAnd, SimplificationProof)
+
     combineWithAnd
         ::  ( MetaOrObject level
             , SortedVariable variable
@@ -514,7 +523,7 @@ constructorAtTheTopAssumesNoBottom
             (OrOfExpandedPattern level variable, SimplificationProof level)
     combineWithAnd tools' (thing1, _proof1) (thing2, _proof2) =
         And.simplifyEvaluated tools' thing1 thing2
-constructorAtTheTopAssumesNoBottom _ _ _ = Nothing
+constructorOrInjectiveAtTheTopAssumesNoBottom _ _ _ = Nothing
 
 
 firstMaybe :: [Maybe a] -> Maybe a
