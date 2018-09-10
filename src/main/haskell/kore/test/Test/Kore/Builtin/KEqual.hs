@@ -84,11 +84,11 @@ kEqualModule =
 
 evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
-    case evalSimplifier (Pattern.simplify tools evaluators pat) of
-        Left err -> error (Error.printError err)
-        Right (ExpandedPattern { term }, _) -> term
-  where
-    tools = extractMetadataTools indexedModule
+    let
+        tools = extractMetadataTools indexedModule
+        (ExpandedPattern { term }, _) =
+            evalSimplifier (Pattern.simplify tools evaluators pat)
+    in term
 
 kEqualDefinition :: KoreDefinition
 kEqualDefinition =
@@ -126,10 +126,8 @@ test_KEqual :: [TestTree]
 test_KEqual =
     [ testCase "equals with variable"
         (assertEqual ""
-            (Right
-                ( ExpandedPattern.fromPurePattern (pat keqSymbol)
-                , SimplificationProof
-                )
+            ( ExpandedPattern.fromPurePattern (pat keqSymbol)
+            , SimplificationProof
             )
             (evalSimplifier
                 (Pattern.simplify tools evaluators (pat keqSymbol))
@@ -137,10 +135,8 @@ test_KEqual =
         )
     , testCase "not equals with variable"
         (assertEqual ""
-            (Right
-                ( ExpandedPattern.fromPurePattern (pat kneqSymbol)
-                , SimplificationProof
-                )
+            ( ExpandedPattern.fromPurePattern (pat kneqSymbol)
+            , SimplificationProof
             )
             (evalSimplifier
                 (Pattern.simplify tools evaluators (pat kneqSymbol))

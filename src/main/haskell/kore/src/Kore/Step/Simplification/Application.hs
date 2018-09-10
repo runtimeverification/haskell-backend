@@ -11,7 +11,6 @@ module Kore.Step.Simplification.Application
     ( simplify
     ) where
 
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
@@ -206,12 +205,11 @@ makeExpandedApplication tools symbol children
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , _proof) <- Monad.Trans.lift
-            (mergePredicatesAndSubstitutions
+        , _proof) <-
+            mergePredicatesAndSubstitutions
                 tools
                 (map ExpandedPattern.predicate children)
                 (map ExpandedPattern.substitution children)
-            )
     return
         ( ExpandedApplication
             { term = Application

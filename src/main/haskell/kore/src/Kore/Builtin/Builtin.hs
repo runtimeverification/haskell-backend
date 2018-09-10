@@ -41,8 +41,6 @@ module Kore.Builtin.Builtin
 
 import           Control.Monad
                  ( zipWithM_ )
-import           Control.Monad.Except
-                 ( MonadError )
 import qualified Control.Monad.Except as Except
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.HashMap.Strict
@@ -52,6 +50,8 @@ import           Data.Semigroup
                  ( Semigroup (..) )
 import           Data.Void
                  ( Void )
+import           GHC.Stack
+                 ( HasCallStack )
 import           Text.Megaparsec
                  ( Parsec )
 import qualified Text.Megaparsec as Parsec
@@ -474,17 +474,17 @@ binaryOperator
     ctx
     op
   =
-    functionEvaluator ctx binaryOperator0
+    functionEvaluator binaryOperator0
   where
-    get = Except.liftEither . Kore.Error.castError . parseDomainValue parser
+    get = runParser ctx . parseDomainValue parser
     binaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a, DomainValuePattern b] -> do
                 -- Apply the operator to two domain values
-                r <- op <$> get a <*> get b
+                let r = op (get a) (get b)
                 (appliedFunction . asPattern resultSort) r
             [_, _] -> return NotApplicable
-            _ -> wrongArity
+            _ -> wrongArity ctx
 
 {- | Construct a builtin unary operator.
 
@@ -511,22 +511,20 @@ unaryOperator
     ctx
     op
   =
-    functionEvaluator ctx unaryOperator0
+    functionEvaluator unaryOperator0
   where
-    get = Except.liftEither . Kore.Error.castError . parseDomainValue parser
+    get = runParser ctx . parseDomainValue parser
     unaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a] -> do
                 -- Apply the operator to a domain value
-                r <- op <$> get a
+                let r = op (get a)
                 (appliedFunction . asPattern resultSort) r
             [_] -> return NotApplicable
-            _ -> wrongArity
+            _ -> wrongArity ctx
 
 functionEvaluator
-    :: String
-       -- ^ Builtin function name (for error messages)
-    -> (  MetadataTools Object StepperAttributes
+    :: (  MetadataTools Object StepperAttributes
        -> CommonPureMLPatternSimplifier Object
        -> Sort Object
        -> [CommonPurePattern Object]
@@ -534,7 +532,7 @@ functionEvaluator
        )
     -- ^ Builtin function implementation
     -> Function
-functionEvaluator ctx impl =
+functionEvaluator impl =
     ApplicationFunctionEvaluator evaluator
   where
     evaluator
@@ -546,11 +544,26 @@ functionEvaluator ctx impl =
             , applicationChildren
             }
       =
-        Kore.Error.withContext ctx
-            (do
-                attempt <- impl tools simplifier resultSort applicationChildren
-                return (attempt, SimplificationProof)
-            )
+        do
+            attempt <- impl tools simplifier resultSort applicationChildren
+            return (attempt, SimplificationProof)
 
-wrongArity :: MonadError (Error w) m => m a
-wrongArity = Kore.Error.koreFail "Wrong number of arguments"
+{- | Evaluation failure due to a builtin call with the wrong arity.
+
+  Such a failure indicates a bug in the well-formedness checker.
+
+ -}
+wrongArity :: HasCallStack => String -> a
+wrongArity ctx = error (ctx ++ ": Wrong number of arguments")
+
+{- | Run a parser on a verified domain value.
+
+  Any pars failure indicates a bug in the well-formedness checker; in this case
+  an error is thrown.
+
+ -}
+runParser :: HasCallStack => String -> Either (Error e) a -> a
+runParser ctx result =
+    case result of
+        Left e -> error (ctx ++ ": " ++ Kore.Error.printError e)
+        Right a -> a
