@@ -11,19 +11,14 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( And (..), AstLocation (..), Id (..), Sort (..),
-                 SymbolOrAlias (..), Variable (..) )
+                 ( And (..), Sort (..) )
 import           Kore.AST.MetaOrObject
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 ( getSort, mkAnd, mkApp, mkBottom, mkTop, mkVar )
+                 ( getSort, mkAnd, mkBottom, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (MetadataTools), SortTools )
-import qualified Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools, SortTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeFalsePredicate,
                  makeTruePredicate )
@@ -44,11 +39,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( constructorFunctionalAttributes, makeMetadataTools )
+                 ( makeMetadataTools, makeSortTools )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_andSimplification :: [TestTree]
-test_andSimplification =
+test_andSimplification = give mockSortTools
     [ testCase "And truth table"
         (do
             assertEqualWithExplanation "false and false = false"
@@ -122,7 +118,7 @@ test_andSimplification =
         (do
             assertEqualWithExplanation "And terms"
                 ExpandedPattern
-                    { term = give mockSortTools $ mkAnd fOfX gOfX
+                    { term = mkAnd fOfX gOfX
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -133,7 +129,7 @@ test_andSimplification =
                 ExpandedPattern
                     { term = mkTop
                     , predicate =
-                        fst $ give mockSortTools $ makeAndPredicate
+                        fst $ makeAndPredicate
                             (makeCeilPredicate fOfX)
                             (makeCeilPredicate gOfX)
                     , substitution = []
@@ -141,14 +137,12 @@ test_andSimplification =
                 (evaluatePatterns
                     ExpandedPattern
                         { term = mkTop
-                        , predicate =
-                            give mockSortTools $ makeCeilPredicate fOfX
+                        , predicate = makeCeilPredicate fOfX
                         , substitution = []
                         }
                     ExpandedPattern
                         { term = mkTop
-                        , predicate =
-                            give mockSortTools $ makeCeilPredicate gOfX
+                        , predicate = makeCeilPredicate gOfX
                         , substitution = []
                         }
                 )
@@ -156,18 +150,18 @@ test_andSimplification =
                 ExpandedPattern
                     { term = mkTop
                     , predicate = makeTruePredicate
-                    , substitution = [(y, fOfX), (z, gOfX)]
+                    , substitution = [(Mock.y, fOfX), (Mock.z, gOfX)]
                     }
                 (evaluatePatterns
                     ExpandedPattern
                         { term = mkTop
                         , predicate = makeTruePredicate
-                        , substitution = [(y, fOfX)]
+                        , substitution = [(Mock.y, fOfX)]
                         }
                     ExpandedPattern
                         { term = mkTop
                         , predicate = makeTruePredicate
-                        , substitution = [(z, gOfX)]
+                        , substitution = [(Mock.z, gOfX)]
                         }
                 )
             {-
@@ -177,8 +171,7 @@ test_andSimplification =
             assertEqualWithExplanation "And substitutions - separate predicate"
                 ExpandedPattern
                     { term = mkTop
-                    , predicate =
-                        give mockSortTools $ makeEqualsPredicate fOfX gOfX
+                    , predicate = makeEqualsPredicate fOfX gOfX
                     , substitution = [(y, fOfX)]
                     }
                 (evaluatePatternsWithAttributes
@@ -203,19 +196,24 @@ test_andSimplification =
                     , predicate = makeFalsePredicate
                     , substitution = []
                     }
-                (evaluatePatternsWithAttributes
-                    [ (fSymbol, Mock.constructorFunctionalAttributes)
-                    , (gSymbol, Mock.constructorFunctionalAttributes)
-                    ]
+                (evaluatePatterns
                     ExpandedPattern
                         { term = mkTop
                         , predicate = makeTruePredicate
-                        , substitution = [(y, fOfX)]
+                        , substitution =
+                            [   ( Mock.y
+                                , Mock.functionalConstr10 (mkVar Mock.x)
+                                )
+                            ]
                         }
                     ExpandedPattern
                         { term = mkTop
                         , predicate = makeTruePredicate
-                        , substitution = [(y, gOfX)]
+                        , substitution =
+                            [   ( Mock.y
+                                , Mock.functionalConstr11 (mkVar Mock.x)
+                                )
+                            ]
                         }
                 )
             {-
@@ -227,12 +225,12 @@ test_andSimplification =
                 ExpandedPattern
                     { term = mkTop
                     , predicate =
-                        fst $ give mockSortTools $ makeAndPredicate
-                            (fst $ give mockSortTools $ makeAndPredicate
+                        fst $ makeAndPredicate
+                            (fst $ makeAndPredicate
                                 (makeCeilPredicate fOfX)
                                 (makeCeilPredicate gOfX)
                             )
-                            (give mockSortTools $ makeEqualsPredicate fOfX gOfX)
+                            (givemakeEqualsPredicate fOfX gOfX)
                     , substitution = [(y, fOfX)]
                     }
                 (evaluatePatternsWithAttributes
@@ -241,44 +239,96 @@ test_andSimplification =
                     ]
                     ExpandedPattern
                         { term = mkTop
-                        , predicate =
-                            give mockSortTools $ makeCeilPredicate fOfX
+                        , predicate = makeCeilPredicate fOfX
                         , substitution = [(y, fOfX)]
                         }
                     ExpandedPattern
                         { term = mkTop
-                        , predicate =
-                            give mockSortTools $ makeCeilPredicate gOfX
+                        , predicate = makeCeilPredicate gOfX
                         , substitution = [(y, gOfX)]
                         }
                 )
             -}
+        )
+    , testCase "Variable-function and"
+        (do
+            assertEqualWithExplanation "variable-term"
+                ExpandedPattern
+                    { term = fOfX
+                    , predicate = makeTruePredicate
+                    , substitution = [(Mock.y, fOfX)]
+                    }
+                (evaluatePatterns
+                    yExpanded fOfXExpanded
+                )
+            assertEqualWithExplanation "term-variable"
+                ExpandedPattern
+                    { term = fOfX
+                    , predicate = makeTruePredicate
+                    , substitution = [(Mock.y, fOfX)]
+                    }
+                (evaluatePatterns
+                    fOfXExpanded yExpanded
+                )
+        )
+    , testCase "constructor and"
+        (do
+            assertEqualWithExplanation "same constructors"
+                ExpandedPattern
+                    { term = Mock.constr10 (mkAnd fOfX gOfX)
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                (evaluatePatterns
+                    ExpandedPattern
+                        { term = Mock.constr10 fOfX
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    ExpandedPattern
+                        { term = Mock.constr10 gOfX
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                )
+            assertEqualWithExplanation "different constructors"
+                ExpandedPattern.bottom
+                (evaluatePatterns
+                    ExpandedPattern
+                        { term = Mock.constr10 fOfX
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    ExpandedPattern
+                        { term = Mock.constr11 gOfX
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                )
         )
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
     , testCase "And-Or distribution"
         (assertEqualWithExplanation "Distributes or"
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
-                    { term = give mockSortTools $ mkAnd fOfX gOfX
+                    { term = mkAnd fOfX gOfX
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 , ExpandedPattern
                     { term = fOfX
-                    , predicate =
-                        give mockSortTools $ makeCeilPredicate gOfX
+                    , predicate = makeCeilPredicate gOfX
                     , substitution = []
                     }
                 , ExpandedPattern
                     { term = gOfX
-                    , predicate =
-                        give mockSortTools $ makeCeilPredicate fOfX
+                    , predicate = makeCeilPredicate fOfX
                     , substitution = []
                     }
                 , ExpandedPattern
                     { term = mkTop
                     , predicate =
-                        fst $ give mockSortTools $ makeAndPredicate
+                        fst $ makeAndPredicate
                             (makeCeilPredicate fOfX)
                             (makeCeilPredicate gOfX)
                     , substitution = []
@@ -290,16 +340,14 @@ test_andSimplification =
                     [ fOfXExpanded
                     , ExpandedPattern
                         { term = mkTop
-                        , predicate =
-                            give mockSortTools $ makeCeilPredicate fOfX
+                        , predicate = makeCeilPredicate fOfX
                         , substitution = []
                         }
                     ]
                     [ gOfXExpanded
                     , ExpandedPattern
                         { term = mkTop
-                        , predicate =
-                            give mockSortTools $ makeCeilPredicate gOfX
+                        , predicate = makeCeilPredicate gOfX
                         , substitution = []
                         }
                     ]
@@ -308,33 +356,18 @@ test_andSimplification =
         )
     ]
   where
-    x = Variable
-        { variableName = Id "x" AstLocationTest
-        , variableSort = testSort
+    yExpanded = ExpandedPattern
+        { term = give mockSortTools $ mkVar Mock.y
+        , predicate = makeTruePredicate
+        , substitution = []
         }
-    y = Variable
-        { variableName = Id "y" AstLocationTest
-        , variableSort = testSort
-        }
-    z = Variable
-        { variableName = Id "z" AstLocationTest
-        , variableSort = testSort
-        }
-    fSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "f" AstLocationTest
-        , symbolOrAliasParams      = []
-        }
-    gSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "g" AstLocationTest
-        , symbolOrAliasParams      = []
-        }
-    fOfX = give mockSortTools $ mkApp fSymbol [mkVar x]
+    fOfX = give mockSortTools $ Mock.f (mkVar Mock.x)
     fOfXExpanded = ExpandedPattern
         { term = fOfX
         , predicate = makeTruePredicate
         , substitution = []
         }
-    gOfX = give mockSortTools $ mkApp gSymbol [mkVar x]
+    gOfX = give mockSortTools $ Mock.g (mkVar Mock.x)
     gOfXExpanded = ExpandedPattern
         { term = gOfX
         , predicate = makeTruePredicate
@@ -382,40 +415,14 @@ evaluatePatterns
 evaluatePatterns first second =
     fst $ evalSimplifier $ makeEvaluate mockMetadataTools first second
 
-evaluatePatternsWithAttributes
-    :: [(SymbolOrAlias Object, StepperAttributes)]
-    -> CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
-evaluatePatternsWithAttributes attributes first second =
-    fst
-        $ evalSimplifier
-        $ makeEvaluate
-            (mockMetadataToolsWithAttributes attributes)
-            first
-            second
-
 mockSortTools :: SortTools Object
-mockSortTools = const
-    ApplicationSorts
-    { applicationSortsOperands = [testSort]
-    , applicationSortsResult = testSort
-    }
+mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools mockSortTools Mock.attributesMapping
 
 testSort :: MetaOrObject level => Sort level
 testSort =
     case mkBottom of
         Bottom_ sort -> sort
         _ -> error "unexpected"
-
-mockMetadataTools :: MetadataTools Object StepperAttributes
-mockMetadataTools = MetadataTools
-    { symAttributes = const Mock.constructorFunctionalAttributes
-    , sortAttributes = undefined
-    , sortTools = mockSortTools
-    }
-
-mockMetadataToolsWithAttributes
-    :: [(SymbolOrAlias Object, StepperAttributes)]
-    -> MetadataTools Object StepperAttributes
-mockMetadataToolsWithAttributes = Mock.makeMetadataTools mockSortTools

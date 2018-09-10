@@ -95,8 +95,8 @@ simplifyEvaluated tools child =
     (evaluated, _proofs) =
         OrOfExpandedPattern.fmapFlattenWithPairs (makeEvaluate tools) child
 
-{-| 'simplifyEvaluated' evaluates a ceil given its child as
-an ExpandedPattern, see 'simplify' for details.
+{-| Evaluates a ceil given its child as an ExpandedPattern, see 'simplify'
+for details.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
@@ -136,7 +136,7 @@ makeEvaluateNonBoolCeil
     ExpandedPattern {term, predicate, substitution}
   =
     let
-        (termCeil, _proof1) = makeTermCeil tools term
+        (termCeil, _proof1) = makeEvaluateTerm tools term
         (ceilPredicate, _proof2) =
             give sortTools $ makeAndPredicate predicate termCeil
     in
@@ -154,45 +154,46 @@ makeEvaluateNonBoolCeil
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
-makeTermCeil
+makeEvaluateTerm
     ::  ( MetaOrObject level
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> (Predicate level variable, SimplificationProof level)
-makeTermCeil
+makeEvaluateTerm
     _
     (Top_ _)
   =
     (makeTruePredicate, SimplificationProof)
-makeTermCeil
+makeEvaluateTerm
     _
     (Bottom_ _)
   =
     (makeFalsePredicate, SimplificationProof)
-makeTermCeil
+makeEvaluateTerm
     tools
     term
   | isFunctional tools term
   =
     (makeTruePredicate, SimplificationProof)
-makeTermCeil
+makeEvaluateTerm
     tools
     (App_ patternHead children)
   | StepperAttributes.isFunctional headAttributes
   -- Not including non-functional constructors here since they can be bottom.
   =
     let
-        (ceils, _proofs) = unzip (map (makeTermCeil tools) children)
+        (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) children)
         (result, _proof) = give (MetadataTools.sortTools tools )
             $ makeMultipleAndPredicate ceils
     in
         (result, SimplificationProof)
   where
     headAttributes = MetadataTools.symAttributes tools patternHead
-makeTermCeil
+makeEvaluateTerm
     tools term
   =
     ( give (MetadataTools.sortTools tools ) $ makeCeilPredicate term

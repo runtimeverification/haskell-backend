@@ -16,13 +16,13 @@ import Control.Exception
        ( assert )
 import Control.Monad
        ( foldM, zipWithM )
-import Data.Either
-       ( isRight )
 import Data.Maybe
-       ( catMaybes, fromMaybe, isNothing, listToMaybe )
+       ( fromMaybe, isNothing )
 import Data.Reflection
        ( give )
 
+import           Data.Maybe.Tools
+                 ( firstMaybe )
 import           Kore.AST.Common
                  ( Equals (..), SortedVariable )
 import           Kore.AST.MetaOrObject
@@ -31,8 +31,7 @@ import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
 import           Kore.ASTUtils.SmartPatterns
-                 ( pattern App_, pattern CharLiteral_, pattern DV_,
-                 pattern StringLiteral_, pattern Top_, pattern Var_ )
+                 ( pattern App_, pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -49,9 +48,11 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, toExpandedPattern )
 import           Kore.Step.PatternAttributes
-                 ( isFunctionPattern, isFunctionalPattern )
+                 ( isFunctionPattern )
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
+import qualified Kore.Step.Simplification.AndTerms as AndTerms
+                 ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate )
 import           Kore.Step.Simplification.Data
@@ -77,6 +78,8 @@ This uses the following simplifications
 (t = term, s = substitution, p = predicate):
 
 * Equals(a, a) = true
+* Equals(t1 and t2) = ceil(t1 and t2) or (not ceil(t1) and not ceil(t2))
+    if t1 and t2 are functions.
 * Equals(t1 and p1 and s1, t2 and p2 and s2) =
     Or(
         And(
@@ -351,58 +354,21 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , SimplificationProof
         )
   | otherwise =
-    -- Writing this the normal way seems to be too much for Haskell's
-    -- pattern matching, this is a workaround.
     firstMaybe
-        [ differentCharLiterals first second
-        , differentStringLiterals first second
-        , differentDomainValues first second
-        , variableEqualsFunctionalAssumesNoBottom tools first second
-        , functionalEqualsVariableAssumesNoBottom tools first second
+        [ makeEvaluateFunctionTermsAssumesNoBottom tools first second
         , constructorOrInjectiveAtTheTopAssumesNoBottom tools first second
         ]
 
-differentCharLiterals
-    :: PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe
-        (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+makeEvaluateFunctionTermsAssumesNoBottom
+    ::  ( MetaOrObject level
+        , Hashable variable
+        , IntVariable variable
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable level)
+        , SortedVariable variable
         )
-differentCharLiterals
-    (CharLiteral_ _) (CharLiteral_ _)
-  =
-    Just (return (OrOfExpandedPattern.make [], SimplificationProof))
-differentCharLiterals _ _ = Nothing
-
-differentStringLiterals
-    :: PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe
-        (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-        )
-differentStringLiterals
-    (StringLiteral_ _) (StringLiteral_ _)
-  =
-    Just (return (OrOfExpandedPattern.make [], SimplificationProof))
-differentStringLiterals _ _ = Nothing
-
-differentDomainValues
-    :: PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe
-        (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-        )
-differentDomainValues
-    (DV_ _ (StringLiteral_ _))
-    (DV_ _ (StringLiteral_ _))
-    = Just (return (OrOfExpandedPattern.make [], SimplificationProof))
-differentDomainValues _ _ = Nothing
-
-variableEqualsFunctionalAssumesNoBottom
-    :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> PureMLPattern level variable
@@ -410,50 +376,19 @@ variableEqualsFunctionalAssumesNoBottom
         (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
-variableEqualsFunctionalAssumesNoBottom
-    tools (Var_ var) term
-  | isFunctional tools term || isFunction tools term
-  =
-    Just
-        (return
-            ( OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeTruePredicate
-                    , substitution = [(var, term)]
-                    }
-                ]
-            , SimplificationProof
-            )
-        )
-variableEqualsFunctionalAssumesNoBottom _ _ _ = Nothing
-
-functionalEqualsVariableAssumesNoBottom
-    :: MetaOrObject level
-    => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe
-        (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-        )
-functionalEqualsVariableAssumesNoBottom
-    tools term (Var_ var)
-  | isFunctional tools term || isFunction tools term
-  =
-    Just
-        (return
-            ( OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeTruePredicate
-                    , substitution = [(var, term)]
-                    }
-                ]
-            , SimplificationProof
-            )
-        )
-functionalEqualsVariableAssumesNoBottom _ _ _ = Nothing
+makeEvaluateFunctionTermsAssumesNoBottom tools first second =
+    give tools $ case (firstIsFunction, secondIsFunction) of
+        (Right _firstProof, Right _secondProof) ->
+            do -- Maybe monad
+                -- TODO(virgil): consider using AndTerms.andTerm here.
+                result <- AndTerms.termUnification tools first second
+                return $ do -- Simplifier monad
+                    (patt, _proof) <- result
+                    return (Ceil.makeEvaluate tools patt)
+        _ -> Nothing
+  where
+    firstIsFunction = isFunctionPattern tools first
+    secondIsFunction = isFunctionPattern tools first
 
 constructorOrInjectiveAtTheTopAssumesNoBottom
     ::  ( MetaOrObject level
@@ -523,23 +458,3 @@ constructorOrInjectiveAtTheTopAssumesNoBottom
     combineWithAnd tools' (thing1, _proof1) (thing2, _proof2) =
         And.simplifyEvaluated tools' thing1 thing2
 constructorOrInjectiveAtTheTopAssumesNoBottom _ _ _ = Nothing
-
-
-firstMaybe :: [Maybe a] -> Maybe a
-firstMaybe = listToMaybe . catMaybes
-
--- TODO: Move these somewhere reasonable and remove all of their other
--- definitions.
-isFunction
-    :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> Bool
-isFunction tools term =
-    isRight (isFunctionPattern tools term)
-
-isFunctional
-    :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> Bool
-isFunctional tools term =
-    isRight (isFunctionalPattern tools term)

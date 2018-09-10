@@ -361,6 +361,7 @@ toExpandedPattern
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level)
         )
     => OrOfExpandedPattern level variable -> ExpandedPattern level variable
