@@ -49,7 +49,7 @@ instance ParseAttributes AxiomAttributes where
         do
             axiomOrdering <-
                 Attribute.choose (Attribute.choose getHeat getCool) (pure EQ)
-            return AxiomAttributes {..}
+            return AxiomAttributes { axiomOrdering }
 
 getHeat :: Attribute.Parser Ordering
 getHeat =
