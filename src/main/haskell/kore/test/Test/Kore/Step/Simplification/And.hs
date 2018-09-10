@@ -20,8 +20,6 @@ import           Kore.ASTUtils.SmartConstructors
                  ( getSort, mkAnd, mkApp, mkBottom, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
-import           Kore.Error
-                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (MetadataTools), SortTools )
 import qualified Kore.IndexedModule.MetadataTools
@@ -43,8 +41,6 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -377,18 +373,14 @@ evaluate
     :: And Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate patt =
-    either (error . printError) fst
-        $ evalSimplifier
-        $ simplify mockMetadataTools patt
+    fst $ evalSimplifier $ simplify mockMetadataTools patt
 
 evaluatePatterns
     :: CommonExpandedPattern Object
     -> CommonExpandedPattern Object
     -> CommonExpandedPattern Object
 evaluatePatterns first second =
-    fst $ fst $ runIntCounter
-        (makeEvaluate mockMetadataTools first second)
-        0
+    fst $ evalSimplifier $ makeEvaluate mockMetadataTools first second
 
 evaluatePatternsWithAttributes
     :: [(SymbolOrAlias Object, StepperAttributes)]
@@ -396,13 +388,12 @@ evaluatePatternsWithAttributes
     -> CommonExpandedPattern Object
     -> CommonExpandedPattern Object
 evaluatePatternsWithAttributes attributes first second =
-    fst $ fst $ runIntCounter
-        (makeEvaluate
+    fst
+        $ evalSimplifier
+        $ makeEvaluate
             (mockMetadataToolsWithAttributes attributes)
             first
             second
-        )
-        0
 
 mockSortTools :: SortTools Object
 mockSortTools = const

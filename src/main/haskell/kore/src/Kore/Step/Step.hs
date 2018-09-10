@@ -13,7 +13,6 @@ module Kore.Step.Step
     , MaxStepCount(..)
     ) where
 
-import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Either
                  ( rights )
 import qualified Data.Map as Map
@@ -67,11 +66,10 @@ step
     -> Simplifier
         (CommonOrOfExpandedPattern level, StepProof level)
 step tools symbolIdToEvaluator axioms configuration = do
-    (stepPattern, stepProofs) <- Monad.Trans.lift
-        (OrOfExpandedPattern.traverseFlattenWithPairs
+    (stepPattern, stepProofs) <-
+        OrOfExpandedPattern.traverseFlattenWithPairs
             (baseStepWithPattern tools axioms)
             configuration
-        )
     (simplifiedPattern, simplificationProofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairs
             (ExpandedPattern.simplify

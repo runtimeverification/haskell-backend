@@ -13,7 +13,6 @@ module Kore.Step.Simplification.Exists
     ) where
 
 import qualified Control.Arrow as Arrow
-import qualified Control.Monad.Except as Except
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
@@ -169,12 +168,11 @@ makeEvaluate
             return (makeEvaluateNoFreeVarInSubstitution variable patt)
         _ -> do
             (substitutedPat, _proof) <-
-                Except.lift $
-                    substituteTermPredicate
-                        term
-                        predicate
-                        localSubstitutionList
-                        globalSubstitution
+                substituteTermPredicate
+                    term
+                    predicate
+                    localSubstitutionList
+                    globalSubstitution
             (result, _proof) <-
                 ExpandedPattern.simplify tools simplifier substitutedPat
             return (result , SimplificationProof)
