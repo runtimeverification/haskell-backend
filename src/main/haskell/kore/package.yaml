@@ -77,7 +77,6 @@ default-extensions:
   - OverloadedStrings
   - PatternSynonyms
   - RankNTypes
-  - RecordWildCards
   - ScopedTypeVariables
   - StandaloneDeriving
   - TypeApplications
@@ -123,8 +122,6 @@ executables:
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
-    default-extensions:
-      - RecordWildCards
     dependencies:
       - kore
 
