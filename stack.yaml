@@ -18,7 +18,9 @@
 resolver: lts-11.3
 
 nix:
-  packages : [ zlib ]
+  packages:
+    - z3
+    - zlib
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
