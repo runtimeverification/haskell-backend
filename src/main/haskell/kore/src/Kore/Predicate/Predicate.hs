@@ -3,7 +3,7 @@ Module      : Kore.Predicate.Predicate
 Description : Data structure holding a predicate and basic tools like
               predicate constructors.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

@@ -2,7 +2,7 @@
 Module      : Kore.Proof.Dummy
 Description : Dummy instances of stuff for testing.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable

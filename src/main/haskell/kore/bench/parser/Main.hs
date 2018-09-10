@@ -97,7 +97,7 @@ verify filename =
         case
             verifyDefinition
                 attributesVerification
-                Builtin.koreBuiltins
+                Builtin.koreVerifiers
                 defn
           of
             Left err -> error (show err)

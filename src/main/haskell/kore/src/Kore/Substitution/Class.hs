@@ -3,7 +3,7 @@ Module      : Kore.Substitution.Class
 Description : Defines basic interfaces and main functionality needed
               to implement substitution for an 'UnifiedPatternInterface'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

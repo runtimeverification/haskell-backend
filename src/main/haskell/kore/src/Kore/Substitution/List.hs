@@ -3,7 +3,7 @@ Module      : Kore.Substitution.List
 Description : Defines an instance of 'SubstitutionClass' using a list of
               variable |-> pattern pairs.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

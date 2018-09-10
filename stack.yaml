@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-11.3
+resolver: lts-12.9
 
 nix:
   packages:
@@ -41,10 +41,14 @@ nix:
 # non-dependency (i.e. a user package), and its test suites and benchmarks
 # will not be run. This is useful for tweaking upstream packages.
 packages:
-- src/main/haskell/kore
+  - src/main/haskell/kore
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
-# extra-deps: []
+extra-deps:
+  - sbv-7.10
+  - crackNum-2.2
+  - FloatingHex-0.4
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

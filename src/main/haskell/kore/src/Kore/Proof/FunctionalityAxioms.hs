@@ -2,7 +2,7 @@
 Module      : Kore.Proof.FunctionalityAxioms
 Description : No-junk, No-confusion etc. for non-AC constructors
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable

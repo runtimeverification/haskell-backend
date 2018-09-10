@@ -3,7 +3,7 @@ Module      : Kore.Unification.UnifierImpl
 Description : Datastructures and functionality for performing unification on
               Pure patterns
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -446,9 +446,11 @@ solveGroupedSubstitution tools ((x,p):subst) = do
           : unificationSolutionConstraints solution
         , proof)
 
+instance Semigroup (UnificationProof level variable) where
+    (<>) proof1 proof2 = CombinedUnificationProof [proof1, proof2]
+
 instance Monoid (UnificationProof level variable) where
     mempty = EmptyUnificationProof
-    mappend proof1 proof2 = CombinedUnificationProof [proof1, proof2]
     mconcat = CombinedUnificationProof
 
 -- |Takes a potentially non-normalized substitution,

@@ -4,7 +4,7 @@ Description : Data structures and functions for manipulating
               ExpandedPatterns, i.e. a representation of paterns
               optimized for the stepper.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

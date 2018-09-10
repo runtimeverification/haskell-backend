@@ -3,7 +3,7 @@
 Module      : Kore.Building.Patterns
 Description : Builders for the standard Kore patterns, without 'Application'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
