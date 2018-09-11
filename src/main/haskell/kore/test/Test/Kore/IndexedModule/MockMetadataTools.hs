@@ -61,6 +61,8 @@ functionAttributes = StepperAttributes
     { isConstructor = False
     , isFunctional = False
     , isFunction = True
+    , isInjective = False
+    , isSortInjection = False
     , hook = def
     }
 
@@ -69,6 +71,8 @@ functionalAttributes = StepperAttributes
     { isConstructor = False
     , isFunctional = True
     , isFunction = False
+    , isInjective = False
+    , isSortInjection = False
     , hook = def
     }
 
@@ -77,6 +81,8 @@ constructorFunctionalAttributes = StepperAttributes
     { isConstructor = True
     , isFunctional = True
     , isFunction = False
+    , isInjective = True
+    , isSortInjection = False
     , hook = def
     }
 
@@ -85,6 +91,8 @@ constructorAttributes = StepperAttributes
     { isConstructor = True
     , isFunctional = False
     , isFunction = False
+    , isInjective = True
+    , isSortInjection = False
     , hook = def
     }
 
@@ -93,5 +101,7 @@ defaultAttributes = StepperAttributes
     { isConstructor = False
     , isFunctional = False
     , isFunction = False
+    , isInjective = False
+    , isSortInjection = False
     , hook = def
     }

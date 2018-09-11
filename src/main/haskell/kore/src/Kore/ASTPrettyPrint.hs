@@ -760,6 +760,8 @@ instance MetaOrObject level => PrettyPrint (ClashReason level) where
             )
     prettyPrint flags (HeadClash h) =
         writeOneFieldStruct flags "HeadClash" h
+    prettyPrint flags (SortInjectionClash s1 s2) =
+        writeTwoFieldStruct flags "SortInjectionClash" s1 s2
 
 instance (MetaOrObject level, PrettyPrint (variable level))
     => PrettyPrint (FunctionalProof level variable)

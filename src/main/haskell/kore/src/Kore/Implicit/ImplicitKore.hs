@@ -27,6 +27,9 @@ module Kore.Implicit.ImplicitKore
     , symbolDeclaredA
     ) where
 
+import Data.Proxy
+       ( Proxy (..) )
+
 import Kore.AST.Builders
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -61,7 +64,7 @@ parameterizedEqualsAxiom
     -> MetaSentenceAxiom
 parameterizedEqualsAxiom parameters =
     parameterizedEqualsAxiom_ parameters
-        (sortParameter Meta "#esp" AstLocationImplicit)
+        (sortParameter Proxy "#esp" AstLocationImplicit)
 
 equalsAxiom
     :: MetaPatternStub
