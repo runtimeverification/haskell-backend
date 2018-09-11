@@ -3,7 +3,7 @@
 Module      : Kore.Implicit.ImplicitKore
 Description : Builds the implicit kore definitions.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX

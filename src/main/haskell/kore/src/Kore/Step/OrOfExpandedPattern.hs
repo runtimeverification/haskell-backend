@@ -4,7 +4,7 @@ Description : Data structures and functions for manipulating
               OrOfExpandedPatterns, which occur naturally during
               pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -36,7 +36,6 @@ import Data.List
 import Data.Reflection
        ( Given )
 
-import qualified Data.List.Tools as List
 import           Kore.AST.Common
                  ( SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
@@ -312,7 +311,7 @@ crossProductGeneric
     -> MultiOr child2
     -> MultiOr child3
 crossProductGeneric joiner (MultiOr first) (MultiOr second) =
-    MultiOr $ map (uncurry joiner) $ List.crossProduct first second
+    MultiOr $ joiner <$> first <*> second
 
 {-| 'crossProductGenericF' is the same as 'crossProductGeneric' except that it
 works under an applicative thing.
@@ -324,7 +323,7 @@ crossProductGenericF
     -> MultiOr child2
     -> f (MultiOr child3)
 crossProductGenericF joiner (MultiOr first) (MultiOr second) =
-    MultiOr <$> traverse (uncurry joiner) (List.crossProduct first second)
+    MultiOr <$> sequenceA (joiner <$> first <*> second)
 
 {-| 'merge' merges two 'OrOfExpandedPattern'.
 -}

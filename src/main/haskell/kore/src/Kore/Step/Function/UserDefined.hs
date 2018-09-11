@@ -2,7 +2,7 @@
 Module      : Kore.Step.Function.UserDefined
 Description : Evaluates user-defined functions in a pattern.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -12,7 +12,6 @@ module Kore.Step.Function.UserDefined
     , axiomFunctionEvaluator
     ) where
 
-import qualified Control.Monad.Except as Except
 import           Data.Reflection
                  ( give )
 
@@ -46,7 +45,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( CommonPureMLPatternSimplifier, PureMLPatternSimplifier (..),
-                 SimplificationProof (..), Simplifier )
+                 Simplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -84,7 +83,7 @@ axiomFunctionEvaluator
             return (AttemptedFunction.NotApplicable, SimplificationProof)
         Right stepPatternWithProof ->
             do
-                (stepPattern, _) <- Except.lift stepPatternWithProof
+                (stepPattern, _) <- stepPatternWithProof
                 (   rewrittenPattern@ExpandedPattern
                         { predicate = rewritingCondition }
                     , _
@@ -206,12 +205,11 @@ evaluatePredicate
             , substitution = mergedSubstitution
             }
         , _proof
-        ) <- Except.lift
-            (mergePredicatesAndSubstitutions
+        ) <-
+            mergePredicatesAndSubstitutions
                 tools
                 [evaluatedPredicate]
                 [substitution, evaluatedSubstitution]
-            )
     -- TODO(virgil): Do I need to re-evaluate the predicate?
     return
         ( ExpandedPattern

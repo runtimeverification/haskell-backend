@@ -42,6 +42,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
 
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -246,12 +248,11 @@ test_functionRegistry =
         (assertEqual ""
             (App_ sHead [])
             ( ExpandedPattern.term
-            $ head $ OrOfExpandedPattern.extractPatterns
-            $ either (error . Kore.Error.printError) fst
+            $ head $ OrOfExpandedPattern.extractPatterns $ fst
             $ evalSimplifier
             $ ExpandedPattern.simplify
                 testMetadataTools
-                testEvaluators
+                (Simplifier.create testMetadataTools testEvaluators)
                 (makeExpandedPattern (App_ gHead []))
             )
         )

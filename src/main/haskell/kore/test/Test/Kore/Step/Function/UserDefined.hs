@@ -447,7 +447,7 @@ evaluateWithAxiom
             , substitution = sort substitution
             }
     evaluated =
-        either (error . printError) fst
+        fst
             $ evalSimplifier
             $ axiomFunctionEvaluator
                 axiom

@@ -2,7 +2,7 @@
 Module      : Kore.Simplification.Iff
 Description : Tools for Iff pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

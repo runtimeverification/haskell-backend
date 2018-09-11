@@ -2,7 +2,7 @@
 Module      : Kore.Simplification.And
 Description : Tools for And pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -13,7 +13,6 @@ module Kore.Step.Simplification.And
     , simplifyEvaluated
     ) where
 
-import qualified Control.Monad.Trans as Monad.Trans
 import Data.Reflection
        ( Given, give )
 
@@ -127,10 +126,9 @@ simplifyEvaluated tools first second
     return (first, SimplificationProof)
 
   | otherwise = do
-    orWithProof <- Monad.Trans.lift
-        (OrOfExpandedPattern.crossProductGenericF
+    orWithProof <-
+        OrOfExpandedPattern.crossProductGenericF
             (makeEvaluate tools) first second
-        )
     return
         -- TODO: It's not obvious at all when filtering occurs and when it doesn't.
         ( OrOfExpandedPattern.filterOr

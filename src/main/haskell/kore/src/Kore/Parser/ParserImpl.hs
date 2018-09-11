@@ -2,7 +2,7 @@
 Module      : Kore.Parser.ParserImpl
 Description : Parser definition for Kore. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX

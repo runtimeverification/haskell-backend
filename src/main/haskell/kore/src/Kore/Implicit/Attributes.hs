@@ -5,7 +5,7 @@ Module      : Kore.Implicit.Attributes
 Description : Haskell definitions for the implicit constructs for attributes.
               uncheckedAttributesModule gathers all of them in a Kore morule
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX

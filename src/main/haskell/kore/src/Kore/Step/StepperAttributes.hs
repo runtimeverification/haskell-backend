@@ -2,7 +2,7 @@
 Module      : Kore.Step.StepperAttributes
 Description : Attributes used for step execution
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -208,12 +208,15 @@ hasSortInjectionAttribute :: Attribute.Parser Bool
 hasSortInjectionAttribute = Attribute.hasKeyOnlyAttribute "sortInjection"
 
 instance ParseAttributes StepperAttributes where
-    attributesParser = do
-        isFunctional <- hasFunctionalAttribute
-        isFunction <- hasFunctionAttribute
-        isConstructor <- hasConstructorAttribute
-        isSortInjection <- hasSortInjectionAttribute
-        isInjective <-
-            ((isConstructor || isSortInjection) ||) <$> hasInjectiveAttribute
-        hook <- attributesParser
-        pure StepperAttributes {..}
+    attributesParser =
+        do
+            isFunctional <- hasFunctionalAttribute
+            isFunction <- hasFunctionAttribute
+            isConstructor <- hasConstructorAttribute
+            isSortInjection <- hasSortInjectionAttribute
+            isInjective <-
+                ((isConstructor || isSortInjection) ||) <$> hasInjectiveAttribute
+            hook <- attributesParser
+            pure StepperAttributes
+                { isFunction, isFunctional, isConstructor
+                , isSortInjection, isInjective, hook }

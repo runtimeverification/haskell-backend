@@ -2,7 +2,7 @@
 Module      : Kore.Step.PatternAttributes
 Description : Tools for using pattern attributes in step execution
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil@runtimeverification.com
 Stability   : experimental
 Portability : portable

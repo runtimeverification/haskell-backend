@@ -2,7 +2,7 @@
 Module      : Kore.ASTVerifier.AttributesVerifier
 Description : Tools for verifying the wellformedness of Kore 'Attributes'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX

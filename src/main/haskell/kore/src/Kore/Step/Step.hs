@@ -2,7 +2,7 @@
 Module      : Kore.Step.Step
 Description : Single and multiple step execution
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -13,7 +13,6 @@ module Kore.Step.Step
     , MaxStepCount(..)
     ) where
 
-import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Either
                  ( rights )
 import qualified Data.Map as Map
@@ -39,6 +38,8 @@ import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Variables.Fresh.IntCounter
@@ -65,14 +66,16 @@ step
     -> Simplifier
         (CommonOrOfExpandedPattern level, StepProof level)
 step tools symbolIdToEvaluator axioms configuration = do
-    (stepPattern, stepProofs) <- Monad.Trans.lift
-        (OrOfExpandedPattern.traverseFlattenWithPairs
+    (stepPattern, stepProofs) <-
+        OrOfExpandedPattern.traverseFlattenWithPairs
             (baseStepWithPattern tools axioms)
             configuration
-        )
     (simplifiedPattern, simplificationProofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairs
-            (ExpandedPattern.simplify tools symbolIdToEvaluator)
+            (ExpandedPattern.simplify
+                tools
+                (Simplifier.create tools symbolIdToEvaluator)
+            )
             stepPattern
     return
         ( simplifiedPattern

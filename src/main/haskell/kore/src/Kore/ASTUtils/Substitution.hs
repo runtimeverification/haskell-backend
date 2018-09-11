@@ -4,7 +4,7 @@ Description : Substitute phi_1 for phi_2, avoiding capture
               In particular this implements axiom 7 in
               the "large" axiom set (Rosu 2017).
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable

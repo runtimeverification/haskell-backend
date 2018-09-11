@@ -4,7 +4,7 @@ Module      : Kore.Unification.SubstitutionNormalization
 Description : Normalization for substitutions resulting from unification, so
               that they can be safely used on the unified term.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -47,20 +47,6 @@ import           Kore.Variables.Fresh.IntCounter
                  ( IntCounter )
 import           Kore.Variables.Int
                  ( IntVariable )
-
-instance
-    ( MetaOrObject level
-    , Ord (variable Object)
-    , Ord (variable Meta)
-    , Hashable variable
-    , IntVariable variable
-    )
-    => PatternSubstitutionClass
-        ListSubstitution.Substitution
-        variable
-        (Pattern level)
-        IntCounter
-  where
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
 in which no variable that occurs on the left hand side also occurs on the

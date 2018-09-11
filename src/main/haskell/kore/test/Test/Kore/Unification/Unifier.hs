@@ -31,8 +31,6 @@ import           Kore.ASTHelpers
 import           Kore.ASTPrettyPrint
 import           Kore.ASTUtils.SmartConstructors
                  ( mkVar )
-import qualified Kore.Error
-                 ( printError )
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, makeTruePredicate )
@@ -44,6 +42,7 @@ import           Kore.Step.PatternAttributes
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
 import           Kore.Unification.UnifierImpl
@@ -722,13 +721,12 @@ simplifyPattern (UnificationTerm pStub) =
     let pat =
             project
             $ ExpandedPattern.term
-            $ either (error . Kore.Error.printError) id
             $ evalSimplifier
             $ do
                 simplifiedPatterns <-
                     ExpandedPattern.simplify
                         tools
-                        functionRegistry
+                        (Simplifier.create tools functionRegistry)
                         expandedPattern
                 case
                     OrOfExpandedPattern.extractPatterns

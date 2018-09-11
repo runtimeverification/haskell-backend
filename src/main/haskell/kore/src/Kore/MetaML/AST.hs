@@ -4,7 +4,7 @@ Module      : Kore.MetaML.AST
 Description : Data Structures for representing a Meta-only version of the
               Kore language AST
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

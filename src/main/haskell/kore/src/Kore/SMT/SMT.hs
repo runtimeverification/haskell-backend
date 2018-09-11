@@ -2,7 +2,7 @@
 Module      : Data.Kore.SMT.SMT
 Description : Basic SMT interface.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -49,7 +49,7 @@ instance Default SMTAttributes where
 instance ParseAttributes SMTAttributes where
     attributesParser = do
         hook <- attributesParser
-        pure SMTAttributes {..} 
+        pure SMTAttributes { hook }
 
 provePredicate
     :: Given (MetadataTools Object SMTAttributes)
@@ -66,7 +66,7 @@ provePattern
     -> Maybe Bool
 provePattern p =
     case res of
-      Unsatisfiable _   -> Just True
+      Unsatisfiable _ _ -> Just True
       Satisfiable   _ _ -> Just False
       _ -> Nothing
       where ThmResult res = unsafePerformIO $ provePatternIO p
