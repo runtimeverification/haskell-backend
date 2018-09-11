@@ -258,7 +258,6 @@ language_extensions:
   - PatternSynonyms
   - PolyKinds
   - RankNTypes
-  - RecordWildCards
   - ScopedTypeVariables
   - StandaloneDeriving
   - TypeApplications

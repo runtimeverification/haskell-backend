@@ -2,7 +2,7 @@
 Module      : Kore.Implicit.Verified
 Description : Builds and verifies the implicit kore definitions.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -23,6 +23,7 @@ import Kore.ASTVerifier.DefinitionVerifier
        ( defaultAttributesVerification, verifyImplicitKoreDefinition )
 import Kore.ASTVerifier.Error
        ( VerifyError )
+import qualified Kore.Builtin as Builtin
 import Kore.Error
        ( Error, printError )
 import Kore.Implicit.Attributes
@@ -35,6 +36,7 @@ checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
     _ <- verifyImplicitKoreDefinition
         attributesVerification
+        Builtin.koreVerifiers
         (definitionPureToKore uncheckedMetaDefinition)
     return uncheckedMetaDefinition
   where
@@ -55,6 +57,7 @@ checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
     _ <- verifyImplicitKoreDefinition
         attributesVerification
+        Builtin.koreVerifiers
         uncheckedKoreDefinition
     return uncheckedKoreDefinition
   where

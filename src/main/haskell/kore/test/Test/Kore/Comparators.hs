@@ -4,7 +4,7 @@ Module      : Test.Kore.Comparators
 Description : Declares various data types involved in testing as instances of
               the 'EqualWithExplanation' class.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -14,18 +14,25 @@ module Test.Kore.Comparators where
 import Data.Functor.Foldable
        ( Fix )
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.Predicate.Predicate
-import Kore.Step.BaseStep
-import Kore.Step.Error
-import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( ExpandedPattern (..) )
-import Kore.Step.Function.Data as AttemptedFunction
-       ( AttemptedFunction (..) )
-import Kore.Unification.Error
-import Kore.Unification.Unifier
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.Predicate.Predicate
+import           Kore.Step.BaseStep
+import           Kore.Step.Error
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..) )
+import           Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import           Kore.Step.Function.Data as AttemptedFunction
+                 ( AttemptedFunction (..) )
+import           Kore.Step.OrOfExpandedPattern
+import           Kore.Step.PatternAttributes
+import qualified Kore.Step.PatternAttributesError as PatternAttributesError
+import           Kore.Step.Simplification.Data
+                 ( SimplificationProof )
+import           Kore.Unification.Error
+import           Kore.Unification.Unifier
 
 import Test.Tasty.HUnit.Extensions
 
@@ -195,6 +202,15 @@ instance
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
+    sumConstructorPair
+        (StepProofSimplification a1)
+        (StepProofSimplification a2)
+      =
+        SumConstructorSameWithArguments (EqWrap "StepProofSimplification" a1 a2)
+    sumConstructorPair a1@(StepProofSimplification _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
 instance (Eq level, Show level) => EqualWithExplanation (StepProof level) where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -327,12 +343,33 @@ instance
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance
-    ( EqualWithExplanation child, Eq child, Show child)
+
+instance (Show child, EqualWithExplanation child)
+    => StructEqualWithExplanation (Floor level child)
+  where
+    structFieldsWithNames
+        expected@(Floor _ _ _)
+        actual@(Floor _ _ _)
+      = [ EqWrap
+            "floorOperandSort = "
+            (floorOperandSort expected)
+            (floorOperandSort actual)
+        , EqWrap
+            "floorResultSort = "
+            (floorResultSort expected)
+            (floorResultSort actual)
+        , EqWrap
+            "floorChild = "
+            (floorChild expected)
+            (floorChild actual)
+        ]
+    structConstructorName _ = "Floor"
+instance (Show child, EqualWithExplanation child)
     => EqualWithExplanation (Floor level child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
 instance
     ( EqualWithExplanation child
     , Eq child
@@ -367,18 +404,59 @@ instance
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
+instance (Show child, Eq child, EqualWithExplanation child)
+  =>
+    StructEqualWithExplanation (Not level child)
+  where
+    structFieldsWithNames
+        expected@(Not _ _)
+        actual@(Not _ _)
+      = [ EqWrap
+            "notSort = "
+            (notSort expected)
+            (notSort actual)
+        , EqWrap
+            "notChild = "
+            (notChild expected)
+            (notChild actual)
+        ]
+    structConstructorName _ = "Not"
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Not level child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
+instance (Show child, Eq child, EqualWithExplanation child)
+  =>
+    StructEqualWithExplanation (Or level child)
+  where
+    structFieldsWithNames
+        expected@(Or _ _ _)
+        actual@(Or _ _ _)
+      = [ EqWrap
+            "orSort = "
+            (orSort expected)
+            (orSort actual)
+        , EqWrap
+            "orFirst = "
+            (orFirst expected)
+            (orFirst actual)
+        , EqWrap
+            "orSecond = "
+            (orSecond expected)
+            (orSecond actual)
+        ]
+    structConstructorName _ = "Or"
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Or level child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Rewrites level child)
@@ -468,10 +546,10 @@ instance EqualWithExplanation (SymbolOrAlias level)
 
 instance SumEqualWithExplanation (UnificationError level)
   where
-    sumConstructorPair (ConstructorClash a1 a2) (ConstructorClash b1 b2) =
+    sumConstructorPair (PatternClash a1 a2) (PatternClash b1 b2) =
         SumConstructorSameWithArguments
-            (EqWrap "ConstructorClash" (a1, a2) (b1, b2))
-    sumConstructorPair a1@(ConstructorClash _ _) a2 =
+            (EqWrap "PatternClash" (a1, a2) (b1, b2))
+    sumConstructorPair a1@(PatternClash _ _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
@@ -516,6 +594,11 @@ instance SumEqualWithExplanation (UnificationError level)
 instance EqualWithExplanation (UnificationError level)
   where
     compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (ClashReason level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance (Show (variable level), EqualWithExplanation (variable level))
@@ -576,6 +659,15 @@ instance
     , Show (variable level)
     )
     => EqualWithExplanation (FunctionalProof level variable)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( Eq (variable level)
+    , Show (variable level)
+    )
+    => EqualWithExplanation (FunctionProof level variable)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -751,6 +843,37 @@ instance
     printWithExplanation = show
 
 instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => StructEqualWithExplanation (PredicateSubstitution level variable)
+  where
+    structFieldsWithNames
+        expected@(PredicateSubstitution _ _)
+        actual@(PredicateSubstitution _ _)
+      = [ EqWrap
+            "predicate = "
+            (PredicateSubstitution.predicate expected)
+            (PredicateSubstitution.predicate actual)
+        , EqWrap
+            "substitution = "
+            (PredicateSubstitution.substitution expected)
+            (PredicateSubstitution.substitution actual)
+        ]
+    structConstructorName _ = "PredicateSubstitution"
+
+instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => EqualWithExplanation (PredicateSubstitution level variable)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
     ( EqualWithExplanation (PureMLPattern level variable)
     , Show level, Show (variable level)
     )
@@ -800,8 +923,38 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-
 instance EqualWithExplanation (PredicateProof level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (SimplificationProof level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (Show a, EqualWithExplanation a)
+    => SumEqualWithExplanation (MultiOr a)
+  where
+    sumConstructorPair (MultiOr a1) (MultiOr a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "MultiOr" a1 a2)
+
+instance
+    (Show a, EqualWithExplanation a)
+    => EqualWithExplanation (MultiOr a)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (PatternAttributesError.FunctionError level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (PatternAttributesError.FunctionalError level)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

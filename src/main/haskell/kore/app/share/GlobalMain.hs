@@ -15,20 +15,22 @@ import Control.Exception
 import Control.Monad
        ( when )
 import Data.Semigroup
-       ( mempty, (<>) )
+       ( (<>) )
 import Data.Time.Format
        ( defaultTimeLocale, formatTime )
 import Data.Time.LocalTime
        ( ZonedTime, getZonedTime )
 import Data.Version
        ( showVersion )
-import System.Clock
-       ( Clock (Monotonic), diffTimeSpec, getTime )
 import Development.GitRev
        ( gitBranch, gitCommitDate, gitHash )
 import Options.Applicative
        ( InfoMod, Parser, argument, disabled, execParser, flag, flag', help,
        helper, hidden, info, internal, long, (<**>), (<|>) )
+import System.Clock
+       ( Clock (Monotonic), diffTimeSpec, getTime )
+import System.IO
+       ( hPutStrLn, stderr )
 
 import qualified Paths_kore as MetaData
                  ( version )
@@ -158,5 +160,5 @@ clockSomethingIO description something = do
     start <- getTime Monotonic
     x     <- something
     end   <- getTime Monotonic
-    putStrLn $ description ++" "++ show (diffTimeSpec end start)
+    hPutStrLn stderr $ description ++" "++ show (diffTimeSpec end start)
     return x

@@ -2,7 +2,7 @@
 Module      : Kore.Parser.ParserImpl
 Description : Parser definition for Kore. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -601,26 +601,10 @@ koreMLConstructorParser = do
         c <- ParserUtils.peekChar'
         if c == '#'
             then asKorePattern <$>
-                mlConstructorRemainderParser korePatternParser
-                    Meta patternType (unsupportedPatternType Meta)
+                mlConstructorRemainderParser korePatternParser Meta patternType
             else asKorePattern <$>
-                mlConstructorRemainderParser korePatternParser
-                    Object patternType objectMlConstructorRemainderParser
-    objectMlConstructorRemainderParser patternType =
-        case patternType of
-            DomainValuePatternType -> DomainValuePattern <$>
-                (   DomainValue
-                <$> inCurlyBracesRemainderParser (sortParser Object)
-                <*> inParenthesesParser (purePatternParser Meta)
-                )
-            NextPatternType -> NextPattern <$>
-                unaryOperatorRemainderParser korePatternParser Object Next
-            RewritesPatternType -> RewritesPattern <$>
-                binaryOperatorRemainderParser
-                    korePatternParser
-                    Object
-                    Rewrites
-            pt -> unsupportedPatternType Object pt
+                mlConstructorRemainderParser korePatternParser Object
+                    patternType
 
 {-|'leveledMLConstructorParser' is similar to 'koreMLConstructorParser'
 in that it parses a pattern starting with @\@.  However, it only parses
@@ -665,7 +649,6 @@ leveledMLConstructorParser childParser level = do
             childParser
             level
             patternType
-            (unsupportedPatternType level)
 
 {-|'unsupportedPatternType' reports an error for a missing parser for
 a 'MLPatternType'.
@@ -689,9 +672,8 @@ mlConstructorRemainderParser
     => Parser child
     -> level
     -> MLPatternType
-    -> (MLPatternType -> Parser (Pattern level Variable child))
     -> Parser (Pattern level Variable child)
-mlConstructorRemainderParser childParser x patternType otherParsers =
+mlConstructorRemainderParser childParser x patternType =
     case patternType of
         AndPatternType -> AndPattern <$>
             binaryOperatorRemainderParser childParser x And
@@ -719,7 +701,30 @@ mlConstructorRemainderParser childParser x patternType otherParsers =
             binaryOperatorRemainderParser childParser x Or
         TopPatternType -> TopPattern <$>
             topBottomRemainderParser x Top
-        _ -> otherParsers patternType
+        DomainValuePatternType ->
+            case isMetaOrObject (toProxy x) of
+                IsMeta -> unsupportedPatternType Meta DomainValuePatternType
+                IsObject ->
+                    DomainValuePattern <$>
+                    (   DomainValue
+                    <$> inCurlyBracesRemainderParser (sortParser Object)
+                    <*> inParenthesesParser (purePatternParser Meta)
+                    )
+        NextPatternType ->
+            case isMetaOrObject (toProxy x) of
+                IsMeta -> unsupportedPatternType Meta NextPatternType
+                IsObject ->
+                    NextPattern <$>
+                    unaryOperatorRemainderParser childParser Object Next
+        RewritesPatternType ->
+            case isMetaOrObject (toProxy x) of
+                IsMeta -> unsupportedPatternType Meta RewritesPatternType
+                IsObject ->
+                    RewritesPattern <$>
+                    binaryOperatorRemainderParser
+                        childParser
+                        Object
+                        Rewrites
 
 {-|'korePatternParser' parses an unifiedPattern
 

@@ -3,15 +3,12 @@ Module      : Kore.Proof.Unification
 Description : Datastructures and functionality for performing unification on
               Pure patterns
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase       #-}
 {-# OPTIONS_GHC -Wno-unused-matches    #-}
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 
@@ -79,19 +76,23 @@ unificationForwardsProof a b = do
     return $ useRule $ Discharge (mkEquals a b) proof
         where
           go finished [] = return $ andIntroN finished
-          go finished (eq : eqs) = case getConclusion eq of
-              And_ s a b -> go finished $
-                useRule (AndElimL eq) : useRule (AndElimR eq) : eqs
-              Equals_ s1 s2 (Var_ x) b
-                | occursCheck eq ->
-                    go (eq : finished) (map (provablySubstitute eq []) eqs)
-                | otherwise ->
-                    Left $ OccursCheck $ getConclusion eq
-              Equals_ s1 s2 a (Var_ x) -> go finished (flipEqn eq : eqs)
-              Equals_ s1 s2 a b -> do
-                eq' <- splitConstructor eq
-                go finished (eq' : eqs)
-              _ -> impossible
+          go finished (eq : eqs) =
+              case getConclusion eq of
+                  And_ s a b -> go finished $
+                    useRule (AndElimL eq) : useRule (AndElimR eq) : eqs
+                  Equals_ s1 s2 a b -> case a of
+                      Var_ x
+                        | occursCheck eq ->
+                            go (eq : finished)
+                            (map (provablySubstitute eq []) eqs)
+                        | otherwise ->
+                            Left $ OccursCheck $ getConclusion eq
+                      _ -> case b of
+                          Var_ x -> go finished (flipEqn eq : eqs)
+                          _ -> do
+                              eq' <- splitConstructor eq
+                              go finished (eq' : eqs)
+                  _ -> impossible
 
 data UnificationError
   = ConstructorClash Term Term

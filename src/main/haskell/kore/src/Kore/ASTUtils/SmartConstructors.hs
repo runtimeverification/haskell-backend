@@ -3,7 +3,7 @@ Module      : Kore.ASTUtils.SmartConstructors
 Description : Tree-based proof system, which can be
               hash-consed into a list-based one.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -90,9 +90,7 @@ getSort x = getPatternResultSort given $ project x
 flexibleSort
     :: MetaOrObject level
     => Sort level
-flexibleSort =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId "*" } --FIXME
+flexibleSort = mkSort "*"
 
 patternLens
     :: (Applicative f, MetaOrObject level)
@@ -437,8 +435,7 @@ mkSort
   => String
   -> Sort level
 mkSort name =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId name }
+    SortActualSort $ SortActual (noLocationId name) []
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s

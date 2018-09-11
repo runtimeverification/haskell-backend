@@ -3,7 +3,7 @@
 Module      : Kore.Implicit.ImplicitKore
 Description : Builds the implicit kore definitions.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -26,6 +26,9 @@ module Kore.Implicit.ImplicitKore
     , sortDeclaredA
     , symbolDeclaredA
     ) where
+
+import Data.Proxy
+       ( Proxy (..) )
 
 import Kore.AST.Builders
 import Kore.AST.Common
@@ -61,7 +64,7 @@ parameterizedEqualsAxiom
     -> MetaSentenceAxiom
 parameterizedEqualsAxiom parameters =
     parameterizedEqualsAxiom_ parameters
-        (sortParameter Meta "#esp" AstLocationImplicit)
+        (sortParameter Proxy "#esp" AstLocationImplicit)
 
 equalsAxiom
     :: MetaPatternStub

@@ -3,7 +3,7 @@ Module      : Kore.Unification.Unifier
 Description : Datastructures and functionality for performing unification on
               Pure patterns
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -14,8 +14,8 @@ module Kore.Unification.Unifier
     ) where
 
 import Kore.Unification.Error as Error
-       ( UnificationError (..) )
+       ( ClashReason (..), UnificationError (..) )
 import Kore.Unification.UnifierImpl as UnifierImpl
-       ( FunctionalProof (..), UnificationProof (..), UnificationSolution (..),
+       ( UnificationProof (..), UnificationSolution (..),
        UnificationSubstitution, mapSubstitutionVariables,
        normalizeSubstitutionDuplication, unificationProcedure )

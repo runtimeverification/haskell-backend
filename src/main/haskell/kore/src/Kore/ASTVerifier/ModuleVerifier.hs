@@ -2,7 +2,7 @@
 Module      : Kore.ASTVerifier.ModuleVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Module'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -19,6 +19,7 @@ import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
+import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 
@@ -41,9 +42,10 @@ verifyUniqueNames existingNames koreModule =
 {-|'verifyModule' verifies the welformedness of a Kore 'Module'. -}
 verifyModule
     :: AttributesVerification atts
+    -> Builtin.Verifiers
     -> KoreIndexedModule atts
     -> Either (Error VerifyError) VerifySuccess
-verifyModule attributesVerification indexedModule =
+verifyModule attributesVerification builtinVerifiers indexedModule =
     withContext
         ("module '" ++ getModuleName (indexedModuleName indexedModule) ++ "'")
         (do
@@ -53,5 +55,6 @@ verifyModule attributesVerification indexedModule =
             SentenceVerifier.verifySentences
                 indexedModule
                 attributesVerification
+                builtinVerifiers
                 (indexedModuleRawSentences indexedModule)
         )

@@ -2,7 +2,7 @@
 Module      : Kore.MetaML.Unlift
 Description : Reverses the effects of 'Kore.MetaML.Lift.liftToMeta'
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX

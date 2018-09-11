@@ -2,14 +2,13 @@
 Module      : Kore.Step.Substitution
 Description : Tools for manipulating substitutions when doing Kore execution.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Substitution
     ( mergePredicatesAndSubstitutions
-    , mergeSubstitutions  -- TODO(virgil): Stop exporting this.
     , mergeAndNormalizeSubstitutions
     ) where
 
@@ -24,10 +23,10 @@ import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..) )
 import Kore.Predicate.Predicate
-       ( Predicate, PredicateProof (..), makeFalsePredicate,
-       makeMultipleAndPredicate, makeTruePredicate )
+       ( Predicate, makeFalsePredicate, makeMultipleAndPredicate,
+       makeTruePredicate )
 import Kore.Step.ExpandedPattern
-       ( PredicateSubstitution (..) )
+       ( PredicateSubstitution (..), substitutionToPredicate )
 import Kore.Step.StepperAttributes
 import Kore.Substitution.Class
        ( Hashable )
@@ -37,7 +36,7 @@ import Kore.Unification.Error
 import Kore.Unification.SubstitutionNormalization
        ( normalizeSubstitution )
 import Kore.Unification.Unifier
-       ( UnificationProof, UnificationSubstitution,
+       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution,
        normalizeSubstitutionDuplication )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
@@ -54,6 +53,7 @@ mergeSubstitutions
     ::  ( MetaOrObject level
         , Ord (variable level)
         , SortedVariable variable
+        , Show (variable level)
         )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
@@ -90,9 +90,30 @@ mergeAndNormalizeSubstitutions
               , UnificationProof level variable
               )
           )
-mergeAndNormalizeSubstitutions tools first second = do
+mergeAndNormalizeSubstitutions tools first second =
+    normalizeSubstitutionAfterMerge tools (first ++ second)
+
+normalizeSubstitutionAfterMerge
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , IntVariable variable
+        , Hashable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> UnificationSubstitution level variable
+    -> Either
+          ( UnificationOrSubstitutionError level variable )
+          ( IntCounter
+              ( PredicateSubstitution level variable
+              , UnificationProof level variable
+              )
+          )
+normalizeSubstitutionAfterMerge tools substit = do
     (substitutionList, proof) <-
-          normalizeSubstitutionDuplication' (first ++ second)
+          normalizeSubstitutionDuplication' substit
     predSubstitution <- normalizeSubstitution' substitutionList
     -- TODO(virgil): Return the actual condition here. and proofs
     return $ (,) <$> predSubstitution <*> pure proof
@@ -105,20 +126,30 @@ mergeAndNormalizeSubstitutions tools first second = do
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
 into a condition.
+
+If it does not know how to merge the substitutions, it will transform them into
+predicates and redo the merge.
+
+TODO(virgil): Reconsider: should this return an Either or is it safe to just
+make everything a Predicate?
 -}
 mergePredicatesAndSubstitutions
     :: ( Show (variable level)
        , SortedVariable variable
        , MetaOrObject level
        , Ord (variable level)
+       , Ord (variable Meta)
+       , Ord (variable Object)
+       , IntVariable variable
+       , Hashable variable
        )
     => MetadataTools level StepperAttributes
     -> [Predicate level variable]
     -> [UnificationSubstitution level variable]
-    -> ( Predicate level variable
-       , UnificationSubstitution level variable
-       , PredicateProof level
-       )
+    -> IntCounter
+        ( PredicateSubstitution level variable
+        , UnificationProof level variable
+        )
 mergePredicatesAndSubstitutions tools predicates substitutions =
     let
         (substitutionMergePredicate, mergedSubstitution) =
@@ -127,16 +158,43 @@ mergePredicatesAndSubstitutions tools predicates substitutions =
                 (predicates, [])
                 substitutions
     in
-        ( fst $ give (sortTools tools)
-            (makeMultipleAndPredicate substitutionMergePredicate)
-        , mergedSubstitution
-        , PredicateProof
-        )
+        case normalizeSubstitutionAfterMerge tools mergedSubstitution of
+            Left _ ->
+                let
+                    (mergedPredicate, _proof) =
+                        give (sortTools tools) $ makeMultipleAndPredicate
+                            (  predicates
+                            ++ map substitutionToPredicate substitutions
+                            )
+                in
+                    return
+                        ( PredicateSubstitution
+                            { predicate = mergedPredicate
+                            , substitution = []
+                            }
+                        , EmptyUnificationProof
+                        )
+            Right counterPredicateSubstitution -> do
+                (PredicateSubstitution {predicate, substitution}, proof) <-
+                    counterPredicateSubstitution
+                let
+                    (mergedPredicate, _proof) =
+                        give (sortTools tools) $
+                            makeMultipleAndPredicate
+                                (predicate : substitutionMergePredicate)
+                return
+                    (PredicateSubstitution
+                        { predicate = mergedPredicate
+                        , substitution = substitution
+                        }
+                    , proof
+                    )
 
 mergeSubstitutionWithPredicate
     :: ( Ord (variable level)
        , SortedVariable variable
        , MetaOrObject level
+       , Show (variable level)
        )
     => MetadataTools level StepperAttributes
     -> ([Predicate level variable], UnificationSubstitution level variable)

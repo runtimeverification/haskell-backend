@@ -2,7 +2,7 @@
 Module      : Kore.ASTVerifier.PatternVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Pattern'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -15,6 +15,7 @@ module Kore.ASTVerifier.PatternVerifier
 
 import           Control.Monad
                  ( foldM, zipWithM_ )
+import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Functor.Foldable
                  (Fix)
 import qualified Data.Map as Map
@@ -34,6 +35,7 @@ import           Kore.AST.Sentence
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
+import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
@@ -111,93 +113,108 @@ addDeclaredVariable
         }
 
 verifyAliasLeftPattern
-    :: CommonKorePattern
-    -> Maybe UnifiedSort
-    -- ^ If present, represents the expected sort of the pattern.
+    :: Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables which are visible in this pattern.
+    -> Maybe UnifiedSort
+    -- ^ If present, represents the expected sort of the pattern.
+    -> CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 verifyAliasLeftPattern = verifyPattern
     -- TODO: check that the left pattern is the alias symbol applied to
     -- non-repeating variables
 
 verifyStandalonePattern
-    :: KoreIndexedModule atts
+    :: Builtin.PatternVerifier
+    -> KoreIndexedModule atts
     -> CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
-verifyStandalonePattern indexedModule korePattern =
-    verifyPattern korePattern Nothing indexedModule Set.empty
+verifyStandalonePattern builtinVerifier indexedModule =
+    verifyPattern builtinVerifier indexedModule Set.empty Nothing
 
 {-|'verifyPattern' verifies the welformedness of a Kore 'CommonKorePattern'. -}
 verifyPattern
-    :: CommonKorePattern
-    -> Maybe UnifiedSort
-    -- ^ If present, represents the expected sort of the pattern.
+    :: Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables which are visible in this pattern.
+    -> Maybe UnifiedSort
+    -- ^ If present, represents the expected sort of the pattern.
+    -> CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
-verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
+verifyPattern
+    builtinVerifier
+    indexedModule
+    sortVariables
+    maybeExpectedSort
+    unifiedPattern
+  = do
     freeVariables1 <- verifyFreeVariables unifiedPattern
     internalVerifyPattern
-        unifiedPattern
-        maybeExpectedSort
+        builtinVerifier
         indexedModule
         sortVariables
         freeVariables1
+        maybeExpectedSort
+        unifiedPattern
 
 internalVerifyPattern
-    :: CommonKorePattern
-    -> Maybe UnifiedSort
+    :: Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
+    -> Maybe UnifiedSort
+    -> CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyPattern
-    korePattern
-    mUnifiedSort
+    builtinVerifier
     indexedModule
     sortParamsSet
     declaredVariables
+    mUnifiedSort
   =
     applyKorePattern
         (internalVerifyMetaPattern
-            mUnifiedSort
+            builtinVerifier
             indexedModule
             sortParamsSet
             declaredVariables
+            mUnifiedSort
         )
         (internalVerifyObjectPattern
-            mUnifiedSort
+            builtinVerifier
             indexedModule
             sortParamsSet
             declaredVariables
+            mUnifiedSort
         )
-        korePattern
 
 internalVerifyMetaPattern
-    :: Maybe UnifiedSort
+    :: Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
+    -> Maybe UnifiedSort
     -> Pattern Meta Variable CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyMetaPattern
-    maybeExpectedSort
+    builtinVerifier
     indexedModule
     sortVariables
     declaredVariables
+    maybeExpectedSort
     p
   =
     withLocationAndContext p (patternNameForContext p) (do
         sort <-
             verifyParameterizedPattern
                 p
+                builtinVerifier
                 indexedModule
                 (metaVerifyHelpers indexedModule declaredVariables)
                 sortVariables
@@ -212,35 +229,39 @@ internalVerifyMetaPattern
     )
 
 internalVerifyObjectPattern
-    :: Maybe UnifiedSort
+    :: Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
+    -> Maybe UnifiedSort
     -> Pattern Object Variable CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyObjectPattern
-    maybeExpectedSort
+    builtinVerifier
     indexedModule
     sortVariables
     declaredVariables
+    maybeExpectedSort
     p
   =
-    withLocationAndContext p (patternNameForContext p) (do
+    withLocationAndContext p (patternNameForContext p)
+    (do
+        Builtin.runPatternVerifier builtinVerifier findSort p
         sort <- verifyParameterizedPattern
                     p
+                    builtinVerifier
                     indexedModule
                     verifyHelpers
                     sortVariables
                     declaredVariables
         case maybeExpectedSort of
             Just expectedSort ->
-                verifySameSort
-                    expectedSort
-                    (UnifiedObject sort)
+                verifySameSort expectedSort (UnifiedObject sort)
             Nothing ->
                 verifySuccess
     )
   where
+    findSort = fmap getIndexedSentence . resolveSort indexedModule
     verifyHelpers = objectVerifyHelpers indexedModule declaredVariables
 
 newtype SortOrError level =
@@ -249,23 +270,24 @@ newtype SortOrError level =
 verifyParameterizedPattern
     :: MetaOrObject level
     => Pattern level Variable CommonKorePattern
+    -> Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Either (Error VerifyError) (Sort level)
-verifyParameterizedPattern pat indexedModule helpers sortParams vars =
+verifyParameterizedPattern pat builtinVerifier indexedModule helpers sortParams vars =
     getSortOrError
     $ applyPatternLeveledFunction
         PatternLeveledFunction
             { patternLeveledFunctionML = \p -> SortOrError $
-                verifyMLPattern p indexedModule helpers sortParams vars
+                verifyMLPattern p builtinVerifier indexedModule helpers sortParams vars
             , patternLeveledFunctionMLBinder = \p -> SortOrError $
-                verifyBinder p indexedModule helpers sortParams vars
+                verifyBinder p builtinVerifier indexedModule helpers sortParams vars
             , stringLeveledFunction = const (SortOrError verifyStringPattern)
             , charLeveledFunction = const (SortOrError verifyCharPattern)
             , applicationLeveledFunction = \p -> SortOrError $
-                verifyApplication p indexedModule helpers sortParams vars
+                verifyApplication p builtinVerifier indexedModule helpers sortParams vars
             , variableLeveledFunction = \p -> SortOrError $
                 verifyVariableUsage p indexedModule helpers sortParams vars
             , domainValueLeveledFunction = \dv -> SortOrError $
@@ -277,6 +299,7 @@ verifyParameterizedPattern pat indexedModule helpers sortParams vars =
 verifyMLPattern
     :: (MLPatternClass p level, MetaOrObject level)
     => p level CommonKorePattern
+    -> Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
@@ -284,6 +307,7 @@ verifyMLPattern
     -> Either (Error VerifyError) (Sort level)
 verifyMLPattern
     mlPattern
+    builtinVerifier
     indexedModule
     verifyHelpers
     declaredSortVariables
@@ -298,6 +322,7 @@ verifyMLPattern
     verifyPatternsWithSorts
         operandSorts
         (getPatternChildren mlPattern)
+        builtinVerifier
         indexedModule
         declaredSortVariables
         declaredVariables
@@ -310,6 +335,7 @@ verifyMLPattern
 verifyPatternsWithSorts
     :: [UnifiedSort]
     -> [CommonKorePattern]
+    -> Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
@@ -317,6 +343,7 @@ verifyPatternsWithSorts
 verifyPatternsWithSorts
     sorts
     operands
+    builtinVerifier
     indexedModule
     declaredSortVariables
     declaredVariables
@@ -329,13 +356,13 @@ verifyPatternsWithSorts
         ++ "."
         )
     zipWithM_
-        (\sort operand ->
+        (\sort ->
             internalVerifyPattern
-                operand
-                (Just sort)
+                builtinVerifier
                 indexedModule
                 declaredSortVariables
                 declaredVariables
+                (Just sort)
         )
         sorts
         operands
@@ -347,6 +374,7 @@ verifyPatternsWithSorts
 verifyApplication
     :: MetaOrObject level
     => Application level CommonKorePattern
+    -> Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
@@ -354,6 +382,7 @@ verifyApplication
     -> Either (Error VerifyError) (Sort level)
 verifyApplication
     application
+    builtinVerifier
     indexedModule
     verifyHelpers
     declaredSortVariables
@@ -367,6 +396,7 @@ verifyApplication
     verifyPatternsWithSorts
         (map asUnified (applicationSortsOperands applicationSorts))
         (applicationChildren application)
+        builtinVerifier
         indexedModule
         declaredSortVariables
         declaredVariables
@@ -375,6 +405,7 @@ verifyApplication
 verifyBinder
     :: (MLBinderPatternClass p, MetaOrObject level)
     => p level Variable CommonKorePattern
+    -> Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
@@ -382,6 +413,7 @@ verifyBinder
     -> Either (Error VerifyError) (Sort level)
 verifyBinder
     binder
+    builtinVerifier
     indexedModule
     verifyHelpers
     declaredSortVariables
@@ -394,11 +426,12 @@ verifyBinder
         declaredSortVariables
         binderSort
     internalVerifyPattern
-        (getBinderPatternChild binder)
-        (Just (asUnified binderSort))
+        builtinVerifier
         indexedModule
         declaredSortVariables
         (addDeclaredVariable (asUnified quantifiedVariable) declaredVariables)
+        (Just (asUnified binderSort))
+        (getBinderPatternChild binder)
     return binderSort
   where
     quantifiedVariable = getBinderPatternVariable binder
@@ -422,22 +455,31 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
         "The declared sort is different."
     return (variableSort variable)
 
--- TODO: properly verify child pattern if it's not a stringLiteral
 verifyDomainValue
     :: (MetaOrObject level)
     => DomainValue Object (Fix (Pattern Meta Variable))
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (Sort Object)
-verifyDomainValue dv verifyHelpers declaredSortVariables =
+verifyDomainValue
+    DomainValue
+        { domainValueSort
+        , domainValueChild
+        }
+    verifyHelpers
+    declaredSortVariables
+  =
     case isMetaOrObject verifyHelpers of
         IsMeta -> error "Domain Values are object-only. Should not happen."
         IsObject -> do
             verifySort
                 (verifyHelpersFindSort verifyHelpers)
                 declaredSortVariables
-                (domainValueSort dv)
-            return (domainValueSort dv)
+                domainValueSort
+            case Functor.Foldable.project domainValueChild of
+                StringLiteralPattern _ -> return ()
+                _ -> koreFail "Domain value argument must be a literal string."
+            return domainValueSort
 
 verifyStringPattern :: Either (Error VerifyError) (Sort Meta)
 verifyStringPattern = Right charListMetaSort

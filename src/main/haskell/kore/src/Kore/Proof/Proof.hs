@@ -3,7 +3,7 @@ Module      : Kore.Proof.Proof
 Description : Tree-based proof system, which can be
               hash-consed into a list-based one.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -457,6 +457,7 @@ isObviouslyPredicate = \case
   Equals_ _ _ _ _  -> True
   Ceil_ _ _ _      -> True
   Floor_ _ _ _     -> True
+  In_ _ _ _ _      -> True
   _ -> False
 
 floorIfNotPredicate

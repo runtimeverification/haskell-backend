@@ -6,7 +6,7 @@ Description : Data Structures for representing the Kore language AST that do not
               need unified constructs (see "Kore.AST.Kore" for the unified
               ones).
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -31,7 +31,7 @@ import Data.Deriving
        makeLiftShowsPrec )
 import Data.Functor.Classes
 import Data.Functor.Foldable
-       ( Fix (..) )
+       ( Fix (..), cata )
 import Data.Hashable
 import Data.Proxy
 import Data.String
@@ -132,7 +132,7 @@ instance Hashable (Id level)
 instance NFData (Id level)
 
 instance Pretty (Id level) where
-    pretty Id { getId } = fromString getId
+    pretty = fromString . getId
 
 {-| 'noLocationId' creates an Id without a source location. While there are some
 narrow cases where this makes sense, you should really consider other options
@@ -155,8 +155,7 @@ instance Hashable StringLiteral
 instance NFData StringLiteral
 
 instance Pretty StringLiteral where
-    pretty StringLiteral {..} =
-        (Pretty.dquotes . fromString . escapeCString) getStringLiteral
+    pretty = Pretty.dquotes . fromString . escapeCString . getStringLiteral
 
 {-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
@@ -169,8 +168,8 @@ instance Hashable CharLiteral
 instance NFData CharLiteral
 
 instance Pretty CharLiteral where
-    pretty CharLiteral {..} =
-        (Pretty.squotes . fromString . escapeCString . (: [])) getCharLiteral
+    pretty =
+        Pretty.squotes . fromString . escapeCString . (: []) . getCharLiteral
 
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
@@ -190,7 +189,7 @@ instance Hashable (SymbolOrAlias level)
 instance NFData (SymbolOrAlias level)
 
 instance Pretty (SymbolOrAlias level) where
-    pretty SymbolOrAlias {..} =
+    pretty SymbolOrAlias { symbolOrAliasConstructor, symbolOrAliasParams } =
         pretty symbolOrAliasConstructor <> Pretty.parameters symbolOrAliasParams
 
 {-|'Symbol' corresponds to the
@@ -214,7 +213,7 @@ instance Hashable (Symbol level)
 instance NFData (Symbol level)
 
 instance Pretty (Symbol level) where
-    pretty Symbol {..} =
+    pretty Symbol { symbolConstructor, symbolParams } =
         pretty symbolConstructor <> Pretty.parameters symbolParams
 
 {-|'Alias' corresponds to the
@@ -238,7 +237,7 @@ instance Hashable (Alias level)
 instance NFData (Alias level)
 
 instance Pretty (Alias level) where
-    pretty Alias {..} =
+    pretty Alias { aliasConstructor, aliasParams } =
         pretty aliasConstructor <> Pretty.parameters aliasParams
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
@@ -277,7 +276,7 @@ instance Hashable (SortActual level)
 instance NFData (SortActual level)
 
 instance Pretty (SortActual level) where
-    pretty SortActual {..} =
+    pretty SortActual { sortActualName, sortActualSorts } =
         pretty sortActualName <> Pretty.parameters sortActualSorts
 
 {-|'Sort' corresponds to the @object-sort@ and
@@ -377,7 +376,7 @@ instance Hashable (Variable level)
 instance NFData (Variable level)
 
 instance Pretty (Variable level) where
-    pretty Variable {..} =
+    pretty Variable { variableName, variableSort } =
         pretty variableName <> Pretty.colon <> pretty variableSort
 
 {-| 'SortedVariable' is a variable which has a sort.
@@ -480,7 +479,7 @@ instance Hashable child => Hashable (And level child)
 instance NFData child => NFData (And level child)
 
 instance Pretty child => Pretty (And level child) where
-    pretty And {..} =
+    pretty And { andSort, andFirst, andSecond } =
         "\\and"
         <> Pretty.parameters [andSort]
         <> Pretty.arguments [andFirst, andSecond]
@@ -509,7 +508,7 @@ instance Hashable child => Hashable (Application level child)
 instance NFData child => NFData (Application level child)
 
 instance Pretty child => Pretty (Application level child) where
-    pretty Application {..} =
+    pretty Application { applicationSymbolOrAlias, applicationChildren } =
         pretty applicationSymbolOrAlias <> Pretty.arguments applicationChildren
 
 {-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
@@ -535,7 +534,7 @@ instance Hashable (Bottom level child)
 instance NFData (Bottom level child)
 
 instance Pretty child => Pretty (Bottom level child) where
-    pretty Bottom {..} =
+    pretty Bottom { bottomSort } =
         "\\bottom" <> Pretty.parameters [bottomSort] <> Pretty.noArguments
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
@@ -567,7 +566,7 @@ instance Hashable child => Hashable (Ceil level child)
 instance NFData child => NFData (Ceil level child)
 
 instance Pretty child => Pretty (Ceil level child) where
-    pretty Ceil {..} =
+    pretty Ceil { ceilOperandSort, ceilResultSort, ceilChild } =
         "\\ceil"
         <> Pretty.parameters [ceilOperandSort, ceilResultSort]
         <> Pretty.arguments [ceilChild]
@@ -602,7 +601,7 @@ instance Hashable child => Hashable (DomainValue level child)
 instance NFData child => NFData (DomainValue level child)
 
 instance Pretty child => Pretty (DomainValue level child) where
-    pretty DomainValue {..} =
+    pretty DomainValue { domainValueSort, domainValueChild } =
         "\\dv"
         <> Pretty.parameters [domainValueSort]
         <> Pretty.arguments [domainValueChild]
@@ -637,7 +636,13 @@ instance Hashable child => Hashable (Equals level child)
 instance NFData child => NFData (Equals level child)
 
 instance Pretty child => Pretty (Equals level child) where
-    pretty Equals {..} =
+    pretty Equals
+        { equalsOperandSort
+        , equalsResultSort
+        , equalsFirst
+        , equalsSecond
+        }
+      =
         "\\equals"
         <> Pretty.parameters [equalsOperandSort, equalsResultSort]
         <> Pretty.arguments [equalsFirst, equalsSecond]
@@ -686,7 +691,7 @@ instance (NFData child, NFData (var level)) => NFData (Exists level var child)
 
 instance (Pretty child, Pretty (variable level)) =>
     Pretty (Exists level variable child) where
-    pretty Exists {..} =
+    pretty Exists { existsSort, existsVariable, existsChild } =
         "\\exists"
         <> Pretty.parameters [existsSort]
         <> Pretty.arguments' [pretty existsVariable, pretty existsChild]
@@ -720,7 +725,7 @@ instance Hashable child => Hashable (Floor level child)
 instance NFData child => NFData (Floor level child)
 
 instance Pretty child => Pretty (Floor level child) where
-    pretty Floor {..} =
+    pretty Floor { floorOperandSort, floorResultSort, floorChild } =
         "\\floor"
         <> Pretty.parameters [floorOperandSort, floorResultSort]
         <> Pretty.arguments [floorChild]
@@ -769,7 +774,7 @@ instance (NFData child, NFData (v level)) => NFData (Forall level v child)
 
 instance (Pretty child, Pretty (variable level)) =>
     Pretty (Forall level variable child) where
-    pretty Forall {..} =
+    pretty Forall { forallSort, forallVariable, forallChild } =
         "\\forall"
         <> Pretty.parameters [forallSort]
         <> Pretty.arguments' [pretty forallVariable, pretty forallChild]
@@ -801,7 +806,7 @@ instance Hashable child => Hashable (Iff level child)
 instance NFData child => NFData (Iff level child)
 
 instance Pretty child => Pretty (Iff level child) where
-    pretty Iff {..} =
+    pretty Iff { iffSort, iffFirst, iffSecond } =
         "\\iff"
         <> Pretty.parameters [iffSort]
         <> Pretty.arguments [iffFirst, iffSecond]
@@ -833,7 +838,7 @@ instance Hashable child => Hashable (Implies level child)
 instance NFData child => NFData (Implies level child)
 
 instance Pretty child => Pretty (Implies level child) where
-    pretty Implies {..} =
+    pretty Implies { impliesSort, impliesFirst, impliesSecond } =
         "\\implies"
         <> Pretty.parameters [impliesSort]
         <> Pretty.arguments [impliesFirst, impliesSecond]
@@ -871,7 +876,13 @@ instance Hashable child => Hashable (In level child)
 instance NFData child => NFData (In level child)
 
 instance Pretty child => Pretty (In level child) where
-    pretty In {..} =
+    pretty In
+        { inOperandSort
+        , inResultSort
+        , inContainedChild
+        , inContainingChild
+        }
+      =
         "\\in"
         <> Pretty.parameters [inOperandSort, inResultSort]
         <> Pretty.arguments [inContainedChild, inContainingChild]
@@ -903,7 +914,7 @@ instance Hashable child => Hashable (Next level child)
 instance NFData child => NFData (Next level child)
 
 instance Pretty child => Pretty (Next level child) where
-    pretty Next {..} =
+    pretty Next { nextSort, nextChild } =
         "\\next"
         <> Pretty.parameters [nextSort]
         <> Pretty.arguments [nextChild]
@@ -934,7 +945,7 @@ instance Hashable child => Hashable (Not level child)
 instance NFData child => NFData (Not level child)
 
 instance Pretty child => Pretty (Not level child) where
-    pretty Not {..} =
+    pretty Not { notSort, notChild } =
         "\\not"
         <> Pretty.parameters [notSort]
         <> Pretty.arguments [notChild]
@@ -966,7 +977,7 @@ instance Hashable child => Hashable (Or level child)
 instance NFData child => NFData (Or level child)
 
 instance Pretty child => Pretty (Or level child) where
-    pretty Or {..} =
+    pretty Or { orSort, orFirst, orSecond } =
         "\\or"
         <> Pretty.parameters [orSort]
         <> Pretty.arguments [orFirst, orSecond]
@@ -999,7 +1010,7 @@ instance Hashable child => Hashable (Rewrites level child)
 instance NFData child => NFData (Rewrites level child)
 
 instance Pretty child => Pretty (Rewrites level child) where
-    pretty Rewrites {..} =
+    pretty Rewrites { rewritesSort, rewritesFirst, rewritesSecond } =
         "\\rewrites"
         <> Pretty.parameters [rewritesSort]
         <> Pretty.arguments [rewritesFirst, rewritesSecond]
@@ -1027,7 +1038,7 @@ instance Hashable (Top level child)
 instance NFData (Top level child)
 
 instance Pretty child => Pretty (Top level child) where
-    pretty Top {..} =
+    pretty Top { topSort } =
         "\\top" <> Pretty.parameters [topSort] <> Pretty.noArguments
 
 {-|'Pattern' corresponds to the @object-pattern@ and
@@ -1296,3 +1307,11 @@ instance
             IsObject -> p
             IsMeta   -> error "Expecting Object pattern"
     unifiedPatternApply = id
+
+-- |'patternBottomUpVisitor' is @cata . unifiedPatternApply@
+patternBottomUpVisitor
+    :: (UnifiedPatternInterface pat, Functor (pat variable))
+    => (forall level . MetaOrObject level
+        => Pattern level variable result -> result)
+    -> (Fix (pat variable) -> result)
+patternBottomUpVisitor reduce = cata (unifiedPatternApply reduce)

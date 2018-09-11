@@ -2,7 +2,7 @@
 Module      : Kore.AST.PureToKore
 Description : Functionality for viewing "Pure"-only as unified Kore constructs.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -30,7 +30,6 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.AST.Sentence
-import Kore.ASTTraversals
 import Kore.Error
 
 patternPureToKore
@@ -47,17 +46,17 @@ patternKoreToPure
     => level
     -> CommonKorePattern
     -> Either (Error a) (CommonPurePattern level)
-patternKoreToPure level = patternBottomUpVisitorM (extractPurePattern level)
+patternKoreToPure level = patternBottomUpVisitor (extractPurePattern level)
 
 extractPurePattern
     :: (MetaOrObject level, MetaOrObject level1)
     => level
-    -> Pattern level1 Variable (CommonPurePattern level)
+    -> Pattern level1 Variable (Either (Error a) (CommonPurePattern level))
     -> Either (Error a) (CommonPurePattern level)
 extractPurePattern level p =
     case (isMetaOrObject (Rotate31 p), isMetaOrObject (toProxy level)) of
-        (IsMeta, IsMeta) -> return (Fix p)
-        (IsObject, IsObject) -> return (Fix p)
+        (IsMeta, IsMeta) -> fmap Fix (sequence p)
+        (IsObject, IsObject) -> fmap Fix (sequence p)
         _ -> koreFail ("Unexpected non-" ++ show level ++ " pattern")
 
 -- FIXME : all of this attribute record syntax stuff

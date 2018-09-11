@@ -16,9 +16,11 @@ import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.Parser.CString
        ( escapeCString )
+import Kore.Step.PatternAttributes
 import Kore.Unification.Unifier
 
-import Data.String(fromString)
+import Data.String
+       ( fromString )
 import Data.Text.Prettyprint.Doc as Doc
 import Data.Text.Prettyprint.Doc.Render.String
 
@@ -736,8 +738,8 @@ instance (MetaOrObject level, PrettyPrint (variable level))
 
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 instance MetaOrObject level => PrettyPrint (UnificationError level) where
-    prettyPrint flags (ConstructorClash h1 h2) =
-        writeTwoFieldStruct flags "ConstructorClash" h1 h2
+    prettyPrint flags (PatternClash h1 h2) =
+        writeTwoFieldStruct flags "PatternClash" h1 h2
     prettyPrint flags (SortClash s1 s2) =
         writeTwoFieldStruct flags "SortClash" s1 s2
     prettyPrint flags (NonConstructorHead h) =
@@ -748,10 +750,29 @@ instance MetaOrObject level => PrettyPrint (UnificationError level) where
     prettyPrint _ UnsupportedPatterns = "UnsupportedPatterns"
     prettyPrint _ EmptyPatternList = "EmptyPatternList"
 
+-- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
+instance MetaOrObject level => PrettyPrint (ClashReason level) where
+    prettyPrint flags (DomainValueClash h) =
+        betweenParentheses
+            flags
+            ("DomainValueClash "
+            <> inDoubleQuotes (fromString (escapeCString h))
+            )
+    prettyPrint flags (HeadClash h) =
+        writeOneFieldStruct flags "HeadClash" h
+    prettyPrint flags (SortInjectionClash s1 s2) =
+        writeTwoFieldStruct flags "SortInjectionClash" s1 s2
+
 instance (MetaOrObject level, PrettyPrint (variable level))
     => PrettyPrint (FunctionalProof level variable)
   where
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v
+    prettyPrint flags (FunctionalDomainValue dv) =
+        writeOneFieldStruct flags "FunctionalDomainValue" dv
     prettyPrint flags (FunctionalHead h) =
         writeOneFieldStruct flags "FunctionalHead" h
+    prettyPrint flags (FunctionalStringLiteral l) =
+        writeOneFieldStruct flags "FunctionalStringLiteral" l
+    prettyPrint flags (FunctionalCharLiteral l) =
+        writeOneFieldStruct flags "FunctionalCharLiteral" l

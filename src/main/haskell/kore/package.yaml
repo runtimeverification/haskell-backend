@@ -1,7 +1,7 @@
 name:                kore
 version:             0.0.1.0
 github:              "kframework/kore"
-license:             OtherLicense
+license:             NCSA
 license-file:        LICENSE
 author:              "Virgil Serbanuta"
 maintainer:          "virgil.serbanuta@runtimeverification.com"
@@ -25,7 +25,6 @@ dependencies:
   - base >= 4.7
   - array
   - bytestring >= 0.10
-  - bytestring-trie
   - containers >= 0.5.8
   - clock
   - data-default
@@ -44,8 +43,10 @@ dependencies:
   - prettyprinter
   - recursion-schemes
   - reflection
+  - sbv
   - text
   - time
+  - unordered-containers
 
 build-tools:
   - tasty-discover
@@ -75,7 +76,6 @@ default-extensions:
   - OverloadedStrings
   - PatternSynonyms
   - RankNTypes
-  - RecordWildCards
   - ScopedTypeVariables
   - StandaloneDeriving
   - TypeApplications
@@ -89,7 +89,7 @@ library:
 
 executables:
   kore-parser:
-    main:                Main.hs
+    main: Main.hs
     source-dirs:
       - app/parser
       - app/share
@@ -100,6 +100,18 @@ executables:
     dependencies:
     - kore
 
+  kore-exec:
+    main: Main.hs
+    source-dirs:
+      - app/exec
+      - app/share
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - kore
+
   kore-format:
     main: Main.hs
     source-dirs:
@@ -109,8 +121,6 @@ executables:
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
-    default-extensions:
-      - RecordWildCards
     dependencies:
       - kore
 
