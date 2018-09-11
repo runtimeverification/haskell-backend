@@ -164,16 +164,17 @@ evaluateSortInjection
     -> Application level (PureMLPattern level variable)
     -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
 evaluateSortInjection tools unchanged ap = case apChild of
-    (App_ apHead' children) | isSortInjection (symAttributes tools apHead') ->
+    (App_ apHeadChild grandChildren)
+        | isSortInjection (symAttributes tools apHeadChild) ->
         let
-            [fromSort', toSort'] = symbolOrAliasParams apHead'
-            apHead'' = updateSortInjectionSource apHead fromSort'
+            [fromSort', toSort'] = symbolOrAliasParams apHeadChild
+            apHeadNew = updateSortInjectionSource apHead fromSort'
         in
             assert (toSort' == fromSort) $
             return
                 ( OrOfExpandedPattern.make
                     [ ExpandedPattern
-                        { term = App_ apHead'' children
+                        { term = App_ apHeadNew grandChildren
                         , predicate = makeTruePredicate
                         , substitution = []
                         }

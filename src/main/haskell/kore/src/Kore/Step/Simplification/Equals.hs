@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Equals
     , simplify
     ) where
 
+import Control.Exception
+       ( assert )
 import Control.Monad
        ( foldM, zipWithM )
 import Data.Either
@@ -474,24 +476,10 @@ constructorOrInjectiveAtTheTopAssumesNoBottom
     tools
     (App_ firstSymbol firstChildren)
     (App_ secondSymbol secondChildren)
-  | isConstructor' firstSymbol && isConstructor' secondSymbol
-  = Just $
-    if firstSymbol == secondSymbol
-        then propagateEqualsToChildren
-        else return (OrOfExpandedPattern.make [], SimplificationProof)
   | isInjective' firstSymbol
     && isInjective' secondSymbol
     && firstSymbol == secondSymbol
-  = Just $ propagateEqualsToChildren
-  where
-    -- TODO: Extract this somewhere.
-    isConstructor' symbolHead =
-        StepperAttributes.isConstructor
-            (MetadataTools.symAttributes tools symbolHead)
-    isInjective' symbolHead =
-        StepperAttributes.isInjective
-            (MetadataTools.symAttributes tools symbolHead)
-    propagateEqualsToChildren = do -- IntCounter monad
+  = Just $ do -- IntCounter monad
         childrenEquals <-
             zipWithM
                 (makeEvaluateTermsAssumesNoBottom tools)
@@ -505,6 +493,17 @@ constructorOrInjectiveAtTheTopAssumesNoBottom
                 )
                 childrenEquals
         return (childrenAnd, SimplificationProof)
+  | isConstructor' firstSymbol && isConstructor' secondSymbol
+  = -- assuming firstSymbol /= secondSymbol, or first case would have applied
+    Just $ pure (OrOfExpandedPattern.make [], SimplificationProof)
+  where
+    -- TODO: Extract this somewhere.
+    isConstructor' symbolHead = assert (isInjective' symbolHead) $
+        StepperAttributes.isConstructor
+            (MetadataTools.symAttributes tools symbolHead)
+    isInjective' symbolHead =
+        StepperAttributes.isInjective
+            (MetadataTools.symAttributes tools symbolHead)
 
     combineWithAnd
         ::  ( MetaOrObject level

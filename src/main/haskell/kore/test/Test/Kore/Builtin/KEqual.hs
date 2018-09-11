@@ -171,7 +171,24 @@ test_KEqual =
                 (Pattern.simplify tools evaluators (pat kneqSymbol))
             )
         )
-    , testCase "distinct Id domain values casted to K"
+    , testCase "dotk equals dotk"
+        (assertEqual ""
+            (Right
+                ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern True)
+                , SimplificationProof
+                )
+            )
+            (evalSimplifier
+                (Pattern.simplify tools evaluators
+                    (App_ keqSymbol
+                        [ App_ dotKHead []
+                        , App_ dotKHead []
+                        ]
+                    )
+                )
+            )
+        )
+    , testCase "distinct domain values"
         (assertEqual ""
             (Right
                 ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
@@ -181,20 +198,10 @@ test_KEqual =
             (evalSimplifier
                 (Pattern.simplify tools evaluators
                     (App_ keqSymbol
-                        [ App_ kSeqHead
-                            [ App_ (injHead idSort kItemSort)
-                                [ DV_ idSort
-                                    (StringLiteral_ (StringLiteral "t"))
-                                ]
-                            , App_ dotKHead []
-                            ]
-                        , App_ kSeqHead
-                            [ App_ (injHead idSort kItemSort)
-                                [ DV_ idSort
-                                    (StringLiteral_ (StringLiteral "x"))
-                                ]
-                            , App_ dotKHead []
-                            ]
+                        [ DV_ idSort
+                            (StringLiteral_ (StringLiteral "t"))
+                        , DV_ idSort
+                            (StringLiteral_ (StringLiteral "x"))
                         ]
                     )
                 )
@@ -223,7 +230,7 @@ test_KEqual =
                 )
             )
         )
-    , testCase "distinct domain values"
+    , testCase "distinct Id domain values casted to K"
         (assertEqual ""
             (Right
                 ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
@@ -233,27 +240,20 @@ test_KEqual =
             (evalSimplifier
                 (Pattern.simplify tools evaluators
                     (App_ keqSymbol
-                        [ DV_ idSort
-                            (StringLiteral_ (StringLiteral "t"))
-                        , DV_ idSort
-                            (StringLiteral_ (StringLiteral "x"))
-                        ]
-                    )
-                )
-            )
-        )
-    , testCase "dotk equals dotk"
-        (assertEqual ""
-            (Right
-                ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern True)
-                , SimplificationProof
-                )
-            )
-            (evalSimplifier
-                (Pattern.simplify tools evaluators
-                    (App_ keqSymbol
-                        [ App_ dotKHead []
-                        , App_ dotKHead []
+                        [ App_ kSeqHead
+                            [ App_ (injHead idSort kItemSort)
+                                [ DV_ idSort
+                                    (StringLiteral_ (StringLiteral "t"))
+                                ]
+                            , App_ dotKHead []
+                            ]
+                        , App_ kSeqHead
+                            [ App_ (injHead idSort kItemSort)
+                                [ DV_ idSort
+                                    (StringLiteral_ (StringLiteral "x"))
+                                ]
+                            , App_ dotKHead []
+                            ]
                         ]
                     )
                 )

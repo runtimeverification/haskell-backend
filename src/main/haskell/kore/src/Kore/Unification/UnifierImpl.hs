@@ -32,7 +32,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
 import Kore.Step.PatternAttributes
-       ( FunctionalProof (..), isConstructorTop, isFunctionalPattern )
+       ( FunctionalProof (..), isConstructorLikeTop, isFunctionalPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
@@ -324,8 +324,8 @@ matchApplicationPattern (ApplicationPattern ap1) ap2
             else Left $ Left $ NonConstructorHead head1
     --head1 /= head2 && neither is a constructor
     | isSortInjection_ head1 && isSortInjection_ head2
-      && isConstructorTop given (project child1)
-      && isConstructorTop given (project child2) =
+      && isConstructorLikeTop given (project child1)
+      && isConstructorLikeTop given (project child2) =
         Left $ Left
             (PatternClash
                 (SortInjectionClash p1FromSort p1ToSort)

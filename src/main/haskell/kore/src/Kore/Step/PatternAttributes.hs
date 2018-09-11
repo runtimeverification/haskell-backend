@@ -11,7 +11,7 @@ Portability : portable
 module Kore.Step.PatternAttributes
     ( FunctionProof(..)
     , FunctionalProof(..)
-    , isConstructorTop
+    , isConstructorLikeTop
     , isFunctionPattern
     , isFunctionalPattern
     , mapFunctionalProofVariables
@@ -139,19 +139,19 @@ checkFunctionalHead tools (ApplicationPattern ap) =
     patternHead = applicationSymbolOrAlias ap
 checkFunctionalHead _ p = isPreconstructedPattern NonFunctionalPattern p
 
-{-|@isConstructorTop@ checks whether the given 'Pattern' is topped in a
+{-|@isConstructorLikeTop@ checks whether the given 'Pattern' is topped in a
 constructor / syntactic sugar for a constructor (literal / domain value)
 construct.
 -}
-isConstructorTop
+isConstructorLikeTop
     :: MetadataTools level StepperAttributes
     -> Pattern level variable pat
     -> Bool
-isConstructorTop tools (ApplicationPattern ap) =
+isConstructorLikeTop tools (ApplicationPattern ap) =
     isConstructor (MetadataTools.symAttributes tools patternHead)
   where
     patternHead = applicationSymbolOrAlias ap
-isConstructorTop _ p = isRight (isPreconstructedPattern undefined p)
+isConstructorLikeTop _ p = isRight (isPreconstructedPattern undefined p)
 
 {-| checks whether a pattern is function-like or not and, if it is, returns
     a proof certifying that.
