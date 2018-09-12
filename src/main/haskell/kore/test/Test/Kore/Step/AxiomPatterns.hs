@@ -10,6 +10,8 @@ import           Data.Default
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
+import           Data.Proxy
+                 ( Proxy (..) )
 
 import           Kore.AST.Builders
 import           Kore.AST.Common
@@ -280,7 +282,7 @@ sortAExp = simpleSort (SortName "AExp")
 sortBExp = simpleSort (SortName "BExp")
 
 sortParam :: String -> SortVariable Object
-sortParam name = sortParameter Object name AstLocationTest
+sortParam name = sortParameter Proxy name AstLocationTest
 
 sortParamSort :: String -> Sort Object
 sortParamSort = SortVariableSort . sortParam

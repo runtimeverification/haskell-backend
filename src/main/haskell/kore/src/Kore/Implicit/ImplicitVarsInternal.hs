@@ -48,5 +48,5 @@ v2 = implicitUnparameterizedVariable "#v2"
 vx = implicitUnparameterizedVariable "#x"
 vx' = implicitUnparameterizedVariable "#x'"
 
-pS = sortParameter Meta "#sp" AstLocationImplicit
+pS = sortParameter (pure Meta) "#sp" AstLocationImplicit
 spS = SortVariableSort pS

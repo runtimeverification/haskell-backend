@@ -1,40 +1,51 @@
 module Test.Kore.Unification.Unifier (test_unification) where
 
 import Test.Tasty
-       ( TestTree )
+       ( TestTree, testGroup )
 import Test.Tasty.HUnit
        ( testCase )
 import Test.Tasty.HUnit.Extensions
 
-import Data.CallStack
-import Data.Default
-       ( def )
-import Data.Function
-       ( on )
-import Data.Functor.Foldable
-import Data.List
-       ( sortBy )
-import Data.Reflection
-       ( give )
+import           Data.CallStack
+import           Data.Default
+                 ( def )
+import           Data.Function
+                 ( on )
+import           Data.Functor.Foldable
+import           Data.List
+                 ( sortBy )
+import qualified Data.Map as Map
+import           Data.Proxy
+                 ( Proxy (..) )
+import           Data.Reflection
+                 ( give )
 
-import Kore.AST.Builders
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.MLPatterns
-import Kore.AST.PureML
-import Kore.AST.Sentence
-import Kore.ASTHelpers
-       ( ApplicationSorts (..) )
-import Kore.ASTPrettyPrint
-import Kore.ASTUtils.SmartConstructors
-       ( mkVar )
-import Kore.IndexedModule.MetadataTools
-import Kore.Predicate.Predicate
-       ( Predicate, makeTruePredicate )
-import Kore.Step.PatternAttributes
-import Kore.Step.StepperAttributes
-import Kore.Unification.Error
-import Kore.Unification.UnifierImpl
+import           Kore.AST.Builders
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.MLPatterns
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.ASTPrettyPrint
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkVar )
+import           Kore.IndexedModule.MetadataTools
+import           Kore.Predicate.Predicate
+                 ( Predicate, makeTruePredicate )
+import           Kore.Step.ExpandedPattern
+                 ( ExpandedPattern (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.PatternAttributes
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
+import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.StepperAttributes
+import           Kore.Unification.Error
+import           Kore.Unification.UnifierImpl
 
 import Test.Kore
 import Test.Kore.AST.MLPatterns
@@ -42,10 +53,17 @@ import Test.Kore.AST.MLPatterns
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Comparators ()
 
-s1, s2, s3 :: Sort Object
+applyInj
+    :: Sort Object
+    -> Sort Object
+    -> CommonPurePatternStub Object -> CommonPurePatternStub Object
+applyInj sortFrom sortTo pat = applyPS symbolInj [sortFrom, sortTo] [pat]
+
+s1, s2, s3, s4 :: Sort Object
 s1 = simpleSort (SortName "s1")
 s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
+s4 = simpleSort (SortName "s4")
 
 a, a1, a2, a3, b, c, f, g, h :: PureSentenceSymbol Object
 a = symbol_ "a" AstLocationTest [] s1
@@ -105,8 +123,14 @@ a2A = applyS a2 []
 a3A :: CommonPurePatternStub Object
 a3A = applyS a3 []
 
+bA :: CommonPurePatternStub Object
+bA = applyS b []
+
 x :: CommonPurePatternStub Object
 x = parameterizedVariable_ s1 "x" AstLocationTest
+
+xs2 :: CommonPurePatternStub Object
+xs2 = parameterizedVariable_ s2 "xs2" AstLocationTest
 
 symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object)]
 symbols =
@@ -118,27 +142,60 @@ symbols =
         , expBin
         ]
 
+sortParam :: String -> SortVariable level
+sortParam name = sortParameter Proxy name AstLocationTest
+
+sortParamSort :: String -> Sort level
+sortParamSort = SortVariableSort . sortParam
+
+injName :: String
+injName = "inj"
+
+symbolInj :: PureSentenceSymbol level
+symbolInj =
+    parameterizedSymbol_ injName AstLocationImplicit
+        [sortParam "From", sortParam "To"]
+        [sortParamSort "From"]
+        (sortParamSort "To")
+
+injHead :: Sort level -> Sort level -> SymbolOrAlias level
+injHead sortFrom sortTo =
+    getSentenceSymbolOrAliasHead symbolInj [sortFrom, sortTo]
+
+isInjHead :: SymbolOrAlias level -> Bool
+isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
+
 mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
 mockStepperAttributes patternHead = StepperAttributes
-    { isConstructor = patternHead /= getSentenceSymbolOrAliasHead a2 []
+    { isConstructor =
+        patternHead /= getSentenceSymbolOrAliasHead a2 []
+        && not (isInjHead patternHead)
     , isFunctional = patternHead /= getSentenceSymbolOrAliasHead a3 []
     , isFunction = False
+    , isInjective =
+        patternHead /= getSentenceSymbolOrAliasHead a2 []
+        || isInjHead patternHead
+    , isSortInjection = isInjHead patternHead
     , hook = def
     }
 
 mockGetArgumentSorts :: SymbolOrAlias Object -> [Sort Object]
-mockGetArgumentSorts patternHead =
-    maybe
-        (error ("Unexpected Head " ++  show patternHead))
-        getSentenceSymbolOrAliasArgumentSorts
-        (lookup patternHead symbols)
+mockGetArgumentSorts patternHead
+    | isInjHead patternHead = init (symbolOrAliasParams patternHead)
+    | otherwise =
+        maybe
+            (error ("Unexpected Head " ++  show patternHead))
+            getSentenceSymbolOrAliasArgumentSorts
+            (lookup patternHead symbols)
 
 mockGetResultSort :: SymbolOrAlias Object -> Sort Object
-mockGetResultSort patternHead =
-    maybe
-        (error ("Unexpected Head " ++  show patternHead))
-        getSentenceSymbolOrAliasResultSort
-        (lookup patternHead symbols)
+mockGetResultSort patternHead
+    | isInjHead patternHead = last (symbolOrAliasParams patternHead)
+    | otherwise =
+        maybe
+            (error ("Unexpected Head " ++  show patternHead))
+            getSentenceSymbolOrAliasResultSort
+            (lookup patternHead symbols)
 
 mockSortTools :: SortTools Object
 mockSortTools pHead = ApplicationSorts
@@ -471,6 +528,7 @@ test_unification =
                 (extractPurePattern expY)
             ]
         )
+    , testGroup "inj unification tests" injUnificationTests
     , andSimplifyFailure "Unmatching constants"
         (UnificationTerm aA)
         (UnificationTerm a1A)
@@ -483,10 +541,18 @@ test_unification =
         (UnificationTerm aA)
         (UnificationTerm dv2)
         (PatternClash (HeadClash (symbolHead a)) (DomainValueClash "dv2"))
-    , andSimplifyFailure "Unmatching domain value + constant"
+    , andSimplifyFailure "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a1A)
         (PatternClash (DomainValueClash "dv1") (HeadClash (symbolHead a1)))
+    , andSimplifyFailure "Unmatching domain value + nonconstructor constant"
+        (UnificationTerm dv1)
+        (UnificationTerm a2A)
+        (NonConstructorHead (symbolHead a2))
+    , andSimplifyFailure "Unmatching nonconstructor constant + domain value"
+        (UnificationTerm a2A)
+        (UnificationTerm dv1)
+        (NonConstructorHead (symbolHead a2))
     , andSimplifyFailure "non-functional pattern"
         (UnificationTerm x)
         (UnificationTerm a3A)
@@ -521,11 +587,17 @@ test_unification =
             )
         )
     ]
-  where
-    symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
-    var ps = case project (extractPurePattern ps) of
-        VariablePattern v -> v
-        _                 -> error "Expecting a variable"
+
+var :: CommonPurePatternStub Object -> Variable Object
+var ps = case project (extractPurePattern ps) of
+    VariablePattern v -> v
+    _                 -> error "Expecting a variable"
+
+symbolHead
+    :: SentenceSymbolOrAlias s
+    => s level (Pattern level) variable
+    -> SymbolOrAlias level
+symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
 
 newtype V level = V Integer
     deriving (Show, Eq, Ord)
@@ -560,3 +632,113 @@ mockSortTools' = const ApplicationSorts
 
 sortVar :: Sort level
 sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))
+
+injUnificationTests :: [TestTree]
+injUnificationTests =
+    [ andSimplifySuccess "Injected Variable"
+        (UnificationTerm (applyInj s1 s2 x))
+        (UnificationTerm (applyInj s1 s2 aA))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("x", aA)]
+        (AndDistributionAndConstraintLifting
+            (injHead s1 s2)
+            [Proposition_5_24_3
+                [FunctionalHead (symbolHead a)]
+                (var x)
+                (extractPurePattern aA)
+            ]
+        )
+    , andSimplifySuccess "Variable"
+        (UnificationTerm xs2)
+        (UnificationTerm (applyInj s1 s2 aA))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("xs2", applyInj s1 s2 aA)]
+        (Proposition_5_24_3
+            [FunctionalHead (injHead s1 s2), FunctionalHead (symbolHead a)]
+            (var xs2)
+            (extractPurePattern (applyInj s1 s2 aA))
+        )
+    , andSimplifySuccess "Injected Variable vs doubly injected term"
+        (UnificationTerm (applyInj s1 s2 x))
+        (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("x", aA)]
+        (AndDistributionAndConstraintLifting
+            (injHead s1 s2)
+            [Proposition_5_24_3
+                [FunctionalHead (symbolHead a)]
+                (var x)
+                (extractPurePattern aA)
+            ]
+        )
+    , andSimplifySuccess "doubly injected variable vs injected term"
+        (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 x))))
+        (UnificationTerm (applyInj s1 s2 aA))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("x", aA)]
+        (AndDistributionAndConstraintLifting
+            (injHead s1 s2)
+            [Proposition_5_24_3
+                [FunctionalHead (symbolHead a)]
+                (var x)
+                (extractPurePattern aA)
+            ]
+        )
+    , andSimplifySuccess "doubly injected variable vs doubly injected term"
+        (simplifyPattern (UnificationTerm (applyInj s4 s2 (applyInj s1 s4 x))))
+        (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
+        (UnificationResultTerm (applyInj s1 s2 aA))
+        [("x", aA)]
+        (AndDistributionAndConstraintLifting
+            (injHead s1 s2)
+            [Proposition_5_24_3
+                [FunctionalHead (symbolHead a)]
+                (var x)
+                (extractPurePattern aA)
+            ]
+        )
+    , andSimplifyFailure "constant vs injection"
+        (UnificationTerm aA)
+        (UnificationTerm (applyInj s2 s1 xs2))
+        (PatternClash (HeadClash (symbolHead a)) (SortInjectionClash s2 s1))
+    , andSimplifyFailure "unmatching injections"
+        (UnificationTerm (applyInj s1 s3 aA))
+        (UnificationTerm (applyInj s2 s3 bA))
+        (PatternClash (SortInjectionClash s1 s3) (SortInjectionClash s2 s3))
+    , andSimplifyFailure "unmatching nested injections"
+        (simplifyPattern (UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA))))
+        (simplifyPattern (UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA))))
+        (PatternClash (SortInjectionClash s1 s4) (SortInjectionClash s2 s4))
+    , andSimplifyFailure "unmatching injections"
+        -- TODO(traiansf): this should succeed if s1 < s2 < s3
+        (UnificationTerm (applyInj s1 s3 aA))
+        (UnificationTerm (applyInj s2 s3 xs2))
+        UnsupportedPatterns
+    ]
+
+simplifyPattern :: UnificationTerm Object -> UnificationTerm Object
+simplifyPattern (UnificationTerm pStub) =
+    let pat =
+            project
+            $ ExpandedPattern.term
+            $ evalSimplifier
+            $ do
+                simplifiedPatterns <-
+                    ExpandedPattern.simplify
+                        tools
+                        (Simplifier.create tools functionRegistry)
+                        expandedPattern
+                case
+                    OrOfExpandedPattern.extractPatterns
+                        (fst simplifiedPatterns) of
+                    [] -> return ExpandedPattern.bottom
+                    (config : _) -> return config
+        resultSort = getPatternResultSort mockSortTools pat
+    in UnificationTerm (SortedPatternStub (SortedPattern pat resultSort))
+  where
+    functionRegistry = Map.empty
+    expandedPattern = ExpandedPattern
+        { term = extractPurePattern pStub
+        , predicate = makeTruePredicate
+        , substitution = []
+        }

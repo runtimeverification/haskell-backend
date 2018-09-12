@@ -1157,10 +1157,12 @@ test_baseStep =
 mockStepperAttributes :: SymbolOrAlias Meta -> StepperAttributes
 mockStepperAttributes patternHead =
     StepperAttributes
-    { isConstructor = patternHead /= hSymbol
-    , isFunctional  = True
-    , isFunction    = True
-    , hook          = def
+    { isConstructor   = patternHead /= hSymbol
+    , isFunctional    = True
+    , isFunction      = True
+    , isInjective     = patternHead /= hSymbol
+    , isSortInjection = False
+    , hook            = def
     }
 
 mockSortTools :: SortTools Meta

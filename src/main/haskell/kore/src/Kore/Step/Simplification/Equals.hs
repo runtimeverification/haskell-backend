@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Equals
     , simplify
     ) where
 
+import Control.Exception
+       ( assert )
 import Control.Monad
        ( foldM, zipWithM )
 import Data.Either
@@ -357,7 +359,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , differentDomainValues first second
         , variableEqualsFunctionalAssumesNoBottom tools first second
         , functionalEqualsVariableAssumesNoBottom tools first second
-        , constructorAtTheTopAssumesNoBottom tools first second
+        , constructorOrInjectiveAtTheTopAssumesNoBottom tools first second
         ]
 
 differentCharLiterals
@@ -453,7 +455,7 @@ functionalEqualsVariableAssumesNoBottom
         )
 functionalEqualsVariableAssumesNoBottom _ _ _ = Nothing
 
-constructorAtTheTopAssumesNoBottom
+constructorOrInjectiveAtTheTopAssumesNoBottom
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
@@ -470,33 +472,39 @@ constructorAtTheTopAssumesNoBottom
         (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
-constructorAtTheTopAssumesNoBottom
+constructorOrInjectiveAtTheTopAssumesNoBottom
     tools
     (App_ firstSymbol firstChildren)
     (App_ secondSymbol secondChildren)
+  | isInjective' firstSymbol
+    && isInjective' secondSymbol
+    && firstSymbol == secondSymbol
+  = Just $ do -- IntCounter monad
+        childrenEquals <-
+            zipWithM
+                (makeEvaluateTermsAssumesNoBottom tools)
+                firstChildren
+                secondChildren
+        (childrenAnd, _proof) <-
+            foldM
+                (combineWithAnd tools)
+                ( OrOfExpandedPattern.make [ExpandedPattern.top]
+                , SimplificationProof
+                )
+                childrenEquals
+        return (childrenAnd, SimplificationProof)
   | isConstructor' firstSymbol && isConstructor' secondSymbol
-  = Just $
-    if firstSymbol == secondSymbol
-        then do -- IntCounter monad
-            childrenEquals <-
-                zipWithM
-                    (makeEvaluateTermsAssumesNoBottom tools)
-                    firstChildren
-                    secondChildren
-            (childrenAnd, _proof) <-
-                foldM
-                    (combineWithAnd tools)
-                    ( OrOfExpandedPattern.make [ExpandedPattern.top]
-                    , SimplificationProof
-                    )
-                    childrenEquals
-            return (childrenAnd, SimplificationProof)
-        else return (OrOfExpandedPattern.make [], SimplificationProof)
+  = -- assuming firstSymbol /= secondSymbol, or first case would have applied
+    Just $ pure (OrOfExpandedPattern.make [], SimplificationProof)
   where
     -- TODO: Extract this somewhere.
-    isConstructor' symbolHead =
+    isConstructor' symbolHead = assert (isInjective' symbolHead) $
         StepperAttributes.isConstructor
             (MetadataTools.symAttributes tools symbolHead)
+    isInjective' symbolHead =
+        StepperAttributes.isInjective
+            (MetadataTools.symAttributes tools symbolHead)
+
     combineWithAnd
         ::  ( MetaOrObject level
             , SortedVariable variable
@@ -514,7 +522,7 @@ constructorAtTheTopAssumesNoBottom
             (OrOfExpandedPattern level variable, SimplificationProof level)
     combineWithAnd tools' (thing1, _proof1) (thing2, _proof2) =
         And.simplifyEvaluated tools' thing1 thing2
-constructorAtTheTopAssumesNoBottom _ _ _ = Nothing
+constructorOrInjectiveAtTheTopAssumesNoBottom _ _ _ = Nothing
 
 
 firstMaybe :: [Maybe a] -> Maybe a

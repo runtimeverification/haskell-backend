@@ -6,8 +6,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Data.Default
-       ( def )
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
 import           Kore.AST.Common
                  ( AstLocation (..), Sort (..), SortVariable (..), Variable,
@@ -215,13 +214,6 @@ runNormalizeSubstitution substitution =
         Right action -> Right $ PredicateSubstitution.substitution
                         $ fst $ runIntCounter action 0
 
-mockStepperAttributes :: StepperAttributes
-mockStepperAttributes = StepperAttributes
-    { isConstructor = False
-    , isFunctional = True
-    , isFunction = False
-    , hook = def
-    }
 
 mockSortTools :: MetaOrObject level => SortTools level
 mockSortTools = const ApplicationSorts
@@ -233,8 +225,8 @@ mockSortTools = const ApplicationSorts
 
 mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
 mockMetadataTools = MetadataTools
-    { symAttributes = const mockStepperAttributes
-    , sortAttributes = const mockStepperAttributes
+    { symAttributes = const Mock.functionalAttributes
+    , sortAttributes = const Mock.functionalAttributes
     , sortTools = mockSortTools
     }
 

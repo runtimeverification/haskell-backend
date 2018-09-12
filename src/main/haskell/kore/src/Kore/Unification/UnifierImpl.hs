@@ -17,6 +17,8 @@ import Data.Function
 import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
+import Data.Reflection
+       ( Given, give, given )
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -30,7 +32,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
 import Kore.Step.PatternAttributes
-       ( FunctionalProof (..), isFunctionalPattern )
+       ( FunctionalProof (..), isConstructorLikeTop, isFunctionalPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
@@ -272,17 +274,99 @@ preTransform tools (AndPattern ap) = if left == right
                         matchDomainValue tools p1 sl2
                     _ -> Left $ Left UnsupportedPatterns
             ApplicationPattern ap2 ->
-                let
-                    head2 = applicationSymbolOrAlias ap2
-                in
-                    if isConstructor (symAttributes tools head2)
-                        then matchConstructor tools p1 head2 ap2
-                        else Left $ Left $ NonConstructorHead head2
+                give tools matchApplicationPattern p1 ap2
             _ -> Left $ Left UnsupportedPatterns
   where
     left = andFirst ap
     right = andSecond ap
 preTransform _ _ = Left $ Left UnsupportedPatterns
+
+matchApplicationPattern
+    :: (Given (MetadataTools level StepperAttributes))
+    => UnFixedPureMLPattern level variable
+    -> Application level (PureMLPattern level variable)
+    -> Either
+        ( Either
+            (UnificationError level)
+            ( UnificationSolution level variable
+            , UnificationProof level variable
+            )
+        )
+        (UnFixedPureMLPattern level variable)
+matchApplicationPattern (DomainValuePattern (DomainValue _ dv1)) ap2
+    | isConstructor_ head2 = case dv1 of
+        StringLiteral_ (StringLiteral sl1) ->
+            Left $ Left (PatternClash (DomainValueClash sl1) (HeadClash head2))
+        _ ->  Left $ Left UnsupportedPatterns
+    | otherwise = Left $ Left $ NonConstructorHead head2
+  where
+    head2 = applicationSymbolOrAlias ap2
+matchApplicationPattern (ApplicationPattern ap1) ap2
+    | head1 == head2 =
+        if isInjective_ head1
+            then matchEqualInjectiveHeads given head1 ap1 ap2
+        else if isConstructor_ head1
+            then error (show head1 ++ " is constructor but not injective.")
+        else Left $ Left $ NonConstructorHead head1
+    --Assuming head1 /= head2 in the sequel
+    | isConstructor_ head1 =
+        if isConstructor_ head2
+            then Left $ Left (PatternClash (HeadClash head1) (HeadClash head2))
+        else if isSortInjection_ head2
+            then Left $ Left
+                (PatternClash (HeadClash head1) (mkSortInjectionClash head2))
+        else Left $ Left $ NonConstructorHead head2
+    --head1 /= head2 && head1 is not constructor
+    | isConstructor_ head2 =
+        if isSortInjection_ head1
+            then Left $ Left
+                (PatternClash (mkSortInjectionClash head1) (HeadClash head2))
+            else Left $ Left $ NonConstructorHead head1
+    --head1 /= head2 && neither is a constructor
+    | isSortInjection_ head1 && isSortInjection_ head2
+      && isConstructorLikeTop given (project child1)
+      && isConstructorLikeTop given (project child2) =
+        Left $ Left
+            (PatternClash
+                (SortInjectionClash p1FromSort p1ToSort)
+                (SortInjectionClash p2FromSort p2ToSort)
+            )
+    --head1 /= head2 && neither is a constructor
+    -- && they are not both sort injections
+    | otherwise = Left $ Left UnsupportedPatterns
+  where
+    head1 = applicationSymbolOrAlias ap1
+    head2 = applicationSymbolOrAlias ap2
+    [p1FromSort, p1ToSort] = symbolOrAliasParams head1
+    [child1] = applicationChildren ap1
+    [p2FromSort, p2ToSort] = symbolOrAliasParams head2
+    [child2] = applicationChildren ap2
+matchApplicationPattern _ _ = Left $ Left UnsupportedPatterns
+
+matchEqualInjectiveHeads
+    :: MetadataTools level StepperAttributes
+    -> SymbolOrAlias level
+    -> Application level (PureMLPattern level variable)
+    -> Application level (PureMLPattern level variable)
+    -> Either err (UnFixedPureMLPattern level variable)
+matchEqualInjectiveHeads tools head1 ap1 ap2 = Right $
+    ApplicationPattern Application
+        { applicationSymbolOrAlias = head1
+        , applicationChildren =
+            Fix . AndPattern
+                <$> zipWith3 And
+                    (applicationSortsOperands
+                        (sortTools tools head1)
+                    )
+                    (applicationChildren ap1)
+                    (applicationChildren ap2)
+        }
+
+mkSortInjectionClash :: SymbolOrAlias level -> ClashReason level
+mkSortInjectionClash head1 = SortInjectionClash p1FromSort p1ToSort
+  where
+    [p1FromSort, p1ToSort] = symbolOrAliasParams head1
+
 
 matchDomainValue
     :: MetadataTools level StepperAttributes
@@ -309,50 +393,6 @@ matchDomainValue tools (ApplicationPattern ap1) sl2
   where
     head1 = applicationSymbolOrAlias ap1
 matchDomainValue _ _ _ = Left $ Left UnsupportedPatterns
-
-matchConstructor
-    :: MetadataTools level StepperAttributes
-    -> UnFixedPureMLPattern level variable
-    -> SymbolOrAlias level
-    -> Application level (PureMLPattern level variable)
-    -> Either
-        ( Either
-            (UnificationError level)
-            ( UnificationSolution level variable
-            , UnificationProof level variable
-            )
-        )
-        (UnFixedPureMLPattern level variable)
-matchConstructor _ (DomainValuePattern (DomainValue _ dv1)) head2 _ =
-    case dv1 of
-        (StringLiteral_ (StringLiteral sl1)) ->
-            Left $ Left (PatternClash (DomainValueClash sl1) (HeadClash head2))
-        _ -> Left $ Left UnsupportedPatterns
-matchConstructor tools (ApplicationPattern ap1) head2 ap2
-    | isConstructor (symAttributes tools head1) =
-        if head1 == head2
-            then Right
-                $ ApplicationPattern Application
-                    { applicationSymbolOrAlias = head1
-                    , applicationChildren =
-                        Fix . AndPattern
-                            <$> zipWith3 And
-                                (applicationSortsOperands
-                                    (sortTools tools head1)
-                                )
-                                (applicationChildren ap1)
-                                (applicationChildren ap2)
-                    }
-            else Left $ Left
-                    (PatternClash
-                        (HeadClash head1)
-                        (HeadClash head2)
-                    )
-    | otherwise = Left $ Left $ NonConstructorHead head1
-  where
-    head1 = applicationSymbolOrAlias ap1
-matchConstructor _ _ _ _ = Left $ Left UnsupportedPatterns
-
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
 -- if phi is a functional pattern.
