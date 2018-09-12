@@ -25,7 +25,8 @@ import Data.String
        ( fromString )
 import Data.Text.Prettyprint.Doc as Doc
 import Data.Text.Prettyprint.Doc.Render.String
-import Unsafe.Coerce (unsafeCoerce)
+import Unsafe.Coerce
+       ( unsafeCoerce )
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
