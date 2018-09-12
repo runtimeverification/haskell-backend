@@ -21,11 +21,10 @@ module Kore.Step.Strategy
     , axiom
     , builtin
       -- * Running strategies
-    , Limit (..)
-    , withinLimit
     , runStrategy
     , pickLongest
     , pickStuck
+    , module Data.Limit
     ) where
 
 import           Data.Bifunctor
@@ -40,6 +39,7 @@ import           Prelude hiding
                  ( all, and, any, or )
 
 import Control.Monad.Counter
+import Data.Limit
 
 {- | An execution strategy.
 
@@ -154,35 +154,6 @@ step stepLimit state@Machine { stepCount } =
         if withinLimit stepLimit stepCount'
             then Just state { stepCount = stepCount' }
             else Nothing
-
-{- | An optionally-limited quantity.
- -}
-data Limit a
-    = Unlimited
-    -- ^ No limit
-    | Limit !a
-    -- ^ Limit @a@ by the given (inclusive) upper bound
-    deriving (Eq)
-
-instance Ord a => Ord (Limit a) where
-    compare =
-        \case
-            Unlimited ->
-                \case
-                    Unlimited -> EQ
-                    Limit _ -> GT
-            Limit a ->
-                \case
-                    Unlimited -> LT
-                    Limit b -> compare a b
-
-{- | Is the given value within the (inclusive) upper bound?
- -}
-withinLimit :: Ord a => Limit a -> a -> Bool
-withinLimit =
-    \case
-        Unlimited -> \_ -> True
-        Limit u -> \a -> a <= u
 
 {- | Run a simple state machine.
 
