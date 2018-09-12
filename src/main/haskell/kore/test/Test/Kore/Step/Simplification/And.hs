@@ -20,8 +20,8 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SortTools )
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeFalsePredicate,
-                 makeTruePredicate )
+                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
+                 makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -116,10 +116,19 @@ test_andSimplification = give mockSortTools
         )
     , testCase "And with normal patterns"
         (do
-            assertEqualWithExplanation "And terms"
+            assertEqualWithExplanation "And random terms"
                 ExpandedPattern
-                    { term = mkAnd fOfX gOfX
+                    { term = mkAnd plain0OfX plain1OfX
                     , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                (evaluatePatterns
+                    plain0OfXExpanded plain1OfXExpanded
+                )
+            assertEqualWithExplanation "And function terms"
+                ExpandedPattern
+                    { term = fOfX
+                    , predicate = makeEqualsPredicate fOfX gOfX
                     , substitution = []
                     }
                 (evaluatePatterns
@@ -275,8 +284,8 @@ test_andSimplification = give mockSortTools
         (do
             assertEqualWithExplanation "same constructors"
                 ExpandedPattern
-                    { term = Mock.constr10 (mkAnd fOfX gOfX)
-                    , predicate = makeTruePredicate
+                    { term = Mock.constr10 fOfX
+                    , predicate = makeEqualsPredicate fOfX gOfX
                     , substitution = []
                     }
                 (evaluatePatterns
@@ -311,8 +320,8 @@ test_andSimplification = give mockSortTools
         (assertEqualWithExplanation "Distributes or"
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
-                    { term = mkAnd fOfX gOfX
-                    , predicate = makeTruePredicate
+                    { term = fOfX
+                    , predicate = makeEqualsPredicate fOfX gOfX
                     , substitution = []
                     }
                 , ExpandedPattern
@@ -370,6 +379,18 @@ test_andSimplification = give mockSortTools
     gOfX = give mockSortTools $ Mock.g (mkVar Mock.x)
     gOfXExpanded = ExpandedPattern
         { term = gOfX
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+    plain0OfX = give mockSortTools $ Mock.plain10 (mkVar Mock.x)
+    plain0OfXExpanded = ExpandedPattern
+        { term = plain0OfX
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+    plain1OfX = give mockSortTools $ Mock.plain11 (mkVar Mock.x)
+    plain1OfXExpanded = ExpandedPattern
+        { term = plain1OfX
         , predicate = makeTruePredicate
         , substitution = []
         }

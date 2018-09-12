@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Simplification.Ceil
     ( simplify
     , makeEvaluate
+    , makeEvaluateTerm
     , simplifyEvaluated
     ) where
 
@@ -154,6 +155,8 @@ makeEvaluateNonBoolCeil
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
+{-| Evaluates the ceil of a PureMLPattern, see 'simplify' for details.
+-}
 makeEvaluateTerm
     ::  ( MetaOrObject level
         , SortedVariable variable

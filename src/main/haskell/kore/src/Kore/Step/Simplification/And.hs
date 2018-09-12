@@ -63,12 +63,12 @@ When we 'and' two terms:
 by Proposition 5.24 from (1),
     x and functional-pattern = functional-pattern and [x=phi]
 We can generalize that to:
-    x and function-like pattern
+    x and function-pattern
         = function-pattern and ceil(function-pattern) and [x=phi]
         but note that ceil(function-pattern) is not actually needed.
 We can still generalize that to:
-    function1 and function2
-        = function1 == function2
+    function-like-pattern1 and function-like-pattern2
+        = function-pattern1 and function-pattern1 == function-pattern2
 Also, we have
     constructor1(s1, ..., sk) and constructor2(t1, ..., tk):
         if constructor1 != constructor2 then this is bottom

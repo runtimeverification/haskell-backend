@@ -9,11 +9,14 @@ Portability : portable
 -}
 module Kore.Step.Simplification.AndTerms
     ( termAnd
+    , termEquals
     , termUnification
     ) where
 
 import Control.Exception
        ( assert )
+import Data.Functor.Foldable
+       ( project )
 import Data.Maybe
        ( fromMaybe )
 import Data.Reflection
@@ -25,7 +28,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkApp, mkBottom )
+                 ( mkAnd, mkApp, mkBottom, mkTop )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern App_, pattern Bottom_, pattern CharLiteral_,
                  pattern DV_, pattern StringLiteral_, pattern Top_,
@@ -35,16 +38,18 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern),
                  PredicateSubstitution (PredicateSubstitution) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), fromPurePattern )
+                 ( ExpandedPattern (..), bottom, fromPurePattern )
 import           Kore.Step.PatternAttributes
-                 ( isFunctionPattern )
+                 ( isConstructorLikeTop, isFunctionPattern )
+import qualified Kore.Step.Simplification.Ceil as Ceil
+                 ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
@@ -60,7 +65,128 @@ import           Kore.Variables.Fresh.IntCounter
 import           Kore.Variables.Int
                  ( IntVariable )
 
-{-| unification for two terms. Note that, most likely, you do not want
+data SimplificationType = SimplifyAnd | SimplifyEquals
+
+{-| equals for two terms. It assumes that this will be part of a predicate
+which has a special condition for testing bottom=bottom equality.
+
+This is very similar to termAnd.
+
+The comment for 'Kore.Step.Simplification.And.simplify' describes all
+the special cases handled by this.
+-}
+termEquals
+    ::  ( MetaOrObject level
+        , Hashable variable
+        , IntVariable variable
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable level)
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> Maybe
+        (IntCounter (ExpandedPattern level variable, SimplificationProof level))
+termEquals tools first second = do  -- Maybe monad
+    result <-termEqualsAnd tools first second
+    return $ do  -- IntCounter monad
+        (patt, _pred) <- result
+        return (patt {ExpandedPattern.term = mkTop}, SimplificationProof)
+
+termEqualsAnd
+    ::  ( MetaOrObject level
+        , Hashable variable
+        , IntVariable variable
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable level)
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> Maybe
+        (IntCounter (ExpandedPattern level variable, SimplificationProof level))
+termEqualsAnd tools =
+    maybeTermEquals
+        tools
+        (\p1 p2 -> Just $ termEqualsAndChild tools p1 p2)
+
+termEqualsAndChild
+    ::  ( MetaOrObject level
+        , Hashable variable
+        , IntVariable variable
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable level)
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> IntCounter (ExpandedPattern level variable, SimplificationProof level)
+termEqualsAndChild tools first second =
+    fromMaybe
+        (give (MetadataTools.sortTools tools) $
+            return
+                ( ExpandedPattern
+                    { term = mkTop
+                    , predicate = makeEqualsPredicate first second
+                    , substitution = []
+                    }
+                , SimplificationProof
+                )
+        )
+        (maybeTermEquals
+            tools
+            (\p1 p2 -> Just $ termEqualsAndChild tools p1 p2)
+            first
+            second
+        )
+
+maybeTermEquals
+    ::  ( MetaOrObject level
+        , Hashable variable
+        , IntVariable variable
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable level)
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> TermSimplifier level variable
+    -- ^ Used to simplify subterm "and".
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> Maybe
+        ( IntCounter (ExpandedPattern level variable
+        , SimplificationProof level)
+        )
+maybeTermEquals =
+    maybeTransformTerm
+        [ liftET equalAndEquals
+        , lift   (variableFunctionAndEquals SimplifyEquals)
+        , lift   (functionVariableAndEquals SimplifyEquals)
+        ,        equalInjectiveHeadsAndEquals
+        , liftE  sortInjectionAndEqualsAssumesDifferentHeads
+        , liftE  constructorSortInjectionAndEquals
+        , liftE  constructorAndEqualsAssumesDifferentHeads
+        , liftET domainValueAndEqualsAssumesDifferent
+        , liftET stringLiteralAndEqualsAssumesDifferent
+        , liftET charLiteralAndEqualsAssumesDifferent
+        ]
+  where
+    lift = transformerLift
+    liftE = lift . toExpanded
+    liftET = liftE . addToolsArg
+
+{-| unification for two terms. Note that, most likely, we do not want
 to throw away the term, since the substitution part relies on it being
 non-bottom.
 
@@ -69,7 +195,7 @@ The main difference from 'termAnd' is that termUnification does not make an
 Nothing instead. Arguably, they should be the same.
 
 The comment for 'Kore.Step.Simplification.And.simplify' describes all
-the special cases that this handles.
+the special cases handled by this.
 -}
 termUnification
     ::  ( MetaOrObject level
@@ -93,7 +219,7 @@ termUnification tools =
 
 {-| "and" simplification for two terms. The comment for
 'Kore.Step.Simplification.And.simplify' describes all the special cases
-that this handles.
+handled by this.
 -}
 termAnd
     ::  ( MetaOrObject level
@@ -151,66 +277,138 @@ maybeTermAnd
         ( IntCounter (ExpandedPattern level variable
         , SimplificationProof level)
         )
-maybeTermAnd tools termMerger first second =
-    firstHandledWithDefault
-        Nothing
-        [ liftPurePattern $
-            boolAnd first second
-        , liftPurePattern $
-            equalAnd first second
-        , liftExpandedPattern $
-            variableFunctionAnd tools first second
-        , liftExpandedPattern $
-            -- Note that when doing actual proofs one can't just reverse the
-            -- order of first and second, so this needs to be changed.
-            variableFunctionAnd tools second first
-        , equalInjectiveHeadsAnd tools termMerger first second
-        , liftPurePattern $
-            sortInjectionAndAssumesDifferentHeads tools first second
-        , liftPurePattern $
-            constructorSortInjectionAnd tools first second
-        , liftPurePattern $
-            constructorAndAssumesDifferentHeads tools first second
-        , liftPurePattern $
-            domainValueAndAssumesDifferent first second
-        , liftPurePattern$
-            stringLiteralAndAssumesDifferent first second
-        , liftPurePattern $
-            charLiteralAndAssumesDifferent first second
+maybeTermAnd =
+    maybeTransformTerm
+        [ liftET boolAnd
+        , liftET equalAndEquals
+        , lift (variableFunctionAndEquals SimplifyAnd)
+        , lift (functionVariableAndEquals SimplifyAnd)
+        , equalInjectiveHeadsAndEquals
+        , liftE sortInjectionAndEqualsAssumesDifferentHeads
+        , liftE constructorSortInjectionAndEquals
+        , liftE constructorAndEqualsAssumesDifferentHeads
+        , liftET domainValueAndEqualsAssumesDifferent
+        , liftET stringLiteralAndEqualsAssumesDifferent
+        , liftET charLiteralAndEqualsAssumesDifferent
+        , lift functionAnd
         ]
   where
-    liftPurePattern
-        :: MetaOrObject level
-        => FunctionResult
+    lift = transformerLift
+    liftE = lift . toExpanded
+    liftET = liftE . addToolsArg
+
+type TermTransformation level variable =
+    (  MetadataTools level StepperAttributes
+    -> TermSimplifier level variable
+    -- ^ Used to simplify subterm "and".
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> FunctionResult
+        (Maybe
+            ( IntCounter (ExpandedPattern level variable
+            , SimplificationProof level)
+            )
+        )
+    )
+
+maybeTransformTerm
+    ::  ( MetaOrObject level
+        , Hashable variable
+        , IntVariable variable
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable level)
+        , SortedVariable variable
+        )
+    => [TermTransformation level variable]
+    -> MetadataTools level StepperAttributes
+    -> TermSimplifier level variable
+    -- ^ Used to simplify subterm pairs.
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> Maybe
+        ( IntCounter (ExpandedPattern level variable
+        , SimplificationProof level)
+        )
+maybeTransformTerm topTransformers tools childTransformers first second =
+    firstHandledWithDefault
+        Nothing
+        (map (\f -> f tools childTransformers first second) topTransformers)
+
+addToolsArg
+    ::  (  PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> FunctionResult
             (PureMLPattern level variable, SimplificationProof level)
+        )
+    ->  (  MetadataTools level StepperAttributes
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
         -> FunctionResult
-            ( Maybe
-                ( IntCounter
-                    ( ExpandedPattern level variable
-                    , SimplificationProof level
-                    )
-                )
-            )
-    liftPurePattern (Handled (patt, proof)) =
-        Handled $ Just $ return
-            ( ExpandedPattern.fromPurePattern patt
-            , proof
-            )
-    liftPurePattern NotHandled = NotHandled
-    liftExpandedPattern
-        :: FunctionResult
+            (PureMLPattern level variable, SimplificationProof level)
+        )
+addToolsArg = pure
+
+toExpanded
+    :: MetaOrObject level
+    =>   (  MetadataTools level StepperAttributes
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> FunctionResult
+            (PureMLPattern level variable, SimplificationProof level)
+        )
+    ->  (  MetadataTools level StepperAttributes
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> FunctionResult
             (ExpandedPattern level variable, SimplificationProof level)
+        )
+toExpanded transformer tools first second =
+    case transformer tools first second of
+        NotHandled -> NotHandled
+        Handled (Bottom_ _, _proof) ->
+            Handled (ExpandedPattern.bottom, SimplificationProof)
+        Handled (term, _proof) ->
+            Handled
+                ( ExpandedPattern
+                    { term = term
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                , SimplificationProof
+                )
+
+transformerLift
+    ::  (  MetadataTools level StepperAttributes
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
         -> FunctionResult
-            (Maybe
-                ( IntCounter
-                    ( ExpandedPattern level variable
-                    , SimplificationProof level
-                    )
+            (ExpandedPattern level variable, SimplificationProof level)
+        )
+    -> TermTransformation level variable
+transformerLift
+    transformation
+    tools
+    _childSimplifier
+    first
+    second
+  = liftExpandedPattern (transformation tools first second)
+
+liftExpandedPattern
+    :: FunctionResult
+        (ExpandedPattern level variable, SimplificationProof level)
+    -> FunctionResult
+        (Maybe
+            ( IntCounter
+                ( ExpandedPattern level variable
+                , SimplificationProof level
                 )
             )
-    liftExpandedPattern (Handled (patt, proof)) =
-        Handled $ Just $ return (patt, proof)
-    liftExpandedPattern NotHandled = NotHandled
+        )
+liftExpandedPattern (Handled (patt, proof)) =
+    Handled $ Just $ return (patt, proof)
+liftExpandedPattern NotHandled = NotHandled
 
 firstHandledWithDefault
     :: a -> [FunctionResult a] -> a
@@ -241,7 +439,7 @@ boolAnd first second =
 
 Returns NotHandled if it could not handle the input.
 -}
-equalAnd
+equalAndEquals
     ::  ( Eq (variable level)
         , Eq (variable Object)
         , MetaOrObject level
@@ -249,23 +447,29 @@ equalAnd
     => PureMLPattern level variable
     -> PureMLPattern level variable
     -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
-equalAnd first second
+equalAndEquals first second
   | first == second =
     Handled (first, SimplificationProof)
-equalAnd _ _ = NotHandled
+equalAndEquals _ _ = NotHandled
 
 {-| And simplification for `variable and function`.
 
 Returns NotHandled if it could not handle the input.
 -}
-variableFunctionAnd
-    :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+variableFunctionAndEquals
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        )
+    => SimplificationType
+    -> MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> FunctionResult
         (ExpandedPattern level variable, SimplificationProof level)
-variableFunctionAnd
+variableFunctionAndEquals
+    simplificationType
     tools
     (Var_ v)
     second
@@ -276,15 +480,44 @@ variableFunctionAnd
         Handled
             ( ExpandedPattern
                 { term = second  -- different for Equals
-                -- Ceil predicate not needed since first being bottom will make
-                -- the entire term bottom. However, one must be careful to not
-                -- just drop the term.
-                , predicate = makeTruePredicate
+                , predicate =
+                    case simplificationType of
+                        -- Ceil predicate not needed since 'second' being bottom
+                        -- will make the entire term bottom. However, one must
+                        -- be careful to not just drop the term.
+                        SimplifyAnd ->
+                            makeTruePredicate
+                        SimplifyEquals ->
+                            case Ceil.makeEvaluateTerm tools second of
+                                (pred', _proof) -> pred'
                 , substitution = [(v, second)]
                 }
             , SimplificationProof
             )
-variableFunctionAnd _ _ _ = NotHandled
+variableFunctionAndEquals _ _ _ _ = NotHandled
+
+{-| And simplification for `function and variable`.
+
+Returns NotHandled if it could not handle the input.
+-}
+functionVariableAndEquals
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        )
+    => SimplificationType
+    -> MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> FunctionResult
+        (ExpandedPattern level variable, SimplificationProof level)
+functionVariableAndEquals
+    simplificationType
+    tools
+    first
+    second
+  = variableFunctionAndEquals simplificationType tools second first
 
 {-| And simplification for patterns with identical injective heads.
 
@@ -292,7 +525,7 @@ This includes constructors and sort injections.
 
 Returns NotHandled if it could not handle the input.
 -}
-equalInjectiveHeadsAnd
+equalInjectiveHeadsAndEquals
     ::  ( MetaOrObject level
         , Hashable variable
         , IntVariable variable
@@ -313,7 +546,7 @@ equalInjectiveHeadsAnd
             , SimplificationProof level)
             )
         )
-equalInjectiveHeadsAnd
+equalInjectiveHeadsAndEquals
     tools
     termMerger
     (App_ firstHead firstChildren)
@@ -347,7 +580,7 @@ equalInjectiveHeadsAnd
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools firstHead
-equalInjectiveHeadsAnd _ _ _ _ = NotHandled
+equalInjectiveHeadsAndEquals _ _ _ _ = NotHandled
 
 {-| And simplification for patterns with sortInjection heads.
 
@@ -356,7 +589,7 @@ to be different.
 
 Returns NotHandled if it could not handle the input.
 -}
-sortInjectionAndAssumesDifferentHeads
+sortInjectionAndEqualsAssumesDifferentHeads
     ::  ( Eq (variable Object)
         , MetaOrObject level
         )
@@ -364,26 +597,33 @@ sortInjectionAndAssumesDifferentHeads
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
-sortInjectionAndAssumesDifferentHeads
+sortInjectionAndEqualsAssumesDifferentHeads
     tools
-    (App_ firstHead _)
-    (App_ secondHead _)
+    (App_ firstHead [firstChild])
+    (App_ secondHead [secondChild])
   | StepperAttributes.isSortInjection firstHeadAttributes
     && StepperAttributes.isSortInjection secondHeadAttributes
+    && isConstructorLikeTop tools (project firstChild)
+    && isConstructorLikeTop tools (project secondChild)
   =
     assert (firstHead /= secondHead) $
+        -- TODO(virgil): This is copied from the unification code, but
+        -- it's not obvious that this is correct.
+        -- It should work for two constructors, but it may not work
+        -- for domainvalue-domainvalue pairs - can't these be obtained
+        -- through sort injections?
         Handled (mkBottom, SimplificationProof)
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools firstHead
-sortInjectionAndAssumesDifferentHeads _ _ _ = NotHandled
+sortInjectionAndEqualsAssumesDifferentHeads _ _ _ = NotHandled
 
 {-| And simplification for patterns with constructor heads vs
 sortInjection heads.
 
 Returns NotHandled if it could not handle the input.
 -}
-constructorSortInjectionAnd
+constructorSortInjectionAndEquals
     ::  ( Eq (variable Object)
         , MetaOrObject level
         )
@@ -391,7 +631,7 @@ constructorSortInjectionAnd
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
-constructorSortInjectionAnd
+constructorSortInjectionAndEquals
     tools
     (App_ firstHead _)
     (App_ secondHead _)
@@ -407,7 +647,7 @@ constructorSortInjectionAnd
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools firstHead
-constructorSortInjectionAnd _ _ _ = NotHandled
+constructorSortInjectionAndEquals _ _ _ = NotHandled
 
 {-| And simplification for patterns with constructor heads.
 
@@ -416,7 +656,7 @@ to be different.
 
 Returns NotHandled if it could not handle the input.
 -}
-constructorAndAssumesDifferentHeads
+constructorAndEqualsAssumesDifferentHeads
     ::  ( Eq (variable Object)
         , MetaOrObject level
         )
@@ -424,7 +664,7 @@ constructorAndAssumesDifferentHeads
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
-constructorAndAssumesDifferentHeads
+constructorAndEqualsAssumesDifferentHeads
     tools
     (App_ firstHead _)
     (App_ secondHead _)
@@ -436,7 +676,7 @@ constructorAndAssumesDifferentHeads
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools firstHead
-constructorAndAssumesDifferentHeads _ _ _ = NotHandled
+constructorAndEqualsAssumesDifferentHeads _ _ _ = NotHandled
 
 {-| And simplification for domain values.
 
@@ -445,18 +685,18 @@ to be different.
 
 Returns NotHandled if it could not handle the input.
 -}
-domainValueAndAssumesDifferent
+domainValueAndEqualsAssumesDifferent
     :: Eq (variable Object)
     => PureMLPattern level variable
     -> PureMLPattern level variable
     -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
-domainValueAndAssumesDifferent
+domainValueAndEqualsAssumesDifferent
     first@(DV_ _ (StringLiteral_ _))
     second@(DV_ _ (StringLiteral_ _))
   =
     assert (first /= second) $
         Handled (mkBottom, SimplificationProof)
-domainValueAndAssumesDifferent _ _ = NotHandled
+domainValueAndEqualsAssumesDifferent _ _ = NotHandled
 
 {-| And simplification for string literals.
 
@@ -465,18 +705,18 @@ to be different.
 
 Returns NotHandled if it could not handle the input.
 -}
-stringLiteralAndAssumesDifferent
+stringLiteralAndEqualsAssumesDifferent
     :: Eq (variable Meta)
     => PureMLPattern level variable
     -> PureMLPattern level variable
     -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
-stringLiteralAndAssumesDifferent
+stringLiteralAndEqualsAssumesDifferent
     first@(StringLiteral_ _)
     second@(StringLiteral_ _)
   =
     assert (first /= second) $
         Handled (mkBottom, SimplificationProof)
-stringLiteralAndAssumesDifferent _ _ = NotHandled
+stringLiteralAndEqualsAssumesDifferent _ _ = NotHandled
 
 {-| And simplification for char literals.
 
@@ -485,15 +725,52 @@ to be different.
 
 Returns NotHandled if it could not handle the input.
 -}
-charLiteralAndAssumesDifferent
+charLiteralAndEqualsAssumesDifferent
     :: Eq (variable Meta)
     => PureMLPattern level variable
     -> PureMLPattern level variable
     -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
-charLiteralAndAssumesDifferent
+charLiteralAndEqualsAssumesDifferent
     first@(CharLiteral_ _)
     second@(CharLiteral_ _)
   =
     assert (first /= second) $
         Handled (mkBottom, SimplificationProof)
-charLiteralAndAssumesDifferent _ _ = NotHandled
+charLiteralAndEqualsAssumesDifferent _ _ = NotHandled
+
+{-| And simplification for `function and function`.
+
+Returns NotHandled if it could not handle the input.
+-}
+functionAnd
+    ::  ( MetaOrObject level
+        , Show (variable level)
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> FunctionResult
+        (ExpandedPattern level variable, SimplificationProof level)
+functionAnd
+    tools
+    first
+    second
+  = case isFunctionPattern tools first of
+    Left _ -> NotHandled
+    Right _proof ->
+        case isFunctionPattern tools second of
+            Left _ -> NotHandled
+            Right _proof ->
+                Handled
+                    ( ExpandedPattern
+                        { term = first  -- different for Equals
+                        -- Ceil predicate not needed since first being
+                        -- bottom will make the entire term bottom. However,
+                        -- one must be careful to not just drop the term.
+                        , predicate = give (MetadataTools.sortTools tools) $
+                            makeEqualsPredicate first second
+                        , substitution = []
+                        }
+                    , SimplificationProof
+                    )

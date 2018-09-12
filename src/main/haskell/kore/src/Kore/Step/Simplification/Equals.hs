@@ -12,17 +12,11 @@ module Kore.Step.Simplification.Equals
     , simplify
     ) where
 
-import Control.Exception
-       ( assert )
-import Control.Monad
-       ( foldM, zipWithM )
 import Data.Maybe
        ( fromMaybe, isNothing )
 import Data.Reflection
        ( give )
 
-import           Data.Maybe.Tools
-                 ( firstMaybe )
 import           Kore.AST.Common
                  ( Equals (..), SortedVariable )
 import           Kore.AST.MetaOrObject
@@ -31,14 +25,13 @@ import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
 import           Kore.ASTUtils.SmartPatterns
-                 ( pattern App_, pattern Top_ )
+                 ( pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue, makeEqualsPredicate,
-                 makeTruePredicate )
+                 ( pattern PredicateTrue, makeEqualsPredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -47,12 +40,10 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, toExpandedPattern )
-import           Kore.Step.PatternAttributes
-                 ( isFunctionPattern )
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
-                 ( termUnification )
+                 ( termEquals )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate )
 import           Kore.Step.Simplification.Data
@@ -65,8 +56,6 @@ import qualified Kore.Step.Simplification.Or as Or
                  ( simplifyEvaluated )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import qualified Kore.Step.StepperAttributes as StepperAttributes
-                 ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Int
@@ -340,121 +329,12 @@ makeEvaluateTermsAssumesNoBottomMaybe
         (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
-makeEvaluateTermsAssumesNoBottomMaybe
-    tools first second
-  | first == second =
-    Just $ return
-        ( OrOfExpandedPattern.make
-            [ ExpandedPattern
-                { term = mkTop
-                , predicate = makeTruePredicate
-                , substitution = []
-                }
-            ]
-        , SimplificationProof
-        )
-  | otherwise =
-    firstMaybe
-        [ makeEvaluateFunctionTermsAssumesNoBottom tools first second
-        , constructorOrInjectiveAtTheTopAssumesNoBottom tools first second
-        ]
-
-makeEvaluateFunctionTermsAssumesNoBottom
-    ::  ( MetaOrObject level
-        , Hashable variable
-        , IntVariable variable
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable level)
-        , SortedVariable variable
-        )
-    => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe
-        (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-        )
-makeEvaluateFunctionTermsAssumesNoBottom tools first second =
-    give tools $ case (firstIsFunction, secondIsFunction) of
-        (Right _firstProof, Right _secondProof) ->
-            do -- Maybe monad
-                -- TODO(virgil): consider using AndTerms.andTerm here.
-                result <- AndTerms.termUnification tools first second
-                return $ do -- Simplifier monad
-                    (patt, _proof) <- result
-                    return (Ceil.makeEvaluate tools patt)
-        _ -> Nothing
-  where
-    firstIsFunction = isFunctionPattern tools first
-    secondIsFunction = isFunctionPattern tools first
-
-constructorOrInjectiveAtTheTopAssumesNoBottom
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , IntVariable variable
-        , Hashable variable
-        )
-    => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe
-        (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-        )
-constructorOrInjectiveAtTheTopAssumesNoBottom
-    tools
-    (App_ firstSymbol firstChildren)
-    (App_ secondSymbol secondChildren)
-  | isInjective' firstSymbol
-    && isInjective' secondSymbol
-    && firstSymbol == secondSymbol
-  = Just $ do -- IntCounter monad
-        childrenEquals <-
-            zipWithM
-                (makeEvaluateTermsAssumesNoBottom tools)
-                firstChildren
-                secondChildren
-        (childrenAnd, _proof) <-
-            foldM
-                (combineWithAnd tools)
-                ( OrOfExpandedPattern.make [ExpandedPattern.top]
+makeEvaluateTermsAssumesNoBottomMaybe tools first second =
+    give tools $ do  -- Maybe monad
+        result <- AndTerms.termEquals tools first second
+        return $ do -- Simplifier monad
+            (patt, _proof) <- result
+            return
+                ( OrOfExpandedPattern.make [ patt ]
                 , SimplificationProof
                 )
-                childrenEquals
-        return (childrenAnd, SimplificationProof)
-  | isConstructor' firstSymbol && isConstructor' secondSymbol
-  = -- assuming firstSymbol /= secondSymbol, or first case would have applied
-    Just $ pure (OrOfExpandedPattern.make [], SimplificationProof)
-  where
-    -- TODO: Extract this somewhere.
-    isConstructor' symbolHead = assert (isInjective' symbolHead) $
-        StepperAttributes.isConstructor
-            (MetadataTools.symAttributes tools symbolHead)
-    isInjective' symbolHead =
-        StepperAttributes.isInjective
-            (MetadataTools.symAttributes tools symbolHead)
-
-    combineWithAnd
-        ::  ( MetaOrObject level
-            , SortedVariable variable
-            , Show (variable level)
-            , Ord (variable level)
-            , Ord (variable Meta)
-            , Ord (variable Object)
-            , IntVariable variable
-            , Hashable variable
-            )
-        => MetadataTools level StepperAttributes
-        -> (OrOfExpandedPattern level variable, SimplificationProof level)
-        -> (OrOfExpandedPattern level variable, SimplificationProof level)
-        -> Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-    combineWithAnd tools' (thing1, _proof1) (thing2, _proof2) =
-        And.simplifyEvaluated tools' thing1 thing2
-constructorOrInjectiveAtTheTopAssumesNoBottom _ _ _ = Nothing

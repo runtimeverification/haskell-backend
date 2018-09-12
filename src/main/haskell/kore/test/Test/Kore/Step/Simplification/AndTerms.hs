@@ -21,7 +21,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SortTools )
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -133,12 +133,13 @@ test_andTermsSimplification = give mockSortTools
     , testCase "injective head and"
         (do
             assertEqualWithExplanation "same head"
-                ( ExpandedPattern
-                    { term = Mock.injective10 (mkAnd fOfA gOfA)
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , Nothing
+                (let
+                    expected = ExpandedPattern
+                        { term = Mock.injective10 fOfA
+                        , predicate = makeEqualsPredicate fOfA gOfA
+                        , substitution = []
+                        }
+                  in (expected, Just expected)
                 )
                 (simplifyUnify
                     mockMetadataTools
@@ -176,14 +177,14 @@ test_andTermsSimplification = give mockSortTools
     , testCase "sortInjection and"
         (do
             assertEqualWithExplanation "same head"
-                ( ExpandedPattern
-                    { term =
-                        Mock.sortInjection10
-                            (mkAnd Mock.cfSort0 Mock.cgSort0)
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , Nothing
+                (let
+                    expected = ExpandedPattern
+                        { term = Mock.sortInjection10 Mock.cfSort0
+                        , predicate =
+                            makeEqualsPredicate Mock.cfSort0 Mock.cgSort0
+                        , substitution = []
+                        }
+                  in (expected, Just expected)
                 )
                 (simplifyUnify
                     mockMetadataTools
@@ -205,9 +206,25 @@ test_andTermsSimplification = give mockSortTools
                     (Mock.sortInjection10 Mock.cfSort0)
                     (Mock.sortInjection10 Mock.cfSort0)
                 )
-            assertEqualWithExplanation "different head"
+            assertEqualWithExplanation "different head constructors"
                 ( ExpandedPattern.bottom
                 , Just ExpandedPattern.bottom
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    (Mock.sortInjection10 Mock.aSort0)
+                    (Mock.sortInjection11 Mock.aSort1)
+                )
+            assertEqualWithExplanation "different head non-constructors"
+                ( ExpandedPattern
+                        { term =
+                            mkAnd
+                                (Mock.sortInjection10 Mock.cfSort0)
+                                (Mock.sortInjection11 Mock.cfSort1)
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                , Nothing
                 )
                 (simplifyUnify
                     mockMetadataTools
@@ -218,12 +235,13 @@ test_andTermsSimplification = give mockSortTools
     , testCase "constructor and"
         (do
             assertEqualWithExplanation "same head"
-                (ExpandedPattern
-                        { term = Mock.constr10 (mkAnd Mock.cf Mock.cg)
-                        , predicate = makeTruePredicate
+                (let
+                    expected = ExpandedPattern
+                        { term = Mock.constr10 Mock.cf
+                        , predicate = makeEqualsPredicate Mock.cf Mock.cg
                         , substitution = []
                         }
-                , Nothing
+                  in (expected, Just expected)
                 )
                 (simplifyUnify
                     mockMetadataTools
@@ -341,23 +359,40 @@ test_andTermsSimplification = give mockSortTools
                     (mkCharLiteral (CharLiteral 'b'))
                 )
         )
-    , testCase "unhandled cases"
+    , testCase "function and"
         (do
-            assertEqualWithExplanation "top level"
-                ( ExpandedPattern
-                    { term = mkAnd fOfA gOfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , Nothing
+            assertEqualWithExplanation "equal values"
+                (let
+                    expanded = ExpandedPattern
+                        { term = fOfA
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                  in (expanded, Just expanded)
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    fOfA fOfA
+                )
+            assertEqualWithExplanation "not equal values"
+                (let
+                    expanded = ExpandedPattern
+                        { term = fOfA
+                        , predicate = makeEqualsPredicate fOfA gOfA
+                        , substitution = []
+                        }
+                  in (expanded, Just expanded)
                 )
                 (simplifyUnify
                     mockMetadataTools
                     fOfA gOfA
                 )
-            assertEqualWithExplanation "one level deep"
+        )
+    , testCase "unhandled cases"
+        (do
+            assertEqualWithExplanation "top level"
                 ( ExpandedPattern
-                    { term = Mock.constr10 (mkAnd fOfA gOfA)
+                    { term = mkAnd plain0OfA plain1OfA
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -365,11 +400,25 @@ test_andTermsSimplification = give mockSortTools
                 )
                 (simplifyUnify
                     mockMetadataTools
-                    (Mock.constr10 fOfA) (Mock.constr10 gOfA)
+                    plain0OfA plain1OfA
+                )
+            assertEqualWithExplanation "one level deep"
+                ( ExpandedPattern
+                    { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                , Nothing
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    (Mock.constr10 plain0OfA) (Mock.constr10 plain1OfA)
                 )
             assertEqualWithExplanation "two levels deep"
                 ( ExpandedPattern
-                    { term = Mock.constr10 (Mock.constr10 (mkAnd fOfA gOfA))
+                    { term =
+                        Mock.constr10
+                            (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -377,15 +426,16 @@ test_andTermsSimplification = give mockSortTools
                 )
                 (simplifyUnify
                     mockMetadataTools
-                    (Mock.constr10 (Mock.constr10 fOfA))
-                    (Mock.constr10 (Mock.constr10 gOfA))
+                    (Mock.constr10 (Mock.constr10 plain0OfA))
+                    (Mock.constr10 (Mock.constr10 plain1OfA))
                 )
         )
-    , testCase "funct-constr(f(a), f(b)) vs funct-constr(g(a), g(b))"
+    , testCase "binary constructor of non-specialcased values"
         (assertEqualWithExplanation ""
             ( ExpandedPattern
                 { term =
-                    Mock.functionalConstr20 (mkAnd fOfA gOfA) (mkAnd fOfB gOfB)
+                    Mock.functionalConstr20
+                        (mkAnd plain0OfA plain1OfA) (mkAnd plain0OfB plain1OfB)
                 , predicate = makeTruePredicate
                 , substitution = []
                 }
@@ -393,8 +443,8 @@ test_andTermsSimplification = give mockSortTools
             )
             (simplifyUnify
                 mockMetadataTools
-                (Mock.functionalConstr20 fOfA fOfB)
-                (Mock.functionalConstr20 gOfA gOfB)
+                (Mock.functionalConstr20 plain0OfA plain0OfB)
+                (Mock.functionalConstr20 plain1OfA plain1OfB)
             )
         )
     ]
@@ -402,14 +452,20 @@ test_andTermsSimplification = give mockSortTools
 fOfA :: CommonPurePattern Object
 fOfA = give mockSortTools $ Mock.f Mock.a
 
-fOfB :: CommonPurePattern Object
-fOfB = give mockSortTools $ Mock.f Mock.b
-
 gOfA :: CommonPurePattern Object
 gOfA = give mockSortTools $ Mock.g Mock.a
 
-gOfB :: CommonPurePattern Object
-gOfB = give mockSortTools $ Mock.g Mock.b
+plain0OfA :: CommonPurePattern Object
+plain0OfA = give mockSortTools $ Mock.plain10 Mock.a
+
+plain1OfA :: CommonPurePattern Object
+plain1OfA = give mockSortTools $ Mock.plain11 Mock.a
+
+plain0OfB :: CommonPurePattern Object
+plain0OfB = give mockSortTools $ Mock.plain10 Mock.b
+
+plain1OfB :: CommonPurePattern Object
+plain1OfB = give mockSortTools $ Mock.plain11 Mock.b
 
 mockSortTools :: SortTools Object
 mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
