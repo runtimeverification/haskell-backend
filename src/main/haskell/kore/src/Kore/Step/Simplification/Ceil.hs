@@ -45,13 +45,13 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fmapFlattenWithPairs, make )
 import           Kore.Step.PatternAttributes
-                 ( isFunctionalPattern )
+                 ( isTotalPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( isTotal )
 
 {-| 'simplify' simplifies a 'Ceil' of 'OrOfExpandedPattern'.
 
@@ -179,14 +179,13 @@ makeEvaluateTerm
 makeEvaluateTerm
     tools
     term
-  | isFunctional tools term
+  | isTotal tools term
   =
     (makeTruePredicate, SimplificationProof)
 makeEvaluateTerm
     tools
     (App_ patternHead children)
-  | StepperAttributes.isFunctional headAttributes
-  -- Not including non-functional constructors here since they can be bottom.
+  | StepperAttributes.isTotal headAttributes
   =
     let
         (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) children)
@@ -205,9 +204,9 @@ makeEvaluateTerm
 
 -- TODO: Move these somewhere reasonable and remove all of their other
 -- definitions.
-isFunctional
+isTotal
     :: MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Bool
-isFunctional tools term =
-    isRight (isFunctionalPattern tools term)
+isTotal tools term =
+    isRight (isTotalPattern tools term)
