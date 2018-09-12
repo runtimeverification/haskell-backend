@@ -120,7 +120,7 @@ test_substitutionNormalization =
       in
         testCase "Simplest cycle"
             (assertEqual ""
-                (Left (CtorCircularVariableDependency [var1]))
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (v1 PatternSort)

@@ -41,7 +41,7 @@ import Kore.Step.PatternAttributes
        ( FunctionalProof (..) )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
-       ( SubstitutionError (..) )
+       ( SubstitutionError (..), UnificationError(..) )
 import Kore.Unification.Unifier
        ( UnificationProof (..) )
 import Kore.Variables.Fresh.IntCounter
@@ -526,8 +526,8 @@ test_baseStep =
         )
     -- sigma(sigma(x, x), sigma(y, y)) -> sigma(x, y)
     -- vs
-    -- sigma(sigma(a, f(b)), sigma(b, a))
-    -- Expected: Error because a=f(b) and b=a.
+    -- sigma(sigma(a, f(b)), sigma(a, b))
+    -- Expected: Error because a=f(b) and a=b.
     , testCase "Impossible substitution."
         (assertEqualWithExplanation ""
             (Right ExpandedPattern
@@ -536,7 +536,7 @@ test_baseStep =
                 , substitution = []
                 }
             )
-            (fst <$> runStep
+            (fst <$> runStepTwice
                 mockMetadataTools
                 ExpandedPattern
                     { term =
@@ -586,7 +586,7 @@ test_baseStep =
                 , substitution = []
                 }
             )
-            (fst <$> runStep
+            (fst <$> runStepTwice
                 mockMetadataTools
                 ExpandedPattern
                     { term =
@@ -623,12 +623,10 @@ test_baseStep =
     -- Expected: Error because a=h(b) and b=a.
     , testCase "Impossible substitution (non-ctor)."
         (assertEqualWithExplanation ""
-            (Left $ StepErrorSubstitution
-                (NonCtorCircularVariableDependency
-                    [ asMetaVariable (b1 PatternSort) ]
-                )
+            (Left $ StepErrorUnification
+                (NonConstructorHead hSymbol)
             )
-            (fst <$> runStep
+            (fst <$> runStepTwice
                 mockMetadataTools
                 ExpandedPattern
                     { term =
@@ -1291,3 +1289,15 @@ runStep metadataTools configuration axiom =
     case give metadataTools (stepWithAxiom metadataTools configuration axiom) of
         Left err            -> Left (fst (runIntCounter err 0))
         Right counterResult -> Right (fst (runIntCounter counterResult 0))
+
+runStepTwice
+    :: MetaOrObject level
+    => MetadataTools level StepperAttributes
+    -> CommonExpandedPattern level
+    -> AxiomPattern level
+    -> Either
+        (StepError level Variable)
+        (CommonExpandedPattern level, StepProof level)
+runStepTwice metadataTools configuration axiom =
+    runStep metadataTools configuration axiom
+        >>= (\(configuration', _) -> runStep metadataTools configuration' axiom)

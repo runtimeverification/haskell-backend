@@ -16,6 +16,8 @@ import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.Parser.CString
        ( escapeCString )
+import Kore.Predicate.Predicate
+import Kore.Step.ExpandedPattern
 import Kore.Step.PatternAttributes
 import Kore.Unification.Unifier
 
@@ -23,6 +25,7 @@ import Data.String
        ( fromString )
 import Data.Text.Prettyprint.Doc as Doc
 import Data.Text.Prettyprint.Doc.Render.String
+import Unsafe.Coerce (unsafeCoerce)
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
@@ -774,3 +777,15 @@ instance (MetaOrObject level, PrettyPrint (variable level))
         writeOneFieldStruct flags "FunctionalStringLiteral" l
     prettyPrint flags (FunctionalCharLiteral l) =
         writeOneFieldStruct flags "FunctionalCharLiteral" l
+
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (Predicate level variable)
+  where
+    prettyPrint flags pat =
+        prettyPrint flags (unsafeCoerce pat :: PureMLPattern level variable)
+
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (ExpandedPattern level variable)
+  where
+    prettyPrint flags (ExpandedPattern t p s) =
+        writeThreeFieldStruct flags "ExpandedPattern" t p s
