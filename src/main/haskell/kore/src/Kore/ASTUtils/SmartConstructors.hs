@@ -18,7 +18,7 @@ module Kore.ASTUtils.SmartConstructors
     ( -- * Utility funcs for dealing with sorts
       getSort
     , forceSort
-    , flexibleSort
+    , predicateSort
     , isRigid
     , isFlexible
     , makeSortsAgree
@@ -87,10 +87,10 @@ getSort x = getPatternResultSort given $ project x
 -- But we don't know yet where it's going to be attached.
 -- No particular way to avoid this, unfortunately.
 -- This will probably happen often during proof routines.
-flexibleSort
+predicateSort
     :: MetaOrObject level
     => Sort level
-flexibleSort = mkSort "*"
+predicateSort = mkSort "PREDICATE"
 
 patternLens
     :: (Applicative f, MetaOrObject level)
@@ -235,7 +235,7 @@ makeSortsAgree
 makeSortsAgree ps =
     forM ps $ forceSort $
         case asum $ getRigidSort <$> ps of
-          Nothing -> flexibleSort
+          Nothing -> predicateSort
           Just a  -> a
 
 getRigidSort
@@ -243,7 +243,7 @@ getRigidSort
     => PureMLPattern level var
     -> Maybe (Sort level)
 getRigidSort p =
-    case forceSort flexibleSort p of
+    case forceSort predicateSort p of
       Nothing -> Just $ getSort p
       Just _  -> Nothing
 
@@ -260,13 +260,13 @@ ensureSortAgreement
     -> PureMLPattern level var
 ensureSortAgreement p =
   case makeSortsAgree $ p ^. partsOf allChildren of
-    Just []    -> p & resultSort .~ flexibleSort
+    Just []    -> p & resultSort .~ predicateSort
     Just children ->
       p & (partsOf allChildren) .~ children
         & inputSort  .~ childSort
         & resultSort .~ (
           if isFlexible p
-            then flexibleSort
+            then predicateSort
             else childSort
           )
       where childSort = getSort $ head children
@@ -294,13 +294,13 @@ mkApp = App_
 mkBottom
     :: MetaOrObject level
     => PureMLPattern level var
-mkBottom = Bottom_ flexibleSort
+mkBottom = Bottom_ predicateSort
 
 mkCeil
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => PureMLPattern level var
     -> PureMLPattern level var
-mkCeil a = Ceil_ (getSort a) flexibleSort a
+mkCeil a = Ceil_ (getSort a) predicateSort a
 
 mkDomainValue
     :: (MetaOrObject Object, Given (SortTools Object))
@@ -419,7 +419,7 @@ mkRewrites a b = ensureSortAgreement $ Rewrites_ fixmeSort a b
 mkTop
     :: MetaOrObject level
     => PureMLPattern level var
-mkTop = Top_ flexibleSort
+mkTop = Top_ predicateSort
 
 mkVar
     :: (MetaOrObject level, Given (SortTools level))
