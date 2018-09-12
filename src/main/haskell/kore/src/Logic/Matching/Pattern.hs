@@ -182,8 +182,8 @@ instance (IsSignature sig, Eq (Sort sig)) =>
 instance (Applicative f) => FromPattern (f (Pattern sort label var)) sort label var where
     fromPattern p = Fix <$> sequenceA p
 
-pattern domain VariableP :: (ToPattern p sort label var) => sort -> var -> p
-pattern domain VariableP sort var <- (toPattern -> Variable sort var)
+pattern VariableP :: (ToPattern p sort label var) => sort -> var -> p
+pattern VariableP sort var <- (toPattern -> Variable sort var)
 
 pattern ApplicationP :: (ToPattern p sort label var) => label -> [p] -> p
 pattern ApplicationP label args <- (toPattern -> Application label args)

@@ -17,7 +17,7 @@ import           Data.Reflection
                  ( give )
 
 import           Kore.AST.Common
-                 ( Application (..), Pattern (..), SortedVariable )
+                 ( Application (..), Pattern (..), SortedVariable, KoreDomain )
 import           Kore.AST.MetaOrObject
                  ( Meta, MetaOrObject, Object )
 import           Kore.AST.PureML
@@ -46,7 +46,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( CommonPureMLPatternSimplifier, PureMLPatternSimplifier (..),
-                 SimplificationProof (..), Simplifier )
+                   Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -63,16 +63,16 @@ The function is assumed to be defined through an axiom.
 -}
 axiomFunctionEvaluator
     ::  ( MetaOrObject level)
-    => AxiomPattern level domain
+    => AxiomPattern level KoreDomain
     -- ^ Axiom defining the current function.
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> CommonPureMLPatternSimplifier domain level
+    -> CommonPureMLPatternSimplifier level KoreDomain
     -- ^ Evaluates functions in patterns
-    -> Application level (CommonPurePattern level domain)
+    -> Application level (CommonPurePattern level KoreDomain)
     -- ^ The function on which to evaluate the current function.
-    -> Simplifier (CommonAttemptedFunction level domain, SimplificationProof level)
+    -> Simplifier (CommonAttemptedFunction level KoreDomain, ())
 axiomFunctionEvaluator
     axiom
     tools
@@ -81,10 +81,10 @@ axiomFunctionEvaluator
   =
     case stepResult of
         Left _ ->
-            return (AttemptedFunction.NotApplicable, SimplificationProof)
-        Right stepPatternWithProof ->
+            return (AttemptedFunction.NotApplicable, ())
+        Right stepPattern ->
             do
-                (stepPattern, _) <- Except.lift stepPatternWithProof
+                (stepPattern, _) <- Except.lift stepPattern
                 (   rewrittenPattern@ExpandedPattern
                         { predicate = rewritingCondition }
                     , _
@@ -94,7 +94,7 @@ axiomFunctionEvaluator
                         return
                             ( AttemptedFunction.Applied
                                 (OrOfExpandedPattern.make [])
-                            , SimplificationProof
+                            , ()
                             )
                     _ ->
                         reevaluateFunctions
@@ -138,7 +138,7 @@ reevaluateFunctions
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level domain variable
     -- ^ Function evaluation result.
-    -> Simplifier (AttemptedFunction level domain variable, SimplificationProof level)
+    -> Simplifier (AttemptedFunction level domain variable, ())
 reevaluateFunctions
     tools
     wrappedSimplifier@(PureMLPatternSimplifier simplifier)
@@ -148,13 +148,13 @@ reevaluateFunctions
         , substitution = rewrittenSubstitution
         }
   = do
-    (pattOr , _proof) <-
+    (pattOr , ()) <-
         -- TODO(virgil): This call should be done in Evaluator.hs, but,
         -- for optimization purposes, it's done here. Make sure that
         -- this still makes sense after the evaluation code is fully
         -- optimized.
         simplifier rewrittenPattern
-    (mergedPatt, _proof) <-
+    (mergedPatt, _) <-
         OrOfExpandedPattern.mergeWithPredicateSubstitution
             tools
             wrappedSimplifier
@@ -169,7 +169,7 @@ reevaluateFunctions
             mergedPatt
     return
         ( AttemptedFunction.Applied evaluatedPatt
-        , SimplificationProof
+        , ()
         )
 
 evaluatePredicate
@@ -189,7 +189,7 @@ evaluatePredicate
     -- ^ Evaluates functions in a pattern.
     -> ExpandedPattern level domain variable
     -- ^ The condition to be evaluated.
-    -> Simplifier (ExpandedPattern level domain variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level domain variable, ())
 evaluatePredicate
     tools
     simplifier
@@ -199,13 +199,13 @@ evaluatePredicate
             { predicate = evaluatedPredicate
             , substitution = evaluatedSubstitution
             }
-        , _proof
+        , _
         ) <- give (sortTools tools) Predicate.evaluate simplifier predicate
     (   PredicateSubstitution
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , _proof
+        , _
         ) <- Except.lift
             (mergePredicatesAndSubstitutions
                 tools
@@ -219,5 +219,5 @@ evaluatePredicate
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , SimplificationProof
+        , ()
         )

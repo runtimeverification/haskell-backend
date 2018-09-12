@@ -384,7 +384,7 @@ sortVisibilityTests =
                             , variableSort = sort
                             }
                         , existsChild = asKorePattern
-                            ( VariablePattern domain Variable
+                            ( VariablePattern Variable
                                 { variableName = testId "var"
                                 , variableSort = sort
                                 }

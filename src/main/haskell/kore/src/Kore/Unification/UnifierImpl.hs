@@ -30,7 +30,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
 import Kore.Step.PatternAttributes
-       ( FunctionalProof (..), isFunctionalPattern )
+       ( isFunctionalPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
@@ -98,89 +98,6 @@ unificationSolutionToPurePattern tools ucp =
             , equalsSecond = p
             }
 
--- |'UnificationProof' is meant to represent proof term stubs for various
--- steps performed during unification
--- TODO: replace this datastructures with proper ones representing
--- both hypotheses and conclusions in the proof object.
-data UnificationProof level domain variable
-    = EmptyUnificationProof
-    -- ^Empty proof (nothing to prove)
-    | CombinedUnificationProof [UnificationProof level domain variable]
-    -- ^Putting multiple proofs together
-    | ConjunctionIdempotency (PureMLPattern level domain variable)
-    -- ^Used to specify the reduction a/\a <-> a
-    | Proposition_5_24_3
-        [FunctionalProof level domain variable]
-        (variable level)
-        (PureMLPattern level domain variable)
-    -- ^Used to specify the application of Proposition 5.24 (3)
-    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-    -- if ϕ and ϕ' are functional patterns, then
-    -- |= (ϕ ∧ ϕ') = (ϕ ∧ (ϕ = ϕ'))
-    | AndDistributionAndConstraintLifting
-        (SymbolOrAlias level)
-        [UnificationProof level domain variable]
-    -- ^Used to specify both the application of the constructor axiom
-    -- c(x1, .., xn) /\ c(y1, ..., yn) -> c(x1 /\ y1, ..., xn /\ yn)
-    -- and of Proposition 5.12 (Constraint propagation) after unification:
-    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.2
-    -- if ϕ is a predicate, then:
-    -- |= c(ϕ1, ..., ϕi /\ ϕ, ..., ϕn) = c(ϕ1, ..., ϕi, ..., ϕn) /\ ϕ
-    | SubstitutionMerge
-        (variable level)
-        (PureMLPattern level domain variable)
-        (PureMLPattern level domain variable)
-    -- ^Specifies the merging of (x = t1) /\ (x = t2) into x = (t1 /\ t2)
-    -- Semantics of K, 7.7.1:
-    -- (Equality Elimination). |- (ϕ1 = ϕ2) → (ψ[ϕ1/v] → ψ[ϕ2/v])
-    -- if we instantiate it using  ϕ1 = x, ϕ2 = y and ψ = (v = t2), we get
-    -- |- x = t1 -> ((x = t2) -> (t1 = t2))
-    -- by boolean manipulation, we can get
-    -- |- (x = t1) /\ (x = t2) -> ((x = t1) /\ (t1 = t2))
-    -- By some ??magic?? similar to Proposition 5.12
-    -- ((x = t1) /\ (t1 = t2)) = (x = (t1 /\ (t1 = t2)))
-    -- then, applying Proposition 5.24(3), this further gets to
-    -- (x = (t1 /\ t2))
-  deriving (Eq, Show)
-
-{-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
-simplifyUnificationProof
-    :: UnificationProof level domain variable
-    -> UnificationProof level domain variable
-simplifyUnificationProof EmptyUnificationProof = EmptyUnificationProof
-simplifyUnificationProof (CombinedUnificationProof []) =
-    EmptyUnificationProof
-simplifyUnificationProof (CombinedUnificationProof [a]) =
-    simplifyUnificationProof a
-simplifyUnificationProof (CombinedUnificationProof items) =
-    case simplifyCombinedItems items of
-        []  -> EmptyUnificationProof
-        [a] -> a
-        as  -> CombinedUnificationProof as
-simplifyUnificationProof a@(ConjunctionIdempotency _) = a
-simplifyUnificationProof a@(Proposition_5_24_3 _ _ _) = a
-simplifyUnificationProof
-    (AndDistributionAndConstraintLifting symbolOrAlias unificationProof)
-  =
-    AndDistributionAndConstraintLifting
-        symbolOrAlias
-        (simplifyCombinedItems unificationProof)
-simplifyUnificationProof a@(SubstitutionMerge _ _ _) = a
-
-simplifyCombinedItems
-    :: [UnificationProof level domain variable] -> [UnificationProof level domain variable]
-simplifyCombinedItems =
-    foldr (addContents . simplifyUnificationProof) []
-  where
-    addContents
-        :: UnificationProof level domain variable
-        -> [UnificationProof level domain variable]
-        -> [UnificationProof level domain variable]
-    addContents EmptyUnificationProof  proofItems           = proofItems
-    addContents (CombinedUnificationProof items) proofItems =
-        items ++ proofItems
-    addContents other proofItems = other : proofItems
-
 simplifyAnds
     :: ( Eq level
        , Ord (variable level)
@@ -191,7 +108,7 @@ simplifyAnds
     -> [PureMLPattern level domain variable]
     -> Either
         (UnificationError level)
-        (UnificationSolution level domain variable, UnificationProof level domain variable)
+        (UnificationSolution level domain variable, ())
 simplifyAnds _ [] = Left EmptyPatternList
 simplifyAnds tools (p:ps) =
     foldM
@@ -200,26 +117,26 @@ simplifyAnds tools (p:ps) =
             { unificationSolutionTerm = p
             , unificationSolutionConstraints = []
             }
-        , EmptyUnificationProof
+        , ()
         )
         ps
   where
     resultSort = getPatternResultSort (sortTools tools) (project p)
-    simplifyAnds' (solution,proof) pat = do
+    simplifyAnds' (solution,_) pat = do
         let
             conjunct = Fix $ AndPattern And
                 { andSort = resultSort
                 , andFirst = unificationSolutionTerm solution
                 , andSecond = pat
                 }
-        (solution', proof') <- simplifyAnd tools conjunct
+        (solution', _) <- simplifyAnd tools conjunct
         return
             ( solution'
                 { unificationSolutionConstraints =
                     unificationSolutionConstraints solution
                     ++ unificationSolutionConstraints solution'
                 }
-            , CombinedUnificationProof [proof, proof']
+            , ()
             )
 
 simplifyAnd
@@ -231,7 +148,7 @@ simplifyAnd
     -> PureMLPattern level domain variable
     -> Either
         (UnificationError level)
-        (UnificationSolution level domain variable, UnificationProof level domain variable)
+        (UnificationSolution level domain variable, ())
 simplifyAnd tools =
     elgot postTransform (preTransform tools . project)
 
@@ -248,7 +165,7 @@ preTransform
         ( Either
             (UnificationError level)
             ( UnificationSolution level domain variable
-            , UnificationProof level domain variable
+            , ()
             )
         )
         (UnFixedPureMLPattern level domain variable)
@@ -258,7 +175,7 @@ preTransform tools (AndPattern ap) = if left == right
             { unificationSolutionTerm = left
             , unificationSolutionConstraints = []
             }
-        , ConjunctionIdempotency left
+        , ()
         )
     else case project left of
         VariablePattern vp ->
@@ -292,7 +209,7 @@ matchDomainValue
         ( Either
             (UnificationError level)
             ( UnificationSolution level domain variable
-            , UnificationProof level domain variable
+            , ()
             )
         )
         (UnFixedPureMLPattern level domain variable)
@@ -319,7 +236,7 @@ matchConstructor
         ( Either
             (UnificationError level)
             ( UnificationSolution level domain variable
-            , UnificationProof level domain variable
+            , ()
             )
         )
         (UnFixedPureMLPattern level domain variable)
@@ -365,18 +282,18 @@ mlProposition_5_24_3
     -- ^functional (term) pattern
     -> Either
         (UnificationError level)
-        (UnificationSolution level domain variable, UnificationProof level domain variable)
+        (UnificationSolution level domain variable, ())
 mlProposition_5_24_3
     tools
     v
     functionalPattern
   = case isFunctionalPattern tools functionalPattern of
-        Right functionalProof -> Right --Matching Logic 5.24 (3)
+        Right _ -> Right --Matching Logic 5.24 (3)
             ( UnificationSolution
                 { unificationSolutionTerm        = functionalPattern
                 , unificationSolutionConstraints = [ (v, functionalPattern) ]
                 }
-            , Proposition_5_24_3 functionalProof v functionalPattern
+            , ()
             )
         _ -> Left NonFunctionalPattern
 
@@ -387,15 +304,15 @@ postTransform
         (Either
             (UnificationError level)
             ( UnificationSolution level domain variable
-            , UnificationProof level domain variable
+            , ()
             )
         )
     -> Either
         (UnificationError level)
-        (UnificationSolution level domain variable, UnificationProof level domain variable)
+        (UnificationSolution level domain variable, ())
 postTransform (ApplicationPattern ap) = do
     children <- sequenceA (applicationChildren ap)
-    let (subSolutions, subProofs) = unzip children
+    let (subSolutions, _) = unzip children
     return
         ( UnificationSolution
             { unificationSolutionTerm = Fix $ ApplicationPattern ap
@@ -407,9 +324,7 @@ postTransform (ApplicationPattern ap) = do
                     unificationSolutionConstraints
                     subSolutions
             }
-        , AndDistributionAndConstraintLifting
-            (applicationSymbolOrAlias ap)
-            subProofs
+        , ()
         )
 postTransform _ = error "Unexpected, non-application, pattern."
 
@@ -437,19 +352,14 @@ solveGroupedSubstitution
     -> UnificationSubstitution level domain variable
     -> Either
         (UnificationError level)
-        (UnificationSubstitution level domain variable, UnificationProof level domain variable)
+        (UnificationSubstitution level domain variable, ())
 solveGroupedSubstitution _ [] = Left EmptyPatternList
 solveGroupedSubstitution tools ((x,p):subst) = do
-    (solution, proof) <- simplifyAnds tools (p : map snd subst)
+    (solution, _) <- simplifyAnds tools (p : map snd subst)
     return
         ( (x,unificationSolutionTerm solution)
           : unificationSolutionConstraints solution
-        , proof)
-
-instance Monoid (UnificationProof level domain variable) where
-    mempty = EmptyUnificationProof
-    mappend proof1 proof2 = CombinedUnificationProof [proof1, proof2]
-    mconcat = CombinedUnificationProof
+        , ())
 
 -- |Takes a potentially non-normalized substitution,
 -- and if it contains multiple assignments to the same variable,
@@ -468,25 +378,22 @@ normalizeSubstitutionDuplication
     -> Either
         (UnificationError level)
         ( UnificationSubstitution level domain variable
-        , UnificationProof level domain variable
+        , ()
         )
 normalizeSubstitutionDuplication tools subst =
     if null nonSingletonSubstitutions
-        then return (subst, EmptyUnificationProof)
+        then return (subst, ())
         else do
-            (subst', proof') <- mconcat <$>
+            (subst', _) <- mconcat <$>
                 mapM (solveGroupedSubstitution tools) nonSingletonSubstitutions
-            (finalSubst, proof) <-
+            (finalSubst, _) <-
                 normalizeSubstitutionDuplication tools
                     (concat singletonSubstitutions
                      ++ subst'
                     )
             return
                 ( finalSubst
-                , CombinedUnificationProof
-                    [ proof'
-                    , proof
-                    ]
+                , ()
                 )
   where
     groupedSubstitution = groupSubstitutionByVariable subst
@@ -515,22 +422,21 @@ unificationProcedure
         (UnificationError level)
         ( UnificationSubstitution level domain variable
         , Predicate level domain variable
-        , UnificationProof level domain variable
+        , ()
         )
 unificationProcedure tools p1 p2
     | p1Sort /= p2Sort =
         Left (SortClash p1Sort p2Sort)
     | otherwise = do
-        (solution, proof) <- simplifyAnd tools conjunct
-        (normSubst, normProof) <-
+        (solution, _) <- simplifyAnd tools conjunct
+        (normSubst, _) <-
             normalizeSubstitutionDuplication
                 tools (unificationSolutionConstraints solution)
         return
             ( normSubst
             -- TODO: Put something sensible here.
             , makeTruePredicate
-            , simplifyUnificationProof
-                (CombinedUnificationProof [proof, normProof])
+            , ()
             )
   where
     resultSort = getPatternResultSort (sortTools tools)

@@ -17,15 +17,13 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 {-| simplifies a Bottom pattern, which means returning an always-false or.
 -}
 simplify
     :: Bottom level child
     -> ( OrOfExpandedPattern level domain variable
-       , SimplificationProof level
+       , ()
        )
 simplify Bottom {} =
-    (OrOfExpandedPattern.make [], SimplificationProof)
+    (OrOfExpandedPattern.make [], ())

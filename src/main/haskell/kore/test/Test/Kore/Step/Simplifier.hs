@@ -19,13 +19,13 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PureMLPatternSimplifier (..), 
                  Simplifier )
 
 mockSimplifier
     :: (MetaOrObject level, Eq level, Eq (variable level))
     =>  [   ( PureMLPattern level domain variable
-            , ([ExpandedPattern level domain variable], SimplificationProof level)
+            , ([ExpandedPattern level domain variable], ())
             )
         ]
     -> PureMLPatternSimplifier level domain variable
@@ -41,7 +41,7 @@ mockSimplifier values =
 mockPredicateSimplifier
     :: (MetaOrObject level, Eq level, Eq (variable level))
     =>  [   ( PureMLPattern level domain variable
-            , ([ExpandedPattern level domain variable], SimplificationProof level)
+            , ([ExpandedPattern level domain variable], ())
             )
         ]
     -> PureMLPatternSimplifier level domain variable
@@ -61,22 +61,22 @@ mockSimplifierHelper
     ::  (MetaOrObject level, Eq level, Eq (variable level))
     =>  (PureMLPattern level domain variable -> ExpandedPattern level domain variable)
     ->  [   ( PureMLPattern level domain variable
-            , ([ExpandedPattern level domain variable], SimplificationProof level)
+            , ([ExpandedPattern level domain variable], ())
             )
         ]
     -> PureMLPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level domain variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, ())
 mockSimplifierHelper unevaluatedConverter [] patt =
     return
         ( OrOfExpandedPattern.make [ unevaluatedConverter patt ]
-        , SimplificationProof
+        , ()
         )
 mockSimplifierHelper
     unevaluatedConverter
-    ((patt, (patts, proof)) : reminder)
+    ((patt, (patts, _)) : reminder)
     unevaluatedPatt
   =
     if patt == unevaluatedPatt
-        then return (OrOfExpandedPattern.make patts, proof)
+        then return (OrOfExpandedPattern.make patts, ())
         else mockSimplifierHelper unevaluatedConverter reminder unevaluatedPatt

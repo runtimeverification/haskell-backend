@@ -31,8 +31,8 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( toExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), Simplifier,
-                 SimplificationProof (SimplificationProof) )
+                 ( PureMLPatternSimplifier (..), Simplifier)
+                  
 
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
@@ -48,7 +48,7 @@ evaluate
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
     -> Simplifier
-        (PredicateSubstitution level domain variable, SimplificationProof level)
+        (PredicateSubstitution level domain variable, ())
 evaluate
     (PureMLPatternSimplifier simplifier)
     predicate'
@@ -57,7 +57,7 @@ evaluate
     let
         (subst, _proof) =
             asPredicateSubstitution (OrOfExpandedPattern.toExpandedPattern patt)
-    return ( subst, SimplificationProof)
+    return ( subst, ())
 
 asPredicateSubstitution
     ::  ( MetaOrObject level
@@ -66,7 +66,7 @@ asPredicateSubstitution
         , Show (variable level)
         )
     => ExpandedPattern level domain variable
-    -> (PredicateSubstitution level domain variable, SimplificationProof level)
+    -> (PredicateSubstitution level domain variable, ())
 asPredicateSubstitution
     ExpandedPattern {term, predicate, substitution}
   =
@@ -77,5 +77,5 @@ asPredicateSubstitution
             { predicate = andPatt
             , substitution = substitution
             }
-        , SimplificationProof
+        , ()
         )

@@ -43,7 +43,7 @@ import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..), AttemptedFunction (..),
                  notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, SimplificationProof (..),
+                 ( PureMLPatternSimplifier, 
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -84,7 +84,7 @@ evalKEq
     -> Application Object (PureMLPattern Object KoreDomain Variable)
     -> Simplifier
         ( AttemptedFunction Object KoreDomain Variable
-        , SimplificationProof Object
+        , ()
         )
 evalKEq true false tools _ pat =
     case pat of

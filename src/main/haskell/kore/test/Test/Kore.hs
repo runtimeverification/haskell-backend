@@ -305,8 +305,8 @@ korePatternGen = sized (\n ->
 sentenceAliasGen
     :: MetaOrObject level
     => level
-    -> Gen (Fix (pat Variable))
-    -> Gen (SentenceAlias level pat Variable)
+    -> Gen (Fix (pat KoreDomain Variable))
+    -> Gen (SentenceAlias level pat KoreDomain Variable)
 sentenceAliasGen x patGen = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
     <*> couple (scale (`div` 2) (sortGen x))
@@ -408,7 +408,7 @@ metaMLPatternGen = Fix <$> sized (\n ->
             ]
     )
 
-metaSentenceGen :: Gen MetaSentence
+metaSentenceGen :: Gen (MetaSentence KoreDomain)
 metaSentenceGen = oneof
     [ (SentenceSymbolSentence <$> sentenceSymbolGen Meta)
     , (SentenceAliasSentence <$> sentenceAliasGen Meta metaMLPatternGen)
@@ -418,7 +418,7 @@ metaSentenceGen = oneof
             <$> sentenceAxiomGen (sortVariableGen Meta) metaMLPatternGen)
     ]
 
-metaModuleGen :: Gen MetaModule
+metaModuleGen :: Gen (MetaModule KoreDomain)
 metaModuleGen = moduleGen metaSentenceGen
 
 testId :: String -> Id level

@@ -34,8 +34,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, toExpandedPattern )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 {-| 'simplify' simplifies a 'Floor' of 'OrOfExpandedPattern'.
 
@@ -57,7 +55,7 @@ simplify
         )
     => Floor level (OrOfExpandedPattern level domain variable)
     ->  ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 simplify
     Floor { floorChild = child }
@@ -72,7 +70,7 @@ simplifyEvaluatedFloor
         , Ord (variable level)
         )
     => OrOfExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 simplifyEvaluatedFloor child =
     case OrOfExpandedPattern.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
@@ -92,12 +90,12 @@ makeEvaluateFloor
         , Ord (variable level)
         )
     => ExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 makeEvaluateFloor child
   | ExpandedPattern.isTop child =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (OrOfExpandedPattern.make [ExpandedPattern.top], ())
   | ExpandedPattern.isBottom child =
-    (OrOfExpandedPattern.make [ExpandedPattern.bottom], SimplificationProof)
+    (OrOfExpandedPattern.make [ExpandedPattern.bottom], ())
   | otherwise =
     makeEvaluateNonBoolFloor child
 
@@ -109,12 +107,12 @@ makeEvaluateNonBoolFloor
         , Ord (variable level)
         )
     => ExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 makeEvaluateNonBoolFloor
     patt@ExpandedPattern { term = Top_ _ }
   =
     ( OrOfExpandedPattern.make [patt]
-    , SimplificationProof
+    , ()
     )
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
@@ -126,9 +124,9 @@ makeEvaluateNonBoolFloor
             { term = mkTop
             , predicate =
                 case makeAndPredicate (makeFloorPredicate term) predicate of
-                    (predicate', _proof) -> predicate'
+                    (predicate', _) -> predicate'
             , substitution = substitution
             }
         ]
-    , SimplificationProof
+    , ()
     )

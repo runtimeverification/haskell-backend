@@ -8,7 +8,7 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import           Kore.AST.Common
-                 ( CharLiteral (..) )
+                 ( CharLiteral (..), KoreDomain )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkCharLiteral )
@@ -49,7 +49,7 @@ test_charLiteralSimplification =
 evaluate
     ::  ( MetaOrObject Meta)
     => CharLiteral
-    -> CommonOrOfExpandedPattern Meta
+    -> CommonOrOfExpandedPattern Meta KoreDomain
 evaluate charLiteral =
     case simplify charLiteral of
         (result, _proof) -> result

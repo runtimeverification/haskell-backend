@@ -33,22 +33,22 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-topPatMeta :: Pattern Meta domain variable (Fix (pat domain variable))
+topPatMeta :: Pattern Meta KoreDomain variable (Fix (pat KoreDomain variable))
 topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
 
-topPatObj :: Pattern Object domain variable (Fix (pat domain variable))
+topPatObj :: Pattern Object KoreDomain variable (Fix (pat KoreDomain variable))
 topPatObj  = TopPattern $ Top { topSort = objectS1 }
 
-objectA :: PureSentenceSymbol Object
+objectA :: PureSentenceSymbol Object KoreDomain
 objectA = symbol_ "a" AstLocationTest [] objectS1
 
-objectB :: PureSentenceAlias Object
+objectB :: PureSentenceAlias Object KoreDomain
 objectB = alias_ "b" AstLocationTest [] objectS1 topPatObj topPatObj
 
-metaA :: PureSentenceSymbol Meta
+metaA :: PureSentenceSymbol Meta KoreDomain
 metaA = symbol_ "#a" AstLocationTest [] charListMetaSort
 
-metaB :: PureSentenceAlias Meta
+metaB :: PureSentenceAlias Meta KoreDomain
 metaB = alias_ "#b" AstLocationTest [] charListMetaSort topPatMeta topPatMeta
 
 testObjectModuleName :: ModuleName
@@ -63,7 +63,7 @@ testSubMainModuleName = ModuleName "TEST-SUB-MAIN-MODULE"
 testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
-testObjectModule :: PureModule Object
+testObjectModule :: PureModule Object KoreDomain
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
@@ -92,7 +92,7 @@ testObjectModule =
                 ]
         }
 
-testMetaModule :: PureModule Meta
+testMetaModule :: PureModule Meta KoreDomain
 testMetaModule =
     Module
         { moduleName = testMetaModuleName

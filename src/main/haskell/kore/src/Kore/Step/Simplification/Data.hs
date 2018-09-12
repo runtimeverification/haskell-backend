@@ -13,7 +13,6 @@ module Kore.Step.Simplification.Data
     , evalSimplifier
     , PureMLPatternSimplifier (..)
     , CommonPureMLPatternSimplifier
-    , SimplificationProof (..)
     ) where
 
 import Control.Monad.Except
@@ -37,12 +36,6 @@ import Kore.Variables.Fresh.IntCounter
 
  -}
 data SimplificationError
-
-{-| 'SimplificationProof' is a placeholder for proofs showing that the
-simplification of a MetaMLPattern was correct.
--}
-data SimplificationProof level = SimplificationProof
-    deriving (Show, Eq)
 
 {- | The concrete monad in which simplification occurs.
 
@@ -72,7 +65,7 @@ newtype PureMLPatternSimplifier level domain variable =
         ( PureMLPattern level domain variable
         -> Simplifier
             ( OrOfExpandedPattern level domain variable
-            , SimplificationProof level
+            , ()
             )
         )
 

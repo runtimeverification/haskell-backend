@@ -26,8 +26,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 {-| 'simplify' simplifies a 'CharLiteral' pattern, which means returning
 an or containing a term made of that literal.
@@ -35,7 +33,7 @@ an or containing a term made of that literal.
 simplify
     :: CharLiteral
     -> ( OrOfExpandedPattern Meta domain variable
-       , SimplificationProof Meta
+       , ()
        )
 simplify str =
     ( OrOfExpandedPattern.make
@@ -45,5 +43,5 @@ simplify str =
             , substitution = []
             }
         ]
-    , SimplificationProof
+    , ()
     )

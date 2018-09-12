@@ -20,8 +20,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 {-| simplifies a Top pattern, which means returning an always-true or.
 -}
@@ -29,7 +27,7 @@ simplify
     :: MetaOrObject level
     => Top level child
     -> ( OrOfExpandedPattern level domain variable
-       , SimplificationProof level
+       , ()
        )
 simplify _ =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (OrOfExpandedPattern.make [ExpandedPattern.top], ())

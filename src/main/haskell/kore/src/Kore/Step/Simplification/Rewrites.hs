@@ -31,8 +31,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, toExpandedPattern )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 {-|'simplify' simplifies a 'Rewrites' pattern with an 'OrOfExpandedPattern'
 child.
@@ -50,7 +48,7 @@ simplify
         )
     => Rewrites Object (OrOfExpandedPattern Object domain variable)
     ->  ( OrOfExpandedPattern Object domain variable
-        , SimplificationProof Object
+        , ()
         )
 simplify
     Rewrites
@@ -69,7 +67,7 @@ simplifyEvaluatedRewrites
         )
     => OrOfExpandedPattern Object domain variable
     -> OrOfExpandedPattern Object domain variable
-    -> (OrOfExpandedPattern Object domain variable, SimplificationProof Object)
+    -> (OrOfExpandedPattern Object domain variable, ())
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
         (OrOfExpandedPattern.toExpandedPattern first)
@@ -84,7 +82,7 @@ makeEvaluateRewrites
         )
     => ExpandedPattern Object domain variable
     -> ExpandedPattern Object domain variable
-    -> (OrOfExpandedPattern Object domain variable, SimplificationProof Object)
+    -> (OrOfExpandedPattern Object domain variable, ())
 makeEvaluateRewrites first second =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern
@@ -95,5 +93,5 @@ makeEvaluateRewrites first second =
             , substitution = []
             }
         ]
-    , SimplificationProof
+    , ()
     )

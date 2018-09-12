@@ -591,7 +591,7 @@ unfilteredTestExamplesForSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        (simpleExistsUnifiedPattern domain variableName1 sort)
+                        (simpleExistsUnifiedPattern variableName1 sort)
                         (map asUnified sortVariables)
                     : additionalSentences
                     )

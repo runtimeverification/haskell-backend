@@ -27,7 +27,7 @@ import Kore.MetaML.Unlift
 import Test.Kore
 import Test.Tasty.HUnit.Extensions
 
-variablePattern :: String -> Sort Meta -> CommonMetaPattern
+variablePattern :: String -> Sort Meta -> CommonMetaPattern KoreDomain
 variablePattern name sort =
     fillCheckSort sort (unparameterizedVariable_ name AstLocationTest)
 
@@ -169,7 +169,7 @@ test_lift =
                         ]
                     )
                 ]
-            )
+            ) 
         )
         (asKorePattern
             (ForallPattern Forall
@@ -182,14 +182,14 @@ test_lift =
                     }
                 , forallChild =
                     asKorePattern
-                        (VariablePattern domain Variable
+                        (VariablePattern Variable
                             { variableName = testId "x" :: Id Object
                             , variableSort = SortVariableSort
                                 (SortVariable (testId "a"))
                             }
                         )
                 }
-            )
+            ) :: CommonKorePattern
         )
     , testLiftUnlift "Exists"
         (Fix
@@ -228,14 +228,14 @@ test_lift =
                     }
                 , existsChild =
                     asKorePattern
-                        (VariablePattern domain Variable
+                        (VariablePattern Variable
                             { variableName = testId "x" :: Id Object
                             , variableSort = SortVariableSort
                                 (SortVariable (testId "a"))
                             }
                         )
                 }
-            )
+            ) :: CommonKorePattern
         )
     , testLiftUnlift "Variable Pattern"
         (Fix
@@ -250,12 +250,12 @@ test_lift =
             )
         )
         (asKorePattern
-            (VariablePattern domain Variable
+            (VariablePattern Variable
                 { variableName = testId "x" :: Id Object
                 , variableSort = SortVariableSort
                     (SortVariable (testId "a"))
                 }
-            )
+            ) :: CommonKorePattern
         )
     , testLiftUnlift "An actual sort"
         (Fix
@@ -1002,7 +1002,7 @@ testLiftUnlift
        , HasCallStack
        )
     => String
-    -> CommonMetaPattern
+    -> CommonMetaPattern KoreDomain
     -> a
     -> TestTree
 testLiftUnlift message metaPattern mixed =
@@ -1024,16 +1024,16 @@ prettyAssertEqual
     -> IO ()
 prettyAssertEqual = assertEqualWithPrinter prettyPrintToString
 
-stringPattern :: Pattern Meta domain Variable child
+stringPattern :: Pattern Meta KoreDomain Variable child
 stringPattern = StringLiteralPattern (StringLiteral "a")
 
 unifiedStringPattern :: CommonKorePattern
 unifiedStringPattern = asKorePattern stringPattern
 
-metaStringPattern :: CommonMetaPattern
+metaStringPattern :: CommonMetaPattern KoreDomain
 metaStringPattern = Fix stringPattern
 
-sentenceImport :: SentenceImport pat domain variable
+sentenceImport :: SentenceImport pat KoreDomain variable
 sentenceImport =
     SentenceImport
         { sentenceImportModuleName = ModuleName "MODULE"
@@ -1043,7 +1043,7 @@ sentenceImport =
 koreSentenceImport :: KoreSentence
 koreSentenceImport = asSentence (sentenceImport :: KoreSentenceImport)
 
-metaSentenceImport :: MetaSentence
+metaSentenceImport :: MetaSentence KoreDomain
 metaSentenceImport = SentenceImportSentence sentenceImport
 
 simpleKoreModule :: KoreModule
@@ -1054,7 +1054,7 @@ simpleKoreModule =
         , moduleAttributes = Attributes []
         }
 
-simpleMetaModule :: MetaModule
+simpleMetaModule :: MetaModule KoreDomain
 simpleMetaModule =
     Module
         { moduleName = ModuleName "MODULE"
@@ -1069,7 +1069,7 @@ simpleKoreDefinition =
         , definitionAttributes = Attributes []
         }
 
-simpleMetaDefinition :: MetaDefinition
+simpleMetaDefinition :: MetaDefinition KoreDomain
 simpleMetaDefinition =
     Definition
         { definitionModules = [simpleMetaModule]

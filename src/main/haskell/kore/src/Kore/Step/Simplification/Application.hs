@@ -39,7 +39,7 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PureMLPatternSimplifier (..), 
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -87,7 +87,7 @@ simplify
     -> Application level (OrOfExpandedPattern level KoreDomain variable)
     -> Simplifier
         ( OrOfExpandedPattern level KoreDomain variable
-        , SimplificationProof level
+        , ()
         )
 simplify
     tools
@@ -102,7 +102,7 @@ simplify
         -- The "Propagation Or" inference rule together with
         -- "Propagation Bottom" for the case when a child or is empty.
         orDistributedChildren = OrOfExpandedPattern.fullCrossProduct children
-    (unflattenedOr, _proofs) <-
+    (unflattenedOr, _) <-
         OrOfExpandedPattern.traverseFlattenWithPairsGeneric
             (makeAndEvaluateApplications
                 tools simplifier symbolIdToEvaluator
@@ -111,7 +111,7 @@ simplify
             orDistributedChildren
     return
         ( unflattenedOr
-        , SimplificationProof
+        , ()
         )
 
 makeAndEvaluateApplications
@@ -132,7 +132,7 @@ makeAndEvaluateApplications
     -> SymbolOrAlias level
     -> [ExpandedPattern level KoreDomain variable]
     -> Simplifier
-        (OrOfExpandedPattern level KoreDomain variable, SimplificationProof level)
+        (OrOfExpandedPattern level KoreDomain variable, ())
 makeAndEvaluateApplications
     tools
     simplifier
@@ -140,13 +140,13 @@ makeAndEvaluateApplications
     symbol
     children
   = do
-    (expandedApplication, _proof) <-
+    (expandedApplication, ()) <-
         makeExpandedApplication tools symbol children
-    (functionApplication, _proof) <-
+    (functionApplication, ()) <-
         evaluateApplicationFunction
             tools simplifier symbolIdToEvaluator
             expandedApplication
-    return (functionApplication, SimplificationProof)
+    return (functionApplication, ())
 
 evaluateApplicationFunction
     ::  ( MetaOrObject level
@@ -166,7 +166,7 @@ evaluateApplicationFunction
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (OrOfExpandedPattern level KoreDomain variable, SimplificationProof level)
+        (OrOfExpandedPattern level KoreDomain variable, ())
 evaluateApplicationFunction
     tools
     simplifier
@@ -199,14 +199,14 @@ makeExpandedApplication
     -> SymbolOrAlias level
     -> [ExpandedPattern level KoreDomain variable]
     -> Simplifier
-        (ExpandedApplication level variable, SimplificationProof level)
+        (ExpandedApplication level variable, ())
 makeExpandedApplication tools symbol children
   = do
     (   PredicateSubstitution
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , _proof) <- Monad.Trans.lift
+        , _) <- Monad.Trans.lift
             (mergePredicatesAndSubstitutions
                 tools
                 (map ExpandedPattern.predicate children)
@@ -221,5 +221,5 @@ makeExpandedApplication tools symbol children
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , SimplificationProof
+        , ()
         )

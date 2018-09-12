@@ -45,8 +45,6 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fmapFlattenWithPairs, make )
 import           Kore.Step.PatternAttributes
                  ( isFunctionalPattern )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -69,7 +67,7 @@ simplify
     => MetadataTools level StepperAttributes
     -> Ceil level (OrOfExpandedPattern level domain variable)
     ->  ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 simplify
     tools
@@ -88,11 +86,11 @@ simplifyEvaluated
         )
     => MetadataTools level StepperAttributes
     -> OrOfExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 simplifyEvaluated tools child =
-    ( evaluated, SimplificationProof )
+    ( evaluated, () )
   where
-    (evaluated, _proofs) =
+    (evaluated, _) =
         OrOfExpandedPattern.fmapFlattenWithPairs (makeEvaluate tools) child
 
 {-| 'simplifyEvaluated' evaluates a ceil given its child as
@@ -106,12 +104,12 @@ makeEvaluate
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 makeEvaluate tools child
   | ExpandedPattern.isTop child =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (OrOfExpandedPattern.make [ExpandedPattern.top], ())
   | ExpandedPattern.isBottom child =
-    (OrOfExpandedPattern.make [ExpandedPattern.bottom], SimplificationProof)
+    (OrOfExpandedPattern.make [ExpandedPattern.bottom], ())
   | otherwise =
     makeEvaluateNonBoolCeil tools child
 
@@ -123,21 +121,21 @@ makeEvaluateNonBoolCeil
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 makeEvaluateNonBoolCeil
     _
     patt@ExpandedPattern { term = Top_ _ }
   =
     ( OrOfExpandedPattern.make [patt]
-    , SimplificationProof
+    , ()
     )
 makeEvaluateNonBoolCeil
     tools
     ExpandedPattern {term, predicate, substitution}
   =
     let
-        (termCeil, _proof1) = makeTermCeil tools term
-        (ceilPredicate, _proof2) =
+        (termCeil, _) = makeTermCeil tools term
+        (ceilPredicate, _) =
             give sortTools $ makeAndPredicate predicate termCeil
     in
         ( OrOfExpandedPattern.make
@@ -147,7 +145,7 @@ makeEvaluateNonBoolCeil
                 , substitution = substitution
                 }
             ]
-        , SimplificationProof
+        , ()
         )
   where
     sortTools = MetadataTools.sortTools tools
@@ -161,23 +159,23 @@ makeTermCeil
         )
     => MetadataTools level StepperAttributes
     -> PureMLPattern level domain variable
-    -> (Predicate level domain variable, SimplificationProof level)
+    -> (Predicate level domain variable, ())
 makeTermCeil
     _
     (Top_ _)
   =
-    (makeTruePredicate, SimplificationProof)
+    (makeTruePredicate, ())
 makeTermCeil
     _
     (Bottom_ _)
   =
-    (makeFalsePredicate, SimplificationProof)
+    (makeFalsePredicate, ())
 makeTermCeil
     tools
     term
   | isFunctional tools term
   =
-    (makeTruePredicate, SimplificationProof)
+    (makeTruePredicate, ())
 makeTermCeil
     tools
     (App_ patternHead children)
@@ -185,18 +183,18 @@ makeTermCeil
       || StepperAttributes.isConstructor headAttributes
   =
     let
-        (ceils, _proofs) = unzip (map (makeTermCeil tools) children)
-        (result, _proof) = give (MetadataTools.sortTools tools )
+        (ceils, _) = unzip (map (makeTermCeil tools) children)
+        (result, _) = give (MetadataTools.sortTools tools )
             $ makeMultipleAndPredicate ceils
     in
-        (result, SimplificationProof)
+        (result, ())
   where
     headAttributes = MetadataTools.attributes tools patternHead
 makeTermCeil
     tools term
   =
     ( give (MetadataTools.sortTools tools ) $ makeCeilPredicate term
-    , SimplificationProof
+    , ()
     )
 
 -- TODO: Move these somewhere reasonable and remove all of their other

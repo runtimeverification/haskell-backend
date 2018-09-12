@@ -44,7 +44,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Application
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 ( CommonPureMLPatternSimplifier,
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -142,7 +142,7 @@ test_applicationSimplification =
                         (const $ const $ const $ return
                             ( AttemptedFunction.Applied
                                 (OrOfExpandedPattern.make [gOfAExpanded])
-                            , SimplificationProof
+                            , ()
                             )
                         )
                     ]
@@ -244,7 +244,7 @@ test_applicationSimplification =
                                         }
                                     ]
                                 )
-                            , SimplificationProof
+                            , ()
                             )
                         )
                     ]

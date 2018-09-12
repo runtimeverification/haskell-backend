@@ -3,6 +3,7 @@ import Data.Char
 import Text.Megaparsec
 import Text.Megaparsec.Char
 
+import Kore.AST.Common
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Parser.Parser
@@ -29,7 +30,7 @@ import GlobalMain
 parseName :: Parser String
 parseName = takeWhile1P Nothing isAlphaNum <* space
 
-pCommand :: Parser (Command String ML.Rule CommonMetaPattern)
+pCommand :: Parser (Command String ML.Rule (CommonMetaPattern KoreDomain) )
 pCommand = parseCommand parseName parseFormula parseRule
   where
     parseFormula = metaPatternParser

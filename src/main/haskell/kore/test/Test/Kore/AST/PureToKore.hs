@@ -18,7 +18,7 @@ import Kore.MetaML.AST
 import Test.Kore
 
 
-pureToKoreToPureProp :: CommonMetaPattern -> Bool
+pureToKoreToPureProp :: CommonMetaPattern KoreDomain -> Bool
 pureToKoreToPureProp p = Right p == patternKoreToPure Meta (patternPureToKore p)
 
 test_pureToKore :: [TestTree]
@@ -86,7 +86,7 @@ test_pureToKore =
                             }
                         ]
                     }
-                  :: PureDefinition Meta
+                  :: PureDefinition Meta KoreDomain
                 )
             )
         )

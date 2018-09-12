@@ -42,7 +42,7 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( crossProductGenericF, filterOr, isFalse, isTrue, make )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier, SimplificationProof (..) )
+                 ( Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -85,7 +85,7 @@ simplify
     -> And level (OrOfExpandedPattern level domain variable)
     -> Simplifier
         ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 simplify
     tools
@@ -114,17 +114,17 @@ simplifyEvaluated
     -> OrOfExpandedPattern level domain variable
     -> OrOfExpandedPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level domain variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, ())
 simplifyEvaluated tools first second
   | OrOfExpandedPattern.isFalse first =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (OrOfExpandedPattern.make [], ())
   | OrOfExpandedPattern.isFalse second =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (OrOfExpandedPattern.make [], ())
 
   | OrOfExpandedPattern.isTrue first =
-    return (second, SimplificationProof)
+    return (second, ())
   | OrOfExpandedPattern.isTrue second =
-    return (first, SimplificationProof)
+    return (first, ())
 
   | otherwise = do
     orWithProof <- Monad.Trans.lift
@@ -136,7 +136,7 @@ simplifyEvaluated tools first second
         ( OrOfExpandedPattern.filterOr
             -- TODO: Remove fst.
             (fst <$> orWithProof)
-        , SimplificationProof
+        , ()
         )
 
 {-|'makeEvaluate' simplifies an 'And' of 'ExpandedPattern's.
@@ -156,15 +156,15 @@ makeEvaluate
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level domain variable
     -> ExpandedPattern level domain variable
-    -> IntCounter (ExpandedPattern level domain variable, SimplificationProof level)
+    -> IntCounter (ExpandedPattern level domain variable, ())
 makeEvaluate
     tools first second
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
-    return (ExpandedPattern.bottom, SimplificationProof)
+    return (ExpandedPattern.bottom, ())
   | ExpandedPattern.isTop first =
-    return (second, SimplificationProof)
+    return (second, ())
   | ExpandedPattern.isTop second =
-    return (first, SimplificationProof)
+    return (first, ())
   | otherwise =
     makeEvaluateNonBool tools first second
 
@@ -181,7 +181,7 @@ makeEvaluateNonBool
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level domain variable
     -> ExpandedPattern level domain variable
-    -> IntCounter (ExpandedPattern level domain variable, SimplificationProof level)
+    -> IntCounter (ExpandedPattern level domain variable, ())
 makeEvaluateNonBool
     tools
     ExpandedPattern
@@ -210,7 +210,7 @@ makeEvaluateNonBool
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , SimplificationProof
+        , ()
         )
   where
     sortTools = MetadataTools.sortTools tools

@@ -41,7 +41,7 @@ instance TermWithSortVariablesClass CommonKorePattern UnifiedSortVariable
         sortVarsVisitor p =
             addPatternSortVariables p (addSortVariables asUnified) (fold p)
 
-instance TermWithSortVariablesClass CommonMetaPattern (SortVariable Meta) where
+instance TermWithSortVariablesClass (CommonMetaPattern KoreDomain) (SortVariable Meta) where
     sortVariables = cata sortVarsVisitor
       where
         sortVarsVisitor p =

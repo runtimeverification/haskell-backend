@@ -37,8 +37,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, isFalse, isTrue, make, toExpandedPattern )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrOfExpandedPattern'
 child.
@@ -58,7 +56,7 @@ simplify
         )
     => Not level (OrOfExpandedPattern level domain variable)
     ->  ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 simplify
     Not { notChild = child }
@@ -78,12 +76,12 @@ simplifyEvaluated
         , Ord (variable level)
         )
     => OrOfExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 simplifyEvaluated simplified
   | OrOfExpandedPattern.isFalse simplified =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (OrOfExpandedPattern.make [ExpandedPattern.top], ())
   | OrOfExpandedPattern.isTrue simplified =
-    (OrOfExpandedPattern.make [], SimplificationProof)
+    (OrOfExpandedPattern.make [], ())
   | otherwise =
     case OrOfExpandedPattern.extractPatterns simplified of
         [patt] -> makeEvaluate patt
@@ -94,7 +92,7 @@ simplifyEvaluated simplified
                         (OrOfExpandedPattern.toExpandedPattern simplified)
                     )
                 )
-            , SimplificationProof
+            , ()
             )
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'ExpandedPattern'
@@ -110,7 +108,7 @@ makeEvaluate
         , Ord (variable level)
         )
     => ExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 makeEvaluate
     ExpandedPattern {term, predicate, substitution}
   =
@@ -132,7 +130,7 @@ makeEvaluate
             , substitution = []
             }
         ]
-    , SimplificationProof
+    , ()
     )
 
 makeTermNot

@@ -376,13 +376,13 @@ applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
     parseTree korePatternParser
         [ success "#v:#Char"
-            ( asKorePattern $ VariablePattern domain Variable
+            ( asKorePattern $ VariablePattern Variable
                 { variableName = testId "#v" :: Id Meta
                 , variableSort = sortVariableSort "#Char"
                 }
             )
         , success "v:s1{s2}"
-            ( asKorePattern $ VariablePattern domain Variable
+            ( asKorePattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
                 , variableSort =
                     SortActualSort SortActual
@@ -401,11 +401,11 @@ applicationPatternParserTests =
                             , sortVariableSort "s2" ]
                         }
                 , applicationChildren =
-                    [ asKorePattern $ VariablePattern domain Variable
+                    [ asKorePattern $ VariablePattern Variable
                         { variableName = testId "v1" :: Id Object
                         , variableSort = sortVariableSort "s1"
                         }
-                    , asKorePattern $ VariablePattern domain Variable
+                    , asKorePattern $ VariablePattern Variable
                         { variableName = testId "v2" :: Id Object
                         , variableSort = sortVariableSort "s2"
                         }
@@ -621,7 +621,7 @@ memPatternParserTests =
                     { inOperandSort = sortVariableSort "s1" :: Sort Object
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild = asKorePattern $
-                        VariablePattern domain Variable
+                        VariablePattern Variable
                             { variableName = testId "v" :: Id Object
                             , variableSort = sortVariableSort "s3"
                             }
@@ -771,13 +771,13 @@ variablePatternParserTests :: [TestTree]
 variablePatternParserTests =
     parseTree korePatternParser
         [ success "v:s"
-            ( asKorePattern $ VariablePattern domain Variable
+            ( asKorePattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
                 , variableSort = sortVariableSort "s"
                 }
             )
         , success "v:s1{s2}"
-            ( asKorePattern $ VariablePattern domain Variable
+            ( asKorePattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
                 , variableSort = SortActualSort SortActual
                     { sortActualName=testId "s1"
@@ -808,7 +808,7 @@ sentenceAliasParserTests =
                                 , symbolOrAliasParams = [ sortVariableSort "s1" ]
                                 }
                         , applicationChildren =
-                            [ asKorePattern $ VariablePattern domain Variable
+                            [ asKorePattern $ VariablePattern Variable
                                 { variableName = testId "X" :: Id Object
                                 , variableSort = sortVariableSort "s2"
                                 }
@@ -855,11 +855,11 @@ sentenceAliasParserTests =
                                     ]
                                 }
                         , applicationChildren =
-                            [ asKorePattern $ VariablePattern domain Variable
+                            [ asKorePattern $ VariablePattern Variable
                                 { variableName = testId "X" :: Id Object
                                 , variableSort = sortVariableSort "s3"
                                 }
-                            , asKorePattern $ VariablePattern domain Variable
+                            , asKorePattern $ VariablePattern Variable
                                 { variableName = testId "Y" :: Id Object
                                 , variableSort = sortVariableSort "s4"
                                 }
@@ -872,11 +872,11 @@ sentenceAliasParserTests =
                                 , symbolOrAliasParams = [ sortVariableSort "s1", sortVariableSort "s2" ]
                                 }
                         , applicationChildren =
-                            [ asKorePattern $ VariablePattern domain Variable
+                            [ asKorePattern $ VariablePattern Variable
                                 { variableName = testId "X" :: Id Object
                                 , variableSort = sortVariableSort "s3"
                                 }
-                            , asKorePattern $ VariablePattern domain Variable
+                            , asKorePattern $ VariablePattern Variable
                                 { variableName = testId "Y" :: Id Object
                                 , variableSort = sortVariableSort "s4"
                                 }

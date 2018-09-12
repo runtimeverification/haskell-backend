@@ -9,7 +9,7 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( And (..), Application (..), Exists (..), Implies (..),
-                 Not (..), Or (..), Pattern (..), SymbolOrAlias (..),
+                 Not (..), Or (..), Pattern (..), SymbolOrAlias (..), KoreDomain,
                  Variable )
 import qualified Kore.AST.Common as Common
                  ( Forall (..) )
@@ -46,14 +46,14 @@ import           Logic.Proof.Hilbert
 
 type Var = Variable Meta
 type Symbol = SymbolOrAlias Meta
-type Formula = CommonMetaPattern
+type Formula = CommonMetaPattern KoreDomain
 type Rule = MLRule Symbol Var Formula
 
 
 -- To get an indexed module one can use `verifyAndIndexDefinition`
 formulaVerifier
     :: KoreIndexedModule atts
-    -> CommonMetaPattern
+    -> Formula
     -> Either (Error MLError) ()
 formulaVerifier indexedModule formula = do
     castError
@@ -75,8 +75,8 @@ instance ProofSystem
         (MLRule
             (SymbolOrAlias Meta)
             (Variable Meta)
-            CommonMetaPattern)
-        CommonMetaPattern
+            Formula)
+        Formula
   where
     checkDerivation conclusion (Propositional1 phi psi) =
         checkPropositional1Derivation phi psi conclusion
@@ -106,9 +106,9 @@ instance ProofSystem
         checkSingvar variable phi path1 path2 conclusion
 
 checkPropositional1Derivation
-    :: CommonMetaPattern
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    :: Formula
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkPropositional1Derivation phi psi topImplication
   = do
@@ -139,10 +139,10 @@ checkPropositional1Derivation phi psi topImplication
         phi "phi in (Propositional1 phi psi)"
 
 checkPropositional2Derivation
-    :: CommonMetaPattern
-    -> CommonMetaPattern
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    :: Formula
+    -> Formula
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkPropositional2Derivation phi1 phi2 phi3 conclusion
   = do
@@ -209,9 +209,9 @@ checkPropositional2Derivation phi1 phi2 phi3 conclusion
     nameInProposition name = name ++ " in Propositional2(phi1, phi2, phi3)"
 
 checkPropositional3Derivation
-    :: CommonMetaPattern
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    :: Formula
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkPropositional3Derivation phi1 phi2 conclusion
   = do
@@ -256,9 +256,9 @@ checkPropositional3Derivation phi1 phi2 conclusion
     nameInProposition name = name ++ " in Propositional3(phi1, phi2)"
 
 checkModusPonensDerivation
-    :: CommonMetaPattern
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    :: Formula
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkModusPonensDerivation phi1 psi1ImpliesPsi2 conclusion
   = do
@@ -299,6 +299,7 @@ type MetaPatternSubstitution =
 instance
     PatternSubstitutionClass
         Substitution.Substitution
+        KoreDomain
         Variable
         (Pattern Meta)
         (Either (Error MLError))
@@ -307,8 +308,8 @@ instance
 checkVariableSubstitution
     :: SubstitutingVariable (Variable Meta)
     -> SubstitutedVariable (Variable Meta)
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkVariableSubstitution
     (SubstitutingVariable substituting)
@@ -359,9 +360,9 @@ checkVariableSubstitution
 
 checkForall
     :: Variable Meta
-    -> CommonMetaPattern
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    -> Formula
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkForall variable phi1 phi2 conclusion
   = do
@@ -425,8 +426,8 @@ checkForall variable phi1 phi2 conclusion
 
 checkGeneralizationDerivation
     :: Variable Meta
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkGeneralizationDerivation variable phi conclusion
   = do
@@ -455,9 +456,9 @@ checkGeneralizationDerivation variable phi conclusion
 checkPropagateOr
     :: SymbolOrAlias Meta
     -> Int
-    -> CommonMetaPattern
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    -> Formula
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkPropagateOr symbol idx phi1 phi2 conclusion
   = do
@@ -568,8 +569,8 @@ checkPropagateExists
     :: SymbolOrAlias Meta
     -> Int
     -> Variable Meta
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkPropagateExists symbol idx variable phi conclusion
   = do
@@ -672,8 +673,8 @@ checkPropagateExists symbol idx variable phi conclusion
 checkFraming
     :: SymbolOrAlias Meta
     -> Int
-    -> CommonMetaPattern
-    -> CommonMetaPattern
+    -> Formula
+    -> Formula
     -> Either (Error MLError) ()
 checkFraming symbol idx hypothesis conclusion
   = do
@@ -754,7 +755,7 @@ checkFraming symbol idx hypothesis conclusion
 
 checkExistence
     :: Variable Meta
-    -> CommonMetaPattern
+    -> Formula
     -> Either (Error MLError) ()
 checkExistence variable conclusion
   = do
@@ -763,7 +764,7 @@ checkExistence variable conclusion
             Fix
                 ( ExistsPattern Exists
                     { existsVariable = v1
-                    , existsChild = Fix (VariablePattern domain v2)
+                    , existsChild = Fix (VariablePattern v2)
                     }
                 )
                 -> return (v1, v2)
@@ -784,10 +785,10 @@ data SingvarPhi = SingvarPhiSimple | SingvarPhiNegated
 
 checkSingvar
     :: Variable Meta
-    -> CommonMetaPattern
+    -> Formula
     -> [Int]
     -> [Int]
-    -> CommonMetaPattern
+    -> Formula
     -> Either (Error MLError) ()
 checkSingvar variable phi path1 path2 conclusion
   = do
@@ -828,11 +829,11 @@ checkSingvar variable phi path1 path2 conclusion
 checkSingvarContext
     :: Variable Meta
     -> String
-    -> CommonMetaPattern
+    -> Formula
     -> String
     -> SingvarPhi
     -> [Int]
-    -> CommonMetaPattern
+    -> Formula
     -> Either (Error MLError) ()
 checkSingvarContext
     variable variableName phi phiName SingvarPhiSimple [] formula
@@ -841,7 +842,7 @@ checkSingvarContext
         case formula of
             Fix
                 (AndPattern And
-                    { andFirst = Fix (VariablePattern domain v)
+                    { andFirst = Fix (VariablePattern v)
                     , andSecond = p
                     }
                 )
@@ -864,7 +865,7 @@ checkSingvarContext
         case formula of
             Fix
                 (AndPattern And
-                    { andFirst = Fix (VariablePattern domain v)
+                    { andFirst = Fix (VariablePattern v)
                     , andSecond = Fix
                         (NotPattern Not { notChild = p })
                     }
@@ -911,8 +912,8 @@ checkSingvarContext
     kind = "sigma{...}(patterns)"
 
 testExtraPatternsEquality
-    :: [CommonMetaPattern]
-    -> [CommonMetaPattern]
+    :: [Formula]
+    -> [Formula]
     -> Int
     -> Int
     -> Either (Error MLError) ()

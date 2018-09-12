@@ -34,7 +34,7 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PureMLPatternSimplifier (..), 
                  Simplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
@@ -63,7 +63,7 @@ simplify
     -> ExpandedPattern level KoreDomain variable
     -> Simplifier
         ( OrOfExpandedPattern level KoreDomain variable
-        , SimplificationProof level
+        , () 
         )
 simplify
     tools
@@ -85,4 +85,4 @@ simplify
                     }
             )
             simplifiedTerm
-    return (simplifiedPatt, SimplificationProof)
+    return (simplifiedPatt, ())

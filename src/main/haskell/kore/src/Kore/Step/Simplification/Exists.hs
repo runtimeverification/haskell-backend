@@ -31,8 +31,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, make, toExpandedPattern )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -51,7 +49,7 @@ simplify
         )
     => Exists level variable (OrOfExpandedPattern level domain variable)
     ->  ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 simplify
     Exists { existsVariable = variable, existsChild = child }
@@ -67,10 +65,10 @@ simplifyEvaluatedExists
         )
     => variable level
     -> OrOfExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 simplifyEvaluatedExists variable simplified
-  | OrOfExpandedPattern.isTrue simplified = (simplified, SimplificationProof)
-  | OrOfExpandedPattern.isFalse simplified = (simplified, SimplificationProof)
+  | OrOfExpandedPattern.isTrue simplified = (simplified, ())
+  | OrOfExpandedPattern.isFalse simplified = (simplified, ())
   | otherwise =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern
@@ -83,5 +81,5 @@ simplifyEvaluatedExists variable simplified
             , substitution = []
             }
         ]
-    , SimplificationProof
+    , ()
     )

@@ -713,28 +713,6 @@ instance (MetaOrObject level, PrettyPrint (variable level))
                 unificationSolutionConstraints
                 us
             ]
-
--- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
--- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
-instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (UnificationProof level domain variable)
-  where
-    prettyPrint _ EmptyUnificationProof = "EmptyUnificationProof"
-    prettyPrint flags (CombinedUnificationProof p) =
-        writeOneFieldStruct flags "CombinedUnificationProof" p
-    prettyPrint flags (ConjunctionIdempotency p) =
-        writeOneFieldStruct flags "ConjunctionIdempotency" p
-    prettyPrint flags (AndDistributionAndConstraintLifting patternHead proofs) =
-        writeTwoFieldStruct
-            flags
-            "AndDistributionAndConstraintLifting"
-            patternHead
-            proofs
-    prettyPrint flags (Proposition_5_24_3 funProof var pat) =
-        writeThreeFieldStruct flags "Proposition_5_24_3" funProof var pat
-    prettyPrint flags (SubstitutionMerge var pat1 pat2) =
-        writeThreeFieldStruct flags "SubstitutionMerge" var pat1 pat2
-
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 instance MetaOrObject level => PrettyPrint (UnificationError level) where
     prettyPrint flags (PatternClash h1 h2) =
@@ -759,17 +737,3 @@ instance MetaOrObject level => PrettyPrint (ClashReason level) where
             )
     prettyPrint flags (HeadClash h) =
         writeOneFieldStruct flags "HeadClash" h
-
-instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (FunctionalProof level domain variable)
-  where
-    prettyPrint flags (FunctionalVariable v) =
-        writeOneFieldStruct flags "FunctionalVariable" v
-    prettyPrint flags (FunctionalDomainValue dv) =
-        writeOneFieldStruct flags "FunctionalDomainValue" dv
-    prettyPrint flags (FunctionalHead h) =
-        writeOneFieldStruct flags "FunctionalHead" h
-    prettyPrint flags (FunctionalStringLiteral l) =
-        writeOneFieldStruct flags "FunctionalStringLiteral" l
-    prettyPrint flags (FunctionalCharLiteral l) =
-        writeOneFieldStruct flags "FunctionalCharLiteral" l

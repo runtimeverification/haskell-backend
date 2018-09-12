@@ -49,7 +49,7 @@ extractEvaluators
     :: MetaOrObject level
     => level
     -> KoreIndexedModule StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level KoreDomain]
 extractEvaluators level indexedModule =
     Map.fromList (map extractPrefix groupedEvaluators)
   where
@@ -70,12 +70,12 @@ extractEvaluators level indexedModule =
 axiomToIdEvaluatorPair
     :: MetaOrObject level
     => level
-    -> SentenceAxiom UnifiedSortVariable UnifiedPattern domain Variable
-    -> Maybe (Id level, CommonApplicationFunctionEvaluator level domain)
+    -> SentenceAxiom UnifiedSortVariable UnifiedPattern KoreDomain Variable
+    -> Maybe (Id level, CommonApplicationFunctionEvaluator level KoreDomain)
 axiomToIdEvaluatorPair
     level
     axiom
-  = case koreSentenceToAxiomPattern level domain (asSentence axiom) of
+  = case koreSentenceToAxiomPattern level (asSentence axiom) of
         Left _ -> Nothing
         Right (FunctionAxiomPattern axiomPat) ->
             case fromPurePattern (axiomPatternLeft axiomPat) of

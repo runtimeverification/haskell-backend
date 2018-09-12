@@ -67,7 +67,7 @@ test_unlift =
     , testCase "Failing to unlift to [CommonMetaPattern] 0"
         (prettyAssertEqual "" Nothing
             (unliftFromMeta (variablePattern "#`a" sortMetaSort)
-            ::Maybe [CommonMetaPattern])
+            ::Maybe [CommonMetaPattern KoreDomain])
         )
     , testCase "Unlift to asKorePattern"
         (let

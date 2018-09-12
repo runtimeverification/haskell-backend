@@ -19,13 +19,13 @@ import           Data.Either
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Id )
+                 ( Id, KoreDomain )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.BaseStep
-                 ( AxiomPattern, StepProof (..), simplifyStepProof,
+                 ( AxiomPattern,
                  stepWithAxiom )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
@@ -56,28 +56,27 @@ sigma(x, y) => y    vs    a
 step
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level KoreDomain]
     -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level domain]
+    -> [AxiomPattern level KoreDomain]
     -- ^ Rewriting axioms
-    -> CommonOrOfExpandedPattern level domain
+    -> CommonOrOfExpandedPattern level KoreDomain
     -- ^ Configuration being rewritten.
     -> Simplifier
-        (CommonOrOfExpandedPattern level domain, StepProof level)
+        (CommonOrOfExpandedPattern level KoreDomain, ())
 step tools symbolIdToEvaluator axioms configuration = do
-    (stepPattern, stepProofs) <- Monad.Trans.lift
+    (stepPattern, _) <- Monad.Trans.lift
         (OrOfExpandedPattern.traverseFlattenWithPairs
             (baseStepWithPattern tools axioms)
             configuration
         )
-    (simplifiedPattern, simplificationProofs) <-
+    (simplifiedPattern, _) <-
         OrOfExpandedPattern.traverseFlattenWithPairs
             (ExpandedPattern.simplify tools symbolIdToEvaluator)
             stepPattern
     return
         ( simplifiedPattern
-        , simplifyStepProof $ StepProofCombined
-            (map StepProofSimplification simplificationProofs ++ stepProofs)
+        , ()
         )
 
 baseStepWithPattern
@@ -87,13 +86,13 @@ baseStepWithPattern
     -- ^ Rewriting axioms
     -> CommonExpandedPattern level domain
     -- ^ Configuration being rewritten.
-    -> IntCounter (CommonOrOfExpandedPattern level domain, StepProof level)
+    -> IntCounter (CommonOrOfExpandedPattern level domain, ())
 baseStepWithPattern tools axioms configuration = do
-    stepResultsWithProofs <- sequence (stepToList tools configuration axioms)
-    let (results, proofs) = unzip stepResultsWithProofs
+    stepResults <- sequence (stepToList tools configuration axioms)
+    let (results, _) = unzip stepResults
     return
         ( OrOfExpandedPattern.make results
-        , simplifyStepProof $ StepProofCombined proofs
+        , ()
         )
 
 stepToList
@@ -104,7 +103,7 @@ stepToList
     -> [AxiomPattern level domain]
     -- ^ Rewriting axioms
     ->  [ IntCounter
-            (CommonExpandedPattern level domain, StepProof level)
+            (CommonExpandedPattern level domain, ())
         ]
 stepToList tools configuration axioms =
     -- TODO: Stop ignoring Left results. Also, how would a result
@@ -122,17 +121,17 @@ sigma(x, y) => y    vs    a
 pickFirstStepper
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level KoreDomain]
     -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level domain]
+    -> [AxiomPattern level KoreDomain]
     -- ^ Rewriting axioms
     -> MaxStepCount
     -- ^ The maximum number of steps to be made
-    -> CommonExpandedPattern level domain
+    -> CommonExpandedPattern level KoreDomain
     -- ^ Configuration being rewritten.
-    -> Simplifier (CommonExpandedPattern level domain, StepProof level)
+    -> Simplifier (CommonExpandedPattern level KoreDomain, ())
 pickFirstStepper _ _ _ (MaxStepCount 0) stepperConfiguration =
-    return (stepperConfiguration, StepProofCombined [])
+    return (stepperConfiguration, ())
 pickFirstStepper _ _ _ (MaxStepCount n) _ | n < 0 =
     error ("Negative MaxStepCount: " ++ show n)
 pickFirstStepper
@@ -157,19 +156,19 @@ pickFirstStepper
 pickFirstStepperSkipMaxCheck
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level KoreDomain]
     -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level domain]
+    -> [AxiomPattern level KoreDomain]
     -- ^ Rewriting axioms
     -> MaxStepCount
     -- ^ The maximum number of steps to be made
-    -> CommonExpandedPattern level domain
+    -> CommonExpandedPattern level KoreDomain
     -- ^ Configuration being rewritten.
-    -> Simplifier (CommonExpandedPattern level domain, StepProof level)
+    -> Simplifier (CommonExpandedPattern level KoreDomain, ())
 pickFirstStepperSkipMaxCheck
     tools symbolIdToEvaluator axioms maxStepCount stepperConfiguration
   = do
-    (patterns, nextProof) <-
+    (patterns, _) <-
         -- TODO: Perhaps use IntCounter.findState to reduce the need for
         -- intCounter values and to make this more testable.
         step
@@ -178,9 +177,9 @@ pickFirstStepperSkipMaxCheck
             axioms
             (OrOfExpandedPattern.make [stepperConfiguration])
     case OrOfExpandedPattern.extractPatterns patterns of
-        [] -> return (stepperConfiguration, StepProofCombined [])
+        [] -> return (stepperConfiguration, ())
         (nextConfiguration : _) -> do
-            (finalConfiguration, finalProof) <-
+            (finalConfiguration, _) <-
                 pickFirstStepper
                     tools
                     symbolIdToEvaluator
@@ -189,6 +188,5 @@ pickFirstStepperSkipMaxCheck
                     nextConfiguration
             return
                 ( finalConfiguration
-                , simplifyStepProof
-                    $ StepProofCombined [nextProof, finalProof]
+                , ()
                 )

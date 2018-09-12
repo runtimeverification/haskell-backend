@@ -27,8 +27,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import Kore.Step.Simplification.Data
-       ( PureMLPatternSimplifier, Simplifier,
-       SimplificationProof (..) )
+       ( PureMLPatternSimplifier, Simplifier)
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 
@@ -58,7 +57,7 @@ newtype ApplicationFunctionEvaluator level domain variable =
         -> Application level (PureMLPattern level domain variable)
         -> Simplifier
             ( AttemptedFunction level domain variable
-            , SimplificationProof level
+            , ()
             )
         )
 
@@ -85,17 +84,17 @@ type CommonAttemptedFunction level domain = AttemptedFunction level domain Varia
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableFunctionEvaluator
     :: Simplifier
-         (AttemptedFunction level1 domain variable, SimplificationProof level2)
-notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
+         (AttemptedFunction level1 domain variable, ())
+notApplicableFunctionEvaluator = pure (NotApplicable, ())
 
 -- |Yields a pure 'Simplifier' which produces a given 'PureMLPattern'
 purePatternFunctionEvaluator
     :: (MetaOrObject level)
     => PureMLPattern level domain variable
-    -> Simplifier (AttemptedFunction level domain variable, SimplificationProof level')
+    -> Simplifier (AttemptedFunction level domain variable, ())
 purePatternFunctionEvaluator p =
     pure
         (Applied (makeFromSinglePurePattern p)
-        , SimplificationProof
+        , ()
         )
 

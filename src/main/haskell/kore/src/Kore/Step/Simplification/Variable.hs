@@ -26,8 +26,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 {-| 'simplify' simplifies a 'Variable' pattern, which means returning
 an or containing a term made of that variable.
@@ -36,7 +34,7 @@ simplify
     :: MetaOrObject level
     => variable level
     -> ( OrOfExpandedPattern level domain variable
-       , SimplificationProof level
+       , ()
        )
 simplify var =
     ( OrOfExpandedPattern.make
@@ -46,5 +44,5 @@ simplify var =
             , substitution = []
             }
         ]
-    , SimplificationProof
+    , ()
     )

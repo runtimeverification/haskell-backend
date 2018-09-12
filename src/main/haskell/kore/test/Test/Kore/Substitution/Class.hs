@@ -22,7 +22,7 @@ type UnifiedPatternSubstitution =
 
 instance
     PatternSubstitutionClass
-        S.Substitution Variable UnifiedPattern IntCounter
+        S.Substitution KoreDomain Variable UnifiedPattern IntCounter
   where
 
 testSubstitute

@@ -44,7 +44,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PureMLPatternSimplifier (..), 
                  Simplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
@@ -105,14 +105,14 @@ simplify
     -> PureMLPattern level KoreDomain variable
     -> Simplifier
         ( ExpandedPattern level KoreDomain variable
-        , SimplificationProof level
+        , ()
         )
 simplify tools symbolIdToEvaluator patt = do
-    (orPatt, proof) <- simplifyToOr tools symbolIdToEvaluator patt
+    (orPatt, _) <- simplifyToOr tools symbolIdToEvaluator patt
     return
         ( give (MetadataTools.sortTools tools)
             $ OrOfExpandedPattern.toExpandedPattern orPatt
-        , proof
+        , ()
         )
 
 {-|'simplifyToOr' simplifies a PureMLPattern level domain variable, returning an
@@ -134,7 +134,7 @@ simplifyToOr
     -> PureMLPattern level KoreDomain variable
     -> Simplifier
         ( OrOfExpandedPattern level KoreDomain variable
-        , SimplificationProof level
+        , ()
         )
 simplifyToOr tools symbolIdToEvaluator patt =
     give
@@ -167,7 +167,7 @@ simplifyInternal
     -> Pattern level KoreDomain variable (PureMLPattern level KoreDomain variable)
     -> Simplifier
         ( OrOfExpandedPattern level KoreDomain variable
-        , SimplificationProof level
+        , ()
         )
 simplifyInternal
     tools

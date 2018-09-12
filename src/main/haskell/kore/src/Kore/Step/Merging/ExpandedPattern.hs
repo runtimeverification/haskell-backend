@@ -33,7 +33,7 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier, Simplifier,
-                 SimplificationProof (SimplificationProof) )
+                )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -68,7 +68,7 @@ mergeWithPredicateSubstitution
     -- ^ Condition and substitution to add.
     -> ExpandedPattern level domain variable
     -- ^ pattern to which the above should be added.
-    -> Simplifier (ExpandedPattern level domain variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level domain variable, ())
 mergeWithPredicateSubstitution
     tools
     simplifier
@@ -85,7 +85,7 @@ mergeWithPredicateSubstitution
             { predicate = mergedCondition
             , substitution = mergedSubstitution
             }
-        , _proof ) <-
+        , _ ) <-
             Except.lift
                 (mergePredicatesAndSubstitutions
                     tools
@@ -115,7 +115,7 @@ mergeWithEvaluatedCondition
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level domain variable
     -> PredicateSubstitution level domain variable
-    -> IntCounter (ExpandedPattern level domain variable, SimplificationProof level)
+    -> IntCounter (ExpandedPattern level domain variable, ())
 mergeWithEvaluatedCondition
     tools
     ExpandedPattern
@@ -129,7 +129,7 @@ mergeWithEvaluatedCondition
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , _proof
+        , _
         ) <- mergePredicatesAndSubstitutions
             tools
             [predPredicate]
@@ -140,5 +140,5 @@ mergeWithEvaluatedCondition
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , SimplificationProof
+        , ()
         )

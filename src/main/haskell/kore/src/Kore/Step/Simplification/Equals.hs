@@ -51,7 +51,7 @@ import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), Simplifier )
+                 ( Simplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Not as Not
@@ -137,7 +137,7 @@ simplify
     -> Equals level (OrOfExpandedPattern level domain variable)
     -> Simplifier
         ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 simplify
     tools
@@ -162,10 +162,10 @@ simplifyEvaluated
     -> OrOfExpandedPattern level domain variable
     -> OrOfExpandedPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level domain variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, ())
 simplifyEvaluated tools first second
   | first == second =
-    return (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    return (OrOfExpandedPattern.make [ExpandedPattern.top], ())
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise =
     case ( firstPatterns, secondPatterns )
@@ -198,7 +198,7 @@ makeEvaluate
     -> ExpandedPattern level domain variable
     -> ExpandedPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level domain variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, ())
 makeEvaluate
     tools
     first@ExpandedPattern
@@ -210,7 +210,7 @@ makeEvaluate
         (result, _proof) = give (MetadataTools.sortTools tools )
             $ Iff.makeEvaluate first second
     in
-        return (result, SimplificationProof)
+        return (result, ())
 makeEvaluate
     tools
     ExpandedPattern
@@ -233,33 +233,33 @@ makeEvaluate
         { term = secondTerm }
   = do
     let
-        (firstCeil, _proof1) =
+        (firstCeil, _) =
             Ceil.makeEvaluate tools
                 first
                     { ExpandedPattern.term =
                         if termsAreEqual then mkTop else firstTerm
                     }
-        (secondCeil, _proof2) =
+        (secondCeil, _) =
             Ceil.makeEvaluate tools
                 second
                     { ExpandedPattern.term =
                         if termsAreEqual then mkTop else secondTerm
                     }
-        (firstCeilNegation, _proof3) =
+        (firstCeilNegation, _) =
             give sortTools $ Not.simplifyEvaluated firstCeil
-        (secondCeilNegation, _proof4) =
+        (secondCeilNegation, _) =
             give sortTools $ Not.simplifyEvaluated secondCeil
-    (termEquality, _proof) <-
+    (termEquality, _) <-
         makeEvaluateTermsAssumesNoBottom tools firstTerm secondTerm
-    (negationAnd, _proof) <-
+    (negationAnd, _) <-
         And.simplifyEvaluated tools firstCeilNegation secondCeilNegation
-    (ceilAnd, _proof) <- And.simplifyEvaluated tools firstCeil secondCeil
-    (equalityAnd, _proof) <-
+    (ceilAnd, _) <- And.simplifyEvaluated tools firstCeil secondCeil
+    (equalityAnd, _) <-
         And.simplifyEvaluated tools termEquality ceilAnd
     let
-        (finalOr, _proof) =
+        (finalOr, _) =
             give sortTools $ Or.simplifyEvaluated equalityAnd negationAnd
-    return (finalOr, SimplificationProof)
+    return (finalOr, ())
   where
     sortTools = MetadataTools.sortTools tools
     termsAreEqual = firstTerm == secondTerm
@@ -280,7 +280,7 @@ makeEvaluateTermsAssumesNoBottom
     -> PureMLPattern level domain variable
     -> PureMLPattern level domain variable
     -> Simplifier
-        (OrOfExpandedPattern level domain variable, SimplificationProof level)
+        (OrOfExpandedPattern level domain variable, ())
 makeEvaluateTermsAssumesNoBottom
     tools first second
   | first == second =
@@ -292,7 +292,7 @@ makeEvaluateTermsAssumesNoBottom
                 , substitution = []
                 }
             ]
-        , SimplificationProof
+        , ()
         )
   | otherwise =
     -- Writing this the normal way seems to be too much for Haskell's
@@ -314,7 +314,7 @@ makeEvaluateTermsAssumesNoBottom
                     , substitution = []
                     }
                 ]
-            , SimplificationProof
+            , ()
             )
         )
 
@@ -323,12 +323,12 @@ differentCharLiterals
     -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level domain variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, ())
         )
 differentCharLiterals
     (CharLiteral_ _) (CharLiteral_ _)
   =
-    Just (return (OrOfExpandedPattern.make [], SimplificationProof))
+    Just (return (OrOfExpandedPattern.make [], ()))
 differentCharLiterals _ _ = Nothing
 
 differentStringLiterals
@@ -336,12 +336,12 @@ differentStringLiterals
     -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level domain variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, ())
         )
 differentStringLiterals
     (StringLiteral_ _) (StringLiteral_ _)
   =
-    Just (return (OrOfExpandedPattern.make [], SimplificationProof))
+    Just (return (OrOfExpandedPattern.make [], ()))
 differentStringLiterals _ _ = Nothing
 
 differentDomainValues
@@ -349,12 +349,12 @@ differentDomainValues
     -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level domain variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, ())
         )
 differentDomainValues
     (DV_ _ (StringLiteral_ _))
     (DV_ _ (StringLiteral_ _))
-    = Just (return (OrOfExpandedPattern.make [], SimplificationProof))
+    = Just (return (OrOfExpandedPattern.make [], ()))
 differentDomainValues _ _ = Nothing
 
 variableEqualsFunctional
@@ -364,7 +364,7 @@ variableEqualsFunctional
     -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level domain variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, ())
         )
 variableEqualsFunctional
     tools (Var_ var) term
@@ -379,7 +379,7 @@ variableEqualsFunctional
                     , substitution = [(var, term)]
                     }
                 ]
-            , SimplificationProof
+            , ()
             )
         )
 variableEqualsFunctional _ _ _ = Nothing
@@ -391,7 +391,7 @@ functionalEqualsVariable
     -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level domain variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, ())
         )
 functionalEqualsVariable
     tools term (Var_ var)
@@ -406,7 +406,7 @@ functionalEqualsVariable
                     , substitution = [(var, term)]
                     }
                 ]
-            , SimplificationProof
+            , ()
             )
         )
 functionalEqualsVariable _ _ _ = Nothing
@@ -426,7 +426,7 @@ constructorAtTheTop
     -> PureMLPattern level domain variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level domain variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, ())
         )
 constructorAtTheTop
     tools
@@ -445,11 +445,11 @@ constructorAtTheTop
                 foldM
                     (combineWithAnd tools)
                     ( OrOfExpandedPattern.make [ExpandedPattern.top]
-                    , SimplificationProof
+                    , ()
                     )
                     childrenEquals
-            return (childrenAnd, SimplificationProof)
-        else return (OrOfExpandedPattern.make [], SimplificationProof)
+            return (childrenAnd, ())
+        else return (OrOfExpandedPattern.make [], ())
   where
     -- TODO: Extract this somewhere.
     isConstructor' symbolHead =
@@ -466,10 +466,10 @@ constructorAtTheTop
             , Hashable variable
             )
         => MetadataTools level StepperAttributes
-        -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
-        -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+        -> (OrOfExpandedPattern level domain variable, ())
+        -> (OrOfExpandedPattern level domain variable, ())
         -> Simplifier
-            (OrOfExpandedPattern level domain variable, SimplificationProof level)
+            (OrOfExpandedPattern level domain variable, ())
     combineWithAnd tools' (thing1, _proof1) (thing2, _proof2) =
         And.simplifyEvaluated tools' thing1 thing2
 constructorAtTheTop _ _ _ = Nothing

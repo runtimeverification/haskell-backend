@@ -182,7 +182,7 @@ boolModule =
             ]
         }
 
-evaluate :: CommonPurePattern Object domain -> CommonPurePattern Object domain
+evaluate :: CommonPurePattern Object KoreDomain -> CommonPurePattern Object KoreDomain
 evaluate pat =
     case evalSimplifier (Pattern.simplify tools evaluators pat) of
         Left err -> error (Kore.Error.printError err)

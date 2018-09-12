@@ -35,8 +35,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, isFalse, isTrue, make, toExpandedPattern )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 
@@ -55,7 +53,7 @@ simplify
         )
     => Iff level (OrOfExpandedPattern level domain variable)
     ->  ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 simplify
     Iff
@@ -78,14 +76,14 @@ simplifyEvaluated
         )
     => OrOfExpandedPattern level domain variable
     -> OrOfExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 simplifyEvaluated first second
   | OrOfExpandedPattern.isTrue first =
-    (second, SimplificationProof)
+    (second, ())
   | OrOfExpandedPattern.isFalse first =
     Not.simplifyEvaluated second
   | OrOfExpandedPattern.isTrue second =
-    (first, SimplificationProof)
+    (first, ())
   | OrOfExpandedPattern.isFalse second =
     Not.simplifyEvaluated first
   | otherwise =
@@ -113,16 +111,16 @@ makeEvaluate
         )
     => ExpandedPattern level domain variable
     -> ExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 makeEvaluate first second
   | ExpandedPattern.isTop first =
-    (OrOfExpandedPattern.make [second], SimplificationProof)
+    (OrOfExpandedPattern.make [second], ())
   | ExpandedPattern.isBottom first =
-    (fst $ Not.makeEvaluate second, SimplificationProof)
+    (fst $ Not.makeEvaluate second, ())
   | ExpandedPattern.isTop second =
-    (OrOfExpandedPattern.make [first], SimplificationProof)
+    (OrOfExpandedPattern.make [first], ())
   | ExpandedPattern.isBottom second =
-    (fst $ Not.makeEvaluate first, SimplificationProof)
+    (fst $ Not.makeEvaluate first, ())
   | otherwise =
     makeEvaluateNonBoolIff first second
 
@@ -135,7 +133,7 @@ makeEvaluateNonBoolIff
         )
     => ExpandedPattern level domain variable
     -> ExpandedPattern level domain variable
-    -> (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> (OrOfExpandedPattern level domain variable, ())
 makeEvaluateNonBoolIff
     ExpandedPattern
         { term = t@(Top_ _)
@@ -166,7 +164,7 @@ makeEvaluateNonBoolIff
             , substitution = []
             }
         ]
-    , SimplificationProof
+    , ()
     )
 makeEvaluateNonBoolIff patt1 patt2 =
     ( OrOfExpandedPattern.make
@@ -178,5 +176,5 @@ makeEvaluateNonBoolIff patt1 patt2 =
             , substitution = []
             }
         ]
-    , SimplificationProof
+    , ()
     )

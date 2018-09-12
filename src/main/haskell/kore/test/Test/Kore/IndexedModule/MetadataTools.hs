@@ -31,7 +31,7 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: PureSentenceSymbol Object
+objectA :: PureSentenceSymbol Object KoreDomain
 objectA = SentenceSymbol
     { sentenceSymbolSymbol =
         Symbol
@@ -43,7 +43,7 @@ objectA = SentenceSymbol
     , sentenceSymbolAttributes = Attributes [ keyOnlyAttribute "constructor" ]
     }
 
-metaA :: PureSentenceSymbol Meta
+metaA :: PureSentenceSymbol Meta KoreDomain
 metaA = symbol_ "#a" AstLocationTest [] charListMetaSort
 
 testObjectModuleName :: ModuleName
@@ -55,7 +55,7 @@ testMetaModuleName = ModuleName "TEST-META-MODULE"
 testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
-testObjectModule :: PureModule Object
+testObjectModule :: PureModule Object KoreDomain
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
@@ -72,7 +72,7 @@ testObjectModule =
         , moduleAttributes = Attributes []
         }
 
-testMetaModule :: PureModule Meta
+testMetaModule :: PureModule Meta KoreDomain
 testMetaModule =
     Module
         { moduleName = testMetaModuleName

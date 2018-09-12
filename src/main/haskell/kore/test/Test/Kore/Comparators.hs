@@ -29,8 +29,6 @@ import           Kore.Step.Function.Data as AttemptedFunction
 import           Kore.Step.OrOfExpandedPattern
 import           Kore.Step.PatternAttributes
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof )
 import           Kore.Unification.Error
 import           Kore.Unification.Unifier
 
@@ -177,43 +175,7 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance
-    (Eq level, Show level) =>
-    SumEqualWithExplanation (StepProof level)
-  where
-    sumConstructorPair (StepProofUnification a1) (StepProofUnification a2) =
-        SumConstructorSameWithArguments (EqWrap "StepProofUnification" a1 a2)
-    sumConstructorPair a1@(StepProofUnification _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
 
-    sumConstructorPair (StepProofCombined a1) (StepProofCombined a2) =
-        SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
-    sumConstructorPair a1@(StepProofCombined _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (StepProofVariableRenamings a1) (StepProofVariableRenamings a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "StepProofVariableRenamings" a1 a2)
-    sumConstructorPair a1@(StepProofVariableRenamings _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (StepProofSimplification a1)
-        (StepProofSimplification a2)
-      =
-        SumConstructorSameWithArguments (EqWrap "StepProofSimplification" a1 a2)
-    sumConstructorPair a1@(StepProofSimplification _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance (Eq level, Show level) => EqualWithExplanation (StepProof level) where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
     => StructEqualWithExplanation (And level child)
@@ -654,88 +616,7 @@ instance (Show (variable level), EqualWithExplanation (variable level))
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance
-    ( Eq (variable level)
-    , Show (variable level)
-    )
-    => EqualWithExplanation (FunctionalProof level domain variable)
-  where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
 
-instance
-    ( Eq (variable level)
-    , Show (variable level)
-    )
-    => EqualWithExplanation (FunctionProof level domain variable)
-  where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Eq level, Eq (variable level)
-    , Show level, Show (variable level)
-    , EqualWithExplanation (variable level)
-    )
-    => SumEqualWithExplanation (UnificationProof level domain variable)
-  where
-    sumConstructorPair EmptyUnificationProof EmptyUnificationProof =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@EmptyUnificationProof a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (CombinedUnificationProof a1) (CombinedUnificationProof a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "CombinedUnificationProof" a1 a2)
-    sumConstructorPair a1@(CombinedUnificationProof _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (ConjunctionIdempotency a1) (ConjunctionIdempotency a2) =
-        SumConstructorSameWithArguments (EqWrap "ConjunctionIdempotency" a1 a2)
-    sumConstructorPair a1@(ConjunctionIdempotency _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (Proposition_5_24_3 a1 a2 a3) (Proposition_5_24_3 b1 b2 b3)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "Proposition_5_24_3" (a1, a2, a3) (b1, b2, b3))
-    sumConstructorPair a1@(Proposition_5_24_3 _ _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (AndDistributionAndConstraintLifting a1 a2)
-        (AndDistributionAndConstraintLifting b1 b2) =
-            SumConstructorSameWithArguments
-                (EqWrap "AndDistributionAndConstraintLifting" (a1, a2) (b1, b2))
-    sumConstructorPair a1@(AndDistributionAndConstraintLifting _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (SubstitutionMerge a1 a2 a3) (SubstitutionMerge b1 b2 b3)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "SubstitutionMerge" (a1, a2, a3) (b1, b2, b3))
-    sumConstructorPair a1@(SubstitutionMerge _ _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance
-    ( Eq level, Eq (variable level)
-    , Show level, Show (variable level)
-    , EqualWithExplanation (variable level)
-    )
-    => EqualWithExplanation (UnificationProof level domain variable)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
 
 instance
     ( Eq level, Eq (variable level)
@@ -764,27 +645,6 @@ instance
     , EqualWithExplanation (variable level)
     )
     => EqualWithExplanation (UnificationSolution level domain variable)
-  where
-    compareWithExplanation = structCompareWithExplanation
-    printWithExplanation = show
-
-instance StructEqualWithExplanation (VariableRenaming level)
-  where
-    structFieldsWithNames
-        expected@(VariableRenaming _ _)
-        actual@(VariableRenaming _ _)
-      = [ EqWrap
-            "variableRenamingOriginal = "
-            (variableRenamingOriginal expected)
-            (variableRenamingOriginal actual)
-        , EqWrap
-            "variableRenamingRenamed = "
-            (variableRenamingRenamed expected)
-            (variableRenamingRenamed actual)
-        ]
-    structConstructorName _ = "VariableRenaming"
-
-instance EqualWithExplanation (VariableRenaming level)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -921,16 +781,6 @@ instance
     => EqualWithExplanation (AttemptedFunction level domain variable)
   where
     compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance EqualWithExplanation (PredicateProof level)
-  where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
-instance EqualWithExplanation (SimplificationProof level)
-  where
-    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance

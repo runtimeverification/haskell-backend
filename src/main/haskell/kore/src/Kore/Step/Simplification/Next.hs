@@ -31,8 +31,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, toExpandedPattern )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -51,7 +49,7 @@ simplify
         )
     => Next Object (OrOfExpandedPattern Object domain variable)
     ->  ( OrOfExpandedPattern Object domain variable
-        , SimplificationProof Object
+        , () 
         )
 simplify
     Next { nextChild = child }
@@ -66,7 +64,7 @@ simplifyEvaluatedNext
         , Ord (variable Object)
         )
     => OrOfExpandedPattern Object domain variable
-    -> (OrOfExpandedPattern Object domain variable, SimplificationProof Object)
+    -> (OrOfExpandedPattern Object domain variable, ())
 simplifyEvaluatedNext simplified =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern
@@ -78,5 +76,5 @@ simplifyEvaluatedNext simplified =
             , substitution = []
             }
         ]
-    , SimplificationProof
+    , ()
     )

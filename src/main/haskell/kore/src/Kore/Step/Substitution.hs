@@ -36,7 +36,7 @@ import Kore.Unification.Error
 import Kore.Unification.SubstitutionNormalization
        ( normalizeSubstitution )
 import Kore.Unification.Unifier
-       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution,
+       ( UnificationSubstitution,
        normalizeSubstitutionDuplication )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
@@ -62,13 +62,13 @@ mergeSubstitutions
           (UnificationError level)
           ( Predicate level domain variable
           , UnificationSubstitution level domain variable
-          , UnificationProof level domain variable
+          , ()
           )
 mergeSubstitutions tools first second = do
-    (substitution, proof) <-
+    (substitution, _) <-
         normalizeSubstitutionDuplication tools (first ++ second)
     -- TODO(virgil): Return the actual condition here.
-    return (makeTruePredicate, substitution, proof)
+    return (makeTruePredicate, substitution, ())
 
 -- | Merge and normalize two unification substitutions
 mergeAndNormalizeSubstitutions
@@ -87,7 +87,7 @@ mergeAndNormalizeSubstitutions
           ( UnificationOrSubstitutionError level variable )
           ( IntCounter
               ( PredicateSubstitution level domain variable
-              , UnificationProof level domain variable
+              , ()
               )
           )
 mergeAndNormalizeSubstitutions tools first second =
@@ -108,15 +108,15 @@ normalizeSubstitutionAfterMerge
           ( UnificationOrSubstitutionError level variable )
           ( IntCounter
               ( PredicateSubstitution level domain variable
-              , UnificationProof level domain variable
+              , ()
               )
           )
 normalizeSubstitutionAfterMerge tools substit = do
-    (substitutionList, proof) <-
+    (substitutionList, _) <-
           normalizeSubstitutionDuplication' substit
     predSubstitution <- normalizeSubstitution' substitutionList
     -- TODO(virgil): Return the actual condition here. and proofs
-    return $ (,) <$> predSubstitution <*> pure proof
+    return $ (,) <$> predSubstitution <*> pure ()
   where
     normalizeSubstitutionDuplication' =
         unificationToUnifyOrSubError . normalizeSubstitutionDuplication tools
@@ -148,7 +148,7 @@ mergePredicatesAndSubstitutions
     -> [UnificationSubstitution level domain variable]
     -> IntCounter
         ( PredicateSubstitution level domain variable
-        , UnificationProof level domain variable
+        , ()
         )
 mergePredicatesAndSubstitutions tools predicates substitutions =
     let
@@ -161,7 +161,7 @@ mergePredicatesAndSubstitutions tools predicates substitutions =
         case normalizeSubstitutionAfterMerge tools mergedSubstitution of
             Left _ ->
                 let
-                    (mergedPredicate, _proof) =
+                    (mergedPredicate, _) =
                         give (sortTools tools) $ makeMultipleAndPredicate
                             (  predicates
                             ++ map substitutionToPredicate substitutions
@@ -172,13 +172,13 @@ mergePredicatesAndSubstitutions tools predicates substitutions =
                             { predicate = mergedPredicate
                             , substitution = []
                             }
-                        , EmptyUnificationProof
+                        , ()
                         )
             Right counterPredicateSubstitution -> do
-                (PredicateSubstitution {predicate, substitution}, proof) <-
+                (PredicateSubstitution {predicate, substitution}, _) <-
                     counterPredicateSubstitution
                 let
-                    (mergedPredicate, _proof) =
+                    (mergedPredicate, _) =
                         give (sortTools tools) $
                             makeMultipleAndPredicate
                                 (predicate : substitutionMergePredicate)
@@ -187,7 +187,7 @@ mergePredicatesAndSubstitutions tools predicates substitutions =
                         { predicate = mergedPredicate
                         , substitution = substitution
                         }
-                    , proof
+                    , ()
                     )
 
 mergeSubstitutionWithPredicate

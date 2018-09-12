@@ -26,8 +26,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.
@@ -35,7 +33,7 @@ an or containing a term made of that value.
 simplify
     :: DomainValue Object (PureMLPattern Meta domain Variable)
     -> ( OrOfExpandedPattern Object domain variable
-       , SimplificationProof Object
+       , ()
        )
 simplify dv =
     ( OrOfExpandedPattern.make
@@ -45,5 +43,5 @@ simplify dv =
             , substitution = []
             }
         ]
-    , SimplificationProof
+    , ()
     )

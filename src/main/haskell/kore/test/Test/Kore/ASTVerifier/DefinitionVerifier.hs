@@ -179,8 +179,8 @@ simpleObjectAliasSentence alias sort =
 simpleAliasSentence
     :: AliasName
     -> SortName
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
     -> KoreSentenceAlias level
 simpleAliasSentence (AliasName name) (SortName sort) l r =
     SentenceAlias
@@ -294,8 +294,8 @@ aliasSentenceWithSortParameters
     :: AliasName
     -> SortName
     -> [SortVariable level]
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
     -> KoreSentenceAlias level
 aliasSentenceWithSortParameters
     (AliasName name) (SortName sort) parameters l r
@@ -321,8 +321,8 @@ sentenceAliasWithSortArgument
     -> Sort level
     -> Sort level
     -> [SortVariable level]
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
     -> KoreSentenceAlias level
 sentenceAliasWithSortArgument
     (AliasName name) sortArgument resultSort parameters l r
@@ -344,8 +344,8 @@ sentenceAliasWithAttributes
     -> [SortVariable level]
     -> Sort level
     -> [CommonKorePattern]
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
     -> KoreSentenceAlias level
 sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
     SentenceAlias
@@ -445,8 +445,8 @@ sentenceAliasWithResultSort
     :: AliasName
     -> Sort level
     -> [SortVariable level]
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
     -> KoreSentenceAlias level
 sentenceAliasWithResultSort
     (AliasName name) sort parameters l r
@@ -516,8 +516,8 @@ aliasSentenceWithArguments
     => AliasName
     -> Sort level
     -> [Sort level]
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
-    -> Pattern level domain Variable (Fix (UnifiedPattern domain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
+    -> Pattern level KoreDomain Variable (Fix (UnifiedPattern KoreDomain Variable))
     -> KoreSentence
 aliasSentenceWithArguments
     (AliasName name) sort operandSorts l r

@@ -95,7 +95,7 @@ import           Kore.Step.Function.Data
                  AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 ( CommonPureMLPatternSimplifier,
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -237,7 +237,7 @@ notImplemented :: Function
 notImplemented =
     ApplicationFunctionEvaluator notImplemented0
   where
-    notImplemented0 _ _ _ = pure (NotApplicable, SimplificationProof)
+    notImplemented0 _ _ _ = pure (NotApplicable, ())
 
 {- | Verify a builtin sort declaration.
 
@@ -549,7 +549,7 @@ functionEvaluator ctx impl =
         Kore.Error.withContext ctx
             (do
                 attempt <- impl tools simplifier resultSort applicationChildren
-                return (attempt, SimplificationProof)
+                return (attempt, ())
             )
 
 wrongArity :: MonadError (Error w) m => m a

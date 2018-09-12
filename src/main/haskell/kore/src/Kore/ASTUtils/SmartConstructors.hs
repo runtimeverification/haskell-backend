@@ -262,7 +262,7 @@ ensureSortAgreement
     -> PureMLPattern level domain var
 ensureSortAgreement p =
   case makeSortsAgree $ p ^. partsOf allChildren of
-    Just []    -> p & resultSort .~ flexibleSort
+    Just []       -> p & resultSort .~ flexibleSort
     Just children ->
       p & (partsOf allChildren) .~ children
         & inputSort  .~ childSort

@@ -32,8 +32,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, merge )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 
 {-|'simplify' simplifies an 'Or' pattern with 'OrOfExpandedPattern'
 children by merging the two children.
@@ -47,7 +45,7 @@ simplify
         )
     => Or level (OrOfExpandedPattern level domain variable)
     ->  ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 simplify
     Or
@@ -71,7 +69,7 @@ simplifyEvaluated
     => OrOfExpandedPattern level domain variable
     -> OrOfExpandedPattern level domain variable
     ->  ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 simplifyEvaluated first second =
     case OrOfExpandedPattern.extractPatterns first of
@@ -82,7 +80,7 @@ simplifyEvaluated first second =
   where
     defaultMerge =
         ( OrOfExpandedPattern.merge first second
-        , SimplificationProof
+        , ()
         )
 
 -- TODO(virgil): This should do all possible mergings, not just the first
@@ -97,7 +95,7 @@ halfSimplifyEvaluated
     => ExpandedPattern level domain variable
     -> OrOfExpandedPattern level domain variable
     ->  ( OrOfExpandedPattern level domain variable
-        , SimplificationProof level
+        , ()
         )
 halfSimplifyEvaluated
     first@ExpandedPattern
@@ -110,7 +108,7 @@ halfSimplifyEvaluated
     case OrOfExpandedPattern.extractPatterns second of
         [] ->
             ( OrOfExpandedPattern.make [first]
-            , SimplificationProof
+            , ()
             )
         ( ExpandedPattern
             { term, predicate, substitution}
@@ -128,11 +126,11 @@ halfSimplifyEvaluated
                         }
                     : patts
                     )
-                , SimplificationProof
+                , ()
                 )
 halfSimplifyEvaluated
     first second
   =
     ( OrOfExpandedPattern.merge (OrOfExpandedPattern.make [first]) second
-    , SimplificationProof
+    , ()
     )

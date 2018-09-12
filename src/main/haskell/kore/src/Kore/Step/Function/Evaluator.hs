@@ -42,7 +42,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, make, merge )
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier (..), Simplifier,
-                 SimplificationProof (..) )
+                )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
@@ -73,7 +73,7 @@ evaluateApplication
     -- ^ Aggregated children predicate and substitution.
     -> Application level (PureMLPattern level domain variable)
     -- ^ The pattern to be evaluated
-    -> Simplifier (OrOfExpandedPattern level domain variable, SimplificationProof level)
+    -> Simplifier (OrOfExpandedPattern level domain variable, ())
 evaluateApplication
     tools
     simplifier
@@ -112,7 +112,7 @@ evaluateApplication
                 appliedTerms = map unwrapApplied applied
             return
                 ( foldr OrOfExpandedPattern.merge notAppliedTerm appliedTerms
-                , SimplificationProof
+                , ()
                 )
   where
     notApplicable :: (AttemptedFunction level domain variable, x) -> Bool
@@ -120,9 +120,9 @@ evaluateApplication
     notApplicable _ = False
 
     unwrapApplied
-        :: (AttemptedFunction level domain variable, proof)
+        :: (AttemptedFunction level domain variable, ())
         -> OrOfExpandedPattern level domain variable
-    unwrapApplied (AttemptedFunction.Applied term, _proof) = term
+    unwrapApplied (AttemptedFunction.Applied term, ()) = term
     unwrapApplied _ = error "Can only unwrap 'Applied' terms."
 
     unchangedPatt =
@@ -134,7 +134,7 @@ evaluateApplication
                     , substitution = substitution
                     }
     unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
-    unchanged = (unchangedOr, SimplificationProof)
+    unchanged = (unchangedOr, ())
     applyEvaluator app' (ApplicationFunctionEvaluator evaluator) =
         evaluator
             tools
@@ -169,22 +169,22 @@ mergeWithConditionAndSubstitution
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level domain variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedFunction level domain variable, SimplificationProof level)
+    -> (AttemptedFunction level domain variable, ())
     -- ^ AttemptedFunction to which the condition should be added.
-    -> Simplifier (AttemptedFunction level domain variable, SimplificationProof level)
+    -> Simplifier (AttemptedFunction level domain variable, ())
 mergeWithConditionAndSubstitution
-    _ _ _ (AttemptedFunction.NotApplicable, _proof)
+    _ _ _ (AttemptedFunction.NotApplicable, ())
   =
-    return (AttemptedFunction.NotApplicable, SimplificationProof)
+    return (AttemptedFunction.NotApplicable, ())
 mergeWithConditionAndSubstitution
     tools
     simplifier
     toMerge
-    (AttemptedFunction.Applied functionResult, _proof)
+    (AttemptedFunction.Applied functionResult, ())
   = do
-    (evaluated, _proof) <- OrOfExpandedPattern.mergeWithPredicateSubstitution
+    (evaluated, ()) <- OrOfExpandedPattern.mergeWithPredicateSubstitution
         tools
         simplifier
         toMerge
         functionResult
-    return (AttemptedFunction.Applied evaluated, SimplificationProof)
+    return (AttemptedFunction.Applied evaluated, ())
