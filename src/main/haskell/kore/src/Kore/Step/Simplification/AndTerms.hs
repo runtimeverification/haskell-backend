@@ -300,7 +300,6 @@ maybeTermAnd =
 type TermTransformation level variable =
     (  MetadataTools level StepperAttributes
     -> TermSimplifier level variable
-    -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> FunctionResult
@@ -612,6 +611,15 @@ sortInjectionAndEqualsAssumesDifferentHeads
         -- It should work for two constructors, but it may not work
         -- for domainvalue-domainvalue pairs - can't these be obtained
         -- through sort injections?
+        --
+        -- To give an example, if we have
+        -- inj{Integer, s}(\dv{Nat}("1")) vs inj{Nat, s}(\dv{Nat}("1"))
+        -- can it happen that
+        -- \dv{Integer}("1") = inj{Nat, Integer}(\dv{Nat}("1"))?
+        -- If yes, then the conditions above are not enough for returning
+        -- bottom here.
+        --
+        -- For now we will assume that inj does not work like that.
         Handled (mkBottom, SimplificationProof)
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
