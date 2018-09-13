@@ -183,10 +183,10 @@ main = do
                                         (fst simplifiedPatterns) of
                                     [] -> ExpandedPattern.bottom
                                     (config : _) -> config
-                        simpleStepper
+                        pickLongest
+                            (simpleStrategy axiomPatterns)
                             metadataTools
                             simplifier
-                            axiomPatterns
                             stepLimit
                             (initialPattern, mempty)
             putStrLn $ unparseToString

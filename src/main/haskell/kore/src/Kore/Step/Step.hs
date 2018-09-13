@@ -14,29 +14,30 @@ module Kore.Step.Step
     , builtin
     , axiomStep
     , transitionPrim
-      -- * Single-step strategy
     , stepStrategy
-    , stepStepper
-      -- * Simple strategy
     , simpleStrategy
-    , simpleStepper
+    , defaultStrategy
+    , pickLongest
+    , pickStuck
       -- * Re-exports
     , Limit (..)
     , Natural
     ) where
 
-import           Data.Foldable
-                 ( toList )
-import           Data.Semigroup
-                 ( (<>) )
+import Data.Foldable
+       ( toList )
+import Data.Semigroup
+       ( (<>) )
 
-import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
-import           Kore.Step.BaseStep
-                 (AxiomPattern, StepProof (..), simplificationProof, stepWithAxiom )
+import Kore.AST.MetaOrObject
+       ( MetaOrObject )
+import Kore.IndexedModule.MetadataTools
+       ( MetadataTools )
+import Kore.Step.BaseStep
+       ( AxiomPattern, StepProof (..), simplificationProof, stepWithAxiom )
 
+import           Kore.Step.AxiomPatterns
+                 ( isCoolingRule, isHeatingRule, isNormalRule )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -126,24 +127,6 @@ stepStrategy axioms =
   where
     applyAxiom a = axiomStep a Strategy.stuck
 
-{- | Apply 'stepStrategy' and return all results.
- -}
-stepStepper
-    :: (MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier level
-    -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
-    -> (CommonExpandedPattern level, StepProof level)
-    -- ^ Configuration being rewritten and its accompanying proof
-    -> Simplifier [(CommonExpandedPattern level, StepProof level)]
-stepStepper tools simplifier axioms =
-    (<$>) Strategy.pickStuck . runStrategy rule strategy Unlimited
-  where
-    rule = transitionPrim tools simplifier
-    strategy = stepStrategy axioms
-
 {- | A strategy which applies all the given axioms as many times as possible.
 
   The builtin simplifier is used after each successful axiom step. The
@@ -160,22 +143,51 @@ simpleStrategy axioms =
   where
     applyAxioms next = Strategy.all (axiomStep <$> axioms <*> pure next)
 
-{- | Apply 'simpleStrategy' and return the result of the longest-running branch.
+{- | Heat the configuration, apply a normal rule, and cool the result.
  -}
-simpleStepper
+defaultStrategy
+    :: MetaOrObject level
+    => [AxiomPattern level]
+    -> Strategy (Prim (AxiomPattern level))
+defaultStrategy axioms =
+    Strategy.many (Strategy.many heatingCoolingCycle) Strategy.stuck
+  where
+    heatingCoolingCycle = Strategy.many heat . normal . cool
+    heatingRules = filter isHeatingRule axioms
+    heat next = Strategy.all (axiomStep <$> heatingRules <*> pure next)
+    normalRules = filter isNormalRule axioms
+    normal next = Strategy.all (axiomStep <$> normalRules <*> pure next)
+    coolingRules = filter isCoolingRule axioms
+    cool next = Strategy.all (axiomStep <$> coolingRules <*> pure next)
+
+pickLongest
     :: (MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    => Strategy (Prim (AxiomPattern level))
+    -> MetadataTools level StepperAttributes
     -> CommonPureMLPatternSimplifier level
     -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
     -> Limit Natural
     -- ^ The maximum number of steps to be made
     -> (CommonExpandedPattern level, StepProof level)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier (CommonExpandedPattern level, StepProof level)
-simpleStepper tools simplifier axioms stepLimit =
+pickLongest strategy tools simplifier stepLimit =
     (<$>) Strategy.pickLongest . runStrategy rule strategy stepLimit
   where
     rule = transitionPrim tools simplifier
-    strategy = simpleStrategy axioms
+
+{- | Apply the strategy and return all results.
+ -}
+pickStuck
+    :: (MetaOrObject level)
+    => Strategy (Prim (AxiomPattern level))
+    -> MetadataTools level StepperAttributes
+    -> CommonPureMLPatternSimplifier level
+    -- ^ Map from symbol IDs to defined functions
+    -> (CommonExpandedPattern level, StepProof level)
+    -- ^ Configuration being rewritten and its accompanying proof
+    -> Simplifier [(CommonExpandedPattern level, StepProof level)]
+pickStuck strategy tools simplifier =
+    (<$>) Strategy.pickStuck . runStrategy rule strategy Unlimited
+  where
+    rule = transitionPrim tools simplifier
