@@ -23,6 +23,7 @@ module Kore.Step.Strategy
     , pickStuck
       -- * Re-exports
     , module Data.Limit
+    , Tree (..)
     ) where
 
 import           Data.Bifunctor
@@ -59,6 +60,8 @@ data Strategy prim where
     Step :: Strategy prim -> Strategy prim
 
     Stuck :: Strategy prim
+
+    deriving (Eq, Show)
 
 -- | Apply two strategies in parallel.
 and :: Strategy app -> Strategy app -> Strategy app
