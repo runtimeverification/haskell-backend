@@ -106,7 +106,7 @@ Definition
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#X" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -116,7 +116,7 @@ Definition
                                                     }))))
                                                 ]
                                             }))))
-                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "#E" AstLocationNone) :: Id Meta
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -134,7 +134,7 @@ Definition
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                        [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "#Exp" AstLocationNone) :: Id Meta
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -142,7 +142,7 @@ Definition
                                                     , sortActualSorts = []
                                                     }
                                             }))))
-                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "#X" AstLocationNone) :: Id Meta
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -164,7 +164,7 @@ Definition
                                                             , symbolOrAliasParams = []
                                                             }
                                                     , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                        [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                             { variableName = (Id "#X" AstLocationNone) :: Id Meta
                                                             , variableSort =
                                                                 SortActualSort SortActual
@@ -174,7 +174,7 @@ Definition
                                                             }))))
                                                         ]
                                                     }))))
-                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#E" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -242,7 +242,7 @@ Definition
                                                             , symbolOrAliasParams = []
                                                             }
                                                     , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                        [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                             { variableName = (Id "#NAME" AstLocationNone) :: Id Meta
                                                             , variableSort =
                                                                 SortActualSort SortActual
@@ -250,7 +250,7 @@ Definition
                                                                     , sortActualSorts = []
                                                                     }
                                                             }))))
-                                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                             { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
                                                             , variableSort =
                                                                 SortActualSort SortActual
@@ -274,7 +274,7 @@ Definition
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
                                     , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                        Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -323,7 +323,7 @@ Definition
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#E1" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -331,7 +331,7 @@ Definition
                                                             , sortActualSorts = []
                                                             }
                                                     }))))
-                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#E2" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -357,7 +357,7 @@ Definition
                                                         ]
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#E1" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -377,7 +377,7 @@ Definition
                                                         ]
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#E2" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -433,7 +433,7 @@ Definition
                                                                     , symbolOrAliasParams = []
                                                                     }
                                                             , applicationChildren =
-                                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                                     { variableName = (Id "#NAME" AstLocationNone) :: Id Meta
                                                                     , variableSort =
                                                                         SortActualSort SortActual
@@ -441,7 +441,7 @@ Definition
                                                                             , sortActualSorts = []
                                                                             }
                                                                     }))))
-                                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                                     { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
                                                                     , variableSort =
                                                                         SortActualSort SortActual
@@ -453,7 +453,7 @@ Definition
                                                             }))))
                                                         ]
                                                     }))))
-                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#E" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -479,7 +479,7 @@ Definition
                                             , equalsResultSort =
                                                 SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
                                             , equalsFirst =
-                                                Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -507,7 +507,7 @@ Definition
                                                         ]
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#E" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -554,7 +554,7 @@ Definition
                                                             , symbolOrAliasParams = []
                                                             }
                                                     , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                                        [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                                             { variableName = (Id "X" AstLocationNone) :: Id Object
                                                             , variableSort =
                                                                 SortActualSort SortActual
@@ -562,7 +562,7 @@ Definition
                                                                     , sortActualSorts = []
                                                                     }
                                                             }))))
-                                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                             { variableName = (Id "#E" AstLocationNone) :: Id Meta
                                                             , variableSort =
                                                                 SortActualSort SortActual
@@ -572,7 +572,7 @@ Definition
                                                             }))))
                                                         ]
                                                     }))))
-                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "#E'" AstLocationNone) :: Id Meta
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -617,7 +617,7 @@ Definition
                                                                     , symbolOrAliasParams = []
                                                                     }
                                                             , applicationChildren =
-                                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                                                     , variableSort =
                                                                         SortActualSort SortActual
@@ -625,7 +625,7 @@ Definition
                                                                             , sortActualSorts = []
                                                                             }
                                                                     }))))
-                                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                                , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                                     { variableName = (Id "#E" AstLocationNone) :: Id Meta
                                                                     , variableSort =
                                                                         SortActualSort SortActual
@@ -635,7 +635,7 @@ Definition
                                                                     }))))
                                                                 ]
                                                             }))))
-                                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                             { variableName = (Id "#E'" AstLocationNone) :: Id Meta
                                                             , variableSort =
                                                                 SortActualSort SortActual
@@ -653,7 +653,7 @@ Definition
                                                             , symbolOrAliasParams = []
                                                             }
                                                     , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                        [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                             { variableName = (Id "#E" AstLocationNone) :: Id Meta
                                                             , variableSort =
                                                                 SortActualSort SortActual
@@ -661,7 +661,7 @@ Definition
                                                                     , sortActualSorts = []
                                                                     }
                                                             }))))
-                                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern domain Variable
+                                                        , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
                                                             { variableName = (Id "#E'" AstLocationNone) :: Id Meta
                                                             , variableSort =
                                                                 SortActualSort SortActual

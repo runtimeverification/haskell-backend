@@ -13,8 +13,9 @@ import           Data.Reflection
 
 import           Kore.AST.Common
                  ( Application (..), AstLocation (..), Id (..), Sort (..),
-                 SymbolOrAlias (..), Variable (..) )
+                 SymbolOrAlias (..), Variable (..), KoreDomain )
 import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
@@ -305,7 +306,7 @@ test_applicationSimplification =
     x = Variable (testId "x") testSort
     y = Variable (testId "y") testSort
     z = Variable (testId "z") testSort
-    -- a, b, c, d, fOfA, fOfB, gOfA, gOfB :: PureMLPattern Object KoreDomain Variable
+    a, b, c, d, fOfA, fOfB, gOfA, gOfB :: PureMLPattern Object KoreDomain Variable
     a = give mockSortTools $ mkApp aSymbol []
     b = give mockSortTools $ mkApp bSymbol []
     c = give mockSortTools $ mkApp cSymbol []
@@ -428,12 +429,12 @@ testSort =
 evaluate
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier domain level
+    -> CommonPureMLPatternSimplifier level KoreDomain
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level KoreDomain]
     -- ^ Map from symbol IDs to defined functions
-    -> Application level (CommonOrOfExpandedPattern level domain)
-    -> CommonOrOfExpandedPattern level domain
+    -> Application level (CommonOrOfExpandedPattern level KoreDomain)
+    -> CommonOrOfExpandedPattern level KoreDomain
 evaluate
     tools
     simplifier

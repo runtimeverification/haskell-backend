@@ -167,7 +167,7 @@ showVar (V i) = W (show i)
 var :: Integer -> PureMLPattern Meta domain V
 var i = give mockSortTools (mkVar (V i))
 
-war :: String -> PureMLPattern Meta W
+war :: String -> PureMLPattern Meta domain W
 war s = give mockSortTools (mkVar (W s))
 
 makeEq
@@ -188,7 +188,9 @@ makeAnd p1 p2 =
 
 makeEquals
     :: (SortedVariable var, Show (var Meta))
-    => PureMLPattern Meta domain var -> PureMLPattern Meta domain var -> Predicate Meta var
+    => PureMLPattern Meta domain var 
+    -> PureMLPattern Meta domain var 
+    -> Predicate Meta domain var
 makeEquals p1 p2 =
     give mockSortTools (makeEqualsPredicate p1 p2)
 

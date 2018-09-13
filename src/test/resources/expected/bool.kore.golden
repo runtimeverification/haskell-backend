@@ -197,7 +197,7 @@ Definition
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "T" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -245,7 +245,7 @@ Definition
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "T" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -293,7 +293,7 @@ Definition
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "T" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -309,7 +309,7 @@ Definition
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -317,7 +317,7 @@ Definition
                                                             , sortActualSorts = []
                                                             }
                                                     }))))
-                                                , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                                , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "Y" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -358,7 +358,7 @@ Definition
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "T" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -374,7 +374,7 @@ Definition
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -382,7 +382,7 @@ Definition
                                                             , sortActualSorts = []
                                                             }
                                                     }))))
-                                                , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                                , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "Y" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -423,7 +423,7 @@ Definition
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "T" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -439,7 +439,7 @@ Definition
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
@@ -482,7 +482,7 @@ Definition
                                                     }
                                             , applicationChildren = []
                                             }))))
-                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "X" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -493,7 +493,7 @@ Definition
                                         ]
                                     }))))
                             , equalsSecond =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortActualSort SortActual
@@ -533,7 +533,7 @@ Definition
                                                     }
                                             , applicationChildren = []
                                             }))))
-                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "X" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -584,7 +584,7 @@ Definition
                                                     }
                                             , applicationChildren = []
                                             }))))
-                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "X" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -635,7 +635,7 @@ Definition
                                                     }
                                             , applicationChildren = []
                                             }))))
-                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                             { variableName = (Id "X" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
@@ -646,7 +646,7 @@ Definition
                                         ]
                                     }))))
                             , equalsSecond =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortActualSort SortActual

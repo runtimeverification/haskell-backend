@@ -12,7 +12,7 @@ import           Data.Reflection
                  ( give )
 
 import           Kore.AST.Common
-                 ( Application (..), Id (..) )
+                 ( Application (..), Id (..), KoreDomain )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern )
@@ -39,7 +39,7 @@ import           Kore.Step.Function.UserDefined
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 ( CommonPureMLPatternSimplifier, 
                  Simplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
@@ -234,9 +234,9 @@ test_functionIntegration = give mockSortTools
 
 
 axiomEvaluator
-    :: CommonPurePattern Object domain
-    -> CommonPurePattern Object domain
-    -> CommonApplicationFunctionEvaluator Object
+    :: CommonPurePattern Object KoreDomain
+    -> CommonPurePattern Object KoreDomain
+    -> CommonApplicationFunctionEvaluator Object KoreDomain
 axiomEvaluator left right =
     ApplicationFunctionEvaluator
         (axiomFunctionEvaluator
@@ -249,7 +249,8 @@ axiomEvaluator left right =
         )
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level domain -> CommonApplicationFunctionEvaluator level domain
+    :: CommonExpandedPattern level KoreDomain 
+    -> CommonApplicationFunctionEvaluator level KoreDomain
 appliedMockEvaluator result =
     ApplicationFunctionEvaluator
         (mockEvaluator
@@ -257,21 +258,21 @@ appliedMockEvaluator result =
         )
 
 mockEvaluator
-    :: CommonAttemptedFunction level domain
+    :: CommonAttemptedFunction level KoreDomain
     -> MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier domain level
-    -> Application level (CommonPurePattern level domain)
+    -> CommonPureMLPatternSimplifier level KoreDomain
+    -> Application level (CommonPurePattern level KoreDomain)
     -> Simplifier
-        (CommonAttemptedFunction level domain, SimplificationProof level)
+        (CommonAttemptedFunction level KoreDomain, ())
 mockEvaluator evaluation _ _ _ =
-    return (evaluation, SimplificationProof)
+    return (evaluation, ())
 
 evaluate
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level domain]
-    -> CommonPurePattern level domain
-    -> CommonExpandedPattern level domain
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level KoreDomain]
+    -> CommonPurePattern level KoreDomain
+    -> CommonExpandedPattern level KoreDomain
 evaluate metadataTools functionIdToEvaluator patt =
     either (error . printError) fst
         $ evalSimplifier

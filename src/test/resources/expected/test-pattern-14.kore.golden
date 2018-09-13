@@ -13,7 +13,7 @@ Definition
                             { nextSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , nextChild =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern domain Variable
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
