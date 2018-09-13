@@ -152,6 +152,9 @@ simpleStrategy axioms =
 
 {- | Heat the configuration, apply a normal rule, and cool the result.
  -}
+-- TODO (thomas.tuegel): This strategy is not right because heating/cooling
+-- rules must have side conditions if encoded as \rewrites, or they must be
+-- \equals rules, which are not handled by this strategy.
 defaultStrategy
     :: MetaOrObject level
     => [AxiomPattern level]
