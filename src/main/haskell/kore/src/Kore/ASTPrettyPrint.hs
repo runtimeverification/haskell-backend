@@ -15,7 +15,6 @@ import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.Parser.CString
        ( escapeCString )
-import Kore.Step.PatternAttributes
 import Kore.Unification.Unifier
 
 import Data.String
@@ -80,18 +79,6 @@ writeTwoFieldStruct flags name contenta contentb =
         name
         (   prettyPrint NeedsParentheses contenta
         <+> prettyPrint NeedsParentheses contentb
-        )
-
-writeThreeFieldStruct
-    :: (PrettyPrint a, PrettyPrint b, PrettyPrint c)
-    => Flags -> String -> a -> b -> c -> Doc ann
-writeThreeFieldStruct flags name contenta contentb contentc =
-    writeOneFieldStructK
-        flags
-        name
-        (   prettyPrint NeedsParentheses contenta
-        <+> prettyPrint NeedsParentheses contentb
-        <+> prettyPrint NeedsParentheses contentc
         )
 
 writeOneFieldStructK

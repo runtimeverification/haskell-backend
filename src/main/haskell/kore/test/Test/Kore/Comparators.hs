@@ -27,7 +27,6 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.OrOfExpandedPattern
-import           Kore.Step.PatternAttributes
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Unification.Error
 import           Kore.Unification.Unifier

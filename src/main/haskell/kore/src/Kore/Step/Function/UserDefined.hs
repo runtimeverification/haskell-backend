@@ -82,9 +82,9 @@ axiomFunctionEvaluator
     case stepResult of
         Left _ ->
             return (AttemptedFunction.NotApplicable, ())
-        Right stepPattern ->
+        Right stepPattern1 ->
             do
-                (stepPattern, _) <- Except.lift stepPattern
+                (stepPattern, _) <- Except.lift stepPattern1
                 (   rewrittenPattern@ExpandedPattern
                         { predicate = rewritingCondition }
                     , _

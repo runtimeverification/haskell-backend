@@ -233,10 +233,9 @@ stepWithAxiom
         -- for the proof.
         (variableMapping, result) <-
             patternStepVariablesToCommon existingVars Map.empty rawResult
-        (variableMapping1, condition) <-
+        (_variableMapping1, condition) <-
             predicateStepVariablesToCommon
                 existingVars variableMapping rawCondition
-        let variableMapping2 = variableMapping1
         let
             orElse :: a -> a -> a
             p1 `orElse` p2 = if Predicate.isFalse condition then p2 else p1
@@ -290,52 +289,6 @@ mergeConditionsWithAnd conditions =
     in
         (return predicate, ())
 
-listStepVariablesToCommon
-    :: MetaOrObject level
-    =>  (Set.Set (Variable level)
-            -> Map.Map (StepperVariable level) (StepperVariable level)
-            -> IntCounter
-                ( Map.Map (StepperVariable level) (StepperVariable level)
-                , ()
-                )
-        )
-    -> Set.Set (Variable level)
-    -> Map.Map (StepperVariable level) (StepperVariable level)
-    -> IntCounter
-        ( Map.Map (StepperVariable level) (StepperVariable level)
-        , ()
-        )
-listStepVariablesToCommon _ _ mapping =
-    return (mapping, ())
-variableStepVariablesToCommon
-    :: MetaOrObject level
-    => Set.Set (Variable level)
-    -> Map.Map (StepperVariable level) (StepperVariable level)
-    -> StepperVariable level
-    -> IntCounter
-        ( Map.Map (StepperVariable level) (StepperVariable level)
-        , Variable level
-        )
-variableStepVariablesToCommon existingVars mapping variable =
-    case variable of
-        ConfigurationVariable v -> return (mapping, v)
-        AxiomVariable av ->
-            case Map.lookup variable mapping of
-                Just var ->
-                    case var of
-                        AxiomVariable _         ->
-                            error "Unexpected axiom variable"
-                        ConfigurationVariable v -> return (mapping, v)
-                Nothing -> do
-                    newVar <-
-                        freshVariableSuchThat
-                            av
-                            ( not . (`Set.member` existingVars) )
-                    return
-                        ( Map.insert
-                            variable (ConfigurationVariable newVar) mapping
-                        , newVar
-                        )
 
 predicateStepVariablesToCommon
     :: MetaOrObject level
