@@ -8,14 +8,15 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module Kore.Step.Strategy
     ( -- * Strategies
       Strategy
-    , apply
-    , stuck
     , and
     , all
     , or
     , any
     , many
     , some
+    , apply
+    , step
+    , stuck
       -- * Running strategies
     , runStrategy
     , pickLongest
@@ -49,26 +50,15 @@ data Strategy prim where
     -- The recursive arguments of these constructors are /intentionally/ lazy to
     -- allow strategies to loop.
 
-    Apply :: !prim -> Strategy prim -> Strategy prim
-
     And :: Strategy prim -> Strategy prim -> Strategy prim
-
-    Stuck :: Strategy prim
 
     Or :: Strategy prim -> Strategy prim -> Strategy prim
 
--- | Apply a rewrite axiom.
-apply
-    :: app
-    -- ^ rule
-    -> Strategy app
-    -- ^ next strategy
-    -> Strategy app
-apply = Apply
+    Apply :: !prim -> Strategy prim -> Strategy prim
 
--- | Terminate execution.
-stuck :: Strategy app
-stuck = Stuck
+    Step :: Strategy prim -> Strategy prim
+
+    Stuck :: Strategy prim
 
 -- | Apply two strategies in parallel.
 and :: Strategy app -> Strategy app -> Strategy app
@@ -112,6 +102,22 @@ many strategy finally = many0
 some :: (Strategy app -> Strategy app) -> Strategy app -> Strategy app
 some strategy finally = strategy (many strategy finally)
 
+-- | Apply a rewrite axiom.
+apply
+    :: app
+    -- ^ rule
+    -> Strategy app
+    -- ^ next strategy
+    -> Strategy app
+apply = Apply
+
+step :: Strategy app -> Strategy app
+step = Step
+
+-- | Terminate execution.
+stuck :: Strategy app
+stuck = Stuck
+
 {- | A simple state machine for running 'Strategy'.
 
   The machine has a primary and secondary instruction pointer and an
@@ -129,16 +135,6 @@ data Machine instr accum =
         , stepCount :: !Natural
         -- ^ current step count
         }
-
--- | Take a step (increment the step counter) if not over the limit.
-step :: Limit Natural -> Machine instr accum -> Maybe (Machine instr accum)
-step stepLimit state@Machine { stepCount } =
-    let
-        stepCount' = succ stepCount
-    in
-        if withinLimit stepLimit stepCount'
-            then Just state { stepCount = stepCount' }
-            else Nothing
 
 {- | Run a simple state machine.
 
@@ -179,41 +175,56 @@ transition applyPrim stepLimit =
             And instr1 instr2 -> transitionAnd state instr1 instr2
             Or instr1 instr2 -> transitionOr state instr1 instr2
             Apply prim instrA' -> transitionApply state prim instrA'
+            Step instrA' -> transitionStep state instrA'
   where
     throw state@Machine { instrB } = state { instrA = instrB, instrB = stuck }
+
+    -- End execution.
     transitionStuck = return []
+
+    -- Attempt both instructions, i.e. create a branch for each.
     transitionAnd state instr1 instr2 =
-        -- Distribute the instructions to child branches.
         return
             [ state { instrA = instr1 }
             , state { instrA = instr2 }
             ]
+
+    -- Attempt the first instruction. Fall back to the second if it is
+    -- unsuccessful.
     transitionOr state@Machine{ instrB } instr1 instr2 =
-        -- Distribute the instructions to the primary and secondary
-        -- instruction pointers.
         return
             [ state
                 { instrA = instr1
-                -- If instr1 fails, try instr2 and finally instrB.
                 , instrB = or instr2 instrB
                 }
             ]
+
+    -- Apply a primitive rule. Throw an exception if the rule is not successful.
     transitionApply state@Machine { accum = config } prim instrA' =
-        case step stepLimit state { instrA = instrA' } of
-            Nothing -> return [ state { instrA = stuck } ]
-            Just state' -> do
-                -- Apply a primitive strategy.
-                configs <- applyPrim prim config
-                case configs of
-                    [] ->
-                        -- If the primitive failed, throw an exception. Reset
-                        -- the exception handler so we do not loop.
-                        return [ throw state' ]
-                    _ -> do
-                        -- If the primitive succeeded, reset the exception
-                        -- handler and continue with the children.
-                        let next accum = state' { accum, instrB = stuck }
-                        return (next <$> configs)
+        do
+            let state' = state { instrA = instrA' }
+            -- Apply a primitive strategy.
+            configs <- applyPrim prim config
+            case configs of
+                [] ->
+                    -- If the primitive failed, throw an exception. Reset the
+                    -- exception handler so we do not loop.
+                    return [ throw state' ]
+                _ -> do
+                    -- If the primitive succeeded, reset the exception handler
+                    -- and continue with the children.
+                    let next accum = state' { accum, instrB = stuck }
+                    return (next <$> configs)
+
+    -- Increment the step counter. End execution if the step limit is exceeded.
+    transitionStep state@Machine { stepCount } instrA'
+        | withinLimit stepLimit stepCount' =
+              return [ state' { instrA = instrA' } ]
+        | otherwise =
+              return [ state' { instrA = stuck } ]
+      where
+        stepCount' = succ stepCount
+        state' = state { stepCount = stepCount' }
 
 {- | Execute a 'Strategy'.
 

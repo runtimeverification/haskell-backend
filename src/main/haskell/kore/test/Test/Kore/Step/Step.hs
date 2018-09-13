@@ -468,7 +468,7 @@ actualStepLimit :: (CommonExpandedPattern Meta, StepProof Meta)
 actualStepLimit =
     runSteps
         mockMetadataTools
-        (Limit 2)
+        (Limit 1)
         ExpandedPattern
             { term = asPureMetaPattern (metaF (v1 PatternSort))
             , predicate = makeTruePredicate

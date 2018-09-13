@@ -60,7 +60,7 @@ stepStrategy axioms =
 
 axiomStep :: axiom -> Strategy (Prim axiom) -> Strategy (Prim axiom)
 axiomStep a =
-    Strategy.apply (axiom a) . Strategy.apply builtin
+    Strategy.step . Strategy.apply (axiom a) . Strategy.apply builtin
 
 stepStepper
     :: (MetaOrObject level)
