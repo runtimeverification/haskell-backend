@@ -16,14 +16,11 @@ module Kore.Step.Strategy
     , any
     , many
     , some
-      -- * Primitive strategies
-    , Prim (..)
-    , axiom
-    , builtin
       -- * Running strategies
     , runStrategy
     , pickLongest
     , pickStuck
+      -- * Re-exports
     , module Data.Limit
     ) where
 
@@ -114,18 +111,6 @@ many strategy finally = many0
 -- | Apply the strategy one or more times.
 some :: (Strategy app -> Strategy app) -> Strategy app -> Strategy app
 some strategy finally = strategy (many strategy finally)
-
-{- | A strategy primitive: a rewrite axiom or builtin simplification step.
- -}
-data Prim axiom = Builtin | Axiom !axiom
-
--- | Apply the axiom.
-axiom :: axiom -> Prim axiom
-axiom = Axiom
-
--- | Apply builtin simplification.
-builtin :: Prim axiom
-builtin = Builtin
 
 {- | A simple state machine for running 'Strategy'.
 

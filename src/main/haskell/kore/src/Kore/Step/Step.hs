@@ -13,6 +13,11 @@ module Kore.Step.Step
     , stepStrategy
     , stepStepper
     , simpleRule
+      -- * Primitive strategies
+    , Prim (..)
+    , axiom
+    , builtin
+      -- * Re-exports
     , Limit (..)
     , Natural
     ) where
@@ -40,7 +45,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
-                 ( Limit (..), Prim (..), Strategy, runStrategy )
+                 ( Limit (..), Strategy, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Variables.Fresh
 
@@ -55,7 +60,7 @@ stepStrategy axioms =
 
 axiomStep :: axiom -> Strategy (Prim axiom) -> Strategy (Prim axiom)
 axiomStep a =
-    Strategy.apply (Strategy.axiom a) . Strategy.apply Strategy.builtin
+    Strategy.apply (axiom a) . Strategy.apply builtin
 
 stepStepper
     :: (MetaOrObject level)
@@ -94,9 +99,9 @@ simpleRule tools simplifier =
                     -- Filter out ⊥ patterns
                     nonEmptyConfigs = ExpandedPattern.filterOr configs
                 return (prove <$> toList nonEmptyConfigs)
-        Axiom axiom -> \(config, proof) ->
+        Axiom a -> \(config, proof) ->
             do
-                case stepWithAxiom tools config axiom of
+                case stepWithAxiom tools config a of
                     Left _ -> pure []
                     Right apply -> do
                         (config', proof') <- apply
@@ -130,3 +135,15 @@ simpleStepper tools simplifier axioms stepLimit =
   where
     rule = simpleRule tools simplifier
     strategy = simpleStrategy axioms
+
+{- | A strategy primitive: a rewrite axiom or builtin simplification step.
+ -}
+data Prim axiom = Builtin | Axiom !axiom
+
+-- | Apply the axiom.
+axiom :: axiom -> Prim axiom
+axiom = Axiom
+
+-- | Apply builtin simplification.
+builtin :: Prim axiom
+builtin = Builtin
