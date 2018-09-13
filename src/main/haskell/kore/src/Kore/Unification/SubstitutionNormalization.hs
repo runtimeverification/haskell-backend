@@ -82,12 +82,8 @@ normalizeSubstitution tools substitution = do
     interestingVariables = extractVariables substitution
     variableToPattern = Map.fromList substitution
     dependencies = buildDependencies substitution interestingVariables
-    depsWithoutReflexivity = Map.filterWithKey (notReflexive) dependencies
-    notReflexive :: (Eq a, Show a) => a -> [a] -> Bool
-    notReflexive a [x]= a /= x
-    notReflexive _ _ = True
     topologicalSortConverted =
-        case topologicalSort depsWithoutReflexivity of
+        case topologicalSort dependencies of
             Left (ToplogicalSortCycles vars) -> do
                 checkCircularVariableDependency tools substitution vars
                 return (error "This should be unreachable")
@@ -201,10 +197,12 @@ buildDependencies
   =
     Map.insert
         var
-        deps
+        deps'
         (buildDependencies reminder interestingVariables)
   where
     deps =
         mapMaybe
             (`Map.lookup` interestingVariables)
             (Set.toList (freeVariables patt))
+    isVar = isVariablePattern patt
+    deps' = if isVar then filter (/= var) deps else deps

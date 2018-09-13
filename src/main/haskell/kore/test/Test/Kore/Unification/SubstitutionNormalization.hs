@@ -119,10 +119,54 @@ test_substitutionNormalization =
       in
         testCase "Simplest cycle"
             (assertEqual ""
-                (Right [])
+                (Right
+                    [    ( asVariable (v1 PatternSort)
+                         , asPureMetaPattern (v1 PatternSort)
+                         )
+                    ]
+                )
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ]
+                )
+            )
+    , let
+        var1 = asVariable (v1 PatternSort)
+        varx1 = asVariable (x1 PatternSort)
+      in
+        testCase "Cycle with extra substitution"
+            (assertEqual ""
+                (Right
+                    [   ( asVariable (x1 PatternSort)
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ,   ( asVariable (v1 PatternSort)
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ]
+                )
+                (runNormalizeSubstitution
+                    [   ( var1
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ,   ( varx1
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ]
+                )
+            )
+    , let
+        var1 = asVariable (v1 PatternSort)
+        varx1 = asVariable (x1 PatternSort)
+      in
+        testCase "Function cycle"
+            (assertEqual ""
+                (Left (NonCtorCircularVariableDependency [var1]))
+                (runNormalizeSubstitution
+                    [   ( var1
+                        , App_ f [Var_ var1]
                         )
                     ]
                 )
@@ -229,4 +273,3 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const Mock.functionalAttributes
     , sortTools = mockSortTools
     }
-

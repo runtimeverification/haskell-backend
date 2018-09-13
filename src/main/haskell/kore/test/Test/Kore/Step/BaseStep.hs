@@ -536,7 +536,7 @@ test_baseStep =
                 , substitution = []
                 }
             )
-            (fst <$> runStepTwice
+            (fst <$> runStep
                 mockMetadataTools
                 ExpandedPattern
                     { term =
@@ -586,7 +586,7 @@ test_baseStep =
                 , substitution = []
                 }
             )
-            (fst <$> runStepTwice
+            (fst <$> runStep
                 mockMetadataTools
                 ExpandedPattern
                     { term =
@@ -623,10 +623,10 @@ test_baseStep =
     -- Expected: Error because a=h(b) and b=a.
     , testCase "Impossible substitution (non-ctor)."
         (assertEqualWithExplanation ""
-            (Left $ StepErrorUnification
-                (NonConstructorHead hSymbol)
+            (Left $ StepErrorSubstitution
+                (NonCtorCircularVariableDependency [asVariable (b1 PatternSort)])
             )
-            (fst <$> runStepTwice
+            (fst <$> runStep
                 mockMetadataTools
                 ExpandedPattern
                     { term =
@@ -1291,15 +1291,3 @@ runStep metadataTools configuration axiom =
     case give metadataTools (stepWithAxiom metadataTools configuration axiom) of
         Left err            -> Left (fst (runIntCounter err 0))
         Right counterResult -> Right (fst (runIntCounter counterResult 0))
-
-runStepTwice
-    :: MetaOrObject level
-    => MetadataTools level StepperAttributes
-    -> CommonExpandedPattern level
-    -> AxiomPattern level
-    -> Either
-        (StepError level Variable)
-        (CommonExpandedPattern level, StepProof level)
-runStepTwice metadataTools configuration axiom =
-    runStep metadataTools configuration axiom
-        >>= (\(configuration', _) -> runStep metadataTools configuration' axiom)
