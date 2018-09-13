@@ -366,10 +366,11 @@ stepWithAxiom
 mergeConditionsWithAnd
     ::  ( MetaOrObject level
         , Given (SortTools level)
-        , SortedVariable var
-        , Show (var level))
-    => [Predicate level var]
-    -> (IntCounter (Predicate level var), PredicateProof level)
+        , SortedVariable variable
+        , Eq (variable level)
+        , Show (variable level))
+    => [Predicate level variable]
+    -> (IntCounter (Predicate level variable), PredicateProof level)
 mergeConditionsWithAnd conditions =
     let
         (predicate, proof) = makeMultipleAndPredicate conditions
