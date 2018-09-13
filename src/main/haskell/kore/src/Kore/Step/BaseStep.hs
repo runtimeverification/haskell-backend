@@ -163,12 +163,14 @@ stepProofSumName (StepProofUnification _)       = "StepProofUnification"
 stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
 stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
-{-| 'stepWithAxiom' executes a single rewriting step using the provided axiom.
+{- |
+    Use the given axiom to execute a single rewriting step.
 
-Does not handle properly various cases, among which:
-sigma(x, y) => y    vs    a
+    Does not properly handle various cases, among them:
+    - sigma(x, y) => y    vs    a
 
-TODO: Decide if Left here also includes bottom results or only impossibilities.
+    Returns 'Left' only if there is an error. It is not an error if the axiom
+    does not apply to the given configuration.
 -}
 stepWithAxiom
     ::  ( MetaOrObject level )
