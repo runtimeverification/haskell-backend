@@ -163,7 +163,7 @@ runMachine transit =
   considered failed if it returns no children.
 
  -}
-transition
+transitionRule
     :: Monad m
     => (prim -> config -> m [config])
     -- ^ Primitive strategy rule
@@ -171,7 +171,7 @@ transition
     -- ^ Step limit
     -> Machine (Strategy prim) config
     -> m [Machine (Strategy prim) config]
-transition applyPrim stepLimit =
+transitionRule applyPrim stepLimit =
     \state@Machine { instrA } ->
         case instrA of
             Stuck -> transitionStuck
@@ -257,7 +257,7 @@ runStrategy
 runStrategy applyPrim strategy stepLimit config =
     (<$>) annotateConfig <$> runMachine rule state
   where
-    rule = transition applyPrim stepLimit
+    rule = transitionRule applyPrim stepLimit
     state = Machine
         { instrA = strategy
         , instrB = stuck

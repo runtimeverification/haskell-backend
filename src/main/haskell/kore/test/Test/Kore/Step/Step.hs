@@ -615,11 +615,12 @@ runStep
     -> [AxiomPattern level]
     -> [(CommonExpandedPattern level, StepProof level)]
 runStep metadataTools configuration axioms =
-    evalSimplifier
-        $ pickStuck
+    pickStuck
+        $ evalSimplifier
+        $ runStrategy
+            (transitionRule metadataTools simplifier)
             (stepStrategy axioms)
-            metadataTools
-            simplifier
+            Unlimited
             (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty
@@ -634,11 +635,11 @@ runSteps
     -> [AxiomPattern level]
     -> (CommonExpandedPattern level, StepProof level)
 runSteps metadataTools stepLimit configuration axioms =
-    evalSimplifier
-        $ pickLongest
+    pickLongest
+        $ evalSimplifier
+        $ runStrategy
+            (transitionRule metadataTools simplifier)
             (simpleStrategy axioms)
-            metadataTools
-            simplifier
             stepLimit
             (configuration, mempty)
   where
