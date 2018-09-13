@@ -157,9 +157,9 @@ defaultStrategy
     => [AxiomPattern level]
     -> Strategy (Prim (AxiomPattern level))
 defaultStrategy axioms =
-    Strategy.many (Strategy.many heatingCoolingCycle) Strategy.stuck
+    Strategy.many heatingCoolingCycle Strategy.stuck
   where
-    heatingCoolingCycle = Strategy.many heat . normal . cool
+    heatingCoolingCycle = Strategy.many heat . normal . Strategy.try cool
     heatingRules = filter isHeatingRule axioms
     heat next = Strategy.all (axiomStep <$> heatingRules <*> pure next)
     normalRules = filter isNormalRule axioms

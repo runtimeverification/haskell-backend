@@ -11,6 +11,7 @@ module Kore.Step.Strategy
     , and
     , all
     , or
+    , try
     , any
     , many
     , some
@@ -94,6 +95,11 @@ any :: [Strategy app] -> Strategy app
 any [] = stuck
 any [x] = x
 any (x : xs) = or x (any xs)
+
+{- | Attempt the given strategy once
+ -}
+try :: (Strategy app -> Strategy app) -> Strategy app -> Strategy app
+try strategy finally = or (strategy finally) finally
 
 -- | Apply the strategy zero or more times.
 many :: (Strategy app -> Strategy app) -> Strategy app -> Strategy app
