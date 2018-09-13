@@ -18,6 +18,7 @@ module Kore.Step.Step
     , simpleStrategy
     , defaultStrategy
       -- * Re-exports
+    , AxiomPattern
     , Limit (..)
     , Natural
     , Strategy

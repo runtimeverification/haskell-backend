@@ -13,7 +13,8 @@ import           Data.Semigroup
                  ( (<>) )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
-                 long, metavar, option, progDesc, str, strOption, value )
+                 long, metavar, option, progDesc, readerError, str, strOption,
+                 value )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -84,6 +85,8 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Whether the pattern file represents a program to be put in the
     -- initial configuration before execution
     , stepLimit           :: !(Limit Natural)
+    , strategy
+        :: !([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
     }
 
 -- | Command Line Argument Parser
@@ -106,8 +109,29 @@ commandLineParser =
     <*> enableDisableFlag "is-program"
         True False False
         "Whether the pattern represents a program."
-    <*> (Limit <$> depth <|> pure Unlimited)
+    <*> parseStepLimit
+    <*> parseStrategy
   where
+    parseStepLimit = Limit <$> depth <|> pure Unlimited
+    parseStrategy =
+        option readStrategy
+            (  metavar "STRATEGY"
+            <> long "strategy"
+            <> value defaultStrategy
+            <> help "Select rewrites using STRATEGY."
+            )
+      where
+        readStrategy = do
+            strat <- str
+            case strat of
+                "simple" -> pure simpleStrategy
+                "default" -> pure defaultStrategy
+                _ ->
+                    let
+                        unknown = "Unknown strategy '" ++ strat ++ "'. "
+                        known = "Known strategies are: simple, default."
+                    in
+                        readerError (unknown ++ known)
     depth =
         option auto
             (  metavar "DEPTH"
@@ -138,6 +162,7 @@ main = do
         , mainModuleName
         , isKProgram
         , stepLimit
+        , strategy
         }
       -> do
         parsedDefinition <- mainDefinitionParse definitionFileName
@@ -185,7 +210,7 @@ main = do
                                     (config : _) -> config
                         pickLongest <$> runStrategy
                             (transitionRule metadataTools simplifier)
-                            (simpleStrategy axiomPatterns)
+                            (strategy axiomPatterns)
                             stepLimit
                             (initialPattern, mempty)
             putStrLn $ unparseToString
