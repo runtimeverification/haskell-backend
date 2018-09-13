@@ -113,10 +113,10 @@ test_single =
             )
         , testCase "Applies two simple axioms"
             -- Axiom: X1 => X1
-            -- Axiom: X1 => and(X1, X1)
+            -- Axiom: X1 => implies(X1, X1)
             -- Start pattern: V1
             -- Expected: V1
-            -- Expected: and(V1, V1)
+            -- Expected: implies(V1, V1)
             (assertEqualWithExplanation ""
                 ( OrOfExpandedPattern.make
                     [ ExpandedPattern
@@ -127,7 +127,7 @@ test_single =
                     , ExpandedPattern
                         { term =
                             asPureMetaPattern
-                                (metaAnd PatternSort
+                                (metaImplies PatternSort
                                     (v1 PatternSort)
                                     (v1 PatternSort)
                                 )
@@ -177,7 +177,7 @@ test_single =
                         { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                         , axiomPatternRight =
                             asPureMetaPattern
-                                (metaAnd PatternSort
+                                (metaImplies PatternSort
                                     (x1 PatternSort)
                                     (x1 PatternSort)
                                 )

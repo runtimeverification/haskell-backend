@@ -186,6 +186,29 @@ instance (EqualWithExplanation a1, EqualWithExplanation a2)
     printWithExplanation (Right a) = "Right (" ++ printWithExplanation a ++ ")"
     printWithExplanation (Left a)  = "Left (" ++ printWithExplanation a ++ ")"
 
+instance (EqualWithExplanation a)
+    => SumEqualWithExplanation (Maybe a)
+  where
+    sumConstructorPair (Just a1) (Just a2) =
+        SumConstructorSameWithArguments (EqWrap "Just" a1 a2)
+    sumConstructorPair a1@(Just _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair Nothing Nothing =
+        SumConstructorSameNoArguments
+    sumConstructorPair a1@Nothing a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+instance (EqualWithExplanation a)
+    => EqualWithExplanation (Maybe a)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+
+    printWithExplanation (Just a) = "Just (" ++ printWithExplanation a ++ ")"
+    printWithExplanation Nothing  = "Nothing"
+
 newtype EWEString = EWEString String
 
 instance EqualWithExplanation EWEString
