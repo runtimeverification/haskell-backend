@@ -1,9 +1,11 @@
 module Test.Kore.Parser.CharSet (test_charSet) where
 
-import           Test.Tasty               (TestTree)
-import           Test.Tasty.HUnit         (assertBool, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertBool, testCase )
 
-import           Kore.Parser.CharSet as CharSet
+import Kore.Parser.CharSet as CharSet
 
 test_charSet :: [TestTree]
 test_charSet =

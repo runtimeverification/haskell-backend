@@ -6,10 +6,11 @@ import Test.Tasty.QuickCheck
 
 import Data.Functor.Identity
 import Numeric.Natural
-import Prelude hiding (and, or)
+import Prelude hiding
+       ( and, or )
 
 import           Kore.Step.Strategy
-                 ( Strategy, Limit (..), Tree (..) )
+                 ( Limit (..), Strategy, Tree (..) )
 import qualified Kore.Step.Strategy as Strategy
 
 data Prim

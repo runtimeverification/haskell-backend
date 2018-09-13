@@ -3,8 +3,10 @@
 module Paths where
 
 import qualified Language.Haskell.TH as TH
-import           System.Directory    (doesFileExist, makeAbsolute)
-import           System.FilePath     (takeDirectory, (</>))
+import           System.Directory
+                 ( doesFileExist, makeAbsolute )
+import           System.FilePath
+                 ( takeDirectory, (</>) )
 
 
 {-| Resolve the file name of a test resource relative to the package root.

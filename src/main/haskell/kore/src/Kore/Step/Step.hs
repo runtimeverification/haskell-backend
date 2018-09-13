@@ -31,7 +31,8 @@ import Data.Foldable
        ( toList )
 import Data.Semigroup
        ( (<>) )
-import Numeric.Natural ( Natural )
+import Numeric.Natural
+       ( Natural )
 
 import Kore.AST.MetaOrObject
        ( MetaOrObject )

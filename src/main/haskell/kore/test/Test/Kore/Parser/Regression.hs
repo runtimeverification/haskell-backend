@@ -26,18 +26,18 @@ import           System.Directory
 import           System.FilePath
                  ( addExtension, splitFileName, (</>) )
 
-import Kore.AST.PureToKore
-       ( definitionPureToKore )
-import Kore.AST.Sentence
-import Kore.ASTPrettyPrint
-import Kore.ASTVerifier.DefinitionVerifier
+import           Kore.AST.PureToKore
+                 ( definitionPureToKore )
+import           Kore.AST.Sentence
+import           Kore.ASTPrettyPrint
+import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-import Kore.Implicit.Attributes
-       ( ImplicitAttributes )
-import Kore.MetaML.Lift
-       ( liftDefinition )
-import Kore.Parser.Parser
+import           Kore.Error
+import           Kore.Implicit.Attributes
+                 ( ImplicitAttributes )
+import           Kore.MetaML.Lift
+                 ( liftDefinition )
+import           Kore.Parser.Parser
 
 import qualified Paths
 

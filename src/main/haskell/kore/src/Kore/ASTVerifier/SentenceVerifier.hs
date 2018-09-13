@@ -17,21 +17,22 @@ import           Control.Monad
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import Kore.AST.Common
-import Kore.AST.Error
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.MLPatterns
-import Kore.AST.Sentence
-import Kore.ASTVerifier.AttributesVerifier
-import Kore.ASTVerifier.Error
-import Kore.ASTVerifier.PatternVerifier
-import Kore.ASTVerifier.SortVerifier
-import Kore.Attribute.Parser ( parseAttributes )
+import           Kore.AST.Common
+import           Kore.AST.Error
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.MLPatterns
+import           Kore.AST.Sentence
+import           Kore.ASTVerifier.AttributesVerifier
+import           Kore.ASTVerifier.Error
+import           Kore.ASTVerifier.PatternVerifier
+import           Kore.ASTVerifier.SortVerifier
+import           Kore.Attribute.Parser
+                 ( parseAttributes )
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-import Kore.IndexedModule.IndexedModule
-import Kore.IndexedModule.Resolvers
+import           Kore.Error
+import           Kore.IndexedModule.IndexedModule
+import           Kore.IndexedModule.Resolvers
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.

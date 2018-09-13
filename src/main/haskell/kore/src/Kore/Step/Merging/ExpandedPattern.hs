@@ -11,8 +11,8 @@ module Kore.Step.Merging.ExpandedPattern
     ( mergeWithPredicateSubstitution
     ) where
 
-import           Data.Reflection
-                 ( give )
+import Data.Reflection
+       ( give )
 
 import           Kore.AST.Common
                  ( SortedVariable )

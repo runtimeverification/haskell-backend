@@ -9,9 +9,12 @@ Portability : POSIX
 -}
 module Kore.Error where
 
-import           Control.Monad (when)
-import Control.Monad.Except ( MonadError (..) )
-import           Data.List     (intercalate)
+import Control.Monad
+       ( when )
+import Control.Monad.Except
+       ( MonadError (..) )
+import Data.List
+       ( intercalate )
 
 {-|'Error' represents a Kore error with a stacktrace-like context.
 

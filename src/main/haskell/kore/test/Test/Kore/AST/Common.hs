@@ -10,7 +10,8 @@ import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.Implicit.ImplicitSorts
-import Test.Kore(testId)
+import Test.Kore
+       ( testId )
 
 test_withSort :: TestTree
 test_withSort =
