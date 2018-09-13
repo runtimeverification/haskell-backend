@@ -137,6 +137,7 @@ toMLPattern
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level))
     => ExpandedPattern level variable -> PureMLPattern level variable
 toMLPattern
@@ -168,6 +169,7 @@ substitutionToPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level))
     => [(variable level, PureMLPattern level variable)]
     -> Predicate level variable
@@ -246,8 +248,11 @@ fromPurePattern
     => PureMLPattern level variable
     -> ExpandedPattern level variable
 fromPurePattern term =
-    ExpandedPattern
-        { term
-        , predicate = makeTruePredicate
-        , substitution = []
-        }
+    case term of
+        Bottom_ _ -> bottom
+        _ ->
+            ExpandedPattern
+                { term
+                , predicate = makeTruePredicate
+                , substitution = []
+                }

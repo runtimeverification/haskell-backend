@@ -13,22 +13,13 @@ module Kore.Step.Simplification.And
     , simplifyEvaluated
     ) where
 
-import Data.Reflection
-       ( Given, give )
-
 import           Kore.AST.Common
                  ( And (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Bottom_, pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SortTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern),
                  PredicateSubstitution (PredicateSubstitution) )
@@ -40,8 +31,10 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( crossProductGenericF, filterOr, isFalse, isTrue, make )
+import qualified Kore.Step.Simplification.AndTerms as AndTerms
+                 ( termAnd )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier, SimplificationProof (..) )
+                 ( SimplificationProof (..), Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -66,9 +59,28 @@ components separately.
 This means that a bottom component anywhere makes the result bottom, while
 top can always be ignored.
 
-And on terms can sometimes be more interesting, e.g. an and between a variable
-and a functional term can be considered a substitution. However, this is not
-implemented yet.
+When we 'and' two terms:
+by Proposition 5.24 from (1),
+    x and functional-pattern = functional-pattern and [x=phi]
+We can generalize that to:
+    x and function-pattern
+        = function-pattern and ceil(function-pattern) and [x=phi]
+        but note that ceil(function-pattern) is not actually needed.
+We can still generalize that to:
+    function-like-pattern1 and function-like-pattern2
+        = function-pattern1 and function-pattern1 == function-pattern2
+Also, we have
+    constructor1(s1, ..., sk) and constructor2(t1, ..., tk):
+        if constructor1 != constructor2 then this is bottom
+        else it is
+            constructor1(s1 and t1, ..., sk and tk)
+    * constructor - 'inj' (sort injection) pairs become bottom
+    * injection-injection pairs with the same injection work the same as
+      identical constructors
+    domain-value1 and domain-value1, where both are string-based:
+        domain-value1 if they are equal
+        bottom otherwise
+    the same for two string literals and two chars
 -}
 simplify
     ::  ( MetaOrObject level
@@ -193,6 +205,13 @@ makeEvaluateNonBool
         , substitution = secondSubstitution
         }
   = do -- IntCounter monad
+    ( ExpandedPattern
+            { term = termTerm
+            , predicate = termPredicate
+            , substitution = termSubstitution
+            }
+        , _proof
+        ) <- makeTermAnd tools firstTerm secondTerm
     (   PredicateSubstitution
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
@@ -200,45 +219,29 @@ makeEvaluateNonBool
         , _proof
         ) <- mergePredicatesAndSubstitutions
             tools
-            [firstPredicate, secondPredicate]
-            [firstSubstitution, secondSubstitution]
+            [firstPredicate, secondPredicate, termPredicate]
+            [firstSubstitution, secondSubstitution, termSubstitution]
     return
         ( ExpandedPattern
-            { term = give sortTools $ makeTermAnd firstTerm secondTerm
+            { term = termTerm
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
         , SimplificationProof
         )
-  where
-    sortTools = MetadataTools.sortTools tools
 
 makeTermAnd
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Given (SortTools level)
-        , Show (variable level)
+        , Hashable variable
+        , IntVariable variable
         , Ord (variable level)
-        )
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-makeTermAnd b@(Bottom_ _) _ = b
-makeTermAnd (Top_ _) term = term
--- TODO: (partial) unification / other simplifications
-makeTermAnd first second = makeTermAndSecond first second
-
-makeTermAndSecond
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Given (SortTools level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
         , Show (variable level)
-        , Ord (variable level)
+        , SortedVariable variable
         )
-    => PureMLPattern level variable
+    => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-makeTermAndSecond _ b@(Bottom_ _) = b
-makeTermAndSecond term (Top_ _) = term
--- TODO: (partial) unification / other simplifications
-makeTermAndSecond first second = mkAnd first second
+    -> IntCounter (ExpandedPattern level variable, SimplificationProof level)
+makeTermAnd = AndTerms.termAnd

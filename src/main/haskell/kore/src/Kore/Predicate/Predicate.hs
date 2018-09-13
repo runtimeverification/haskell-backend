@@ -38,7 +38,7 @@ module Kore.Predicate.Predicate
     ) where
 
 import Data.List
-       ( foldl' )
+       ( foldl', nub )
 import Data.Reflection
        ( Given )
 import Data.Set
@@ -135,6 +135,7 @@ makeMultipleAndPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level))
     => [Predicate level variable]
     -> (Predicate level variable, PredicateProof level)
@@ -142,6 +143,8 @@ makeMultipleAndPredicate =
     foldl'
         (\(cond1, _) cond2 -> makeAndPredicate cond1 cond2)
         (makeTruePredicate, PredicateProof)
+    . nub -- 'and' is idempotent so we eliminate duplicates
+    -- TODO: This is O(n^2), consider doing something better.
 
 {-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
 doing some simplification.
@@ -150,6 +153,7 @@ makeMultipleOrPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level))
     => [Predicate level variable]
     -> (Predicate level variable, PredicateProof level)
@@ -157,6 +161,8 @@ makeMultipleOrPredicate =
     foldl'
         (\(cond1, _) cond2 -> makeOrPredicate cond1 cond2)
         (makeFalsePredicate, PredicateProof)
+    . nub -- 'or' is idempotent so we eliminate duplicates
+    -- TODO: This is O(n^2), consider doing something better.
 
 {-| 'makeAndPredicate' combines two Predicates with an 'and', doing some
 simplification.
@@ -167,6 +173,7 @@ makeAndPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level))
     => Predicate level variable
     -> Predicate level variable
@@ -175,6 +182,11 @@ makeAndPredicate b@PredicateFalse _ = (b, PredicateProof)
 makeAndPredicate _ b@PredicateFalse = (b, PredicateProof)
 makeAndPredicate PredicateTrue second = (second, PredicateProof)
 makeAndPredicate first PredicateTrue = (first, PredicateProof)
+makeAndPredicate (GenericPredicate first) (GenericPredicate second)
+  | first == second =
+    ( GenericPredicate first
+    , PredicateProof
+    )
 makeAndPredicate (GenericPredicate first) (GenericPredicate second) =
     ( GenericPredicate $ mkAnd first second
     , PredicateProof
@@ -187,6 +199,7 @@ makeOrPredicate
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level))
     => Predicate level variable
     -> Predicate level variable
@@ -195,6 +208,11 @@ makeOrPredicate t@PredicateTrue _ = (t, PredicateProof)
 makeOrPredicate _ t@PredicateTrue = (t, PredicateProof)
 makeOrPredicate PredicateFalse second = (second, PredicateProof)
 makeOrPredicate first PredicateFalse = (first, PredicateProof)
+makeOrPredicate (GenericPredicate first) (GenericPredicate second)
+  | first == second =
+    ( GenericPredicate first
+    , PredicateProof
+    )
 makeOrPredicate (GenericPredicate first) (GenericPredicate second) =
     ( GenericPredicate $ mkOr first second
     , PredicateProof
