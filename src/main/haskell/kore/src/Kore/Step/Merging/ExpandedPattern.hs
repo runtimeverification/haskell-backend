@@ -31,8 +31,8 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, Simplifier,
-                 SimplificationProof (SimplificationProof) )
+                 ( PureMLPatternSimplifier,
+                 SimplificationProof (SimplificationProof), Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -42,7 +42,7 @@ import           Kore.Substitution.Class
 import           Kore.Variables.Fresh.IntCounter
                  ( IntCounter )
 import           Kore.Variables.Int
-                 ( IntVariable (..) )
+                 ( IntVariable )
 
 
 {-| 'mergeWithPredicateSubstitution' ands the given predicate-substitution
