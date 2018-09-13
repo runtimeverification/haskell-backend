@@ -8,15 +8,18 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Step
-    ( simpleStrategy
-    , simpleStepper
-    , stepStrategy
-    , stepStepper
-    , simpleRule
-      -- * Primitive strategies
-    , Prim (..)
+    ( -- * Primitive strategies
+      Prim (..)
     , axiom
     , builtin
+    , axiomStep
+    , transitionPrim
+      -- * Single-step strategy
+    , stepStrategy
+    , stepStepper
+      -- * Simple strategy
+    , simpleStrategy
+    , simpleStepper
       -- * Re-exports
     , Limit (..)
     , Natural
@@ -49,6 +52,71 @@ import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Variables.Fresh
 
+{- | A strategy primitive: a rewrite axiom or builtin simplification step.
+ -}
+data Prim axiom = Builtin | Axiom !axiom
+
+-- | Apply the axiom.
+axiom :: axiom -> Prim axiom
+axiom = Axiom
+
+-- | Apply builtin simplification.
+builtin :: Prim axiom
+builtin = Builtin
+
+{- | A single-step strategy which applies the given axiom.
+
+  If the axiom is successful, the builtin simplifier is applied. The combination
+  of axiom and builtin simplifier is considered one step for the purposes of the
+  step limit.
+
+ -}
+axiomStep :: axiom -> Strategy (Prim axiom) -> Strategy (Prim axiom)
+axiomStep a =
+    Strategy.step . Strategy.apply (axiom a) . Strategy.apply builtin
+
+{- | Transition rule for primitive strategies in 'Prim'.
+ -}
+transitionPrim
+    :: (MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> CommonPureMLPatternSimplifier level
+    -- ^ Map from symbol IDs to defined functions
+    -> Prim (AxiomPattern level)
+    -> (CommonExpandedPattern level, StepProof level)
+    -- ^ Configuration being rewritten and its accompanying proof
+    -> Simplifier [(CommonExpandedPattern level, StepProof level)]
+transitionPrim tools simplifier =
+    \case
+        Builtin -> transitionBuiltin
+        Axiom a -> transitionAxiom a
+  where
+    transitionBuiltin (config, proof) =
+        do
+            (configs, proof') <-
+                ExpandedPattern.simplify tools simplifier config
+            let
+                proof'' = proof <> simplificationProof proof'
+                prove config' = (config', proof'')
+                -- Filter out ⊥ patterns
+                nonEmptyConfigs = ExpandedPattern.filterOr configs
+            return (prove <$> toList nonEmptyConfigs)
+    transitionAxiom a (config, proof) =
+        case stepWithAxiom tools config a of
+            Left _ -> pure []
+            Right apply -> do
+                (config', proof') <- apply
+                if ExpandedPattern.isBottom config'
+                    then return []
+                    else return [(config', proof <> proof')]
+
+{- | A strategy which takes one step by attempting all the axioms.
+
+  The builtin simplifier is used after each successful axiom step. The
+  combination of axiom and builtin simplification is considered one step for the
+  purposes of the step limit.
+
+ -}
 stepStrategy
     :: MetaOrObject level
     => [AxiomPattern level]
@@ -58,10 +126,8 @@ stepStrategy axioms =
   where
     applyAxiom a = axiomStep a Strategy.stuck
 
-axiomStep :: axiom -> Strategy (Prim axiom) -> Strategy (Prim axiom)
-axiomStep a =
-    Strategy.step . Strategy.apply (axiom a) . Strategy.apply builtin
-
+{- | Apply 'stepStrategy' and return all results.
+ -}
 stepStepper
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
@@ -75,40 +141,16 @@ stepStepper
 stepStepper tools simplifier axioms =
     (<$>) Strategy.pickStuck . runStrategy rule strategy Unlimited
   where
-    rule = simpleRule tools simplifier
+    rule = transitionPrim tools simplifier
     strategy = stepStrategy axioms
 
-simpleRule
-    :: (MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier level
-    -- ^ Map from symbol IDs to defined functions
-    -> Prim (AxiomPattern level)
-    -> (CommonExpandedPattern level, StepProof level)
-    -- ^ Configuration being rewritten and its accompanying proof
-    -> Simplifier [(CommonExpandedPattern level, StepProof level)]
-simpleRule tools simplifier =
-    \case
-        Builtin -> \(config, proof) ->
-            do
-                (configs, proof') <-
-                    ExpandedPattern.simplify tools simplifier config
-                let
-                    proof'' = proof <> simplificationProof proof'
-                    prove config' = (config', proof'')
-                    -- Filter out ⊥ patterns
-                    nonEmptyConfigs = ExpandedPattern.filterOr configs
-                return (prove <$> toList nonEmptyConfigs)
-        Axiom a -> \(config, proof) ->
-            do
-                case stepWithAxiom tools config a of
-                    Left _ -> pure []
-                    Right apply -> do
-                        (config', proof') <- apply
-                        if ExpandedPattern.isBottom config'
-                            then return []
-                            else return [(config', proof <> proof')]
+{- | A strategy which applies all the given axioms as many times as possible.
 
+  The builtin simplifier is used after each successful axiom step. The
+  combination of axiom and builtin simplification is considered one step for the
+  purposes of the step limit.
+
+ -}
 simpleStrategy
     :: MetaOrObject level
     => [AxiomPattern level]
@@ -118,6 +160,8 @@ simpleStrategy axioms =
   where
     applyAxioms next = Strategy.all (axiomStep <$> axioms <*> pure next)
 
+{- | Apply 'simpleStrategy' and return the result of the longest-running branch.
+ -}
 simpleStepper
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
@@ -133,17 +177,5 @@ simpleStepper
 simpleStepper tools simplifier axioms stepLimit =
     (<$>) Strategy.pickLongest . runStrategy rule strategy stepLimit
   where
-    rule = simpleRule tools simplifier
+    rule = transitionPrim tools simplifier
     strategy = simpleStrategy axioms
-
-{- | A strategy primitive: a rewrite axiom or builtin simplification step.
- -}
-data Prim axiom = Builtin | Axiom !axiom
-
--- | Apply the axiom.
-axiom :: axiom -> Prim axiom
-axiom = Axiom
-
--- | Apply builtin simplification.
-builtin :: Prim axiom
-builtin = Builtin
