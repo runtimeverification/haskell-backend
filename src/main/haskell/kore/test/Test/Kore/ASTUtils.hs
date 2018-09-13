@@ -62,18 +62,18 @@ test_sortAgreement = testGroup "Sort agreement"
           assertEqual ""
               (sortAgreement2 ^? (inPath [1] . resultSort ))
               (Just $ mkSort "Y")
-    , testCase "flexibleSort.1" $
+    , testCase "predicateSort.1" $
           assertEqual ""
               (dummyEnvironment mkBottom ^? resultSort)
-              (Just (flexibleSort :: Sort Object))
-    , testCase "flexibleSort.2" $
+              (Just (predicateSort :: Sort Object))
+    , testCase "predicateSort.2" $
           assertEqual ""
               (dummyEnvironment mkTop ^? resultSort)
-              (Just (flexibleSort :: Sort Object))
-    , testCase "flexibleSort.3" $
+              (Just (predicateSort :: Sort Object))
+    , testCase "predicateSort.3" $
           assertEqual ""
               (dummyEnvironment (mkExists (var_ "a" "A") mkBottom) ^? resultSort)
-              (Just (flexibleSort :: Sort Object))
+              (Just (predicateSort :: Sort Object))
     , testGroup "sortAgreementManySimplePatterns" $
           dummyEnvironment sortAgreementManySimplePatterns
     , testGetSetIdentity 5
@@ -161,11 +161,11 @@ sortAgreementManySimplePatterns = do
         , mkIff a b
         , mkRewrites a b
         ]
-    shouldHaveFlexibleSortTwoArgs <-
+    shouldHavepredicateSortTwoArgs <-
         [ mkEquals a b
         , mkIn a b
         ]
-    shoudlHaveFlexibleSortOneArg <-
+    shoudlHavepredicateSortOneArg <-
         [ mkCeil a
         , mkFloor a
         ]
@@ -176,11 +176,11 @@ sortAgreementManySimplePatterns = do
             (getSort shouldHaveSortXTwoArgs)
             (mkSort "X")
     let assert3 = return $ testCase "" $ assertEqual ""
-            (getSort shoudlHaveFlexibleSortOneArg)
-            flexibleSort
+            (getSort shoudlHavepredicateSortOneArg)
+            predicateSort
     let assert4 = return $ testCase "" $ assertEqual ""
-            (getSort shouldHaveFlexibleSortTwoArgs)
-            flexibleSort
+            (getSort shouldHavepredicateSortTwoArgs)
+            predicateSort
     assert1 ++ assert2 ++ assert3 ++ assert4
 
 substitutionGetSetIdentity a b pat =

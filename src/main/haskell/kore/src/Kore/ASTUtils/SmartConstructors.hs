@@ -9,7 +9,6 @@ Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
@@ -18,11 +17,12 @@ module Kore.ASTUtils.SmartConstructors
     ( -- * Utility funcs for dealing with sorts
       getSort
     , forceSort
-    , flexibleSort
+    , predicateSort
     , isRigid
     , isFlexible
     , makeSortsAgree
     , ensureSortAgreement
+    , isObviouslyPredicate
     -- * Lenses -- all applicative
     , patternLens
     , inputSort   -- | will have 0 or 1 inhabitants
@@ -87,10 +87,10 @@ getSort x = getPatternResultSort given $ project x
 -- But we don't know yet where it's going to be attached.
 -- No particular way to avoid this, unfortunately.
 -- This will probably happen often during proof routines.
-flexibleSort
+predicateSort
     :: MetaOrObject level
     => Sort level
-flexibleSort = mkSort "*"
+predicateSort = mkSort "PREDICATE"
 
 patternLens
     :: (Applicative f, MetaOrObject level)
@@ -138,10 +138,12 @@ inputSort        f = patternLens f    pure pure pure
 -- In the semantics.pdf documentation, the sorts are written
 -- {s1} if there is one sort parameter, and {s1, s2}
 -- if there are two sort parameters. This has the effect
--- that the result sort is sometimes s1 and sometimes s2.
+-- that the result sort is sometimes `s1` and sometimes `s2`.
+-- I always refer to the result sort as `s2`, even if
+-- there is no `s1`.
 -- I believe this convention is less confusing.
--- Note that a few constructors like App, StringLiteral and Var
--- Lack a result sort.
+-- Note that a few constructors like App and StringLiteral
+-- lack a result sort in the AST.
 resultSort       f = patternLens pure f    pure pure
 -- | Points to the bound variable in Forall/Exists,
 -- and also the Variable in VariablePattern
@@ -172,7 +174,7 @@ inPath
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 
--- | Rigid patterns are those which have a
+-- | Rigid pattern heads are those which have a
 -- single uniquely determined sort,
 -- which we can't change.
 isRigid
@@ -188,7 +190,7 @@ isRigid p = case project p of
     _                      -> False
 
 
--- | Flexible patterns are those which can be
+-- | Flexible pattern heads are those which can be
 -- any sort, like predicates \equals, \ceil etc.
 -- The 3rd possibility (not isFlexible && not isRigid)
 -- is a constructor whose sort
@@ -207,25 +209,17 @@ isFlexible p = case project p of
     TopPattern    _ -> True
     _               -> False
 
--- | Tries to modify p to have sort s.
+-- | Attempts to modify p to have sort s.
 forceSort
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => Sort level
     -> PureMLPattern level var
     -> Maybe (PureMLPattern level var)
 forceSort s p
-   | isRigid    p = checkIfAlreadyCorrectSort s p
-   | isFlexible p = Just $ p & resultSort .~ s
-   | otherwise = traverseOf allChildren (forceSort s) p
-
-checkIfAlreadyCorrectSort
-    :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
-    => Sort level
-    -> PureMLPattern level var
-    -> Maybe (PureMLPattern level var)
-checkIfAlreadyCorrectSort s p
-   | getSort p == s = Just p
-   | otherwise = Nothing
+  | getSort p == s = Just p
+  | isRigid    p   = Nothing
+  | isFlexible p   = Just $ p & resultSort .~ s
+  | otherwise      = traverseOf allChildren (forceSort s) p
 
 -- | Modify all patterns in a list to have the same sort.
 makeSortsAgree
@@ -235,7 +229,7 @@ makeSortsAgree
 makeSortsAgree ps =
     forM ps $ forceSort $
         case asum $ getRigidSort <$> ps of
-          Nothing -> flexibleSort
+          Nothing -> predicateSort
           Just a  -> a
 
 getRigidSort
@@ -243,7 +237,7 @@ getRigidSort
     => PureMLPattern level var
     -> Maybe (Sort level)
 getRigidSort p =
-    case forceSort flexibleSort p of
+    case forceSort predicateSort p of
       Nothing -> Just $ getSort p
       Just _  -> Nothing
 
@@ -260,17 +254,43 @@ ensureSortAgreement
     -> PureMLPattern level var
 ensureSortAgreement p =
   case makeSortsAgree $ p ^. partsOf allChildren of
-    Just []    -> p & resultSort .~ flexibleSort
+    Just []    -> p & resultSort .~ predicateSort
     Just children ->
       p & (partsOf allChildren) .~ children
         & inputSort  .~ childSort
         & resultSort .~ (
           if isFlexible p
-            then flexibleSort
+            then predicateSort
             else childSort
           )
       where childSort = getSort $ head children
     Nothing -> error $ "Can't unify sorts of subpatterns: " ++ show p
+
+-- | In practice, all the predicate patterns we use are
+-- composed of =, \floor, \ceil, and \in. I haven't come
+-- across a single counterexample. Thus this function can
+-- probably be trusted to tell you if something is a
+-- predicate. Note that `isObviouslyPredicate` and
+-- `isFlexible` are NOT the same. `isFlexible` only 
+-- looks at the head of the pattern, it will return false
+-- for `a = b /\ c = d`, whereas `isObviouslyPredicate` will
+-- traverse the whole pattern and return True. 
+isObviouslyPredicate
+    :: PureMLPattern level var
+    -> Bool
+isObviouslyPredicate = \case
+  And_ _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Or_  _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Implies_ _   a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Iff_ _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Not_ _       a   -> isObviouslyPredicate a
+  Forall_ _ _  a   -> isObviouslyPredicate a
+  Exists_ _ _  a   -> isObviouslyPredicate a
+  Equals_ _ _ _ _  -> True
+  Ceil_ _ _ _      -> True
+  Floor_ _ _ _     -> True
+  In_ _ _ _ _      -> True
+  _ -> False
 
 -- | Constructors that handle sort information automatically.
 -- To use, put `give metadatatools` at the top of the computation.
@@ -284,6 +304,7 @@ mkAnd
     -> PureMLPattern level var
 mkAnd a b = ensureSortAgreement $ And_ fixmeSort a b
 
+-- TODO: Should this check for sort agreement?
 mkApp
     :: (MetaOrObject level, Given (SortTools level))
     => SymbolOrAlias level
@@ -294,13 +315,13 @@ mkApp = App_
 mkBottom
     :: MetaOrObject level
     => PureMLPattern level var
-mkBottom = Bottom_ flexibleSort
+mkBottom = Bottom_ predicateSort
 
 mkCeil
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => PureMLPattern level var
     -> PureMLPattern level var
-mkCeil a = Ceil_ (getSort a) flexibleSort a
+mkCeil a = Ceil_ (getSort a) predicateSort a
 
 mkDomainValue
     :: (MetaOrObject Object, Given (SortTools Object))
@@ -419,7 +440,7 @@ mkRewrites a b = ensureSortAgreement $ Rewrites_ fixmeSort a b
 mkTop
     :: MetaOrObject level
     => PureMLPattern level var
-mkTop = Top_ flexibleSort
+mkTop = Top_ predicateSort
 
 mkVar
     :: (MetaOrObject level, Given (SortTools level))
