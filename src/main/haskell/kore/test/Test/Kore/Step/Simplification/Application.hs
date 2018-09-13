@@ -305,7 +305,7 @@ test_applicationSimplification =
     x = Variable (testId "x") testSort
     y = Variable (testId "y") testSort
     z = Variable (testId "z") testSort
-
+    -- a, b, c, d, fOfA, fOfB, gOfA, gOfB :: PureMLPattern Object KoreDomain Variable
     a = give mockSortTools $ mkApp aSymbol []
     b = give mockSortTools $ mkApp bSymbol []
     c = give mockSortTools $ mkApp cSymbol []
