@@ -117,7 +117,9 @@ commandLineParser =
         option readStrategy
             (  metavar "STRATEGY"
             <> long "strategy"
-            <> value defaultStrategy
+            -- TODO (thomas.tuegel): Make defaultStrategy the default when it
+            -- works correctly.
+            <> value simpleStrategy
             <> help "Select rewrites using STRATEGY."
             )
       where
