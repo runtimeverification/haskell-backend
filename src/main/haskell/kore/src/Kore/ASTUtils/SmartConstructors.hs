@@ -18,8 +18,8 @@ module Kore.ASTUtils.SmartConstructors
       getSort
     , forceSort
     , predicateSort
-    , isRigid
-    , isFlexible
+    , hasRigidHead
+    , hasFlexibleHead
     , makeSortsAgree
     , ensureSortAgreement
     , isObviouslyPredicate
@@ -177,11 +177,11 @@ inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 -- | Rigid pattern heads are those which have a
 -- single uniquely determined sort,
 -- which we can't change.
-isRigid
+hasRigidHead
     :: MetaOrObject level
     => PureMLPattern level var
     -> Bool
-isRigid p = case project p of
+hasRigidHead p = case project p of
     ApplicationPattern   _ -> True
     DomainValuePattern   _ -> True
     VariablePattern      _ -> True
@@ -192,15 +192,15 @@ isRigid p = case project p of
 
 -- | Flexible pattern heads are those which can be
 -- any sort, like predicates \equals, \ceil etc.
--- The 3rd possibility (not isFlexible && not isRigid)
+-- The 3rd possibility (not hasFlexibleHead && not hasRigidHead)
 -- is a constructor whose sort
 -- must match the sort of of its subexpressions:
 -- \and, \or, \implies, etc.
-isFlexible
+hasFlexibleHead
     :: MetaOrObject level
     => PureMLPattern level var
     -> Bool
-isFlexible p = case project p of
+hasFlexibleHead p = case project p of
     BottomPattern _ -> True
     CeilPattern   _ -> True
     EqualsPattern _ -> True
@@ -217,8 +217,8 @@ forceSort
     -> Maybe (PureMLPattern level var)
 forceSort s p
   | getSort p == s = Just p
-  | isRigid    p   = Nothing
-  | isFlexible p   = Just $ p & resultSort .~ s
+  | hasRigidHead    p   = Nothing
+  | hasFlexibleHead p   = Just $ p & resultSort .~ s
   | otherwise      = traverseOf allChildren (forceSort s) p
 
 -- | Modify all patterns in a list to have the same sort.
@@ -259,7 +259,7 @@ ensureSortAgreement p =
       p & (partsOf allChildren) .~ children
         & inputSort  .~ childSort
         & resultSort .~ (
-          if isFlexible p
+          if hasFlexibleHead p
             then predicateSort
             else childSort
           )
@@ -271,10 +271,12 @@ ensureSortAgreement p =
 -- across a single counterexample. Thus this function can
 -- probably be trusted to tell you if something is a
 -- predicate. Note that `isObviouslyPredicate` and
--- `isFlexible` are NOT the same. `isFlexible` only 
+-- `hasFlexibleHead` are NOT the same. `hasFlexibleHead` only 
 -- looks at the head of the pattern, it will return false
 -- for `a = b /\ c = d`, whereas `isObviouslyPredicate` will
 -- traverse the whole pattern and return True. 
+-- Also, in practice, having a flexible sort and being a predicate
+-- are synonymous. But don't quote me on this.
 isObviouslyPredicate
     :: PureMLPattern level var
     -> Bool
