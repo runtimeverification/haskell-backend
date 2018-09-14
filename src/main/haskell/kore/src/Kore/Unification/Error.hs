@@ -27,6 +27,7 @@ import Kore.AST.Common
 data UnificationOrSubstitutionError level variable
     = UnificationError (UnificationError level)
     | SubstitutionError (SubstitutionError level variable)
+    deriving (Eq, Show)
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
