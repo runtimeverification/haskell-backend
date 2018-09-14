@@ -28,7 +28,7 @@ import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
                  ( KoreDefinition, ModuleName (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 (mkApp, mkDomainValue)
+                 ( mkApp, mkDomainValue )
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
@@ -62,7 +62,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Unparser.Unparse
+import           Kore.Unparser
                  ( unparseToString )
 
 import GlobalMain

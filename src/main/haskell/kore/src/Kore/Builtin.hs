@@ -22,6 +22,10 @@ module Kore.Builtin
     , koreVerifiers
     , koreEvaluators
     , evaluators
+    , asMetaPattern
+    , asPattern
+    -- * Errors
+    , notImplementedInternal
     ) where
 
 import           Data.Map
@@ -29,10 +33,15 @@ import           Data.Map
 import qualified Data.Map as Map
 import           Data.Semigroup
                  ( (<>) )
+import           GHC.Stack
+                 ( HasCallStack )
 
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
-                 ( Object )
+                 ( Meta, Object )
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
+import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Hook as Hook
@@ -128,3 +137,25 @@ evaluators builtins indexedModule =
             name <- Hook.getHook hook
             impl <- Map.lookup name builtins
             pure [impl]
+
+asPattern
+    :: Kore.DomainValue Object (CommonPurePattern Meta)
+    -> CommonPurePattern Object
+asPattern Kore.DomainValue { domainValueSort, domainValueChild } =
+    case domainValueChild of
+        Kore.BuiltinDomainPattern _ ->
+            Kore.DV_ domainValueSort domainValueChild
+        _ -> error "Not implemented"
+
+asMetaPattern
+    :: Kore.DomainValue Object (CommonPurePattern Meta)
+    -> CommonPurePattern Meta
+asMetaPattern Kore.DomainValue { domainValueChild } =
+    case domainValueChild of
+        Kore.BuiltinDomainPattern pat -> pat
+        _ -> error "Not implemented"
+
+{- | Throw an error for operations not implemented for internal domain values.
+ -}
+notImplementedInternal :: HasCallStack => a
+notImplementedInternal = error "Not implemented for internal domain values"

@@ -71,6 +71,7 @@ import Kore.ASTPrettyPrint
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 import Kore.ASTUtils.Substitution
+import Kore.Unparser
 
 import Data.Hashable
 import GHC.Generics
@@ -221,63 +222,63 @@ data LargeRule subproof =
 instance Hashable subproof => Hashable (LargeRule subproof)
 
 instance Pretty a => Pretty (LargeRule a) where
-  pretty e = sep $ case e of
-      Assumption _
-          -> ["Assumption"]
-      Discharge a b
-          -> ["Discharge", pretty a, pretty b]
-      Abstract var a
-          -> ["Abstract", pretty var, pretty a]
-      ForallElim a b
-          -> ["ForallElim", pretty a, pretty b]
-      AndIntro a b
-          -> ["AndIntro", pretty a, pretty b]
-      AndElimR a
-          -> ["AndElimR", pretty a]
-      AndElimL a
-          -> ["AndElimL", pretty a]
-      OrIntroL a b
-          -> ["OrIntroL", pretty a, pretty b]
-      OrIntroR a b
-          -> ["OrIntroR", pretty a, pretty b]
-      OrElim a b c
-          -> ["OrElim", pretty a, pretty b, pretty c]
-      TopIntro
-          -> ["TopIntro"]
-      ExistsIntro var a b
-          -> ["ExistsIntro", pretty var, pretty a, pretty b]
-      ExistsElim a var b c
-          -> ["ExistsElim", pretty a, pretty var, pretty b, pretty c]
-      ModusPonens a b
-          -> ["ModusPonens", pretty a, pretty b]
-      FunctionalSubst var1 a var2 b
-          -> ["FunctionalSubst", pretty var1, pretty a, pretty var2, pretty b]
-      FunctionalVar var1 var2
-          -> ["FunctionalVar", pretty var1, pretty var2]
-      EqualityIntro a
-          -> ["EqualityIntro", pretty a]
-      EqualityElim a b c p
-          -> ["EqualityElim", pretty a, pretty b, pretty c, pretty p]
-      MembershipForall var a
-          -> ["MembershipForall", pretty var, pretty a]
-      MembershipEq var1 var2
-          -> ["MembershipEq", pretty var1, pretty var2]
-      MembershipNot var a
-          -> ["MembershipNot", pretty var, pretty a]
-      MembershipAnd var a b
-          -> ["MembershipAnd", pretty var, pretty a, pretty b]
-      MembershipExists var1 var2 a
-          -> ["MembershipExists", pretty var1, pretty var2, pretty a]
-      MembershipCong var1 var2 pos a
-          -> ["MembershipCong", pretty var1, pretty var2, pretty pos, pretty a]
+    pretty e = sep $ case e of
+        Assumption _
+            -> ["Assumption"]
+        Discharge a b
+            -> ["Discharge", unparse a, pretty b]
+        Abstract var a
+            -> ["Abstract", unparse var, pretty a]
+        ForallElim a b
+            -> ["ForallElim", unparse a, pretty b]
+        AndIntro a b
+            -> ["AndIntro", pretty a, pretty b]
+        AndElimR a
+            -> ["AndElimR", pretty a]
+        AndElimL a
+            -> ["AndElimL", pretty a]
+        OrIntroL a b
+            -> ["OrIntroL", pretty a, unparse b]
+        OrIntroR a b
+            -> ["OrIntroR", unparse a, pretty b]
+        OrElim a b c
+            -> ["OrElim", pretty a, pretty b, pretty c]
+        TopIntro
+            -> ["TopIntro"]
+        ExistsIntro var a b
+            -> ["ExistsIntro", unparse var, unparse a, pretty b]
+        ExistsElim a var b c
+            -> ["ExistsElim", pretty a, unparse var, unparse b, pretty c]
+        ModusPonens a b
+            -> ["ModusPonens", pretty a, pretty b]
+        FunctionalSubst var1 a var2 b
+            -> ["FunctionalSubst", unparse var1, unparse a, unparse var2, unparse b]
+        FunctionalVar var1 var2
+            -> ["FunctionalVar", unparse var1, unparse var2]
+        EqualityIntro a
+            -> ["EqualityIntro", unparse a]
+        EqualityElim a b c p
+            -> ["EqualityElim", unparse a, unparse b, unparse c, pretty p]
+        MembershipForall var a
+            -> ["MembershipForall", unparse var, unparse a]
+        MembershipEq var1 var2
+            -> ["MembershipEq", unparse var1, unparse var2]
+        MembershipNot var a
+            -> ["MembershipNot", unparse var, unparse a]
+        MembershipAnd var a b
+            -> ["MembershipAnd", unparse var, unparse a, unparse b]
+        MembershipExists var1 var2 a
+            -> ["MembershipExists", unparse var1, unparse var2, unparse a]
+        MembershipCong var1 var2 pos a
+            -> ["MembershipCong", unparse var1, unparse var2, pretty pos, unparse a]
 
 instance
-  ( Pretty formula
+  ( Unparse formula
   , Pretty (rules subproof)
   , Pretty subproof
-  , Pretty assumption
+  , Unparse assumption
   ) => Pretty (PropF formula rules assumption subproof) where
-    pretty (ByF a b c) = "|- " <> pretty a <> P.line <> "By " <> pretty b
+    pretty (ByF a b c) = "|- " <> unparse a <> P.line <> "By " <> pretty b
 
 getConclusion
     :: Proof

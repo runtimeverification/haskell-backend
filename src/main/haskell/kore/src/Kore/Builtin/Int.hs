@@ -21,6 +21,7 @@ module Kore.Builtin.Int
     , symbolVerifiers
     , patternVerifier
     , builtinFunctions
+    , asMetaPattern
     , asPattern
     , asExpandedPattern
     ) where
@@ -35,7 +36,7 @@ import qualified Text.Megaparsec.Char.Lexer as Parsec
 
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
-                 ( Object )
+                 ( Meta, Object )
 import           Kore.AST.PureML
                  ( CommonPurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
@@ -152,7 +153,10 @@ asPattern
 asPattern resultSort result =
     Kore.DV_ resultSort
         $ Kore.BuiltinDomainPattern
-        $ Kore.StringLiteral_ $ show result
+        $ asMetaPattern result
+
+asMetaPattern :: Integer -> CommonPurePattern Meta
+asMetaPattern result = Kore.StringLiteral_ $ show result
 
 asExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort

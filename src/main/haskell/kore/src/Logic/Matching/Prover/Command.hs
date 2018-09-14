@@ -7,9 +7,10 @@ import Data.Text
        ( Text )
 import Data.Text.Prettyprint.Doc
        ( Pretty (pretty), colon, (<+>) )
-
 import Text.Megaparsec
 import Text.Megaparsec.Char
+
+import Kore.Unparser
 
 -- | Prover command data type
 --   TODO: better way of expressing the inherent
@@ -74,11 +75,12 @@ parseCommand pIx pFormula pDerivation
 
 --------------
 -- Printing --
-instance (Pretty ix, Pretty formula, Pretty (rule ix)) => Pretty (Command ix rule formula) where
-  pretty (Add ix formula)              =  pretty(  "add"::Text)<+>pretty ix<+>colon<+>pretty formula
+instance (Pretty ix, Unparse formula, Pretty (rule ix)) => Pretty (Command ix rule formula) where
+-- TODO (thomas.tuegel): Fix implementation of Pretty Command
+  pretty (Add ix formula)              =  pretty(  "add"::Text)<+>pretty ix<+>colon<+>unparse formula
   pretty (Prove ix rule)               =  pretty("prove"::Text)<+>pretty ix<+>colon
                                       <+> pretty(   "by"::Text)<+>pretty rule
-  pretty (AddAndProve ix formula rule) =  pretty(  "add"::Text)<+>pretty ix<+>colon<+>pretty formula
+  pretty (AddAndProve ix formula rule) =  pretty(  "add"::Text)<+>pretty ix<+>colon<+>unparse formula
                                       <+> pretty(   "by"::Text)<+>pretty rule
   pretty Undo                          =  pretty( "undo"::Text)
   pretty Show                          =  pretty( "show"::Text)
