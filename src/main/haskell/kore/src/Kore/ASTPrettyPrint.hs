@@ -306,9 +306,18 @@ instance
             , writeFieldNewLine "ceilChild" ceilChild p
             ]
 
+instance PrettyPrint child => PrettyPrint (BuiltinDomain child) where
+    prettyPrint flags =
+        \case
+            BuiltinDomainPattern str ->
+                betweenParentheses flags
+                    ("BuiltinDomainString " <> prettyPrint NeedsParentheses str)
+            _ -> error "Domain value must be a string literal"
+
 instance
     ( MetaOrObject level
-    ) => PrettyPrint (DomainValue level (Fix (Pattern Meta Variable))) where
+    , PrettyPrint child
+    ) => PrettyPrint (DomainValue level child) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
             "DomainValue"

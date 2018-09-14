@@ -116,7 +116,7 @@ mulSymbol :: SymbolOrAlias Object
 mulSymbol = builtinSymbol "mulInt"
 
 intLiteral :: Integer -> CommonPurePattern Object
-intLiteral n = DV_ intSort (StringLiteral_ $ StringLiteral $ show n)
+intLiteral n = DV_ intSort (BuiltinDomainPattern $ StringLiteral_ $ show n)
 
 
 -- | Test a binary operator hooked to the given symbol.

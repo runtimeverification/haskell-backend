@@ -11,10 +11,10 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( DomainValue (..), Sort (..), StringLiteral (..), Variable )
+                 ( BuiltinDomain (..), DomainValue (..), Sort (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( PureMLPattern )
+                 ( CommonPurePattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkDomainValue, mkStringLiteral )
 import           Kore.ASTUtils.SmartPatterns
@@ -49,7 +49,7 @@ test_domainValueSimplification =
                         give mockSortTools $
                             mkDomainValue
                                 testSort
-                                (mkStringLiteral (StringLiteral "a"))
+                                (BuiltinDomainPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -58,7 +58,7 @@ test_domainValueSimplification =
             (evaluate
                 (DomainValue
                     testSort
-                    (mkStringLiteral (StringLiteral "a"))
+                    (BuiltinDomainPattern (mkStringLiteral "a"))
                 )
             )
         )
@@ -76,7 +76,7 @@ testSort =
 
 evaluate
     ::  (MetaOrObject Object)
-    => DomainValue Object (PureMLPattern Meta Variable)
+    => DomainValue Object (CommonPurePattern Meta)
     -> CommonOrOfExpandedPattern Object
 evaluate domainValue =
     case simplify domainValue of

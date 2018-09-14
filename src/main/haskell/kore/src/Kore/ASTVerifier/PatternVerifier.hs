@@ -15,9 +15,6 @@ module Kore.ASTVerifier.PatternVerifier
 
 import           Control.Monad
                  ( foldM, zipWithM_ )
-import           Data.Functor.Foldable
-                 ( Fix )
-import qualified Data.Functor.Foldable as Functor.Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc.Render.String
@@ -31,8 +28,11 @@ import           Kore.AST.MLPatterns
 import           Kore.AST.Pretty
                  ( Pretty (..), (<+>), (<>) )
 import qualified Kore.AST.Pretty as Pretty
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Builtin as Builtin
@@ -457,7 +457,7 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
 
 verifyDomainValue
     :: (MetaOrObject level)
-    => DomainValue Object (Fix (Pattern Meta Variable))
+    => DomainValue Object (CommonPurePattern Meta)
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (Sort Object)
@@ -476,8 +476,8 @@ verifyDomainValue
                 (verifyHelpersFindSort verifyHelpers)
                 declaredSortVariables
                 domainValueSort
-            case Functor.Foldable.project domainValueChild of
-                StringLiteralPattern _ -> return ()
+            case domainValueChild of
+                BuiltinDomainPattern (StringLiteral_ _) -> return ()
                 _ -> koreFail "Domain value argument must be a literal string."
             return domainValueSort
 

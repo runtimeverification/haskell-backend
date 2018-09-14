@@ -23,20 +23,23 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Kore.AST.Common where
 
-import Control.DeepSeq
-       ( NFData (..) )
-import Data.Deriving
-       ( deriveEq1, deriveOrd1, deriveShow1, makeLiftCompare, makeLiftEq,
-       makeLiftShowsPrec )
-import Data.Functor.Classes
-import Data.Functor.Foldable
-       ( Fix (..), cata )
-import Data.Hashable
-import Data.Proxy
-import Data.String
-       ( fromString )
-import GHC.Generics
-       ( Generic )
+import           Control.DeepSeq
+                 ( NFData (..) )
+import           Data.Deriving
+                 ( deriveEq1, deriveOrd1, deriveShow1, makeLiftCompare,
+                 makeLiftEq, makeLiftShowsPrec )
+import           Data.Functor.Classes
+import           Data.Functor.Foldable
+                 ( Fix (..), cata )
+import           Data.Hashable
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
+import           Data.Proxy
+import           Data.String
+                 ( fromString )
+import           GHC.Generics
+                 ( Generic )
 
 import           Data.Functor.Foldable.Orphans ()
 import           Kore.AST.MetaOrObject
@@ -570,6 +573,28 @@ instance Pretty child => Pretty (Ceil level child) where
         <> Pretty.parameters [ceilOperandSort, ceilResultSort]
         <> Pretty.arguments [ceilChild]
 
+data BuiltinDomain child
+    = BuiltinDomainPattern !child
+    | BuiltinDomainMap !(Map child child)
+    deriving (Eq, Generic, Ord, Show)
+
+instance Hashable child => Hashable (BuiltinDomain child) where
+    hashWithSalt salt =
+        \case
+            BuiltinDomainPattern p -> hashWithSalt salt p
+            BuiltinDomainMap m -> hashWithSalt salt (Map.toAscList m)
+
+instance NFData child => NFData (BuiltinDomain child)
+
+instance Pretty child => Pretty (BuiltinDomain child) where
+    pretty = pretty . asBuiltinPattern
+
+asBuiltinPattern :: BuiltinDomain child -> child
+asBuiltinPattern =
+    \case
+        BuiltinDomainPattern pat -> pat
+        _ -> error "Not a domain value argument pattern"
+
 {-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
 syntactic category, which are not yet in the Semantics of K document,
 but they should appear in Section 9.1.4 (Patterns) at some point.
@@ -587,13 +612,9 @@ e.g. succesor(succesor(...succesor(0)...))
 -}
 data DomainValue level child = DomainValue
     { domainValueSort  :: !(Sort level)
-    , domainValueChild :: !child
+    , domainValueChild :: !(BuiltinDomain child)
     }
-    deriving (Eq, Ord, Show, Generic)
-
-deriveEq1 ''DomainValue
-deriveOrd1 ''DomainValue
-deriveShow1 ''DomainValue
+    deriving (Eq, Generic, Ord, Show)
 
 instance Hashable child => Hashable (DomainValue level child)
 

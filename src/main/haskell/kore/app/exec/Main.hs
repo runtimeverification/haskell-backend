@@ -28,7 +28,8 @@ import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
                  ( KoreDefinition, ModuleName (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkApp, mkDomainValue, mkStringLiteral )
+                 (mkApp, mkDomainValue)
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification, verifyAndIndexDefinition )
@@ -341,7 +342,8 @@ makeKInitConfig pat =
             [ mkApp kSeqHead
                 [ mkApp (injHead configVarSort kItemSort)
                     [ mkDomainValue configVarSort
-                      $ mkStringLiteral (StringLiteral "$PGM")
+                        $ BuiltinDomainPattern
+                        $ StringLiteral_ "$PGM"
                     ]
                 , mkApp dotKHead []
                 ]

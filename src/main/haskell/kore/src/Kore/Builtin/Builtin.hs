@@ -57,10 +57,9 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 
 import           Kore.AST.Common
-                 ( Application (..), DomainValue (..), Id (..),
-                 Pattern (DomainValuePattern, StringLiteralPattern), Sort (..),
-                 SortActual (..), SortVariable (..), StringLiteral (..),
-                 Symbol (..), Variable )
+                 ( Application (..), BuiltinDomain (..), DomainValue (..),
+                 Id (..), Pattern (DomainValuePattern), Sort (..),
+                 SortActual (..), SortVariable (..), Symbol (..), Variable )
 import           Kore.AST.Error
                  ( withLocationAndContext )
 import           Kore.AST.Kore
@@ -398,12 +397,12 @@ verifyDomainValue builtinSort validate =
 
  -}
 verifyStringLiteral
-    :: (StringLiteral -> Either (Error VerifyError) ())
+    :: (String -> Either (Error VerifyError) ())
     -- ^ validation function
     -> DomainValueVerifier
 verifyStringLiteral validate DomainValue { domainValueChild } =
-    case Functor.Foldable.project domainValueChild of
-        StringLiteralPattern lit@StringLiteral {} -> validate lit
+    case domainValueChild of
+        BuiltinDomainPattern (StringLiteral_ lit) -> validate lit
         _ -> return ()
 
 {- | Run a parser in a domain value pattern.
@@ -422,7 +421,7 @@ parseDomainValue
   =
     Kore.Error.withContext "While parsing domain value"
         (case domainValueChild of
-            StringLiteral_ StringLiteral { getStringLiteral = lit } ->
+            BuiltinDomainPattern (StringLiteral_ lit) ->
                 let parsed =
                         Parsec.parse
                             (parser <* Parsec.eof)

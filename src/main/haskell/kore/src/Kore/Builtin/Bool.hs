@@ -116,8 +116,8 @@ asPattern
     -> CommonPurePattern Object
 asPattern resultSort result =
     Kore.DV_ resultSort
-        (Kore.StringLiteral_ Kore.StringLiteral
-            { getStringLiteral = unparse result })
+        $ Kore.BuiltinDomainPattern
+        $ Kore.StringLiteral_ $ unparse result
   where
     unparse :: Bool -> String
     unparse True = "true"

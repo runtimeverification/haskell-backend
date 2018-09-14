@@ -708,7 +708,8 @@ mlConstructorRemainderParser childParser x patternType =
                     DomainValuePattern <$>
                     (   DomainValue
                     <$> inCurlyBracesRemainderParser (sortParser Object)
-                    <*> inParenthesesParser (purePatternParser Meta)
+                    <*> inParenthesesParser
+                        (BuiltinDomainPattern <$> purePatternParser Meta)
                     )
         NextPatternType ->
             case isMetaOrObject (toProxy x) of

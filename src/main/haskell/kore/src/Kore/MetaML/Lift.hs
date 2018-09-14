@@ -163,7 +163,7 @@ liftObjectReducer p = case p of
     DomainValuePattern dvp ->
         applyMetaMLPatternHead DomainValuePatternType
             [ liftToMeta (domainValueSort dvp)
-            , domainValueChild dvp
+            , asBuiltinPattern (domainValueChild dvp)
             ]
     EqualsPattern cp -> applyMetaMLPatternHead EqualsPatternType
         [ liftToMeta (equalsOperandSort cp)

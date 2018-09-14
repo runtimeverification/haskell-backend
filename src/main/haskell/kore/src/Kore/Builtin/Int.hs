@@ -151,8 +151,8 @@ asPattern
     -> CommonPurePattern Object
 asPattern resultSort result =
     Kore.DV_ resultSort
-        (Kore.StringLiteral_ Kore.StringLiteral
-            { getStringLiteral = show result })
+        $ Kore.BuiltinDomainPattern
+        $ Kore.StringLiteral_ $ show result
 
 asExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort
