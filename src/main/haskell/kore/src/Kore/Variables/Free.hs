@@ -14,7 +14,6 @@ module Kore.Variables.Free
     , pureFreeVariables
     , allVariables
     , pureAllVariables
-    , isVariablePattern
     ) where
 
 import           Data.Foldable
@@ -43,19 +42,6 @@ freeVariables = patternBottomUpVisitor freeVarsVisitor
     freeVarsVisitor (ForallPattern f) =
         Set.delete (asUnified (forallVariable f)) (forallChild f)
     freeVarsVisitor p = fold p  -- default rule
-
--- | 'isVariablePattern' returns true iff the pattern is just a VariablePattern.
-isVariablePattern
-    :: ( UnifiedPatternInterface pat
-       , Functor (pat var)
-       , Ord (var Object)
-       , Ord (var Meta))
-    => Fix (pat var)
-    -> Bool
-isVariablePattern = para (unifiedPatternApply go)
-    where
-    go (VariablePattern _) = True
-    go _ = False
 
 {-| 'allVariables' extracts all variables in a pattern as a set, regardless of
 whether they are quantified or not.

@@ -28,6 +28,8 @@ import           Data.Graph.TopologicalSort
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
+import           Kore.ASTUtils.SmartPatterns
+                 ( pattern Var_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -204,5 +206,7 @@ buildDependencies
         mapMaybe
             (`Map.lookup` interestingVariables)
             (Set.toList (freeVariables patt))
-    isVar = isVariablePattern patt
-    deps' = if isVar then filter (/= var) deps else deps
+    isSameVar = case patt of
+        (Var_ v) -> v == var
+        _        -> False
+    deps' = if isSameVar then [] else deps
