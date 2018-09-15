@@ -36,7 +36,7 @@ test_mergeAndNormalizeSubstitutions :: [TestTree]
 test_mergeAndNormalizeSubstitutions = give mockSortTools
     [ testCase "Constructor normalization"
         -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a, a)]
-        -- TODO(Vladimir) the result is actually x=constructor(a)
+        -- TODO(Vladimir) the result is x=constructor(a) instead of x=(constructor(a,a))
         (assertEqual ""
             ( Right
                 ( PredicateSubstitution
@@ -91,7 +91,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
                     )
                 ]
                 [   ( Mock.x
-                    , Mock.f (Mock.constr10 Mock.a)
+                    , Mock.constr10 (Mock.f Mock.a)
                     )
                 ]
             )
