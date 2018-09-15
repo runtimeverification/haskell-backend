@@ -19,7 +19,7 @@ module Kore.Variables.Free
 import           Data.Foldable
                  ( fold )
 import           Data.Functor.Foldable
-                 ( Fix, cata, para )
+                 ( Fix, cata )
 import qualified Data.Set as Set
 
 import Kore.AST.Common

@@ -41,7 +41,7 @@ import Kore.Step.PatternAttributes
        ( FunctionalProof (..) )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
-       ( SubstitutionError (..), UnificationError (..) )
+       ( SubstitutionError (..) )
 import Kore.Unification.Unifier
        ( UnificationProof (..) )
 import Kore.Variables.Fresh.IntCounter
