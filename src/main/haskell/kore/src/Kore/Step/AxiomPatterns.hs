@@ -48,8 +48,9 @@ data HeatCool = Heat | Cool
 data AxiomPatternAttributes =
     AxiomPatternAttributes
     { axiomPatternHeatCool :: !(Maybe HeatCool)
-      -- ^ An axiom may be denoted as a heating or cooling rule.
+    -- ^ An axiom may be denoted as a heating or cooling rule.
     , axiomPatternProductionID :: !(Maybe String)
+    -- ^ The identifier from the front-end identifying a rule or group of rules.
     }
   deriving (Eq, Ord, Show)
 
