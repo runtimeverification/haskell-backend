@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.Strategy
+Module      : Data.Limit
 Description : Optionally-limited quantities
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
