@@ -57,6 +57,31 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
                 ]
             )
         )
+
+    , testCase "Constructor normalization with variables"
+        -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
+        (assertEqual ""
+            ( Right
+                ( PredicateSubstitution
+                    makeTruePredicate
+                    [   ( Mock.x
+                        , Mock.constr10 (mkVar Mock.y)
+                        )
+                    ]
+                )
+            )
+            ( normalize
+                [   ( Mock.x
+                    , Mock.constr10 (mkVar Mock.y)
+                    )
+                ]
+                [   ( Mock.x
+                    , Mock.constr10 (mkVar Mock.y)
+                    )
+                ]
+            )
+        )
+
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
         -- TODO(Vladimir) the result is error instead of bottom
@@ -80,6 +105,25 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
                 ]
             )
         )
+
+    , testCase "Double constructor is bottom with variables"
+        -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
+        -- TODO(Vladimir) the result is error instead of bottom, and different
+        --   than the one without variables.
+        (assertEqual ""
+            ( Left (UnificationError NonFunctionalPattern) )
+            ( normalize
+                [   ( Mock.x
+                    , Mock.constr10 (mkVar Mock.y)
+                    )
+                ]
+                [   ( Mock.x
+                    , Mock.constr10 (Mock.constr10 (mkVar Mock.y))
+                    )
+                ]
+            )
+        )
+
     , testCase "Constructor and constructor of function errors"
         -- [x=constructor(a)] + [x=constructor(f(a))]  === error
         (assertEqual ""
@@ -95,6 +139,24 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
                 ]
             )
         )
+
+    , testCase "Constructor and constructor of function errors with variables"
+        -- [x=constructor(y)] + [x=constructor(f(y))]  === error
+        -- TODO(Vladimir) the result is different than the one above.
+        (assertEqual ""
+            ( Left (UnificationError (NonFunctionalPattern)) )
+            ( normalize
+                [   ( Mock.x
+                    , Mock.constr10 (mkVar Mock.y)
+                    )
+                ]
+                [   ( Mock.x
+                    , Mock.constr10 (Mock.f (mkVar Mock.y))
+                    )
+                ]
+            )
+        )
+
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === bottom
         (assertEqual ""
@@ -113,8 +175,9 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
                 ]
             )
         )
+
     , testCase "Non-ctor circular dependency"
-        -- [a=b] + [b=f(a)]  === error
+        -- [x=y] + [y=f(x)]  === error
         (assertEqual ""
             ( Left
                 ( SubstitutionError
@@ -133,6 +196,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
         )
     ]
+
   where
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
