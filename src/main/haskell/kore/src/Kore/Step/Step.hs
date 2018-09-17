@@ -11,7 +11,7 @@ module Kore.Step.Step
     ( -- * Primitive strategies
       Prim (..)
     , axiom
-    , builtin
+    , simplify
     , axiomStep
     , transitionRule
     , stepStrategy
@@ -59,26 +59,26 @@ import qualified Kore.Step.Strategy as Strategy
 
 {- | A strategy primitive: a rewrite axiom or builtin simplification step.
  -}
-data Prim axiom = Builtin | Axiom !axiom
+data Prim axiom = Simplify | Axiom !axiom
 
 -- | Apply the axiom.
 axiom :: axiom -> Prim axiom
 axiom = Axiom
 
--- | Apply builtin simplification.
-builtin :: Prim axiom
-builtin = Builtin
+-- | Apply builtin simplification rules and evaluate functions.
+simplify :: Prim axiom
+simplify = Simplify
 
 {- | A single-step strategy which applies the given axiom.
 
-  If the axiom is successful, the builtin simplifier is applied. The combination
-  of axiom and builtin simplifier is considered one step for the purposes of the
-  step limit.
+    If the axiom is successful, the built-in simplification rules and function
+    evaluator are applied (see 'ExpandedPattern.simplify' for details). The
+    combination is considered one step for the purposes of the step limit.
 
  -}
 axiomStep :: axiom -> Strategy (Prim axiom) -> Strategy (Prim axiom)
 axiomStep a =
-    Strategy.step . Strategy.apply (axiom a) . Strategy.apply builtin
+    Strategy.step . Strategy.apply (axiom a) . Strategy.apply simplify
 
 {- |
     Transition rule for primitive strategies in 'Prim'.
@@ -97,10 +97,10 @@ transitionRule
     -> Simplifier [(CommonExpandedPattern level, StepProof level)]
 transitionRule tools simplifier =
     \case
-        Builtin -> transitionBuiltin
+        Simplify -> transitionSimplify
         Axiom a -> transitionAxiom a
   where
-    transitionBuiltin (config, proof) =
+    transitionSimplify (config, proof) =
         do
             (configs, proof') <-
                 ExpandedPattern.simplify tools simplifier config
@@ -121,9 +121,9 @@ transitionRule tools simplifier =
 
 {- | A strategy which takes one step by attempting all the axioms.
 
-  The builtin simplifier is used after each successful axiom step. The
-  combination of axiom and builtin simplification is considered one step for the
-  purposes of the step limit.
+    If the axiom is successful, the built-in simplification rules and function
+    evaluator are applied (see 'ExpandedPattern.simplify' for details). The
+    combination is considered one step for the purposes of the step limit.
 
  -}
 stepStrategy
@@ -137,9 +137,9 @@ stepStrategy axioms =
 
 {- | A strategy which applies all the given axioms as many times as possible.
 
-  The builtin simplifier is used after each successful axiom step. The
-  combination of axiom and builtin simplification is considered one step for the
-  purposes of the step limit.
+    If the axiom is successful, the built-in simplification rules and function
+    evaluator are applied (see 'ExpandedPattern.simplify' for details). The
+    combination is considered one step for the purposes of the step limit.
 
  -}
 simpleStrategy
