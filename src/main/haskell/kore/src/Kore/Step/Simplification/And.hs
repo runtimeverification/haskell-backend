@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.And
+Module      : Kore.Step.Simplification.And
 Description : Tools for And pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA

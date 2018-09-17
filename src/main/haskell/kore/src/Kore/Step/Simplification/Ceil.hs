@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Ceil
+Module      : Kore.Step.Simplification.Ceil
 Description : Tools for Ceil pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
