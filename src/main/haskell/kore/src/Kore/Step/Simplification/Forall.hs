@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Forall
+Module      : Kore.Step.Simplification.Forall
 Description : Tools for Forall pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
