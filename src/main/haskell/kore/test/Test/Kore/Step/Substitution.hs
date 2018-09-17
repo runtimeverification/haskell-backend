@@ -35,8 +35,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 test_mergeAndNormalizeSubstitutions :: [TestTree]
 test_mergeAndNormalizeSubstitutions = give mockSortTools
     [ testCase "Constructor normalization"
-        -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a, a)]
-        -- TODO(Vladimir) the result is x=constructor(a) instead of x=(constructor(a,a))
+        -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
         (assertEqual ""
             ( Right
                 ( PredicateSubstitution
