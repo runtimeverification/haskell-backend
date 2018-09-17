@@ -57,9 +57,6 @@ right side.
 
 Returns an error when the substitution is not normalizable (i.e. it contains
 x = f(x) or something equivalent).
-
-Also returns an error when the substitution contains x = x, although that
-should be solvable.
 -}
 normalizeSubstitution
     ::  forall level variable
