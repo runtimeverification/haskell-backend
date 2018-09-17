@@ -16,7 +16,6 @@ module Kore.Unification.Error
     , substitutionErrorVariables
     , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
-    , ctorSubstitutionCycleToBottom
     ) where
 
 import qualified Data.Set as Set
@@ -52,9 +51,7 @@ data ClashReason level
 substitutions.
 -}
 data SubstitutionError level variable
-    = CtorCircularVariableDependency [variable level]
-    -- ^the circularity path passes only through constructors: unsolvable.
-    | NonCtorCircularVariableDependency [variable level]
+    = NonCtorCircularVariableDependency [variable level]
     -- ^the circularity path may pass through non-constructors: maybe solvable.
     deriving (Eq, Show)
 
@@ -65,8 +62,6 @@ substitutionErrorVariables
     :: Ord (variable level)
     => SubstitutionError level variable
     -> Set.Set (variable level)
-substitutionErrorVariables (CtorCircularVariableDependency variables) =
-    Set.fromList variables
 substitutionErrorVariables (NonCtorCircularVariableDependency variables) =
     Set.fromList variables
 
@@ -77,9 +72,6 @@ mapSubstitutionErrorVariables
     :: (variableFrom level -> variableTo level)
     -> SubstitutionError level variableFrom
     -> SubstitutionError level variableTo
-mapSubstitutionErrorVariables mapper
-    (CtorCircularVariableDependency variables) =
-        CtorCircularVariableDependency (map mapper variables)
 mapSubstitutionErrorVariables mapper
     (NonCtorCircularVariableDependency variables) =
         NonCtorCircularVariableDependency (map mapper variables)
@@ -97,12 +89,3 @@ unificationToUnifyOrSubError
     -> Either (UnificationOrSubstitutionError level variable) a
 unificationToUnifyOrSubError (Left err) = Left $ UnificationError err
 unificationToUnifyOrSubError (Right a)  = Right a
-
--- Catches a Constructor cycle in substitution error as a 'bottom' value
-ctorSubstitutionCycleToBottom
-    :: result -- ^ bottom value to catch cycle error
-    -> Either (UnificationOrSubstitutionError level variable) result
-    -> Either (UnificationOrSubstitutionError level variable) result
-ctorSubstitutionCycleToBottom bottom
-    (Left (SubstitutionError (CtorCircularVariableDependency _))) = Right bottom
-ctorSubstitutionCycleToBottom _ owise = owise

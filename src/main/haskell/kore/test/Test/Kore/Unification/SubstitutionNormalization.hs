@@ -177,7 +177,7 @@ test_substitutionNormalization =
       in
         testCase "Length 2 cycle"
             (assertEqual ""
-                (Left (CtorCircularVariableDependency [var1, varx1]))
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (x1 PatternSort)
@@ -194,7 +194,7 @@ test_substitutionNormalization =
       in
         testCase "Cycle with 'and'"
             (assertEqual ""
-                (Left (CtorCircularVariableDependency [var1, varx1]))
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern

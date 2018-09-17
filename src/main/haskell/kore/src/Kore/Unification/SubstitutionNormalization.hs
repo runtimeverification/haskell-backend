@@ -33,7 +33,7 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (..) )
 import           Kore.Step.StepperAttributes
@@ -74,12 +74,20 @@ normalizeSubstitution
     -> Either
         (SubstitutionError level variable)
         (IntCounter (PredicateSubstitution level variable))
-normalizeSubstitution tools substitution = do
-    sorted <- topologicalSortConverted
-    let
-        sortedSubstitution =
-            map (variableToSubstitution variableToPattern) sorted
-    return $ normalizeSortedSubstitution sortedSubstitution [] []
+normalizeSubstitution tools substitution =
+    case topologicalSortConverted of
+        Left Nothing ->
+            return . return $
+                PredicateSubstitution
+                    { predicate = makeFalsePredicate
+                    , substitution = []
+                    }
+        Left (Just err) -> Left err
+        Right sorted -> do
+            let
+                sortedSubstitution =
+                    map (variableToSubstitution variableToPattern) sorted
+            return $ normalizeSortedSubstitution sortedSubstitution [] []
   where
     interestingVariables = extractVariables substitution
     variableToPattern = Map.fromList substitution
@@ -96,15 +104,15 @@ checkCircularVariableDependency
     =>  MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> [variable level]
-    -> Either (SubstitutionError level variable) ()
+    -> Either (Maybe (SubstitutionError level variable)) ()
 checkCircularVariableDependency tools substitution vars = do
     traverse_
         ( checkThatApplicationUsesConstructors
-            tools (NonCtorCircularVariableDependency vars)
+            tools (Just $ NonCtorCircularVariableDependency vars)
         . (`lookup` substitution)
         )
         vars
-    Left (CtorCircularVariableDependency vars)
+    Left Nothing
 
 checkThatApplicationUsesConstructors
     :: (MetaOrObject level)

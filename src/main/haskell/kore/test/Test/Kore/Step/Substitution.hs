@@ -17,7 +17,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkVar )
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Substitution
@@ -97,12 +97,10 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
         )
     , testCase "Constructor circular dependency?"
-        -- [a=b] + [b=constructor(a)]  === bottom
-        -- TODO(Vladimir) the result is error instead of bottom
+        -- [x=y] + [y=constructor(x)]  === bottom
         (assertEqual ""
-            ( Left
-                ( SubstitutionError
-                    ( CtorCircularVariableDependency [ Mock.x, Mock.y ] )
+            ( Right
+                ( PredicateSubstitution makeFalsePredicate []
                 )
             )
             ( normalize

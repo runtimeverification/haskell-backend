@@ -58,7 +58,7 @@ import           Kore.Substitution.Class
                  ( Hashable (..), PatternSubstitutionClass (..) )
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
-                 ( UnificationError, ctorSubstitutionCycleToBottom )
+                 ( UnificationError )
 import           Kore.Unification.Unifier
                  ( UnificationProof (..), UnificationSubstitution,
                  mapSubstitutionVariables, unificationProcedure )
@@ -256,14 +256,6 @@ stepWithAxiom
         stepperVariableToVariableForError
             existingVars
             $ unificationOrSubstitutionToStepError
-            $ ctorSubstitutionCycleToBottom
-            ( return ( PredicateSubstitution
-                           { predicate = makeFalsePredicate
-                           , substitution = []
-                           }
-                     , EmptyUnificationProof
-                     )
-            )
             $ mergeAndNormalizeSubstitutions tools unificationSubstitution startSubstitution
 
     return $ do

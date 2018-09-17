@@ -25,8 +25,6 @@ import Data.String
        ( fromString )
 import Data.Text.Prettyprint.Doc as Doc
 import Data.Text.Prettyprint.Doc.Render.String
-import Unsafe.Coerce
-       ( unsafeCoerce )
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
@@ -785,7 +783,7 @@ instance (MetaOrObject level, PrettyPrint (variable level))
     => PrettyPrint (Predicate level variable)
   where
     prettyPrint flags pat =
-        prettyPrint flags (unsafeCoerce pat :: PureMLPattern level variable)
+        prettyPrint flags (unwrapPredicate pat)
 
 instance (MetaOrObject level, PrettyPrint (variable level))
     => PrettyPrint (ExpandedPattern level variable)
