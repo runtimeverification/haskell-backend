@@ -90,7 +90,7 @@ transitionRule
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> CommonPureMLPatternSimplifier level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Evaluates functions in patterns
     -> Prim (AxiomPattern level)
     -> (CommonExpandedPattern level, StepProof level)
     -- ^ Configuration being rewritten and its accompanying proof
