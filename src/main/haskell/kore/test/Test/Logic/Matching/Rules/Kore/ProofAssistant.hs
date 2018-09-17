@@ -17,33 +17,34 @@ import           Data.List
 import qualified Data.Map.Strict as Map
 import           Data.Text.Prettyprint.Doc
 
-import Kore.AST.Common
-       ( Application (..), AstLocation (..), Id (..), Pattern (..),
-       Symbol (..), SymbolOrAlias (..), Variable )
-import Kore.AST.Kore
-       ( CommonKorePattern )
-import Kore.AST.MetaOrObject
-       ( Meta (..) )
-import Kore.AST.PureToKore
-import Kore.AST.Sentence
-import Kore.ASTVerifier.DefinitionVerifier
-       ( AttributesVerification (..), verifyAndIndexDefinition )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts
+import           Kore.AST.Common
+                 ( Application (..), AstLocation (..), Id (..), Pattern (..),
+                 Symbol (..), SymbolOrAlias (..), Variable )
+import           Kore.AST.Kore
+                 ( CommonKorePattern )
+import           Kore.AST.MetaOrObject
+                 ( Meta (..) )
+import           Kore.AST.PureToKore
+import           Kore.AST.Sentence
+import           Kore.ASTVerifier.DefinitionVerifier
+                 ( AttributesVerification (..), verifyAndIndexDefinition )
+import           Kore.Building.AsAst
+import           Kore.Building.Patterns
+import           Kore.Building.Sorts
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-import Kore.IndexedModule.IndexedModule
-import Kore.Implicit.Attributes
-       ( ImplicitAttributes )
-import Kore.MetaML.AST
-       ( MetaMLPattern )
-import Logic.Matching.Error
-import Logic.Matching.Rules.Kore as MLProofSystem
-import Logic.Matching.Rules.Minimal
-       ( MLRule (..), SubstitutedVariable (..), SubstitutingVariable (..) )
-import Logic.Proof.Hilbert as HilbertProof
-       ( Proof (..), add, derive, emptyProof )
+import           Kore.Error
+import           Kore.Implicit.Attributes
+                 ( ImplicitAttributes )
+import           Kore.IndexedModule.IndexedModule
+import           Kore.MetaML.AST
+                 ( MetaMLPattern )
+import           Logic.Matching.Error
+import           Logic.Matching.Rules.Kore as MLProofSystem
+import           Logic.Matching.Rules.Minimal
+                 ( MLRule (..), SubstitutedVariable (..),
+                 SubstitutingVariable (..) )
+import           Logic.Proof.Hilbert as HilbertProof
+                 ( Proof (..), add, derive, emptyProof )
 
 test_proofAssistant :: TestTree
 test_proofAssistant =

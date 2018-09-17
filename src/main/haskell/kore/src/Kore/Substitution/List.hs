@@ -26,10 +26,7 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Substitution.Class
 import Kore.Variables.Free
-import Kore.Variables.Fresh.IntCounter
-       ( IntCounter )
-import Kore.Variables.Int
-       ( IntVariable )
+import Kore.Variables.Fresh
 
 -- |A very simple substitution represented as a list of pairs
 newtype Substitution var pat = Substitution { getSubstitution :: [(var, pat)] }
@@ -56,13 +53,12 @@ instance
     , Ord (variable Object)
     , Ord (variable Meta)
     , Hashable variable
-    , IntVariable variable
+    , FreshVariable variable
     )
     => PatternSubstitutionClass
         Substitution
         variable
         (Pattern level)
-        IntCounter
   where
 
 fromList :: Eq k => [(k,v)] -> Substitution k v

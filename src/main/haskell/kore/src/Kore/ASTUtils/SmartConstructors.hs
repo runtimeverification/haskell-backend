@@ -271,10 +271,10 @@ ensureSortAgreement p =
 -- across a single counterexample. Thus this function can
 -- probably be trusted to tell you if something is a
 -- predicate. Note that `isObviouslyPredicate` and
--- `hasFlexibleHead` are NOT the same. `hasFlexibleHead` only 
+-- `hasFlexibleHead` are NOT the same. `hasFlexibleHead` only
 -- looks at the head of the pattern, it will return false
 -- for `a = b /\ c = d`, whereas `isObviouslyPredicate` will
--- traverse the whole pattern and return True. 
+-- traverse the whole pattern and return True.
 -- Also, in practice, having a flexible sort and being a predicate
 -- are synonymous. But don't quote me on this.
 isObviouslyPredicate
