@@ -43,29 +43,60 @@ import Data.Limit
 
 {- | An execution strategy.
 
-  @Strategy prim@ represents a strategy for execution by applying rewrite axioms
-  of type @prim@.
+    @Strategy prim@ represents a strategy for execution by applying rewrite
+    axioms of type @prim@.
+
+    The strategy is represented as a tree where constructor is either a branch
+    ('and', 'or'), a continuation ('apply', 'step'), or a termination ('stuck').
+    The continutations should be thought of as constructing a linked list where
+    the head is a rule to apply and the tail is the rest of the strategy; this
+    representation ensures that the root of the strategy tree can always be
+    acted upon immediately.
 
  -}
+-- TODO (thomas.tuegel): This could be implemented as an algebra so that a
+-- strategy is a free monad over the primitive rule type and the result of
+-- execution is not a generic tree, but a cofree comonad with exactly the
+-- branching structure described by the strategy algebra.
 data Strategy prim where
 
     -- The recursive arguments of these constructors are /intentionally/ lazy to
     -- allow strategies to loop.
 
+    -- | Apply both strategies to the same configuration, i.e. in parallel.
     And :: Strategy prim -> Strategy prim -> Strategy prim
 
+    {- | Apply the second strategy if the first fails immediately.
+
+        A strategy is considered successful if it applies at least one rule,
+        even if it later fails.  If the first strategy successfully applies at
+        least one rule, the second strategy will not be invoked.
+     -}
     Or :: Strategy prim -> Strategy prim -> Strategy prim
 
+    -- | Apply the rewrite rule, then advance to the next strategy.
     Apply :: !prim -> Strategy prim -> Strategy prim
 
+    {- | Increment the step counter and continue with the next strategy.
+
+        If the step limit is exceeded, execution terminates instead.
+
+     -}
     Step :: Strategy prim -> Strategy prim
 
+    {- | Terminate execution; the end of all strategies.
+
+        @Stuck@ does not necessarily indicate unsuccessful termination, but it
+        is not generally possible to determine if one branch of execution is
+        successful without looking at all the branches.
+
+     -}
     Stuck :: Strategy prim
 
     deriving (Eq, Show)
 
--- | Apply two strategies in parallel.
-and :: Strategy app -> Strategy app -> Strategy app
+-- | Apply both strategies to the same configuration, i.e. in parallel.
+and :: Strategy prim -> Strategy prim -> Strategy prim
 and = And
 
 {- | Apply all of the strategies in parallel.
@@ -75,62 +106,88 @@ and = And
   @
 
  -}
-all :: [Strategy app] -> Strategy app
+all :: [Strategy prim] -> Strategy prim
 all [] = stuck
 all [x] = x
 all (x : xs) = and x (all xs)
 
--- | Apply the second strategy if the first fails.
-or :: Strategy app -> Strategy app -> Strategy app
+{- | Apply the second strategy if the first fails immediately.
+
+    A strategy is considered successful if it applies at least one rule, even if
+    it later fails.  If the first strategy successfully applies at least one
+    rule, the second strategy will not be invoked.
+ -}
+or :: Strategy prim -> Strategy prim -> Strategy prim
 or = Or
 
-{- | Apply the given strategies until one succeeds.
+{- | Apply the given strategies in order until one succeeds.
+
+    A strategy is considered successful if it applies at least one rule, even if
+    it later fails.
 
   @
   any [] === stuck
   @
 
  -}
-any :: [Strategy app] -> Strategy app
+any :: [Strategy prim] -> Strategy prim
 any [] = stuck
 any [x] = x
 any (x : xs) = or x (any xs)
 
-{- | Attempt the given strategy once
+{- | Attempt the given strategy once, then continue with the next strategy.
  -}
-try :: (Strategy app -> Strategy app) -> Strategy app -> Strategy app
+try
+    :: (Strategy prim -> Strategy prim)
+    -> Strategy prim
+    -- ^ next strategy
+    -> Strategy prim
 try strategy finally = or (strategy finally) finally
 
 -- | Apply the strategy zero or more times.
-many :: (Strategy app -> Strategy app) -> Strategy app -> Strategy app
+many :: (Strategy prim -> Strategy prim) -> Strategy prim -> Strategy prim
 many strategy finally = many0
   where
     many0 = or (strategy many0) finally
 
 -- | Apply the strategy one or more times.
-some :: (Strategy app -> Strategy app) -> Strategy app -> Strategy app
+some :: (Strategy prim -> Strategy prim) -> Strategy prim -> Strategy prim
 some strategy finally = strategy (many strategy finally)
 
--- | Apply a rewrite axiom.
+-- | Apply the rewrite rule, then advance to the next strategy.
 apply
-    :: app
+    :: prim
     -- ^ rule
-    -> Strategy app
+    -> Strategy prim
     -- ^ next strategy
-    -> Strategy app
+    -> Strategy prim
 apply = Apply
 
-step :: Strategy app -> Strategy app
+{- | Increment the step counter and continue with the next strategy.
+
+    If the step limit is exceeded, execution terminates instead.
+
+ -}
+step
+    :: Strategy prim
+    -- ^ next strategy
+    -> Strategy prim
 step = Step
 
--- | Terminate execution.
-stuck :: Strategy app
+{- | Terminate execution; the end of all strategies.
+
+    @stuck@ does not necessarily indicate unsuccessful termination, but it
+    is not generally possible to determine if one branch of execution is
+    successful without looking at all the branches.
+
+ -}
+stuck :: Strategy prim
 stuck = Stuck
 
 {- | A simple state machine for running 'Strategy'.
 
-  The machine has a primary and secondary instruction pointer and an
-  accumulator. The secondary instruction is intended for exception handling.
+    The machine has a primary and secondary instruction pointer and an
+    accumulator. The secondary instruction is intended for exception handling.
 
  -}
 data Machine instr accum =
@@ -164,9 +221,9 @@ runMachine transit =
 
 {- | Transition rule for running a 'Strategy' 'Machine'.
 
-  The primitive strategy rule is used to execute the 'Apply' strategy. The
-  primitive rule is considered successful if it returns any children and
-  considered failed if it returns no children.
+    The primitive strategy rule is used to execute the 'Apply' strategy. The
+    primitive rule is considered successful if it returns any children and
+    considered failed if it returns no children.
 
  -}
 transitionRule
@@ -237,16 +294,16 @@ transitionRule applyPrim stepLimit =
 
 {- | Execute a 'Strategy'.
 
-  The primitive strategy rule is used to execute the 'apply' strategy. The
-  primitive rule is considered successful if it returns any children and
-  considered failed if it returns no children. The given step limit is applied
-  to the primitive strategy rule only; i.e. only 'apply' is considered a step,
-  the other strategy combinators are "free".
+    The primitive strategy rule is used to execute the 'apply' strategy. The
+    primitive rule is considered successful if it returns any children and
+    considered failed if it returns no children. The given step limit is applied
+    to the primitive strategy rule only; i.e. only 'apply' is considered a step,
+    the other strategy combinators are "free".
 
-  The resulting tree of configurations is annotated with the strategy stack at
-  each node.
+    The resulting tree of configurations is annotated with the strategy stack at
+    each node.
 
-  See also: 'pickFirst'
+    See also: 'pickFirst'
 
  -}
 runStrategy
