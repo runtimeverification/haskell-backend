@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Equals
+Module      : Kore.Step.Simplification.Equals
 Description : Tools for Equals pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA

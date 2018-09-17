@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Exists
+Module      : Kore.Step.Simplification.Exists
 Description : Tools for Exists pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
