@@ -1,11 +1,25 @@
 {-# LANGUAGE DefaultSignatures #-}
 
+{-|
+Module      : Control.Monad.Counter
+Description : Monads carrying a monotonically-increasing counter
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : thomas.tuegel@runtimeverification.com
+
+The class 'MonadCounter' describes a monad carrying a monotonically-increasing
+counter used for fresh variable generation. The type 'Counter' provides a
+concrete implementation of the class.
+
+-}
 module Control.Monad.Counter
-    ( Counter
-    , runCounter, evalCounter
-    , MonadCounter (..)
+    ( -- * Class
+      MonadCounter (..)
     , findState
     , module Numeric.Natural
+      -- * Implementation
+    , Counter
+    , runCounter, evalCounter
     ) where
 
 import qualified Control.Monad.Except as Monad.Except
