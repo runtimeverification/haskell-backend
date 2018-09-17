@@ -65,8 +65,9 @@ import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( UnificationError )
 import           Kore.Unification.Unifier
-                 ( UnificationProof (..), UnificationSubstitution,
-                 mapSubstitutionVariables, unificationProcedure )
+                 ( UnificationFunction, UnificationProof (..),
+                 UnificationSubstitution, mapSubstitutionVariables,
+                 unificationProcedure )
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
@@ -174,7 +175,8 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 -}
 stepWithAxiom
     ::  ( MetaOrObject level )
-    => MetadataTools level StepperAttributes
+    => UnificationFunction level Variable
+    -> MetadataTools level StepperAttributes
     -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> AxiomPattern level
@@ -185,6 +187,7 @@ stepWithAxiom
             (ExpandedPattern.CommonExpandedPattern level, StepProof level)
         )
 stepWithAxiom
+    unificationFunction
     tools
     expandedPattern
     AxiomPattern
@@ -230,14 +233,11 @@ stepWithAxiom
     -- Unify the left-hand side of the rewriting axiom with the initial
     -- configuration, producing a substitution (instantiating the axiom to the
     -- configuration) subject to a predicate.
-    (     unificationSubstitution
-        , unificationCondition
-        , rawSubstitutionProof
-        ) <-
+    unificationResult <-
             normalizeUnificationError
                 ([], makeFalsePredicate, EmptyUnificationProof)
                 existingVars
-                (unificationProcedure
+                (unificationFunction
                     tools
                     axiomLeft
                     startPattern

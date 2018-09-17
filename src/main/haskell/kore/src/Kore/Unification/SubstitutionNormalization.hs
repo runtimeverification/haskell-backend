@@ -41,10 +41,10 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
+import           Kore.Unification.Data
+                 ( UnificationSubstitution )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
-import           Kore.Unification.UnifierImpl
-                 ( UnificationSubstitution )
 import           Kore.Variables.Free
 import           Kore.Variables.Fresh
 

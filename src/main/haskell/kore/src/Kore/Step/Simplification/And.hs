@@ -201,7 +201,7 @@ makeEvaluateNonBool
         , predicate = secondPredicate
         , substitution = secondSubstitution
         }
-  = do -- IntCounter monad
+  = do -- Counter monad
     ( ExpandedPattern
             { term = termTerm
             , predicate = termPredicate

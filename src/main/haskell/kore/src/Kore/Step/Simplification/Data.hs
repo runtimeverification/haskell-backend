@@ -47,7 +47,7 @@ runSimplifier = runCounter
 
 {- | Evaluate a simplifier computation.
 
-  Only the result is returned. The 'IntCounter' is discarded.
+  Only the result is returned. The 'Counter' is discarded.
 
   -}
 evalSimplifier :: Simplifier a -> a

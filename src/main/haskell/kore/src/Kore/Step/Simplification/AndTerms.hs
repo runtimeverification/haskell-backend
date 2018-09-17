@@ -86,12 +86,16 @@ termEquals
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (Counter (ExpandedPattern level variable, SimplificationProof level))
+        (Counter (PredicateSubstitution level variable, SimplificationProof level))
 termEquals tools first second = do  -- Maybe monad
     result <-termEqualsAnd tools first second
-    return $ do  -- IntCounter monad
-        (patt, _pred) <- result
-        return (patt {ExpandedPattern.term = mkTop}, SimplificationProof)
+    return $ do  -- Counter monad
+        (ExpandedPattern {predicate, substitution}, _pred) <- result
+        return
+            ( PredicateSubstitution
+                {predicate = predicate, substitution = substitution}
+            , SimplificationProof
+            )
 
 termEqualsAnd
     ::  ( MetaOrObject level
@@ -553,7 +557,7 @@ equalInjectiveHeadsAndEquals
   = Handled $ do -- Maybe monad
     intCounterChildren <- sequenceA $
         zipWith termMerger firstChildren secondChildren
-    return $ do -- IntCounter monad
+    return $ do -- Counter monad
         children <- sequenceA intCounterChildren
         (   PredicateSubstitution
                 { predicate = mergedPredicate

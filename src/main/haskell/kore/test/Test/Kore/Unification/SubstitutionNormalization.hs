@@ -30,11 +30,11 @@ import           Kore.MetaML.AST
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.StepperAttributes
+import           Kore.Unification.Data
+                 ( UnificationSubstitution )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import           Kore.Unification.SubstitutionNormalization
-import           Kore.Unification.UnifierImpl
-                 ( UnificationSubstitution )
 import           Kore.Variables.Fresh
 
 test_substitutionNormalization :: [TestTree]
@@ -265,3 +265,4 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const Mock.functionalAttributes
     , sortTools = mockSortTools
     }
+

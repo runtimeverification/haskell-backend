@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Equals
     ( makeEvaluate
+    , makeEvaluateTermsToPredicateSubstitution
     , simplify
     ) where
 
@@ -31,11 +32,16 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue, makeEqualsPredicate )
+                 ( pattern PredicateTrue, makeAndPredicate,
+                 makeEqualsPredicate, makeNotPredicate, makeOrPredicate,
+                 makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern (ExpandedPattern),
+                 PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..), top )
+import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -45,7 +51,7 @@ import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termEquals )
 import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluate )
+                 ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), Simplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
@@ -332,8 +338,79 @@ makeEvaluateTermsAssumesNoBottomMaybe tools first second =
     give tools $ do  -- Maybe monad
         result <- AndTerms.termEquals tools first second
         return $ do -- Simplifier monad
-            (patt, _proof) <- result
+            (PredicateSubstitution {predicate, substitution}, _proof) <- result
             return
-                ( OrOfExpandedPattern.make [ patt ]
+                ( OrOfExpandedPattern.make
+                    [ ExpandedPattern
+                        { term = mkTop
+                        , predicate = predicate
+                        , substitution = substitution
+                        }
+                    ]
                 , SimplificationProof
                 )
+
+{-| Combines two terms with 'Equals' into an predicate-substitution.
+
+It does not attempt to fully simplify the terms (the not-ceil parts used to
+catch the bottom=bottom case and everything above it), but, if the patterns are
+total, this should not be needed anyway.
+TODO(virgil): Fully simplify the terms.
+
+See 'simplify' for detailed documentation.
+-}
+makeEvaluateTermsToPredicateSubstitution
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , FreshVariable variable
+        , Hashable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> Simplifier
+        (PredicateSubstitution level variable, SimplificationProof level)
+makeEvaluateTermsToPredicateSubstitution tools first second
+  | first == second =
+    return
+        ( PredicateSubstitution
+            { predicate = makeTruePredicate
+            , substitution = []
+            }
+        , SimplificationProof
+        )
+  | otherwise = give sortTools $
+    case AndTerms.termEquals tools first second of
+        Nothing -> return
+            ( PredicateSubstitution
+                { predicate = makeEqualsPredicate first second
+                , substitution = []
+                }
+            , SimplificationProof
+            )
+        Just wrappedResult -> do
+            (PredicateSubstitution {predicate, substitution}, _proof) <-
+                wrappedResult
+            let
+                (firstCeil, _proof1) = Ceil.makeEvaluateTerm tools first
+                (secondCeil, _proof2) = Ceil.makeEvaluateTerm tools second
+                (firstCeilNegation, _proof3) = makeNotPredicate firstCeil
+                (secondCeilNegation, _proof4) = makeNotPredicate secondCeil
+                (ceilNegationAnd, _proof5) =
+                    makeAndPredicate firstCeilNegation secondCeilNegation
+                (finalPredicate, _proof6) =
+                    makeOrPredicate predicate ceilNegationAnd
+            return
+                ( PredicateSubstitution
+                    { predicate = finalPredicate
+                    , substitution = substitution
+                    }
+                , SimplificationProof
+                )
+  where
+    sortTools = MetadataTools.sortTools tools
+
