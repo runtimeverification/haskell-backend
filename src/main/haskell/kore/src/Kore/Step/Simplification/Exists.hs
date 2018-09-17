@@ -104,9 +104,9 @@ simplify
     simplifier
     Exists { existsVariable = variable, existsChild = child }
   =
-    simplifyEvaluatedExists tools simplifier variable child
+    simplifyEvaluated tools simplifier variable child
 
-simplifyEvaluatedExists
+simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Given (SortTools level)
@@ -126,7 +126,7 @@ simplifyEvaluatedExists
     -> OrOfExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluatedExists tools simplifier variable simplified
+simplifyEvaluated tools simplifier variable simplified
   | OrOfExpandedPattern.isTrue simplified =
     return (simplified, SimplificationProof)
   | OrOfExpandedPattern.isFalse simplified =
@@ -137,6 +137,10 @@ simplifyEvaluatedExists tools simplifier variable simplified
             (makeEvaluate tools simplifier variable) simplified
     return ( evaluated, SimplificationProof )
 
+{-| evaluates an 'Exists' given its two 'ExpandedPattern' children.
+
+See 'simplify' for detailed documentation.
+-}
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable

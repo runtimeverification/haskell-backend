@@ -371,6 +371,33 @@ instance (Show child, EqualWithExplanation child)
     printWithExplanation = show
 
 instance
+    ( Eq child
+    , Eq (variable level)
+    , Show child
+    , Show (variable level)
+    , EqualWithExplanation child
+    , EqualWithExplanation (variable level)
+    )
+    => StructEqualWithExplanation (Forall level variable child)
+  where
+    structFieldsWithNames
+        expected@(Forall _ _ _)
+        actual@(Forall _ _ _)
+      = [ EqWrap
+            "forallSort = "
+            (forallSort expected)
+            (forallSort actual)
+        , EqWrap
+            "forallVariable = "
+            (forallVariable expected)
+            (forallVariable actual)
+        , EqWrap
+            "forallChild = "
+            (forallChild expected)
+            (forallChild actual)
+        ]
+    structConstructorName _ = "Forall"
+instance
     ( EqualWithExplanation child
     , Eq child
     , Show child
@@ -379,8 +406,9 @@ instance
     , Show (variable level)
     ) => EqualWithExplanation (Forall level variable child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Iff level child)
