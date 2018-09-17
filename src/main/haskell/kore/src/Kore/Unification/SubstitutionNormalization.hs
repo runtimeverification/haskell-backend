@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 {-|
 Module      : Kore.Unification.SubstitutionNormalization
 Description : Normalization for substitutions resulting from unification, so
@@ -61,7 +62,8 @@ Also returns an error when the substitution contains x = x, although that
 should be solvable.
 -}
 normalizeSubstitution
-    ::  ( MetaOrObject level
+    ::  forall level variable
+     .  ( MetaOrObject level
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
@@ -75,44 +77,62 @@ normalizeSubstitution
         (SubstitutionError level variable)
         (IntCounter (PredicateSubstitution level variable))
 normalizeSubstitution tools substitution =
-    case topologicalSortConverted of
-        Left Nothing ->
-            return . return $
-                PredicateSubstitution
-                    { predicate = makeFalsePredicate
-                    , substitution = []
-                    }
-        Left (Just err) -> Left err
-        Right sorted -> do
-            let
-                sortedSubstitution =
-                    map (variableToSubstitution variableToPattern) sorted
-            return $ normalizeSortedSubstitution sortedSubstitution [] []
+    maybe bottom normalizeSortedSubstitution' <$> topologicalSortConverted
+
   where
+    interestingVariables :: Map.Map (Unified variable) (variable level)
     interestingVariables = extractVariables substitution
+
+    variableToPattern :: Map.Map (variable level) (PureMLPattern level variable)
     variableToPattern = Map.fromList substitution
+
+    dependencies :: Map.Map (variable level) [variable level]
     dependencies = buildDependencies substitution interestingVariables
+
+    -- | Do a `topologicalSort` of variables using the `dependencies` Map.
+    -- Topological cycles with non-ctors are returned as Left errors.
+    -- Constructor cycles are returned as Right Nothing.
+    topologicalSortConverted
+        :: Either
+            (SubstitutionError level variable)
+            (Maybe [variable level])
     topologicalSortConverted =
         case topologicalSort dependencies of
             Left (ToplogicalSortCycles vars) -> do
                 checkCircularVariableDependency tools substitution vars
-                return (error "This should be unreachable")
-            Right result -> Right result
+                Right Nothing
+            Right result -> Right $ Just result
+
+    sortedSubstitution
+        :: [variable level]
+        -> [(variable level, PureMLPattern level variable)]
+    sortedSubstitution = fmap (variableToSubstitution variableToPattern)
+
+    normalizeSortedSubstitution'
+        :: [variable level]
+        -> IntCounter (PredicateSubstitution level variable)
+    normalizeSortedSubstitution' s =
+        normalizeSortedSubstitution (sortedSubstitution s) [] []
+
+    bottom :: IntCounter (PredicateSubstitution level variable)
+    bottom = return $ PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
 
 checkCircularVariableDependency
     :: (MetaOrObject level, Eq (variable level))
     =>  MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> [variable level]
-    -> Either (Maybe (SubstitutionError level variable)) ()
-checkCircularVariableDependency tools substitution vars = do
+    -> Either (SubstitutionError level variable) ()
+checkCircularVariableDependency tools substitution vars =
     traverse_
         ( checkThatApplicationUsesConstructors
-            tools (Just $ NonCtorCircularVariableDependency vars)
+            tools (NonCtorCircularVariableDependency vars)
         . (`lookup` substitution)
         )
         vars
-    Left Nothing
 
 checkThatApplicationUsesConstructors
     :: (MetaOrObject level)
