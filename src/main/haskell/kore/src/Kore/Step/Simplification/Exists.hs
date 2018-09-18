@@ -53,10 +53,7 @@ import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
 import           Kore.Variables.Free
                  ( pureFreeVariables )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
-import           Kore.Variables.Int
-                 ( IntVariable )
+import           Kore.Variables.Fresh
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -89,7 +86,7 @@ simplify
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PureMLPatternSimplifier level variable
@@ -117,7 +114,7 @@ simplifyEvaluated
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PureMLPatternSimplifier level variable
@@ -152,7 +149,7 @@ makeEvaluate
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PureMLPatternSimplifier level variable
@@ -261,13 +258,13 @@ substituteTermPredicate
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
         )
     => PureMLPattern level variable
     -> Predicate level variable
     -> ListSubstitution.Substitution (Unified variable) (PureMLPattern level variable)
     -> UnificationSubstitution level variable
-    -> IntCounter
+    -> Simplifier
         (ExpandedPattern level variable, SimplificationProof level)
 substituteTermPredicate term predicate substitution globalSubstitution = do
     substitutedTerm <- substitute term substitution
