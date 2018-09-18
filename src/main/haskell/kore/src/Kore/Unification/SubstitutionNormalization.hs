@@ -56,7 +56,7 @@ Returns an error when the substitution is not normalizable (i.e. it contains
 x = f(x) or something equivalent).
 -}
 normalizeSubstitution
-    ::  forall level variable
+    ::  forall m level variable
      .  ( MetaOrObject level
         , Ord (variable level)
         , Ord (variable Meta)
@@ -105,11 +105,11 @@ normalizeSubstitution tools substitution =
 
     normalizeSortedSubstitution'
         :: [variable level]
-        -> IntCounter (PredicateSubstitution level variable)
+        -> m (PredicateSubstitution level variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) [] []
 
-    bottom :: IntCounter (PredicateSubstitution level variable)
+    bottom :: m (PredicateSubstitution level variable)
     bottom = return $ PredicateSubstitution
                 { predicate = makeFalsePredicate
                 , substitution = []

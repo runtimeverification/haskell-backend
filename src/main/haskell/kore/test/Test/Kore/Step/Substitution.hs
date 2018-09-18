@@ -7,6 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase, assertEqual )
 
+import           Control.Monad.Counter
+                 ( evalCounter )
 import           Data.Reflection
                  ( give )
 
@@ -25,8 +27,6 @@ import           Kore.Step.Substitution
 import           Kore.Unification.Error
 import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSortTools )
@@ -84,7 +84,6 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
 
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
-        -- TODO(Vladimir) the result is error instead of bottom
         (assertEqual ""
             ( Left
                 ( UnificationError
@@ -108,8 +107,6 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
 
     , testCase "Double constructor is bottom with variables"
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
-        -- TODO(Vladimir) the result is error instead of bottom, and different
-        --   than the one without variables.
         (assertEqual ""
             ( Left (UnificationError NonFunctionalPattern) )
             ( normalize
@@ -142,7 +139,6 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
 
     , testCase "Constructor and constructor of function errors with variables"
         -- [x=constructor(y)] + [x=constructor(f(y))]  === error
-        -- TODO(Vladimir) the result is different than the one above.
         (assertEqual ""
             ( Left (UnificationError (NonFunctionalPattern)) )
             ( normalize
@@ -152,6 +148,22 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
                 ]
                 [   ( Mock.x
                     , Mock.constr10 (Mock.f (mkVar Mock.y))
+                    )
+                ]
+            )
+        )
+
+    , testCase "Constructor and constructor of function symbol errors"
+        -- [x=constructor(y)] + [x=constructor(f(y))]  === error
+        (assertEqual ""
+            ( Left (UnificationError (NonFunctionalPattern)) )
+            ( normalize
+                [   ( Mock.x
+                    , Mock.constr10 (mkVar Mock.y)
+                    )
+                ]
+                [   ( Mock.x
+                    , Mock.constr10 (Mock.functional10 (mkVar Mock.y))
                     )
                 ]
             )
@@ -210,4 +222,4 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     normalize s1 s2 =
         case mergeAndNormalizeSubstitutions mockMetadataTools s1 s2 of
             Left e -> Left e
-            Right res -> Right . fst . fst $ runIntCounter res 0
+            Right res -> Right . fst $ evalCounter res
