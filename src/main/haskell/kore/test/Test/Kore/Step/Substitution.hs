@@ -156,7 +156,11 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     , testCase "Constructor and constructor of function symbol errors"
         -- [x=constructor(y)] + [x=constructor(f(y))]  === error
         (assertEqual ""
-            ( Left (UnificationError (NonFunctionalPattern)) )
+            ( Left
+                ( SubstitutionError
+                    ( NonCtorCircularVariableDependency [ Mock.y ] )
+                )
+            )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 (mkVar Mock.y)

@@ -166,6 +166,7 @@ variableToSubstitution varToPattern var =
 
 normalizeSortedSubstitution
     ::  ( MetaOrObject level
+        , Eq (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
@@ -185,13 +186,18 @@ normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result
     substitution
-  = do
-    substitutedVarPattern <-
-        substitute varPattern (ListSubstitution.fromList substitution)
-    normalizeSortedSubstitution
-        unprocessed
-        ((var, substitutedVarPattern) : result)
-        ((asUnified var, substitutedVarPattern) : substitution)
+  = if eqVar varPattern
+      then normalizeSortedSubstitution unprocessed result substitution
+      else do
+            substitutedVarPattern <-
+                substitute varPattern (ListSubstitution.fromList substitution)
+            normalizeSortedSubstitution
+                unprocessed
+                ((var, substitutedVarPattern) : result)
+                ((asUnified var, substitutedVarPattern) : substitution)
+    where
+        eqVar (Var_ var') = var == var'
+        eqVar _           = False
 
 extractVariables
     ::  ( MetaOrObject level

@@ -118,12 +118,7 @@ test_substitutionNormalization =
       in
         testCase "Simplest cycle"
             (assertEqual ""
-                (Right
-                    [    ( asVariable (v1 PatternSort)
-                         , asPureMetaPattern (v1 PatternSort)
-                         )
-                    ]
-                )
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (v1 PatternSort)
@@ -139,9 +134,6 @@ test_substitutionNormalization =
             (assertEqual ""
                 (Right
                     [   ( asVariable (x1 PatternSort)
-                        , asPureMetaPattern (v1 PatternSort)
-                        )
-                    ,   ( asVariable (v1 PatternSort)
                         , asPureMetaPattern (v1 PatternSort)
                         )
                     ]
