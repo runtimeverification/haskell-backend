@@ -3,7 +3,14 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 
-module Test.Kore.ASTUtils (test_substitutions, test_sortAgreement) where
+module Test.Kore.ASTUtils
+( test_substitutions
+, test_sortAgreement
+, var
+, var_
+, mkSort
+, dummyEnvironment
+) where
 
 import Test.Tasty
        ( TestTree, testGroup )
@@ -17,7 +24,7 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.ASTHelpers
-       (ApplicationSorts (..) )
+       ( ApplicationSorts (..) )
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 import Kore.ASTUtils.Substitution
@@ -46,27 +53,27 @@ test_sortAgreement = testGroup "Sort agreement"
     [ testCase "sortAgreement1" $
           assertEqual ""
               (sortAgreement1 ^? inPath [1])
-              (Just $ Bottom_ (testSort "X"))
+              (Just $ Bottom_ (mkSort "X"))
     , testCase "sortAgreement2.1" $
           assertEqual ""
               (sortAgreement2 ^? inPath [0])
-              (Just $ Bottom_ (testSort "Y"))
+              (Just $ Bottom_ (mkSort "Y"))
     , testCase "sortAgreement2.2" $
           assertEqual ""
               (sortAgreement2 ^? (inPath [1] . resultSort ))
-              (Just $ testSort "Y")
-    , testCase "flexibleSort.1" $
+              (Just $ mkSort "Y")
+    , testCase "predicateSort.1" $
           assertEqual ""
               (dummyEnvironment mkBottom ^? resultSort)
-              (Just (flexibleSort :: Sort Object))
-    , testCase "flexibleSort.2" $
+              (Just (predicateSort :: Sort Object))
+    , testCase "predicateSort.2" $
           assertEqual ""
               (dummyEnvironment mkTop ^? resultSort)
-              (Just (flexibleSort :: Sort Object))
-    , testCase "flexibleSort.3" $
+              (Just (predicateSort :: Sort Object))
+    , testCase "predicateSort.3" $
           assertEqual ""
               (dummyEnvironment (mkExists (var_ "a" "A") mkBottom) ^? resultSort)
-              (Just (flexibleSort :: Sort Object))
+              (Just (predicateSort :: Sort Object))
     , testGroup "sortAgreementManySimplePatterns" $
           dummyEnvironment sortAgreementManySimplePatterns
     , testGetSetIdentity 5
@@ -154,26 +161,26 @@ sortAgreementManySimplePatterns = do
         , mkIff a b
         , mkRewrites a b
         ]
-    shouldHaveFlexibleSortTwoArgs <-
+    shouldHavepredicateSortTwoArgs <-
         [ mkEquals a b
         , mkIn a b
         ]
-    shoudlHaveFlexibleSortOneArg <-
+    shoudlHavepredicateSortOneArg <-
         [ mkCeil a
         , mkFloor a
         ]
     let assert1 = return $ testCase "" $ assertEqual ""
             (getSort shouldHaveSortXOneArg)
-            (testSort "X")
+            (mkSort "X")
     let assert2 = return $ testCase "" $ assertEqual ""
             (getSort shouldHaveSortXTwoArgs)
-            (testSort "X")
+            (mkSort "X")
     let assert3 = return $ testCase "" $ assertEqual ""
-            (getSort shoudlHaveFlexibleSortOneArg)
-            flexibleSort
+            (getSort shoudlHavepredicateSortOneArg)
+            predicateSort
     let assert4 = return $ testCase "" $ assertEqual ""
-            (getSort shouldHaveFlexibleSortTwoArgs)
-            flexibleSort
+            (getSort shouldHavepredicateSortTwoArgs)
+            predicateSort
     assert1 ++ assert2 ++ assert3 ++ assert4
 
 substitutionGetSetIdentity a b pat =
@@ -219,12 +226,11 @@ testGetSetIdentity size = dummyEnvironment $ testGroup "getSetIdent" $ do
 
 var :: MetaOrObject level => String -> Variable level
 var x =
-  Variable (noLocationId x) (testSort "S")
-
+  Variable (noLocationId x) (mkSort "S")
 
 var_ :: MetaOrObject level => String -> String -> Variable level
 var_ x s =
-  Variable (noLocationId x) (testSort s)
+  Variable (noLocationId x) (mkSort s)
 
 dummyEnvironment
   :: forall r . MetaOrObject Object
@@ -235,13 +241,5 @@ dummyEnvironment = give (dummySortTools @Object)
 dummySortTools :: MetaOrObject level => SortTools level
 dummySortTools = const ApplicationSorts
     { applicationSortsOperands = []
-    , applicationSortsResult   = testSort "S"
+    , applicationSortsResult   = mkSort "S"
     }
-
-testSort
-  :: MetaOrObject level
-  => String
-  -> Sort level
-testSort name =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId name }

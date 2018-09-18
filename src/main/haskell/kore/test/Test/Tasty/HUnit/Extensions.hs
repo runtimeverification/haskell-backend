@@ -1,15 +1,19 @@
 module Test.Tasty.HUnit.Extensions where
 
-import Control.Exception
-       ( SomeException, catch, evaluate )
-import Control.Monad
-import Data.CallStack
-import Data.Functor.Classes
-import Data.Functor.Foldable
-import Data.List
-       ( intercalate, isInfixOf )
 import Test.Tasty.HUnit
        ( assertBool, assertFailure )
+
+import           Control.Exception
+                 ( SomeException, catch, evaluate )
+import           Control.Monad
+import           Data.CallStack
+import qualified Data.Foldable as Foldable
+import           Data.Functor.Classes
+import           Data.Functor.Foldable
+import           Data.List
+                 ( intercalate, isInfixOf )
+import           Data.Sequence
+                 ( Seq )
 
 assertEqualWithPrinter
     :: (Eq a, HasCallStack)
@@ -186,6 +190,29 @@ instance (EqualWithExplanation a1, EqualWithExplanation a2)
     printWithExplanation (Right a) = "Right (" ++ printWithExplanation a ++ ")"
     printWithExplanation (Left a)  = "Left (" ++ printWithExplanation a ++ ")"
 
+instance (EqualWithExplanation a)
+    => SumEqualWithExplanation (Maybe a)
+  where
+    sumConstructorPair (Just a1) (Just a2) =
+        SumConstructorSameWithArguments (EqWrap "Just" a1 a2)
+    sumConstructorPair a1@(Just _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair Nothing Nothing =
+        SumConstructorSameNoArguments
+    sumConstructorPair a1@Nothing a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+instance (EqualWithExplanation a)
+    => EqualWithExplanation (Maybe a)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+
+    printWithExplanation (Just a) = "Just (" ++ printWithExplanation a ++ ")"
+    printWithExplanation Nothing  = "Nothing"
+
 newtype EWEString = EWEString String
 
 instance EqualWithExplanation EWEString
@@ -233,6 +260,12 @@ instance EqualWithExplanation a => EqualWithExplanation [a]
 
     printWithExplanation a =
         "[" ++ intercalate ", " (map printWithExplanation a) ++ "]"
+
+instance EqualWithExplanation a => EqualWithExplanation (Seq a) where
+    compareWithExplanation expected actual =
+        compareWithExplanation (Foldable.toList expected) (Foldable.toList actual)
+
+    printWithExplanation = printWithExplanation . Foldable.toList
 
 instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
     => WrapperEqualWithExplanation (Fix thing)

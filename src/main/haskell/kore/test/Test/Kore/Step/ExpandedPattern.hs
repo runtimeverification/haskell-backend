@@ -16,7 +16,7 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern )
 import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
+       ( ApplicationSorts (..) )
 import Kore.ASTUtils.SmartConstructors
        ( mkAnd, mkBottom, mkEquals, mkTop, mkVar )
 import Kore.IndexedModule.MetadataTools

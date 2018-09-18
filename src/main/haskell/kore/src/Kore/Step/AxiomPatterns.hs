@@ -1,5 +1,10 @@
 module Kore.Step.AxiomPatterns
     ( AxiomPattern(..)
+    , AxiomPatternAttributes(..)
+    , HeatCool(..)
+    , isHeatingRule
+    , isCoolingRule
+    , isNormalRule
     , QualifiedAxiomPattern(..)
     , AxiomPatternError(..)
     , koreSentenceToAxiomPattern
@@ -12,10 +17,6 @@ import Data.Either
        ( rights )
 import Data.Functor
        ( ($>) )
-import Data.Ord
-       ( comparing )
-import Data.Semigroup
-       ( (<>) )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -26,44 +27,58 @@ import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
+                 ( ParseAttributes (..), parseAttributes )
 import qualified Kore.Attribute.Parser as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, makeTruePredicate, wrapPredicate )
+                 ( CommonPredicate, wrapPredicate )
 
-newtype AxiomPatternError = AxiomPatternError ()
+{- | Denote the heating or cooling phase of execution.
 
-data AxiomAttributes =
-    AxiomAttributes
-        { axiomOrdering :: !Ordering
-        }
+  There is no separate denotation for normal rules because they are executed
+  whenever possible.
+
+ -}
+data HeatCool = Heat | Cool
   deriving (Eq, Ord, Show)
 
-instance Default AxiomAttributes where
-    def = AxiomAttributes { axiomOrdering = EQ }
+{- | Attributes specific to interpreting axiom patterns.
+ -}
+data AxiomPatternAttributes =
+    AxiomPatternAttributes
+    { axiomPatternHeatCool :: !(Maybe HeatCool)
+    -- ^ An axiom may be denoted as a heating or cooling rule.
+    , axiomPatternProductionID :: !(Maybe String)
+    -- ^ The identifier from the front-end identifying a rule or group of rules.
+    }
+  deriving (Eq, Ord, Show)
 
-instance ParseAttributes AxiomAttributes where
+instance Default AxiomPatternAttributes where
+    def =
+        AxiomPatternAttributes
+        { axiomPatternHeatCool = Nothing
+        , axiomPatternProductionID = Nothing
+        }
+
+instance ParseAttributes AxiomPatternAttributes where
     attributesParser =
-        do
-            axiomOrdering <-
-                Attribute.choose (Attribute.choose getHeat getCool) (pure EQ)
-            return AxiomAttributes {..}
+        AxiomPatternAttributes
+            <$> Attribute.choose (Just <$> getHeatCool) (getNormal $> Nothing)
+            <*> Attribute.optional (Attribute.parseStringAttribute "productionID")
+      where
+        getHeat = do
+            Attribute.assertNoAttribute "cool"
+            Attribute.assertKeyOnlyAttribute "heat" $> Heat
+        getCool = do
+            Attribute.assertNoAttribute "heat"
+            Attribute.assertKeyOnlyAttribute "cool" $> Cool
+        getHeatCool = Attribute.choose getHeat getCool
+        getNormal = do
+            Attribute.assertNoAttribute "heat"
+            Attribute.assertNoAttribute "cool"
 
-getHeat :: Attribute.Parser Ordering
-getHeat =
-    Attribute.assertKeyOnlyAttribute "heat" $> LT
-
-getCool :: Attribute.Parser Ordering
-getCool =
-    Attribute.assertKeyOnlyAttribute "cool" $> GT
-
-parseAxiomAttributes
-    :: Attributes
-    -> Either (Error AxiomPatternError) AxiomAttributes
-parseAxiomAttributes attrs =
-    Kore.Error.castError (Attribute.parseAttributes attrs)
+newtype AxiomPatternError = AxiomPatternError ()
 
 {- | Normal rewriting and function axioms
 
@@ -76,16 +91,9 @@ data AxiomPattern level = AxiomPattern
     { axiomPatternLeft  :: !(CommonPurePattern level)
     , axiomPatternRight :: !(CommonPurePattern level)
     , axiomPatternRequires :: !(CommonPredicate level)
-    , axiomAttributes :: !AxiomAttributes
+    , axiomPatternAttributes :: !AxiomPatternAttributes
     }
     deriving (Eq, Show)
-
-instance Ord level => Ord (AxiomPattern level) where
-    compare a b =
-        comparing axiomAttributes a b
-        <> comparing axiomPatternLeft a b
-        <> comparing axiomPatternRight a b
-        <> comparing axiomPatternRequires a b
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
@@ -93,7 +101,46 @@ from function axioms (used for functional simplification).
 data QualifiedAxiomPattern level
     = RewriteAxiomPattern (AxiomPattern level)
     | FunctionAxiomPattern (AxiomPattern level)
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Show)
+
+{- | Does the axiom pattern represent a heating rule?
+ -}
+isHeatingRule :: AxiomPattern level -> Bool
+isHeatingRule
+    AxiomPattern
+    { axiomPatternAttributes =
+        AxiomPatternAttributes
+        { axiomPatternHeatCool = Just Heat }
+    }
+  =
+    True
+isHeatingRule _ = False
+
+{- | Does the axiom pattern represent a cooling rule?
+ -}
+isCoolingRule :: AxiomPattern level -> Bool
+isCoolingRule
+    AxiomPattern
+    { axiomPatternAttributes =
+        AxiomPatternAttributes
+        { axiomPatternHeatCool = Just Cool }
+    }
+  =
+    True
+isCoolingRule _ = False
+
+{- | Does the axiom pattern represent a normal rule?
+ -}
+isNormalRule :: AxiomPattern level -> Bool
+isNormalRule
+    AxiomPattern
+    { axiomPatternAttributes =
+        AxiomPatternAttributes
+        { axiomPatternHeatCool = Nothing }
+    }
+  =
+    True
+isNormalRule _ = False
 
 
 -- | Extracts all 'AxiomPattern' structures matching a given @level@ from
@@ -135,9 +182,10 @@ sentenceToAxiomPattern
         }
     )
   = do
-    axiomAttributes <- parseAxiomAttributes sentenceAxiomAttributes
+    axiomPatternAttributes <-
+        Kore.Error.castError (parseAttributes sentenceAxiomAttributes)
     case patternKoreToPure level sentenceAxiomPattern of
-        Right pat -> patternToAxiomPattern axiomAttributes pat
+        Right pat -> patternToAxiomPattern axiomPatternAttributes pat
         Left err  -> Left err
 sentenceToAxiomPattern _ _ =
     koreFail "Only axiom sentences can be translated to AxiomPatterns"
@@ -149,10 +197,10 @@ not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern
     :: MetaOrObject level
-    => AxiomAttributes
+    => AxiomPatternAttributes
     -> CommonPurePattern level
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
-patternToAxiomPattern axiomAttributes pat =
+patternToAxiomPattern axiomPatternAttributes pat =
     case pat of
         -- normal rewrite axioms
         And_ _ requires (And_ _ _ensures (Rewrites_ _ lhs rhs)) ->
@@ -160,15 +208,7 @@ patternToAxiomPattern axiomAttributes pat =
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = wrapPredicate requires
-                , axiomAttributes
-                }
-        -- unconditional rewrite axioms
-        Rewrites_ _ lhs rhs ->
-            pure $ RewriteAxiomPattern AxiomPattern
-                { axiomPatternLeft = lhs
-                , axiomPatternRight = rhs
-                , axiomPatternRequires = makeTruePredicate
-                , axiomAttributes
+                , axiomPatternAttributes
                 }
         -- function axioms
         Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
@@ -176,15 +216,7 @@ patternToAxiomPattern axiomAttributes pat =
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = wrapPredicate requires
-                , axiomAttributes
+                , axiomPatternAttributes
                 }
-        -- unconditional function axioms
-        Equals_ _ _ lhs rhs ->
-            pure $ FunctionAxiomPattern AxiomPattern
-                { axiomPatternLeft = lhs
-                , axiomPatternRight = rhs
-                , axiomPatternRequires = makeTruePredicate
-                , axiomAttributes
-                }
-        Forall_ _ _ child -> patternToAxiomPattern axiomAttributes child
+        Forall_ _ _ child -> patternToAxiomPattern axiomPatternAttributes child
         _ -> koreFail "Unsupported pattern type in axiom"

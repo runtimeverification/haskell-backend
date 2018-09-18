@@ -184,9 +184,9 @@ boolModule =
 
 evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
-    case evalSimplifier (Pattern.simplify tools evaluators pat) of
-        Left err -> error (Kore.Error.printError err)
-        Right (ExpandedPattern { term }, _) -> term
+    let (ExpandedPattern { term }, _) =
+            evalSimplifier (Pattern.simplify tools evaluators pat)
+    in term
   where
     tools = extractMetadataTools indexedModule
 

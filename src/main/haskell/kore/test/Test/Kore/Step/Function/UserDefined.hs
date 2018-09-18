@@ -10,6 +10,8 @@ import Data.Default
 import Data.List
        ( sort )
 
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+
 import           Kore.AST.Common
                  ( Application (..), AstLocation (..), Id (..), Pattern (..),
                  SymbolOrAlias (..) )
@@ -75,7 +77,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 (mockSimplifier [])
                 (asApplication (metaH (x PatternSort)))
@@ -99,7 +101,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 (mockSimplifier [])
                 (asApplication (metaF (x PatternSort)))
@@ -116,7 +118,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeFalsePredicate
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 (mockSimplifier [])
                 (asApplication (metaF (x PatternSort)))
@@ -135,7 +137,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 (mockSimplifier
                     -- Evaluate Top to Bottom.
@@ -162,7 +164,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 (mockSimplifier
                     [   ( asPureMetaPattern (metaG (x PatternSort))
@@ -194,7 +196,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 (mockSimplifier
                     [   ( asPureMetaPattern (metaG (x PatternSort))
@@ -236,7 +238,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 (mockSimplifier [])
                 (asApplication (metaSigma (a PatternSort) (b PatternSort)))
@@ -270,7 +272,7 @@ test_userDefinedFunction =
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
                     , axiomPatternRequires = makeTruePredicate
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 (mockSimplifier
                     [   ( asPureMetaPattern (metaG (b PatternSort))
@@ -297,14 +299,6 @@ test_userDefinedFunction =
     -- TODO: Add a test for the stepper giving up
     ]
 
-mockStepperAttributes :: StepperAttributes
-mockStepperAttributes = StepperAttributes
-    { isConstructor = True
-    , isFunctional  = True
-    , isFunction    = False
-    , hook          = def
-    }
-
 mockSortTools :: SortTools Meta
 mockSortTools = const ApplicationSorts
     { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
@@ -313,7 +307,8 @@ mockSortTools = const ApplicationSorts
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { attributes = const mockStepperAttributes
+    { symAttributes = const Mock.constructorFunctionalAttributes
+    , sortAttributes = const Mock.constructorFunctionalAttributes
     , sortTools  = mockSortTools
     }
 
@@ -452,7 +447,7 @@ evaluateWithAxiom
             , substitution = sort substitution
             }
     evaluated =
-        either (error . printError) fst
+        fst
             $ evalSimplifier
             $ axiomFunctionEvaluator
                 axiom

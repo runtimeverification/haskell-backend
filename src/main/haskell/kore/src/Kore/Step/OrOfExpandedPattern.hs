@@ -4,7 +4,7 @@ Description : Data structures and functions for manipulating
               OrOfExpandedPatterns, which occur naturally during
               pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -16,6 +16,7 @@ module Kore.Step.OrOfExpandedPattern
     , filterOr -- TODO: This should be internal-only.
     , flatten
     , fmapFlattenWithPairs
+    , fmapWithPairs
     , fullCrossProduct
     , isFalse
     , isTrue
@@ -36,7 +37,6 @@ import Data.List
 import Data.Reflection
        ( Given )
 
-import qualified Data.List.Tools as List
 import           Kore.AST.Common
                  ( SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
@@ -198,6 +198,19 @@ patternToOrBool patt
   | ExpandedPattern.isBottom patt = OrFalse
   | otherwise = OrUnknown
 
+{-| fmaps an or in a similar way to traverseWithPairs.
+-}
+fmapWithPairs
+    ::  (  ExpandedPattern level variable
+        -> (ExpandedPattern level variable, a)
+        )
+    -> OrOfExpandedPattern level variable
+    -> (OrOfExpandedPattern level variable, [a])
+fmapWithPairs mapper patt =
+    (filterOr (fmap fst mapped), extract (fmap snd mapped))
+  where
+    mapped = fmap mapper patt
+
 {-| 'traverseWithPairs' traverses an or with a function that returns a
 (pattern, something) pair, then returns a 'MultiOr' of the patterns and
 a list of that something.
@@ -312,7 +325,7 @@ crossProductGeneric
     -> MultiOr child2
     -> MultiOr child3
 crossProductGeneric joiner (MultiOr first) (MultiOr second) =
-    MultiOr $ map (uncurry joiner) $ List.crossProduct first second
+    MultiOr $ joiner <$> first <*> second
 
 {-| 'crossProductGenericF' is the same as 'crossProductGeneric' except that it
 works under an applicative thing.
@@ -324,7 +337,7 @@ crossProductGenericF
     -> MultiOr child2
     -> f (MultiOr child3)
 crossProductGenericF joiner (MultiOr first) (MultiOr second) =
-    MultiOr <$> traverse (uncurry joiner) (List.crossProduct first second)
+    MultiOr <$> sequenceA (joiner <$> first <*> second)
 
 {-| 'merge' merges two 'OrOfExpandedPattern'.
 -}
@@ -362,6 +375,7 @@ toExpandedPattern
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level)
         )
     => OrOfExpandedPattern level variable -> ExpandedPattern level variable

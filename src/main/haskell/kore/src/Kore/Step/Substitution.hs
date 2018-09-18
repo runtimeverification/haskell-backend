@@ -2,7 +2,7 @@
 Module      : Kore.Step.Substitution
 Description : Tools for manipulating substitutions when doing Kore execution.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -38,10 +38,7 @@ import Kore.Unification.SubstitutionNormalization
 import Kore.Unification.Unifier
        ( UnificationProof (EmptyUnificationProof), UnificationSubstitution,
        normalizeSubstitutionDuplication )
-import Kore.Variables.Fresh.IntCounter
-       ( IntCounter )
-import Kore.Variables.Int
-       ( IntVariable )
+import Kore.Variables.Fresh
 
 {-|'mergeSubstitutions' merges a list of substitutions into
 a single one, then returns it together with the side condition of that merge.
@@ -77,7 +74,8 @@ mergeAndNormalizeSubstitutions
         , OrdMetaOrObject variable
         , SortedVariable variable
         , Show (variable level)
-        , IntVariable variable
+        , FreshVariable variable
+        , MonadCounter m
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -85,7 +83,7 @@ mergeAndNormalizeSubstitutions
     -> UnificationSubstitution level variable
     -> Either
           ( UnificationOrSubstitutionError level variable )
-          ( IntCounter
+          ( m
               ( PredicateSubstitution level variable
               , UnificationProof level variable
               )
@@ -99,14 +97,15 @@ normalizeSubstitutionAfterMerge
         , OrdMetaOrObject variable
         , SortedVariable variable
         , Show (variable level)
-        , IntVariable variable
+        , FreshVariable variable
+        , MonadCounter m
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
           ( UnificationOrSubstitutionError level variable )
-          ( IntCounter
+          ( m
               ( PredicateSubstitution level variable
               , UnificationProof level variable
               )
@@ -140,13 +139,14 @@ mergePredicatesAndSubstitutions
        , Ord (variable level)
        , Ord (variable Meta)
        , Ord (variable Object)
-       , IntVariable variable
+       , FreshVariable variable
+       , MonadCounter m
        , Hashable variable
        )
     => MetadataTools level StepperAttributes
     -> [Predicate level variable]
     -> [UnificationSubstitution level variable]
-    -> IntCounter
+    -> m
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )

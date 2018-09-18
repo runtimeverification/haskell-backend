@@ -2,7 +2,7 @@
 Module      : Kore.Unification.Error
 Description : Utilities for unification errors
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -44,6 +44,7 @@ data UnificationError level
 data ClashReason level
     = HeadClash (SymbolOrAlias level)
     | DomainValueClash String
+    | SortInjectionClash (Sort level) (Sort level)
     deriving (Eq, Show)
 
 {-| 'SubstitutionError' specifies the various error cases related to

@@ -1,8 +1,8 @@
 {-|
-Module      : Kore.Simplification.Top
+Module      : Kore.Step.Simplification.Top
 Description : Tools for Top pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

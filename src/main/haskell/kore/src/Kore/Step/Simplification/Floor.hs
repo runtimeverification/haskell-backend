@@ -1,8 +1,8 @@
 {-|
-Module      : Kore.Simplification.Floor
+Module      : Kore.Step.Simplification.Floor
 Description : Tools for Floor pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

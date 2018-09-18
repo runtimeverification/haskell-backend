@@ -1,8 +1,8 @@
 {-|
-Module      : Kore.Simplification.Ceil
+Module      : Kore.Step.Simplification.Ceil
 Description : Tools for Ceil pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Simplification.Ceil
     ( simplify
     , makeEvaluate
+    , makeEvaluateTerm
     , simplifyEvaluated
     ) where
 
@@ -44,13 +45,13 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fmapFlattenWithPairs, make )
 import           Kore.Step.PatternAttributes
-                 ( isFunctionalPattern )
+                 ( isTotalPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( isTotal )
 
 {-| 'simplify' simplifies a 'Ceil' of 'OrOfExpandedPattern'.
 
@@ -95,8 +96,8 @@ simplifyEvaluated tools child =
     (evaluated, _proofs) =
         OrOfExpandedPattern.fmapFlattenWithPairs (makeEvaluate tools) child
 
-{-| 'simplifyEvaluated' evaluates a ceil given its child as
-an ExpandedPattern, see 'simplify' for details.
+{-| Evaluates a ceil given its child as an ExpandedPattern, see 'simplify'
+for details.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
@@ -136,7 +137,7 @@ makeEvaluateNonBoolCeil
     ExpandedPattern {term, predicate, substitution}
   =
     let
-        (termCeil, _proof1) = makeTermCeil tools term
+        (termCeil, _proof1) = makeEvaluateTerm tools term
         (ceilPredicate, _proof2) =
             give sortTools $ makeAndPredicate predicate termCeil
     in
@@ -154,45 +155,47 @@ makeEvaluateNonBoolCeil
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
-makeTermCeil
+{-| Evaluates the ceil of a PureMLPattern, see 'simplify' for details.
+-}
+makeEvaluateTerm
     ::  ( MetaOrObject level
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> (Predicate level variable, SimplificationProof level)
-makeTermCeil
+makeEvaluateTerm
     _
     (Top_ _)
   =
     (makeTruePredicate, SimplificationProof)
-makeTermCeil
+makeEvaluateTerm
     _
     (Bottom_ _)
   =
     (makeFalsePredicate, SimplificationProof)
-makeTermCeil
+makeEvaluateTerm
     tools
     term
-  | isFunctional tools term
+  | isTotal tools term
   =
     (makeTruePredicate, SimplificationProof)
-makeTermCeil
+makeEvaluateTerm
     tools
     (App_ patternHead children)
-  | StepperAttributes.isFunctional headAttributes
-      || StepperAttributes.isConstructor headAttributes
+  | StepperAttributes.isTotal headAttributes
   =
     let
-        (ceils, _proofs) = unzip (map (makeTermCeil tools) children)
+        (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) children)
         (result, _proof) = give (MetadataTools.sortTools tools )
             $ makeMultipleAndPredicate ceils
     in
         (result, SimplificationProof)
   where
-    headAttributes = MetadataTools.attributes tools patternHead
-makeTermCeil
+    headAttributes = MetadataTools.symAttributes tools patternHead
+makeEvaluateTerm
     tools term
   =
     ( give (MetadataTools.sortTools tools ) $ makeCeilPredicate term
@@ -201,9 +204,9 @@ makeTermCeil
 
 -- TODO: Move these somewhere reasonable and remove all of their other
 -- definitions.
-isFunctional
+isTotal
     :: MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Bool
-isFunctional tools term =
-    isRight (isFunctionalPattern tools term)
+isTotal tools term =
+    isRight (isTotalPattern tools term)

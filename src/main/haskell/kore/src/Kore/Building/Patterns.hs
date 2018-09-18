@@ -3,7 +3,7 @@
 Module      : Kore.Building.Patterns
 Description : Builders for the standard Kore patterns, without 'Application'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -25,7 +25,7 @@ import Kore.AST.MetaOrObject
 import Kore.Building.AsAst
 import Kore.Building.Sorts
 import Kore.MetaML.Lift
-       (liftToMeta)
+       ( liftToMeta )
 
 {-| When defining new patterns (e.g. for new symbols and aliases),
 users are expected to instantiate either

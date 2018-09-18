@@ -3,7 +3,7 @@ Module      : Kore.Building.Implicit
 Description : Builders for symbols and aliases that are implicitly defined in
               Kore.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX

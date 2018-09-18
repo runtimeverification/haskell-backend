@@ -1,13 +1,15 @@
-module Test.Kore.Step.Step (test_multiple, test_single) where
+module Test.Kore.Step.Step (test_simpleStrategy, test_stepStrategy) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+       ( TestTree )
 import Test.Tasty.HUnit
        ( testCase )
 
 import           Data.Default
                  ( def )
 import qualified Data.Map as Map
+
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
 import           Kore.AST.Common
                  ( Application (..), AstLocation (..), Id (..),
@@ -30,14 +32,11 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern (..) )
-import           Kore.Step.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.PatternAttributes
                  ( FunctionalProof (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), evalSimplifier )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Unifier
@@ -58,466 +57,424 @@ var_0 :: MetaSort sort => sort -> MetaVariable sort
 var_0 = metaVariable "#var_0" AstLocationTest
 var_1 :: MetaSort sort => sort -> MetaVariable sort
 var_1 = metaVariable "#var_1" AstLocationTest
-var_2 :: MetaSort sort => sort -> MetaVariable sort
-var_2 = metaVariable "#var_2" AstLocationTest
 var_3 :: MetaSort sort => sort -> MetaVariable sort
 var_3 = metaVariable "#var_3" AstLocationTest
 
-test_single :: TestTree
-test_single =
-    testGroup
-        "Single step Tests"
-        [ testCase "Applies a simple axiom"
-            -- Axiom: X1 => X1
-            -- Start pattern: V1
-            -- Expected: V1
-            (assertEqualWithExplanation ""
-                ( OrOfExpandedPattern.make
-                    [ ExpandedPattern
-                        { term = asPureMetaPattern (v1 PatternSort)
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    ]
-                , StepProofCombined
-                    [ StepProofSimplification SimplificationProof
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_0 PatternSort)
-                        ]
-                    , StepProofUnification
-                        ( proposition_5_24_3
-                            [ functionalVariable (v1 PatternSort) ]
-                            (var_0 PatternSort)
-                            (v1 PatternSort)
-                        )
-                    ]
+rewriteIdentity :: AxiomPattern Meta
+rewriteIdentity =
+    AxiomPattern
+        { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
+        , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+        , axiomPatternRequires = makeTruePredicate
+        , axiomPatternAttributes = def
+        }
+
+rewriteImplies :: AxiomPattern Meta
+rewriteImplies =
+    AxiomPattern
+        { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
+        , axiomPatternRight =
+            asPureMetaPattern
+                (metaImplies PatternSort
+                    (x1 PatternSort)
+                    (x1 PatternSort)
                 )
-                (runStep
-                    mockMetadataTools
-                    ExpandedPattern
-                        { term = asPureMetaPattern (v1 PatternSort)
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    [ AxiomPattern
-                        { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
-                        , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    ]
+        , axiomPatternRequires = makeTruePredicate
+        , axiomPatternAttributes = def
+        }
+
+expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta)]
+expectTwoAxioms =
+    [
+        ( ExpandedPattern
+            { term = asPureMetaPattern (v1 PatternSort)
+            , predicate = makeTruePredicate
+            , substitution = []
+            }
+        , (mconcat . map stepProof)
+            [ StepProofVariableRenamings
+                [ variableRenaming
+                    (x1 PatternSort) (var_0 PatternSort)
+                ]
+            , StepProofUnification
+                ( proposition_5_24_3
+                    [ functionalVariable (v1 PatternSort) ]
+                    (var_0 PatternSort)
+                    (v1 PatternSort)
                 )
-            )
-        , testCase "Applies two simple axioms"
-            -- Axiom: X1 => X1
-            -- Axiom: X1 => and(X1, X1)
-            -- Start pattern: V1
-            -- Expected: V1
-            -- Expected: and(V1, V1)
-            (assertEqualWithExplanation ""
-                ( OrOfExpandedPattern.make
-                    [ ExpandedPattern
-                        { term = asPureMetaPattern (v1 PatternSort)
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    , ExpandedPattern
-                        { term =
-                            asPureMetaPattern
-                                (metaAnd PatternSort
-                                    (v1 PatternSort)
-                                    (v1 PatternSort)
-                                )
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    ]
-                , StepProofCombined
-                    [ StepProofSimplification SimplificationProof
-                    , StepProofSimplification SimplificationProof
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_0 PatternSort)
-                        ]
-                    , StepProofUnification
-                        ( proposition_5_24_3
-                            [ functionalVariable (v1 PatternSort) ]
-                            (var_0 PatternSort)
-                            (v1 PatternSort)
-                        )
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_1 PatternSort)
-                        ]
-                    , StepProofUnification
-                        ( proposition_5_24_3
-                            [ functionalVariable (v1 PatternSort) ]
-                            (var_1 PatternSort)
-                            (v1 PatternSort)
-                        )
-                    ]
+            , StepProofSimplification SimplificationProof
+            ]
+        )
+    ,
+        ( ExpandedPattern
+            { term =
+                asPureMetaPattern
+                    (metaImplies PatternSort
+                        (v1 PatternSort)
+                        (v1 PatternSort)
+                    )
+            , predicate = makeTruePredicate
+            , substitution = []
+            }
+        , (mconcat . map stepProof)
+            [ StepProofVariableRenamings
+                [ variableRenaming
+                    (x1 PatternSort) (var_1 PatternSort)
+                ]
+            , StepProofUnification
+                ( proposition_5_24_3
+                    [ functionalVariable (v1 PatternSort) ]
+                    (var_1 PatternSort)
+                    (v1 PatternSort)
                 )
-                (runStep
-                    mockMetadataTools
-                    ExpandedPattern
-                        { term = asPureMetaPattern (v1 PatternSort)
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    [ AxiomPattern
-                        { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
-                        , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    , AxiomPattern
-                        { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
-                        , axiomPatternRight =
-                            asPureMetaPattern
-                                (metaAnd PatternSort
-                                    (x1 PatternSort)
-                                    (x1 PatternSort)
-                                )
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    ]
-                )
-            )
-        , testCase "Fails to apply a simple axiom"
-            -- Axiom: sigma(X1, X1) => X1
-            -- Start pattern: sigma(f(A1), g(B1))
-            -- Expected: empty result list
-            (assertEqualWithExplanation ""
-                ( OrOfExpandedPattern.make []
-                , StepProofCombined
-                    [ StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_0 PatternSort)
-                        ]
-                    , StepProofUnification EmptyUnificationProof
-                    ]
-                )
-                (runStep
-                    mockMetadataTools
-                    ExpandedPattern
-                        { term =
-                            asPureMetaPattern
-                                ( metaSigma
-                                    (metaG (a1 PatternSort))
-                                    (metaF (b1 PatternSort))
-                                )
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    [ AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern
-                                (metaSigma (x1 PatternSort) (x1 PatternSort))
-                        , axiomPatternRight =
-                            asPureMetaPattern (x1 PatternSort)
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    ]
-                )
-            )
-        , testCase "Fails to apply a simple axiom due to cycle."
-            -- Axiom: sigma(f(X1), X1) => X1
-            -- Start pattern: sigma(A1, A1)
-            -- Expected: empty result list
-            (assertEqualWithExplanation ""
-                ( OrOfExpandedPattern.make []
-                , StepProofCombined
-                    [StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_0 PatternSort)
-                        ]
-                    , StepProofUnification
-                        ( AndDistributionAndConstraintLifting
-                            sigmaSymbol
-                            [ proposition_5_24_3
-                                [ FunctionalHead fSymbol
-                                , functionalVariable (var_0 PatternSort)
-                                ]
-                                (a1 PatternSort)
-                                (metaF (var_0 PatternSort))
-                            , proposition_5_24_3
-                                [ functionalVariable (a1 PatternSort)]
-                                (var_0 PatternSort)
-                                (a1 PatternSort)
-                            ]
-                        )
-                    ]
-                )
-                (runStep
-                    mockMetadataTools
-                    ExpandedPattern
-                        { term =
-                            asPureMetaPattern
-                                ( metaSigma
-                                    (a1 PatternSort)
-                                    (a1 PatternSort)
-                                )
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    [ AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern
-                                (metaSigma
-                                    (metaF (x1 PatternSort))
-                                    (x1 PatternSort)
-                                )
-                        , axiomPatternRight =
-                            asPureMetaPattern (x1 PatternSort)
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    ]
-                )
-            )
+            , StepProofSimplification SimplificationProof
+            ]
+        )
+    ]
+
+actualTwoAxioms :: [(CommonExpandedPattern Meta, StepProof Meta)]
+actualTwoAxioms =
+    runStep
+        mockMetadataTools
+        ExpandedPattern
+            { term = asPureMetaPattern (v1 PatternSort)
+            , predicate = makeTruePredicate
+            , substitution = []
+            }
+        [ rewriteIdentity
+        , rewriteImplies
         ]
 
-test_multiple :: TestTree
-test_multiple =
-    testGroup
-        "Pick-first stepper Tests"
-        [ testCase "Runs one step"
-            -- Axiom: f(X1) => g(X1)
-            -- Start pattern: f(V1)
-            -- Expected: g(V1)
-            (assertEqualWithExplanation ""
-                ( ExpandedPattern
-                    { term = asPureMetaPattern (metaG (v1 PatternSort))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , StepProofCombined
-                    [ StepProofSimplification SimplificationProof
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_0 PatternSort)
-                        ]
-                    , StepProofUnification
-                        (AndDistributionAndConstraintLifting
-                            fSymbol
-                            [ proposition_5_24_3
-                                [ functionalVariable (v1 PatternSort) ]
-                                (var_0 PatternSort)
-                                (v1 PatternSort)
-                            ]
-                        )
-                    ]
+initialFailSimple :: ExpandedPattern Meta Variable
+initialFailSimple =
+    ExpandedPattern
+        { term =
+            asPureMetaPattern
+                ( metaSigma
+                    (metaG (a1 PatternSort))
+                    (metaF (b1 PatternSort))
                 )
-                (runStepsPickFirst
-                    mockMetadataTools
-                    AnyStepCount
-                    ExpandedPattern
-                        { term = asPureMetaPattern (metaF (v1 PatternSort))
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    [ AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern (metaF (x1 PatternSort))
-                        , axiomPatternRight =
-                            asPureMetaPattern (metaG (x1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    ]
-                )
-            )
-        , testCase "Runs two steps"
-            -- Axiom: f(X1) => g(X1)
-            -- Axiom: g(X1) => h(X1)
-            -- Start pattern: f(V1)
-            -- Expected: h(V1)
-            (assertEqualWithExplanation ""
-                ( ExpandedPattern
-                    { term = asPureMetaPattern (metaH (v1 PatternSort))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , StepProofCombined
-                    [ StepProofSimplification SimplificationProof
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_0 PatternSort)
-                        ]
-                    , StepProofUnification
-                        (AndDistributionAndConstraintLifting
-                            fSymbol
-                            [ proposition_5_24_3
-                                [ functionalVariable (v1 PatternSort) ]
-                                (var_0 PatternSort)
-                                (v1 PatternSort)
-                            ]
-                        )
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_1 PatternSort)
-                        ]
-                    , StepProofUnification EmptyUnificationProof
-                    , StepProofSimplification SimplificationProof
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_2 PatternSort)
-                        ]
-                    , StepProofUnification EmptyUnificationProof
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_3 PatternSort)
-                        ]
-                    , StepProofUnification
-                        (AndDistributionAndConstraintLifting
-                            gSymbol
-                            [ proposition_5_24_3
-                                [ functionalVariable (v1 PatternSort) ]
-                                (var_3 PatternSort)
-                                (v1 PatternSort)
-                            ]
-                        )
-                    ]
-                )
-                (runStepsPickFirst
-                    mockMetadataTools
-                    AnyStepCount
-                    ExpandedPattern
-                        { term = asPureMetaPattern (metaF (v1 PatternSort))
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    [ AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern (metaF (x1 PatternSort))
-                        , axiomPatternRight =
-                            asPureMetaPattern (metaG (x1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    , AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern (metaG (x1 PatternSort))
-                        , axiomPatternRight =
-                            asPureMetaPattern (metaH (x1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    ]
-                )
-            )
-        , testCase "Obeys step limit"
-            -- Axiom: f(X1) => g(X1)
-            -- Axiom: g(X1) => h(X1)
-            -- Start pattern: f(V1)
-            -- Expected: g(V1)
-            (assertEqualWithExplanation ""
-                ( ExpandedPattern
-                    { term = asPureMetaPattern (metaG (v1 PatternSort))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , StepProofCombined
-                    [ StepProofSimplification SimplificationProof
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_0 PatternSort)
-                        ]
-                    , StepProofUnification
-                        (AndDistributionAndConstraintLifting
-                            fSymbol
-                            [ proposition_5_24_3
-                                [ functionalVariable (v1 PatternSort) ]
-                                (var_0 PatternSort)
-                                (v1 PatternSort)
-                            ]
-                        )
-                    , StepProofVariableRenamings
-                        [ variableRenaming
-                            (x1 PatternSort) (var_1 PatternSort)
-                        ]
-                    , StepProofUnification EmptyUnificationProof
-                    ]
-                )
-                (runStepsPickFirst
-                    mockMetadataTools
-                    (MaxStepCount 1)
-                    ExpandedPattern
-                        { term = asPureMetaPattern (metaF (v1 PatternSort))
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    [ AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern (metaF (x1 PatternSort))
-                        , axiomPatternRight =
-                            asPureMetaPattern (metaG (x1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    , AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern (metaG (x1 PatternSort))
-                        , axiomPatternRight =
-                            asPureMetaPattern (metaH (x1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    ]
-                )
-            )
-        , testCase "0 step limit"
-            -- Axiom: f(X1) => g(X1)
-            -- Axiom: g(X1) => h(X1)
-            -- Start pattern: f(V1)
-            -- Expected: f(V1)
-            (assertEqualWithExplanation ""
-                ( ExpandedPattern
-                    { term = asPureMetaPattern (metaF (v1 PatternSort))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , StepProofCombined []
-                )
-                (runStepsPickFirst
-                    mockMetadataTools
-                    (MaxStepCount 0)
-                    ExpandedPattern
-                        { term = asPureMetaPattern (metaF (v1 PatternSort))
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    [ AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern (metaF (x1 PatternSort))
-                        , axiomPatternRight =
-                            asPureMetaPattern (metaG (x1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    , AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern (metaG (x1 PatternSort))
-                        , axiomPatternRight =
-                            asPureMetaPattern (metaH (x1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomAttributes = def
-                        }
-                    ]
-                )
-            )
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+
+expectFailSimple :: [(CommonExpandedPattern Meta, StepProof Meta)]
+expectFailSimple = [ (initialFailSimple, mempty) ]
+
+actualFailSimple :: [(CommonExpandedPattern Meta, StepProof Meta)]
+actualFailSimple =
+    runStep
+        mockMetadataTools
+        initialFailSimple
+        [ AxiomPattern
+            { axiomPatternLeft =
+                asPureMetaPattern
+                    (metaSigma (x1 PatternSort) (x1 PatternSort))
+            , axiomPatternRight =
+                asPureMetaPattern (x1 PatternSort)
+            , axiomPatternRequires = makeTruePredicate
+            , axiomPatternAttributes = def
+            }
         ]
 
-mockStepperAttributes :: StepperAttributes
-mockStepperAttributes = StepperAttributes
-    { isConstructor = True
-    , isFunctional = True
-    , isFunction = False
-    , hook = def
-    }
+initialFailCycle :: ExpandedPattern Meta Variable
+initialFailCycle =
+    ExpandedPattern
+        { term =
+            asPureMetaPattern
+                ( metaSigma
+                    (a1 PatternSort)
+                    (a1 PatternSort)
+                )
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+
+expectFailCycle :: [(CommonExpandedPattern Meta, StepProof Meta)]
+expectFailCycle = [ (initialFailCycle, mempty) ]
+
+actualFailCycle :: [(CommonExpandedPattern Meta, StepProof Meta)]
+actualFailCycle =
+    runStep
+        mockMetadataTools
+        initialFailCycle
+        [ AxiomPattern
+            { axiomPatternLeft =
+                asPureMetaPattern
+                    (metaSigma
+                        (metaF (x1 PatternSort))
+                        (x1 PatternSort)
+                    )
+            , axiomPatternRight =
+                asPureMetaPattern (x1 PatternSort)
+            , axiomPatternRequires = makeTruePredicate
+            , axiomPatternAttributes = def
+            }
+        ]
+
+initialIdentity :: ExpandedPattern Meta Variable
+initialIdentity =
+    ExpandedPattern
+        { term = asPureMetaPattern (v1 PatternSort)
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+
+expectIdentity :: [(CommonExpandedPattern Meta, StepProof Meta)]
+expectIdentity =
+    [
+        ( initialIdentity
+        , (mconcat . map stepProof)
+            [ StepProofVariableRenamings
+                [ variableRenaming (x1 PatternSort) (var_0 PatternSort) ]
+            , StepProofUnification
+                ( proposition_5_24_3
+                    [ functionalVariable (v1 PatternSort) ]
+                    (var_0 PatternSort)
+                    (v1 PatternSort)
+                )
+            , StepProofSimplification SimplificationProof
+            ]
+        )
+    ]
+
+actualIdentity :: [(CommonExpandedPattern Meta, StepProof Meta)]
+actualIdentity =
+    runStep
+        mockMetadataTools
+        initialIdentity
+        [ rewriteIdentity ]
+
+test_stepStrategy :: [TestTree]
+test_stepStrategy =
+    [ testCase "Applies a simple axiom"
+        -- Axiom: X1 => X1
+        -- Start pattern: V1
+        -- Expected: V1
+        (assertEqualWithExplanation "" expectIdentity actualIdentity)
+    , testCase "Applies two simple axioms"
+        -- Axiom: X1 => X1
+        -- Axiom: X1 => implies(X1, X1)
+        -- Start pattern: V1
+        -- Expected: V1
+        -- Expected: implies(V1, V1)
+        (assertEqualWithExplanation "" expectTwoAxioms actualTwoAxioms)
+    , testCase "Fails to apply a simple axiom"
+        -- Axiom: sigma(X1, X1) => X1
+        -- Start pattern: sigma(f(A1), g(B1))
+        -- Expected: empty result list
+        (assertEqualWithExplanation "" expectFailSimple actualFailSimple)
+    , testCase "Fails to apply a simple axiom due to cycle."
+        -- Axiom: sigma(f(X1), X1) => X1
+        -- Start pattern: sigma(A1, A1)
+        -- Expected: empty result list
+        (assertEqualWithExplanation "" expectFailCycle actualFailCycle)
+    ]
+
+test_simpleStrategy :: [TestTree]
+test_simpleStrategy =
+    [ testCase "Runs one step"
+        -- Axiom: f(X1) => g(X1)
+        -- Start pattern: f(V1)
+        -- Expected: g(V1)
+        (assertEqualWithExplanation "" expectOneStep actualOneStep)
+    , testCase "Runs two steps"
+        -- Axiom: f(X1) => g(X1)
+        -- Axiom: g(X1) => h(X1)
+        -- Start pattern: f(V1)
+        -- Expected: h(V1)
+        (assertEqualWithExplanation "" expectTwoSteps actualTwoSteps)
+    , testCase "Obeys step limit"
+        -- Axiom: f(X1) => g(X1)
+        -- Axiom: g(X1) => h(X1)
+        -- Start pattern: f(V1)
+        -- Expected: g(V1)
+        (assertEqualWithExplanation "" expectStepLimit actualStepLimit)
+    , testCase "0 step limit"
+        -- Axiom: f(X1) => g(X1)
+        -- Axiom: g(X1) => h(X1)
+        -- Start pattern: f(V1)
+        -- Expected: f(V1)
+        (assertEqualWithExplanation "" expectZeroStepLimit actualZeroStepLimit)
+    ]
+
+axiomsSimpleStrategy :: [AxiomPattern Meta]
+axiomsSimpleStrategy =
+    [ AxiomPattern
+        { axiomPatternLeft =
+            asPureMetaPattern (metaF (x1 PatternSort))
+        , axiomPatternRight =
+            asPureMetaPattern (metaG (x1 PatternSort))
+        , axiomPatternRequires = makeTruePredicate
+        , axiomPatternAttributes = def
+        }
+    , AxiomPattern
+        { axiomPatternLeft =
+            asPureMetaPattern (metaG (x1 PatternSort))
+        , axiomPatternRight =
+            asPureMetaPattern (metaH (x1 PatternSort))
+        , axiomPatternRequires = makeTruePredicate
+        , axiomPatternAttributes = def
+        }
+    ]
+
+expectOneStep :: (ExpandedPattern Meta Variable, StepProof Meta)
+expectOneStep =
+    ( ExpandedPattern
+        { term = asPureMetaPattern (metaG (v1 PatternSort))
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+    , mconcat
+        (map stepProof
+            [ StepProofVariableRenamings
+                [ variableRenaming
+                    (x1 PatternSort) (var_0 PatternSort)
+                ]
+            , StepProofUnification
+                (AndDistributionAndConstraintLifting
+                    fSymbol
+                    [ proposition_5_24_3
+                        [ functionalVariable (v1 PatternSort) ]
+                        (var_0 PatternSort)
+                        (v1 PatternSort)
+                    ]
+                )
+            , StepProofSimplification SimplificationProof
+            ]
+        )
+    )
+
+actualOneStep :: (CommonExpandedPattern Meta, StepProof Meta)
+actualOneStep =
+    runSteps
+        mockMetadataTools
+        Unlimited
+        ExpandedPattern
+            { term = asPureMetaPattern (metaF (v1 PatternSort))
+            , predicate = makeTruePredicate
+            , substitution = []
+            }
+        [ AxiomPattern
+            { axiomPatternLeft =
+                asPureMetaPattern (metaF (x1 PatternSort))
+            , axiomPatternRight =
+                asPureMetaPattern (metaG (x1 PatternSort))
+            , axiomPatternRequires = makeTruePredicate
+            , axiomPatternAttributes = def
+            }
+        ]
+
+expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Meta)
+expectTwoSteps =
+    ( ExpandedPattern
+        { term = asPureMetaPattern (metaH (v1 PatternSort))
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+    , (mconcat . map stepProof)
+        [ StepProofVariableRenamings
+            [ variableRenaming
+                (x1 PatternSort) (var_0 PatternSort)
+            ]
+        , StepProofUnification
+            (AndDistributionAndConstraintLifting
+                fSymbol
+                [ proposition_5_24_3
+                    [ functionalVariable (v1 PatternSort) ]
+                    (var_0 PatternSort)
+                    (v1 PatternSort)
+                ]
+            )
+        , StepProofSimplification SimplificationProof
+        , StepProofVariableRenamings
+            [ variableRenaming
+                (x1 PatternSort) (var_3 PatternSort)
+            ]
+        , StepProofUnification
+            (AndDistributionAndConstraintLifting
+                gSymbol
+                [ proposition_5_24_3
+                    [ functionalVariable (v1 PatternSort) ]
+                    (var_3 PatternSort)
+                    (v1 PatternSort)
+                ]
+            )
+        , StepProofSimplification SimplificationProof
+        ]
+    )
+
+actualTwoSteps :: (CommonExpandedPattern Meta, StepProof Meta)
+actualTwoSteps =
+    runSteps
+        mockMetadataTools
+        Unlimited
+        ExpandedPattern
+            { term = asPureMetaPattern (metaF (v1 PatternSort))
+            , predicate = makeTruePredicate
+            , substitution = []
+            }
+        axiomsSimpleStrategy
+
+
+expectZeroStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta)
+expectZeroStepLimit =
+        ( ExpandedPattern
+            { term = asPureMetaPattern (metaF (v1 PatternSort))
+            , predicate = makeTruePredicate
+            , substitution = []
+            }
+        , mempty
+        )
+
+actualZeroStepLimit :: (CommonExpandedPattern Meta, StepProof Meta)
+actualZeroStepLimit =
+    runSteps
+        mockMetadataTools
+        (Limit 0)
+        ExpandedPattern
+            { term = asPureMetaPattern (metaF (v1 PatternSort))
+            , predicate = makeTruePredicate
+            , substitution = []
+            }
+        axiomsSimpleStrategy
+
+expectStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta)
+expectStepLimit =
+    ( ExpandedPattern
+        { term = asPureMetaPattern (metaG (v1 PatternSort))
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
+    , (mconcat . map stepProof)
+        [ StepProofVariableRenamings
+            [ variableRenaming
+                (x1 PatternSort) (var_0 PatternSort)
+            ]
+        , StepProofUnification
+            (AndDistributionAndConstraintLifting
+                fSymbol
+                [ proposition_5_24_3
+                    [ functionalVariable (v1 PatternSort) ]
+                    (var_0 PatternSort)
+                    (v1 PatternSort)
+                ]
+            )
+        , StepProofSimplification SimplificationProof
+        ]
+    )
+
+actualStepLimit :: (CommonExpandedPattern Meta, StepProof Meta)
+actualStepLimit =
+    runSteps
+        mockMetadataTools
+        (Limit 1)
+        ExpandedPattern
+            { term = asPureMetaPattern (metaF (v1 PatternSort))
+            , predicate = makeTruePredicate
+            , substitution = []
+            }
+        axiomsSimpleStrategy
 
 mockSortTools :: SortTools Meta
 mockSortTools = const ApplicationSorts
@@ -527,7 +484,8 @@ mockSortTools = const ApplicationSorts
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { attributes = const mockStepperAttributes
+    { symAttributes = const Mock.constructorFunctionalAttributes
+    , sortAttributes = const Mock.constructorFunctionalAttributes
     , sortTools = mockSortTools
     }
 
@@ -655,27 +613,34 @@ runStep
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [AxiomPattern level]
-    -> (CommonOrOfExpandedPattern level, StepProof level)
+    -> [(CommonExpandedPattern level, StepProof level)]
 runStep metadataTools configuration axioms =
-    either (error . printError) id
+    pickStuck
         $ evalSimplifier
-        $ step
-            metadataTools
-            Map.empty
-            axioms
-            (OrOfExpandedPattern.make [configuration])
+        $ runStrategy
+            (transitionRule metadataTools simplifier)
+            (stepStrategy axioms)
+            Unlimited
+            (configuration, mempty)
+  where
+    simplifier = Simplifier.create metadataTools Map.empty
 
-runStepsPickFirst
+runSteps
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> MaxStepCount
+    -> Limit Natural
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [AxiomPattern level]
     -> (CommonExpandedPattern level, StepProof level)
-runStepsPickFirst metadataTools maxStepCount configuration axioms =
-    either (error . printError) id
+runSteps metadataTools stepLimit configuration axioms =
+    pickLongest
         $ evalSimplifier
-        $ pickFirstStepper
-            metadataTools Map.empty axioms maxStepCount configuration
+        $ runStrategy
+            (transitionRule metadataTools simplifier)
+            (simpleStrategy axioms)
+            stepLimit
+            (configuration, mempty)
+  where
+    simplifier = Simplifier.create metadataTools Map.empty

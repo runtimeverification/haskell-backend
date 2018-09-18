@@ -2,7 +2,7 @@
 Module      : Kore.Step.Merging.ExpandedPattern
 Description : Tools for merging ExpandedPatterns with various stuff.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -11,9 +11,8 @@ module Kore.Step.Merging.ExpandedPattern
     ( mergeWithPredicateSubstitution
     ) where
 
-import qualified Control.Monad.Except as Except
-import           Data.Reflection
-                 ( give )
+import Data.Reflection
+       ( give )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -32,19 +31,15 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, Simplifier,
-                 SimplificationProof (SimplificationProof) )
+                 ( PureMLPatternSimplifier,
+                 SimplificationProof (SimplificationProof), Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
-
+import           Kore.Variables.Fresh
 
 {-| 'mergeWithPredicateSubstitution' ands the given predicate-substitution
 with the given pattern.
@@ -56,7 +51,7 @@ mergeWithPredicateSubstitution
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -86,21 +81,17 @@ mergeWithPredicateSubstitution
             , substitution = mergedSubstitution
             }
         , _proof ) <-
-            Except.lift
-                (mergePredicatesAndSubstitutions
-                    tools
-                    [pattPredicate, conditionToMerge]
-                    [pattSubstitution, substitutionToMerge]
-                )
+            mergePredicatesAndSubstitutions
+                tools
+                [pattPredicate, conditionToMerge]
+                [pattSubstitution, substitutionToMerge]
     (evaluatedCondition, _) <-
         give (MetadataTools.sortTools tools)
             $ Predicate.evaluate simplifier mergedCondition
-    Except.lift
-        (mergeWithEvaluatedCondition
-            tools
-            patt {substitution = mergedSubstitution}
-            evaluatedCondition
-        )
+    mergeWithEvaluatedCondition
+        tools
+        patt {substitution = mergedSubstitution}
+        evaluatedCondition
 
 mergeWithEvaluatedCondition
     ::  ( MetaOrObject level
@@ -109,13 +100,13 @@ mergeWithEvaluatedCondition
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level variable
     -> PredicateSubstitution level variable
-    -> IntCounter (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
     ExpandedPattern

@@ -1,23 +1,24 @@
 module Test.Kore.Proof.ExampleProofs (test_exampleProofs) where
 
-import           Test.Tasty                           (TestTree, testGroup)
-import           Test.Tasty.HUnit                     (Assertion, assertEqual,
-                                                       testCase)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
+       ( Assertion, assertEqual, testCase )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import Kore.AST.Common
+import Kore.AST.MetaOrObject
 
-import           Kore.ASTUtils.SmartConstructors
-import           Kore.ASTUtils.SmartPatterns
+import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 
-import           Kore.Proof.FunctionalityAxioms
-import           Kore.Proof.Proof
-import           Kore.Proof.Dummy
+import Kore.Proof.Dummy
+import Kore.Proof.FunctionalityAxioms
+import Kore.Proof.Proof
 
-import           Kore.Proof.Unification
-import           Kore.Proof.LineBasedProof
+import Kore.Proof.LineBasedProof
+import Kore.Proof.Unification
 
-import           Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc
 
 test_exampleProofs :: TestTree
 test_exampleProofs = testGroup "exampleProofs" $

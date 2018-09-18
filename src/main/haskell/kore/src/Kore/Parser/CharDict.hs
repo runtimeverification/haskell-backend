@@ -3,7 +3,7 @@ Module      : Kore.Parser.CharSet
 Description : Efficient representation for a dictionary having extended ASCII
               characters as keys. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX

@@ -11,26 +11,26 @@ import           Options.Applicative
                  ( InfoMod, Parser, argument, fullDesc, header, help, long,
                  metavar, progDesc, str, strOption, value )
 
-import Kore.AST.Kore
-       ( CommonKorePattern )
-import Kore.AST.Sentence
-       ( KoreDefinition, ModuleName (..) )
-import Kore.ASTPrettyPrint
-       ( prettyPrintToString )
-import Kore.ASTVerifier.DefinitionVerifier
-       ( AttributesVerification (DoNotVerifyAttributes),
-       defaultAttributesVerification, verifyAndIndexDefinition )
-import Kore.ASTVerifier.PatternVerifier
-       ( verifyStandalonePattern )
+import           Kore.AST.Kore
+                 ( CommonKorePattern )
+import           Kore.AST.Sentence
+                 ( KoreDefinition, ModuleName (..) )
+import           Kore.ASTPrettyPrint
+                 ( prettyPrintToString )
+import           Kore.ASTVerifier.DefinitionVerifier
+                 ( AttributesVerification (DoNotVerifyAttributes),
+                 defaultAttributesVerification, verifyAndIndexDefinition )
+import           Kore.ASTVerifier.PatternVerifier
+                 ( verifyStandalonePattern )
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-       ( printError )
-import Kore.IndexedModule.IndexedModule
-       ( KoreIndexedModule )
-import Kore.Parser.Parser
-       ( fromKore, fromKorePattern )
-import Kore.Step.StepperAttributes
-       ( StepperAttributes )
+import           Kore.Error
+                 ( printError )
+import           Kore.IndexedModule.IndexedModule
+                 ( KoreIndexedModule )
+import           Kore.Parser.Parser
+                 ( fromKore, fromKorePattern )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,

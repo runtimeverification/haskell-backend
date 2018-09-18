@@ -18,8 +18,6 @@ import           Kore.AST.PureML
                  ( CommonPurePattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr, mkVar )
-import           Kore.Error
-                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SortTools )
 import           Kore.Predicate.Predicate
@@ -244,7 +242,7 @@ axiomEvaluator left right =
                 { axiomPatternLeft  = left
                 , axiomPatternRight = right
                 , axiomPatternRequires = makeTruePredicate
-                , axiomAttributes = def
+                , axiomPatternAttributes = def
                 }
         )
 
@@ -273,7 +271,7 @@ evaluate
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 evaluate metadataTools functionIdToEvaluator patt =
-    either (error . printError) fst
+    fst
         $ evalSimplifier
         $ Pattern.simplify metadataTools functionIdToEvaluator patt
 

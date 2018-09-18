@@ -2,7 +2,7 @@
 Module      : Kore.Step.Function.UserDefined
 Description : Evaluates user-defined functions in a pattern.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -12,9 +12,8 @@ module Kore.Step.Function.UserDefined
     , axiomFunctionEvaluator
     ) where
 
-import qualified Control.Monad.Except as Except
-import           Data.Reflection
-                 ( give )
+import Data.Reflection
+       ( give )
 
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SortedVariable )
@@ -53,8 +52,7 @@ import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
+import           Kore.Variables.Fresh
 
 {-| 'axiomFunctionEvaluator' evaluates a user-defined function. After
 evaluating the function, it tries to re-evaluate all functions on the result.
@@ -84,7 +82,7 @@ axiomFunctionEvaluator
             return (AttemptedFunction.NotApplicable, SimplificationProof)
         Right stepPatternWithProof ->
             do
-                (stepPattern, _) <- Except.lift stepPatternWithProof
+                (stepPattern, _) <- stepPatternWithProof
                 (   rewrittenPattern@ExpandedPattern
                         { predicate = rewritingCondition }
                     , _
@@ -128,7 +126,7 @@ reevaluateFunctions
         , Show (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -179,7 +177,7 @@ evaluatePredicate
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -206,12 +204,11 @@ evaluatePredicate
             , substitution = mergedSubstitution
             }
         , _proof
-        ) <- Except.lift
-            (mergePredicatesAndSubstitutions
+        ) <-
+            mergePredicatesAndSubstitutions
                 tools
                 [evaluatedPredicate]
                 [substitution, evaluatedSubstitution]
-            )
     -- TODO(virgil): Do I need to re-evaluate the predicate?
     return
         ( ExpandedPattern

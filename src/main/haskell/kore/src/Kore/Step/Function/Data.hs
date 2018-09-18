@@ -2,7 +2,7 @@
 Module      : Kore.Step.Function.Data
 Description : Data structures used for function evaluation.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -27,8 +27,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import Kore.Step.Simplification.Data
-       ( PureMLPatternSimplifier, Simplifier,
-       SimplificationProof (..) )
+       ( PureMLPatternSimplifier, SimplificationProof (..), Simplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 

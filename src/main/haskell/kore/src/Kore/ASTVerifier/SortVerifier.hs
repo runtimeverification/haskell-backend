@@ -3,7 +3,7 @@
 Module      : Kore.ASTVerifier.SortVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sort'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -61,7 +61,7 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
     sortIsMeta = case asUnified sort of UnifiedObject _ -> False ; UnifiedMeta _ -> True
     sortName   = sortActualName sort
     sortId     = getId sortName
-    
+
 verifySortMatchesDeclaration
     :: MetaOrObject level
     => (Id level -> Either (Error VerifyError) (SortDescription level))

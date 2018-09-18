@@ -4,7 +4,7 @@ Module      : Kore.Unification.SubstitutionNormalization
 Description : Normalization for substitutions resulting from unification, so
               that they can be safely used on the unified term.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -43,24 +43,7 @@ import           Kore.Unification.Error
 import           Kore.Unification.UnifierImpl
                  ( UnificationSubstitution )
 import           Kore.Variables.Free
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
-import           Kore.Variables.Int
-                 ( IntVariable )
-
-instance
-    ( MetaOrObject level
-    , Ord (variable Object)
-    , Ord (variable Meta)
-    , Hashable variable
-    , IntVariable variable
-    )
-    => PatternSubstitutionClass
-        ListSubstitution.Substitution
-        variable
-        (Pattern level)
-        IntCounter
-  where
+import           Kore.Variables.Fresh
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
 in which no variable that occurs on the left hand side also occurs on the
@@ -78,14 +61,15 @@ normalizeSubstitution
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
+        , MonadCounter m
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
         (SubstitutionError level variable)
-        (IntCounter (PredicateSubstitution level variable))
+        (m (PredicateSubstitution level variable))
 normalizeSubstitution tools substitution = do
     sorted <- topologicalSortConverted
     let
@@ -139,7 +123,7 @@ checkApplicationConstructor
     -> Pattern level variable ()
     -> Either checkError ()
 checkApplicationConstructor tools err (ApplicationPattern (Application h _))
-    | isConstructor (attributes tools h) = return ()
+    | isConstructor (symAttributes tools h) = return ()
     | otherwise = Left err
 checkApplicationConstructor _ _ _ = return ()
 
@@ -158,12 +142,13 @@ normalizeSortedSubstitution
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , MonadCounter m
+        , FreshVariable variable
         )
     => UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> [(Unified variable, PureMLPattern level variable)]
-    -> IntCounter (PredicateSubstitution level variable)
+    -> m (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
     return PredicateSubstitution
         { predicate = makeTruePredicate

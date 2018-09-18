@@ -2,12 +2,15 @@
 Module      : Kore.Implicit.ImplicitSortsImpl
 Description : Infrastructure for defining the implicit Kore 'Meta' sorts.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
 module Kore.Implicit.ImplicitSortsImpl where
+
+import Data.Proxy
+       ( Proxy (..) )
 
 import Kore.AST.Builders
 import Kore.AST.Common
@@ -22,7 +25,7 @@ parameterizedEqualsAxiom
     -> MetaSentenceAxiom
 parameterizedEqualsAxiom parameters =
     parameterizedEqualsAxiom_ parameters
-        (sortParameter Meta "#esp" AstLocationImplicit)
+        (sortParameter Proxy "#esp" AstLocationImplicit)
 
 equalsAxiom
     :: MetaPatternStub

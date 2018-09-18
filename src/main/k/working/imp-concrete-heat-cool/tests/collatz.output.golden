@@ -1,0 +1,42 @@
+Lbl'-LT-'T'-GT-'{}(
+    Lbl'-LT-'k'-GT-'{}(dotk{}()),
+    Lbl'-LT-'state'-GT-'{}(
+        Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+            Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'StateKey'Unds'StateValue{}(
+                inj{SortId{}, SortStateKey{}}(\dv{SortId{}}("m")),
+                inj{SortInt{}, SortStateValue{}}(\dv{SortInt{}}("2"))
+            ),
+            Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+                Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'StateKey'Unds'StateValue{}(
+                    inj{SortId{}, SortStateKey{}}(\dv{SortId{}}("n")),
+                    inj{SortInt{}, SortStateValue{}}(\dv{SortInt{}}("1"))
+                ),
+                Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+                    Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'StateKey'Unds'StateValue{}(
+                        inj{SortId{}, SortStateKey{}}(\dv{SortId{}}("q")),
+                        inj{SortInt{}, SortStateValue{}}(\dv{SortInt{}}("1"))
+                    ),
+                    Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+                        Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'StateKey'Unds'StateValue{}(
+                            inj{SortId{}, SortStateKey{}}(\dv{SortId{}}("r")),
+                            inj{SortInt{}, SortStateValue{}}(
+                                \dv{SortInt{}}("3")
+                            )
+                        ),
+                        Lbl'UndsUndsUnds'STATE-API'UndsUnds'Assignment'Unds'State{}(
+                            Lbl'UndsPipe'-'-GT-UndsUnds'STATE-API'UndsUnds'StateKey'Unds'StateValue{}(
+                                inj{SortId{}, SortStateKey{}}(
+                                    \dv{SortId{}}("s")
+                                ),
+                                inj{SortInt{}, SortStateValue{}}(
+                                    \dv{SortInt{}}("66")
+                                )
+                            ),
+                            Lbl'Stop'State'Unds'STATE-API'Unds'{}()
+                        )
+                    )
+                )
+            )
+        )
+    )
+)

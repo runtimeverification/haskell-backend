@@ -1,8 +1,8 @@
 {-|
-Module      : Kore.Simplification.Pattern
+Module      : Kore.Step.Simplification.Pattern
 Description : Tools for Pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -80,8 +80,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
+import           Kore.Variables.Fresh
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -96,7 +95,9 @@ simplify
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , Show (variable Meta)
+        , Show (variable Object)
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -125,7 +126,9 @@ simplifyToOr
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , Show (variable Meta)
+        , Show (variable Object)
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -157,7 +160,9 @@ simplifyInternal
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , Show (variable Meta)
+        , Show (variable Object)
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -191,7 +196,7 @@ simplifyInternal
         CeilPattern p -> return $ Ceil.simplify tools p
         DomainValuePattern p -> return $ DomainValue.simplify p
         EqualsPattern p -> Equals.simplify tools p
-        ExistsPattern p -> return $ Exists.simplify p
+        ExistsPattern p -> Exists.simplify tools simplifier p
         FloorPattern p -> return $ Floor.simplify p
         ForallPattern p -> return $ Forall.simplify p
         IffPattern p -> return $ Iff.simplify p

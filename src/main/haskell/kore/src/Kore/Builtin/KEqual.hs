@@ -2,7 +2,7 @@
 Module      : Kore.Builtin.KEqual
 Description : Built-in KEQUAL operations
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -25,7 +25,7 @@ import           Data.Map
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Application(..), Variable (..) )
+                 ( Application (..), Variable (..) )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.PureML
@@ -33,19 +33,17 @@ import           Kore.AST.PureML
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Error
-                 ( unificationToStepError )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..), AttemptedFunction (..),
                  notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
+import qualified Kore.Step.Simplification.Equals as Equals
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Unification.Unifier
-                 ( unificationProcedure )
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -64,7 +62,9 @@ symbolVerifiers =
     trivialVerifier :: Builtin.SortVerifier
     trivialVerifier = const $ const $ Right ()
 
-{- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
+{- | @builtinFunctions@ defines the hooks for @KEQUAL.eq@ and @KEQUAL.neq@
+which can take arbitrary terms (of the same sort) and check whether they are
+equal or not, producing a builtin boolean value.
  -}
 builtinFunctions :: Map String Builtin.Function
 builtinFunctions =
@@ -92,18 +92,14 @@ evalKEq true false tools _ pat =
             } -> evalEq resultSort t1 t2
         _ -> notApplicableFunctionEvaluator
   where
-    evalEq resultSort t1 t2 =
-        case unificationProcedure tools t1 t2 of
-            Right (subst, predicate, _)
-                | Predicate.isFalse predicate ->
-                    purePatternFunctionEvaluator
-                        (Bool.asPattern resultSort false)
-                | null subst ->
-                    purePatternFunctionEvaluator
-                        (Bool.asPattern resultSort true)
-                | otherwise -> notApplicableFunctionEvaluator
-            Left err -> case unificationToStepError () (Left err) of
-                Right () ->
-                    purePatternFunctionEvaluator
-                        (Bool.asPattern resultSort false)
-                Left _ -> notApplicableFunctionEvaluator
+    evalEq resultSort t1 t2 = do
+        (result, _proof) <- Equals.makeEvaluate tools ep1 ep2
+        if OrOfExpandedPattern.isTrue result
+            then purePatternFunctionEvaluator (Bool.asPattern resultSort true)
+        else if OrOfExpandedPattern.isFalse result
+            then purePatternFunctionEvaluator (Bool.asPattern resultSort false)
+        else notApplicableFunctionEvaluator
+      where
+        ep1 = ExpandedPattern.fromPurePattern t1
+        ep2 = ExpandedPattern.fromPurePattern t2
+

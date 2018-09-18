@@ -6,10 +6,11 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import           Data.Default
-                 ( Default (..) )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
+import           Data.Proxy
+                 ( Proxy (..) )
 
 import           Kore.AST.Builders
 import           Kore.AST.Common
@@ -55,7 +56,7 @@ axiomPatternsUnitTests =
                     { axiomPatternLeft = extractPurePattern varI1
                     , axiomPatternRight = extractPurePattern varI2
                     , axiomPatternRequires = wrapPredicate topAInt
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 )
                 ( koreSentenceToAxiomPattern Object
@@ -75,7 +76,7 @@ axiomPatternsUnitTests =
                     { axiomPatternLeft = extractPurePattern varI1
                     , axiomPatternRight = extractPurePattern varI2
                     , axiomPatternRequires = wrapPredicate topAInt
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 ]
                 ( koreIndexedModuleToAxiomPatterns Object
@@ -218,7 +219,7 @@ axiomPatternsIntegrationTests =
                           , varStateCell
                           ]
                     , axiomPatternRequires = wrapPredicate topTCell
-                    , axiomAttributes = def
+                    , axiomPatternAttributes = def
                     }
                 )
                 (koreSentenceToAxiomPattern Object =<< parseAxiom
@@ -280,7 +281,7 @@ sortAExp = simpleSort (SortName "AExp")
 sortBExp = simpleSort (SortName "BExp")
 
 sortParam :: String -> SortVariable Object
-sortParam name = sortParameter Object name AstLocationTest
+sortParam name = sortParameter Proxy name AstLocationTest
 
 sortParamSort :: String -> Sort Object
 sortParamSort = SortVariableSort . sortParam

@@ -2,7 +2,7 @@
 Module      : Kore.Builtin.Bool
 Description : Built-in Boolean sort
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable

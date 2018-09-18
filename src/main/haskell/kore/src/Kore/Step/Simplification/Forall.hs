@@ -1,14 +1,15 @@
 {-|
-Module      : Kore.Simplification.Forall
+Module      : Kore.Step.Simplification.Forall
 Description : Tools for Forall pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Forall
     ( simplify
+    , makeEvaluate
     ) where
 
 import Data.Reflection
@@ -26,11 +27,12 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), toMLPattern )
+                 ( ExpandedPattern (..), bottom, isBottom, isTop, toMLPattern,
+                 top )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue, make, toExpandedPattern )
+                 ( fmapWithPairs, isFalse, isTrue )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
@@ -41,6 +43,15 @@ import           Kore.Step.Simplification.Data
 child.
 
 Right now this has special cases only for top and bottom children.
+
+Note that while forall x . phi(x) and [x=alpha] can be simplified
+(it's bottom if x's sort is multivalued and alpha is not the 'x' pattern or
+the identity function applied to the pattern x, or phi(alpha) otherwise),
+we only expect forall usage for symbolic variables, so we won't attempt to
+simplify it this way.
+
+For this reason, we don't even try to see if the variable actually occurs in
+the pattern except for the top/bottom cases.
 -}
 simplify
     ::  ( MetaOrObject level
@@ -56,9 +67,9 @@ simplify
 simplify
     Forall { forallVariable = variable, forallChild = child }
   =
-    simplifyEvaluatedForall variable child
+    simplifyEvaluated variable child
 
-simplifyEvaluatedForall
+simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Given (SortTools level)
@@ -68,20 +79,46 @@ simplifyEvaluatedForall
     => variable level
     -> OrOfExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluatedForall variable simplified
+simplifyEvaluated variable simplified
   | OrOfExpandedPattern.isTrue simplified = (simplified, SimplificationProof)
   | OrOfExpandedPattern.isFalse simplified = (simplified, SimplificationProof)
   | otherwise =
-    ( OrOfExpandedPattern.make
-        [ ExpandedPattern
-            { term = mkForall
-                variable
-                (ExpandedPattern.toMLPattern
-                    (OrOfExpandedPattern.toExpandedPattern simplified)
-                )
-            , predicate = makeTruePredicate
-            , substitution = []
-            }
-        ]
+    let
+        (patt, _proofs) =
+            OrOfExpandedPattern.fmapWithPairs (makeEvaluate variable) simplified
+      in
+        ( patt
+        , SimplificationProof
+        )
+
+{-| evaluates an 'Forall' given its two 'ExpandedPattern' children.
+
+See 'simplify' for detailed documentation.
+-}
+makeEvaluate
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Given (SortTools level)
+        , Show (variable level)
+        , Eq (variable level)
+        )
+    => variable level
+    -> ExpandedPattern level variable
+    -> (ExpandedPattern level variable, SimplificationProof level)
+makeEvaluate variable patt
+  | ExpandedPattern.isTop patt =
+    (ExpandedPattern.top, SimplificationProof)
+  | ExpandedPattern.isBottom patt =
+    ( ExpandedPattern.bottom
+    , SimplificationProof
+    )
+  | otherwise =
+    ( ExpandedPattern
+        { term = mkForall
+            variable
+            (ExpandedPattern.toMLPattern patt)
+        , predicate = makeTruePredicate
+        , substitution = []
+        }
     , SimplificationProof
     )

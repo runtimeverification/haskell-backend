@@ -2,41 +2,27 @@
 Module      : Kore.Step.Simplification.Data
 Description : Data structures used for term simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Data
-    ( SimplificationError
-    , Simplifier
+    ( Simplifier
+    , runSimplifier
     , evalSimplifier
     , PureMLPatternSimplifier (..)
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
     ) where
 
-import Control.Monad.Except
-       ( ExceptT, runExceptT )
-
 import Kore.AST.Common
        ( Variable )
 import Kore.AST.PureML
        ( PureMLPattern )
-import Kore.Error
-       ( Error )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
-import Kore.Variables.Fresh.IntCounter
-       ( IntCounter, runIntCounter )
-
-
-{- | A tag for errors during simplification
-
-  See also: 'Error'
-
- -}
-data SimplificationError
+import Kore.Variables.Fresh
 
 {-| 'SimplificationProof' is a placeholder for proofs showing that the
 simplification of a MetaMLPattern was correct.
@@ -44,23 +30,30 @@ simplification of a MetaMLPattern was correct.
 data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
-{- | The concrete monad in which simplification occurs.
+type Simplifier = Counter
+
+{- | Run a simplifier computation.
+
+  The result is returned along with the final 'Counter'.
 
  -}
--- TODO (thomas.tuegel): Replace IntCounter with a single state carrying both
--- the counter and the proof.
--- TODO (thomas.tuegel): Lift the StateT to the outer level.
-type Simplifier = ExceptT (Error SimplificationError) IntCounter
+runSimplifier
+    :: Simplifier a
+    -- ^ simplifier computation
+    -> Natural
+    -- ^ initial counter for fresh variables
+    -> (a, Natural)
+runSimplifier = runCounter
 
 {- | Evaluate a simplifier computation.
 
-  Only the result (or error) is returned. The 'IntCounter' is discarded.
+  Only the result is returned. The 'IntCounter' is discarded.
 
   -}
-evalSimplifier :: Simplifier a -> Either (Error SimplificationError) a
-evalSimplifier simp =
+evalSimplifier :: Simplifier a -> a
+evalSimplifier simplifier =
     let
-        (result, _) = runIntCounter (runExceptT simp) 0
+        (result, _) = runSimplifier simplifier 0
     in
       result
 

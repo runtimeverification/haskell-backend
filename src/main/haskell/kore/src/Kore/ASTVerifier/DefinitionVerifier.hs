@@ -2,7 +2,7 @@
 Module      : Kore.ASTVerifier.DefinitionVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Definiton'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -22,18 +22,18 @@ import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy )
 
-import Kore.AST.Common
-import Kore.AST.Sentence
-import Kore.ASTVerifier.AttributesVerifier
-import Kore.ASTVerifier.Error
-import Kore.ASTVerifier.ModuleVerifier
-import Kore.Attribute.Parser
-       ( ParseAttributes (..) )
+import           Kore.AST.Common
+import           Kore.AST.Sentence
+import           Kore.ASTVerifier.AttributesVerifier
+import           Kore.ASTVerifier.Error
+import           Kore.ASTVerifier.ModuleVerifier
+import           Kore.Attribute.Parser
+                 ( ParseAttributes (..) )
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-import Kore.Implicit.Definitions
-       ( uncheckedKoreModules )
-import Kore.IndexedModule.IndexedModule
+import           Kore.Error
+import           Kore.Implicit.Definitions
+                 ( uncheckedKoreModules )
+import           Kore.IndexedModule.IndexedModule
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 

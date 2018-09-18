@@ -2,7 +2,7 @@
 Module      : Kore.MetaML.Builders
 Description : Safe way to build larger 'level' patterns from components.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -58,7 +58,7 @@ import Kore.Error
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}
-sortParameter :: level -> String -> AstLocation -> SortVariable level
+sortParameter :: Proxy level -> String -> AstLocation -> SortVariable level
 sortParameter _ name location =
     SortVariable Id
         { getId = name

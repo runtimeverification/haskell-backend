@@ -2,7 +2,7 @@
 Module      : Kore.Builtin.Map
 Description : Built-in arbitrary-precision integer sort
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -34,9 +34,9 @@ import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Builtin.Hook
                  ( Hook (..) )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools(..) )
+                 ( MetadataTools (..) )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator(..),
+                 ( ApplicationFunctionEvaluator (..),
                  notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -115,7 +115,7 @@ isHook
     -> String
     -> Bool
 isHook tools sym hookName =
-    hook (attributes tools sym) == Hook (Just hookName)
+    hook (symAttributes tools sym) == Hook (Just hookName)
 
 evalBind :: Builtin.Function
 evalBind =

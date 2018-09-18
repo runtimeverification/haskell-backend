@@ -88,6 +88,8 @@ test_stepperAttributes =
                 { isFunction = True
                 , isFunctional = True
                 , isConstructor = False
+                , isInjective = False
+                , isSortInjection = False
                 , hook = (Hook . Just) "builtin"
                 })
             (parseStepperAttributes

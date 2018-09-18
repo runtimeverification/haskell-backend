@@ -19,7 +19,6 @@ import           Kore.ASTUtils.SmartConstructors
                  mkStringLiteral, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
-import qualified Kore.Error
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SortTools )
 import           Kore.Predicate.Predicate
@@ -357,11 +356,29 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "constructor1(a) vs constructor2(a) for patterns"
+    , testCase
+        "functionalconstructor1(a) vs functionalconstructor2(a) for patterns"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 []
             )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = functionalConstructor1OfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = functionalConstructor2OfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "constructor1(a) vs constructor2(a) for patterns"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make [])
             (evaluate
                 mockMetadataTools
                 ExpandedPattern
@@ -406,9 +423,37 @@ test_equalsSimplification = give mockSortTools
                 [ ExpandedPattern
                     { term = mkTop
                     , predicate =
-                        fst $ makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
-                            (makeEqualsPredicate fOfB gOfB)
+                        fst $ makeOrPredicate
+                            (fst $ makeAndPredicate
+                                (fst $ makeAndPredicate
+                                    (makeEqualsPredicate fOfA gOfA)
+                                    (makeEqualsPredicate fOfB gOfB)
+                                )
+                                (fst $ makeAndPredicate
+                                    (fst $ makeAndPredicate
+                                        (makeCeilPredicate fOfA)
+                                        (makeCeilPredicate fOfB)
+                                    )
+                                    (fst $ makeAndPredicate
+                                        (makeCeilPredicate gOfA)
+                                        (makeCeilPredicate gOfB)
+                                    )
+                                )
+                            )
+                            (fst $ makeAndPredicate
+                                (fst $ makeNotPredicate
+                                    (fst $ makeAndPredicate
+                                        (makeCeilPredicate fOfA)
+                                        (makeCeilPredicate fOfB)
+                                    )
+                                )
+                                (fst $ makeNotPredicate
+                                    (fst $ makeAndPredicate
+                                        (makeCeilPredicate gOfA)
+                                        (makeCeilPredicate gOfB)
+                                    )
+                                )
+                            )
                     , substitution = []
                     }
                 ]
@@ -416,12 +461,12 @@ test_equalsSimplification = give mockSortTools
             (evaluate
                 mockMetadataTools
                 ExpandedPattern
-                    { term = Mock.constr20 fOfA fOfB
+                    { term = Mock.functionalConstr20 fOfA fOfB
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 ExpandedPattern
-                    { term = Mock.constr20 gOfA gOfB
+                    { term = Mock.functionalConstr20 gOfA gOfB
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -495,18 +540,18 @@ test_equalsSimplification = give mockSortTools
             (evaluate
                 mockMetadataTools
                 ExpandedPattern
-                    { term = constructor1OfHOfA
+                    { term = Mock.functionalConstr10 hOfA
                     , predicate = makeEqualsPredicate fOfA fOfB
                     , substitution = []
                     }
                 ExpandedPattern
-                    { term = constructor1OfHOfB
+                    { term = Mock.functionalConstr10 hOfB
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = []
                     }
             )
         )
-    , testCase "equals(Mock.x, functional) becomes a substitution"
+    , testCase "equals(x, functional) becomes a substitution"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
@@ -554,6 +599,104 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
+    , testCase "equals(x, function) becomes a substitution + ceil"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate = makeCeilPredicate fOfA
+                    , substitution = [(Mock.x, fOfA)]
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = mkVar Mock.x
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = fOfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "equals(function, x) becomes a substitution + ceil"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate = makeCeilPredicate fOfA
+                    , substitution = [(Mock.x, fOfA)]
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = fOfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = mkVar Mock.x
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "equals(x, constructor) becomes a predicate"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate =
+                        makeEqualsPredicate (mkVar Mock.x) constructor1OfA
+                    , substitution = []
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = mkVar Mock.x
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = constructor1OfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "equals(something, x) becomes a predicate"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern
+                    { term = mkTop
+                    , predicate =
+                        makeEqualsPredicate constructor1OfA (mkVar Mock.x)
+                    , substitution = []
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                ExpandedPattern
+                    { term = constructor1OfA
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ExpandedPattern
+                    { term = mkVar Mock.x
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
     , testCase "equals(function, constructor) is not simplifiable"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
@@ -588,9 +731,11 @@ test_equalsSimplification = give mockSortTools
     hOfB = give mockSortTools $ Mock.h Mock.b
     functionalOfA = give mockSortTools $ Mock.functional10 Mock.a
     constructor1OfA = give mockSortTools $ Mock.constr10 Mock.a
-    constructor1OfHOfA = give mockSortTools $ Mock.constr10 hOfA
-    constructor1OfHOfB = give mockSortTools $ Mock.constr10 hOfB
     constructor2OfA = give mockSortTools $ Mock.constr11 Mock.a
+    functionalConstructor1OfA =
+        give mockSortTools $ Mock.functionalConstr10 Mock.a
+    functionalConstructor2OfA =
+        give mockSortTools $ Mock.functionalConstr11 Mock.a
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
         Mock.makeMetadataTools mockSortTools Mock.attributesMapping
@@ -617,9 +762,7 @@ evaluateOr
     -> Equals Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluateOr tools equals =
-    either (error . Kore.Error.printError) fst
-        $ evalSimplifier
-        $ simplify tools equals
+    fst $ evalSimplifier $ simplify tools equals
 
 evaluate
     :: MetadataTools Object StepperAttributes
@@ -635,7 +778,5 @@ evaluateGeneric
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 evaluateGeneric tools first second =
-    either (error . Kore.Error.printError) fst
-        $ evalSimplifier
-        $ makeEvaluate tools first second
+    fst $ evalSimplifier $ makeEvaluate tools first second
 

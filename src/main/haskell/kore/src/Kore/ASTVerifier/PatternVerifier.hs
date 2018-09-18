@@ -2,7 +2,7 @@
 Module      : Kore.ASTVerifier.PatternVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Pattern'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -15,9 +15,9 @@ module Kore.ASTVerifier.PatternVerifier
 
 import           Control.Monad
                  ( foldM, zipWithM_ )
-import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Functor.Foldable
-                 (Fix)
+                 ( Fix )
+import qualified Data.Functor.Foldable as Functor.Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc.Render.String

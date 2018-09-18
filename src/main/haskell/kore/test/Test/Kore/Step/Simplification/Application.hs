@@ -21,8 +21,6 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkApp, mkBottom )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
-import           Kore.Error
-                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -440,6 +438,6 @@ evaluate
     symbolIdToEvaluator
     application
   =
-    either (error . printError) fst
+    fst
         $ evalSimplifier
         $ simplify tools simplifier symbolIdToEvaluator application

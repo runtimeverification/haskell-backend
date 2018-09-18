@@ -4,7 +4,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Monad
                  ( when )
-import qualified Data.List as List
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -14,7 +13,8 @@ import           Data.Semigroup
                  ( (<>) )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
-                 long, metavar, option, progDesc, str, strOption, value )
+                 long, metavar, option, progDesc, readerError, str, strOption,
+                 value )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -56,8 +56,9 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.Step
-                 ( MaxStepCount (..), pickFirstStepper )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Unparser.Unparse
@@ -83,7 +84,9 @@ data KoreExecOptions = KoreExecOptions
     , isKProgram          :: !Bool
     -- ^ Whether the pattern file represents a program to be put in the
     -- initial configuration before execution
-    , maxStepCount        :: !MaxStepCount
+    , stepLimit           :: !(Limit Natural)
+    , strategy
+        :: !([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
     }
 
 -- | Command Line Argument Parser
@@ -106,8 +109,31 @@ commandLineParser =
     <*> enableDisableFlag "is-program"
         True False False
         "Whether the pattern represents a program."
-    <*> (MaxStepCount <$> depth <|> pure AnyStepCount)
+    <*> parseStepLimit
+    <*> parseStrategy
   where
+    parseStepLimit = Limit <$> depth <|> pure Unlimited
+    parseStrategy =
+        option readStrategy
+            (  metavar "STRATEGY"
+            <> long "strategy"
+            -- TODO (thomas.tuegel): Make defaultStrategy the default when it
+            -- works correctly.
+            <> value simpleStrategy
+            <> help "Select rewrites using STRATEGY."
+            )
+      where
+        readStrategy = do
+            strat <- str
+            case strat of
+                "simple" -> pure simpleStrategy
+                "default" -> pure defaultStrategy
+                _ ->
+                    let
+                        unknown = "Unknown strategy '" ++ strat ++ "'. "
+                        known = "Known strategies are: simple, default."
+                    in
+                        readerError (unknown ++ known)
     depth =
         option auto
             (  metavar "DEPTH"
@@ -137,7 +163,8 @@ main = do
         , patternFileName
         , mainModuleName
         , isKProgram
-        , maxStepCount
+        , stepLimit
+        , strategy
         }
       -> do
         parsedDefinition <- mainDefinitionParse definitionFileName
@@ -155,9 +182,9 @@ main = do
                         -- builtin functions
                         (Builtin.koreEvaluators indexedModule)
                 axiomPatterns =
-                    List.sort
-                        (koreIndexedModuleToAxiomPatterns Object indexedModule)
+                    koreIndexedModuleToAxiomPatterns Object indexedModule
                 metadataTools = constructorFunctions (extractMetadataTools indexedModule)
+                simplifier = Simplifier.create metadataTools functionRegistry
                 purePattern = makePurePattern parsedPattern
                 runningPattern =
                     if isKProgram
@@ -165,14 +192,16 @@ main = do
                             $ makeKInitConfig purePattern
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
-            finalExpandedPattern <- clockSomething "Executing"
-                    $ either (error . Kore.Error.printError) fst
+            (finalExpandedPattern, _) <-
+                clockSomething "Executing"
                     $ evalSimplifier
                     $ do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
                                 metadataTools
-                                functionRegistry
+                                (Simplifier.create
+                                    metadataTools functionRegistry
+                                )
                                 expandedPattern
                         let
                             initialPattern =
@@ -181,12 +210,11 @@ main = do
                                         (fst simplifiedPatterns) of
                                     [] -> ExpandedPattern.bottom
                                     (config : _) -> config
-                        pickFirstStepper
-                            metadataTools
-                            functionRegistry
-                            axiomPatterns
-                            maxStepCount
-                            initialPattern
+                        pickLongest <$> runStrategy
+                            (transitionRule metadataTools simplifier)
+                            (strategy axiomPatterns)
+                            stepLimit
+                            (initialPattern, mempty)
             putStrLn $ unparseToString
                 (ExpandedPattern.term finalExpandedPattern)
 
@@ -352,16 +380,22 @@ kItemSort = groundObjectSort "SortKItem"
 -- The function below works around several limitations of
 -- the current tool by tricking the tool into believing that
 -- functions are constructors (so that function patterns can match)
--- and that @inj@ is both functional and constructor.
+-- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions :: MetadataTools Object StepperAttributes -> MetadataTools Object StepperAttributes
 constructorFunctions tools =
     tools
-    { attributes = \h -> let atts = attributes tools h in
+    { symAttributes = \h -> let atts = symAttributes tools h in
         atts
-        { isConstructor = isConstructor atts || isFunction atts || isInj h
-        , isFunctional = isFunctional atts || isInj h
+        { isConstructor = isConstructor atts || isFunction atts || isCons h
+        , isFunctional = isFunctional atts || isCons h || isInj h
+        , isInjective =
+            isInjective atts || isFunction atts || isCons h || isInj h
+        , isSortInjection = isSortInjection atts || isInj h
         }
     }
   where
     isInj :: SymbolOrAlias Object -> Bool
-    isInj h = getId (symbolOrAliasConstructor h) `elem` ["inj","kseq","dotk"]
+    isInj h =
+        getId (symbolOrAliasConstructor h) == "inj"
+    isCons :: SymbolOrAlias Object -> Bool
+    isCons h = getId (symbolOrAliasConstructor h) `elem` ["kseq", "dotk"]
