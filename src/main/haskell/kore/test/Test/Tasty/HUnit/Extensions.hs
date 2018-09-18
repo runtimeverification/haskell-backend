@@ -1,15 +1,19 @@
 module Test.Tasty.HUnit.Extensions where
 
-import Control.Exception
-       ( SomeException, catch, evaluate )
-import Control.Monad
-import Data.CallStack
-import Data.Functor.Classes
-import Data.Functor.Foldable
-import Data.List
-       ( intercalate, isInfixOf )
 import Test.Tasty.HUnit
        ( assertBool, assertFailure )
+
+import           Control.Exception
+                 ( SomeException, catch, evaluate )
+import           Control.Monad
+import           Data.CallStack
+import qualified Data.Foldable as Foldable
+import           Data.Functor.Classes
+import           Data.Functor.Foldable
+import           Data.List
+                 ( intercalate, isInfixOf )
+import           Data.Sequence
+                 ( Seq )
 
 assertEqualWithPrinter
     :: (Eq a, HasCallStack)
@@ -256,6 +260,12 @@ instance EqualWithExplanation a => EqualWithExplanation [a]
 
     printWithExplanation a =
         "[" ++ intercalate ", " (map printWithExplanation a) ++ "]"
+
+instance EqualWithExplanation a => EqualWithExplanation (Seq a) where
+    compareWithExplanation expected actual =
+        compareWithExplanation (Foldable.toList expected) (Foldable.toList actual)
+
+    printWithExplanation = printWithExplanation . Foldable.toList
 
 instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
     => WrapperEqualWithExplanation (Fix thing)

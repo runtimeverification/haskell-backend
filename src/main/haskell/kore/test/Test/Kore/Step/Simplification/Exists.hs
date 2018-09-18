@@ -313,5 +313,9 @@ makeEvaluate
     -> CommonOrOfExpandedPattern level
 makeEvaluate tools variable child =
     fst $ evalSimplifier
-        $ Exists.makeEvaluate tools (Simplifier.create tools Map.empty) variable child
+        $ Exists.makeEvaluate
+            tools
+            (Simplifier.create tools Map.empty)
+            variable
+            child
 

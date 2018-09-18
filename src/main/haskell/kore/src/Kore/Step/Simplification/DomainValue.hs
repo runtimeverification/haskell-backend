@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.DomainValue
+Module      : Kore.Step.Simplification.DomainValue
 Description : Tools for DomainValue pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA

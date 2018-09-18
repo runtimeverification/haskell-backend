@@ -4,26 +4,26 @@ module Test.Kore.SMT.SMT where
 import Test.QuickCheck
        ( Property, (===) )
 
-import           Data.Map
-import           Data.Reflection
+import Data.Map
+import Data.Reflection
 
 
-import           Kore.AST.PureML
-import           Kore.AST.Sentence
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-import           Kore.ASTUtils.SmartPatterns
-import           Kore.Proof.Dummy
+import Kore.AST.MetaOrObject
+import Kore.AST.PureML
+import Kore.AST.Sentence
+import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
+import Kore.Proof.Dummy
 
 
-import           Kore.IndexedModule.IndexedModule
-import           Kore.IndexedModule.MetadataTools
-import           Kore.SMT.SMT
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.MetadataTools
+import Kore.SMT.SMT
 
-import           Test.Kore.Builtin.Int hiding 
-                 ( intModule, indexedModules )
-import           Test.Kore.Builtin.Bool 
-                 ( boolSort ) 
+import Test.Kore.Builtin.Bool
+       ( boolSort )
+import Test.Kore.Builtin.Int hiding
+       ( indexedModules, intModule )
 
 indexedModules :: Map ModuleName (KoreIndexedModule SMTAttributes)
 indexedModules = verify intDefinition
@@ -90,15 +90,15 @@ run :: CommonPurePattern Object -> Property
 run prop = (give tools $ provePattern prop) === Just True
 
 prop1 :: CommonPurePattern Object
-prop1 = dummyEnvironment $ mkNot $ 
-  App_ ltSymbol [a, intLiteral 0] 
-  `mkAnd` 
+prop1 = dummyEnvironment $ mkNot $
+  App_ ltSymbol [a, intLiteral 0]
+  `mkAnd`
   App_ ltSymbol [intLiteral 0, a]
 
 prop2 :: CommonPurePattern Object
-prop2 = dummyEnvironment $ mkNot $ 
+prop2 = dummyEnvironment $ mkNot $
   App_ ltSymbol [a `plus` a, a `plus` b]
-  `mkAnd` 
+  `mkAnd`
   App_ ltSymbol [b `plus` b, a `plus` b]
 
 prop3 :: CommonPurePattern Object
@@ -111,16 +111,16 @@ prop3 = dummyEnvironment $
 
 prop4 :: CommonPurePattern Object
 prop4 = dummyEnvironment $ mkNot $
-  App_ eqSymbol 
+  App_ eqSymbol
   [ intLiteral 1 `plus` (intLiteral 2 `mul` a)
   , intLiteral 2 `mul` b
   ]
- 
+
 prop5 :: CommonPurePattern Object
-prop5 = dummyEnvironment $  
+prop5 = dummyEnvironment $
   App_ eqSymbol
   [ intLiteral 0 `sub` (a `mul` a)
-  , b `mul` b 
+  , b `mul` b
   ]
   `mkImplies`
   App_ eqSymbol
@@ -129,7 +129,7 @@ prop5 = dummyEnvironment $
   ]
 
 prop6 :: CommonPurePattern Object
-prop6 = dummyEnvironment $ 
+prop6 = dummyEnvironment $
   (
   App_ leSymbol [a, b]
   `mkIff`
@@ -150,8 +150,8 @@ propDiv = dummyEnvironment $
   App_ ltSymbol [App_ tdivSymbol [a, intLiteral 2], a]
 
 propMod :: CommonPurePattern Object
-propMod = dummyEnvironment $ 
-  App_ eqSymbol 
+propMod = dummyEnvironment $
+  App_ eqSymbol
     [ App_ tmodSymbol [a `mul` intLiteral 2, intLiteral 2]
     , intLiteral 0
     ]
@@ -161,7 +161,7 @@ propPierce = dummyEnvironment $
   ((p `mkImplies` q) `mkImplies` p) `mkImplies` p
 
 propDeMorgan :: CommonPurePattern Object
-propDeMorgan = dummyEnvironment $ 
+propDeMorgan = dummyEnvironment $
   (mkNot $ p `mkOr` q) `mkIff` (mkNot p `mkAnd` mkNot q)
 
 propTrue :: CommonPurePattern Object

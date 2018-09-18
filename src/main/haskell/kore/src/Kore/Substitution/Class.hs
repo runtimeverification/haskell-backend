@@ -29,7 +29,7 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.Variables.Free
-import Kore.Variables.Fresh.Class
+import Kore.Variables.Fresh
 
 {-|'SubstitutionClass' represents a substitution type @s@ mapping variables
 of type @v@ to terms of type @t@.
@@ -93,15 +93,16 @@ used for generating fresh variables.
 class ( UnifiedPatternInterface pat
       , Traversable (pat var)
       , SubstitutionClass s (Unified var) (Fix (pat var))
-      , FreshVariablesClass m var
+      , FreshVariable var
       , Ord (var Meta)
       , Ord (var Object)
       , Hashable var
       )
-    => PatternSubstitutionClass s var pat m
+    => PatternSubstitutionClass s var pat
   where
     substitute
-        :: Fix (pat var)
+        :: MonadCounter m
+        => Fix (pat var)
         -> s (Unified var) (Fix (pat var))
         -> m (Fix (pat var))
     substitute p s = substituteM (SubstitutionAndQuantifiedVars
@@ -111,12 +112,13 @@ class ( UnifiedPatternInterface pat
 
 substituteM
     :: forall s var pat m .
-       PatternSubstitutionClass s var pat m
+       (MonadCounter m, PatternSubstitutionClass s var pat)
     => SubstitutionAndQuantifiedVars s (Unified var) (Fix (pat var))
     -> Fix (pat var)
     -> m (Fix (pat var))
-substituteM subst p | isEmpty subst = return p
-substituteM subst p = unifiedPatternApply @pat substPattern  (project p)
+substituteM subst p
+    | isEmpty subst = return p
+    | otherwise = unifiedPatternApply @pat substPattern  (project p)
   where
     substPattern :: (MetaOrObject level')
                  => Pattern level' var (Fix (pat var))
@@ -139,8 +141,10 @@ substituteM subst p = unifiedPatternApply @pat substPattern  (project p)
 -}
 binderPatternSubstitutePreprocess
     :: ( MLBinderPatternClass q
-       , PatternSubstitutionClass s var pat m
-       , MetaOrObject level)
+       , MetaOrObject level
+       , MonadCounter m
+       , PatternSubstitutionClass s var pat
+       )
     => FixedSubstitutionAndQuantifiedVars s var pat
     -> q level var (Fix (pat var))
     -> m (Fix (pat var))

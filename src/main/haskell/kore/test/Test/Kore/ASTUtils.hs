@@ -3,7 +3,7 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 
-module Test.Kore.ASTUtils 
+module Test.Kore.ASTUtils
 ( test_substitutions
 , test_sortAgreement
 , var
@@ -24,7 +24,7 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.ASTHelpers
-       (ApplicationSorts (..) )
+       ( ApplicationSorts (..) )
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 import Kore.ASTUtils.Substitution

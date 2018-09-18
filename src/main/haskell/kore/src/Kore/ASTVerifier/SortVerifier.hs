@@ -61,7 +61,7 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
     sortIsMeta = case asUnified sort of UnifiedObject _ -> False ; UnifiedMeta _ -> True
     sortName   = sortActualName sort
     sortId     = getId sortName
-    
+
 verifySortMatchesDeclaration
     :: MetaOrObject level
     => (Id level -> Either (Error VerifyError) (SortDescription level))

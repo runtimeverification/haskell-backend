@@ -25,14 +25,13 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), Simplifier,
-                 SimplificationProof (..) )
+                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
+import           Kore.Variables.Fresh
 
 {-| 'mergeWithPredicateSubstitution' ands the given predicate/substitution
 to the given Or.
@@ -44,7 +43,7 @@ mergeWithPredicateSubstitution
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes

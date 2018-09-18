@@ -9,21 +9,21 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
 
-import Kore.AST.Builders
-import Kore.ASTHelpers
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.PureToKore
-import Kore.AST.Sentence
-import Kore.ASTVerifier.DefinitionVerifier
+import           Kore.AST.Builders
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.AST.PureToKore
+import           Kore.AST.Sentence
+import           Kore.ASTHelpers
+import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-import Kore.Implicit.Attributes
-import Kore.Implicit.ImplicitSorts
-import Kore.IndexedModule.IndexedModule
-import Kore.IndexedModule.MetadataTools
-import Kore.Step.StepperAttributes
+import           Kore.Error
+import           Kore.Implicit.Attributes
+import           Kore.Implicit.ImplicitSorts
+import           Kore.IndexedModule.IndexedModule
+import           Kore.IndexedModule.MetadataTools
+import           Kore.Step.StepperAttributes
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

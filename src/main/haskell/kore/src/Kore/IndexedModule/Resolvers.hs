@@ -126,7 +126,7 @@ getSortAttributes
     => KoreIndexedModule atts
     -> Sort level
     -> atts
-getSortAttributes m (SortActualSort (SortActual sortId _)) = 
+getSortAttributes m (SortActualSort (SortActual sortId _)) =
   case resolveSort m sortId of
     Right (atts, _) -> atts
     Left _ -> error $ "Sort " ++ show sortId ++ " not defined."

@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Or
+Module      : Kore.Step.Simplification.Or
 Description : Tools for Or pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA

@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Variable
+Module      : Kore.Step.Simplification.Variable
 Description : Tools for Variable pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
