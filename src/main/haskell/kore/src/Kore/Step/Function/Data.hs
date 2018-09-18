@@ -27,8 +27,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import Kore.Step.Simplification.Data
-       ( PureMLPatternSimplifier, Simplifier,
-       SimplificationProof (..) )
+       ( PureMLPatternSimplifier, SimplificationProof (..), Simplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 

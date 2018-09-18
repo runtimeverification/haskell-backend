@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Pattern
+Module      : Kore.Step.Simplification.Pattern
 Description : Tools for Pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -80,8 +80,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
+import           Kore.Variables.Fresh
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -98,7 +97,7 @@ simplify
         , Ord (variable Object)
         , Show (variable Meta)
         , Show (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -129,7 +128,7 @@ simplifyToOr
         , Ord (variable Object)
         , Show (variable Meta)
         , Show (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -163,7 +162,7 @@ simplifyInternal
         , Ord (variable Object)
         , Show (variable Meta)
         , Show (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes

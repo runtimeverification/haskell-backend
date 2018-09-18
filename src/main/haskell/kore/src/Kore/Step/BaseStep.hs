@@ -12,8 +12,10 @@ module Kore.Step.BaseStep
     , StepperConfiguration (..)
     , StepperVariable (..)
     , StepProof (..)
+    , StepProofAtom (..)
     , VariableRenaming (..)
-    , simplifyStepProof
+    , simplificationProof
+    , stepProof
     , stepProofSumName
     , stepWithAxiom
     ) where
@@ -22,10 +24,13 @@ import qualified Control.Arrow as Arrow
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
-import           Data.Monoid
-                 ( (<>) )
 import           Data.Reflection
                  ( Given, give )
+import           Data.Semigroup
+                 ( Semigroup (..) )
+import           Data.Sequence
+                 ( Seq )
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
@@ -64,12 +69,8 @@ import           Kore.Unification.Unifier
                  mapSubstitutionVariables, unificationProcedure )
 import           Kore.Variables.Free
                  ( pureAllVariables )
-import           Kore.Variables.Fresh.Class
-                 ( FreshVariablesClass (freshVariableSuchThat) )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
+import           Kore.Variables.Fresh
+
 {-| 'StepperConfiguration' represents the configuration to which a rewriting
 axiom is applied.
 
@@ -86,47 +87,38 @@ data StepperConfiguration level = StepperConfiguration
     }
     deriving (Show, Eq)
 
-{-| 'StepProof' is a proof for a single execution step.
--}
-data StepProof level
-    = StepProofCombined ![StepProof level]
-    -- ^ combines multiple parts of a proof.
-    | StepProofUnification !(UnificationProof level Variable)
+{- | 'StepProof' is the proof for an execution step or steps.
+ -}
+newtype StepProof level = StepProof { getStepProof :: Seq (StepProofAtom level) }
+  deriving (Eq, Show)
+
+instance Semigroup (StepProof level) where
+    (<>) (StepProof a) (StepProof b) = StepProof (a <> b)
+
+instance Monoid (StepProof level) where
+    mempty = StepProof mempty
+    mappend = (<>)
+
+stepProof :: StepProofAtom level -> StepProof level
+stepProof atom = StepProof (Seq.singleton atom)
+
+simplificationProof :: SimplificationProof level -> StepProof level
+simplificationProof = stepProof . StepProofSimplification
+
+{- | The smallest unit of a 'StepProof'.
+
+  @StepProofAtom@ encapsulates the separate proofs resulting from unification,
+  variable renaming, and simplification.
+
+ -}
+data StepProofAtom level
+    = StepProofUnification !(UnificationProof level Variable)
     -- ^ Proof for a unification that happened during the step.
     | StepProofVariableRenamings [VariableRenaming level]
     -- ^ Proof for the remanings that happened during ther proof.
-    | StepProofSimplification (SimplificationProof level)
+    | StepProofSimplification !(SimplificationProof level)
     -- ^ Proof for the simplification part of a step.
     deriving (Show, Eq)
-
-{-| 'simplifyStepProof' simplifies the representation of a 'StepProof'.
-
-As an example, it replaces a StepProofCombined with a single element with its
-contents.
--}
-simplifyStepProof :: StepProof level -> StepProof level
-simplifyStepProof (StepProofCombined things) =
-    StepProofCombined (simplifyCombinedItems things)
-simplifyStepProof a@(StepProofUnification _) = a
-simplifyStepProof (StepProofVariableRenamings []) = StepProofCombined []
-simplifyStepProof a@(StepProofVariableRenamings _) = a
-simplifyStepProof a@(StepProofSimplification _) = a
-
-{-| `simplifyCombinedItems` simplifies the representation of a list of
-    'StepProof's recursively.
-
-    As an example, it replaces a 'StepProofCombined' with its contents.
--}
-simplifyCombinedItems :: [StepProof level] -> [StepProof level]
-simplifyCombinedItems =
-    foldr (simplifyAndAdd . simplifyStepProof) []
-  where
-    simplifyAndAdd
-        :: StepProof level
-        -> [StepProof level]
-        -> [StepProof level]
-    simplifyAndAdd (StepProofCombined items) proofItems = items ++ proofItems
-    simplifyAndAdd other proofItems                     = other : proofItems
 
 {-| 'VariableRenaming' represents a renaming of a variable.
 -}
@@ -152,10 +144,11 @@ instance Hashable StepperVariable where
     -- hashes for axiom and configuration variables.
     getVariableHash = getVariableHash . getStepperVariableVariable
 
-instance IntVariable StepperVariable where
-    intVariable (AxiomVariable a) n = AxiomVariable (intVariable a n)
-    intVariable (ConfigurationVariable a) n =
-        ConfigurationVariable (intVariable a n)
+instance FreshVariable StepperVariable where
+    freshVariableWith (AxiomVariable a) =
+        AxiomVariable <$> freshVariableWith a
+    freshVariableWith (ConfigurationVariable a) =
+        ConfigurationVariable <$> freshVariableWith a
 
 {-| 'getStepperVariableVariable' extracts the initial variable from a stepper
 one.
@@ -165,18 +158,19 @@ getStepperVariableVariable (AxiomVariable a)         = a
 getStepperVariableVariable (ConfigurationVariable a) = a
 
 {-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
-stepProofSumName :: StepProof level -> String
+stepProofSumName :: StepProofAtom level -> String
 stepProofSumName (StepProofUnification _)       = "StepProofUnification"
-stepProofSumName (StepProofCombined _)          = "StepProofCombined"
 stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
 stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
-{-| 'stepWithAxiom' executes a single rewriting step using the provided axiom.
+{- |
+    Use the given axiom to execute a single rewriting step.
 
-Does not handle properly various cases, among which:
-sigma(x, y) => y    vs    a
+    Does not properly handle various cases, among them:
+    - sigma(x, y) => y    vs    a
 
-TODO: Decide if Left here also includes bottom results or only impossibilities.
+    Returns 'Left' only if there is an error. It is not an error if the axiom
+    does not apply to the given configuration.
 -}
 stepWithAxiom
     ::  ( MetaOrObject level )
@@ -186,8 +180,8 @@ stepWithAxiom
     -> AxiomPattern level
     -- ^ Rewriting axiom
     -> Either
-        (IntCounter (StepError level Variable))
-        (IntCounter
+        (Counter (StepError level Variable))
+        (Counter
             (ExpandedPattern.CommonExpandedPattern level, StepProof level)
         )
 stepWithAxiom
@@ -228,7 +222,7 @@ stepWithAxiom
             -- ^element of the target symbolizing a 'Bottom'-like result
             -> Set.Set (Variable level)
             -> Either (UnificationError level) a
-            -> Either (IntCounter (StepError level Variable)) a
+            -> Either (Counter (StepError level Variable)) a
         normalizeUnificationError bottom existingVariables action =
             stepperVariableToVariableForError
                 existingVariables (unificationToStepError bottom action)
@@ -314,15 +308,11 @@ stepWithAxiom
                         (removeAxiomVariables normalizedSubstitution)
                     `orElse` []
                 }
-            , simplifyStepProof
-                (StepProofCombined
-                    [ StepProofVariableRenamings
-                        (map variablePairToRenaming
-                            (Map.toList variableMapping2)
-                        )
-                    , StepProofUnification substitutionProof
-                    ]
-                )
+            , (<>)
+              ((stepProof . StepProofVariableRenamings)
+               (variablePairToRenaming <$> Map.toList variableMapping2)
+              )
+              ((stepProof . StepProofUnification) substitutionProof)
             )
   where
     -- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
@@ -331,7 +321,7 @@ stepWithAxiom
         :: MetaOrObject level
         => Set.Set (Variable level)
         -> Either (StepError level StepperVariable) a
-        -> Either (IntCounter (StepError level Variable)) a
+        -> Either (Counter (StepError level Variable)) a
     stepperVariableToVariableForError existingVars action =
         case action of
             Left err -> Left $ do
@@ -358,11 +348,11 @@ stepWithAxiom
 mergeConditionsWithAnd
     ::  ( MetaOrObject level
         , Given (SortTools level)
-        , SortedVariable variable
-        , Eq (variable level)
-        , Show (variable level))
-    => [Predicate level variable]
-    -> (IntCounter (Predicate level variable), PredicateProof level)
+        , SortedVariable var
+        , Eq (var level)
+        , Show (var level))
+    => [Predicate level var]
+    -> (Counter (Predicate level var), PredicateProof level)
 mergeConditionsWithAnd conditions =
     let
         (predicate, proof) = makeMultipleAndPredicate conditions
@@ -374,7 +364,7 @@ unificationProofStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> UnificationProof level StepperVariable
-    -> IntCounter
+    -> Counter
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , UnificationProof level Variable
         )
@@ -466,7 +456,7 @@ listStepVariablesToCommon
     =>  (Set.Set (Variable level)
             -> Map.Map (StepperVariable level) (StepperVariable level)
             -> listElement StepperVariable
-            -> IntCounter
+            -> Counter
                 ( Map.Map (StepperVariable level) (StepperVariable level)
                 , listElement Variable
                 )
@@ -474,7 +464,7 @@ listStepVariablesToCommon
     -> Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> [listElement StepperVariable]
-    -> IntCounter
+    -> Counter
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , [listElement Variable]
         )
@@ -492,7 +482,7 @@ functionalProofStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> FunctionalProof level StepperVariable
-    -> IntCounter
+    -> Counter
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , FunctionalProof level Variable
         )
@@ -516,7 +506,7 @@ variableStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> StepperVariable level
-    -> IntCounter
+    -> Counter
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , Variable level
         )
@@ -546,7 +536,7 @@ predicateStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> Predicate level StepperVariable
-    -> IntCounter
+    -> Counter
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , Predicate level Variable
         )
@@ -569,7 +559,7 @@ patternStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> PureMLPattern level StepperVariable
-    -> IntCounter
+    -> Counter
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , PureMLPattern level Variable
         )
@@ -604,7 +594,7 @@ addAxiomVariablesAsConfig
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> [StepperVariable level]
-    -> IntCounter (Map.Map (StepperVariable level) (StepperVariable level))
+    -> Counter (Map.Map (StepperVariable level) (StepperVariable level))
 addAxiomVariablesAsConfig _ mapping [] = return mapping
 addAxiomVariablesAsConfig
     existingVars mapping (ConfigurationVariable _ : vars)

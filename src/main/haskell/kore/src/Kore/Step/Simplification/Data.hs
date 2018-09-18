@@ -22,8 +22,7 @@ import Kore.AST.PureML
        ( PureMLPattern )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
-import Kore.Variables.Fresh.IntCounter
-       ( IntCounter, runIntCounter )
+import Kore.Variables.Fresh
 
 {-| 'SimplificationProof' is a placeholder for proofs showing that the
 simplification of a MetaMLPattern was correct.
@@ -31,7 +30,7 @@ simplification of a MetaMLPattern was correct.
 data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
-type Simplifier = IntCounter
+type Simplifier = Counter
 
 {- | Run a simplifier computation.
 
@@ -41,10 +40,10 @@ type Simplifier = IntCounter
 runSimplifier
     :: Simplifier a
     -- ^ simplifier computation
-    -> Int
+    -> Natural
     -- ^ initial counter for fresh variables
-    -> (a, Int)
-runSimplifier = runIntCounter
+    -> (a, Natural)
+runSimplifier = runCounter
 
 {- | Evaluate a simplifier computation.
 
@@ -53,7 +52,10 @@ runSimplifier = runIntCounter
   -}
 evalSimplifier :: Simplifier a -> a
 evalSimplifier simplifier =
-    fst $ runSimplifier simplifier 0
+    let
+        (result, _) = runSimplifier simplifier 0
+    in
+      result
 
 {-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.

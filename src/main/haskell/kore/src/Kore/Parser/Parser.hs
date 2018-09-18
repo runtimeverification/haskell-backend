@@ -51,8 +51,8 @@ import           Kore.MetaML.AST
 import           Kore.Parser.Lexeme
                  ( skipWhitespace )
 import qualified Kore.Parser.ParserImpl as KoreParser
-                 ( koreDefinitionParser, korePatternParser, metaPatternParser,
-                 headParser, variableParser )
+                 ( headParser, koreDefinitionParser, korePatternParser,
+                 metaPatternParser, variableParser )
 import           Kore.Parser.ParserUtils
 
 {-|'koreParser' is a parser for Kore.

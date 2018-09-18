@@ -35,8 +35,7 @@ import           Kore.Unification.Error
 import           Kore.Unification.SubstitutionNormalization
 import           Kore.Unification.UnifierImpl
                  ( UnificationSubstitution )
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
+import           Kore.Variables.Fresh
 
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =
@@ -255,8 +254,10 @@ runNormalizeSubstitution
 runNormalizeSubstitution substitution =
     case normalizeSubstitution mockMetadataTools substitution of
         Left err     -> Left err
-        Right action -> Right $ PredicateSubstitution.substitution
-                        $ fst $ runIntCounter action 0
+        Right action ->
+            Right
+                $ PredicateSubstitution.substitution
+                $ evalCounter action
 
 
 mockSortTools :: MetaOrObject level => SortTools level
