@@ -153,8 +153,8 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
         )
 
-    , testCase "Constructor and constructor of function symbol errors"
-        -- [x=constructor(y)] + [x=constructor(f(y))]  === error
+    , testCase "Constructor and constructor of functional symbol errors"
+        -- [x=constructor(y)] + [x=constructor(functional(y))]  === error
         (assertEqual ""
             ( Left
                 ( SubstitutionError
