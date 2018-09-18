@@ -150,7 +150,6 @@ test_substitutionNormalization =
             )
     , let
         var1 = asVariable (v1 PatternSort)
-        varx1 = asVariable (x1 PatternSort)
       in
         testCase "Function cycle"
             (assertEqual ""
