@@ -2,7 +2,6 @@ module Kore.Step.Error
     ( StepError (..)
     , mapStepErrorVariables
     , stepErrorVariables
-    , substitutionToStepError
     , unificationToStepError
     , unificationOrSubstitutionToStepError
     ) where
@@ -51,20 +50,6 @@ unificationToStepError
 unificationToStepError bottom (Left (PatternClash _ _)) = Right bottom
 unificationToStepError _ (Left err)     = Left (StepErrorUnification err)
 unificationToStepError _ (Right result) = Right result
-
-{-| 'substitutionToStepError' converts an action with a 'SubstitutionError'
-into an action with a 'StepError'.
-It takes a @bottom@ default value to convert constructor-only cycling errors
-into 'Bottom'.
--}
-substitutionToStepError
-    :: a
-    -> Either (SubstitutionError level variable) a
-    -> Either (StepError level variable) a
-substitutionToStepError bottom (Left (CtorCircularVariableDependency _)) =
-    Right bottom
-substitutionToStepError _ (Left err)     = Left (StepErrorSubstitution err)
-substitutionToStepError _ (Right result) = Right result
 
 {-| Converts a Unification or Substitution error to a step error
 -}

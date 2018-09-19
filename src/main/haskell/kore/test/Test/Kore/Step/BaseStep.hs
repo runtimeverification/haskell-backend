@@ -540,8 +540,8 @@ test_baseStep =
         )
     -- sigma(sigma(x, x), sigma(y, y)) -> sigma(x, y)
     -- vs
-    -- sigma(sigma(a, f(b)), sigma(b, a))
-    -- Expected: Error because a=f(b) and b=a.
+    -- sigma(sigma(a, f(b)), sigma(a, b))
+    -- Expected: Error because a=f(b) and a=b.
     , testCase "Impossible substitution."
         (assertEqualWithExplanation ""
             (Right ExpandedPattern
@@ -638,9 +638,7 @@ test_baseStep =
     , testCase "Impossible substitution (non-ctor)."
         (assertEqualWithExplanation ""
             (Left $ StepErrorSubstitution
-                (NonCtorCircularVariableDependency
-                    [ asMetaVariable (b1 PatternSort) ]
-                )
+                (NonCtorCircularVariableDependency [asVariable (b1 PatternSort)])
             )
             (fst <$> runStep
                 mockMetadataTools

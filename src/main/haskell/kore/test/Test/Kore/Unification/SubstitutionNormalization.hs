@@ -118,7 +118,7 @@ test_substitutionNormalization =
       in
         testCase "Simplest cycle"
             (assertEqual ""
-                (Left (CtorCircularVariableDependency [var1]))
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (v1 PatternSort)
@@ -130,9 +130,44 @@ test_substitutionNormalization =
         var1 = asVariable (v1 PatternSort)
         varx1 = asVariable (x1 PatternSort)
       in
+        testCase "Cycle with extra substitution"
+            (assertEqual ""
+                (Right
+                    [   ( asVariable (x1 PatternSort)
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ]
+                )
+                (runNormalizeSubstitution
+                    [   ( var1
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ,   ( varx1
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ]
+                )
+            )
+    , let
+        var1 = asVariable (v1 PatternSort)
+      in
+        testCase "Function cycle"
+            (assertEqual ""
+                (Left (NonCtorCircularVariableDependency [var1]))
+                (runNormalizeSubstitution
+                    [   ( var1
+                        , App_ f [Var_ var1]
+                        )
+                    ]
+                )
+            )
+    , let
+        var1 = asVariable (v1 PatternSort)
+        varx1 = asVariable (x1 PatternSort)
+      in
         testCase "Length 2 cycle"
             (assertEqual ""
-                (Left (CtorCircularVariableDependency [var1, varx1]))
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (x1 PatternSort)
@@ -149,7 +184,7 @@ test_substitutionNormalization =
       in
         testCase "Cycle with 'and'"
             (assertEqual ""
-                (Left (CtorCircularVariableDependency [var1, varx1]))
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern
@@ -230,4 +265,3 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const Mock.functionalAttributes
     , sortTools = mockSortTools
     }
-

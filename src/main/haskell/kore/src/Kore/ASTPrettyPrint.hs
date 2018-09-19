@@ -16,6 +16,8 @@ import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.Parser.CString
        ( escapeCString )
+import Kore.Predicate.Predicate
+import Kore.Step.ExpandedPattern
 import Kore.Step.PatternAttributes
 import Kore.Unification.Unifier
 
@@ -776,3 +778,15 @@ instance (MetaOrObject level, PrettyPrint (variable level))
         writeOneFieldStruct flags "FunctionalStringLiteral" l
     prettyPrint flags (FunctionalCharLiteral l) =
         writeOneFieldStruct flags "FunctionalCharLiteral" l
+
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (Predicate level variable)
+  where
+    prettyPrint flags pat =
+        prettyPrint flags (unwrapPredicate pat)
+
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (ExpandedPattern level variable)
+  where
+    prettyPrint flags (ExpandedPattern t p s) =
+        writeThreeFieldStruct flags "ExpandedPattern" t p s
