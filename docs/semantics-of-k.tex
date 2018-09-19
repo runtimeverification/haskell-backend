@@ -6129,8 +6129,10 @@ sort is object-level or meta-level in the parse time.
 
 <object-sort-constructor> ::= <object-identifier>
 
-<object-sort-list> ::= $\epsilon$ | <object-sort> | <object-sort> `,' 
-<object-sort-list>
+<object-sort-list> ::= $\epsilon$ | <nonempty-object-sort>
+
+<nonempty-object-sort-list> ::= <object-sort> | 
+<object-sort> `,' <nonempty-object-sort-list>
 
 <meta-sort> ::= <meta-sort-variable> | <meta-non-variable-sort> 
 
@@ -6143,8 +6145,10 @@ sort is object-level or meta-level in the parse time.
 \alt `#Symbol' | `#SymbolList' | `#Variable' | `#VariableList' | `#Pattern' | 
 `#PatternList'
 
-<meta-sort-list> ::= $\epsilon$ | <meta-sort> | <meta-sort> `,' 
-<meta-sort-list>
+<meta-sort-list> ::= $\epsilon$ | <nonempty-meta-sort-list>
+
+<nonempty-meta-sort-list> ::= <meta-sort> | 
+<meta-sort> `,' <nonempty-meta-sort-list>
 \end{grammar}
 If a sort has no sort parameter, it is a \emph{non-parametric} sort.
 All meta-level sorts are non-parametric sorts, as defined in the grammar.
@@ -6467,7 +6471,10 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	
 	<meta-variable> ::= <meta-identifier> `:' <meta-sort>
 	
-	<pattern-list> ::= $\epsilon$ | <pattern> | <pattern> `,' <pattern-list>
+	<pattern-list> ::= $\epsilon$ | <nonempty-pattern-list>
+	
+	<nonempty-pattern-list> ::= <pattern> | <pattern> `,' 
+	<nonempty-pattern-list>
 \end{grammar}
 Notice that we allow a mixed syntax for object-level patterns and meta-level 
 patterns.
@@ -6662,10 +6669,10 @@ in the list.
 \begin{grammar}
 <attributes> ::= `[' <attribute-list> `]'
 
-<attribute-list> ::= \quad
-\alt $\epsilon$ 
-\alt <attribute>
-\alt <attribute> `,' <attribute-list>
+<attribute-list> ::= $\epsilon$ | <nonempty-attribute-list>
+
+<nonempty-attribute-list> ::= <attribute>
+| <attribute> `,' <nonempty-attribute-list>
 
 <attribute> ::= <object-head> `(' <pattern-list> `)'
 \end{grammar}
@@ -6747,22 +6754,28 @@ axiom.
 `{' <object-sort-variable-list> `}' 
 `(' <object-sort-list> `)' `:' <object-sort> <attributes>
 
-<sort-variable-list> ::= \quad
-\alt $\epsilon$
+<sort-variable-list> ::= $\epsilon$ | <nonempty-sort-variable-list>
+
+<nonempty-sort-variable-list> ::= \quad
 \alt <object-sort-variable>
 \alt <meta-sort-variable>
-\alt <object-sort-variable> `,' <sort-variable-list>
-\alt <meta-sort-variable> `,' <sort-variable-list>
+\alt <object-sort-variable> `,' <nonempty-sort-variable-list>
+\alt <meta-sort-variable> `,' <nonempty-sort-variable-list>
 
-<object-sort-variable-list> ::= \quad
-\alt $\epsilon$
+<object-sort-variable-list> ::= $\epsilon$ | 
+<nonempty-object-sort-variable-list>
+
+<nonempty-object-sort-variable-list> ::= \quad
 \alt <object-sort-variable>
-\alt <object-sort-variable> `,' <object-sort-variable-list>
+\alt <object-sort-variable> `,' <nonempty-object-sort-variable-list>
 
-<meta-sort-variable-list> ::= \quad
-\alt $\epsilon$
+<meta-sort-variable-list> ::= $\epsilon$ | 
+<nonempty-meta-sort-variable-list>
+
+
+<nonempty-meta-sort-variable-list> ::= \quad
 \alt <meta-sort-variable>
-\alt <meta-sort-variable> `,' <meta-sort-variable-list>
+\alt <meta-sort-variable> `,' <nonempty-meta-sort-variable-list>
 
 <module-name> ::= <object-nonslash-identifier>
 \end{grammar}
