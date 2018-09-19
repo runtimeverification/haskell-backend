@@ -300,7 +300,7 @@ instance (EqualWithExplanation child, Show child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (DomainValue level (CommonPurePattern Meta))
+instance EqualWithExplanation (DomainValue level (BuiltinDomain (CommonPurePattern Meta)))
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

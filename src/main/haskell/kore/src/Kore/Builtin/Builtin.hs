@@ -34,9 +34,13 @@ module Kore.Builtin.Builtin
     , verifyDomainValue
     , verifyStringLiteral
     , parseDomainValue
+      -- * Implementing builtin functions
     , notImplemented
     , binaryOperator
     , unaryOperator
+    , functionEvaluator
+    , wrongArity
+    , appliedFunction
     ) where
 
 import           Control.Monad
@@ -169,7 +173,8 @@ instance Monoid PatternVerifier where
     mappend = (<>)
 
 type DomainValueVerifier =
-    DomainValue Object (CommonPurePattern Meta) -> Either (Error VerifyError) ()
+    DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+    -> Either (Error VerifyError) ()
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
@@ -413,7 +418,7 @@ verifyStringLiteral validate DomainValue { domainValueChild } =
  -}
 parseDomainValue
     :: Parser a
-    -> DomainValue Object (CommonPurePattern Meta)
+    -> DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
     -> Either (Error VerifyError) a
 parseDomainValue
     parser

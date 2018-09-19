@@ -139,21 +139,22 @@ evaluators builtins indexedModule =
             pure [impl]
 
 asPattern
-    :: Kore.DomainValue Object (CommonPurePattern Meta)
+    :: Kore.DomainValue Object (Kore.BuiltinDomain (CommonPurePattern Meta))
     -> CommonPurePattern Object
 asPattern Kore.DomainValue { domainValueSort, domainValueChild } =
     case domainValueChild of
         Kore.BuiltinDomainPattern _ ->
             Kore.DV_ domainValueSort domainValueChild
-        _ -> error "Not implemented"
+        Kore.BuiltinDomainMap _ ->
+            notImplementedInternal
 
 asMetaPattern
-    :: Kore.DomainValue Object (CommonPurePattern Meta)
+    :: Kore.DomainValue Object (Kore.BuiltinDomain (CommonPurePattern Meta))
     -> CommonPurePattern Meta
 asMetaPattern Kore.DomainValue { domainValueChild } =
     case domainValueChild of
         Kore.BuiltinDomainPattern pat -> pat
-        _ -> error "Not implemented"
+        _ -> notImplementedInternal
 
 {- | Throw an error for operations not implemented for internal domain values.
  -}

@@ -25,8 +25,8 @@ import Data.Functor.Foldable
        ( cata )
 
 import           Kore.AST.Common
-                 ( Application (..), CharLiteral, DomainValue, Pattern (..),
-                 StringLiteral, SymbolOrAlias )
+                 ( Application (..), BuiltinDomain, CharLiteral, DomainValue,
+                 Pattern (..), StringLiteral, SymbolOrAlias )
 import           Kore.AST.MetaOrObject
                  ( Meta )
 import           Kore.AST.PureML
@@ -51,7 +51,8 @@ data FunctionalProof level variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
-    | FunctionalDomainValue (DomainValue level (CommonPurePattern Meta))
+    | FunctionalDomainValue
+        (DomainValue level (BuiltinDomain (CommonPurePattern Meta)))
     -- ^Domain values are functional as ther represent one value in the model.
     | FunctionalHead (SymbolOrAlias level)
     -- ^Head of a total function, conforming to Definition 5.21

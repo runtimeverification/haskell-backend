@@ -24,6 +24,7 @@ module Kore.Builtin.Int
     , asMetaPattern
     , asPattern
     , asExpandedPattern
+    , asPartialExpandedPattern
     ) where
 
 import           Control.Monad

@@ -137,12 +137,16 @@ instance
     unparse DomainValue { domainValueSort, domainValueChild } =
         "\\dv"
         <> parameters [domainValueSort]
-        <> arguments' [unparsedChild]
+        <> arguments' [unparse domainValueChild]
       where
-        unparsedChild =
-            case domainValueChild of
-                BuiltinDomainPattern child -> unparse child
-                _ -> Builtin.notImplementedInternal
+
+instance
+    Unparse child => Unparse (BuiltinDomain child)
+  where
+    unparse =
+        \case
+            BuiltinDomainPattern child -> unparse child
+            BuiltinDomainMap _ -> Builtin.notImplementedInternal
 
 instance Unparse child => Unparse (Equals level child) where
     unparse

@@ -76,7 +76,7 @@ testSort =
 
 evaluate
     ::  (MetaOrObject Object)
-    => DomainValue Object (CommonPurePattern Meta)
+    => DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
     -> CommonOrOfExpandedPattern Object
 evaluate domainValue =
     case simplify domainValue of

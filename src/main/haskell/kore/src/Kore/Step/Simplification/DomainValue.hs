@@ -12,7 +12,8 @@ module Kore.Step.Simplification.DomainValue
     ) where
 
 import           Kore.AST.Common
-                 (DomainValue (..), Pattern (DomainValuePattern))
+                 ( BuiltinDomain, DomainValue (..),
+                 Pattern (DomainValuePattern) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern, asPurePattern )
@@ -33,7 +34,7 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that value.
 -}
 simplify
-    :: DomainValue Object (CommonPurePattern Meta)
+    :: DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
     -> ( OrOfExpandedPattern Object variable
        , SimplificationProof Object
        )

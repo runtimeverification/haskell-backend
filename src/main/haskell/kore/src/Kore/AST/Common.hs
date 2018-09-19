@@ -506,19 +506,6 @@ instance Hashable child => Hashable (Ceil level child)
 
 instance NFData child => NFData (Ceil level child)
 
-data BuiltinDomain child
-    = BuiltinDomainPattern !child
-    | BuiltinDomainMap !(Map child child)
-    deriving (Eq, Generic, Ord, Show)
-
-instance Hashable child => Hashable (BuiltinDomain child) where
-    hashWithSalt salt =
-        \case
-            BuiltinDomainPattern p -> hashWithSalt salt p
-            BuiltinDomainMap m -> hashWithSalt salt (Map.toAscList m)
-
-instance NFData child => NFData (BuiltinDomain child)
-
 {-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
 syntactic category, which are not yet in the Semantics of K document,
 but they should appear in Section 9.1.4 (Patterns) at some point.
@@ -536,7 +523,7 @@ e.g. succesor(succesor(...succesor(0)...))
 -}
 data DomainValue level child = DomainValue
     { domainValueSort  :: !(Sort level)
-    , domainValueChild :: !(BuiltinDomain child)
+    , domainValueChild :: !child
     }
     deriving (Eq, Generic, Ord, Show)
 
@@ -918,7 +905,8 @@ data Pattern level variable child where
     CeilPattern
         :: !(Ceil level child) -> Pattern level variable child
     DomainValuePattern
-        :: !(DomainValue Object (Fix (Pattern Meta Variable))) -> Pattern Object variable child
+        :: !(DomainValue Object (BuiltinDomain (Fix (Pattern Meta Variable))))
+        -> Pattern Object variable child
     EqualsPattern
         :: !(Equals level child) -> Pattern level variable child
     ExistsPattern
@@ -950,6 +938,19 @@ data Pattern level variable child where
     VariablePattern
         :: !(variable level) -> Pattern level variable child
 
+data BuiltinDomain child
+    = BuiltinDomainPattern !child
+    | BuiltinDomainMap !(Map (Fix (Pattern Object Variable)) (Fix (Pattern Object Variable)))
+    deriving (Generic)
+
+instance Hashable child => Hashable (BuiltinDomain child) where
+    hashWithSalt salt =
+        \case
+            BuiltinDomainPattern p -> hashWithSalt salt p
+            BuiltinDomainMap m -> hashWithSalt salt (Map.toAscList m)
+
+instance NFData child => NFData (BuiltinDomain child)
+
 $(return [])
 {- dummy top-level splice to make ''Pattern available for lifting -}
 
@@ -961,6 +962,12 @@ instance (Eq level, Eq (variable level)) => Eq1 (Pattern level variable) where
 
 instance (Show level, Show (variable level)) => Show1 (Pattern level variable) where
     liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
+
+deriving instance Eq child => Eq (BuiltinDomain child)
+
+deriving instance Ord child => Ord (BuiltinDomain child)
+
+deriving instance Show child => Show (BuiltinDomain child)
 
 -- instance Generic child => Generic (Pattern level variable child)
 
