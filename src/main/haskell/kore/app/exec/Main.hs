@@ -79,6 +79,8 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for a file containing a definition to verify and use for execution
     , patternFileName     :: !String
     -- ^ Name for file containing a pattern to verify and use for execution
+    , outputFileName     :: !String
+    -- ^ Name for file to contain the output pattern
     , mainModuleName      :: !String
     -- ^ The name of the main module in the definition
     , isKProgram          :: !Bool
@@ -100,6 +102,11 @@ commandLineParser =
         (  metavar "PATTERN_FILE"
         <> long "pattern"
         <> help "Kore pattern source file to verify and execute. Needs --module."
+        <> value "" )
+    <*> strOption
+        (  metavar "PATTERN_OUTPUT_FILE"
+        <> long "output"
+        <> help "Output file to contain final Kore pattern."
         <> value "" )
     <*> strOption
         (  metavar "MODULE"
@@ -161,6 +168,7 @@ main = do
     Just KoreExecOptions
         { definitionFileName
         , patternFileName
+        , outputFileName
         , mainModuleName
         , isKProgram
         , stepLimit
@@ -215,8 +223,13 @@ main = do
                             (strategy axiomPatterns)
                             stepLimit
                             (initialPattern, mempty)
-            putStrLn $ unparseToString
-                (ExpandedPattern.term finalExpandedPattern)
+            let outputString = unparseToString
+                    (ExpandedPattern.term finalExpandedPattern)
+            if outputFileName /= ""
+                then
+                    writeFile outputFileName outputString
+                else
+                    putStrLn $ outputString
 
 mainModule
     :: ModuleName
