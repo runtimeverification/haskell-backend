@@ -39,6 +39,7 @@ module Kore.Builtin.Builtin
     , binaryOperator
     , unaryOperator
     , functionEvaluator
+    , verifierBug
     , wrongArity
     , appliedFunction
     ) where
@@ -552,22 +553,33 @@ functionEvaluator impl =
             attempt <- impl tools simplifier resultSort applicationChildren
             return (attempt, SimplificationProof)
 
-{- | Evaluation failure due to a builtin call with the wrong arity.
+{- | Abort due to an internal error that should be prevented by the verifier.
 
-  Such a failure indicates a bug in the well-formedness checker.
+    Such an error is a bug in Kore that we would like the user to report.
+
+ -}
+verifierBug :: HasCallStack => String -> a
+verifierBug msg =
+    (error . unlines)
+        [ "Internal error: " ++ msg
+        , "This error should be prevented by the verifier."
+        , "Please report this as a bug."
+        ]
+
+{- | Evaluation failure due to a builtin call with the wrong arity.
 
  -}
 wrongArity :: HasCallStack => String -> a
-wrongArity ctx = error (ctx ++ ": Wrong number of arguments")
+wrongArity ctx = verifierBug (ctx ++ ": Wrong number of arguments")
 
 {- | Run a parser on a verified domain value.
 
-  Any pars failure indicates a bug in the well-formedness checker; in this case
+  Any parse failure indicates a bug in the well-formedness checker; in this case
   an error is thrown.
 
  -}
 runParser :: HasCallStack => String -> Either (Error e) a -> a
 runParser ctx result =
     case result of
-        Left e -> error (ctx ++ ": " ++ Kore.Error.printError e)
+        Left e -> verifierBug (ctx ++ ": " ++ Kore.Error.printError e)
         Right a -> a
