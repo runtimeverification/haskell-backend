@@ -1,13 +1,15 @@
 module Test.Kore.Builtin.Map where
 
 import Test.QuickCheck
-       ( Property, (.&&.), (===), (==>) )
+       ( Property, property, (.&&.), (===), (==>) )
 
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
+import           Data.Reflection
+                 ( give )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -15,6 +17,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern )
 import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Parser
@@ -46,8 +49,13 @@ import qualified Test.Kore.Builtin.Int as Test.Int
  -}
 prop_lookupUnit :: Integer -> Property
 prop_lookupUnit k =
-    let pat = App_ symbolLookup [App_ symbolUnit [], Test.Int.asPattern k]
-    in ExpandedPattern.bottom === evaluate pat
+    let patLookup = App_ symbolLookup [App_ symbolUnit [], Test.Int.asPattern k]
+        predicate = give testSortTools $ mkEquals mkBottom patLookup
+    in
+        allProperties
+            [ ExpandedPattern.bottom === evaluate patLookup
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 {- |
     @
@@ -55,16 +63,20 @@ prop_lookupUnit k =
     @
  -}
 prop_lookupElement :: (Integer, Integer) -> Property
-prop_lookupElement (k, v) =
-    let pat =
+prop_lookupElement (key, value) =
+    let patLookup =
             App_ symbolLookup
-                [ App_ symbolElement
-                    [ Test.Int.asPattern k
-                    , Test.Int.asPattern v
-                    ]
-                , Test.Int.asPattern k
+                [ App_ symbolElement [ patKey , patValue ]
+                , patKey
                 ]
-    in Test.Int.asExpandedPattern v === evaluate pat
+        patKey = Test.Int.asPattern key
+        patValue = Test.Int.asPattern value
+        predicate = give testSortTools $ mkEquals patLookup patValue
+    in
+        allProperties
+            [ Test.Int.asExpandedPattern value === evaluate patLookup
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 {- |
     Let @vs = [v1, v2, ...]@ and let @updates@ be the map constructed by
@@ -82,19 +94,24 @@ prop_lookupElement (k, v) =
     @
  -}
 prop_lookupUpdates :: (Integer, [Integer]) -> Property
-prop_lookupUpdates (k, vs) =
-    let applyUpdate _v m =
-            App_ symbolUpdate [ m, Test.Int.asPattern k, Test.Int.asPattern _v ]
+prop_lookupUpdates (key, values) =
+    let applyUpdate _v _map =
+            App_ symbolUpdate [ _map, patKey, Test.Int.asPattern _v ]
+        patKey = Test.Int.asPattern key
         patUnit = App_ symbolUnit []
-        patUpdates = foldr applyUpdate patUnit vs
-        patLookup =
-            App_ symbolLookup [ patUpdates, Test.Int.asPattern k ]
-        v =
-            case vs of
+        patUpdates = foldr applyUpdate patUnit values
+        patLookup = App_ symbolLookup [ patUpdates, patKey ]
+        value =
+            case values of
                 [] -> Nothing
                 (_v : _) -> Just _v
+        patValue = maybe mkBottom Test.Int.asPattern value
+        predicate = give testSortTools $ mkEquals patValue patLookup
     in
-        Test.Int.asPartialExpandedPattern v === evaluate patLookup
+        allProperties
+            [ Test.Int.asPartialExpandedPattern value === evaluate patLookup
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 {- |
     @
@@ -102,128 +119,167 @@ prop_lookupUpdates (k, vs) =
     @
  -}
 prop_concatUnit :: (Integer, Integer) -> Property
-prop_concatUnit (k, v) =
-    let patConcat =
-            App_ symbolConcat [ patUnit, patElement ]
+prop_concatUnit (key, value) =
+    let patConcat = App_ symbolConcat [ patUnit, patElement ]
         patUnit = App_ symbolUnit []
-        patElement =
-            App_ symbolElement [ Test.Int.asPattern k, Test.Int.asPattern v ]
+        patKey = Test.Int.asPattern key
+        patValue = Test.Int.asPattern value
+        patElement = App_ symbolElement [ patKey, patValue ]
+        predicate = give testSortTools $ mkEquals patElement patConcat
     in
-        evaluate patElement === evaluate patConcat
+        allProperties
+            [ evaluate patElement === evaluate patConcat
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 {- |
-    If @k1@ and @k2@ are distinct keys, then
+    If @key1@ and @key2@ are distinct keys, then
     @
         lookup{}(
             concat{}(
-                element{}(k1, v1),
-                element{}(k2, v2)
+                element{}(key1, value1),
+                element{}(key2, value2)
             ),
-            k1
+            key1
         )
         ===
-        v1
+        value1
     @
     and
     @
         lookup{}(
             concat{}(
-                element{}(k1, v1),
-                element{}(k2, v2)
+                element{}(key1, value1),
+                element{}(key2, value2)
             ),
-            k2
+            key2
         )
         ===
-        v2
+        value2
     @
  -}
 prop_lookupConcatUniqueKeys :: (Integer, Integer) -> (Integer, Integer) -> Property
-prop_lookupConcatUniqueKeys (k1, v1) (k2, v2) =
-    let patConcat = App_ symbolConcat [ patElement1, patElement2 ]
-        patElement1 =
-            App_ symbolElement [ Test.Int.asPattern k1, Test.Int.asPattern v1 ]
-        patElement2 =
-            App_ symbolElement [ Test.Int.asPattern k2, Test.Int.asPattern v2 ]
-        patLookup1 =
-            App_ symbolLookup [ patConcat, Test.Int.asPattern k1 ]
-        patLookup2 =
-            App_ symbolLookup [ patConcat, Test.Int.asPattern k2 ]
+prop_lookupConcatUniqueKeys (key1, value1) (key2, value2) =
+    let patConcat = App_ symbolConcat [ patMap1, patMap2 ]
+        patKey1 = Test.Int.asPattern key1
+        patKey2 = Test.Int.asPattern key2
+        patValue1 = Test.Int.asPattern value1
+        patValue2 = Test.Int.asPattern value2
+        patMap1 = App_ symbolElement [ patKey1, patValue1 ]
+        patMap2 = App_ symbolElement [ patKey2, patValue2 ]
+        patLookup1 = App_ symbolLookup [ patConcat, patKey1 ]
+        patLookup2 = App_ symbolLookup [ patConcat, patKey2 ]
+        predicate =
+            give testSortTools
+            (mkImplies
+                (mkNot (mkEquals patKey1 patKey2))
+                (mkAnd
+                    (mkEquals patLookup1 patValue1)
+                    (mkEquals patLookup2 patValue2)
+                )
+            )
     in
-        (k1 /= k2) ==>
-        (.&&.)
-            (Test.Int.asExpandedPattern v1 === evaluate patLookup1)
-            (Test.Int.asExpandedPattern v2 === evaluate patLookup2)
+        allProperties
+            [ (key1 /= key2) ==> allProperties
+                [ Test.Int.asExpandedPattern value1 === evaluate patLookup1
+                , Test.Int.asExpandedPattern value2 === evaluate patLookup2
+                ]
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 {- |
     @
-        concat{}(element{}(k, v1), element{}(k, v2)) === \bottom{}()
+        concat{}(element{}(key, value1), element{}(key, value2)) === \bottom{}()
     @
  -}
 prop_concatDuplicateKeys :: Integer -> Integer -> Integer -> Property
-prop_concatDuplicateKeys k v1 v2 =
-    let patConcat = App_ symbolConcat [ patElement1, patElement2 ]
-        patElement1 =
-            App_ symbolElement [ Test.Int.asPattern k, Test.Int.asPattern v1 ]
-        patElement2 =
-            App_ symbolElement [ Test.Int.asPattern k, Test.Int.asPattern v2 ]
+prop_concatDuplicateKeys key value1 value2 =
+    let patKey = Test.Int.asPattern key
+        patValue1 = Test.Int.asPattern value1
+        patValue2 = Test.Int.asPattern value2
+        patMap1 = App_ symbolElement [ patKey, patValue1 ]
+        patMap2 = App_ symbolElement [ patKey, patValue2 ]
+        patConcat = App_ symbolConcat [ patMap1, patMap2 ]
+        predicate = give testSortTools (mkEquals mkBottom patConcat)
     in
-        (ExpandedPattern.bottom === evaluate patConcat)
+        allProperties
+            [ ExpandedPattern.bottom === evaluate patConcat
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 {- |
-    Let @a = element{}(k1, v1)@ and @b = element{}(k2, v2)@; then
+    Let @a = element{}(key1, value1)@ and @b = element{}(key2, value2)@; then
     @
         concat{}(a, b) === concat{}(b, a)
     @
  -}
 prop_concatCommutes :: (Integer, Integer) -> (Integer, Integer) -> Property
-prop_concatCommutes (k1, v1) (k2, v2) =
-    let patConcat1 = App_ symbolConcat [ patElement1, patElement2 ]
-        patConcat2 = App_ symbolConcat [ patElement2, patElement1 ]
-        patElement1 =
-            App_ symbolElement [ Test.Int.asPattern k1, Test.Int.asPattern v1 ]
-        patElement2 =
-            App_ symbolElement [ Test.Int.asPattern k2, Test.Int.asPattern v2 ]
+prop_concatCommutes (key1, value1) (key2, value2) =
+    let patConcat1 = App_ symbolConcat [ patMap1, patMap2 ]
+        patConcat2 = App_ symbolConcat [ patMap2, patMap1 ]
+        patKey1 = Test.Int.asPattern key1
+        patValue1 = Test.Int.asPattern value1
+        patKey2 = Test.Int.asPattern key2
+        patValue2 = Test.Int.asPattern value2
+        patMap1 = App_ symbolElement [ patKey1, patValue1 ]
+        patMap2 = App_ symbolElement [ patKey2, patValue2 ]
+        predicate = give testSortTools (mkEquals patConcat1 patConcat2)
     in
-        evaluate patConcat1 === evaluate patConcat2
+        allProperties
+            [ evaluate patConcat1 === evaluate patConcat2
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 {- |
-    Let @a = element{}(k1, v1)@, @b = element{}(k2, v2)@
-    and @c = element{}(k3, v3)@; then
+    Let @a = element{}(key1, value1)@, @b = element{}(key2, value2)@
+    and @c = element{}(key3, value3)@; then
     @
         concat{}(concat{}(a, b), c) === concat{}(a, concat{}(b, c))
     @
  -}
 prop_concatAssociates :: (Integer, Integer) -> (Integer, Integer) -> (Integer, Integer) -> Property
-prop_concatAssociates (k1, v1) (k2, v2) (k3, v3) =
-    let patConcat12 = App_ symbolConcat [ patElement1, patElement2 ]
-        patConcat23 = App_ symbolConcat [ patElement2, patElement3 ]
-        patConcat12_3 = App_ symbolConcat [ patConcat12, patElement3 ]
-        patConcat1_23 = App_ symbolConcat [ patElement1, patConcat23 ]
-        patElement1 =
-            App_ symbolElement [ Test.Int.asPattern k1, Test.Int.asPattern v1 ]
-        patElement2 =
-            App_ symbolElement [ Test.Int.asPattern k2, Test.Int.asPattern v2 ]
-        patElement3 =
-            App_ symbolElement [ Test.Int.asPattern k3, Test.Int.asPattern v3 ]
+prop_concatAssociates (key1, value1) (key2, value2) (key3, value3) =
+    let patKey1 = Test.Int.asPattern key1
+        patValue1 = Test.Int.asPattern value1
+        patKey2 = Test.Int.asPattern key2
+        patValue2 = Test.Int.asPattern value2
+        patKey3 = Test.Int.asPattern key3
+        patValue3 = Test.Int.asPattern value3
+        patMap1 = App_ symbolElement [ patKey1, patValue1 ]
+        patMap2 = App_ symbolElement [ patKey2, patValue2 ]
+        patMap3 = App_ symbolElement [ patKey3, patValue3 ]
+        patConcat12 = App_ symbolConcat [ patMap1, patMap2 ]
+        patConcat23 = App_ symbolConcat [ patMap2, patMap3 ]
+        patConcat12_3 = App_ symbolConcat [ patConcat12, patMap3 ]
+        patConcat1_23 = App_ symbolConcat [ patMap1, patConcat23 ]
+        predicate = give testSortTools (mkEquals patConcat12_3 patConcat1_23)
     in
-        evaluate patConcat12_3 === evaluate patConcat1_23
+        allProperties
+            [ evaluate patConcat12_3 === evaluate patConcat1_23
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 {- |
     @
-        inKeys{}(unit{}(), k) === \dv{Bool{}}("true")
+        inKeys{}(unit{}(), key) === \dv{Bool{}}("false")
     @
  -}
 prop_inKeysUnit :: Integer -> Property
-prop_inKeysUnit k =
-    let patKey = Test.Int.asPattern k
+prop_inKeysUnit key =
+    let patKey = Test.Int.asPattern key
         patUnit = App_ symbolUnit []
         patInKeys = App_ symbolInKeys [ patKey, patUnit ]
+        predicate =
+            give testSortTools (mkEquals (Test.Bool.asPattern False) patInKeys)
     in
-        Test.Bool.asExpandedPattern False === evaluate patInKeys
+        allProperties
+            [ Test.Bool.asExpandedPattern False === evaluate patInKeys
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 {- |
     @
-        inKeys{}(element{}(), k) === \bottom{}()
+        inKeys{}(element{}(key, value), key) === \dv{Bool{}}("true")
     @
  -}
 prop_inKeysElement :: (Integer, Integer) -> Property
@@ -232,8 +288,14 @@ prop_inKeysElement (key, value) =
         patValue = Test.Int.asPattern value
         patMap = App_ symbolElement [ patKey, patValue ]
         patInKeys = App_ symbolInKeys [ patKey, patMap ]
+        predicate =
+            give testSortTools
+                (mkEquals (Test.Bool.asPattern True) patInKeys)
     in
-        Test.Bool.asExpandedPattern True === evaluate patInKeys
+        allProperties
+            [ Test.Bool.asExpandedPattern True === evaluate patInKeys
+            , ExpandedPattern.top === evaluate predicate
+            ]
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern
@@ -392,3 +454,9 @@ builtinVerifiers =
         , symbolVerifiers = Map.symbolVerifiers
         , patternVerifier = mempty
         }
+
+testSortTools :: SortTools Object
+MetadataTools { sortTools = testSortTools } = extractMetadataTools indexedModule
+
+allProperties :: [Property] -> Property
+allProperties = foldr (.&&.) (property True)
