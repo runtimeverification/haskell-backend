@@ -9,7 +9,7 @@ These live in the `design-decisions` directory, using file names with
 the `yyyy-mm-dd-<dash-separated-title>.md` format, with the date
 being roughly the date when the decision was made.
 
-Currently (2018-09-19) the document format is unrestricted, but loosely
+Currently the document format is unrestricted, but loosely
 follows the template in this file.
 
 Problem/Questions
