@@ -24,21 +24,13 @@ import Kore.AST.Common
 
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError level variable
-    = UnificationError (UnificationError level)
+    = UnificationError UnificationError
     | SubstitutionError (SubstitutionError level variable)
     deriving (Eq, Show)
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
-data UnificationError level
-    = PatternClash (ClashReason level) (ClashReason level)
-    | SortClash (Sort level) (Sort level)
-    | NonConstructorHead (SymbolOrAlias level)
-    | NonFunctionalHead (SymbolOrAlias level)
-    | NonFunctionalPattern
-    | UnsupportedPatterns
-    | EmptyPatternList
-    deriving (Eq, Show)
+data UnificationError = UnsupportedPatterns deriving (Eq, Show)
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason level
@@ -85,7 +77,7 @@ substitutionToUnifyOrSubError (Right a)  = Right a
 
 -- Trivially promote unification errors to sum-type errors
 unificationToUnifyOrSubError
-    :: Either (UnificationError level) a
+    :: Either UnificationError a
     -> Either (UnificationOrSubstitutionError level variable) a
 unificationToUnifyOrSubError (Left err) = Left $ UnificationError err
 unificationToUnifyOrSubError (Right a)  = Right a

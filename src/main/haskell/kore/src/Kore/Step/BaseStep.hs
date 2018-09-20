@@ -21,6 +21,8 @@ module Kore.Step.BaseStep
     ) where
 
 import qualified Control.Arrow as Arrow
+import           Control.Monad
+                 ( join )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -64,9 +66,11 @@ import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( UnificationError )
+import           Kore.Unification.Procedure
+                 ( unificationProcedure )
 import           Kore.Unification.Unifier
                  ( UnificationProof (..), UnificationSubstitution,
-                 mapSubstitutionVariables, unificationProcedure )
+                 mapSubstitutionVariables )
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
@@ -179,11 +183,10 @@ stepWithAxiom
     -- ^ Configuration being rewritten.
     -> AxiomPattern level
     -- ^ Rewriting axiom
-    -> Either
+    -> ExceptT
         (Counter (StepError level Variable))
-        (Counter
-            (ExpandedPattern.CommonExpandedPattern level, StepProof level)
-        )
+        Counter
+        (ExpandedPattern.CommonExpandedPattern level, StepProof level)
 stepWithAxiom
     tools
     expandedPattern
@@ -215,13 +218,18 @@ stepWithAxiom
             <> pureAllVariables axiomRightRaw
             <> Predicate.allVariables axiomRequiresRaw
 
+        bottomResult =
+            return $
+                ( PredicateSubstitution makeFalsePredicate []
+                , EmptyUnificationProof
+                )
         -- Remap unification and substitution errors into 'StepError'.
         normalizeUnificationError
             :: MetaOrObject level
             => a
             -- ^element of the target symbolizing a 'Bottom'-like result
             -> Set.Set (Variable level)
-            -> Either (UnificationError level) a
+            -> Either UnificationError a
             -> Either (Counter (StepError level Variable)) a
         normalizeUnificationError bottom existingVariables action =
             stepperVariableToVariableForError
@@ -230,12 +238,8 @@ stepWithAxiom
     -- Unify the left-hand side of the rewriting axiom with the initial
     -- configuration, producing a substitution (instantiating the axiom to the
     -- configuration) subject to a predicate.
-    (     unificationSubstitution
-        , unificationCondition
-        , rawSubstitutionProof
-        ) <-
-            normalizeUnificationError
-                ([], makeFalsePredicate, EmptyUnificationProof)
+    counter <- normalizeUnificationError
+                bottomResult
                 existingVars
                 (unificationProcedure
                     tools
@@ -250,8 +254,13 @@ stepWithAxiom
         stepperVariableToVariableForError
             existingVars
             $ unificationOrSubstitutionToStepError
-            $ mergeAndNormalizeSubstitutions tools unificationSubstitution startSubstitution
-
+            $ fmap
+                join
+                (Right counter >>= traverse
+                                (\(ps, _) ->
+                                    mergeAndNormalizeSubstitutions tools (substitution ps) startSubstitution
+                                )
+                )
     return $ do
         ( PredicateSubstitution
               { predicate = normalizedCondition

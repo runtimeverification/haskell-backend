@@ -56,7 +56,7 @@ mergeSubstitutions
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> Either
-          (UnificationError level)
+          UnificationError
           ( Predicate level variable
           , UnificationSubstitution level variable
           , UnificationProof level variable

@@ -14,7 +14,7 @@ import Kore.Unification.Error
 a single step.
 -}
 data StepError level variable
-    = StepErrorUnification (UnificationError level)
+    = StepErrorUnification UnificationError
     | StepErrorSubstitution (SubstitutionError level variable)
     deriving (Show, Eq)
 
@@ -45,9 +45,8 @@ It takes a @bottom@ default value to convert unification errors into
 -}
 unificationToStepError
     :: a
-    -> Either (UnificationError level) a
+    -> Either UnificationError a
     -> Either (StepError level variable) a
-unificationToStepError bottom (Left (PatternClash _ _)) = Right bottom
 unificationToStepError _ (Left err)     = Left (StepErrorUnification err)
 unificationToStepError _ (Right result) = Right result
 

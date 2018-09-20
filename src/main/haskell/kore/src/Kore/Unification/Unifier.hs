@@ -18,4 +18,4 @@ import Kore.Unification.Error as Error
 import Kore.Unification.UnifierImpl as UnifierImpl
        ( UnificationProof (..), UnificationSolution (..),
        UnificationSubstitution, mapSubstitutionVariables,
-       normalizeSubstitutionDuplication, unificationProcedure )
+       normalizeSubstitutionDuplication )

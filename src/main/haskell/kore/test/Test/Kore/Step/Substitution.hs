@@ -85,14 +85,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
         (assertEqual ""
-            ( Left
-                ( UnificationError
-                    ( PatternClash
-                        ( HeadClash Mock.aSymbol )
-                        ( HeadClash Mock.constr10Symbol )
-                    )
-                )
-            )
+            ( Left (UnificationError UnsupportedPatterns) )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 Mock.a
@@ -108,7 +101,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     , testCase "Double constructor is bottom with variables"
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
         (assertEqual ""
-            ( Left (UnificationError NonFunctionalPattern) )
+            ( Left (UnificationError UnsupportedPatterns) )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 (mkVar Mock.y)
@@ -124,7 +117,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     , testCase "Constructor and constructor of function errors"
         -- [x=constructor(a)] + [x=constructor(f(a))]  === error
         (assertEqual ""
-            ( Left (UnificationError (NonConstructorHead Mock.fSymbol)) )
+            ( Left (UnificationError UnsupportedPatterns) )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 Mock.a
@@ -140,7 +133,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     , testCase "Constructor and constructor of function errors with variables"
         -- [x=constructor(y)] + [x=constructor(f(y))]  === error
         (assertEqual ""
-            ( Left (UnificationError (NonFunctionalPattern)) )
+            ( Left (UnificationError UnsupportedPatterns) )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 (mkVar Mock.y)

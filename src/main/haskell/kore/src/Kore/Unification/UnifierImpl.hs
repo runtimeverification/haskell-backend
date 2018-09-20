@@ -21,7 +21,6 @@ import Data.Reflection
        ( Given, give, given )
 
 import Kore.AST.Common
-import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.ASTHelpers
@@ -29,8 +28,6 @@ import Kore.ASTHelpers
 import Kore.ASTUtils.SmartPatterns
        ( pattern StringLiteral_ )
 import Kore.IndexedModule.MetadataTools
-import Kore.Predicate.Predicate
-       ( Predicate, makeTruePredicate )
 import Kore.Step.PatternAttributes
        ( FunctionalProof (..), isConstructorLikeTop, isFunctionalPattern )
 import Kore.Step.StepperAttributes
@@ -192,9 +189,9 @@ simplifyAnds
     => MetadataTools level StepperAttributes
     -> [PureMLPattern level variable]
     -> Either
-        (UnificationError level)
+        UnificationError
         (UnificationSolution level variable, UnificationProof level variable)
-simplifyAnds _ [] = Left EmptyPatternList
+simplifyAnds _ [] = Left UnsupportedPatterns
 simplifyAnds tools (p:ps) =
     foldM
         simplifyAnds'
@@ -232,7 +229,7 @@ simplifyAnd
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either
-        (UnificationError level)
+        UnificationError
         (UnificationSolution level variable, UnificationProof level variable)
 simplifyAnd tools =
     elgot postTransform (preTransform tools . project)
@@ -248,7 +245,7 @@ preTransform
     -> UnFixedPureMLPattern level variable
     -> Either
         ( Either
-            (UnificationError level)
+            UnificationError
             ( UnificationSolution level variable
             , UnificationProof level variable
             )
@@ -287,7 +284,7 @@ matchApplicationPattern
     -> Application level (PureMLPattern level variable)
     -> Either
         ( Either
-            (UnificationError level)
+            UnificationError
             ( UnificationSolution level variable
             , UnificationProof level variable
             )
@@ -296,9 +293,9 @@ matchApplicationPattern
 matchApplicationPattern (DomainValuePattern (DomainValue _ dv1)) ap2
     | isConstructor_ head2 = case dv1 of
         StringLiteral_ (StringLiteral sl1) ->
-            Left $ Left (PatternClash (DomainValueClash sl1) (HeadClash head2))
+            Left $ Left UnsupportedPatterns
         _ ->  Left $ Left UnsupportedPatterns
-    | otherwise = Left $ Left $ NonConstructorHead head2
+    | otherwise = Left $ Left $ UnsupportedPatterns
   where
     head2 = applicationSymbolOrAlias ap2
 matchApplicationPattern (ApplicationPattern ap1) ap2
@@ -307,30 +304,24 @@ matchApplicationPattern (ApplicationPattern ap1) ap2
             then matchEqualInjectiveHeads given head1 ap1 ap2
         else if isConstructor_ head1
             then error (show head1 ++ " is constructor but not injective.")
-        else Left $ Left $ NonConstructorHead head1
+        else Left $ Left $ UnsupportedPatterns
     --Assuming head1 /= head2 in the sequel
     | isConstructor_ head1 =
         if isConstructor_ head2
-            then Left $ Left (PatternClash (HeadClash head1) (HeadClash head2))
+            then Left $ Left UnsupportedPatterns
         else if isSortInjection_ head2
-            then Left $ Left
-                (PatternClash (HeadClash head1) (mkSortInjectionClash head2))
-        else Left $ Left $ NonConstructorHead head2
+            then Left $ Left UnsupportedPatterns
+        else Left $ Left $ UnsupportedPatterns
     --head1 /= head2 && head1 is not constructor
     | isConstructor_ head2 =
         if isSortInjection_ head1
-            then Left $ Left
-                (PatternClash (mkSortInjectionClash head1) (HeadClash head2))
-            else Left $ Left $ NonConstructorHead head1
+            then Left $ Left UnsupportedPatterns
+            else Left $ Left UnsupportedPatterns
     --head1 /= head2 && neither is a constructor
     | isSortInjection_ head1 && isSortInjection_ head2
       && isConstructorLikeTop given (project child1)
       && isConstructorLikeTop given (project child2) =
-        Left $ Left
-            (PatternClash
-                (SortInjectionClash p1FromSort p1ToSort)
-                (SortInjectionClash p2FromSort p2ToSort)
-            )
+        Left $ Left UnsupportedPatterns
     --head1 /= head2 && neither is a constructor
     -- && they are not both sort injections
     | otherwise = Left $ Left UnsupportedPatterns
@@ -374,7 +365,7 @@ matchDomainValue
     -> String
     -> Either
         ( Either
-            (UnificationError level)
+            UnificationError
             ( UnificationSolution level variable
             , UnificationProof level variable
             )
@@ -383,13 +374,12 @@ matchDomainValue
 matchDomainValue _ (DomainValuePattern (DomainValue _ dv1)) sl2 =
     case dv1 of
         StringLiteral_ (StringLiteral sl1) ->
-            Left $ Left
-                (PatternClash (DomainValueClash sl1) (DomainValueClash sl2))
+            Left $ Left UnsupportedPatterns
         _ ->  Left $ Left UnsupportedPatterns
 matchDomainValue tools (ApplicationPattern ap1) sl2
     | isConstructor (symAttributes tools head1) =
-        Left $ Left (PatternClash (HeadClash head1) (DomainValueClash sl2))
-    | otherwise = Left $ Left $ NonConstructorHead head1
+        Left $ Left UnsupportedPatterns
+    | otherwise = Left $ Left UnsupportedPatterns
   where
     head1 = applicationSymbolOrAlias ap1
 matchDomainValue _ _ _ = Left $ Left UnsupportedPatterns
@@ -404,7 +394,7 @@ mlProposition_5_24_3
     -> PureMLPattern level variable
     -- ^functional (term) pattern
     -> Either
-        (UnificationError level)
+        UnificationError
         (UnificationSolution level variable, UnificationProof level variable)
 mlProposition_5_24_3
     tools
@@ -418,20 +408,20 @@ mlProposition_5_24_3
                 }
             , Proposition_5_24_3 functionalProof v functionalPattern
             )
-        _ -> Left NonFunctionalPattern
+        _ -> Left UnsupportedPatterns
 
 -- returns from the recursion, building the unified term and
 -- pushing up the constraints (substitution)
 postTransform
     :: Pattern level variable
         (Either
-            (UnificationError level)
+            UnificationError
             ( UnificationSolution level variable
             , UnificationProof level variable
             )
         )
     -> Either
-        (UnificationError level)
+        UnificationError
         (UnificationSolution level variable, UnificationProof level variable)
 postTransform (ApplicationPattern ap) = do
     children <- sequenceA (applicationChildren ap)
@@ -476,9 +466,9 @@ solveGroupedSubstitution
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
-        (UnificationError level)
+        UnificationError
         (UnificationSubstitution level variable, UnificationProof level variable)
-solveGroupedSubstitution _ [] = Left EmptyPatternList
+solveGroupedSubstitution _ [] = Left UnsupportedPatterns
 solveGroupedSubstitution tools ((x,p):subst) = do
     (solution, proof) <- simplifyAnds tools (p : map snd subst)
     return
@@ -508,7 +498,7 @@ normalizeSubstitutionDuplication
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
-        (UnificationError level)
+        UnificationError
         ( UnificationSubstitution level variable
         , UnificationProof level variable
         )
@@ -536,50 +526,3 @@ normalizeSubstitutionDuplication tools subst =
     isSingleton _   = False
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
-
--- |'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
--- are terms (functional patterns) to a substitution.
--- If successful, it also produces a proof of how the substitution was obtained.
--- If failing, it gives a 'UnificationError' reason for the failure.
-unificationProcedure
-    ::  ( SortedVariable variable
-        , Ord (variable level)
-        , MetaOrObject level
-        , Show (variable level)
-        )
-    => MetadataTools level StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> PureMLPattern level variable
-    -- ^left-hand-side of unification
-    -> PureMLPattern level variable
-    -> Either
-        -- TODO: Consider using a false predicate instead of a Left error
-        (UnificationError level)
-        ( UnificationSubstitution level variable
-        , Predicate level variable
-        , UnificationProof level variable
-        )
-unificationProcedure tools p1 p2
-    | p1Sort /= p2Sort =
-        Left (SortClash p1Sort p2Sort)
-    | otherwise = do
-        (solution, proof) <- simplifyAnd tools conjunct
-        (normSubst, normProof) <-
-            normalizeSubstitutionDuplication
-                tools (unificationSolutionConstraints solution)
-        return
-            ( normSubst
-            -- TODO: Put something sensible here.
-            , makeTruePredicate
-            , simplifyUnificationProof
-                (CombinedUnificationProof [proof, normProof])
-            )
-  where
-    resultSort = getPatternResultSort (sortTools tools)
-    p1Sort =  resultSort (project p1)
-    p2Sort =  resultSort (project p2)
-    conjunct = Fix $ AndPattern And
-        { andSort = p1Sort
-        , andFirst = p1
-        , andSecond = p2
-        }

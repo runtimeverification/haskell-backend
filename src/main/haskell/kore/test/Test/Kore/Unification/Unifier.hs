@@ -46,6 +46,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
 import           Kore.Unification.UnifierImpl
+import           Kore.Unification.Procedure
 
 import Test.Kore
 import Test.Kore.AST.MLPatterns
@@ -279,7 +280,7 @@ andSimplifyFailure
     => String
     -> UnificationTerm Object
     -> UnificationTerm Object
-    -> UnificationError Object
+    -> UnificationError
     -> TestTree
 andSimplifyFailure message term1 term2 err =
     testCase
@@ -532,43 +533,43 @@ test_unification =
     , andSimplifyFailure "Unmatching constants"
         (UnificationTerm aA)
         (UnificationTerm a1A)
-        (PatternClash (HeadClash (symbolHead a)) (HeadClash (symbolHead a1)))
+        UnsupportedPatterns
     , andSimplifyFailure "Unmatching domain values"
         (UnificationTerm dv1)
         (UnificationTerm dv2)
-        (PatternClash (DomainValueClash "dv1") (DomainValueClash "dv2"))
+        UnsupportedPatterns
     , andSimplifyFailure "Unmatching constant + domain value"
         (UnificationTerm aA)
         (UnificationTerm dv2)
-        (PatternClash (HeadClash (symbolHead a)) (DomainValueClash "dv2"))
+        UnsupportedPatterns
     , andSimplifyFailure "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a1A)
-        (PatternClash (DomainValueClash "dv1") (HeadClash (symbolHead a1)))
+        UnsupportedPatterns
     , andSimplifyFailure "Unmatching domain value + nonconstructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a2A)
-        (NonConstructorHead (symbolHead a2))
+        UnsupportedPatterns
     , andSimplifyFailure "Unmatching nonconstructor constant + domain value"
         (UnificationTerm a2A)
         (UnificationTerm dv1)
-        (NonConstructorHead (symbolHead a2))
+        UnsupportedPatterns
     , andSimplifyFailure "non-functional pattern"
         (UnificationTerm x)
         (UnificationTerm a3A)
-        NonFunctionalPattern
+        UnsupportedPatterns
     , andSimplifyFailure "non-constructor symbolHead right"
         (UnificationTerm aA)
         (UnificationTerm a2A)
-        (NonConstructorHead (symbolHead a2))
+        UnsupportedPatterns
     , andSimplifyFailure "non-constructor symbolHead left"
         (UnificationTerm a2A)
         (UnificationTerm aA)
-        (NonConstructorHead (symbolHead a2))
+        UnsupportedPatterns
     , andSimplifyFailure "nested failure"
         (UnificationTerm (applyS f [aA]))
         (UnificationTerm (applyS f [a1A]))
-        (PatternClash (HeadClash (symbolHead a)) (HeadClash (symbolHead a1)))
+        UnsupportedPatterns
     , andSimplifyFailure "Unsupported constructs"
         (UnificationTerm (applyS f [aA]))
         (UnificationTerm (applyS f [implies_ aA (next_ a1A)]))
@@ -700,15 +701,15 @@ injUnificationTests =
     , andSimplifyFailure "constant vs injection"
         (UnificationTerm aA)
         (UnificationTerm (applyInj s2 s1 xs2))
-        (PatternClash (HeadClash (symbolHead a)) (SortInjectionClash s2 s1))
+        UnsupportedPatterns
     , andSimplifyFailure "unmatching injections"
         (UnificationTerm (applyInj s1 s3 aA))
         (UnificationTerm (applyInj s2 s3 bA))
-        (PatternClash (SortInjectionClash s1 s3) (SortInjectionClash s2 s3))
+        UnsupportedPatterns
     , andSimplifyFailure "unmatching nested injections"
         (simplifyPattern (UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA))))
         (simplifyPattern (UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA))))
-        (PatternClash (SortInjectionClash s1 s4) (SortInjectionClash s2 s4))
+        UnsupportedPatterns
     , andSimplifyFailure "unmatching injections"
         -- TODO(traiansf): this should succeed if s1 < s2 < s3
         (UnificationTerm (applyInj s1 s3 aA))
