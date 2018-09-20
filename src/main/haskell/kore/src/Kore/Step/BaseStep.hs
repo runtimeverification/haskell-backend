@@ -23,6 +23,7 @@ module Kore.Step.BaseStep
 import qualified Control.Arrow as Arrow
 import           Control.Monad
                  ( join )
+import           Control.Monad.Except
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -183,9 +184,10 @@ stepWithAxiom
     -- ^ Configuration being rewritten.
     -> AxiomPattern level
     -- ^ Rewriting axiom
-    -> Either
+    -> ExceptT
         (Counter (StepError level Variable))
-        (Counter (ExpandedPattern.CommonExpandedPattern level, StepProof level))
+        Counter
+        (ExpandedPattern.CommonExpandedPattern level, StepProof level)
 stepWithAxiom
     tools
     expandedPattern
