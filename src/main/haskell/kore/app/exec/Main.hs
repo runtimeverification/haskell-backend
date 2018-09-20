@@ -223,7 +223,8 @@ main = do
                             (strategy axiomPatterns)
                             stepLimit
                             (initialPattern, mempty)
-            let outputString = unparseToString
+            let
+                outputString = unparseToString
                     (ExpandedPattern.term finalExpandedPattern)
             if outputFileName /= ""
                 then
