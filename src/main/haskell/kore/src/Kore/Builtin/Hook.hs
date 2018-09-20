@@ -7,7 +7,11 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Builtin.Hook where
+module Kore.Builtin.Hook
+    ( Hook (..)
+    , hookAttribute
+    , getHookAttribute
+    ) where
 
 import Data.Default
        ( Default (..) )
@@ -25,9 +29,12 @@ import           Kore.AST.Common
 import           Kore.AST.Kore
                  ( CommonKorePattern, pattern KoreMetaPattern,
                  pattern KoreObjectPattern )
+import           Kore.AST.Sentence
+                 ( Attributes )
 import           Kore.Attribute.Parser
                  ( ParseAttributes )
 import qualified Kore.Attribute.Parser as Attribute
+import           Kore.Error
 import           Kore.Implicit.Attributes
                  ( attributeHead )
 
@@ -74,3 +81,19 @@ instance ParseAttributes Hook where
       where
         correctAttribute = Just <$> Attribute.parseStringAttribute "hook"
         noAttribute = Attribute.assertNoAttribute "hook" $> Nothing
+
+
+{- | Look up a required @hook{}()@ attribute from the given attributes.
+
+    It is an error if the attribute is missing.
+
+ -}
+getHookAttribute
+    :: MonadError (Error e) m
+    => Attributes
+    -> m String
+getHookAttribute attributes = do
+    case castError (Attribute.parseAttributes attributes) of
+        Left e -> throwError e
+        Right Hook { getHook } ->
+            maybe (koreFail "missing hook attribute") return getHook

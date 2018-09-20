@@ -156,52 +156,47 @@ verifyMetaSentence
     builtinVerifiers
     indexedModule
     attributesVerification
-    (SentenceAliasSentence aliasSentence)
+    sentence
   =
-    verifyAliasSentence
-        (fmap getIndexedSentence . resolveSort indexedModule)
-        builtinVerifiers
-        indexedModule
-        attributesVerification
-        aliasSentence
-verifyMetaSentence
-    _
-    indexedModule
-    attributesVerification
-    (SentenceSymbolSentence symbolSentence)
-  =
-    verifySymbolSentence
-        (fmap getIndexedSentence . resolveSort indexedModule)
-        indexedModule
-        attributesVerification
-        symbolSentence
-verifyMetaSentence
-    builtinVerifiers
-    indexedModule
-    attributesVerification
-    (SentenceAxiomSentence axiomSentence)
-  =
-    verifyAxiomSentence axiomSentence builtinVerifiers indexedModule attributesVerification
-verifyMetaSentence
-    _
-    _indexedModule
-    attributesVerification
-    (SentenceSortSentence sortSentence)
-  = do
-    koreFailWithLocationsWhen
-        (sortParams /= [])
-        [sortId]
-        ("Malformed meta sort '" ++ getId sortId ++ "' with non-empty Parameter sorts.")
-    verifyAttributes
-        (sentenceSortAttributes sortSentence)
-        attributesVerification
+    withSentenceContext sentence verifyMetaSentence0
   where
-    sortId     = sentenceSortName sortSentence
-    sortParams = sentenceSortParameters sortSentence
-verifyMetaSentence _ _ _ (SentenceImportSentence _) =
-    -- Since we have an IndexedModule, we assume that imports were already
-    -- resolved, so there is nothing left to verify here.
-    verifySuccess
+    findSort = fmap getIndexedSentence . resolveSort indexedModule
+    verifyMetaSentence0 =
+        case sentence of
+            SentenceSymbolSentence symbolSentence ->
+                verifySymbolSentence
+                    findSort
+                    indexedModule
+                    attributesVerification
+                    symbolSentence
+            SentenceAliasSentence aliasSentence ->
+                verifyAliasSentence
+                    findSort
+                    builtinVerifiers
+                    indexedModule
+                    attributesVerification
+                    aliasSentence
+            SentenceAxiomSentence axiomSentence ->
+                verifyAxiomSentence
+                    axiomSentence
+                    builtinVerifiers
+                    indexedModule
+                    attributesVerification
+            SentenceSortSentence sortSentence -> do
+                koreFailWhen
+                    (sortParams /= [])
+                    ("Malformed meta sort '" ++ getId sortId
+                        ++ "' with non-empty Parameter sorts.")
+                verifyAttributes
+                    (sentenceSortAttributes sortSentence)
+                    attributesVerification
+              where
+                sortId     = sentenceSortName sortSentence
+                sortParams = sentenceSortParameters sortSentence
+            SentenceImportSentence _ ->
+                -- Since we have an IndexedModule, we assume that imports were
+                -- already resolved, so there is nothing left to verify here.
+                verifySuccess
 
 verifyObjectSentence
     :: Builtin.Verifiers
@@ -213,63 +208,44 @@ verifyObjectSentence
     builtinVerifiers
     indexedModule
     attributesVerification
-    (SentenceAliasSentence aliasSentence)
+    sentence
   =
-    verifyAliasSentence
-        (fmap getIndexedSentence . resolveSort indexedModule)
-        builtinVerifiers
-        indexedModule
-        attributesVerification
-        aliasSentence
-verifyObjectSentence
-    _
-    indexedModule
-    attributesVerification
-    (SentenceSymbolSentence symbolSentence)
-  =
-    verifySymbolSentence
-        (fmap getIndexedSentence . resolveSort indexedModule)
-        indexedModule
-        attributesVerification
-        symbolSentence
-verifyObjectSentence
-    _
-    _
-    attributesVerification
-    (SentenceSortSentence sortSentence)
-  =
-    verifySortSentence sortSentence attributesVerification
-verifyObjectSentence
-    builtinVerifiers
-    _
-    attributesVerification
-    (SentenceHookSentence (SentenceHookedSort sortSentence))
-  =
-    do
-        verifySortSentence sortSentence attributesVerification
-        let SentenceSort { sentenceSortAttributes } = sortSentence
-        hook <- castError (parseAttributes sentenceSortAttributes)
-        Builtin.sortDeclVerifier builtinVerifiers hook sortSentence
-        pure (VerifySuccess ())
-
-verifyObjectSentence
-    builtinVerifiers
-    indexedModule
-    attributesVerification
-    (SentenceHookSentence (SentenceHookedSymbol symbolSentence))
-  =
-    do
-        verifySymbolSentence
-            findSort
-            indexedModule
-            attributesVerification
-            symbolSentence
-        let SentenceSymbol { sentenceSymbolAttributes } = symbolSentence
-        hook <- castError (parseAttributes sentenceSymbolAttributes)
-        Builtin.symbolVerifier builtinVerifiers hook findSort symbolSentence
-        pure (VerifySuccess ())
+    withSentenceContext sentence verifyObjectSentence1
   where
     findSort = fmap getIndexedSentence . resolveSort indexedModule
+    verifyObjectSentence1 =
+        case sentence of
+            SentenceAliasSentence aliasSentence ->
+                verifyAliasSentence
+                    findSort
+                    builtinVerifiers
+                    indexedModule
+                    attributesVerification
+                    aliasSentence
+            SentenceSymbolSentence symbolSentence ->
+                verifySymbolSentence
+                    findSort
+                    indexedModule
+                    attributesVerification
+                    symbolSentence
+            SentenceSortSentence sortSentence ->
+                verifySortSentence sortSentence attributesVerification
+            SentenceHookSentence (SentenceHookedSort sortSentence) -> do
+                verifySortSentence sortSentence attributesVerification
+                let SentenceSort { sentenceSortAttributes } = sortSentence
+                hook <- castError (parseAttributes sentenceSortAttributes)
+                Builtin.sortDeclVerifier builtinVerifiers hook sortSentence
+                pure (VerifySuccess ())
+            SentenceHookSentence (SentenceHookedSymbol symbolSentence) -> do
+                verifySymbolSentence
+                    findSort
+                    indexedModule
+                    attributesVerification
+                    symbolSentence
+                let SentenceSymbol { sentenceSymbolAttributes } = symbolSentence
+                hook <- castError (parseAttributes sentenceSymbolAttributes)
+                Builtin.symbolVerifier builtinVerifiers hook findSort symbolSentence
+                pure (VerifySuccess ())
 
 verifySymbolSentence
     :: (MetaOrObject level)
@@ -281,26 +257,18 @@ verifySymbolSentence
 verifySymbolSentence
     findSortDeclaration _ attributesVerification sentence
   =
-    withLocationAndContext
-        ((symbolConstructor . sentenceSymbolSymbol) sentence)
-        (  "symbol"
-        ++ " '"
-        ++ getId ((symbolConstructor . sentenceSymbolSymbol) sentence)
-        ++ "' declaration"
-        )
-        (do
-            variables <- buildDeclaredSortVariables sortParams
-            mapM_
-                (verifySort findSortDeclaration variables)
-                (sentenceSymbolSorts sentence)
-            verifySort
-                findSortDeclaration
-                variables
-                (sentenceSymbolResultSort sentence)
-            verifyAttributes
-                (sentenceSymbolAttributes sentence)
-                attributesVerification
-        )
+    do
+        variables <- buildDeclaredSortVariables sortParams
+        mapM_
+            (verifySort findSortDeclaration variables)
+            (sentenceSymbolSorts sentence)
+        verifySort
+            findSortDeclaration
+            variables
+            (sentenceSymbolResultSort sentence)
+        verifyAttributes
+            (sentenceSymbolAttributes sentence)
+            attributesVerification
   where
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
@@ -315,43 +283,35 @@ verifyAliasSentence
 verifyAliasSentence
     findSortDeclaration builtinVerifiers indexedModule attributesVerification sentence
   =
-    withLocationAndContext
-        (aliasConstructor $ sentenceAliasAlias sentence)
-        (  "alias"
-        ++ " '"
-        ++ getId (aliasConstructor $ sentenceAliasAlias sentence)
-        ++ "' declaration"
-        )
-        (do
-            variables <- buildDeclaredSortVariables sortParams
-            mapM_
-                (verifySort findSortDeclaration variables)
-                (sentenceAliasSorts sentence)
-            verifySort
-                findSortDeclaration
-                variables
-                (sentenceAliasResultSort sentence)
-            if leftPatternSort == rightPatternSort
-                then
-                    verifySuccess
-                else
-                    koreFail "Left and Right sorts do not match"
-            verifyAliasLeftPattern
-                (Builtin.patternVerifier builtinVerifiers)
-                indexedModule
-                variables
-                (Just $ asUnified leftPatternSort)
-                (asKorePattern $ sentenceAliasLeftPattern sentence)
-            verifyPattern
-                (Builtin.patternVerifier builtinVerifiers)
-                indexedModule
-                variables
-                (Just $ asUnified rightPatternSort)
-                (asKorePattern $ sentenceAliasRightPattern sentence)
-            verifyAttributes
-                (sentenceAliasAttributes sentence)
-                attributesVerification
-        )
+    do
+        variables <- buildDeclaredSortVariables sortParams
+        mapM_
+            (verifySort findSortDeclaration variables)
+            (sentenceAliasSorts sentence)
+        verifySort
+            findSortDeclaration
+            variables
+            (sentenceAliasResultSort sentence)
+        if leftPatternSort == rightPatternSort
+            then
+                verifySuccess
+            else
+                koreFail "Left and Right sorts do not match"
+        verifyAliasLeftPattern
+            (Builtin.patternVerifier builtinVerifiers)
+            indexedModule
+            variables
+            (Just $ asUnified leftPatternSort)
+            (asKorePattern $ sentenceAliasLeftPattern sentence)
+        verifyPattern
+            (Builtin.patternVerifier builtinVerifiers)
+            indexedModule
+            variables
+            (Just $ asUnified rightPatternSort)
+            (asKorePattern $ sentenceAliasRightPattern sentence)
+        verifyAttributes
+            (sentenceAliasAttributes sentence)
+            attributesVerification
   where
     sortParams       = (aliasParams . sentenceAliasAlias) sentence
     leftPatternSort  = patternSort leftPattern
@@ -368,38 +328,31 @@ verifyAxiomSentence
     -> AttributesVerification atts
     -> Either (Error VerifyError) VerifySuccess
 verifyAxiomSentence axiom builtinVerifiers indexedModule attributesVerification =
-    withContext
-        "axiom declaration"
-        (do
-            variables <-
-                buildDeclaredUnifiedSortVariables
-                    (sentenceAxiomParameters axiom)
-            verifyPattern
-                (Builtin.patternVerifier builtinVerifiers)
-                indexedModule
-                variables
-                Nothing
-                (sentenceAxiomPattern axiom)
-            verifyAttributes
-                (sentenceAxiomAttributes axiom)
-                attributesVerification
-        )
+    do
+        variables <-
+            buildDeclaredUnifiedSortVariables
+                (sentenceAxiomParameters axiom)
+        verifyPattern
+            (Builtin.patternVerifier builtinVerifiers)
+            indexedModule
+            variables
+            Nothing
+            (sentenceAxiomPattern axiom)
+        verifyAttributes
+            (sentenceAxiomAttributes axiom)
+            attributesVerification
 
 verifySortSentence
     :: KoreSentenceSort Object
     -> AttributesVerification atts
     -> Either (Error VerifyError) VerifySuccess
 verifySortSentence sentenceSort attributesVerification =
-    withLocationAndContext
-        (sentenceSortName sentenceSort)
-        ("sort '" ++ getId (sentenceSortName sentenceSort) ++ "' declaration")
-        (do
-            _ <-
-                buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
-            verifyAttributes
-                (sentenceSortAttributes sentenceSort)
-                attributesVerification
-        )
+    do
+        _ <-
+            buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
+        verifyAttributes
+            (sentenceSortAttributes sentenceSort)
+            attributesVerification
 
 buildDeclaredSortVariables
     :: MetaOrObject level

@@ -64,9 +64,7 @@ import qualified Text.Megaparsec as Parsec
 import           Kore.AST.Common
                  ( Application (..), BuiltinDomain (..), DomainValue (..),
                  Id (..), Pattern (DomainValuePattern), Sort (..),
-                 SortActual (..), SortVariable (..), Symbol (..), Variable )
-import           Kore.AST.Error
-                 ( withLocationAndContext )
+                 SortActual (..), SortVariable (..), Variable )
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
@@ -250,22 +248,13 @@ notImplemented =
 
  -}
 verifySortDecl :: SortDeclVerifier
-verifySortDecl
-    SentenceSort
-    { sentenceSortName = sortId@Id { getId = sortName }
-    , sentenceSortParameters
-    }
-  =
-    withLocationAndContext
-    sortId
-    ("In sort '" ++ sortName ++ "' declaration")
-    (case sentenceSortParameters of
+verifySortDecl SentenceSort { sentenceSortParameters } =
+    case sentenceSortParameters of
         [] -> pure ()
         _ ->
             Kore.Error.koreFail
                 ("Expected 0 sort parameters, found "
                     ++ show (length sentenceSortParameters))
-    )
 
 {- | Verify the occurrence of a builtin sort.
 
@@ -306,20 +295,12 @@ verifySymbol
     verifyResult
     verifyArguments
     findSort
-    decl@SentenceSymbol
-        { sentenceSymbolSymbol =
-            Symbol { symbolConstructor = symbolId@Id { getId = symbolName } }
-        , sentenceSymbolResultSort = result
-        }
+    decl@SentenceSymbol { sentenceSymbolResultSort = result }
   =
-    withLocationAndContext
-        symbolId
-        ("In symbol '" ++ symbolName ++ "' declaration")
-        (do
-            Kore.Error.withContext "In result sort"
-                (verifyResult findSort result)
-            verifySymbolArguments verifyArguments findSort decl
-        )
+    do
+        Kore.Error.withContext "In result sort"
+            (verifyResult findSort result)
+        verifySymbolArguments verifyArguments findSort decl
 
 {- | Verify the arguments of a builtin sort declaration.
 
