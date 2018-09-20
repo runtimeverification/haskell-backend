@@ -67,9 +67,14 @@ prop_lookupElement (k, v) =
     in Test.Int.asExpandedPattern v === evaluate pat
 
 {- |
-    If @vs = [v1, v2, ...]@,
+    Let @vs = [v1, v2, ...]@ and let @updates@ be the map constructed by
+    assigning @k |-> v@ with all the @vs@ from right to left, i.e.
     @
-        lookup{}(update{}(update{}(..., k, v2), k, v1), k) === v1
+        updates = update{}(update{}(..., k, v2), k, v1)
+    @
+    Then,
+    @
+        lookup{}(updates, k) === v1
     @
     Otherwise, if @vs = []@ then
     @
@@ -91,6 +96,11 @@ prop_lookupUpdates (k, vs) =
     in
         Test.Int.asPartialExpandedPattern v === evaluate patLookup
 
+{- |
+    @
+        concat{}(unit{}(), element{}(key, value)) === element{}(key, value)
+    @
+ -}
 prop_concatUnit :: (Integer, Integer) -> Property
 prop_concatUnit (k, v) =
     let patConcat =
@@ -101,6 +111,32 @@ prop_concatUnit (k, v) =
     in
         evaluate patElement === evaluate patConcat
 
+{- |
+    If @k1@ and @k2@ are distinct keys, then
+    @
+        lookup{}(
+            concat{}(
+                element{}(k1, v1),
+                element{}(k2, v2)
+            ),
+            k1
+        )
+        ===
+        v1
+    @
+    and
+    @
+        lookup{}(
+            concat{}(
+                element{}(k1, v1),
+                element{}(k2, v2)
+            ),
+            k2
+        )
+        ===
+        v2
+    @
+ -}
 prop_lookupConcatUniqueKeys :: (Integer, Integer) -> (Integer, Integer) -> Property
 prop_lookupConcatUniqueKeys (k1, v1) (k2, v2) =
     let patConcat = App_ symbolConcat [ patElement1, patElement2 ]
@@ -118,18 +154,27 @@ prop_lookupConcatUniqueKeys (k1, v1) (k2, v2) =
             (Test.Int.asExpandedPattern v1 === evaluate patLookup1)
             (Test.Int.asExpandedPattern v2 === evaluate patLookup2)
 
-prop_lookupConcatDuplicateKeys :: Integer -> Integer -> Integer -> Property
-prop_lookupConcatDuplicateKeys k v1 v2 =
+{- |
+    @
+        concat{}(element{}(k, v1), element{}(k, v2)) === \bottom{}()
+    @
+ -}
+prop_concatDuplicateKeys :: Integer -> Integer -> Integer -> Property
+prop_concatDuplicateKeys k v1 v2 =
     let patConcat = App_ symbolConcat [ patElement1, patElement2 ]
         patElement1 =
             App_ symbolElement [ Test.Int.asPattern k, Test.Int.asPattern v1 ]
         patElement2 =
             App_ symbolElement [ Test.Int.asPattern k, Test.Int.asPattern v2 ]
-        patLookup =
-            App_ symbolLookup [ patConcat, Test.Int.asPattern k ]
     in
-        (ExpandedPattern.bottom === evaluate patLookup)
+        (ExpandedPattern.bottom === evaluate patConcat)
 
+{- |
+    Let @a = element{}(k1, v1)@ and @b = element{}(k2, v2)@; then
+    @
+        concat{}(a, b) === concat{}(b, a)
+    @
+ -}
 prop_concatCommutes :: (Integer, Integer) -> (Integer, Integer) -> Property
 prop_concatCommutes (k1, v1) (k2, v2) =
     let patConcat1 = App_ symbolConcat [ patElement1, patElement2 ]
@@ -141,6 +186,13 @@ prop_concatCommutes (k1, v1) (k2, v2) =
     in
         evaluate patConcat1 === evaluate patConcat2
 
+{- |
+    Let @a = element{}(k1, v1)@, @b = element{}(k2, v2)@
+    and @c = element{}(k3, v3)@; then
+    @
+        concat{}(concat{}(a, b), c) === concat{}(a, concat{}(b, c))
+    @
+ -}
 prop_concatAssociates :: (Integer, Integer) -> (Integer, Integer) -> (Integer, Integer) -> Property
 prop_concatAssociates (k1, v1) (k2, v2) (k3, v3) =
     let patConcat12 = App_ symbolConcat [ patElement1, patElement2 ]
@@ -155,6 +207,33 @@ prop_concatAssociates (k1, v1) (k2, v2) (k3, v3) =
             App_ symbolElement [ Test.Int.asPattern k3, Test.Int.asPattern v3 ]
     in
         evaluate patConcat12_3 === evaluate patConcat1_23
+
+{- |
+    @
+        inKeys{}(unit{}(), k) === \dv{Bool{}}("true")
+    @
+ -}
+prop_inKeysUnit :: Integer -> Property
+prop_inKeysUnit k =
+    let patKey = Test.Int.asPattern k
+        patUnit = App_ symbolUnit []
+        patInKeys = App_ symbolInKeys [ patKey, patUnit ]
+    in
+        Test.Bool.asExpandedPattern False === evaluate patInKeys
+
+{- |
+    @
+        inKeys{}(element{}(), k) === \bottom{}()
+    @
+ -}
+prop_inKeysElement :: (Integer, Integer) -> Property
+prop_inKeysElement (key, value) =
+    let patKey = Test.Int.asPattern key
+        patValue = Test.Int.asPattern value
+        patMap = App_ symbolElement [ patKey, patValue ]
+        patInKeys = App_ symbolInKeys [ patKey, patMap ]
+    in
+        Test.Bool.asExpandedPattern True === evaluate patInKeys
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern
@@ -225,12 +304,14 @@ symbolElement :: SymbolOrAlias Object
 symbolConcat :: SymbolOrAlias Object
 symbolLookup :: SymbolOrAlias Object
 symbolUpdate :: SymbolOrAlias Object
+symbolInKeys :: SymbolOrAlias Object
 symbols@Map.Symbols
     { symbolUnit
     , symbolElement
     , symbolConcat
     , symbolLookup
     , symbolUpdate
+    , symbolInKeys
     }
   =
     Map.Symbols
@@ -239,6 +320,7 @@ symbols@Map.Symbols
         , symbolConcat = builtinSymbol "concatMap"
         , symbolLookup = builtinSymbol "lookupMap"
         , symbolUpdate = builtinSymbol "updateMap"
+        , symbolInKeys = builtinSymbol "inKeysMap"
         }
 
 {- | Declare the @MAP@ builtins.
@@ -262,6 +344,8 @@ mapModule =
                 Test.Int.intSort [mapSort, Test.Int.intSort]
             , hookedSymbolDecl "MAP.update" symbolUpdate
                 mapSort [mapSort, Test.Int.intSort, Test.Int.intSort]
+            , hookedSymbolDecl "MAP.in_keys" symbolInKeys
+                Test.Bool.boolSort [Test.Int.intSort, mapSort]
             ]
         }
 

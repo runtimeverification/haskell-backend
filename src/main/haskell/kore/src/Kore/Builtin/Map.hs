@@ -37,6 +37,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
+import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
@@ -87,6 +88,9 @@ symbolVerifiers =
       )
     , ( "MAP.update"
       , Builtin.verifySymbol assertSort [assertSort, anySort, anySort]
+      )
+    , ( "MAP.in_keys"
+      , Builtin.verifySymbol Bool.assertSort [anySort, assertSort]
       )
     ]
   where
@@ -203,6 +207,23 @@ evalUpdate =
             returnMap resultSort (Map.insert _key _value _map)
         )
 
+evalInKeys :: Builtin.Function
+evalInKeys =
+    Builtin.functionEvaluator evalInKeys0
+  where
+    evalInKeys0 _ _ resultSort = \arguments ->
+        getAttemptedFunction
+        (do
+            let (_key, _map) =
+                    case arguments of
+                        [_key, _map] -> (_key, _map)
+                        _ -> Builtin.wrongArity "MAP.in_keys"
+            _map <- expectBuiltinDomainMap "MAP.in_keys" _map
+            Builtin.appliedFunction
+                $ Bool.asExpandedPattern resultSort
+                $ Map.member _key _map
+        )
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map String Builtin.Function
@@ -213,4 +234,5 @@ builtinFunctions =
         , ("MAP.element", evalElement)
         , ("MAP.unit", evalUnit)
         , ("MAP.update", evalUpdate)
+        , ("MAP.in_keys", evalInKeys)
         ]
