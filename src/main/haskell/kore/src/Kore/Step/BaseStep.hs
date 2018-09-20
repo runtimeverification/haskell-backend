@@ -183,10 +183,9 @@ stepWithAxiom
     -- ^ Configuration being rewritten.
     -> AxiomPattern level
     -- ^ Rewriting axiom
-    -> ExceptT
+    -> Either
         (Counter (StepError level Variable))
-        Counter
-        (ExpandedPattern.CommonExpandedPattern level, StepProof level)
+        (Counter (ExpandedPattern.CommonExpandedPattern level, StepProof level))
 stepWithAxiom
     tools
     expandedPattern
