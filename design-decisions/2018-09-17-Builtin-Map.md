@@ -9,44 +9,55 @@ Here "partial" means that some keys may not be associated with any value.
 KEVM relies on concrete operations only, but we will eventually need to support
 symbolic operations.
 
-Operations
-----------
+Problem
+-------
 
-The builtin `Map` domain should support operations equivalent to:
+KEVM requires that the builtin `Map` domain supports operations equivalent to:
 
 ```
 module MAP
-    sort Map{} []
+    hooked-sort Map{}
+        [hook{}("MAP.Map")]
 
-    // unit: The empty map (no keys).
-    symbol unit{}() : Map{} []
+    // unit:
+    // The empty map (containing no keys).
+    hooked-symbol unit{}() : Map{}
+        [hook{}("MAP.unit")]
 
-    // element(key, value): A map from one key to one value.
-    symbol element{}(K{}, K{}) : Map{} []
+    // element(key, value):
+    // A map from with exactly one association: ‘key |-> value’.
+    hooked-symbol element{}(K{}, K{}) : Map{}
+        [hook{}("MAP.element")]
 
-    // concat(map1, map2): Combine both maps so that a key is in the result if
-    // it is in either operand.
-    symbol concat{}(Map{}, Map{}) : Map{} []
+    // concat(map1, map2):
+    // Combine ‘map1’ and ‘map2’ so that the association ‘key |-> value’ is in
+    // the result if it is in one operand. The result is ‘\bottom{}()’ if
+    // ‘map1’ and ‘map2’ have any keys in common.
+    symbol concat{}(Map{}, Map{}) : Map{}
+        [hook{}("MAP.concat")]
 
-    // update(map, key, value): Update the map so that key refers to value.
-    symbol update{}(Map{}, K{}, K{}) : Map{} []
+    // update(map, key, value):
+    // Update ‘map’ with the association ‘key |-> value’.
+    // The ‘key’ may or may not be present in ‘map’.
+    symbol update{}(Map{}, K{}, K{}) : Map{}
+        [hook{}("MAP.update")]
 
-    // lookup(map, key): Lookup key in map and return the associated value.
-    // Return \bottom if the key is missing.
-    symbol lookup{}(Map{}, K{}) : K{} []
+    // lookup(map, key):
+    // If ‘map’ contains the association ‘key |-> value’, then the result
+    // is ‘value’; otherwise the result is ‘\bottom{}()’.
+    symbol lookup{}(Map{}, K{}) : K{}
+        [hook{}("MAP.lookup")]
 
-    // inKeys(map, key): Is key in map?
-    symbol inKeys{}(Map{}, K{}) : Bool{} []
+    // inKeys(map, key):
+    // If ‘map’ contains any association ‘key |-> _’, then the result is
+    // ‘\dv{Bool{}}("true")’; otherwise the result is ‘\dv{Bool{}}("false")’.
+    symbol inKeys{}(Map{}, K{}) : Bool{}
+        [hook{}("MAP.in_keys")]
 endmodule
 ```
 
-Questions:
-
-- What does `update` do if the key is missing from the map?
-- What does `concat` do if the key is present in both maps?
-
-Concrete operations
--------------------
+Decision: Implement concrete operations immediately
+---------------------------------------------------
 
 Existing semantics, particularly KEVM, rely on concrete map operations.
 Therefore, we may assume all keys are concrete, i.e. contain no variables.
@@ -55,8 +66,8 @@ and perform lookup by exact structural equality of patterns.
 For the immediate purpose of supporting KEVM, we may do the same:
 perform key lookup by exact structural equality between patterns.
 
-Symbolic operations
--------------------
+Decision: Defer implementing symbolic operations
+------------------------------------------------
 
 Eventually we will support both concrete and symbolic map operations.
 Once we support concrete operations, we can add support for symbolic operations
@@ -69,3 +80,13 @@ Looking up a symbolic key will traverse the entire map and will potentially be
 very expensive, so we will want to fall back to concrete lookup whenever
 possible; therefore it is in our best interest to implement concrete operations
 first.
+
+There is a trade-off to make between evaluating symbolic insertion and lookup.
+Either operation can be left as an unevaluated pattern.
+When evaluated, the symbolic operations may generate a large disjunction of
+patterns; the trade-off is _when_ the disjunction is generated.
+We have tentatively decided to evaluate lookups and leave insertions unevaluated.
+During a lookup, all the branches where the key does not unify can be discarded,
+so there may be fewer branches to explore.
+On the other hand, the result of evaluating an insertion is always the largest
+possible disjunction.
