@@ -38,7 +38,8 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeTruePredicate )
+                 ( pattern PredicateTrue, makeEqualsPredicate,
+                 makeNotPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern),
                  PredicateSubstitution (PredicateSubstitution) )
@@ -86,12 +87,16 @@ termEquals
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (Counter (ExpandedPattern level variable, SimplificationProof level))
+        (Counter (PredicateSubstitution level variable, SimplificationProof level))
 termEquals tools first second = do  -- Maybe monad
     result <-termEqualsAnd tools first second
-    return $ do  -- IntCounter monad
-        (patt, _pred) <- result
-        return (patt {ExpandedPattern.term = mkTop}, SimplificationProof)
+    return $ do  -- Counter monad
+        (ExpandedPattern {predicate, substitution}, _pred) <- result
+        return
+            ( PredicateSubstitution
+                {predicate = predicate, substitution = substitution}
+            , SimplificationProof
+            )
 
 termEqualsAnd
     ::  ( MetaOrObject level
@@ -166,6 +171,8 @@ maybeTermEquals
 maybeTermEquals =
     maybeTransformTerm
         [ liftET equalAndEquals
+        , lift   bottomTermEquals
+        , lift   termBottomEquals
         , lift   (variableFunctionAndEquals SimplifyEquals)
         , lift   (functionVariableAndEquals SimplifyEquals)
         ,        equalInjectiveHeadsAndEquals
@@ -448,6 +455,58 @@ equalAndEquals first second
     Handled (first, SimplificationProof)
 equalAndEquals _ _ = NotHandled
 
+{-| Equals simplification for `bottom == term`.
+
+Returns NotHandled if it could not handle the input.
+-}
+bottomTermEquals
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> FunctionResult
+        (ExpandedPattern level variable, SimplificationProof level)
+bottomTermEquals
+    tools
+    (Bottom_ _)
+    second
+  = case Ceil.makeEvaluateTerm tools second of
+    (PredicateTrue, _proof) ->
+        Handled (ExpandedPattern.bottom, SimplificationProof)
+    (predicate, _proof) ->
+        Handled
+            ( ExpandedPattern
+                { term = mkTop
+                , predicate = give (MetadataTools.sortTools tools) $
+                    case makeNotPredicate predicate of
+                        (pred, _proof) -> pred
+                , substitution = []
+                }
+            , SimplificationProof
+            )
+bottomTermEquals _ _ _ = NotHandled
+
+{-| Equals simplification for `term == bottom`.
+
+Returns NotHandled if it could not handle the input.
+-}
+termBottomEquals
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> FunctionResult
+        (ExpandedPattern level variable, SimplificationProof level)
+termBottomEquals tools first second = bottomTermEquals tools second first
+
 {-| And simplification for `variable and function`.
 
 Returns NotHandled if it could not handle the input.
@@ -553,7 +612,7 @@ equalInjectiveHeadsAndEquals
   = Handled $ do -- Maybe monad
     intCounterChildren <- sequenceA $
         zipWith termMerger firstChildren secondChildren
-    return $ do -- IntCounter monad
+    return $ do -- Counter monad
         children <- sequenceA intCounterChildren
         (   PredicateSubstitution
                 { predicate = mergedPredicate
