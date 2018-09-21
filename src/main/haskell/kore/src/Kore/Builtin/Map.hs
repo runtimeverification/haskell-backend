@@ -19,6 +19,16 @@ module Kore.Builtin.Map
     , sortDeclVerifiers
     , symbolVerifiers
     , builtinFunctions
+    , Builtin
+    , asPattern
+    , asExpandedPattern
+      -- * Symbols
+    , lookupSymbolUnit
+    , lookupSymbolUpdate
+    , lookupSymbolLookup
+    , lookupSymbolElement
+    , lookupSymbolConcat
+    , lookupSymbolInKeys
     ) where
 
 import qualified Control.Monad as Monad
@@ -39,6 +49,11 @@ import           Kore.AST.PureML
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Error as Kore
+import           Kore.IndexedModule.IndexedModule
+                 ( KoreIndexedModule )
+import           Kore.Step.ExpandedPattern
+                 ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
@@ -97,7 +112,7 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type PatternMap = Map (CommonPurePattern Object) (CommonPurePattern Object)
+type Builtin = Map (CommonPurePattern Object) (CommonPurePattern Object)
 
 {- | Abort function evaluation if the argument is not a Map domain value.
 
@@ -110,7 +125,7 @@ expectBuiltinDomainMap
     :: Monad m
     => String  -- ^ Context for error message
     -> CommonPurePattern Object  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object Kore.Variable) m PatternMap
+    -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
 expectBuiltinDomainMap ctx =
     \case
         Kore.DV_ _ domain ->
@@ -126,7 +141,7 @@ getAttemptedFunction = fmap (either id id) . runExceptT
 returnMap
     :: Monad m
     => Kore.Sort Object
-    -> PatternMap
+    -> Builtin
     -> m (AttemptedFunction Object Kore.Variable)
 returnMap resultSort _map =
     Builtin.appliedFunction
@@ -236,3 +251,83 @@ builtinFunctions =
         , ("MAP.update", evalUpdate)
         , ("MAP.in_keys", evalInKeys)
         ]
+
+{- | Render a 'Map' as a domain value pattern of the given sort.
+
+    The result sort should be hooked to the builtin @Int@ sort, but this is not
+    checked.
+
+    The constructed pattern will be valid in the contexed of the given indexed
+    module. It is an error if the indexed module does not define symbols hooked
+    to @MAP.unit@ and @MAP.update@.
+
+    See also: 'sort'
+
+ -}
+asPattern
+    :: KoreIndexedModule attrs
+    -- ^ indexed module where pattern would appear
+    -> Kore.Sort Object
+    -> Either (Kore.Error e) (Builtin -> CommonPurePattern Object)
+asPattern indexedModule _
+  = do
+    symbolUnit <- lookupSymbolUnit indexedModule
+    let applyUnit = Kore.App_ symbolUnit []
+    symbolUpdate <- lookupSymbolUpdate indexedModule
+    let applyUpdate (k, v) m = Kore.App_ symbolUpdate [m, k, v]
+    return $ \result -> foldr applyUpdate applyUnit (Map.toAscList result)
+
+{- | Render a 'Map' as an extended domain value pattern.
+
+    See also: 'asPattern'
+
+ -}
+asExpandedPattern
+    :: KoreIndexedModule attrs
+    -- ^ dictionary of Map constructor symbols
+    -> Kore.Sort Object
+    -> Either (Kore.Error e) (Builtin -> CommonExpandedPattern Object)
+asExpandedPattern symbols resultSort =
+    (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
+
+{- | Find the symbol hooked to @MAP.unit@ in an indexed module.
+ -}
+lookupSymbolUnit
+    :: KoreIndexedModule attrs
+    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+lookupSymbolUnit = Builtin.lookupSymbol "MAP.unit"
+
+{- | Find the symbol hooked to @MAP.update@ in an indexed module.
+ -}
+lookupSymbolUpdate
+    :: KoreIndexedModule attrs
+    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+lookupSymbolUpdate = Builtin.lookupSymbol "MAP.update"
+
+{- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
+ -}
+lookupSymbolLookup
+    :: KoreIndexedModule attrs
+    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+lookupSymbolLookup = Builtin.lookupSymbol "MAP.lookup"
+
+{- | Find the symbol hooked to @MAP.element@ in an indexed module.
+ -}
+lookupSymbolElement
+    :: KoreIndexedModule attrs
+    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+lookupSymbolElement = Builtin.lookupSymbol "MAP.element"
+
+{- | Find the symbol hooked to @MAP.concat@ in an indexed module.
+ -}
+lookupSymbolConcat
+    :: KoreIndexedModule attrs
+    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+lookupSymbolConcat = Builtin.lookupSymbol "MAP.concat"
+
+{- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
+ -}
+lookupSymbolInKeys
+    :: KoreIndexedModule attrs
+    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+lookupSymbolInKeys = Builtin.lookupSymbol "MAP.in_keys"

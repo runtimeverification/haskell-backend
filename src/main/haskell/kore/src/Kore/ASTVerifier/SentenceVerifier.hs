@@ -27,8 +27,6 @@ import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.PatternVerifier
 import           Kore.ASTVerifier.SortVerifier
-import           Kore.Attribute.Parser
-                 ( parseAttributes )
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -230,22 +228,57 @@ verifyObjectSentence
                     symbolSentence
             SentenceSortSentence sortSentence ->
                 verifySortSentence sortSentence attributesVerification
-            SentenceHookSentence (SentenceHookedSort sortSentence) -> do
-                verifySortSentence sortSentence attributesVerification
-                let SentenceSort { sentenceSortAttributes } = sortSentence
-                hook <- castError (parseAttributes sentenceSortAttributes)
-                Builtin.sortDeclVerifier builtinVerifiers hook sortSentence
-                pure (VerifySuccess ())
-            SentenceHookSentence (SentenceHookedSymbol symbolSentence) -> do
-                verifySymbolSentence
-                    findSort
+            SentenceHookSentence hookSentence ->
+                verifyHookSentence
+                    builtinVerifiers
                     indexedModule
                     attributesVerification
-                    symbolSentence
-                let SentenceSymbol { sentenceSymbolAttributes } = symbolSentence
-                hook <- castError (parseAttributes sentenceSymbolAttributes)
-                Builtin.symbolVerifier builtinVerifiers hook findSort symbolSentence
-                pure (VerifySuccess ())
+                    hookSentence
+
+verifyHookSentence
+    :: Builtin.Verifiers
+    -> KoreIndexedModule atts
+    -> AttributesVerification atts
+    -> SentenceHook Object UnifiedPattern Variable
+    -> Either (Error VerifyError) VerifySuccess
+verifyHookSentence
+    builtinVerifiers
+    indexedModule
+    attributesVerification
+  =
+    \case
+        SentenceHookedSort s -> verifyHookedSort s
+        SentenceHookedSymbol s -> verifyHookedSymbol s
+  where
+    findSort = fmap getIndexedSentence . resolveSort indexedModule
+
+    verifyHookedSort
+        sentence@SentenceSort { sentenceSortAttributes }
+      = do
+        verifySortSentence sentence attributesVerification
+        hook <-
+            verifyHookAttribute
+                indexedModule
+                attributesVerification
+                sentenceSortAttributes
+        Builtin.sortDeclVerifier builtinVerifiers hook sentence
+        return (VerifySuccess ())
+
+    verifyHookedSymbol
+        sentence@SentenceSymbol { sentenceSymbolAttributes }
+      = do
+        verifySymbolSentence
+            findSort
+            indexedModule
+            attributesVerification
+            sentence
+        hook <-
+            verifyHookAttribute
+                indexedModule
+                attributesVerification
+                sentenceSymbolAttributes
+        Builtin.symbolVerifier builtinVerifiers hook findSort sentence
+        return (VerifySuccess ())
 
 verifySymbolSentence
     :: (MetaOrObject level)

@@ -298,16 +298,12 @@ prop_inKeysElement (key, value) =
             ]
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern
-    :: Map (CommonPurePattern Object) (CommonPurePattern Object)
-    -> CommonPurePattern Object
-asPattern = Map.asPattern symbols mapSort
+asPattern :: Map.Builtin -> CommonPurePattern Object
+Right asPattern = Map.asPattern indexedModule mapSort
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asExpandedPattern
-    :: Map (CommonPurePattern Object) (CommonPurePattern Object)
-    -> CommonExpandedPattern Object
-asExpandedPattern = Map.asExpandedPattern symbols mapSort
+asExpandedPattern :: Map.Builtin -> CommonExpandedPattern Object
+Right asExpandedPattern = Map.asExpandedPattern indexedModule mapSort
 
 -- | A sort to hook to the builtin @MAP.Map@.
 mapSort :: Sort Object
@@ -360,30 +356,23 @@ builtinSymbol name =
         , symbolOrAliasParams = []
         }
 
-symbols :: Map.Symbols
 symbolUnit :: SymbolOrAlias Object
-symbolElement :: SymbolOrAlias Object
-symbolConcat :: SymbolOrAlias Object
-symbolLookup :: SymbolOrAlias Object
+Right symbolUnit = Map.lookupSymbolUnit indexedModule
+
 symbolUpdate :: SymbolOrAlias Object
+Right symbolUpdate = Map.lookupSymbolUpdate indexedModule
+
+symbolLookup :: SymbolOrAlias Object
+Right symbolLookup = Map.lookupSymbolLookup indexedModule
+
+symbolElement :: SymbolOrAlias Object
+Right symbolElement = Map.lookupSymbolElement indexedModule
+
+symbolConcat :: SymbolOrAlias Object
+Right symbolConcat = Map.lookupSymbolConcat indexedModule
+
 symbolInKeys :: SymbolOrAlias Object
-symbols@Map.Symbols
-    { symbolUnit
-    , symbolElement
-    , symbolConcat
-    , symbolLookup
-    , symbolUpdate
-    , symbolInKeys
-    }
-  =
-    Map.Symbols
-        { symbolUnit = builtinSymbol "unitMap"
-        , symbolElement = builtinSymbol "elementMap"
-        , symbolConcat = builtinSymbol "concatMap"
-        , symbolLookup = builtinSymbol "lookupMap"
-        , symbolUpdate = builtinSymbol "updateMap"
-        , symbolInKeys = builtinSymbol "inKeysMap"
-        }
+Right symbolInKeys = Map.lookupSymbolInKeys indexedModule
 
 {- | Declare the @MAP@ builtins.
  -}
@@ -396,17 +385,17 @@ mapModule =
             [ importBool
             , importInt
             , mapSortDecl
-            , hookedSymbolDecl "MAP.unit" symbolUnit
+            , hookedSymbolDecl "MAP.unit" (builtinSymbol "unitMap")
                 mapSort []
-            , hookedSymbolDecl "MAP.element" symbolElement
+            , hookedSymbolDecl "MAP.element" (builtinSymbol "elementMap")
                 mapSort [Test.Int.intSort, Test.Int.intSort]
-            , hookedSymbolDecl "MAP.concat" symbolConcat
+            , hookedSymbolDecl "MAP.concat" (builtinSymbol "concatMap")
                 mapSort [mapSort, mapSort]
-            , hookedSymbolDecl "MAP.lookup" symbolLookup
+            , hookedSymbolDecl "MAP.lookup" (builtinSymbol "lookupMap")
                 Test.Int.intSort [mapSort, Test.Int.intSort]
-            , hookedSymbolDecl "MAP.update" symbolUpdate
+            , hookedSymbolDecl "MAP.update" (builtinSymbol "updateMap")
                 mapSort [mapSort, Test.Int.intSort, Test.Int.intSort]
-            , hookedSymbolDecl "MAP.in_keys" symbolInKeys
+            , hookedSymbolDecl "MAP.in_keys" (builtinSymbol "inKeysMap")
                 Test.Bool.boolSort [Test.Int.intSort, mapSort]
             ]
         }

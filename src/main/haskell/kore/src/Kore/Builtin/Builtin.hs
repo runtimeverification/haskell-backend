@@ -42,6 +42,7 @@ module Kore.Builtin.Builtin
     , verifierBug
     , wrongArity
     , appliedFunction
+    , lookupSymbol
     ) where
 
 import           Control.Monad
@@ -64,7 +65,8 @@ import qualified Text.Megaparsec as Parsec
 import           Kore.AST.Common
                  ( Application (..), BuiltinDomain (..), DomainValue (..),
                  Id (..), Pattern (DomainValuePattern), Sort (..),
-                 SortActual (..), SortVariable (..), Variable )
+                 SortActual (..), SortVariable (..), SymbolOrAlias (..),
+                 Variable )
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
@@ -86,10 +88,11 @@ import           Kore.Error
                  ( Error )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( SortDescription )
+                 ( KoreIndexedModule, SortDescription )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import           Kore.Step.Function.Data
@@ -555,8 +558,8 @@ wrongArity ctx = verifierBug (ctx ++ ": Wrong number of arguments")
 
 {- | Run a parser on a verified domain value.
 
-  Any parse failure indicates a bug in the well-formedness checker; in this case
-  an error is thrown.
+    Any parse failure indicates a bug in the well-formedness checker; in this
+    case an error is thrown.
 
  -}
 runParser :: HasCallStack => String -> Either (Error e) a -> a
@@ -564,3 +567,19 @@ runParser ctx result =
     case result of
         Left e -> verifierBug (ctx ++ ": " ++ Kore.Error.printError e)
         Right a -> a
+
+{- | Look up the symbol hooked to the named builtin in the provided module.
+ -}
+lookupSymbol
+    :: String
+    -- ^ builtin name
+    -> KoreIndexedModule attrs
+    -> Either (Error e) (SymbolOrAlias Object)
+lookupSymbol builtinName indexedModule
+  = do
+    symbolOrAliasConstructor <- IndexedModule.resolveHook indexedModule builtinName
+    _ <- IndexedModule.resolveSymbol indexedModule symbolOrAliasConstructor
+    return SymbolOrAlias
+        { symbolOrAliasConstructor
+        , symbolOrAliasParams = []
+        }

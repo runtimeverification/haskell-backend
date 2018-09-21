@@ -198,7 +198,7 @@ boolDefinition =
         }
 
 indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
-Right indexedModules = verify boolDefinition
+indexedModules = either (error . Kore.Error.printError) id (verify boolDefinition)
 
 indexedModule :: KoreIndexedModule StepperAttributes
 Just indexedModule = Map.lookup boolModuleName indexedModules

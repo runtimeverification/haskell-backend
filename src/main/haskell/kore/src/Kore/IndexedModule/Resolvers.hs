@@ -15,11 +15,13 @@ module Kore.IndexedModule.Resolvers
     , resolveAlias
     , resolveSymbol
     , resolveHook
+    , resolveHooks
     ) where
 
+import qualified Data.List as List
 import qualified Data.Map as Map
-import           Data.Monoid
-                 ( First (..) )
+import           Data.Maybe
+                 ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
 import qualified Data.Set as Set
@@ -243,11 +245,25 @@ resolveHook
     -> String
     -> Either (Error a) (Id Object)
 resolveHook indexedModule builtinName =
-    case getFirst (foldMap resolveHook1 allHooks) of
-        Just hookId ->
-            return hookId
-        Nothing ->
+    case resolveHooks indexedModule builtinName of
+        [hookId] -> return hookId
+        [] ->
             koreFail ("Builtin '" ++ builtinName ++ "' is not hooked.")
+        hookIds ->
+            koreFail
+                ("Builtin '" ++ builtinName
+                    ++ "' is hooked to multiple identifiers: "
+                    ++ List.intercalate ", " (squotes . getId <$> hookIds)
+                )
+          where
+            squotes str = "'" ++ str ++ "'"
+
+resolveHooks
+    :: KoreIndexedModule atts
+    -> String
+    -> [Id Object]
+resolveHooks indexedModule builtinName =
+    foldMap resolveHooks1 allHooks
   where
     allHooks = allHooksOf indexedModule
     allHooksOf _module =
@@ -255,4 +271,4 @@ resolveHook indexedModule builtinName =
                 (\(_, _, _import) -> _import) <$> indexedModuleImports _module
         in
             indexedModuleHooks _module : mconcat (allHooksOf <$> _imports)
-    resolveHook1 hooks = First (Map.lookup builtinName hooks)
+    resolveHooks1 hooks = fromMaybe [] (Map.lookup builtinName hooks)

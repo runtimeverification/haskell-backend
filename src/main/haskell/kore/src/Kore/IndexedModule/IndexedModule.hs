@@ -51,7 +51,6 @@ import Kore.AST.Sentence
 import Kore.Attribute.Parser
        ( ParseAttributes, parseAttributes )
 import Kore.Builtin.Hook
-       ( Hook (..) )
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
 
@@ -100,10 +99,14 @@ data IndexedModule sortParam pat variable atts =
     , indexedModuleHookedIdentifiers
         :: !(Set.Set (Id Object))
         -- ^ set of hooked identifiers
+
+    -- TODO (thomas.tuegel): Having multiple identifiers hooked to the same
+    -- builtin is not actually valid, but the index must admit invalid data
+    -- because verification only happens after.
     , indexedModuleHooks
-        :: !(Map.Map String (Id Object))
+        :: !(Map.Map String [Id Object])
         -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
-        -- identifier
+        -- identifiers
     }
 
 -- |Convenient notation for retrieving a sentence from a
@@ -603,15 +606,6 @@ indexModuleObjectSentence
                 }
             )
 
-    {- | Look up the @hook{}()@ attribute in @attributes@.
-
-        It is an error if there is no hook attribute.
-     -}
-    getHookAttribute attributes =
-        do
-            Hook { getHook } <- parseAttributesInModule attributes
-            maybe (koreFail "missing hook attribute") return getHook
-
     indexSentenceHook
         (SentenceHookedSort _sentence@SentenceSort
             { sentenceSortName
@@ -633,7 +627,10 @@ indexModuleObjectSentence
                 { indexedModuleHookedIdentifiers =
                     Set.insert sentenceSortName indexedModuleHookedIdentifiers
                 , indexedModuleHooks =
-                    Map.insert hook sentenceSortName indexedModuleHooks
+                    Map.alter
+                        (Just . maybe [sentenceSortName] (sentenceSortName :))
+                        hook
+                        indexedModuleHooks
                 }
             )
 
@@ -655,7 +652,10 @@ indexModuleObjectSentence
                 , indexedModuleHookedIdentifiers =
                     Set.insert symbolConstructor indexedModuleHookedIdentifiers
                 , indexedModuleHooks =
-                    Map.insert hook symbolConstructor indexedModuleHooks
+                    Map.alter
+                        (Just . maybe [symbolConstructor] (symbolConstructor :))
+                        hook
+                        indexedModuleHooks
                 }
             )
 
