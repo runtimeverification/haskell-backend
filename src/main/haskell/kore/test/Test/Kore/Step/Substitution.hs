@@ -9,6 +9,8 @@ import Test.Tasty.HUnit
 
 import           Control.Monad.Counter
                  ( evalCounter )
+import           Control.Monad.Except
+                 ( runExceptT )
 import           Data.Reflection
                  ( give )
 
@@ -217,6 +219,10 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
               ( UnificationOrSubstitutionError Object Variable )
               ( PredicateSubstitution Object Variable )
     normalize s1 s2 =
-        case mergeAndNormalizeSubstitutions mockMetadataTools s1 s2 of
-            Left e -> Left e
-            Right res -> Right . fst $ evalCounter res
+        let
+            result =
+                evalCounter
+                . runExceptT
+                $ mergeAndNormalizeSubstitutions mockMetadataTools s1 s2
+        in
+            fmap fst result

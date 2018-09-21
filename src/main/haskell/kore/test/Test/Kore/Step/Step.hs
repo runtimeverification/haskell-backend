@@ -92,16 +92,8 @@ expectTwoAxioms =
             , substitution = []
             }
         , (mconcat . map stepProof)
-            [ StepProofVariableRenamings
-                [ variableRenaming
-                    (x1 PatternSort) (var_0 PatternSort)
-                ]
-            , StepProofUnification
-                ( proposition_5_24_3
-                    [ functionalVariable (v1 PatternSort) ]
-                    (var_0 PatternSort)
-                    (v1 PatternSort)
-                )
+            [ StepProofVariableRenamings []
+            , StepProofUnification EmptyUnificationProof
             , StepProofSimplification SimplificationProof
             ]
         )
@@ -117,16 +109,8 @@ expectTwoAxioms =
             , substitution = []
             }
         , (mconcat . map stepProof)
-            [ StepProofVariableRenamings
-                [ variableRenaming
-                    (x1 PatternSort) (var_1 PatternSort)
-                ]
-            , StepProofUnification
-                ( proposition_5_24_3
-                    [ functionalVariable (v1 PatternSort) ]
-                    (var_1 PatternSort)
-                    (v1 PatternSort)
-                )
+            [ StepProofVariableRenamings []
+            , StepProofUnification EmptyUnificationProof
             , StepProofSimplification SimplificationProof
             ]
         )
@@ -225,14 +209,8 @@ expectIdentity =
     [
         ( initialIdentity
         , (mconcat . map stepProof)
-            [ StepProofVariableRenamings
-                [ variableRenaming (x1 PatternSort) (var_0 PatternSort) ]
-            , StepProofUnification
-                ( proposition_5_24_3
-                    [ functionalVariable (v1 PatternSort) ]
-                    (var_0 PatternSort)
-                    (v1 PatternSort)
-                )
+            [ StepProofVariableRenamings []
+            , StepProofUnification EmptyUnificationProof
             , StepProofSimplification SimplificationProof
             ]
         )
@@ -327,19 +305,8 @@ expectOneStep =
         }
     , mconcat
         (map stepProof
-            [ StepProofVariableRenamings
-                [ variableRenaming
-                    (x1 PatternSort) (var_0 PatternSort)
-                ]
-            , StepProofUnification
-                (AndDistributionAndConstraintLifting
-                    fSymbol
-                    [ proposition_5_24_3
-                        [ functionalVariable (v1 PatternSort) ]
-                        (var_0 PatternSort)
-                        (v1 PatternSort)
-                    ]
-                )
+            [ StepProofVariableRenamings []
+            , StepProofUnification EmptyUnificationProof
             , StepProofSimplification SimplificationProof
             ]
         )
@@ -373,33 +340,11 @@ expectTwoSteps =
         , substitution = []
         }
     , (mconcat . map stepProof)
-        [ StepProofVariableRenamings
-            [ variableRenaming
-                (x1 PatternSort) (var_0 PatternSort)
-            ]
-        , StepProofUnification
-            (AndDistributionAndConstraintLifting
-                fSymbol
-                [ proposition_5_24_3
-                    [ functionalVariable (v1 PatternSort) ]
-                    (var_0 PatternSort)
-                    (v1 PatternSort)
-                ]
-            )
+        [ StepProofVariableRenamings []
+        , StepProofUnification EmptyUnificationProof
         , StepProofSimplification SimplificationProof
-        , StepProofVariableRenamings
-            [ variableRenaming
-                (x1 PatternSort) (var_3 PatternSort)
-            ]
-        , StepProofUnification
-            (AndDistributionAndConstraintLifting
-                gSymbol
-                [ proposition_5_24_3
-                    [ functionalVariable (v1 PatternSort) ]
-                    (var_3 PatternSort)
-                    (v1 PatternSort)
-                ]
-            )
+        , StepProofVariableRenamings []
+        , StepProofUnification EmptyUnificationProof
         , StepProofSimplification SimplificationProof
         ]
     )
@@ -447,19 +392,8 @@ expectStepLimit =
         , substitution = []
         }
     , (mconcat . map stepProof)
-        [ StepProofVariableRenamings
-            [ variableRenaming
-                (x1 PatternSort) (var_0 PatternSort)
-            ]
-        , StepProofUnification
-            (AndDistributionAndConstraintLifting
-                fSymbol
-                [ proposition_5_24_3
-                    [ functionalVariable (v1 PatternSort) ]
-                    (var_0 PatternSort)
-                    (v1 PatternSort)
-                ]
-            )
+        [ StepProofVariableRenamings []
+        , StepProofUnification EmptyUnificationProof
         , StepProofSimplification SimplificationProof
         ]
     )

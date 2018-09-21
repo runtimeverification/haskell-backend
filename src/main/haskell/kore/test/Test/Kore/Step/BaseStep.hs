@@ -5,8 +5,12 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import Control.Monad.Except
+       ( runExceptT )
 import Data.Default
        ( def )
+import Data.Bifunctor
+       ( first )
 import Data.Reflection
        ( give )
 
@@ -61,16 +65,8 @@ test_baseStep =
                     }
                 , mconcat
                     (map stepProof
-                        [ StepProofVariableRenamings
-                            [ variableRenaming
-                                (x1 PatternSort) (var_0 PatternSort)
-                            ]
-                        , StepProofUnification
-                            ( proposition_5_24_3
-                                [ functionalVariable (v1 PatternSort) ]
-                                (var_0 PatternSort)
-                                (v1 PatternSort)
-                            )
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
                         ]
                     )
                 )
@@ -100,16 +96,8 @@ test_baseStep =
                     }
                 , mconcat
                     (map stepProof
-                        [ StepProofVariableRenamings
-                            [ variableRenaming
-                                (x1 PatternSort) (var_0 PatternSort)
-                            ]
-                        , StepProofUnification
-                            ( proposition_5_24_3
-                                [ functionalVariable (y1 PatternSort) ]
-                                (var_0 PatternSort)
-                                (y1 PatternSort)
-                            )
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
                         ]
                     )
                 )
@@ -139,27 +127,8 @@ test_baseStep =
                     }
                 , mconcat
                     (map stepProof
-                        [ StepProofVariableRenamings
-                            [ variableRenaming
-                                (x1 PatternSort) (var_0 PatternSort)
-                            ]
-                        , StepProofUnification
-                            ( CombinedUnificationProof
-                                [ AndDistributionAndConstraintLifting
-                                    sigmaSymbol
-                                    [ proposition_5_24_3
-                                        [ functionalVariable (v1 PatternSort) ]
-                                        (var_0 PatternSort)
-                                        (v1 PatternSort)
-                                    , proposition_5_24_3
-                                        [ functionalVariable (v1 PatternSort) ]
-                                        (var_0 PatternSort)
-                                        (v1 PatternSort)
-                                    ]
-                                , ConjunctionIdempotency
-                                    (asPureMetaPattern (v1 PatternSort))
-                                ]
-                            )
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
                         ]
                     )
                 )
@@ -201,33 +170,8 @@ test_baseStep =
                     }
                 , mconcat
                     (map stepProof
-                        [ StepProofVariableRenamings
-                            [ variableRenaming
-                                (x1 PatternSort) (var_0 PatternSort)
-                            ]
-                        , StepProofUnification
-                            ( CombinedUnificationProof
-                                [ AndDistributionAndConstraintLifting
-                                    sigmaSymbol
-                                    [ proposition_5_24_3
-                                        [ functionalVariable (a1 PatternSort) ]
-                                        (var_0 PatternSort)
-                                        (a1 PatternSort)
-                                    , proposition_5_24_3
-                                        [ FunctionalHead fSymbol
-                                        , functionalVariable (b1 PatternSort)
-                                        ]
-                                        (var_0 PatternSort)
-                                        (metaF (b1 PatternSort))
-                                    ]
-                                , proposition_5_24_3
-                                    [ FunctionalHead fSymbol
-                                    , functionalVariable (b1 PatternSort)
-                                    ]
-                                    (a1 PatternSort)
-                                    (metaF (b1 PatternSort))
-                                ]
-                            )
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
                         ]
                     )
                 )
@@ -270,37 +214,8 @@ test_baseStep =
                     }
                 , mconcat
                     (map stepProof
-                        [ StepProofVariableRenamings
-                            [ variableRenaming
-                                (x1 PatternSort) (var_0 PatternSort)
-                            ]
-                        , StepProofUnification
-                            ( CombinedUnificationProof
-                                [ AndDistributionAndConstraintLifting
-                                    sigmaSymbol
-                                    [ proposition_5_24_3
-                                        [ FunctionalHead fSymbol
-                                        , functionalVariable (a1 PatternSort)
-                                        ]
-                                        (var_0 PatternSort)
-                                        (metaF (a1 PatternSort))
-                                    , proposition_5_24_3
-                                        [ FunctionalHead fSymbol
-                                        , functionalVariable (b1 PatternSort)
-                                        ]
-                                        (var_0 PatternSort)
-                                        (metaF (b1 PatternSort))
-                                    ]
-                                , AndDistributionAndConstraintLifting
-                                    fSymbol
-                                    [ proposition_5_24_3
-                                        [ functionalVariable (b1 PatternSort)
-                                        ]
-                                        (a1 PatternSort)
-                                        (b1 PatternSort)
-                                    ]
-                                ]
-                            )
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
                         ]
                     )
                 )
@@ -356,57 +271,8 @@ test_baseStep =
                     }
                 , mconcat
                     (map stepProof
-                        [ StepProofVariableRenamings
-                            [ variableRenaming
-                                (x1 PatternSort) (var_0 PatternSort)
-                            , variableRenaming
-                                (y1 PatternSort) (var_1 PatternSort)
-                            ]
-                        , StepProofUnification
-                            ( CombinedUnificationProof
-                                [ AndDistributionAndConstraintLifting
-                                    sigmaSymbol
-                                    [ AndDistributionAndConstraintLifting
-                                        sigmaSymbol
-                                        [ proposition_5_24_3
-                                            [ functionalVariable (a1 PatternSort)
-                                            ]
-                                            (var_0 PatternSort)
-                                            (a1 PatternSort)
-                                        , proposition_5_24_3
-                                            [ functionalVariable (b1 PatternSort)
-                                            ]
-                                            (var_0 PatternSort)
-                                            (b1 PatternSort)
-                                        ]
-                                    , AndDistributionAndConstraintLifting
-                                        sigmaSymbol
-                                        [ proposition_5_24_3
-                                            [ functionalVariable (b1 PatternSort)
-                                            ]
-                                            (var_1 PatternSort)
-                                            (b1 PatternSort)
-                                        , proposition_5_24_3
-                                            [ functionalVariable (a1 PatternSort)
-                                            ]
-                                            (var_1 PatternSort)
-                                            (a1 PatternSort)
-                                        ]
-                                    ]
-                                , proposition_5_24_3
-                                    [ functionalVariable (b1 PatternSort)
-                                    ]
-                                    (a1 PatternSort)
-                                    (b1 PatternSort)
-                                , proposition_5_24_3
-                                    [ functionalVariable (a1 PatternSort)
-                                    ]
-                                    (b1 PatternSort)
-                                    (a1 PatternSort)
-                                , ConjunctionIdempotency
-                                    (asPureMetaPattern (b1 PatternSort))
-                                ]
-                            )
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
                         ]
                     )
                 )
@@ -469,16 +335,8 @@ test_baseStep =
                         [ StepProofVariableRenamings
                             [ variableRenaming
                                 (a1 PatternSort) (var_0 PatternSort)
-                            , variableRenaming
-                                (x1 PatternSort) (var_1 PatternSort)
                             ]
-                        , StepProofUnification
-                            ( proposition_5_24_3
-                                [ functionalVariable (a1 PatternSort)
-                                ]
-                                (var_1 PatternSort)
-                                (a1 PatternSort)
-                            )
+                        , StepProofUnification EmptyUnificationProof
                         ]
                     )
                 )
@@ -692,44 +550,8 @@ test_baseStep =
                         }
                     , mconcat
                         (map stepProof
-                            [ StepProofVariableRenamings
-                                [ variableRenaming
-                                    (x1 PatternSort) (var_0 PatternSort)
-                                , variableRenaming
-                                    (y1 PatternSort) (var_1 PatternSort)
-                                ]
-                            , StepProofUnification
-                                ( CombinedUnificationProof
-                                    [ AndDistributionAndConstraintLifting
-                                        sigmaSymbol
-                                        [ AndDistributionAndConstraintLifting
-                                            sigmaSymbol
-                                            [ proposition_5_24_3
-                                                [ functionalVariable (a1 PatternSort)
-                                                ]
-                                                (var_0 PatternSort)
-                                                (a1 PatternSort)
-                                            , proposition_5_24_3
-                                                [ FunctionalHead fSymbol
-                                                , functionalVariable (b1 PatternSort)
-                                                ]
-                                                (var_0 PatternSort)
-                                                fOfB
-                                            ]
-                                        , proposition_5_24_3
-                                            [ functionalVariable (a1 PatternSort)
-                                            ]
-                                            (var_1 PatternSort)
-                                            (a1 PatternSort)
-                                        ]
-                                    , proposition_5_24_3
-                                        [ FunctionalHead fSymbol
-                                        , functionalVariable (b1 PatternSort)
-                                        ]
-                                        (a1 PatternSort)
-                                        fOfB
-                                    ]
-                                )
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
                             ]
                         )
                     )
@@ -791,44 +613,8 @@ test_baseStep =
                         }
                     , mconcat
                         (map stepProof
-                            [ StepProofVariableRenamings
-                                [ variableRenaming
-                                    (x1 PatternSort) (var_0 PatternSort)
-                                , variableRenaming
-                                    (y1 PatternSort) (var_1 PatternSort)
-                                ]
-                            , StepProofUnification
-                                ( CombinedUnificationProof
-                                    [ AndDistributionAndConstraintLifting
-                                        sigmaSymbol
-                                        [ AndDistributionAndConstraintLifting
-                                            sigmaSymbol
-                                            [ proposition_5_24_3
-                                                [ functionalVariable (a1 PatternSort)
-                                                ]
-                                                (var_0 PatternSort)
-                                                (a1 PatternSort)
-                                            , proposition_5_24_3
-                                                [ FunctionalHead fSymbol
-                                                , functionalVariable (b1 PatternSort)
-                                                ]
-                                                (var_0 PatternSort)
-                                                fOfB
-                                            ]
-                                        , proposition_5_24_3
-                                            [ functionalVariable (a1 PatternSort)
-                                            ]
-                                            (var_1 PatternSort)
-                                            (a1 PatternSort)
-                                        ]
-                                    , proposition_5_24_3
-                                        [ FunctionalHead fSymbol
-                                        , functionalVariable (b1 PatternSort)
-                                        ]
-                                        (a1 PatternSort)
-                                        fOfB
-                                    ]
-                                )
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
                             ]
                         )
                     )
@@ -886,16 +672,8 @@ test_baseStep =
                     }
                 , mconcat
                     (map stepProof
-                        [ StepProofVariableRenamings
-                            [ variableRenaming
-                                (x1 PatternSort) (var_0 PatternSort)
-                            ]
-                        , StepProofUnification
-                            ( proposition_5_24_3
-                                [ functionalVariable (a1 PatternSort) ]
-                                (var_0 PatternSort)
-                                (a1 PatternSort)
-                            )
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
                         ]
                     )
                 )
@@ -942,44 +720,8 @@ test_baseStep =
                         }
                     , mconcat
                         (map stepProof
-                            [ StepProofVariableRenamings
-                                [ variableRenaming
-                                    (x1 PatternSort) (var_0 PatternSort)
-                                , variableRenaming
-                                    (y1 PatternSort) (var_1 PatternSort)
-                                ]
-                            , StepProofUnification
-                                ( CombinedUnificationProof
-                                    [ AndDistributionAndConstraintLifting
-                                        sigmaSymbol
-                                        [ AndDistributionAndConstraintLifting
-                                            sigmaSymbol
-                                            [ proposition_5_24_3
-                                                [ functionalVariable (a1 PatternSort)
-                                                ]
-                                                (var_0 PatternSort)
-                                                (a1 PatternSort)
-                                            , proposition_5_24_3
-                                                [ FunctionalHead fSymbol
-                                                , functionalVariable (b1 PatternSort)
-                                                ]
-                                                (var_0 PatternSort)
-                                                fOfB
-                                            ]
-                                        , proposition_5_24_3
-                                            [ functionalVariable (a1 PatternSort)
-                                            ]
-                                            (var_1 PatternSort)
-                                            (a1 PatternSort)
-                                        ]
-                                    , proposition_5_24_3
-                                        [ FunctionalHead fSymbol
-                                        , functionalVariable (b1 PatternSort)
-                                        ]
-                                        (a1 PatternSort)
-                                        fOfB
-                                    ]
-                                )
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
                             ]
                         )
                     )
@@ -1039,16 +781,8 @@ test_baseStep =
                       }
                   , mconcat
                       (map stepProof
-                          [ StepProofVariableRenamings
-                              [ variableRenaming
-                                  (x1 PatternSort) (var_0 PatternSort)
-                              ]
-                          , StepProofUnification
-                              ( proposition_5_24_3
-                                  [ functionalVariable (a1 PatternSort) ]
-                                  (var_0 PatternSort)
-                                  (a1 PatternSort)
-                              )
+                          [ StepProofVariableRenamings []
+                          , StepProofUnification EmptyUnificationProof
                           ]
                       )
                   )
@@ -1131,29 +865,8 @@ test_baseStep =
                     }
                 , mconcat
                     (map stepProof
-                        [ StepProofVariableRenamings
-                            [ variableRenaming
-                                (x1 PatternSort) (var_0 PatternSort)
-                            ]
-                        , StepProofUnification
-                            ( CombinedUnificationProof
-                                [ AndDistributionAndConstraintLifting
-                                    sigmaSymbol
-                                    [ proposition_5_24_3
-                                        [ functionalVariable (var PatternSort)
-                                        ]
-                                        (var_0 PatternSort)
-                                        (var PatternSort)
-                                    , proposition_5_24_3
-                                        [ functionalVariable (var PatternSort)
-                                        ]
-                                        (var_0 PatternSort)
-                                        (var PatternSort)
-                                    ]
-                                , ConjunctionIdempotency
-                                    (asPureMetaPattern (var PatternSort))
-                                ]
-                            )
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
                         ]
                     )
                 )
@@ -1314,6 +1027,4 @@ runStep
         (StepError level Variable)
         (CommonExpandedPattern level, StepProof level)
 runStep metadataTools configuration axiom =
-    case give metadataTools (stepWithAxiom metadataTools configuration axiom) of
-        Left err            -> Left (evalCounter err)
-        Right counterResult -> Right (evalCounter counterResult)
+    first evalCounter . evalCounter . runExceptT $ stepWithAxiom metadataTools configuration axiom

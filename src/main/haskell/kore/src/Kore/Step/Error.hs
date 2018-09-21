@@ -3,9 +3,11 @@ module Kore.Step.Error
     , mapStepErrorVariables
     , stepErrorVariables
     , unificationToStepError
+    , unificationToStepErrorM
     , unificationOrSubstitutionToStepError
     ) where
 
+import Data.Bifunctor ( first )
 import qualified Data.Set as Set
 
 import Kore.Unification.Error
@@ -49,6 +51,13 @@ unificationToStepError
     -> Either (StepError level variable) a
 unificationToStepError _ (Left err)     = Left (StepErrorUnification err)
 unificationToStepError _ (Right result) = Right result
+
+
+unificationToStepErrorM
+    :: Monad m
+    => m (Either UnificationError a)
+    -> m (Either (StepError level variable) a)
+unificationToStepErrorM = fmap $ first StepErrorUnification
 
 {-| Converts a Unification or Substitution error to a step error
 -}

@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Unification.Procedure where
 
 import Control.Monad.Counter (evalCounter, Counter)
+import Control.Monad.Except ( ExceptT(..)  )
 import Data.Functor.Foldable
 import Data.Reflection (give)
 
@@ -52,59 +53,31 @@ unificationProcedure
     -> PureMLPattern level variable
     -- ^left-hand-side of unification
     -> PureMLPattern level variable
-    -> Either
+    -> ExceptT
         -- TODO: Consider using a false predicate instead of a Left error
         UnificationError
-        ( Counter
-            ( PredicateSubstitution level variable
-            , UnificationProof level variable)
+        Counter
+        ( PredicateSubstitution level variable
+        , UnificationProof level variable
         )
 unificationProcedure tools p1 p2
-    | p1Sort /= p2Sort = return . return $ (bottom, EmptyUnificationProof)
+    | p1Sort /= p2Sort = return (bottom, EmptyUnificationProof)
     | otherwise = do
       let
           unifiedTerm = termUnification tools p1 p2
-      counter <- note UnsupportedPatterns unifiedTerm
+      (pat, _) <- ExceptT . sequence $ note UnsupportedPatterns unifiedTerm
       let
-          (pat, _) = evalCounter counter
           (pred', _) = makeEvaluateTerm tools (ExpandedPattern.term pat)
-      return $ const
+      return
           ( PredicateSubstitution
                 (fst $ give sortTools $
                      makeAndPredicate (ExpandedPattern.predicate pat) pred')
                 (ExpandedPattern.substitution pat)
           , EmptyUnificationProof
-          ) <$> counter
+          )
   where
       sortTools = MetadataTools.sortTools tools
       resultSort = getPatternResultSort sortTools
       p1Sort = resultSort (project p1)
       p2Sort = resultSort (project p2)
       bottom = PredicateSubstitution makeFalsePredicate []
-
-
-{-
-    | p1Sort /= p2Sort =
-        Left (SortClash p1Sort p2Sort)
-    | otherwise = do
-        (solution, proof) <- simplifyAnd tools conjunct
-        (normSubst, normProof) <-
-            normalizeSubstitutionDuplication
-                tools (unificationSolutionConstraints solution)
-        return
-            ( normSubst
-            -- TODO: Put something sensible here.
-            , makeTruePredicate
-            , simplifyUnificationProof
-                (CombinedUnificationProof [proof, normProof])
-            )
-  where
-    resultSort = getPatternResultSort (sortTools tools)
-    p1Sort =  resultSort (project p1)
-    p2Sort =  resultSort (project p2)
-    conjunct = Fix $ AndPattern And
-        { andSort = p1Sort
-        , andFirst = p1
-        , andSecond = p2
-        }
--}

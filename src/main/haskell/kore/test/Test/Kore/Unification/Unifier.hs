@@ -6,6 +6,10 @@ import Test.Tasty.HUnit
        ( testCase )
 import Test.Tasty.HUnit.Extensions
 
+import           Control.Monad.Counter
+                 ( evalCounter )
+import           Control.Monad.Except
+                 ( runExceptT )
 import           Data.CallStack
 import           Data.Default
                  ( def )
@@ -33,7 +37,7 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkVar )
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeTruePredicate )
+                 ( Predicate, makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -313,11 +317,13 @@ unificationProcedureSuccess
         (assertEqualWithExplanation
             ""
             (unificationSubstitution subst, predicate', proof)
-            (sortBy (compare `on` fst) subst', pred', proof')
+            (sortBy (compare `on` fst) substitution, predicate, proof')
         )
   where
-    Right (subst', pred', proof') =
-        give tools
+    Right ( ExpandedPattern.PredicateSubstitution {substitution, predicate}
+          , proof'
+          ) =
+        evalCounter . runExceptT $
             ( unificationProcedure
                 tools
                 (extractPurePattern term1)
@@ -458,77 +464,21 @@ test_unification =
             ]
         )
     , unificationProcedureSuccess
-        "times(x, g(x)) = times(a, a) -- cycles are resolved elsewhere"
+        "times(x, g(x)) = times(a, a) -- cycle bottom"
         (UnificationTerm (applyS expBin [expX, applyS eg [expX]]))
         (UnificationTerm (applyS expBin [expA, expA]))
-        [ ("a", applyS eg [expX])
-        , ("x", applyS eg [expX])
-        ]
-        makeTruePredicate
-        (CombinedUnificationProof
-            [ AndDistributionAndConstraintLifting
-                (symbolHead expBin)
-                [ Proposition_5_24_3
-                    [ FunctionalVariable (var expA)
-                    ]
-                    (var expX)
-                    (extractPurePattern expA)
-                , Proposition_5_24_3
-                    [ FunctionalHead (symbolHead eg)
-                    , FunctionalVariable (var expX)
-                    ]
-                    (var expA)
-                    (extractPurePattern (applyS eg [expX]))
-                ]
-            , Proposition_5_24_3
-                [ FunctionalHead (symbolHead eg)
-                , FunctionalVariable (var expX)
-                ]
-                (var expX)
-                (extractPurePattern (applyS eg [expX]))
-            ]
-        )
+        []
+        makeFalsePredicate
+        EmptyUnificationProof
     , unificationProcedureSuccess
         "times(times(a, y), x) = times(x, times(y, a))"
         (UnificationTerm (applyS expBin [applyS expBin [expA, expY], expX]))
         (UnificationTerm (applyS expBin [expX, applyS expBin [expY, expA]]))
         [ ("a", expY)
-        , ("x", applyS expBin [expY, expA])
+        , ("x", applyS expBin [expY, expY])
         ]
         makeTruePredicate
-        (CombinedUnificationProof
-            [ AndDistributionAndConstraintLifting
-                (symbolHead expBin)
-                [ Proposition_5_24_3
-                    [ FunctionalHead (symbolHead expBin)
-                    , FunctionalVariable (var expA)
-                    , FunctionalVariable (var expY)
-                    ]
-                    (var expX)
-                    (extractPurePattern (applyS expBin [expA, expY]))
-                , Proposition_5_24_3
-                    [ FunctionalHead (symbolHead expBin)
-                    , FunctionalVariable (var expY)
-                    , FunctionalVariable (var expA)
-                    ]
-                    (var expX)
-                    (extractPurePattern (applyS expBin [expY, expA]))
-                ]
-            , AndDistributionAndConstraintLifting
-                (symbolHead expBin)
-                [ Proposition_5_24_3
-                    [FunctionalVariable (var expY)]
-                    (var expA)
-                    (extractPurePattern expY)
-                , Proposition_5_24_3
-                    [FunctionalVariable (var expA)]
-                    (var expY)
-                    (extractPurePattern expA)
-                ]
-            , ConjunctionIdempotency
-                (extractPurePattern expY)
-            ]
-        )
+        EmptyUnificationProof
     , testGroup "inj unification tests" injUnificationTests
     , andSimplifyFailure "Unmatching constants"
         (UnificationTerm aA)

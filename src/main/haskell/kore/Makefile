@@ -2,6 +2,7 @@ package = kore
 
 stack_yaml = STACK_YAML="../../../../stack.yaml"
 stack = $(stack_yaml) stack
+pattern = ""
 
 build:
 	$(stack) build $(package)
@@ -19,7 +20,10 @@ ghci:
 	$(stack) ghci $(package)
 
 test:
-	$(stack) test $(package)
+	$(stack) test $(package) --test-arguments "--hide-successes"
+
+testp:
+	$(stack) test --test-arguments '-p "$(pattern)"'
 
 test-ghci:
 	$(stack) ghci $(package):test:$(package)-test
