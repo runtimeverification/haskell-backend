@@ -35,7 +35,7 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFalsePredicate )
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
-import           Kore.Step.Simplification.Ceil
+import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..) )
@@ -86,7 +86,7 @@ unificationProcedure tools p1 p2
           unifiedTerm = termUnification tools p1 p2
       (pat, _) <- ExceptT . sequence $ note UnsupportedPatterns unifiedTerm
       let
-          (pred', _) = makeEvaluateTerm tools (ExpandedPattern.term pat)
+          (pred', _) = Ceil.makeEvaluateTerm tools (ExpandedPattern.term pat)
       return
           ( PredicateSubstitution
                 (fst $ give sortTools $

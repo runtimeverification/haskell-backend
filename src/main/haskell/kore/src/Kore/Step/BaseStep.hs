@@ -230,7 +230,12 @@ stepWithAxiom
     -- Unify the left-hand side of the rewriting axiom with the initial
     -- configuration, producing a substitution (instantiating the axiom to the
     -- configuration) subject to a predicate.
-    (pred', rawSubstitutionProof) <- normalizeUnificationError
+    ( PredicateSubstitution
+            { predicate = rawPredicate
+            , substitution = rawSubstitution
+            }
+        , rawSubstitutionProof
+        ) <- normalizeUnificationError
                 existingVars
                 (unificationProcedure
                     tools
@@ -249,7 +254,7 @@ stepWithAxiom
         ) <- stepperVariableToVariableForError
             existingVars
             $ mapExceptT (fmap unificationOrSubstitutionToStepError)
-            $ mergeAndNormalizeSubstitutions tools (substitution pred') startSubstitution
+            $ mergeAndNormalizeSubstitutions tools rawSubstitution startSubstitution
     let
         unifiedSubstitution =
             ListSubstitution.fromList
@@ -260,7 +265,7 @@ stepWithAxiom
             $ makeMultipleAndPredicate
                 [ startCondition  -- from initial configuration
                 , axiomRequires  -- from axiom
-                , (predicate pred') -- produced during unification
+                , rawPredicate -- produced during unification
                 , normalizedCondition -- from normalizing the substitution
                 ]
 
