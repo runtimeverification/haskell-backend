@@ -14,9 +14,12 @@ module Kore.IndexedModule.Resolvers
     , resolveSort
     , resolveAlias
     , resolveSymbol
+    , resolveHook
     ) where
 
 import qualified Data.Map as Map
+import           Data.Monoid
+                 ( First (..) )
 import           Data.Proxy
                  ( Proxy (..) )
 import qualified Data.Set as Set
@@ -26,12 +29,12 @@ import Kore.AST.Error
        ( koreFailWithLocations )
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
-       ( IsMetaOrObject (..), MetaOrObject, isMetaOrObject )
+       ( IsMetaOrObject (..), MetaOrObject, Object, isMetaOrObject )
 import Kore.AST.Sentence
 import Kore.ASTHelpers
        ( ApplicationSorts, symbolOrAliasSorts )
 import Kore.Error
-       ( Error, printError )
+       ( Error, koreFail, printError )
 import Kore.IndexedModule.IndexedModule
        ( IndexedModule (..), KoreIndexedModule, SortDescription )
 
@@ -234,3 +237,22 @@ resolveSort m sortId =
                 [sortId]
                 ("Sort '" ++ getId sortId ++  "' not declared.")
         Just sortDescription -> Right sortDescription
+
+resolveHook
+    :: KoreIndexedModule atts
+    -> String
+    -> Either (Error a) (Id Object)
+resolveHook indexedModule builtinName =
+    case getFirst (foldMap resolveHook1 allHooks) of
+        Just hookId ->
+            return hookId
+        Nothing ->
+            koreFail ("Builtin '" ++ builtinName ++ "' is not hooked.")
+  where
+    allHooks = allHooksOf indexedModule
+    allHooksOf _module =
+        let _imports =
+                (\(_, _, _import) -> _import) <$> indexedModuleImports _module
+        in
+            indexedModuleHooks _module : mconcat (allHooksOf <$> _imports)
+    resolveHook1 hooks = First (Map.lookup builtinName hooks)

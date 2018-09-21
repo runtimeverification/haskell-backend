@@ -20,6 +20,7 @@ module Kore.IndexedModule.IndexedModule
         , indexedModuleObjectSortDescriptions
         , indexedModuleMetaSortDescriptions, indexedModuleAxioms
         , indexedModuleAttributes, indexedModuleImports
+        , indexedModuleHooks
         )
     , KoreImplicitIndexedModule
     , KoreIndexedModule
@@ -49,6 +50,8 @@ import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Attribute.Parser
        ( ParseAttributes, parseAttributes )
+import Kore.Builtin.Hook
+       ( Hook (..) )
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
 
@@ -97,6 +100,10 @@ data IndexedModule sortParam pat variable atts =
     , indexedModuleHookedIdentifiers
         :: !(Set.Set (Id Object))
         -- ^ set of hooked identifiers
+    , indexedModuleHooks
+        :: !(Map.Map String (Id Object))
+        -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
+        -- identifier
     }
 
 -- |Convenient notation for retrieving a sentence from a
@@ -183,6 +190,7 @@ emptyIndexedModule name =
     , indexedModuleAttributes = (def, Attributes [])
     , indexedModuleImports = []
     , indexedModuleHookedIdentifiers = Set.empty
+    , indexedModuleHooks = Map.empty
     }
 
 {-|'indexedModuleWithDefaultImports' provides an 'IndexedModule' with the given
@@ -491,7 +499,6 @@ indexModuleMetaSentence
                 }
             )
 
-
 indexModuleObjectSentence
     :: ParseAttributes atts
     => KoreImplicitIndexedModule atts
@@ -512,6 +519,7 @@ indexModuleObjectSentence
         , indexedModuleObjectSymbolSentences
         , indexedModuleObjectSortDescriptions
         , indexedModuleHookedIdentifiers
+        , indexedModuleHooks
         }
     )
     _sentence
@@ -595,8 +603,21 @@ indexModuleObjectSentence
                 }
             )
 
+    {- | Look up the @hook{}()@ attribute in @attributes@.
+
+        It is an error if there is no hook attribute.
+     -}
+    getHookAttribute attributes =
+        do
+            Hook { getHook } <- parseAttributesInModule attributes
+            maybe (koreFail "missing hook attribute") return getHook
+
     indexSentenceHook
-        (SentenceHookedSort _sentence@SentenceSort { sentenceSortName })
+        (SentenceHookedSort _sentence@SentenceSort
+            { sentenceSortName
+            , sentenceSortAttributes
+            }
+        )
       = do
         (indexedModules', indexedModule') <-
             indexModuleObjectSentence
@@ -605,11 +626,14 @@ indexModuleObjectSentence
                 nameToModule
                 (indexedModules, indexedModule)
                 (SentenceSortSentence _sentence)
+        hook <- getHookAttribute sentenceSortAttributes
         return
             ( indexedModules'
             , indexedModule'
                 { indexedModuleHookedIdentifiers =
                     Set.insert sentenceSortName indexedModuleHookedIdentifiers
+                , indexedModuleHooks =
+                    Map.insert hook sentenceSortName indexedModuleHooks
                 }
             )
 
@@ -621,6 +645,7 @@ indexModuleObjectSentence
         )
       = do
         atts <- parseAttributesInModule sentenceSymbolAttributes
+        hook <- getHookAttribute sentenceSymbolAttributes
         return
             ( indexedModules
             , indexedModule
@@ -629,6 +654,8 @@ indexModuleObjectSentence
                         indexedModuleObjectSymbolSentences
                 , indexedModuleHookedIdentifiers =
                     Set.insert symbolConstructor indexedModuleHookedIdentifiers
+                , indexedModuleHooks =
+                    Map.insert hook symbolConstructor indexedModuleHooks
                 }
             )
 
