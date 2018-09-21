@@ -9,26 +9,26 @@ Portability : portable
 -}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-unused-matches #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Kore.SMT.SMT
-( patternToSMT
--- , provePatternIO
--- , provePattern
--- , provePredicate
-, SMTAttributes
-) where
+( SMTAttributes(..)
+, unsafeTryRefutePattern
+, unsafeTryRefutePredicate
+)
+where
+
 
 import           Data.Default
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 import           Control.Monad.Except
-
+import           Control.Monad.State
+import           Control.Lens ( makeLenses, Lens', (%=), use)
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
-import           Kore.ASTUtils.Substitution
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import           Kore.Builtin.Hook
@@ -40,8 +40,17 @@ import           Data.SBV
 
 import           GHC.IO.Unsafe
 
--- | The only pattern type that makes sense for SMT.
-type Pat = PureMLPattern Object Variable
+import Debug.Trace
+
+data TranslatePredicateError
+ = UnknownHookedSort (Sort Object) 
+ | UnknownHookedSymbol (SymbolOrAlias Object)
+ | UnknownPatternConstructor Pat
+ | ExpectedDVPattern Pat
+ deriving(Eq, Ord, Show)
+
+type Pat = PureMLPattern Object Variable 
+type Translating = ExceptT TranslatePredicateError (StateT TranslationState Symbolic)
 
 data SMTAttributes
   = SMTAttributes
@@ -56,120 +65,142 @@ instance ParseAttributes SMTAttributes where
         hook <- attributesParser
         pure SMTAttributes { hook }
 
--- provePredicate
---     :: Given (MetadataTools Object SMTAttributes)
---     => KorePredicate.CommonPredicate Object
---     -> Maybe Bool
--- provePredicate p = provePattern $ KorePredicate.unwrapPredicate p
+
+-- Variable `x` or a pattern with an Uninterpreted Function head
+type VarOrUF = Either (Id Object) Pat
+
+data TranslationState
+ = TranslationState
+   { _boolVars :: Map.Map VarOrUF SBool
+   , _intVars  :: Map.Map VarOrUF SInteger
+   }
+
+makeLenses ''TranslationState
+
+getVar
+    :: Lens' TranslationState (Map.Map VarOrUF b)
+    -> (String -> Symbolic b)
+    -> VarOrUF
+    -> Translating b
+getVar lens makeNewVar i = do
+  v' <- Map.lookup i <$> use lens
+  case v' of
+    Nothing -> do
+      v <- lift $ lift $ makeNewVar (either getId show i)
+      lens %= Map.insert i v
+      return v
+    Just v -> return v
+
+getBoolVar :: VarOrUF -> Translating SBool
+getBoolVar = getVar boolVars sBool
+
+getIntVar :: VarOrUF -> Translating SInteger
+getIntVar  = getVar intVars sInteger
+-- getIntVar  = \v -> return (3 :: SInteger)
+
+goUnaryOp :: Monad m => (t1 -> b) -> (t2 -> m t1) -> t2 -> m b
+goUnaryOp op cont x1 = do
+  tx1 <- cont x1
+  return (op tx1)
+
+goBinaryOp :: Monad m => (t1 -> t1 -> b) -> (t2 -> m t1) -> t2 -> t2 -> m b
+goBinaryOp op cont x1 x2 = do
+  tx1 <- cont x1
+  tx2 <- cont x2
+  return (tx1 `op` tx2)
+
+config :: SMTConfig
+config = z3
 
 -- | Returns `Just True` if the sentence is satisfied in all models,
 -- `Just False` if it has a counterexample,
 -- Nothing if timeout/undecidable.
--- provePattern
---     :: Given (MetadataTools Object SMTAttributes)
---     => CommonPurePattern Object
---     -> Maybe Bool
--- provePattern p =
---     case res of
---       Unsatisfiable _ _ -> Just True
---       Satisfiable   _ _ -> Just False
---       _ -> Nothing
---       where ThmResult res = unsafePerformIO $ provePatternIO p
--- {-# NOINLINE provePattern #-}
+unsafeTryRefutePattern
+    :: Given (MetadataTools Object SMTAttributes)
+    => CommonPurePattern Object
+    -> Maybe Bool
+unsafeTryRefutePattern p = unsafePerformIO $ do 
+  let smtPredicate = patternToSMT True p >>= (\(Right p') -> return p') >> setTimeOut 500
+  res <- proveWith config smtPredicate
+  return $ case res of 
+    ThmResult (Satisfiable   _ _) -> Just True
+    ThmResult (Unsatisfiable _ _) -> Just False
+    _ -> Nothing
 
--- | Prints the result of SMT solving a pattern to the command line.
--- provePatternIO
---     :: Given (MetadataTools Object SMTAttributes)
---     => CommonPurePattern Object
---     -> IO ThmResult
--- provePatternIO = prove . patternToSMT
-
-data TranslatePredicateError
- = UnknownHookedSort (Sort Object) 
- | UnknownHookedSymbol (SymbolOrAlias Object)
- | UnknownPatternConstructor Pat
- | ExpectedDVPattern Pat
+unsafeTryRefutePredicate
+    :: Given (MetadataTools Object SMTAttributes)
+    => KorePredicate.CommonPredicate Object
+    -> Maybe Bool
+unsafeTryRefutePredicate p = unsafeTryRefutePattern $ KorePredicate.unwrapPredicate p
 
 patternToSMT
     :: Given (MetadataTools Object SMTAttributes)
-    => CommonPurePattern Object
-    -> ExceptT TranslatePredicateError Symbolic SBool
-patternToSMT p = goTranslate
-  where
-    vars = Set.toList $ freeVars p
-    filterVars hookName =
-        filter (\v -> (getSortHook $ variableSort v) == Hook (Just hookName)) vars
-    boolVars = filterVars "BOOL.Bool"
-    intVars  = filterVars "INT.Int"
-    goTranslate = do
-        boolSMTVars <- lift $ sBools $ map (getId . variableName) boolVars
-        let boolTable = Map.fromList $ zip boolVars boolSMTVars
-        intSMTVars <- lift $ sIntegers $ map (getId . variableName) intVars
-        let intTable = Map.fromList $ zip intVars intSMTVars
-        go boolTable intTable
-    go boolTable intTable = goBoolean p
+    => Bool
+    -> CommonPurePattern Object
+    -> Symbolic (Either TranslatePredicateError SBool)
+patternToSMT sloppy p =
+    flip evalStateT (TranslationState Map.empty Map.empty) 
+  $ runExceptT  
+  $ goBoolean p
       where
-        goUnaryOp op cont x1 = do
-          tx1 <- cont x1
-          return (op tx1)
-        goBinaryOp op cont x1 x2 = do
-          tx1 <- cont x1
-          tx2 <- cont x2
-          return (tx1 `op` tx2)
+        goBoolean
+            :: CommonPurePattern Object
+            -> Translating SBool
         goBoolean (And_     _   x1 x2) = goBinaryOp (&&&) goBoolean x1 x2
         goBoolean (Or_      _   x1 x2) = goBinaryOp (|||) goBoolean x1 x2
         goBoolean (Implies_ _   x1 x2) = goBinaryOp (==>) goBoolean x1 x2
         goBoolean (Iff_     _   x1 x2) = goBinaryOp (<=>) goBoolean x1 x2
-        goBoolean (Not_     _   x1)    = goUnaryOp (bnot) goBoolean x1
+        goBoolean (Not_     _   x1)    = trace "goBoolean Not: " $ goUnaryOp (bnot) goBoolean x1
         goBoolean (Equals_  s _ x1 x2) = 
           case getHookString $ getSortHook s of
                 "BOOL.Bool" -> goBinaryOp (<=>) goBoolean x1 x2
                 "INT.Int"   -> goBinaryOp (.==) goInteger x1 x2
                 other -> throwError $ UnknownHookedSort s
-        goBoolean (App_ h [x1, x2]) = 
+        goBoolean pat@(App_ h [x1, x2]) = trace "goBoolean on App_" $ 
           case getHookString $ getSymbolHook h of
                 "INT.le" -> goBinaryOp (.<=) goInteger x1 x2
                 "INT.ge" -> goBinaryOp (.>=) goInteger x1 x2 
                 "INT.gt" -> goBinaryOp (.>)  goInteger x1 x2
-                "INT.lt" -> goBinaryOp (.<)  goInteger x1 x2
+                "INT.lt" -> trace "LT:" $ goBinaryOp (.<)  goInteger x1 x2
                 "INT.eq" -> goBinaryOp (.==) goInteger x1 x2
-                other -> throwError $ UnknownHookedSymbol h
-        goBoolean (V v) = tryLookupVar v boolTable "BOOL.Bool"
-        goBoolean pat@(DV_ _ _) = goLiteral pat "BOOL.Bool" :: ExceptT TranslatePredicateError Symbolic SBool
-        goBoolean (Top_ _)    = return true
+                other -> undefined $ 
+                  if sloppy 
+                    then trace ("WHOOP!" ++ show pat) $ getBoolVar (Right pat) 
+                    else throwError $ UnknownHookedSymbol h
+        goBoolean (V v) = trace "getBoolVar" $ getBoolVar (Left $ variableName v)
+        goBoolean pat@(DV_ _ _) = goLiteral pat "BOOL.Bool" :: Translating SBool
+        goBoolean (Top_ _)    = return true 
         goBoolean (Bottom_ _) = return false 
         goBoolean pat = throwError $ UnknownPatternConstructor pat
         goInteger
             :: Given (MetadataTools Object SMTAttributes)
             => CommonPurePattern Object
-            -> ExceptT TranslatePredicateError Symbolic SInteger
-        goInteger (App_ h [x1, x2]) = 
+            -> Translating SInteger
+        goInteger pat@(App_ h [x1, x2]) = 
           case getHookString $ getSymbolHook h of
                 "INT.add" -> goBinaryOp (+) goInteger x1 x2
                 "INT.sub" -> goBinaryOp (-) goInteger x1 x2
                 "INT.mul" -> goBinaryOp (*) goInteger x1 x2
                 "INT.tdiv" -> goBinaryOp (sDiv) goInteger x1 x2
                 "INT.tmod" -> goBinaryOp (sMod) goInteger x1 x2
-                other -> throwError $ UnknownHookedSymbol h
-        goInteger (V v) = tryLookupVar v intTable "INT.Int"
-        goInteger pat@(DV_ _ _) = goLiteral pat "INT.Int" :: ExceptT TranslatePredicateError Symbolic SInteger 
+                other -> 
+                  if sloppy 
+                    then getIntVar (Right pat) 
+                    else throwError $ UnknownHookedSymbol h
+        goInteger (V v) = getIntVar (Left $ variableName v)
+        goInteger pat@(DV_ _ _) = goLiteral pat "INT.Int" :: Translating SInteger 
         goInteger pat = throwError $ UnknownPatternConstructor pat
         goLiteral 
             :: (Given (MetadataTools Object SMTAttributes), Read a, SymWord a)
             => CommonPurePattern Object 
             -> String 
-            -> ExceptT TranslatePredicateError Symbolic (SBV a) 
+            -> Translating (SBV a) 
         goLiteral (DV_ s (StringLiteral_ (StringLiteral i))) hookName
          | (getHookString $ getSortHook s) == hookName
-             = return $ literal $ read i
+             = return $ literal $ read $ trace ("i="++show i) $ i
         goLiteral pat _ = 
           throwError $ ExpectedDVPattern pat
-        tryLookupVar v table hookName
-         | getHookString (getSortHook (variableSort v)) == hookName
-            = case Map.lookup v table of
-                Just var -> return var
-                _ -> error "The impossible happened"
-         | otherwise = throwError $ UnknownHookedSort (variableSort v)
+
 
 getHookString :: Hook -> String
 getHookString (Hook (Just s)) = s
@@ -186,3 +217,6 @@ getSortHook
     => Sort Object
     -> Hook
 getSortHook sort = hook $ sortAttributes given sort
+
+
+
