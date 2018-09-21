@@ -26,7 +26,7 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
 import           Data.Reflection
-                 ( Given, give )
+                 ( give )
 import           Data.Semigroup
                  ( Semigroup (..) )
 import           Data.Sequence
@@ -41,10 +41,9 @@ import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SortTools )
+                 ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( Predicate, PredicateProof (..), makeFalsePredicate,
-                 makeMultipleAndPredicate )
+                 ( Predicate, makeMultipleAndPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Error
@@ -231,7 +230,7 @@ stepWithAxiom
     -- Unify the left-hand side of the rewriting axiom with the initial
     -- configuration, producing a substitution (instantiating the axiom to the
     -- configuration) subject to a predicate.
-    (pred, rawSubstitutionProof) <- normalizeUnificationError
+    (pred', rawSubstitutionProof) <- normalizeUnificationError
                 existingVars
                 (unificationProcedure
                     tools
@@ -250,7 +249,7 @@ stepWithAxiom
         ) <- stepperVariableToVariableForError
             existingVars
             $ mapExceptT (fmap unificationOrSubstitutionToStepError)
-            $ mergeAndNormalizeSubstitutions tools (substitution pred) startSubstitution
+            $ mergeAndNormalizeSubstitutions tools (substitution pred') startSubstitution
     let
         unifiedSubstitution =
             ListSubstitution.fromList
@@ -261,7 +260,7 @@ stepWithAxiom
             $ makeMultipleAndPredicate
                 [ startCondition  -- from initial configuration
                 , axiomRequires  -- from axiom
-                , (predicate pred) -- produced during unification
+                , (predicate pred') -- produced during unification
                 , normalizedCondition -- from normalizing the substitution
                 ]
 

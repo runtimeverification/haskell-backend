@@ -41,8 +41,6 @@ import Kore.Step.ExpandedPattern as ExpandedPattern
        ( ExpandedPattern (..) )
 import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
-import Kore.Step.PatternAttributes
-       ( FunctionalProof (..) )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
        ( SubstitutionError (..) )
@@ -829,8 +827,6 @@ test_baseStep =
     y1 = metaVariable "#y1" AstLocationTest
     var_0 :: MetaSort sort => sort -> MetaVariable sort
     var_0 = metaVariable "#var_0" AstLocationTest
-    var_1 :: MetaSort sort => sort -> MetaVariable sort
-    var_1 = metaVariable "#var_1" AstLocationTest
     variableRenaming
         :: MetaSort sort
         => MetaVariable sort -> MetaVariable sort -> VariableRenaming Meta
@@ -840,20 +836,6 @@ test_baseStep =
             , variableRenamingRenamed =
                 ConfigurationVariable (asMetaVariable to)
             }
-    functionalVariable
-        :: MetaSort sort => MetaVariable sort -> FunctionalProof Meta Variable
-    functionalVariable = FunctionalVariable . asMetaVariable
-    proposition_5_24_3
-        :: (MetaSort sort1, ProperPattern Meta sort2 patt)
-        => [FunctionalProof Meta Variable]
-        -> MetaVariable sort1
-        -> patt
-        -> UnificationProof Meta Variable
-    proposition_5_24_3 functionalProof variable patt =
-        Proposition_5_24_3
-            functionalProof
-            (asMetaVariable variable)
-            (asPureMetaPattern patt)
     identicalVariablesAssertion var =
         assertEqualWithExplanation ""
             (Right

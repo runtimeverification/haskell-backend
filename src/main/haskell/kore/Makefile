@@ -28,6 +28,9 @@ testp:
 test-ghci:
 	$(stack) ghci $(package):test:$(package)-test
 
+pedantic:
+	$(stack) build --haddock --no-haddock-deps --coverage --bench --no-run-benchmarks --test --no-run-tests --pedantic
+
 ghcid:
 	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind'"
 

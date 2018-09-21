@@ -29,7 +29,7 @@ import Kore.ASTUtils.SmartPatterns
        ( pattern StringLiteral_ )
 import Kore.IndexedModule.MetadataTools
 import Kore.Step.PatternAttributes
-       ( FunctionalProof (..), isConstructorLikeTop, isFunctionalPattern )
+       ( FunctionalProof (..), isFunctionalPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
@@ -290,48 +290,18 @@ matchApplicationPattern
             )
         )
         (UnFixedPureMLPattern level variable)
-matchApplicationPattern (DomainValuePattern (DomainValue _ dv1)) ap2
-    | isConstructor_ head2 = case dv1 of
-        StringLiteral_ (StringLiteral sl1) ->
-            Left $ Left UnsupportedPatterns
-        _ ->  Left $ Left UnsupportedPatterns
-    | otherwise = Left $ Left $ UnsupportedPatterns
-  where
-    head2 = applicationSymbolOrAlias ap2
-matchApplicationPattern (ApplicationPattern ap1) ap2
-    | head1 == head2 =
-        if isInjective_ head1
-            then matchEqualInjectiveHeads given head1 ap1 ap2
-        else if isConstructor_ head1
-            then error (show head1 ++ " is constructor but not injective.")
-        else Left $ Left $ UnsupportedPatterns
-    --Assuming head1 /= head2 in the sequel
-    | isConstructor_ head1 =
-        if isConstructor_ head2
-            then Left $ Left UnsupportedPatterns
-        else if isSortInjection_ head2
-            then Left $ Left UnsupportedPatterns
-        else Left $ Left $ UnsupportedPatterns
-    --head1 /= head2 && head1 is not constructor
-    | isConstructor_ head2 =
-        if isSortInjection_ head1
-            then Left $ Left UnsupportedPatterns
-            else Left $ Left UnsupportedPatterns
-    --head1 /= head2 && neither is a constructor
-    | isSortInjection_ head1 && isSortInjection_ head2
-      && isConstructorLikeTop given (project child1)
-      && isConstructorLikeTop given (project child2) =
+matchApplicationPattern (DomainValuePattern (DomainValue _ _)) _ =
         Left $ Left UnsupportedPatterns
-    --head1 /= head2 && neither is a constructor
-    -- && they are not both sort injections
-    | otherwise = Left $ Left UnsupportedPatterns
+matchApplicationPattern (ApplicationPattern ap1) ap2
+    | head1 == head2 && isInjective_ head1 =
+            matchEqualInjectiveHeads given head1 ap1 ap2
+    | isConstructor_ head1 =
+            error (show head1 ++ " is constructor but not injective.")
+    | otherwise =
+            Left $ Left UnsupportedPatterns
   where
     head1 = applicationSymbolOrAlias ap1
     head2 = applicationSymbolOrAlias ap2
-    [p1FromSort, p1ToSort] = symbolOrAliasParams head1
-    [child1] = applicationChildren ap1
-    [p2FromSort, p2ToSort] = symbolOrAliasParams head2
-    [child2] = applicationChildren ap2
 matchApplicationPattern _ _ = Left $ Left UnsupportedPatterns
 
 matchEqualInjectiveHeads
@@ -371,17 +341,6 @@ matchDomainValue
             )
         )
         (UnFixedPureMLPattern level variable)
-matchDomainValue _ (DomainValuePattern (DomainValue _ dv1)) sl2 =
-    case dv1 of
-        StringLiteral_ (StringLiteral sl1) ->
-            Left $ Left UnsupportedPatterns
-        _ ->  Left $ Left UnsupportedPatterns
-matchDomainValue tools (ApplicationPattern ap1) sl2
-    | isConstructor (symAttributes tools head1) =
-        Left $ Left UnsupportedPatterns
-    | otherwise = Left $ Left UnsupportedPatterns
-  where
-    head1 = applicationSymbolOrAlias ap1
 matchDomainValue _ _ _ = Left $ Left UnsupportedPatterns
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi

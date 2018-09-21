@@ -12,7 +12,7 @@ module Kore.Unification.Procedure
     ) where
 
 import           Control.Monad.Counter
-                 ( evalCounter, Counter )
+                 ( Counter )
 import           Control.Monad.Except
                  ( ExceptT(..)  )
 import           Data.Functor.Foldable
@@ -32,7 +32,7 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeFalsePredicate )
+                 ( makeAndPredicate, makeFalsePredicate )
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import           Kore.Step.Simplification.Ceil
@@ -48,7 +48,7 @@ import           Kore.Substitution.Class
 import           Kore.Unification.Error
                  ( UnificationError (..) )
 import           Kore.Unification.UnifierImpl
-                 ( UnificationProof (..), UnificationSubstitution )
+                 ( UnificationProof (..) )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 

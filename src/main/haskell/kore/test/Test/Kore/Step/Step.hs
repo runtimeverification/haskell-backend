@@ -32,8 +32,6 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern (..) )
-import           Kore.Step.PatternAttributes
-                 ( FunctionalProof (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -53,12 +51,6 @@ b1 :: MetaSort sort => sort -> MetaVariable sort
 b1 = metaVariable "#b1" AstLocationTest
 x1 :: MetaSort sort => sort -> MetaVariable sort
 x1 = metaVariable "#x1" AstLocationTest
-var_0 :: MetaSort sort => sort -> MetaVariable sort
-var_0 = metaVariable "#var_0" AstLocationTest
-var_1 :: MetaSort sort => sort -> MetaVariable sort
-var_1 = metaVariable "#var_1" AstLocationTest
-var_3 :: MetaSort sort => sort -> MetaVariable sort
-var_3 = metaVariable "#var_3" AstLocationTest
 
 rewriteIdentity :: AxiomPattern Meta
 rewriteIdentity =
@@ -513,32 +505,6 @@ asPureMetaPattern patt =
     case patternKoreToPure Meta (asAst patt) of
         Left err  -> error (printError err)
         Right pat -> pat
-
-variableRenaming
-    :: MetaSort sort
-    => MetaVariable sort -> MetaVariable sort -> VariableRenaming Meta
-variableRenaming from to =
-    VariableRenaming
-        { variableRenamingOriginal = AxiomVariable (asMetaVariable from)
-        , variableRenamingRenamed =
-            ConfigurationVariable (asMetaVariable to)
-        }
-
-proposition_5_24_3
-    :: (MetaSort sort1, ProperPattern Meta sort2 patt)
-    => [FunctionalProof Meta Variable]
-    -> MetaVariable sort1
-    -> patt
-    -> UnificationProof Meta Variable
-proposition_5_24_3 functionalProof variable patt =
-    Proposition_5_24_3
-        functionalProof
-        (asMetaVariable variable)
-        (asPureMetaPattern patt)
-
-functionalVariable
-    :: MetaSort sort => MetaVariable sort -> FunctionalProof Meta Variable
-functionalVariable = FunctionalVariable . asMetaVariable
 
 runStep
     :: MetaOrObject level
