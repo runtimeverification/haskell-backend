@@ -295,7 +295,7 @@ matchApplicationPattern (DomainValuePattern (DomainValue _ _)) _ =
 matchApplicationPattern (ApplicationPattern ap1) ap2
     | head1 == head2 && isInjective_ head1 =
             matchEqualInjectiveHeads given head1 ap1 ap2
-    | isConstructor_ head1 =
+    | head1 == head2 && isConstructor_ head1 =
             error (show head1 ++ " is constructor but not injective.")
     | otherwise =
             Left $ Left UnsupportedPatterns
