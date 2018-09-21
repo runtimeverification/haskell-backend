@@ -115,7 +115,7 @@ normalizeSubstitutionAfterMerge tools substit = do
           normalizeSubstitutionDuplication' substit
     predSubstitution <- normalizeSubstitution' substitutionList
     -- TODO(virgil): Return the actual condition here. and proofs
-    (,) <$> predSubstitution <*> pure proof
+    (,) <$> predSubstitution <*> return proof
   where
     normalizeSubstitutionDuplication' =
         liftEither

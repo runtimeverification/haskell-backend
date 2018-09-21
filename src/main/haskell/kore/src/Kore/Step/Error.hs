@@ -3,7 +3,6 @@ module Kore.Step.Error
     , mapStepErrorVariables
     , stepErrorVariables
     , unificationToStepError
-    , unificationToStepErrorM
     , unificationOrSubstitutionToStepError
     ) where
 
@@ -42,22 +41,11 @@ mapStepErrorVariables mapper (StepErrorSubstitution a) =
 
 {-| 'unificationToStepError' converts an action with a 'UnificationError' into
 an action with a 'StepError'.
-It takes a @bottom@ default value to convert unification errors into
-'Bottom' if necessary.
 -}
 unificationToStepError
-    :: a
-    -> Either UnificationError a
+    :: Either UnificationError a
     -> Either (StepError level variable) a
-unificationToStepError _ (Left err)     = Left (StepErrorUnification err)
-unificationToStepError _ (Right result) = Right result
-
-
-unificationToStepErrorM
-    :: Monad m
-    => m (Either UnificationError a)
-    -> m (Either (StepError level variable) a)
-unificationToStepErrorM = fmap $ first StepErrorUnification
+unificationToStepError = first StepErrorUnification
 
 {-| Converts a Unification or Substitution error to a step error
 -}

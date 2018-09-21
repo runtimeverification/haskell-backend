@@ -7,32 +7,51 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Unification.Procedure where
+module Kore.Unification.Procedure
+    ( unificationProcedure
+    ) where
 
-import Control.Monad.Counter (evalCounter, Counter)
-import Control.Monad.Except ( ExceptT(..)  )
-import Data.Functor.Foldable
-import Data.Reflection (give)
+import           Control.Monad.Counter
+                 ( evalCounter, Counter )
+import           Control.Monad.Except
+                 ( ExceptT(..)  )
+import           Data.Functor.Foldable
+import           Data.Reflection
+                 ( give )
 
-import Kore.AST.Common (SortedVariable)
-import Kore.AST.MetaOrObject (MetaOrObject, Meta, Object)
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools (MetadataTools(..))
-import Kore.IndexedModule.MetadataTools (MetadataTools)
-import Kore.Step.StepperAttributes (StepperAttributes)
-import Kore.AST.PureML (PureMLPattern)
-import Kore.Unification.Error ( UnificationError (..) )
-import Kore.Unification.UnifierImpl (UnificationSubstitution, UnificationProof (..))
-import Kore.Predicate.Predicate (Predicate, makeFalsePredicate, makeAndPredicate)
-import Kore.Step.Simplification.AndTerms (termUnification)
-import Kore.Step.Simplification.Ceil (makeEvaluateTerm)
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern ( ExpandedPattern (..) )
-import Kore.Step.ExpandedPattern ( PredicateSubstitution(..) )
-import Kore.Substitution.Class (Hashable)
-import Kore.Variables.Fresh (FreshVariable)
-import Kore.AST.MLPatterns (getPatternResultSort)
+import           Kore.AST.Common
+                 ( SortedVariable )
+import           Kore.AST.MetaOrObject
+                 ( Meta, MetaOrObject, Object )
+import           Kore.AST.MLPatterns
+                 ( getPatternResultSort )
+import           Kore.AST.PureML
+                 ( PureMLPattern )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
+import           Kore.Predicate.Predicate
+                 ( Predicate, makeAndPredicate, makeFalsePredicate )
+import           Kore.Step.Simplification.AndTerms
+                 ( termUnification )
+import           Kore.Step.Simplification.Ceil
+                 ( makeEvaluateTerm )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..) )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution(..) )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
+import           Kore.Substitution.Class
+                 ( Hashable )
+import           Kore.Unification.Error
+                 ( UnificationError (..) )
+import           Kore.Unification.UnifierImpl
+                 ( UnificationProof (..), UnificationSubstitution )
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
-note :: a -> Maybe b -> Either a b
-note a = maybe (Left a) Right
 
 -- |'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
 -- are terms (functional patterns) to a substitution.
@@ -78,6 +97,11 @@ unificationProcedure tools p1 p2
   where
       sortTools = MetadataTools.sortTools tools
       resultSort = getPatternResultSort sortTools
+
       p1Sort = resultSort (project p1)
       p2Sort = resultSort (project p2)
+
       bottom = PredicateSubstitution makeFalsePredicate []
+
+      note :: a -> Maybe b -> Either a b
+      note a = maybe (Left a) Right
