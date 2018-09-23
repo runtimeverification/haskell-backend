@@ -49,7 +49,7 @@ import           Kore.Predicate.Predicate
                  makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeFalsePredicate, makeTruePredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Unification.Unifier
+import           Kore.Unification.UnificationSolution
                  ( UnificationSubstitution, mapSubstitutionVariables )
 import           Kore.Variables.Free
                  ( pureAllVariables )

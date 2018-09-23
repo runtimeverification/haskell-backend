@@ -43,7 +43,7 @@ import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
-import           Kore.Unification.UnifierImpl
+import           Kore.Unification.UnificationSolution
                  ( UnificationSubstitution )
 import           Kore.Variables.Free
 import           Kore.Variables.Fresh

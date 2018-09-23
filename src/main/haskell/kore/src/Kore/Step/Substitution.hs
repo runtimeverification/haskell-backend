@@ -37,9 +37,9 @@ import Kore.Unification.Error
        substitutionToUnifyOrSubError, unificationToUnifyOrSubError )
 import Kore.Unification.SubstitutionNormalization
        ( normalizeSubstitution )
-import Kore.Unification.Unifier
-       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution,
-       normalizeSubstitutionDuplication )
+import Kore.Unification.UnificationSolution
+       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution )
+import Kore.Unification.UnifierImpl ( normalizeSubstitutionDuplication )
 import Kore.Variables.Fresh
 
 {-|'mergeSubstitutions' merges a list of substitutions into

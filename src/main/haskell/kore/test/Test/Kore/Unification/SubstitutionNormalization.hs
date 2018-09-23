@@ -33,7 +33,7 @@ import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import           Kore.Unification.SubstitutionNormalization
-import           Kore.Unification.UnifierImpl
+import           Kore.Unification.UnificationSolution
                  ( UnificationSubstitution )
 import           Kore.Variables.Fresh
 
