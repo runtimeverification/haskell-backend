@@ -90,3 +90,8 @@ During a lookup, all the branches where the key does not unify can be discarded,
 so there may be fewer branches to explore.
 On the other hand, the result of evaluating an insertion is always the largest
 possible disjunction.
+
+Questions
+---------
+
+- How should substitution behave with respect to symbolic maps?
