@@ -15,7 +15,6 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( Rewrites (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkRewrites )
@@ -43,13 +42,10 @@ TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
     ::  ( MetaOrObject Object
-        , SortedVariable variable
         , Given (SortTools Object)
-        , Show (variable Object)
-        , Ord (variable Object)
         )
-    => Rewrites Object (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Rewrites Object (OrOfExpandedPattern Object Variable)
+    ->  ( OrOfExpandedPattern Object Variable
         , SimplificationProof Object
         )
 simplify
@@ -62,14 +58,11 @@ simplify
 
 simplifyEvaluatedRewrites
     ::  ( MetaOrObject Object
-        , SortedVariable variable
         , Given (SortTools Object)
-        , Show (variable Object)
-        , Ord (variable Object)
         )
-    => OrOfExpandedPattern Object variable
-    -> OrOfExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => OrOfExpandedPattern Object Variable
+    -> OrOfExpandedPattern Object Variable
+    -> (OrOfExpandedPattern Object Variable, SimplificationProof Object)
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
         (OrOfExpandedPattern.toExpandedPattern first)
@@ -77,14 +70,11 @@ simplifyEvaluatedRewrites first second =
 
 makeEvaluateRewrites
     ::  ( MetaOrObject Object
-        , SortedVariable variable
         , Given (SortTools Object)
-        , Show (variable Object)
-        , Ord (variable Object)
         )
-    => ExpandedPattern Object variable
-    -> ExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => ExpandedPattern Object Variable
+    -> ExpandedPattern Object Variable
+    -> (OrOfExpandedPattern Object Variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern

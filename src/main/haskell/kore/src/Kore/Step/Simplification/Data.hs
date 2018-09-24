@@ -42,7 +42,7 @@ runSimplifier
     :: Simplifier a
     -- ^ simplifier computation
     -> Int
-    -- ^ initial counter for fresh variables
+    -- ^ initial counter for fresh Variables
     -> (a, Int)
 runSimplifier = runIntCounter
 

@@ -61,7 +61,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Step
                  ( MaxStepCount (..), pickFirstStepper )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 import           Kore.Unparser.Unparse
                  ( unparseToString )
 
@@ -171,7 +170,7 @@ main = do
                 clockSomething "Executing"
                     $ fst $ evalSimplifier
                     $ do
-                        simplifiedPatterns <-
+                        simplifiedPatterns <- give (convertMetadataTools metadataTools) $
                             ExpandedPattern.simplify
                                 metadataTools
                                 (Simplifier.create

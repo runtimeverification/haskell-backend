@@ -13,9 +13,8 @@ module Kore.Step.Simplification.Simplifier
     ) where
 
 import qualified Data.Map as Map
-
+import Data.Reflection ( give )
 import           Kore.AST.Common
-                 ( Id, SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -26,31 +25,17 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable )
 
 create
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , IntVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level Variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
 create
     tools
     symbolIdToEvaluator
-  =
+  = give (convertMetadataTools tools) $ 
     PureMLPatternSimplifier
         (Pattern.simplifyToOr tools symbolIdToEvaluator)

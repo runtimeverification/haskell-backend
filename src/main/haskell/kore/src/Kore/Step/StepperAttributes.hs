@@ -20,6 +20,7 @@ module Kore.Step.StepperAttributes
   , injectiveAttribute
   , sortInjectionAttribute
   , hookAttribute
+  , convertMetadataTools
   ) where
 
 import Data.Default
@@ -38,6 +39,17 @@ import           Kore.Implicit.Attributes
                  ( keyOnlyAttribute )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
+import Kore.SMT.SMT
+
+convertMetadataTools
+    :: MetadataTools level StepperAttributes
+    -> MetadataTools level SMTAttributes
+convertMetadataTools tools = MetadataTools
+    { symAttributes  = convert . symAttributes  tools
+    , sortAttributes = convert . sortAttributes tools
+    , sortTools = sortTools tools
+    }
+    where convert (StepperAttributes _ _ _ _ _ hook) = SMTAttributes hook
 
 {- | @constructorAttribute@ represents a @constructor@ attribute Kore pattern.
 

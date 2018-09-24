@@ -18,7 +18,6 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( Equals (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
@@ -56,10 +55,6 @@ import qualified Kore.Step.Simplification.Or as Or
                  ( simplifyEvaluated )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrOfExpandedPattern's.
 
@@ -103,7 +98,7 @@ This uses the following simplifications
       Note that when expanding Equals(t1, t1') recursively we don't need to
       put the ceil conditions again, since we already asserted that.
       Also note that ceil(constr(...)) is simplifiable.
-    + If the first term is a variable and the second is functional,
+    + If the first term is a Variable and the second is functional,
       then we get a substitution:
         Or(
             And(
@@ -121,18 +116,11 @@ Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , IntVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Equals level (OrOfExpandedPattern level variable)
+    -> Equals level (OrOfExpandedPattern level Variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
@@ -146,19 +134,12 @@ simplify
 
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , IntVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    -> OrOfExpandedPattern level Variable
+    -> OrOfExpandedPattern level Variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluated tools first second
   | first == second =
     return (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
@@ -182,19 +163,12 @@ See 'simplify' for detailed documentation.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , IntVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluate
     tools
     first@ExpandedPattern
@@ -277,19 +251,12 @@ makeEvaluate
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottom
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , IntVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> PureMLPattern level Variable
+    -> PureMLPattern level Variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottom
     tools
     firstTerm
@@ -314,20 +281,13 @@ makeEvaluateTermsAssumesNoBottom
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , IntVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> PureMLPattern level Variable
+    -> PureMLPattern level Variable
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (OrOfExpandedPattern level Variable, SimplificationProof level)
         )
 makeEvaluateTermsAssumesNoBottomMaybe tools first second =
     give tools $ do  -- Maybe monad

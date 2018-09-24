@@ -16,7 +16,7 @@ module Kore.Step.Step
 import           Data.Either
                  ( rights )
 import qualified Data.Map as Map
-
+import Data.Reflection ( give )
 import           Kore.AST.Common
                  ( Id )
 import           Kore.AST.MetaOrObject
@@ -41,13 +41,15 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
+                 ( StepperAttributes, convertMetadataTools )
 import           Kore.Variables.Fresh.IntCounter
                  ( IntCounter )
+
 
 data MaxStepCount
     = MaxStepCount Integer
     | AnyStepCount
+
 
 {-| 'step' executes a single rewriting step using the provided axioms.
 
@@ -72,7 +74,7 @@ step tools symbolIdToEvaluator axioms configuration = do
             configuration
     (simplifiedPattern, simplificationProofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairs
-            (ExpandedPattern.simplify
+            (give (convertMetadataTools tools) $ ExpandedPattern.simplify
                 tools
                 (Simplifier.create tools symbolIdToEvaluator)
             )

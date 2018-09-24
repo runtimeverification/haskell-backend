@@ -37,7 +37,6 @@ import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -311,7 +310,7 @@ makeEvaluate
     -> Variable level
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
-makeEvaluate tools variable child =
+makeEvaluate tools variable child = give (convertMetadataTools tools) $ 
     fst $ evalSimplifier
         $ Exists.makeEvaluate tools (Simplifier.create tools Map.empty) variable child
 

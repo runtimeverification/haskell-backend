@@ -34,7 +34,7 @@ an or containing a term made of that value.
 -}
 simplify
     :: DomainValue Object (PureMLPattern Meta Variable)
-    -> ( OrOfExpandedPattern Object variable
+    -> ( OrOfExpandedPattern Object Variable
        , SimplificationProof Object
        )
 simplify dv =

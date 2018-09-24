@@ -20,7 +20,6 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( Ceil (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
@@ -63,13 +62,10 @@ A ceil(or) is equal to or(ceil). We also take into account that
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> Ceil level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    -> Ceil level (OrOfExpandedPattern level Variable)
+    ->  ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
@@ -83,13 +79,10 @@ for details.
 -}
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluated tools child =
     ( evaluated, SimplificationProof )
   where
@@ -101,13 +94,10 @@ for details.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluate tools child
   | ExpandedPattern.isTop child =
     (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
@@ -118,13 +108,10 @@ makeEvaluate tools child
 
 makeEvaluateNonBoolCeil
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateNonBoolCeil
     _
     patt@ExpandedPattern { term = Top_ _ }
@@ -159,13 +146,10 @@ makeEvaluateNonBoolCeil
 -}
 makeEvaluateTerm
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Eq (variable level)
-        , Show (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> (Predicate level variable, SimplificationProof level)
+    -> PureMLPattern level Variable
+    -> (Predicate level Variable, SimplificationProof level)
 makeEvaluateTerm
     _
     (Top_ _)
@@ -207,7 +191,7 @@ makeEvaluateTerm
 -- definitions.
 isFunctional
     :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> PureMLPattern level Variable
     -> Bool
 isFunctional tools term =
     isRight (isFunctionalPattern tools term)

@@ -12,7 +12,6 @@ module Kore.Step.Simplification.ExpandedPattern
     ) where
 
 import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -33,39 +32,27 @@ import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
 
+import Data.Reflection
 {-| Simplifies an 'ExpandedPattern', returning an 'OrOfExpandedPattern'.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , IntVariable variable
-        , Hashable variable
+        -- , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Evaluates functions in patterns.
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level Variable
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
     tools
     wrappedSimplifier@(PureMLPatternSimplifier simplifier)
     ExpandedPattern {term, predicate, substitution}
-  = do
+  = give (convertMetadataTools tools) $ do
     (simplifiedTerm, _)
         <- simplifier term
     (simplifiedPatt, _) <-

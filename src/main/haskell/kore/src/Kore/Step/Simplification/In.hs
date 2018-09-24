@@ -15,7 +15,6 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( In (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
@@ -54,13 +53,10 @@ TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> In level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    -> In level (OrOfExpandedPattern level Variable)
+    ->  ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
@@ -74,14 +70,11 @@ simplify
 
 simplifyEvaluatedIn
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level Variable
+    -> OrOfExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluatedIn tools first second
   | OrOfExpandedPattern.isFalse first =
     (OrOfExpandedPattern.make [], SimplificationProof)
@@ -105,14 +98,11 @@ simplifyEvaluatedIn tools first second
 
 makeEvaluateIn
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateIn tools first second
   | ExpandedPattern.isTop first =
     Ceil.makeEvaluate tools second
@@ -124,14 +114,11 @@ makeEvaluateIn tools first second
 
 makeEvaluateNonBoolIn
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateNonBoolIn tools patt1 patt2 =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern

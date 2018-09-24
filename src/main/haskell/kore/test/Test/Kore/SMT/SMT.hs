@@ -58,7 +58,7 @@ mul a b = App_ mulSymbol  [a, b]
 div   a b = App_ tdivSymbol [a, b]
 
 run :: CommonPurePattern Object -> Property
-run prop = (give tools $ unsafeTryRefutePattern prop) === Just False
+run prop = (give tools $ unsafeTryRefutePattern prop) === Just True
 
 
 prop_1 :: Property 

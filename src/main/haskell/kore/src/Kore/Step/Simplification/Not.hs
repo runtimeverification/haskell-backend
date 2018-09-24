@@ -17,7 +17,6 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( Not (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
@@ -51,13 +50,10 @@ Right now this uses the following:
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => Not level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Not level (OrOfExpandedPattern level Variable)
+    ->  ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
@@ -72,13 +68,10 @@ See 'simplify' for details.
 -}
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrOfExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluated simplified
   | OrOfExpandedPattern.isFalse simplified =
     (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
@@ -104,13 +97,10 @@ See 'simplify' for details.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluate
     ExpandedPattern {term, predicate, substitution}
   =
@@ -137,13 +127,10 @@ makeEvaluate
 
 makeTermNot
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
+    => PureMLPattern level Variable
+    -> PureMLPattern level Variable
 makeTermNot (Bottom_ _) = mkTop
 makeTermNot (Top_ _) = mkBottom
 -- TODO: maybe other simplifications like

@@ -13,12 +13,10 @@ module Kore.Step.Function.UserDefined
     ) where
 
 import           Data.Reflection
-                 ( give )
+                 ( give , Given )
 
 import           Kore.AST.Common
-                 ( Application (..), Pattern (..), SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( Meta, MetaOrObject, Object )
 import           Kore.AST.PureML
                  ( CommonPurePattern, PureMLPattern, asPurePattern )
 import           Kore.IndexedModule.MetadataTools
@@ -47,21 +45,18 @@ import           Kore.Step.Simplification.Data
                  ( CommonPureMLPatternSimplifier, PureMLPatternSimplifier (..),
                  Simplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
 
+import Kore.SMT.SMT
 {-| 'axiomFunctionEvaluator' evaluates a user-defined function. After
 evaluating the function, it tries to re-evaluate all functions on the result.
 
 The function is assumed to be defined through an axiom.
 -}
 axiomFunctionEvaluator
-    ::  ( MetaOrObject level)
+    ::  ( MetaOrObject level
+        )
     => AxiomPattern level
     -- ^ Axiom defining the current function.
     -> MetadataTools level StepperAttributes
@@ -77,7 +72,7 @@ axiomFunctionEvaluator
     tools
     simplifier
     app
-  =
+  = give (convertMetadataTools tools) $ 
     case stepResult of
         Left _ ->
             return (AttemptedFunction.NotApplicable, SimplificationProof)
@@ -122,22 +117,16 @@ was evaluated.
 -}
 reevaluateFunctions
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , IntVariable variable
-        , Hashable variable
+        , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Evaluates functions in patterns.
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level Variable
     -- ^ Function evaluation result.
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
+    -> Simplifier (AttemptedFunction level Variable, SimplificationProof level)
 reevaluateFunctions
     tools
     wrappedSimplifier@(PureMLPatternSimplifier simplifier)
@@ -173,22 +162,16 @@ reevaluateFunctions
 
 evaluatePredicate
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , IntVariable variable
-        , Hashable variable
+        , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Evaluates functions in a pattern.
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level Variable
     -- ^ The condition to be evaluated.
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 evaluatePredicate
     tools
     simplifier

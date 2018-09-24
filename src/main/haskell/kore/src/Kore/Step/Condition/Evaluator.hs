@@ -15,12 +15,12 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( SortedVariable )
+                 ( SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SortTools, MetadataTools )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, unwrapPredicate,
+                 ( Predicate, makeAndPredicate, makeFalsePredicate, unwrapPredicate,
                  wrapPredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
@@ -33,31 +33,33 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier (..),
                  SimplificationProof (SimplificationProof), Simplifier )
-
+import           Kore.SMT.SMT
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
     ::  ( MetaOrObject level
         , Given (SortTools level)
-        , SortedVariable variable
-        , Eq (variable level)
-        , Show (variable level)
+        , Given (MetadataTools level SMTAttributes)
         )
-    => PureMLPatternSimplifier level variable
+    => PureMLPatternSimplifier level Variable
     -- ^ Evaluates functions in a pattern.
-    -> Predicate level variable
+    -> Predicate level Variable
     -- ^ The condition to be evaluated.
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
     -> Simplifier
-        (PredicateSubstitution level variable, SimplificationProof level)
+        (PredicateSubstitution level Variable, SimplificationProof level)
 evaluate
     (PureMLPatternSimplifier simplifier)
-    predicate'
+    predicate''
   = do
+    let predicate' = 
+          if unsafeTryRefutePredicate predicate'' == Just False 
+            then makeFalsePredicate
+            else predicate'' 
     (patt, _proof) <- simplifier (unwrapPredicate predicate')
     let
-        (subst, _proof) =
-            asPredicateSubstitution (OrOfExpandedPattern.toExpandedPattern patt)
+       (subst, _proof) =
+           asPredicateSubstitution (OrOfExpandedPattern.toExpandedPattern patt)
     return ( subst, SimplificationProof)
 
 asPredicateSubstitution
