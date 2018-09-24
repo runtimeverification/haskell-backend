@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Implies
+Module      : Kore.Step.Simplification.Implies
 Description : Tools for Implies pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA

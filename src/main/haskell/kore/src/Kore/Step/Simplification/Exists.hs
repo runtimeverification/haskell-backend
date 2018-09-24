@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Exists
+Module      : Kore.Step.Simplification.Exists
 Description : Tools for Exists pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -52,6 +52,8 @@ import           Kore.Variables.Free
 import           Kore.Variables.Fresh.IntCounter
                  ( IntCounter )
 import Kore.SMT.SMT
+import           Kore.Variables.Fresh
+
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
@@ -89,9 +91,9 @@ simplify
     simplifier
     Exists { existsVariable = variable, existsChild = child }
   = give (convertMetadataTools tools) $ 
-    simplifyEvaluatedExists tools simplifier variable child
+      simplifyEvaluated tools simplifier variable child
 
-simplifyEvaluatedExists
+simplifyEvaluated
     ::  ( MetaOrObject level
         , Given (MetadataTools level SMTAttributes)
         , Given (SortTools level)
@@ -103,7 +105,7 @@ simplifyEvaluatedExists
     -> OrOfExpandedPattern level Variable
     -> Simplifier
         (OrOfExpandedPattern level Variable, SimplificationProof level)
-simplifyEvaluatedExists tools simplifier variable simplified
+simplifyEvaluated tools simplifier variable simplified
   | OrOfExpandedPattern.isTrue simplified =
     return (simplified, SimplificationProof)
   | OrOfExpandedPattern.isFalse simplified =
@@ -114,6 +116,10 @@ simplifyEvaluatedExists tools simplifier variable simplified
             (makeEvaluate tools simplifier variable) simplified
     return ( evaluated, SimplificationProof )
 
+{-| evaluates an 'Exists' given its two 'ExpandedPattern' children.
+
+See 'simplify' for detailed documentation.
+-}
 makeEvaluate
     ::  ( MetaOrObject level
         , Given (MetadataTools level SMTAttributes)
@@ -214,12 +220,12 @@ substituteTermPredicate
         , Given (MetadataTools level SMTAttributes)
         , Given (SortTools level)
         )
-    => PureMLPattern level Variable
-    -> Predicate level Variable
-    -> ListSubstitution.Substitution (Unified Variable) (PureMLPattern level Variable)
-    -> UnificationSubstitution level Variable
-    -> IntCounter
-        (ExpandedPattern level Variable, SimplificationProof level)
+    => PureMLPattern level variable
+    -> Predicate level variable
+    -> ListSubstitution.Substitution (Unified variable) (PureMLPattern level variable)
+    -> UnificationSubstitution level variable
+    -> Simplifier
+        (ExpandedPattern level variable, SimplificationProof level)
 substituteTermPredicate term predicate substitution globalSubstitution = do
     substitutedTerm <- substitute term substitution
     substitutedPredicate <-

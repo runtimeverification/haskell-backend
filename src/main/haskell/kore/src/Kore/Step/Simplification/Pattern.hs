@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Pattern
+Module      : Kore.Step.Simplification.Pattern
 Description : Tools for Pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -85,7 +85,6 @@ import Kore.SMT.SMT
 -}
 simplify
     ::  ( MetaOrObject level
-        -- , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level Variable]
@@ -108,7 +107,6 @@ simplify tools symbolIdToEvaluator patt = give (convertMetadataTools tools) $ do
 -}
 simplifyToOr
     ::  ( MetaOrObject level
-        -- , Given (SortTools level)
         , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes

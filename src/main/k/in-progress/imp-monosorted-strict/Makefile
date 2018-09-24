@@ -5,7 +5,7 @@ imp.kore: imp.k
 	kast --sort K --kore $< > $<.kore
 
 %.output: %.imp.kore imp.kore
-	stack --nix exec -- kore-exec imp.kore --module IMP --is-program --pattern $< > $@
+	stack exec -- kore-exec imp.kore --module IMP --is-program --strategy default --depth 4 --pattern $< > $@
 
 %.korun: %.output
 	cat $<

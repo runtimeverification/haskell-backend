@@ -14,6 +14,7 @@ module Kore.Step.StepperAttributes
   , isConstructor_
   , isInjective_
   , isSortInjection_
+  , isTotal
   , functionalAttribute
   , functionAttribute
   , constructorAttribute
@@ -123,6 +124,14 @@ data StepperAttributes =
       -- ^ The builtin sort or symbol hooked to a sort or symbol
     }
   deriving (Eq, Show)
+
+{-| Whether a symbol is total (i.e. can't produce bottom)
+-}
+isTotal :: StepperAttributes -> Bool
+isTotal StepperAttributes
+    { isFunctional, isConstructor }
+  =
+    isFunctional || isConstructor
 
 defaultStepperAttributes :: StepperAttributes
 defaultStepperAttributes =

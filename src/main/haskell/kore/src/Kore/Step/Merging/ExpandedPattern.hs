@@ -91,9 +91,9 @@ mergeWithEvaluatedCondition
         , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level Variable
-    -> PredicateSubstitution level Variable
-    -> IntCounter (ExpandedPattern level Variable, SimplificationProof level)
+    -> ExpandedPattern level variable
+    -> PredicateSubstitution level variable
+    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
     ExpandedPattern

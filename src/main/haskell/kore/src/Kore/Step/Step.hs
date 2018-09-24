@@ -8,192 +8,167 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Step
-    ( step
-    , pickFirstStepper
-    , MaxStepCount(..)
+    ( -- * Primitive strategies
+      Prim (..)
+    , axiom
+    , simplify
+    , axiomStep
+    , transitionRule
+    , stepStrategy
+    , simpleStrategy
+    , defaultStrategy
+      -- * Re-exports
+    , AxiomPattern
+    , Limit (..)
+    , Natural
+    , Strategy
+    , pickLongest
+    , pickStuck
+    , runStrategy
     ) where
 
-import           Data.Either
-                 ( rights )
-import qualified Data.Map as Map
+
 import Data.Reflection ( give )
-import           Kore.AST.Common
-                 ( Id )
-import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
-import           Kore.Step.BaseStep
-                 ( AxiomPattern, StepProof (..), simplifyStepProof,
-                 stepWithAxiom )
+import Data.Foldable
+       ( toList )
+import Data.Semigroup
+       ( (<>) )
+import Numeric.Natural
+       ( Natural )
+
+import Kore.AST.MetaOrObject
+       ( MetaOrObject )
+import Kore.IndexedModule.MetadataTools
+       ( MetadataTools )
+import Kore.Step.BaseStep
+       ( AxiomPattern, StepProof (..), simplificationProof, stepWithAxiom )
+
+import           Kore.Step.AxiomPatterns
+                 ( isCoolingRule, isHeatingRule, isNormalRule )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
-import           Kore.Step.Function.Data
-                 ( CommonApplicationFunctionEvaluator )
-import           Kore.Step.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, traverseFlattenWithPairs )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( CommonPureMLPatternSimplifier, Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes, convertMetadataTools )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
+                 ( StepperAttributes )
+import           Kore.Step.Strategy
+                 ( Limit (..), Strategy, pickLongest, pickStuck, runStrategy )
+import qualified Kore.Step.Strategy as Strategy
 
+{- | A strategy primitive: a rewrite axiom or builtin simplification step.
+ -}
+data Prim axiom = Simplify | Axiom !axiom
 
-data MaxStepCount
-    = MaxStepCount Integer
-    | AnyStepCount
+-- | Apply the axiom.
+axiom :: axiom -> Prim axiom
+axiom = Axiom
 
+-- | Apply builtin simplification rules and evaluate functions.
+simplify :: Prim axiom
+simplify = Simplify
 
-{-| 'step' executes a single rewriting step using the provided axioms.
+{- | A single-step strategy which applies the given axiom.
 
-Does not handle properly various cases, among which:
-sigma(x, y) => y    vs    a
--}
-step
-    ::  ( MetaOrObject level)
+    If the axiom is successful, the built-in simplification rules and function
+    evaluator are applied (see 'ExpandedPattern.simplify' for details). The
+    combination is considered one step for the purposes of the step limit.
+
+ -}
+axiomStep :: axiom -> Strategy (Prim axiom) -> Strategy (Prim axiom)
+axiomStep a =
+    Strategy.step . Strategy.apply (axiom a) . Strategy.apply simplify
+
+{- |
+    Transition rule for primitive strategies in 'Prim'.
+
+    @transitionRule@ is intended to be partially applied and passed to
+    'Strategy.runStrategy'.
+ -}
+transitionRule
+    :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
-    -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
-    -> CommonOrOfExpandedPattern level
-    -- ^ Configuration being rewritten.
-    -> Simplifier
-        (CommonOrOfExpandedPattern level, StepProof level)
-step tools symbolIdToEvaluator axioms configuration = do
-    (stepPattern, stepProofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairs
-            (baseStepWithPattern tools axioms)
-            configuration
-    (simplifiedPattern, simplificationProofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairs
-            (give (convertMetadataTools tools) $ ExpandedPattern.simplify
-                tools
-                (Simplifier.create tools symbolIdToEvaluator)
-            )
-            stepPattern
-    return
-        ( simplifiedPattern
-        , simplifyStepProof $ StepProofCombined
-            (map StepProofSimplification simplificationProofs ++ stepProofs)
-        )
+    -> CommonPureMLPatternSimplifier level
+    -- ^ Evaluates functions in patterns
+    -> Prim (AxiomPattern level)
+    -> (CommonExpandedPattern level, StepProof level)
+    -- ^ Configuration being rewritten and its accompanying proof
+    -> Simplifier [(CommonExpandedPattern level, StepProof level)]
+transitionRule tools simplifier =
+    \case
+        Simplify -> transitionSimplify
+        Axiom a -> transitionAxiom a
+  where
+    transitionSimplify (config, proof) =
+        do
+            (configs, proof') <- give (convertMetadataTools tools) $ 
+                ExpandedPattern.simplify tools simplifier config
+            let
+                proof'' = proof <> simplificationProof proof'
+                prove config' = (config', proof'')
+                -- Filter out ⊥ patterns
+                nonEmptyConfigs = ExpandedPattern.filterOr configs
+            return (prove <$> toList nonEmptyConfigs)
+    transitionAxiom a (config, proof) =
+        case stepWithAxiom tools config a of
+            Left _ -> pure []
+            Right apply -> do
+                (config', proof') <- apply
+                if ExpandedPattern.isBottom config'
+                    then return []
+                    else return [(config', proof <> proof')]
 
-baseStepWithPattern
-    ::  ( MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
-    -> CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
-    -> IntCounter (CommonOrOfExpandedPattern level, StepProof level)
-baseStepWithPattern tools axioms configuration = do
-    stepResultsWithProofs <- sequence (stepToList tools configuration axioms)
-    let (results, proofs) = unzip stepResultsWithProofs
-    return
-        ( OrOfExpandedPattern.make results
-        , simplifyStepProof $ StepProofCombined proofs
-        )
+{- | A strategy which takes one step by attempting all the axioms.
 
-stepToList
-    ::  ( MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
-    ->  [ IntCounter
-            (CommonExpandedPattern level, StepProof level)
-        ]
-stepToList tools configuration axioms =
-    -- TODO: Stop ignoring Left results. Also, how would a result
-    -- to which I can't apply an axiom look like?
-    rights $ map (stepWithAxiom tools configuration) axioms
+    If the axiom is successful, the built-in simplification rules and function
+    evaluator are applied (see 'ExpandedPattern.simplify' for details). The
+    combination is considered one step for the purposes of the step limit.
 
-{-| 'pickFirstStepper' rewrites a configuration using the provided axioms
-until it cannot be rewritten anymore or until the step limit has been reached.
-Whenever multiple axioms can be applied, it picks the first one whose
-'Predicate' is not false and continues with that.
+ -}
+stepStrategy
+    :: MetaOrObject level
+    => [AxiomPattern level]
+    -> Strategy (Prim (AxiomPattern level))
+stepStrategy axioms =
+    Strategy.all (applyAxiom <$> axioms)
+  where
+    applyAxiom a = axiomStep a Strategy.stuck
 
-Does not handle properly various cases, among which:
-sigma(x, y) => y    vs    a
--}
-pickFirstStepper
-    ::  ( MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
-    -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
-    -> MaxStepCount
-    -- ^ The maximum number of steps to be made
-    -> CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
-    -> Simplifier (CommonExpandedPattern level, StepProof level)
-pickFirstStepper _ _ _ (MaxStepCount 0) stepperConfiguration =
-    return (stepperConfiguration, StepProofCombined [])
-pickFirstStepper _ _ _ (MaxStepCount n) _ | n < 0 =
-    error ("Negative MaxStepCount: " ++ show n)
-pickFirstStepper
-    tools symbolIdToEvaluator axioms (MaxStepCount maxStep) stepperConfiguration
-  =
-    pickFirstStepperSkipMaxCheck
-        tools
-        symbolIdToEvaluator
-        axioms
-        (MaxStepCount (maxStep - 1))
-        stepperConfiguration
-pickFirstStepper
-    tools symbolIdToEvaluator axioms AnyStepCount stepperConfiguration
-  =
-    pickFirstStepperSkipMaxCheck
-        tools
-        symbolIdToEvaluator
-        axioms
-        AnyStepCount
-        stepperConfiguration
+{- | A strategy which applies all the given axioms as many times as possible.
 
-pickFirstStepperSkipMaxCheck
-    ::  ( MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
-    -- ^ Map from symbol IDs to defined functions
-    -> [AxiomPattern level]
-    -- ^ Rewriting axioms
-    -> MaxStepCount
-    -- ^ The maximum number of steps to be made
-    -> CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
-    -> Simplifier (CommonExpandedPattern level, StepProof level)
-pickFirstStepperSkipMaxCheck
-    tools symbolIdToEvaluator axioms maxStepCount stepperConfiguration
-  = do
-    (patterns, nextProof) <-
-        -- TODO: Perhaps use IntCounter.findState to reduce the need for
-        -- intCounter values and to make this more testable.
-        step
-            tools
-            symbolIdToEvaluator
-            axioms
-            (OrOfExpandedPattern.make [stepperConfiguration])
-    case OrOfExpandedPattern.extractPatterns patterns of
-        [] -> return (stepperConfiguration, StepProofCombined [])
-        (nextConfiguration : _) -> do
-            (finalConfiguration, finalProof) <-
-                pickFirstStepper
-                    tools
-                    symbolIdToEvaluator
-                    axioms
-                    maxStepCount
-                    nextConfiguration
-            return
-                ( finalConfiguration
-                , simplifyStepProof
-                    $ StepProofCombined [nextProof, finalProof]
-                )
+    If the axiom is successful, the built-in simplification rules and function
+    evaluator are applied (see 'ExpandedPattern.simplify' for details). The
+    combination is considered one step for the purposes of the step limit.
+
+ -}
+simpleStrategy
+    :: MetaOrObject level
+    => [AxiomPattern level]
+    -> Strategy (Prim (AxiomPattern level))
+simpleStrategy axioms =
+    Strategy.many applyAxioms Strategy.stuck
+  where
+    applyAxioms next = Strategy.all (axiomStep <$> axioms <*> pure next)
+
+{- | Heat the configuration, apply a normal rule, and cool the result.
+ -}
+-- TODO (thomas.tuegel): This strategy is not right because heating/cooling
+-- rules must have side conditions if encoded as \rewrites, or they must be
+-- \equals rules, which are not handled by this strategy.
+defaultStrategy
+    :: MetaOrObject level
+    => [AxiomPattern level]
+    -> Strategy (Prim (AxiomPattern level))
+defaultStrategy axioms =
+    Strategy.many heatingCoolingCycle Strategy.stuck
+  where
+    heatingCoolingCycle = Strategy.many heat . normal . Strategy.try cool
+    heatingRules = filter isHeatingRule axioms
+    heat next = Strategy.all (axiomStep <$> heatingRules <*> pure next)
+    normalRules = filter isNormalRule axioms
+    normal next = Strategy.all (axiomStep <$> normalRules <*> pure next)
+    coolingRules = filter isCoolingRule axioms
+    cool next = Strategy.all (axiomStep <$> coolingRules <*> pure next)

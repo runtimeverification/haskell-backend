@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.CharLiteral
+Module      : Kore.Step.Simplification.CharLiteral
 Description : Tools for CharLiteral pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA

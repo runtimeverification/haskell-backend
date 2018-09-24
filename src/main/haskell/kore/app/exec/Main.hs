@@ -4,7 +4,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Monad
                  ( when )
-import qualified Data.List as List
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -14,7 +13,8 @@ import           Data.Semigroup
                  ( (<>) )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
-                 long, metavar, option, progDesc, str, strOption, value )
+                 long, metavar, option, progDesc, readerError, str, strOption,
+                 value )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -59,7 +59,6 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step
-                 ( MaxStepCount (..), pickFirstStepper )
 import           Kore.Step.StepperAttributes
 import           Kore.Unparser.Unparse
                  ( unparseToString )
@@ -79,12 +78,16 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for a file containing a definition to verify and use for execution
     , patternFileName     :: !String
     -- ^ Name for file containing a pattern to verify and use for execution
+    , outputFileName     :: !String
+    -- ^ Name for file to contain the output pattern
     , mainModuleName      :: !String
     -- ^ The name of the main module in the definition
     , isKProgram          :: !Bool
     -- ^ Whether the pattern file represents a program to be put in the
     -- initial configuration before execution
-    , maxStepCount        :: !MaxStepCount
+    , stepLimit           :: !(Limit Natural)
+    , strategy
+        :: !([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
     }
 
 -- | Command Line Argument Parser
@@ -100,6 +103,11 @@ commandLineParser =
         <> help "Kore pattern source file to verify and execute. Needs --module."
         <> value "" )
     <*> strOption
+        (  metavar "PATTERN_OUTPUT_FILE"
+        <> long "output"
+        <> help "Output file to contain final Kore pattern."
+        <> value "" )
+    <*> strOption
         (  metavar "MODULE"
         <> long "module"
         <> help "The name of the main module in the Kore definition."
@@ -107,8 +115,31 @@ commandLineParser =
     <*> enableDisableFlag "is-program"
         True False False
         "Whether the pattern represents a program."
-    <*> (MaxStepCount <$> depth <|> pure AnyStepCount)
+    <*> parseStepLimit
+    <*> parseStrategy
   where
+    parseStepLimit = Limit <$> depth <|> pure Unlimited
+    parseStrategy =
+        option readStrategy
+            (  metavar "STRATEGY"
+            <> long "strategy"
+            -- TODO (thomas.tuegel): Make defaultStrategy the default when it
+            -- works correctly.
+            <> value simpleStrategy
+            <> help "Select rewrites using STRATEGY."
+            )
+      where
+        readStrategy = do
+            strat <- str
+            case strat of
+                "simple" -> pure simpleStrategy
+                "default" -> pure defaultStrategy
+                _ ->
+                    let
+                        unknown = "Unknown strategy '" ++ strat ++ "'. "
+                        known = "Known strategies are: simple, default."
+                    in
+                        readerError (unknown ++ known)
     depth =
         option auto
             (  metavar "DEPTH"
@@ -136,9 +167,11 @@ main = do
     Just KoreExecOptions
         { definitionFileName
         , patternFileName
+        , outputFileName
         , mainModuleName
         , isKProgram
-        , maxStepCount
+        , stepLimit
+        , strategy
         }
       -> do
         parsedDefinition <- mainDefinitionParse definitionFileName
@@ -156,9 +189,9 @@ main = do
                         -- builtin functions
                         (Builtin.koreEvaluators indexedModule)
                 axiomPatterns =
-                    List.sort
-                        (koreIndexedModuleToAxiomPatterns Object indexedModule)
+                    koreIndexedModuleToAxiomPatterns Object indexedModule
                 metadataTools = constructorFunctions (extractMetadataTools indexedModule)
+                simplifier = Simplifier.create metadataTools functionRegistry
                 purePattern = makePurePattern parsedPattern
                 runningPattern =
                     if isKProgram
@@ -166,9 +199,9 @@ main = do
                             $ makeKInitConfig purePattern
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
-            finalExpandedPattern <-
+            (finalExpandedPattern, _) <-
                 clockSomething "Executing"
-                    $ fst $ evalSimplifier
+                    $ evalSimplifier
                     $ do
                         simplifiedPatterns <- give (convertMetadataTools metadataTools) $
                             ExpandedPattern.simplify
@@ -184,14 +217,19 @@ main = do
                                         (fst simplifiedPatterns) of
                                     [] -> ExpandedPattern.bottom
                                     (config : _) -> config
-                        pickFirstStepper
-                            metadataTools
-                            functionRegistry
-                            axiomPatterns
-                            maxStepCount
-                            initialPattern
-            putStrLn $ unparseToString
-                (ExpandedPattern.term finalExpandedPattern)
+                        pickLongest <$> runStrategy
+                            (transitionRule metadataTools simplifier)
+                            (strategy axiomPatterns)
+                            stepLimit
+                            (initialPattern, mempty)
+            let
+                outputString = unparseToString
+                    (ExpandedPattern.term finalExpandedPattern)
+            if outputFileName /= ""
+                then
+                    writeFile outputFileName outputString
+                else
+                    putStrLn $ outputString
 
 mainModule
     :: ModuleName

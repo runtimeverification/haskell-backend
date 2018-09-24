@@ -49,6 +49,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import Kore.SMT.SMT
+
 {-| 'evaluateApplication' - evaluates functions on an application pattern.
 -}
 evaluateApplication

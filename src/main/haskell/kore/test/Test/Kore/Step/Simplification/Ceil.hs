@@ -156,7 +156,10 @@ test_ceilSimplification = give mockSortTools
                         , predicate =
                             fst $ makeAndPredicate
                                 (makeEqualsPredicate fOfA gOfA)
-                                (makeCeilPredicate constructorTerm)
+                                (fst $ makeAndPredicate
+                                    (makeCeilPredicate somethingOfA)
+                                    (makeCeilPredicate somethingOfB)
+                                )
                         , substitution = [(Mock.x, fOfB)]
                         }
                     ]
@@ -169,6 +172,17 @@ test_ceilSimplification = give mockSortTools
                         }
                 )
             )
+    , testCase "ceil of constructors is top"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make [ExpandedPattern.top])
+            (makeEvaluate mockMetadataTools
+                ExpandedPattern
+                    { term = Mock.constr10 Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
     , testCase "ceil with functional symbols"
         -- if term is a functional(params), then
         -- ceil(term and predicate and subst)

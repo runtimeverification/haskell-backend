@@ -378,21 +378,7 @@ test_equalsSimplification = give mockSortTools
         )
     , testCase "constructor1(a) vs constructor2(a) for patterns"
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate =
-                        fst $ makeAndPredicate
-                            (fst $ makeNotPredicate
-                                (makeCeilPredicate constructor1OfA)
-                            )
-                            (fst $ makeNotPredicate
-                                (makeCeilPredicate constructor2OfA)
-                            )
-                    , substitution = []
-                    }
-                ]
-            )
+            (OrOfExpandedPattern.make [])
             (evaluate
                 mockMetadataTools
                 ExpandedPattern

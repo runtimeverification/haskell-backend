@@ -19,13 +19,13 @@ module Kore.AST.MLPatterns
     ) where
 
 import Data.Functor.Foldable
-       (Fix)
+       ( Fix )
 
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
-       (ApplicationSorts (..))
+       ( ApplicationSorts (..) )
 import Kore.Implicit.ImplicitSorts
 
 {-|'MLPatternClass' offers a common interface to ML patterns

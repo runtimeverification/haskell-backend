@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Rewrites
+Module      : Kore.Step.Simplification.Rewrites
 Description : Tools for Rewrites pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA

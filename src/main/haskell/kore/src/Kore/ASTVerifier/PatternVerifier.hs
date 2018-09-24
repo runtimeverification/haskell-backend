@@ -15,9 +15,9 @@ module Kore.ASTVerifier.PatternVerifier
 
 import           Control.Monad
                  ( foldM, zipWithM_ )
-import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Functor.Foldable
-                 (Fix)
+                 ( Fix )
+import qualified Data.Functor.Foldable as Functor.Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc.Render.String

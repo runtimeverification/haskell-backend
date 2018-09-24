@@ -25,11 +25,12 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), Simplifier,
-                 SimplificationProof (..) )
+                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.SMT.SMT ( SMTAttributes )
+
 {-| 'mergeWithPredicateSubstitution' ands the given predicate/substitution
 to the given Or.
 -}

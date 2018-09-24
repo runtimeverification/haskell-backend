@@ -34,9 +34,9 @@ import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Builtin.Hook
                  ( Hook (..) )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools(..) )
+                 ( MetadataTools (..) )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator(..),
+                 ( ApplicationFunctionEvaluator (..),
                  notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )

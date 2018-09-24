@@ -38,7 +38,6 @@ import Data.Reflection
 -}
 simplify
     ::  ( MetaOrObject level
-        -- , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
     -> PureMLPatternSimplifier level Variable

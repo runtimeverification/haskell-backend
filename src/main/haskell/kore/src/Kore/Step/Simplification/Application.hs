@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Application
+Module      : Kore.Step.Simplification.Application
 Description : Tools for Application pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -46,6 +46,9 @@ import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
                  
 import Kore.SMT.SMT
+
+import           Kore.Variables.Fresh
+
 data ExpandedApplication level variable = ExpandedApplication
     { term         :: !(Application level (PureMLPattern level variable))
     , predicate    :: !(Predicate level variable)
@@ -65,7 +68,6 @@ then merging everything into an ExpandedPattern.
 -}
 simplify
     ::  ( MetaOrObject level
-        -- , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
     -> PureMLPatternSimplifier level Variable

@@ -15,6 +15,7 @@ module Kore.Step.Function.UserDefined
 import           Data.Reflection
                  ( give , Given )
 
+
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
@@ -43,10 +44,11 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( CommonPureMLPatternSimplifier, PureMLPatternSimplifier (..),
-                 Simplifier, SimplificationProof (..) )
+                 SimplificationProof (..), Simplifier )
 import           Kore.Step.StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+
 
 import Kore.SMT.SMT
 {-| 'axiomFunctionEvaluator' evaluates a user-defined function. After

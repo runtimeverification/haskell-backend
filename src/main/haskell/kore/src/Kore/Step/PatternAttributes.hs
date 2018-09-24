@@ -14,6 +14,7 @@ module Kore.Step.PatternAttributes
     , isConstructorLikeTop
     , isFunctionPattern
     , isFunctionalPattern
+    , isTotalPattern
     , mapFunctionalProofVariables
     ) where
 
@@ -35,9 +36,9 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.PatternAttributesError
-                 ( FunctionError (..), FunctionalError (..) )
+                 ( FunctionError (..), FunctionalError (..), TotalError (..) )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( StepperAttributes (..), isTotal )
 
 -- |'FunctionalProof' is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
@@ -61,20 +62,6 @@ data FunctionalProof level variable
     -- ^A char literal is a functional constructor without arguments.
   deriving (Eq, Show)
 
-functionalProofVars
-    :: Prism
-         (FunctionalProof level variableFrom)
-         (FunctionalProof level variableTo)
-         (variableFrom level)
-         (variableTo level)
-functionalProofVars = prism FunctionalVariable isVar
-  where
-    isVar (FunctionalVariable v) = Right v
-    isVar (FunctionalDomainValue dv) = Left (FunctionalDomainValue dv)
-    isVar (FunctionalHead sym) = Left (FunctionalHead sym)
-    isVar (FunctionalStringLiteral str) = Left (FunctionalStringLiteral str)
-    isVar (FunctionalCharLiteral char) = Left (FunctionalCharLiteral char)
-
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
 -- pattern consists of domain values, functional and function symbols and
@@ -88,6 +75,33 @@ data FunctionProof level variable
     | FunctionHead (SymbolOrAlias level)
     -- ^Head of a partial function.
   deriving (Eq, Show)
+
+-- |'TotalProof' is used for providing arguments that a pattern is
+-- total/not bottom.  Currently we only support arguments stating that a
+-- pattern is functional or a constructor.
+-- Hence, a proof that a pattern is total is a list of 'TotalProof'.
+-- TODO: replace this datastructures with proper ones representing
+-- both hypotheses and conclusions in the proof object.
+data TotalProof level variable
+    = TotalProofFunctional (FunctionalProof level variable)
+    -- ^A functional component is also total.
+    | TotalHead (SymbolOrAlias level)
+    -- ^Head of a total symbol.
+  deriving (Eq, Show)
+
+functionalProofVars
+    :: Prism
+         (FunctionalProof level variableFrom)
+         (FunctionalProof level variableTo)
+         (variableFrom level)
+         (variableTo level)
+functionalProofVars = prism FunctionalVariable isVar
+  where
+    isVar (FunctionalVariable v) = Right v
+    isVar (FunctionalDomainValue dv) = Left (FunctionalDomainValue dv)
+    isVar (FunctionalHead sym) = Left (FunctionalHead sym)
+    isVar (FunctionalStringLiteral str) = Left (FunctionalStringLiteral str)
+    isVar (FunctionalCharLiteral char) = Left (FunctionalCharLiteral char)
 
 {-| 'mapFunctionalProofVariables' replaces all variables in a 'FunctionalProof'
 using the provided mapping.
@@ -105,35 +119,65 @@ isFunctionalPattern
     :: MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either (FunctionalError level) [FunctionalProof level variable]
-isFunctionalPattern tools = cata  reduceM
+isFunctionalPattern tools =
+    provePattern (checkFunctionalHead tools)
+
+{-| checks whether a pattern is non-bottom or not and, if it is, returns a proof
+    certifying that.
+-}
+isTotalPattern
+    :: MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> Either (TotalError level) [TotalProof level variable]
+isTotalPattern tools =
+    provePattern (checkTotalHead tools)
+
+data PartialPatternProof proof
+    = Descend proof
+    | DoNotDescend proof
+  deriving Functor
+
+provePattern
+    ::  (  Pattern level variable (Either error [proof])
+        -> Either error (PartialPatternProof proof)
+        )
+    -> PureMLPattern level variable
+    -> Either error [proof]
+provePattern levelProver =
+    cata reduceM
   where
     reduceM patt = do
-        proof <- checkFunctionalHead tools patt
-        proofs <- concat <$> sequence patt
-        return (proof : proofs)
+        wrappedProof <- levelProver patt
+        case wrappedProof of
+            DoNotDescend proof -> return [proof]
+            Descend proof -> do
+                proofs <- concat <$> sequence patt
+                return (proof : proofs)
 
 -- Tells whether the pattern is a built-in constructor-like pattern
 isPreconstructedPattern
     :: err
     -> Pattern level variable pat
-    -> Either err (FunctionalProof level variable)
+    -> Either err (PartialPatternProof (FunctionalProof level variable))
 isPreconstructedPattern _ (DomainValuePattern dv) =
-    Right (FunctionalDomainValue dv)
+    Right (DoNotDescend (FunctionalDomainValue dv))
 isPreconstructedPattern _ (StringLiteralPattern str) =
-    Right (FunctionalStringLiteral str)
+    Right (DoNotDescend (FunctionalStringLiteral str))
 isPreconstructedPattern _ (CharLiteralPattern str) =
-    Right (FunctionalCharLiteral str)
+    Right (DoNotDescend (FunctionalCharLiteral str))
 isPreconstructedPattern err _ = Left err
 
 checkFunctionalHead
     :: MetadataTools level StepperAttributes
     -> Pattern level variable a
-    -> Either (FunctionalError level) (FunctionalProof level variable)
+    -> Either
+        (FunctionalError level)
+        (PartialPatternProof (FunctionalProof level variable))
 checkFunctionalHead _ (VariablePattern v) =
-    Right (FunctionalVariable v)
+    Right (DoNotDescend (FunctionalVariable v))
 checkFunctionalHead tools (ApplicationPattern ap) =
     if isFunctional (MetadataTools.symAttributes tools patternHead)
-        then return (FunctionalHead patternHead)
+        then return (Descend (FunctionalHead patternHead))
         else Left (NonFunctionalHead patternHead)
   where
     patternHead = applicationSymbolOrAlias ap
@@ -160,25 +204,41 @@ isFunctionPattern
     :: MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either (FunctionError level) [FunctionProof level variable]
-isFunctionPattern tools = cata reduceM
-  where
-    reduceM patt = do
-        proof <- checkFunctionHead tools patt
-        proofs <- concat <$> sequence patt
-        return (proof : proofs)
+isFunctionPattern tools =
+    provePattern (checkFunctionHead tools)
 
 checkFunctionHead
     :: MetadataTools level StepperAttributes
     -> Pattern level variable a
-    -> Either (FunctionError level) (FunctionProof level variable)
+    -> Either
+        (FunctionError level)
+        (PartialPatternProof (FunctionProof level variable))
 checkFunctionHead tools (ApplicationPattern ap)
   | isFunction (MetadataTools.symAttributes tools patternHead) =
-    Right (FunctionHead patternHead)
+    Right (Descend (FunctionHead patternHead))
   where
     patternHead = applicationSymbolOrAlias ap
 checkFunctionHead tools patt =
     case checkFunctionalHead tools patt of
-        Right proof -> Right (FunctionProofFunctional proof)
+        Right proof -> Right (FunctionProofFunctional <$> proof)
         Left (NonFunctionalHead patternHead) ->
             Left (NonFunctionHead patternHead)
         Left NonFunctionalPattern -> Left NonFunctionPattern
+
+checkTotalHead
+    :: MetadataTools level StepperAttributes
+    -> Pattern level variable a
+    -> Either
+        (TotalError level)
+        (PartialPatternProof (TotalProof level variable))
+checkTotalHead tools (ApplicationPattern ap)
+  | isTotal (MetadataTools.symAttributes tools patternHead) =
+    Right (Descend (TotalHead patternHead))
+  where
+    patternHead = applicationSymbolOrAlias ap
+checkTotalHead tools patt =
+    case checkFunctionalHead tools patt of
+        Right proof -> Right (TotalProofFunctional <$> proof)
+        Left (NonFunctionalHead patternHead) ->
+            Left (NonTotalHead patternHead)
+        Left NonFunctionalPattern -> Left NonTotalPattern

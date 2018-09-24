@@ -14,21 +14,20 @@ import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as S
-import           Kore.Variables.Fresh.IntCounter
-import           Kore.Variables.Int
+import           Kore.Variables.Fresh
 
 type UnifiedPatternSubstitution =
     S.Substitution (Unified Variable) CommonKorePattern
 
 instance
     PatternSubstitutionClass
-        S.Substitution Variable UnifiedPattern IntCounter
+        S.Substitution Variable UnifiedPattern
   where
 
 testSubstitute
     :: CommonKorePattern
     -> UnifiedPatternSubstitution
-    -> IntCounter CommonKorePattern
+    -> Counter CommonKorePattern
 testSubstitute = substitute
 
 test_class :: [TestTree]
@@ -36,7 +35,7 @@ test_class =
     [ testCase "Testing substituting a variable."
         (assertEqual ""
             (objectTopPattern, 2)
-            (runIntCounter
+            (runCounter
                 (testSubstitute objectVariableUnifiedPattern substitution1)
                 2
             )
@@ -44,7 +43,7 @@ test_class =
     , testCase "Testing not substituting a variable."
         (assertEqual ""
             (metaVariableUnifiedPattern, 2)
-            (runIntCounter
+            (runCounter
                 (testSubstitute metaVariableUnifiedPattern substitution1)
                 2
             )
@@ -52,7 +51,7 @@ test_class =
     , testCase "Testing not substituting anything."
         (assertEqual ""
             (objectBottomPattern, 2)
-            (runIntCounter
+            (runCounter
                 (testSubstitute objectBottomPattern substitution1)
                 2
             )
@@ -60,7 +59,7 @@ test_class =
       , testCase "Testing exists => empty substitution."
         (assertEqual ""
             (existsObjectUnifiedPattern1, 2)
-            (runIntCounter
+            (runCounter
                 (testSubstitute existsObjectUnifiedPattern1 substitution1)
                 2
             )
@@ -68,7 +67,7 @@ test_class =
       , testCase "Testing forall."
         (assertEqual ""
             (forallObjectUnifiedPattern2, 2)
-            (runIntCounter
+            (runCounter
                 (testSubstitute forallObjectUnifiedPattern1 substitution1)
                 2
             )
@@ -76,7 +75,7 @@ test_class =
       , testCase "Testing binder renaming"
         (assertEqual ""
             (existsObjectUnifiedPattern1S 2, 3)
-            (runIntCounter
+            (runCounter
                 (testSubstitute existsObjectUnifiedPattern1 substitution2)
                 2
             )
@@ -84,7 +83,7 @@ test_class =
       , testCase "Testing binder renaming and substitution"
         (assertEqual ""
             (forallObjectUnifiedPattern1S3, 6)
-            (runIntCounter
+            (runCounter
                 (testSubstitute forallObjectUnifiedPattern1 substitution3)
                 5
             )
@@ -92,7 +91,7 @@ test_class =
       , testCase "Testing double binder renaming"
         (assertEqual ""
             (forallExistsObjectUnifiedPattern1S2, 9)
-            (runIntCounter
+            (runCounter
                 (testSubstitute
                     forallExistsObjectUnifiedPattern1 substitution2)
                 7
@@ -101,7 +100,7 @@ test_class =
         , testCase "Testing double binder renaming 1"
         (assertEqual ""
             (forallExistsObjectUnifiedPattern2, 17)
-            (runIntCounter
+            (runCounter
                 (testSubstitute
                     forallExistsObjectUnifiedPattern2 substitution1)
                 17
@@ -110,7 +109,7 @@ test_class =
         , testCase "Testing substitution state 1"
         (assertEqual ""
             (testSubstitutionStatePatternS3, 18)
-            (runIntCounter
+            (runCounter
                 (testSubstitute
                     testSubstitutionStatePattern substitution3)
                 17
@@ -119,14 +118,26 @@ test_class =
         ]
 
 metaVariableSubstitute :: Int -> Variable Meta
-metaVariableSubstitute = intVariable metaVariable
+metaVariableSubstitute n =
+    metaVariable
+        { variableName = Id
+            { getId = "#var_" ++ show n
+            , idLocation = AstLocationGeneratedVariable
+            }
+        }
 
 metaVariableUnifiedPatternSubstitute :: Int -> CommonKorePattern
 metaVariableUnifiedPatternSubstitute =
     asKorePattern . VariablePattern . metaVariableSubstitute
 
 objectVariableSubstitute :: Int -> Variable Object
-objectVariableSubstitute = intVariable objectVariable
+objectVariableSubstitute n =
+    objectVariable
+        { variableName = Id
+            { getId = "var_" ++ show n
+            , idLocation = AstLocationGeneratedVariable
+            }
+        }
 
 objectVariableUnifiedPatternSubstitute :: Int -> CommonKorePattern
 objectVariableUnifiedPatternSubstitute =

@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Iff
+Module      : Kore.Step.Simplification.Iff
 Description : Tools for Iff pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA

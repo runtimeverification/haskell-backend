@@ -4,8 +4,8 @@ module Test.Kore.SMT.SMT where
 import Test.QuickCheck
        ( Property, (===) )
 
-import           Data.Map
-import           Data.Reflection
+import Data.Map
+import Data.Reflection
 
 import           Kore.AST.PureML
 import           Kore.AST.Sentence
@@ -15,14 +15,15 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.Proof.Dummy
 
 
-import           Kore.IndexedModule.IndexedModule
-import           Kore.IndexedModule.MetadataTools
-import           Kore.SMT.SMT
 
-import           Test.Kore.Builtin.Int hiding 
-                 ( intModule, indexedModules )
-import           Test.Kore.Builtin.Bool 
-                 ( boolSort ) 
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.MetadataTools
+import Kore.SMT.SMT
+
+import Test.Kore.Builtin.Bool
+       ( boolSort )
+import Test.Kore.Builtin.Int hiding
+       ( indexedModules, intModule )
 
 indexedModules :: Map ModuleName (KoreIndexedModule SMTAttributes)
 indexedModules = verify intDefinition
@@ -73,7 +74,6 @@ prop_2 = run $ dummyEnvironment $ mkNot $
   `mkAnd` 
   App_ ltSymbol [b `add` b, a `add` b]
 
-
 prop_3 :: Property 
 prop_3 = run $ dummyEnvironment $
   App_ ltSymbol [a, b]
@@ -93,7 +93,7 @@ prop_5 :: Property
 prop_5 = run $ dummyEnvironment $  
   App_ eqSymbol
   [ intLiteral 0 `sub` (a `mul` a)
-  , b `mul` b 
+  , b `mul` b
   ]
   `mkImplies`
   App_ eqSymbol

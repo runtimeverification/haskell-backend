@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.And
+Module      : Kore.Step.Simplification.And
 Description : Tools for And pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -139,12 +139,11 @@ simplifyEvaluated tools first second
 See the comment for 'simplify' to find more details.
 -}
 makeEvaluate
-    ::  ( MetaOrObject level
-        )
+    ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level Variable
-    -> ExpandedPattern level Variable
-    -> IntCounter (ExpandedPattern level Variable, SimplificationProof level)
+    -> ExpandedPattern level variable
+    -> ExpandedPattern level variable
+    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
     tools first second
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
@@ -157,12 +156,11 @@ makeEvaluate
     makeEvaluateNonBool tools first second
 
 makeEvaluateNonBool
-    ::  ( MetaOrObject level
-        )
+    ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level Variable
-    -> ExpandedPattern level Variable
-    -> IntCounter (ExpandedPattern level Variable, SimplificationProof level)
+    -> ExpandedPattern level variable
+    -> ExpandedPattern level variable
+    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBool
     tools
     ExpandedPattern
@@ -205,7 +203,7 @@ makeTermAnd
     ::  ( MetaOrObject level
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level Variable
-    -> PureMLPattern level Variable
-    -> IntCounter (ExpandedPattern level Variable, SimplificationProof level)
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> Counter (ExpandedPattern level variable, SimplificationProof level)
 makeTermAnd = AndTerms.termAnd

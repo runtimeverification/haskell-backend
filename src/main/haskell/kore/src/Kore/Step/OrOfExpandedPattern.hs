@@ -16,6 +16,7 @@ module Kore.Step.OrOfExpandedPattern
     , filterOr -- TODO: This should be internal-only.
     , flatten
     , fmapFlattenWithPairs
+    , fmapWithPairs
     , fullCrossProduct
     , isFalse
     , isTrue
@@ -196,6 +197,19 @@ patternToOrBool patt
   | ExpandedPattern.isTop patt = OrTrue
   | ExpandedPattern.isBottom patt = OrFalse
   | otherwise = OrUnknown
+
+{-| fmaps an or in a similar way to traverseWithPairs.
+-}
+fmapWithPairs
+    ::  (  ExpandedPattern level variable
+        -> (ExpandedPattern level variable, a)
+        )
+    -> OrOfExpandedPattern level variable
+    -> (OrOfExpandedPattern level variable, [a])
+fmapWithPairs mapper patt =
+    (filterOr (fmap fst mapped), extract (fmap snd mapped))
+  where
+    mapped = fmap mapper patt
 
 {-| 'traverseWithPairs' traverses an or with a function that returns a
 (pattern, something) pair, then returns a 'MultiOr' of the patterns and

@@ -312,5 +312,9 @@ makeEvaluate
     -> CommonOrOfExpandedPattern level
 makeEvaluate tools variable child = give (convertMetadataTools tools) $ 
     fst $ evalSimplifier
-        $ Exists.makeEvaluate tools (Simplifier.create tools Map.empty) variable child
+        $ Exists.makeEvaluate
+            tools
+            (Simplifier.create tools Map.empty)
+            variable
+            child
 
