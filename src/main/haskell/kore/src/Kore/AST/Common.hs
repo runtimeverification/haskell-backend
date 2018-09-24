@@ -946,8 +946,10 @@ data BuiltinDomain child
 instance Hashable child => Hashable (BuiltinDomain child) where
     hashWithSalt salt =
         \case
-            BuiltinDomainPattern p -> hashWithSalt salt p
-            BuiltinDomainMap m -> hashWithSalt salt (Map.toAscList m)
+            BuiltinDomainPattern _pat ->
+                salt `hashWithSalt` (0::Int) `hashWithSalt` _pat
+            BuiltinDomainMap _map ->
+                salt `hashWithSalt` (1::Int) `hashWithSalt` (Map.toAscList _map)
 
 instance NFData child => NFData (BuiltinDomain child)
 
