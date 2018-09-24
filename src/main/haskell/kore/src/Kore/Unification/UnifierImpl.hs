@@ -12,28 +12,35 @@ module Kore.Unification.UnifierImpl where
 
 import Control.Monad
        ( foldM )
+import Control.Monad.Counter
+       ( MonadCounter )
+import Control.Monad.Except
+       ( ExceptT(..)  )
+import Control.Monad.Trans.Except
+       ( throwE )
 import Data.Function
        ( on )
 import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
-import Data.Reflection
-       ( Given, give, given )
 
+import Kore.Predicate.Predicate (Predicate, unwrapPredicate, wrapPredicate)
 import Kore.AST.Common
-import Kore.AST.MLPatterns
+import Kore.AST.MetaOrObject
 import Kore.AST.PureML
-import Kore.ASTHelpers
-       ( ApplicationSorts (..) )
-import Kore.ASTUtils.SmartPatterns
-       ( pattern StringLiteral_ )
 import Kore.IndexedModule.MetadataTools
-import Kore.Step.PatternAttributes
-       ( FunctionalProof (..), isFunctionalPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 import Kore.Unification.UnificationSolution
-import Kore.Step.Simplification.AndTerms
+import Kore.Unification.Procedure (unificationProcedure)
+import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import           Kore.Substitution.Class
+                 ( Hashable )
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
+import {-# SOURCE #-} Kore.Step.Substitution (mergePredicatesAndSubstitutions)
+
 
 {-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
@@ -74,226 +81,56 @@ simplifyCombinedItems =
     addContents other proofItems = other : proofItems
 
 simplifyAnds
-    :: ( Eq level
+    :: forall level variable m
+     . ( MetaOrObject level
+       , Eq level
        , Ord (variable level)
+       , Ord (variable Meta)
+       , Ord (variable Object)
        , SortedVariable variable
        , Show (variable level)
+       , Hashable variable
+       , FreshVariable variable
+       , MonadCounter m
        )
     => MetadataTools level StepperAttributes
     -> [PureMLPattern level variable]
-    -> Either
+    -> ExceptT
         UnificationError
-        (UnificationSolution level variable, UnificationProof level variable)
-simplifyAnds _ [] = Left UnsupportedPatterns
-simplifyAnds tools (p:ps) =
-    foldM
+        m
+        ( UnificationSolution level variable
+        , UnificationProof level variable
+        )
+simplifyAnds _ [] = throwE UnsupportedPatterns
+simplifyAnds tools (p:ps) = do
+    (predicate, ls) <- foldM
         simplifyAnds'
+        (wrapPredicate p, [])
+        ps
+    (predSubst, _) <- mergePredicatesAndSubstitutions tools [predicate] ls
+    return $
         ( UnificationSolution
-            { unificationSolutionTerm = p
-            , unificationSolutionConstraints = []
-            }
+            (unwrapPredicate . PredicateSubstitution.predicate $ predSubst)
+            (PredicateSubstitution.substitution predSubst)
         , EmptyUnificationProof
         )
-        ps
   where
-    resultSort = getPatternResultSort (sortTools tools) (project p)
-    simplifyAnds' (solution,proof) pat = do
-        let
-            conjunct = Fix $ AndPattern And
-                { andSort = resultSort
-                , andFirst = unificationSolutionTerm solution
-                , andSecond = pat
-                }
-        (solution', proof') <- simplifyAnd tools conjunct
-        return
-            ( solution'
-                { unificationSolutionConstraints =
-                    unificationSolutionConstraints solution
-                    ++ unificationSolutionConstraints solution'
-                }
-            , CombinedUnificationProof [proof, proof']
-            )
-
-simplifyAnd
-    :: ( Eq level
-       , Ord (variable level)
-       , Show (variable level)
-       )
-    => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> Either
-        UnificationError
-        (UnificationSolution level variable, UnificationProof level variable)
-simplifyAnd tools =
-    elgot postTransform (preTransform tools . project)
-
--- Performs variable and equality checks and distributes the conjunction
--- to the children, creating sub-unification problems
-preTransform
-    :: ( Eq level
-       , Ord (variable level)
-       , Show (variable level)
-       )
-    => MetadataTools level StepperAttributes
-    -> UnFixedPureMLPattern level variable
-    -> Either
-        ( Either
+    simplifyAnds'
+        :: ( Predicate level variable
+           , [UnificationSubstitution level variable]
+           )
+        -> PureMLPattern level variable
+        -> ExceptT
             UnificationError
-            ( UnificationSolution level variable
-            , UnificationProof level variable
+            m
+            ( Predicate level variable
+            , [UnificationSubstitution level variable]
             )
-        )
-        (UnFixedPureMLPattern level variable)
-preTransform tools (AndPattern ap) = if left == right
-    then Left $ Right
-        ( UnificationSolution
-            { unificationSolutionTerm = left
-            , unificationSolutionConstraints = []
-            }
-        , ConjunctionIdempotency left
-        )
-    else case project left of
-        VariablePattern vp ->
-            Left (mlProposition_5_24_3 tools vp right)
-        p1 -> case project right of
-            VariablePattern vp -> -- add commutativity here
-                Left (mlProposition_5_24_3 tools vp left)
-            DomainValuePattern (DomainValue _ dv2) ->
-                case dv2 of
-                    StringLiteral_ (StringLiteral sl2) ->
-                        matchDomainValue tools p1 sl2
-                    _ -> Left $ Left UnsupportedPatterns
-            ApplicationPattern ap2 ->
-                give tools matchApplicationPattern p1 ap2
-            _ -> Left $ Left UnsupportedPatterns
-  where
-    left = andFirst ap
-    right = andSecond ap
-preTransform _ _ = Left $ Left UnsupportedPatterns
-
-matchApplicationPattern
-    :: (Given (MetadataTools level StepperAttributes))
-    => UnFixedPureMLPattern level variable
-    -> Application level (PureMLPattern level variable)
-    -> Either
-        ( Either
-            UnificationError
-            ( UnificationSolution level variable
-            , UnificationProof level variable
-            )
-        )
-        (UnFixedPureMLPattern level variable)
-matchApplicationPattern (DomainValuePattern (DomainValue _ _)) _ =
-        Left $ Left UnsupportedPatterns
-matchApplicationPattern (ApplicationPattern ap1) ap2
-    | head1 == head2 && isInjective_ head1 =
-            matchEqualInjectiveHeads given head1 ap1 ap2
-    | head1 == head2 && isConstructor_ head1 =
-            error (show head1 ++ " is constructor but not injective.")
-    | otherwise =
-            Left $ Left UnsupportedPatterns
-  where
-    head1 = applicationSymbolOrAlias ap1
-    head2 = applicationSymbolOrAlias ap2
-matchApplicationPattern _ _ = Left $ Left UnsupportedPatterns
-
-matchEqualInjectiveHeads
-    :: MetadataTools level StepperAttributes
-    -> SymbolOrAlias level
-    -> Application level (PureMLPattern level variable)
-    -> Application level (PureMLPattern level variable)
-    -> Either err (UnFixedPureMLPattern level variable)
-matchEqualInjectiveHeads tools head1 ap1 ap2 = Right $
-    ApplicationPattern Application
-        { applicationSymbolOrAlias = head1
-        , applicationChildren =
-            Fix . AndPattern
-                <$> zipWith3 And
-                    (applicationSortsOperands
-                        (sortTools tools head1)
-                    )
-                    (applicationChildren ap1)
-                    (applicationChildren ap2)
-        }
-
-mkSortInjectionClash :: SymbolOrAlias level -> ClashReason level
-mkSortInjectionClash head1 = SortInjectionClash p1FromSort p1ToSort
-  where
-    [p1FromSort, p1ToSort] = symbolOrAliasParams head1
-
-
-matchDomainValue
-    :: MetadataTools level StepperAttributes
-    -> UnFixedPureMLPattern level variable
-    -> String
-    -> Either
-        ( Either
-            UnificationError
-            ( UnificationSolution level variable
-            , UnificationProof level variable
-            )
-        )
-        (UnFixedPureMLPattern level variable)
-matchDomainValue _ _ _ = Left $ Left UnsupportedPatterns
-
--- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
--- if phi is a functional pattern.
-mlProposition_5_24_3
-    :: Show (variable level)
-    => MetadataTools level StepperAttributes
-    -> variable level
-    -- ^variable pattern
-    -> PureMLPattern level variable
-    -- ^functional (term) pattern
-    -> Either
-        UnificationError
-        (UnificationSolution level variable, UnificationProof level variable)
-mlProposition_5_24_3
-    tools
-    v
-    functionalPattern
-  = case isFunctionalPattern tools functionalPattern of
-        Right functionalProof -> Right --Matching Logic 5.24 (3)
-            ( UnificationSolution
-                { unificationSolutionTerm        = functionalPattern
-                , unificationSolutionConstraints = [ (v, functionalPattern) ]
-                }
-            , Proposition_5_24_3 functionalProof v functionalPattern
-            )
-        _ -> Left UnsupportedPatterns
-
--- returns from the recursion, building the unified term and
--- pushing up the constraints (substitution)
-postTransform
-    :: Pattern level variable
-        (Either
-            UnificationError
-            ( UnificationSolution level variable
-            , UnificationProof level variable
-            )
-        )
-    -> Either
-        UnificationError
-        (UnificationSolution level variable, UnificationProof level variable)
-postTransform (ApplicationPattern ap) = do
-    children <- sequenceA (applicationChildren ap)
-    let (subSolutions, subProofs) = unzip children
-    return
-        ( UnificationSolution
-            { unificationSolutionTerm = Fix $ ApplicationPattern ap
-                { applicationChildren =
-                        map unificationSolutionTerm subSolutions
-                }
-            , unificationSolutionConstraints =
-                concatMap
-                    unificationSolutionConstraints
-                    subSolutions
-            }
-        , AndDistributionAndConstraintLifting
-            (applicationSymbolOrAlias ap)
-            subProofs
-        )
-postTransform _ = error "Unexpected, non-application, pattern."
+    simplifyAnds' (predicate, ls) pat = do
+        (predSubst, _) <- unificationProcedure tools (unwrapPredicate predicate) pat
+        return ( PredicateSubstitution.predicate predSubst
+               , PredicateSubstitution.substitution predSubst : ls
+               )
 
 groupSubstitutionByVariable
     :: Ord (variable level)
@@ -310,30 +147,32 @@ groupSubstitutionByVariable =
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: ( Eq level
+    :: ( MetaOrObject level
+       , Eq level
        , Ord (variable level)
+       , Ord (variable Meta)
+       , Ord (variable Object)
        , SortedVariable variable
        , Show (variable level)
+       , Hashable variable
+       , FreshVariable variable
+       , MonadCounter m
        )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
-    -> Either
+    -> ExceptT
         UnificationError
-        (UnificationSubstitution level variable, UnificationProof level variable)
-solveGroupedSubstitution _ [] = Left UnsupportedPatterns
+        m
+        ( UnificationSubstitution level variable
+        , UnificationProof level variable
+        )
+solveGroupedSubstitution _ [] = throwE UnsupportedPatterns
 solveGroupedSubstitution tools ((x,p):subst) = do
     (solution, proof) <- simplifyAnds tools (p : map snd subst)
     return
         ( (x,unificationSolutionTerm solution)
           : unificationSolutionConstraints solution
         , proof)
-
-instance Semigroup (UnificationProof level variable) where
-    (<>) proof1 proof2 = CombinedUnificationProof [proof1, proof2]
-
-instance Monoid (UnificationProof level variable) where
-    mempty = EmptyUnificationProof
-    mconcat = CombinedUnificationProof
 
 -- |Takes a potentially non-normalized substitution,
 -- and if it contains multiple assignments to the same variable,
@@ -342,15 +181,22 @@ instance Monoid (UnificationProof level variable) where
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: ( Eq level
+    :: ( MetaOrObject level
+       , Eq level
        , Ord (variable level)
+       , Ord (variable Meta)
+       , Ord (variable Object)
        , SortedVariable variable
        , Show (variable level)
+       , Hashable variable
+       , FreshVariable variable
+       , MonadCounter m
        )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
-    -> Either
+    -> ExceptT
         UnificationError
+        m
         ( UnificationSubstitution level variable
         , UnificationProof level variable
         )

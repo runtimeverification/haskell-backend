@@ -12,10 +12,12 @@ module Kore.Step.Substitution
     , mergeAndNormalizeSubstitutions
     ) where
 
+import Control.Monad
+       ( foldM )
+import Control.Monad.Counter
+       ( MonadCounter )
 import Control.Monad.Except
-       ( ExceptT, liftEither, runExceptT )
-import Data.List
-       ( foldl' )
+       ( ExceptT, runExceptT, withExceptT )
 import Data.Reflection
        ( give )
 
@@ -49,16 +51,22 @@ Note that it currently returns makeTruePredicate and has a TODO to return
 the correct condition.
 -}
 mergeSubstitutions
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        , SortedVariable variable
-        , Show (variable level)
-        )
+    :: ( MetaOrObject level
+       , Ord (variable level)
+       , Ord (variable Meta)
+       , Ord (variable Object)
+       , SortedVariable variable
+       , Show (variable level)
+       , Hashable variable
+       , FreshVariable variable
+       , MonadCounter m
+       )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
-    -> Either
+    -> ExceptT
           UnificationError
+          m
           ( Predicate level variable
           , UnificationSubstitution level variable
           , UnificationProof level variable
@@ -115,14 +123,14 @@ normalizeSubstitutionAfterMerge tools substit = do
           normalizeSubstitutionDuplication' substit
     predSubstitution <- normalizeSubstitution' substitutionList
     -- TODO(virgil): Return the actual condition here. and proofs
-    (,) <$> predSubstitution <*> return proof
+    return (predSubstitution, proof)
   where
     normalizeSubstitutionDuplication' =
-        liftEither
-        . unificationToUnifyOrSubError
-        . normalizeSubstitutionDuplication tools
+        withExceptT unificationToUnifyOrSubError
+            . normalizeSubstitutionDuplication tools
     normalizeSubstitution' =
-        liftEither . substitutionToUnifyOrSubError . normalizeSubstitution tools
+        withExceptT substitutionToUnifyOrSubError
+            . normalizeSubstitution tools
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
@@ -153,12 +161,11 @@ mergePredicatesAndSubstitutions
         , UnificationProof level variable
         )
 mergePredicatesAndSubstitutions tools predicates substitutions = do
-    let
-        (substitutionMergePredicate, mergedSubstitution) =
-            foldl'
-                (mergeSubstitutionWithPredicate tools)
-                (predicates, [])
-                substitutions
+    (substitutionMergePredicate, mergedSubstitution) <-
+        foldM
+            (mergeSubstitutionWithPredicate tools)
+            (predicates, [])
+            substitutions
     result <- runExceptT $ normalizeSubstitutionAfterMerge tools mergedSubstitution
     case result of
         Left _ ->
@@ -192,20 +199,25 @@ mergePredicatesAndSubstitutions tools predicates substitutions = do
 
 mergeSubstitutionWithPredicate
     :: ( Ord (variable level)
+       , Ord (variable Meta)
+       , Ord (variable Object)
        , SortedVariable variable
        , MetaOrObject level
        , Show (variable level)
+       , Hashable variable
+       , FreshVariable variable
+       , MonadCounter m
        )
     => MetadataTools level StepperAttributes
     -> ([Predicate level variable], UnificationSubstitution level variable)
     -> UnificationSubstitution level variable
-    -> ([Predicate level variable], UnificationSubstitution level variable)
+    -> m ([Predicate level variable], UnificationSubstitution level variable)
 mergeSubstitutionWithPredicate
     tools
     (predicates, subst1)
     subst2
-  =
-    case mergeSubstitutions tools subst1 subst2 of
-        Left _ -> (makeFalsePredicate : predicates, [])
-        Right (predicate, subst, _) ->
-            (predicate : predicates, subst)
+  = do
+    merge <- runExceptT $ mergeSubstitutions tools subst1 subst2
+    case merge of
+        Left _ -> return (makeFalsePredicate : predicates, [])
+        Right (predicate, subst, _) -> return (predicate : predicates, subst)

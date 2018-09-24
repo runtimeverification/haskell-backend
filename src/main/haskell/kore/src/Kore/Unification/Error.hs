@@ -70,14 +70,12 @@ mapSubstitutionErrorVariables mapper
 
 -- Trivially promote substitution errors to sum-type errors
 substitutionToUnifyOrSubError
-    :: Either (SubstitutionError level variable) a
-    -> Either (UnificationOrSubstitutionError level variable) a
-substitutionToUnifyOrSubError (Left err) = Left $ SubstitutionError err
-substitutionToUnifyOrSubError (Right a)  = Right a
+    :: SubstitutionError level variable
+    -> UnificationOrSubstitutionError level variable
+substitutionToUnifyOrSubError = SubstitutionError
 
 -- Trivially promote unification errors to sum-type errors
 unificationToUnifyOrSubError
-    :: Either UnificationError a
-    -> Either (UnificationOrSubstitutionError level variable) a
-unificationToUnifyOrSubError (Left err) = Left $ UnificationError err
-unificationToUnifyOrSubError (Right a)  = Right a
+    :: UnificationError
+    -> UnificationOrSubstitutionError level variable
+unificationToUnifyOrSubError = UnificationError

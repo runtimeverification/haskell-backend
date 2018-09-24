@@ -16,6 +16,8 @@ module Kore.Unification.SubstitutionNormalization
 
 import           Control.Monad
                  ( (>=>) )
+import           Control.Monad.Except
+                 ( ExceptT (..) )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor.Foldable
@@ -68,11 +70,13 @@ normalizeSubstitution
         )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
-    -> Either
+    -> ExceptT
         (SubstitutionError level variable)
-        (m (PredicateSubstitution level variable))
+        m
+        (PredicateSubstitution level variable)
 normalizeSubstitution tools substitution =
-    maybe bottom normalizeSortedSubstitution' <$> topologicalSortConverted
+    ExceptT . sequence $
+        maybe bottom normalizeSortedSubstitution' <$> topologicalSortConverted
 
   where
     interestingVariables :: Map.Map (Unified variable) (variable level)

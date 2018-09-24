@@ -11,8 +11,10 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
+import           Control.Error.Util
+                 ( note )
 import           Control.Monad.Counter
-                 ( Counter )
+                 ( MonadCounter )
 import           Control.Monad.Except
                  ( ExceptT(..)  )
 import           Data.Functor.Foldable
@@ -33,8 +35,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFalsePredicate )
-import           Kore.Step.Simplification.AndTerms
-                 ( termUnification )
+import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
+       ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -47,7 +49,7 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Unification.Error
                  ( UnificationError (..) )
-import           Kore.Unification.UnifierImpl
+import           Kore.Unification.UnificationSolution
                  ( UnificationProof (..) )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -66,6 +68,7 @@ unificationProcedure
         , Hashable variable
         , FreshVariable variable
         , Show (variable level)
+        , MonadCounter m
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
@@ -75,7 +78,7 @@ unificationProcedure
     -> ExceptT
         -- TODO: Consider using a false predicate instead of a Left error
         UnificationError
-        Counter
+        m
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
@@ -102,6 +105,3 @@ unificationProcedure tools p1 p2
       p2Sort = resultSort (project p2)
 
       bottom = PredicateSubstitution makeFalsePredicate []
-
-      note :: a -> Maybe b -> Either a b
-      note a = maybe (Left a) Right

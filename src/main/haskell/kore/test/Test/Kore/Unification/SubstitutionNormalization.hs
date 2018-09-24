@@ -1,6 +1,8 @@
 module Test.Kore.Unification.SubstitutionNormalization
     (test_substitutionNormalization) where
 
+import Control.Monad.Except
+       ( runExceptT )
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
@@ -243,13 +245,8 @@ runNormalizeSubstitution
         (SubstitutionError level Variable)
         (UnificationSubstitution level Variable)
 runNormalizeSubstitution substitution =
-    case normalizeSubstitution mockMetadataTools substitution of
-        Left err     -> Left err
-        Right action ->
-            Right
-                $ PredicateSubstitution.substitution
-                $ evalCounter action
-
+    fmap PredicateSubstitution.substitution
+        $ evalCounter . runExceptT $ normalizeSubstitution mockMetadataTools substitution
 
 mockSortTools :: MetaOrObject level => SortTools level
 mockSortTools = const ApplicationSorts

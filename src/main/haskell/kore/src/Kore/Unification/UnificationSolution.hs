@@ -127,3 +127,10 @@ data UnificationProof level variable
     -- then, applying Proposition 5.24(3), this further gets to
     -- (x = (t1 /\ t2))
   deriving (Eq, Show)
+
+instance Semigroup (UnificationProof level variable) where
+    (<>) proof1 proof2 = CombinedUnificationProof [proof1, proof2]
+
+instance Monoid (UnificationProof level variable) where
+    mempty = EmptyUnificationProof
+    mconcat = CombinedUnificationProof

@@ -273,7 +273,7 @@ andSimplifySuccess message term1 term2 resultTerm subst proof =
             (subst'', proof')
         )
   where
-    Right (subst', proof') = simplifyAnd tools (unificationProblem term1 term2)
+    Right (subst', proof') = evalCounter . runExceptT $ simplifyAnds tools [(unificationProblem term1 term2)]
     subst'' = subst'
         { unificationSolutionConstraints =
             sortBy (compare `on` fst) (unificationSolutionConstraints subst')
@@ -294,7 +294,7 @@ andSimplifyFailure message term1 term2 err =
             prettyPrintToString
             ""
             (Left err)
-            (simplifyAnd tools (unificationProblem term1 term2))
+            (evalCounter . runExceptT $ simplifyAnds tools [(unificationProblem term1 term2)])
         )
 
 unificationProcedureSuccess
