@@ -225,8 +225,11 @@ main = do
                             stepLimit
                             (initialPattern, mempty)
             let
-                outputString = unparseToString
-                    (ExpandedPattern.term finalExpandedPattern)
+                finalPattern = ExpandedPattern.term finalExpandedPattern
+                finalExternalPattern =
+                    either (error . printError) id
+                    (Builtin.externalizePattern indexedModule finalPattern)
+                outputString = unparseToString finalExternalPattern
             if outputFileName /= ""
                 then
                     writeFile outputFileName outputString

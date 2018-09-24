@@ -34,15 +34,13 @@ import           Kore.Parser.CString
 
 {- | Class of types that can be rendered in concrete Kore syntax.
 
-    Only instantiate this class for types that could be parsed from Kore syntax.
-    For other types, please use 'Pretty'.
+    @Unparse@ should only be instantiated for types with a corresponding
+    concrete syntax, i.e. each instance of @Unparse@ should correspond to a
+    parser in "Kore.Parser.Parser".
 
-    The superclass constraint makes this class trivial to implement:
-    @
-    instance Pretty P where
-        pretty p = ...
-    instance Unparse P
-    @
+    @Unparse@ assumes that the pattern is fully externalized by
+    'Builtin.externalizePattern'. An error will be thrown if an internal domain
+    value is found.
 
  -}
 class Unparse p where

@@ -17,17 +17,20 @@ module Kore.Builtin
     ( Builtin.Verifiers (..)
     , Builtin.PatternVerifier (..)
     , Builtin.Function
+    , Builtin
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
     , koreVerifiers
     , koreEvaluators
     , evaluators
-    , asMetaPattern
     , asPattern
+    , externalizePattern
+    , asMetaPattern
     -- * Errors
     , notImplementedInternal
     ) where
 
+import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -48,11 +51,17 @@ import qualified Kore.Builtin.Hook as Hook
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Builtin.Map as Map
+import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
+
+{- | The default type of builtin domain values.
+ -}
+type Builtin =
+    Kore.DomainValue Object (Kore.BuiltinDomain (CommonPurePattern Meta))
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -138,23 +147,69 @@ evaluators builtins indexedModule =
             impl <- Map.lookup name builtins
             pure [impl]
 
+{- | Represent a 'Builtin' domain value as an object-level pattern.
+
+    Any builtins with an internal representation are externalized to their
+    concrete Kore syntax. The given indexed module must define the appropriate
+    hooks.
+
+ -}
 asPattern
-    :: Kore.DomainValue Object (Kore.BuiltinDomain (CommonPurePattern Meta))
-    -> CommonPurePattern Object
-asPattern Kore.DomainValue { domainValueSort, domainValueChild } =
+    :: KoreIndexedModule attrs
+    -- ^ indexed module defining hooks for builtin domains
+    -> Builtin
+    -- ^ domain value
+    -> Either (Error e) (CommonPurePattern Object)
+asPattern
+    indexedModule
+    Kore.DomainValue { domainValueSort, domainValueChild }
+  =
     case domainValueChild of
         Kore.BuiltinDomainPattern _ ->
-            Kore.DV_ domainValueSort domainValueChild
-        Kore.BuiltinDomainMap _ ->
-            notImplementedInternal
+            return (Kore.DV_ domainValueSort domainValueChild)
+        Kore.BuiltinDomainMap _map ->
+            Map.asPattern indexedModule domainValueSort <*> pure _map
 
+{- | Externalize all builtin domain values in the given pattern.
+
+    All builtins will be rendered using their concrete Kore syntax. The given
+    indexed module must define the appropriate hooks.
+
+    See also: 'asPattern'
+
+ -}
+-- TODO (thomas.tuegel): Parameterize patterns on the type of domain values. Use
+-- 'StringLiteral' as the domain value type in the parser and a distinct domain
+-- type for internally-represented builtin domains. Use this function to change
+-- the domain value type parameter of the pattern and eliminate error cases
+-- throughout.
+externalizePattern
+    :: KoreIndexedModule attrs
+    -- ^ indexed module defining hooks for builtin domains
+    -> CommonPurePattern Object
+    -> Either (Error e) (CommonPurePattern Object)
+externalizePattern indexedModule =
+    Functor.Foldable.fold externalizePattern0
+  where
+    externalizePattern0 =
+        \case
+            Kore.DomainValuePattern dv ->
+                asPattern indexedModule dv
+            pat -> Functor.Foldable.embed <$> sequence pat
+
+{- | Extract the meta-level pattern argument of a domain value.
+
+    WARNING: This is not implemented for internal domain values. Use
+    'externalizePattern' before calling this function.
+
+ -}
 asMetaPattern
-    :: Kore.DomainValue Object (Kore.BuiltinDomain (CommonPurePattern Meta))
+    :: Builtin
     -> CommonPurePattern Meta
 asMetaPattern Kore.DomainValue { domainValueChild } =
     case domainValueChild of
         Kore.BuiltinDomainPattern pat -> pat
-        _ -> notImplementedInternal
+        Kore.BuiltinDomainMap _ -> notImplementedInternal
 
 {- | Throw an error for operations not implemented for internal domain values.
  -}
