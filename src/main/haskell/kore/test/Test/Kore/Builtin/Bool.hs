@@ -210,14 +210,6 @@ verify
     :: KoreDefinition
     -> Either (Kore.Error.Error VerifyError)
         (Map ModuleName (KoreIndexedModule StepperAttributes))
-verify = verifyAndIndexDefinition attrVerify builtinVerifiers
+verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
   where
     attrVerify = defaultAttributesVerification Proxy
-
-builtinVerifiers :: Builtin.Verifiers
-builtinVerifiers =
-    Builtin.Verifiers
-        { sortDeclVerifiers = Bool.sortDeclVerifiers
-        , symbolVerifiers = Bool.symbolVerifiers
-        , patternVerifier = Bool.patternVerifier
-        }

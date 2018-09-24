@@ -335,14 +335,6 @@ verify
     -> Map ModuleName (KoreIndexedModule a)
 verify defn =
     either (error . Kore.Error.printError) id
-        (verifyAndIndexDefinition attrVerify builtinVerifiers defn)
+        (verifyAndIndexDefinition attrVerify Builtin.koreVerifiers defn)
   where
     attrVerify = defaultAttributesVerification Proxy
-
-builtinVerifiers :: Builtin.Verifiers
-builtinVerifiers =
-    Builtin.Verifiers
-        { sortDeclVerifiers = Int.sortDeclVerifiers
-        , symbolVerifiers = Int.symbolVerifiers
-        , patternVerifier = Int.patternVerifier
-        }

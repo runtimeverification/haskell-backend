@@ -418,17 +418,9 @@ verify
     -> Map ModuleName (KoreIndexedModule a)
 verify defn =
     either (error . Kore.Error.printError) id
-        (verifyAndIndexDefinition attrVerify builtinVerifiers defn)
+        (verifyAndIndexDefinition attrVerify Builtin.koreVerifiers defn)
   where
     attrVerify = defaultAttributesVerification Proxy
-
-builtinVerifiers :: Builtin.Verifiers
-builtinVerifiers =
-    Builtin.Verifiers
-        { sortDeclVerifiers = Map.sortDeclVerifiers
-        , symbolVerifiers = Map.symbolVerifiers
-        , patternVerifier = mempty
-        }
 
 testSortTools :: SortTools Object
 MetadataTools { sortTools = testSortTools } = extractMetadataTools indexedModule
