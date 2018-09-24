@@ -14,7 +14,7 @@ module Kore.Step.Simplification.Equals
     ) where
 
 import Data.Maybe
-       ( fromMaybe, isNothing )
+       ( fromMaybe )
 import Data.Reflection
        ( give )
 
@@ -357,7 +357,7 @@ makeEvaluateTermsAssumesNoBottomMaybe tools first second =
                 , SimplificationProof
                 )
 
-{-| Combines two terms with 'Equals' into an predicate-substitution.
+{-| Combines two terms with 'Equals' into a predicate-substitution.
 
 It does not attempt to fully simplify the terms (the not-ceil parts used to
 catch the bottom=bottom case and everything above it), but, if the patterns are

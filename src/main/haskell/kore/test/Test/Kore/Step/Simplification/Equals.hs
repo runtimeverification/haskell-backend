@@ -674,13 +674,6 @@ evaluateGeneric
 evaluateGeneric tools first second =
     fst $ evalSimplifier $ makeEvaluate tools first second
 
-evaluateTerms
-    :: MetadataTools Object StepperAttributes
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPredicateSubstitution Object
-evaluateTerms = evaluateTermsGeneric
-
 evaluateTermsGeneric
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
