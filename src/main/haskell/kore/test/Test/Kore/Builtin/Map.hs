@@ -59,16 +59,20 @@ prop_lookupUnit k =
 
 {- |
     @
-        lookup{}(element{}(k, v), k) === v
+        lookup{}(update{}(m : Map{}, k : Key{}, v : Value{}), k) === v
     @
  -}
-prop_lookupElement :: (Integer, Integer) -> Property
-prop_lookupElement (key, value) =
+prop_lookupUpdate :: (Integer, Integer) -> [(Integer, Integer)] -> Property
+prop_lookupUpdate (key, value) (Map.fromList -> _map) =
     let patLookup =
             App_ symbolLookup
-                [ App_ symbolElement [ patKey , patValue ]
+                [ App_ symbolUpdate [ patMap, patKey , patValue ]
                 , patKey
                 ]
+        patMap =
+            asPattern
+            $ Map.mapKeys Test.Int.asPattern
+            $ Map.map Test.Int.asPattern _map
         patKey = Test.Int.asPattern key
         patValue = Test.Int.asPattern value
         predicate = give testSortTools $ mkEquals patLookup patValue
@@ -79,57 +83,27 @@ prop_lookupElement (key, value) =
             ]
 
 {- |
-    Let @vs = [v1, v2, ...]@ and let @updates@ be the map constructed by
-    assigning @k |-> v@ with all the @vs@ from right to left, i.e.
     @
-        updates = update{}(update{}(..., k, v2), k, v1)
-    @
-    Then,
-    @
-        lookup{}(updates, k) === v1
-    @
-    Otherwise, if @vs = []@ then
-    @
-        lookup{}(unit{}(), k) === \bottom{}()
+        concat{}(unit{}(), map : Map{}) === map
     @
  -}
-prop_lookupUpdates :: (Integer, [Integer]) -> Property
-prop_lookupUpdates (key, values) =
-    let applyUpdate _v _map =
-            App_ symbolUpdate [ _map, patKey, Test.Int.asPattern _v ]
-        patKey = Test.Int.asPattern key
+prop_concatUnit :: [(Integer, Integer)] -> Property
+prop_concatUnit (Map.fromList -> _map) =
+    let patConcat2 = App_ symbolConcat [ patUnit, patMap ]
+        patConcat1 = App_ symbolConcat [ patMap, patUnit ]
         patUnit = App_ symbolUnit []
-        patUpdates = foldr applyUpdate patUnit values
-        patLookup = App_ symbolLookup [ patUpdates, patKey ]
-        value =
-            case values of
-                [] -> Nothing
-                (_v : _) -> Just _v
-        patValue = maybe mkBottom Test.Int.asPattern value
-        predicate = give testSortTools $ mkEquals patValue patLookup
+        patMap =
+            asPattern
+            $ Map.mapKeys Test.Int.asPattern
+            $ Map.map Test.Int.asPattern _map
+        predicate1 = give testSortTools $ mkEquals patMap patConcat1
+        predicate2 = give testSortTools $ mkEquals patMap patConcat2
     in
         allProperties
-            [ Test.Int.asPartialExpandedPattern value === evaluate patLookup
-            , ExpandedPattern.top === evaluate predicate
-            ]
-
-{- |
-    @
-        concat{}(unit{}(), element{}(key, value)) === element{}(key, value)
-    @
- -}
-prop_concatUnit :: (Integer, Integer) -> Property
-prop_concatUnit (key, value) =
-    let patConcat = App_ symbolConcat [ patUnit, patElement ]
-        patUnit = App_ symbolUnit []
-        patKey = Test.Int.asPattern key
-        patValue = Test.Int.asPattern value
-        patElement = App_ symbolElement [ patKey, patValue ]
-        predicate = give testSortTools $ mkEquals patElement patConcat
-    in
-        allProperties
-            [ evaluate patElement === evaluate patConcat
-            , ExpandedPattern.top === evaluate predicate
+            [ evaluate patMap === evaluate patConcat1
+            , evaluate patMap === evaluate patConcat2
+            , ExpandedPattern.top === evaluate predicate1
+            , ExpandedPattern.top === evaluate predicate2
             ]
 
 {- |
@@ -208,21 +182,22 @@ prop_concatDuplicateKeys key value1 value2 =
             ]
 
 {- |
-    Let @a = element{}(key1, value1)@ and @b = element{}(key2, value2)@; then
     @
-        concat{}(a, b) === concat{}(b, a)
+        concat{}(as : Map{}, bs : Map{}) === concat{}(bs, as)
     @
  -}
-prop_concatCommutes :: (Integer, Integer) -> (Integer, Integer) -> Property
-prop_concatCommutes (key1, value1) (key2, value2) =
+prop_concatCommutes :: [(Integer, Integer)] -> [(Integer, Integer)] -> Property
+prop_concatCommutes (Map.fromList -> _map1) (Map.fromList -> _map2) =
     let patConcat1 = App_ symbolConcat [ patMap1, patMap2 ]
         patConcat2 = App_ symbolConcat [ patMap2, patMap1 ]
-        patKey1 = Test.Int.asPattern key1
-        patValue1 = Test.Int.asPattern value1
-        patKey2 = Test.Int.asPattern key2
-        patValue2 = Test.Int.asPattern value2
-        patMap1 = App_ symbolElement [ patKey1, patValue1 ]
-        patMap2 = App_ symbolElement [ patKey2, patValue2 ]
+        patMap1 =
+            asPattern
+            $ Map.mapKeys Test.Int.asPattern
+            $ Map.map Test.Int.asPattern _map1
+        patMap2 =
+            asPattern
+            $ Map.mapKeys Test.Int.asPattern
+            $ Map.map Test.Int.asPattern _map2
         predicate = give testSortTools (mkEquals patConcat1 patConcat2)
     in
         allProperties
@@ -231,23 +206,34 @@ prop_concatCommutes (key1, value1) (key2, value2) =
             ]
 
 {- |
-    Let @a = element{}(key1, value1)@, @b = element{}(key2, value2)@
-    and @c = element{}(key3, value3)@; then
     @
-        concat{}(concat{}(a, b), c) === concat{}(a, concat{}(b, c))
+        concat{}(concat{}(as : Map{}, bs : Map{}), cs : Map{})
+        ===
+        concat{}(as, concat{}(bs, cs))
     @
  -}
-prop_concatAssociates :: (Integer, Integer) -> (Integer, Integer) -> (Integer, Integer) -> Property
-prop_concatAssociates (key1, value1) (key2, value2) (key3, value3) =
-    let patKey1 = Test.Int.asPattern key1
-        patValue1 = Test.Int.asPattern value1
-        patKey2 = Test.Int.asPattern key2
-        patValue2 = Test.Int.asPattern value2
-        patKey3 = Test.Int.asPattern key3
-        patValue3 = Test.Int.asPattern value3
-        patMap1 = App_ symbolElement [ patKey1, patValue1 ]
-        patMap2 = App_ symbolElement [ patKey2, patValue2 ]
-        patMap3 = App_ symbolElement [ patKey3, patValue3 ]
+prop_concatAssociates
+    :: [(Integer, Integer)]
+    -> [(Integer, Integer)]
+    -> [(Integer, Integer)]
+    -> Property
+prop_concatAssociates
+    (Map.fromList -> _map1)
+    (Map.fromList -> _map2)
+    (Map.fromList -> _map3)
+  =
+    let patMap1 =
+            asPattern
+            $ Map.mapKeys Test.Int.asPattern
+            $ Map.map Test.Int.asPattern _map1
+        patMap2 =
+            asPattern
+            $ Map.mapKeys Test.Int.asPattern
+            $ Map.map Test.Int.asPattern _map2
+        patMap3 =
+            asPattern
+            $ Map.mapKeys Test.Int.asPattern
+            $ Map.map Test.Int.asPattern _map3
         patConcat12 = App_ symbolConcat [ patMap1, patMap2 ]
         patConcat23 = App_ symbolConcat [ patMap2, patMap3 ]
         patConcat12_3 = App_ symbolConcat [ patConcat12, patMap3 ]
