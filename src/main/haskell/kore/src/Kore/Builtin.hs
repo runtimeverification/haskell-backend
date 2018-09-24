@@ -50,6 +50,7 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Hook as Hook
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.KEqual as KEqual
+import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -74,10 +75,12 @@ koreVerifiers =
     { sortDeclVerifiers =
            Bool.sortDeclVerifiers
         <> Int.sortDeclVerifiers
+        <> List.sortDeclVerifiers
         <> Map.sortDeclVerifiers
     , symbolVerifiers =
            Bool.symbolVerifiers
         <> Int.symbolVerifiers
+        <> List.symbolVerifiers
         <> Map.symbolVerifiers
         <> KEqual.symbolVerifiers
     , patternVerifier =
@@ -169,6 +172,8 @@ asPattern
             return (Kore.DV_ domainValueSort domainValueChild)
         Kore.BuiltinDomainMap map' ->
             Map.asPattern indexedModule domainValueSort <*> pure map'
+        Kore.BuiltinDomainList list ->
+            List.asPattern indexedModule domainValueSort <*> pure list
 
 {- | Externalize all builtin domain values in the given pattern.
 
@@ -210,6 +215,7 @@ asMetaPattern Kore.DomainValue { domainValueChild } =
     case domainValueChild of
         Kore.BuiltinDomainPattern pat -> pat
         Kore.BuiltinDomainMap _ -> notImplementedInternal
+        Kore.BuiltinDomainList _ -> notImplementedInternal
 
 {- | Throw an error for operations not implemented for internal domain values.
  -}

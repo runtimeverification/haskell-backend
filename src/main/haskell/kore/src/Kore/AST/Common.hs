@@ -28,6 +28,7 @@ import           Control.DeepSeq
 import           Data.Deriving
                  ( deriveEq1, deriveOrd1, deriveShow1, makeLiftCompare,
                  makeLiftEq, makeLiftShowsPrec )
+import qualified Data.Foldable as Foldable
 import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix (..), cata )
@@ -36,6 +37,8 @@ import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import           Data.Proxy
+import           Data.Sequence
+                 ( Seq )
 import           GHC.Generics
                  ( Generic )
 
@@ -942,6 +945,7 @@ data BuiltinDomain child
     = BuiltinDomainPattern !child
     | BuiltinDomainMap
         !(Map (Fix (Pattern Object Variable)) (Fix (Pattern Object Variable)))
+    | BuiltinDomainList !(Seq (Fix (Pattern Object Variable)))
     deriving (Generic)
 
 instance Hashable child => Hashable (BuiltinDomain child) where
@@ -949,8 +953,10 @@ instance Hashable child => Hashable (BuiltinDomain child) where
         \case
             BuiltinDomainPattern pat ->
                 salt `hashWithSalt` (0::Int) `hashWithSalt` pat
-            BuiltinDomainMap map' ->
-                salt `hashWithSalt` (1::Int) `hashWithSalt` (Map.toAscList map')
+            BuiltinDomainMap (Map.toAscList -> map') ->
+                salt `hashWithSalt` (1::Int) `hashWithSalt` map'
+            BuiltinDomainList (Foldable.toList -> list) ->
+                salt `hashWithSalt` (2::Int) `hashWithSalt` list
 
 instance NFData child => NFData (BuiltinDomain child)
 
