@@ -16,7 +16,6 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( Forall (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkForall )
@@ -55,13 +54,10 @@ the pattern except for the top/bottom cases.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => Forall level variable (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Forall level Variable (OrOfExpandedPattern level Variable)
+    ->  ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
@@ -71,14 +67,11 @@ simplify
 
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => variable level
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => Variable level
+    -> OrOfExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluated variable simplified
   | OrOfExpandedPattern.isTrue simplified = (simplified, SimplificationProof)
   | OrOfExpandedPattern.isFalse simplified = (simplified, SimplificationProof)

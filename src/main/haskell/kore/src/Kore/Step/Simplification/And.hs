@@ -14,7 +14,6 @@ module Kore.Step.Simplification.And
     ) where
 
 import           Kore.AST.Common
-                 ( And (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
@@ -40,8 +39,7 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Fresh
+                 ( )
 
 {-|'simplify' simplifies an 'And' of 'OrOfExpandedPattern'.
 
@@ -81,18 +79,11 @@ Also, we have
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> And level (OrOfExpandedPattern level variable)
+    -> And level (OrOfExpandedPattern level Variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
@@ -110,19 +101,12 @@ See 'simplify' for details.
 -}
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    -> OrOfExpandedPattern level Variable
+    -> OrOfExpandedPattern level Variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluated tools first second
   | OrOfExpandedPattern.isFalse first =
     return (OrOfExpandedPattern.make [], SimplificationProof)
@@ -151,19 +135,11 @@ simplifyEvaluated tools first second
 See the comment for 'simplify' to find more details.
 -}
 makeEvaluate
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
-        )
+    ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 makeEvaluate
     tools first second
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
@@ -176,19 +152,11 @@ makeEvaluate
     makeEvaluateNonBool tools first second
 
 makeEvaluateNonBool
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
-        )
+    ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateNonBool
     tools
     ExpandedPattern
@@ -229,16 +197,9 @@ makeEvaluateNonBool
 
 makeTermAnd
     ::  ( MetaOrObject level
-        , Hashable variable
-        , FreshVariable variable
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable level)
-        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Counter (ExpandedPattern level variable, SimplificationProof level)
+    -> PureMLPattern level Variable
+    -> PureMLPattern level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 makeTermAnd = AndTerms.termAnd

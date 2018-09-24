@@ -12,7 +12,6 @@ module Kore.Step.Simplification.Top
     ) where
 
 import           Kore.AST.Common
-                 ( Top (..) )
 import           Kore.AST.MetaOrObject
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( top )
@@ -28,7 +27,7 @@ import           Kore.Step.Simplification.Data
 simplify
     :: MetaOrObject level
     => Top level child
-    -> ( OrOfExpandedPattern level variable
+    -> ( OrOfExpandedPattern level Variable
        , SimplificationProof level
        )
 simplify _ =

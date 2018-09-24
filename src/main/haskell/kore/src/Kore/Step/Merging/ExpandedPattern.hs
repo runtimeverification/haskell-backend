@@ -11,11 +11,10 @@ module Kore.Step.Merging.ExpandedPattern
     ( mergeWithPredicateSubstitution
     ) where
 
-import Data.Reflection
-       ( give )
+import           Data.Reflection
+                 ( give, Given )
 
 import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -37,33 +36,25 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Fresh
+import           Kore.SMT.SMT ( SMTAttributes )
 
 {-| 'mergeWithPredicateSubstitution' ands the given predicate-substitution
 with the given pattern.
 -}
 mergeWithPredicateSubstitution
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Evaluates functions in a pattern.
-    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level Variable
     -- ^ Condition and substitution to add.
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level Variable
     -- ^ pattern to which the above should be added.
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
     simplifier
@@ -95,18 +86,12 @@ mergeWithPredicateSubstitution
 
 mergeWithEvaluatedCondition
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> PredicateSubstitution level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> PredicateSubstitution level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
     ExpandedPattern

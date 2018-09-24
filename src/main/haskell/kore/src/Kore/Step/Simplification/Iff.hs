@@ -17,7 +17,6 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( Iff (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkIff )
@@ -48,13 +47,10 @@ and for children with top terms.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => Iff level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Iff level (OrOfExpandedPattern level Variable)
+    ->  ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
@@ -71,14 +67,11 @@ See 'simplify' for detailed documentation.
 -}
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrOfExpandedPattern level Variable
+    -> OrOfExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluated first second
   | OrOfExpandedPattern.isTrue first =
     (second, SimplificationProof)
@@ -106,14 +99,11 @@ See 'simplify' for detailed documentation.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluate first second
   | ExpandedPattern.isTop first =
     (OrOfExpandedPattern.make [second], SimplificationProof)
@@ -128,14 +118,11 @@ makeEvaluate first second
 
 makeEvaluateNonBoolIff
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateNonBoolIff
     ExpandedPattern
         { term = t@(Top_ _)

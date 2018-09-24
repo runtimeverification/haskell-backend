@@ -27,6 +27,8 @@ module Kore.Step.Step
     , runStrategy
     ) where
 
+
+import Data.Reflection ( give )
 import Data.Foldable
        ( toList )
 import Data.Semigroup
@@ -52,7 +54,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Strategy
                  ( Limit (..), Strategy, pickLongest, pickStuck, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
@@ -102,7 +103,7 @@ transitionRule tools simplifier =
   where
     transitionSimplify (config, proof) =
         do
-            (configs, proof') <-
+            (configs, proof') <- give (convertMetadataTools tools) $ 
                 ExpandedPattern.simplify tools simplifier config
             let
                 proof'' = proof <> simplificationProof proof'

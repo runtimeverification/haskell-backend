@@ -17,7 +17,6 @@ import           Data.Reflection
                  ( Given, give )
 
 import           Kore.AST.Common
-                 ( Id, Pattern (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern, fromPurePattern )
@@ -77,38 +76,25 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Fresh
-
+import Kore.SMT.SMT
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
 
-{-|'simplify' simplifies a PureMLPattern level variable, returning an
+{-|'simplify' simplifies a PureMLPattern level Variable, returning an
 'ExpandedPattern'.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level Variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPattern level variable
+    -> PureMLPattern level Variable
     -> Simplifier
-        ( ExpandedPattern level variable
+        ( ExpandedPattern level Variable
         , SimplificationProof level
         )
-simplify tools symbolIdToEvaluator patt = do
+simplify tools symbolIdToEvaluator patt = give (convertMetadataTools tools) $ do
     (orPatt, proof) <- simplifyToOr tools symbolIdToEvaluator patt
     return
         ( give (MetadataTools.sortTools tools)
@@ -116,27 +102,19 @@ simplify tools symbolIdToEvaluator patt = do
         , proof
         )
 
-{-|'simplifyToOr' simplifies a PureMLPattern level variable, returning an
+{-|'simplifyToOr' simplifies a PureMLPattern level Variable, returning an
 'OrOfExpandedPattern'.
 -}
 simplifyToOr
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level Variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPattern level variable
+    -> PureMLPattern level Variable
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplifyToOr tools symbolIdToEvaluator patt =
@@ -154,24 +132,16 @@ simplifyToOr tools symbolIdToEvaluator patt =
 
 simplifyInternal
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> PureMLPatternSimplifier level Variable
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level Variable]
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern level variable (PureMLPattern level variable)
+    -> Pattern level Variable (PureMLPattern level Variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplifyInternal

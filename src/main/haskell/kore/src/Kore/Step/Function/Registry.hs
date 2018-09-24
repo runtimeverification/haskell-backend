@@ -29,7 +29,8 @@ import Kore.AST.PureML
 import Kore.AST.Sentence
        ( AsSentence (..), SentenceAxiom (..) )
 import Kore.IndexedModule.IndexedModule
-       ( IndexedModule (..), KoreIndexedModule )
+       ( IndexedModule (..), KoreIndexedModule, )
+import Kore.IndexedModule.MetadataTools
 import Kore.Step.AxiomPatterns
        ( AxiomPattern (..), QualifiedAxiomPattern (..),
        koreSentenceToAxiomPattern )
@@ -39,20 +40,24 @@ import Kore.Step.Function.Data
 import Kore.Step.Function.UserDefined
        ( axiomFunctionEvaluator )
 import Kore.Step.StepperAttributes
-       ( StepperAttributes )
-
+       ( StepperAttributes, convertMetadataTools )
+import Kore.SMT.SMT
+import Data.Reflection
 {-|Given a 'MetaOrObject' @level@ and a 'KoreIndexedModule', @extractEvaluators@
 creates a registry mapping function symbol identifiers to their
 corresponding 'CommonApplicationFunctionEvaluator's.
 -}
 extractEvaluators
-    :: MetaOrObject level
+    :: forall level . 
+       ( MetaOrObject level
+       )
     => level
     -> KoreIndexedModule StepperAttributes
     -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
 extractEvaluators level indexedModule =
     Map.fromList (map extractPrefix groupedEvaluators)
   where
+    stepperMetadata = extractMetadataTools indexedModule :: MetadataTools level StepperAttributes
     extractPrefix []                  = error "unexpected case"
     extractPrefix ((a, b) : reminder) = (a, b : map snd reminder)
     groupedEvaluators =
@@ -61,14 +66,16 @@ extractEvaluators level indexedModule =
             (sortBy
                 (compare `on` fst)
                 (mapMaybe
-                    (axiomToIdEvaluatorPair
+                    (give (convertMetadataTools stepperMetadata) $ axiomToIdEvaluatorPair
                         level
                     )
                     (snd <$> indexedModuleAxioms indexedModule))
             )
 
 axiomToIdEvaluatorPair
-    :: MetaOrObject level
+    :: ( MetaOrObject level
+       , Given (MetadataTools level SMTAttributes)
+       )
     => level
     -> SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
     -> Maybe (Id level, CommonApplicationFunctionEvaluator level)

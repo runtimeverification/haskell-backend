@@ -12,7 +12,6 @@ module Kore.Step.Simplification.Variable
     ) where
 
 import           Kore.AST.Common
-                 ( Pattern (VariablePattern) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( asPurePattern )
@@ -30,12 +29,12 @@ import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
 {-| 'simplify' simplifies a 'Variable' pattern, which means returning
-an or containing a term made of that variable.
+an or containing a term made of that Variable.
 -}
 simplify
     :: MetaOrObject level
-    => variable level
-    -> ( OrOfExpandedPattern level variable
+    => Variable level
+    -> ( OrOfExpandedPattern level Variable
        , SimplificationProof level
        )
 simplify var =

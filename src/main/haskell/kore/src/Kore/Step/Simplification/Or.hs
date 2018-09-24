@@ -16,7 +16,6 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( Or (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Top_ )
@@ -40,13 +39,10 @@ children by merging the two children.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => Or level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Or level (OrOfExpandedPattern level Variable)
+    ->  ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
@@ -63,14 +59,11 @@ See 'simplify' for detailed documentation.
 -}
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    ->  ( OrOfExpandedPattern level variable
+    => OrOfExpandedPattern level Variable
+    -> OrOfExpandedPattern level Variable
+    ->  ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplifyEvaluated first second =
@@ -89,14 +82,11 @@ simplifyEvaluated first second =
 -- term with the second.
 halfSimplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    ->  ( OrOfExpandedPattern level variable
+    => ExpandedPattern level Variable
+    -> OrOfExpandedPattern level Variable
+    ->  ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 halfSimplifyEvaluated

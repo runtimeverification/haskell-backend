@@ -16,10 +16,8 @@ import           Control.Exception
 import           Data.List
                  ( nub, partition )
 import qualified Data.Map as Map
-
+import Data.Reflection (Given)
 import           Kore.AST.Common
-                 ( Application (..), Id (..), Pattern (..), Sort,
-                 SortedVariable, SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern, asPurePattern )
@@ -50,34 +48,26 @@ import           Kore.Step.Simplification.Data
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Fresh
+import Kore.SMT.SMT
 
 {-| 'evaluateApplication' - evaluates functions on an application pattern.
 -}
 evaluateApplication
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level Variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level Variable
     -- ^ Aggregated children predicate and substitution.
-    -> Application level (PureMLPattern level variable)
+    -> Application level (PureMLPattern level Variable)
     -- ^ The pattern to be evaluated
-    -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (OrOfExpandedPattern level Variable, SimplificationProof level)
 evaluateApplication
     tools
     simplifier
@@ -157,11 +147,11 @@ evaluateApplication
 -- move the recursive simplification call from UserDefined.hs here.
 
 evaluateSortInjection
-    :: (MetaOrObject level)
+    :: (MetaOrObject level, Given (MetadataTools level SMTAttributes))
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
-    -> Application level (PureMLPattern level variable)
-    -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level Variable
+    -> Application level (PureMLPattern level Variable)
+    -> Simplifier (OrOfExpandedPattern level Variable, SimplificationProof level)
 evaluateSortInjection tools unchanged ap = case apChild of
     (App_ apHeadChild grandChildren)
         | isSortInjection (symAttributes tools apHeadChild) ->
@@ -197,23 +187,16 @@ function evaluation.
 -}
 mergeWithConditionAndSubstitution
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Evaluates functions in a pattern.
-    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level Variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedFunction level variable, SimplificationProof level)
+    -> (AttemptedFunction level Variable, SimplificationProof level)
     -- ^ AttemptedFunction to which the condition should be added.
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
+    -> Simplifier (AttemptedFunction level Variable, SimplificationProof level)
 mergeWithConditionAndSubstitution
     _ _ _ (AttemptedFunction.NotApplicable, _proof)
   =

@@ -16,11 +16,9 @@ import qualified Control.Arrow as Arrow
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
-                 ( Given )
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
-                 ( Exists (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
@@ -45,15 +43,13 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 import           Kore.Substitution.Class
-                 ( Hashable (..), PatternSubstitutionClass (..) )
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
 import           Kore.Variables.Free
                  ( pureFreeVariables )
-import           Kore.Variables.Fresh
+import Kore.SMT.SMT
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -77,52 +73,35 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Hashable variable
-        , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Simplifies patterns.
-    -> Exists level variable (OrOfExpandedPattern level variable)
+    -> Exists level Variable (OrOfExpandedPattern level Variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
     tools
     simplifier
     Exists { existsVariable = variable, existsChild = child }
-  =
-    simplifyEvaluated tools simplifier variable child
+  = give (convertMetadataTools tools) $ 
+      simplifyEvaluated tools simplifier variable child
 
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
+        , Given (MetadataTools level SMTAttributes)
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Hashable variable
-        , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Simplifies patterns.
-    -> variable level
-    -> OrOfExpandedPattern level variable
+    -> Variable level
+    -> OrOfExpandedPattern level Variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluated tools simplifier variable simplified
   | OrOfExpandedPattern.isTrue simplified =
     return (simplified, SimplificationProof)
@@ -140,30 +119,22 @@ See 'simplify' for detailed documentation.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
-        , SortedVariable variable
+        , Given (MetadataTools level SMTAttributes)
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Hashable variable
-        , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Simplifies patterns.
-    -> variable level
-    -> ExpandedPattern level variable
+    -> Variable level
+    -> ExpandedPattern level Variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluate
     tools
     simplifier
     variable
     patt@ExpandedPattern { term, predicate, substitution }
-  =
+  = give (convertMetadataTools tools) $ 
     case localSubstitution of
         [] ->
             return (makeEvaluateNoFreeVarInSubstitution variable patt)
@@ -186,18 +157,12 @@ makeEvaluate
 
 makeEvaluateNoFreeVarInSubstitution
     ::  ( MetaOrObject level
-        , SortedVariable variable
+        , Given (MetadataTools level SMTAttributes)
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         )
-    => variable level
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => Variable level
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateNoFreeVarInSubstitution
     variable
     patt@ExpandedPattern { term, predicate, substitution }
@@ -249,23 +214,15 @@ makeEvaluateNoFreeVarInSubstitution
 
 substituteTermPredicate
     ::  ( MetaOrObject level
-        , SortedVariable variable
+        , Given (MetadataTools level SMTAttributes)
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Hashable variable
-        , FreshVariable variable
         )
-    => PureMLPattern level variable
-    -> Predicate level variable
-    -> ListSubstitution.Substitution (Unified variable) (PureMLPattern level variable)
-    -> UnificationSubstitution level variable
+    => PureMLPattern level Variable
+    -> Predicate level Variable
+    -> ListSubstitution.Substitution (Unified Variable) (PureMLPattern level Variable)
+    -> UnificationSubstitution level Variable
     -> Simplifier
-        (ExpandedPattern level variable, SimplificationProof level)
+        (ExpandedPattern level Variable, SimplificationProof level)
 substituteTermPredicate term predicate substitution globalSubstitution = do
     substitutedTerm <- substitute term substitution
     substitutedPredicate <-
@@ -283,11 +240,11 @@ newtype Local a = Local a
 newtype Global a = Global a
 
 splitSubstitutionByVariable
-    :: Eq (variable level)
-    => variable level
-    -> UnificationSubstitution level variable
-    ->  ( Local (UnificationSubstitution level variable)
-        , Global (UnificationSubstitution level variable)
+    :: Eq (Variable level)
+    => Variable level
+    -> UnificationSubstitution level Variable
+    ->  ( Local (UnificationSubstitution level Variable)
+        , Global (UnificationSubstitution level Variable)
         )
 splitSubstitutionByVariable _ [] =
     (Local [], Global [])

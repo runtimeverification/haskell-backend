@@ -15,7 +15,6 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( Next (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkNext )
@@ -44,13 +43,10 @@ Right now this does not do any actual simplification.
 -}
 simplify
     ::  ( MetaOrObject Object
-        , SortedVariable variable
         , Given (SortTools Object)
-        , Show (variable Object)
-        , Ord (variable Object)
         )
-    => Next Object (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Next Object (OrOfExpandedPattern Object Variable)
+    ->  ( OrOfExpandedPattern Object Variable
         , SimplificationProof Object
         )
 simplify
@@ -60,13 +56,10 @@ simplify
 
 simplifyEvaluated
     ::  ( MetaOrObject Object
-        , SortedVariable variable
         , Given (SortTools Object)
-        , Show (variable Object)
-        , Ord (variable Object)
         )
-    => OrOfExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => OrOfExpandedPattern Object Variable
+    -> (OrOfExpandedPattern Object Variable, SimplificationProof Object)
 simplifyEvaluated simplified =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern

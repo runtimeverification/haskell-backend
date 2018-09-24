@@ -12,7 +12,6 @@ module Kore.Step.Simplification.CharLiteral
     ) where
 
 import           Kore.AST.Common
-                 ( CharLiteral (..), Pattern (CharLiteralPattern) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( asPurePattern )
@@ -34,7 +33,7 @@ an or containing a term made of that literal.
 -}
 simplify
     :: CharLiteral
-    -> ( OrOfExpandedPattern Meta variable
+    -> ( OrOfExpandedPattern Meta Variable
        , SimplificationProof Meta
        )
 simplify str =

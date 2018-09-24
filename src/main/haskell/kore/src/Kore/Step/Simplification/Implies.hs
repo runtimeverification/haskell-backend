@@ -15,7 +15,6 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( Implies (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkImplies )
@@ -54,13 +53,10 @@ and it has a special case for children with top terms.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => Implies level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    => Implies level (OrOfExpandedPattern level Variable)
+    ->  ( OrOfExpandedPattern level Variable
         , SimplificationProof level
         )
 simplify
@@ -74,14 +70,11 @@ simplify
 -- TODO: Maybe transform this to (not a) \/ b
 simplifyEvaluatedImplies
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrOfExpandedPattern level Variable
+    -> OrOfExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluatedImplies first second
   | OrOfExpandedPattern.isTrue first =
     (second, SimplificationProof)
@@ -102,14 +95,11 @@ simplifyEvaluatedImplies first second
 
 simplifyEvaluateHalfImplies
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => OrOfExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrOfExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 simplifyEvaluateHalfImplies first second
   | OrOfExpandedPattern.isTrue first =
     (OrOfExpandedPattern.make [second], SimplificationProof)
@@ -130,14 +120,11 @@ simplifyEvaluateHalfImplies first second
 
 makeEvaluateImplies
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateImplies
     first second
   | ExpandedPattern.isTop first =
@@ -153,14 +140,11 @@ makeEvaluateImplies
 
 makeEvaluateImpliesNonBool
     ::  ( MetaOrObject level
-        , SortedVariable variable
         , Given (SortTools level)
-        , Show (variable level)
-        , Ord (variable level)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> (OrOfExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateImpliesNonBool
     ExpandedPattern
         { term = t@(Top_ _)

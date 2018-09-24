@@ -11,8 +11,8 @@ module Kore.Step.Merging.OrOfExpandedPattern
     ( mergeWithPredicateSubstitution
     ) where
 
+import           Data.Reflection ( Given )
 import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -29,33 +29,25 @@ import           Kore.Step.Simplification.Data
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Fresh
+import           Kore.SMT.SMT ( SMTAttributes )
 
 {-| 'mergeWithPredicateSubstitution' ands the given predicate/substitution
 to the given Or.
 -}
 mergeWithPredicateSubstitution
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level Variable
     -- ^ Evaluates functions in a pattern.
-    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level Variable
     -- ^ PredicateSubstitution to add.
-    -> OrOfExpandedPattern level variable
+    -> OrOfExpandedPattern level Variable
     -- ^ Pattern to which the condition should be added.
-    -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (OrOfExpandedPattern level Variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
     simplifier

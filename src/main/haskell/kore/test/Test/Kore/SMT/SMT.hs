@@ -7,13 +7,13 @@ import Test.QuickCheck
 import Data.Map
 import Data.Reflection
 
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+import           Kore.AST.MetaOrObject
+import           Kore.ASTUtils.SmartConstructors
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.Proof.Dummy
 
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.Sentence
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
-import Kore.Proof.Dummy
 
 
 import Kore.IndexedModule.IndexedModule
@@ -49,75 +49,48 @@ p, q :: CommonPurePattern Object
 p = vBool "p"
 q = vBool "q"
 
-type Op = CommonPurePattern Object -> CommonPurePattern Object -> CommonPurePattern Object
-plus, sub, mul, div :: Op
-plus  a b = App_ addSymbol  [a, b]
+add, sub, mul, div 
+    :: CommonPurePattern Object 
+    -> CommonPurePattern Object 
+    -> CommonPurePattern Object
+add  a b = App_ addSymbol  [a, b]
 sub a b = App_ subSymbol  [a, b]
 mul a b = App_ mulSymbol  [a, b]
 div   a b = App_ tdivSymbol [a, b]
 
-prop_1 :: Property
-prop_1 = run prop1
-
-prop_2 :: Property
-prop_2 = run prop2
-
-prop_3 :: Property
-prop_3 = run prop3
-
-prop_4 :: Property
-prop_4 = run prop4
-
-prop_pierce :: Property
-prop_pierce = run propPierce
-
-prop_tdiv :: Property
-prop_tdiv = run propDiv
-
-prop_tmod :: Property
-prop_tmod = run propMod
-
-prop_demorgan :: Property
-prop_demorgan = run propDeMorgan
-
-prop_true :: Property
-prop_true = run propTrue
-
-prop_false :: Property
-prop_false = run propFalse
-
 run :: CommonPurePattern Object -> Property
-run prop = (give tools $ provePattern prop) === Just True
+run prop = (give tools $ unsafeTryRefutePattern prop) === Just True
 
-prop1 :: CommonPurePattern Object
-prop1 = dummyEnvironment $ mkNot $
-  App_ ltSymbol [a, intLiteral 0]
-  `mkAnd`
+
+prop_1 :: Property 
+prop_1 = run $ dummyEnvironment $ mkNot $ 
+  App_ ltSymbol [a, intLiteral 0] 
+  `mkAnd` 
   App_ ltSymbol [intLiteral 0, a]
 
-prop2 :: CommonPurePattern Object
-prop2 = dummyEnvironment $ mkNot $
-  App_ ltSymbol [a `plus` a, a `plus` b]
-  `mkAnd`
-  App_ ltSymbol [b `plus` b, a `plus` b]
+prop_2 :: Property
+prop_2 = run $ dummyEnvironment $ mkNot $ 
+  App_ ltSymbol [a `add` a, a `add` b]
+  `mkAnd` 
+  App_ ltSymbol [b `add` b, a `add` b]
 
-prop3 :: CommonPurePattern Object
-prop3 = dummyEnvironment $
+prop_3 :: Property 
+prop_3 = run $ dummyEnvironment $
   App_ ltSymbol [a, b]
   `mkImplies`
   (App_ ltSymbol [b, c]
   `mkImplies`
   App_ ltSymbol [a, c])
 
-prop4 :: CommonPurePattern Object
-prop4 = dummyEnvironment $ mkNot $
-  App_ eqSymbol
-  [ intLiteral 1 `plus` (intLiteral 2 `mul` a)
+prop_4 :: Property
+prop_4 = run $ dummyEnvironment $ mkNot $
+  App_ eqSymbol 
+  [ intLiteral 1 `add` (intLiteral 2 `mul` a)
   , intLiteral 2 `mul` b
   ]
-
-prop5 :: CommonPurePattern Object
-prop5 = dummyEnvironment $
+ 
+prop_5 :: Property 
+prop_5 = run $ dummyEnvironment $  
   App_ eqSymbol
   [ intLiteral 0 `sub` (a `mul` a)
   , b `mul` b
@@ -128,8 +101,8 @@ prop5 = dummyEnvironment $
   , intLiteral 0
   ]
 
-prop6 :: CommonPurePattern Object
-prop6 = dummyEnvironment $
+prop_6 :: Property 
+prop_6 = run $ dummyEnvironment $ 
   (
   App_ leSymbol [a, b]
   `mkIff`
@@ -143,31 +116,31 @@ prop6 = dummyEnvironment $
   )
 
 
-propDiv :: CommonPurePattern Object
-propDiv = dummyEnvironment $
+prop_div :: Property 
+prop_div = run $ dummyEnvironment $
   App_ ltSymbol [intLiteral 0, a]
   `mkImplies`
   App_ ltSymbol [App_ tdivSymbol [a, intLiteral 2], a]
 
-propMod :: CommonPurePattern Object
-propMod = dummyEnvironment $
-  App_ eqSymbol
+prop_mod :: Property 
+prop_mod = run $ dummyEnvironment $ 
+  App_ eqSymbol 
     [ App_ tmodSymbol [a `mul` intLiteral 2, intLiteral 2]
     , intLiteral 0
     ]
 
-propPierce :: CommonPurePattern Object
-propPierce = dummyEnvironment $
+prop_pierce :: Property 
+prop_pierce = run $ dummyEnvironment $
   ((p `mkImplies` q) `mkImplies` p) `mkImplies` p
 
-propDeMorgan :: CommonPurePattern Object
-propDeMorgan = dummyEnvironment $
+prop_demorgan :: Property 
+prop_demorgan = run $ dummyEnvironment $ 
   (mkNot $ p `mkOr` q) `mkIff` (mkNot p `mkAnd` mkNot q)
 
-propTrue :: CommonPurePattern Object
-propTrue = dummyEnvironment $ mkTop
+prop_true :: Property
+prop_true = run $ dummyEnvironment $ mkTop
 
-propFalse :: CommonPurePattern Object
-propFalse = dummyEnvironment $ mkIff (mkNot p) (p `mkImplies` mkBottom)
+prop_false :: Property
+prop_false = run $ dummyEnvironment $ mkIff (mkNot p) (p `mkImplies` mkBottom)
 
 
