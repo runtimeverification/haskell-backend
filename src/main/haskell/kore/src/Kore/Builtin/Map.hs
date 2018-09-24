@@ -1,6 +1,6 @@
 {- |
 Module      : Kore.Builtin.Map
-Description : Built-in arbitrary-precision integer sort
+Description : Built-in key-value maps
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
