@@ -125,12 +125,12 @@ withSentenceHookContext
     -> Either (Error e) a
 withSentenceHookContext =
     \case
-        SentenceHookedSort SentenceSort { sentenceSortName }->
+        SentenceHookedSort SentenceSort { sentenceSortName } ->
             withLocationAndContext sentenceSortName
                 ("hooked-sort '" ++ getId sentenceSortName ++ "' declaration")
+
         SentenceHookedSymbol SentenceSymbol
-            { sentenceSymbolSymbol = Symbol { symbolConstructor } }
-          ->
+            { sentenceSymbolSymbol = Symbol { symbolConstructor } } ->
             withLocationAndContext symbolConstructor
                 ("hooked-symbol '" ++ getId symbolConstructor ++ "' declaration")
 
