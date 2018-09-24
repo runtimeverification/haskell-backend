@@ -36,8 +36,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 import           Kore.SMT.SMT ( SMTAttributes )
 
 {-| 'mergeWithPredicateSubstitution' ands the given predicate-substitution
@@ -91,9 +89,9 @@ mergeWithEvaluatedCondition
         , Given (MetadataTools level SMTAttributes)
         )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> PredicateSubstitution level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> PredicateSubstitution level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
     ExpandedPattern

@@ -54,7 +54,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Strategy
                  ( Limit (..), Strategy, pickLongest, pickStuck, runStrategy )
 import qualified Kore.Step.Strategy as Strategy

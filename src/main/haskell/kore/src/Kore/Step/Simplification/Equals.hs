@@ -55,9 +55,6 @@ import qualified Kore.Step.Simplification.Or as Or
                  ( simplifyEvaluated )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrOfExpandedPattern's.
 

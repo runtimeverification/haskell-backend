@@ -50,7 +50,6 @@ import           Kore.Step.PatternAttributes
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -58,10 +57,6 @@ import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
-                 ( )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
-import           Kore.Variables.Int
                  ( )
 
 data SimplificationType = SimplifyAnd | SimplifyEquals
@@ -81,7 +76,7 @@ termEquals
     -> PureMLPattern level Variable
     -> PureMLPattern level Variable
     -> Maybe
-        (Counter (ExpandedPattern level variable, SimplificationProof level))
+        (Simplifier (ExpandedPattern level Variable, SimplificationProof level))
 termEquals tools first second = do  -- Maybe monad
     result <-termEqualsAnd tools first second
     return $ do  -- IntCounter monad
@@ -95,7 +90,7 @@ termEqualsAnd
     -> PureMLPattern level Variable
     -> PureMLPattern level Variable
     -> Maybe
-        (Counter (ExpandedPattern level variable, SimplificationProof level))
+        (Simplifier (ExpandedPattern level Variable, SimplificationProof level))
 termEqualsAnd tools =
     maybeTermEquals
         tools
@@ -105,9 +100,9 @@ termEqualsAndChild
     ::  ( MetaOrObject level
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Counter (ExpandedPattern level variable, SimplificationProof level)
+    -> PureMLPattern level Variable
+    -> PureMLPattern level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 termEqualsAndChild tools first second =
     fromMaybe
         (give (MetadataTools.sortTools tools) $
@@ -136,7 +131,7 @@ maybeTermEquals
     -> PureMLPattern level Variable
     -> PureMLPattern level Variable
     -> Maybe
-        ( Counter (ExpandedPattern level variable, SimplificationProof level) )
+        ( Simplifier (ExpandedPattern level Variable, SimplificationProof level) )
 maybeTermEquals =
     maybeTransformTerm
         [ liftET equalAndEquals
@@ -173,7 +168,7 @@ termUnification
     -> PureMLPattern level Variable
     -> PureMLPattern level Variable
     -> Maybe
-        (Counter (ExpandedPattern level variable, SimplificationProof level))
+        (Simplifier (ExpandedPattern level Variable, SimplificationProof level))
 termUnification tools =
     maybeTermAnd
         tools
@@ -187,9 +182,9 @@ termAnd
     ::  ( MetaOrObject level
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Counter (ExpandedPattern level variable, SimplificationProof level)
+    -> PureMLPattern level Variable
+    -> PureMLPattern level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 termAnd tools first second =
     fromMaybe
         (give (MetadataTools.sortTools tools) $
@@ -204,7 +199,7 @@ type TermSimplifier level variable =
     (  PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (Counter
+        (Simplifier
             (ExpandedPattern level variable, SimplificationProof level)
         )
     )
@@ -222,7 +217,7 @@ maybeTermAnd
     -> PureMLPattern level Variable
     -> PureMLPattern level Variable
     -> Maybe
-        ( Counter (ExpandedPattern level variable
+        ( Simplifier (ExpandedPattern level Variable
         , SimplificationProof level)
         )
 maybeTermAnd =
@@ -252,7 +247,7 @@ type TermTransformation level variable =
     -> PureMLPattern level variable
     -> FunctionResult
         (Maybe
-            ( Counter
+            ( Simplifier
                 ( ExpandedPattern level variable
                 , SimplificationProof level
                 )
@@ -270,7 +265,7 @@ maybeTransformTerm
     -> PureMLPattern level Variable
     -> PureMLPattern level Variable
     -> Maybe
-        ( Counter (ExpandedPattern level variable
+        ( Simplifier (ExpandedPattern level Variable
         , SimplificationProof level)
         )
 maybeTransformTerm topTransformers tools childTransformers first second =
@@ -342,8 +337,8 @@ liftExpandedPattern
         (ExpandedPattern level Variable, SimplificationProof level)
     -> FunctionResult
         (Maybe
-            ( Counter
-                ( ExpandedPattern level variable
+            ( Simplifier
+                ( ExpandedPattern level Variable
                 , SimplificationProof level
                 )
             )
@@ -469,7 +464,7 @@ equalInjectiveHeadsAndEquals
     -> PureMLPattern level Variable
     -> FunctionResult
         (Maybe
-            ( Counter (ExpandedPattern level variable
+            ( Simplifier (ExpandedPattern level Variable
             , SimplificationProof level)
             )
         )

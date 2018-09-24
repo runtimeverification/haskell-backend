@@ -40,10 +40,6 @@ import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
                  ( )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
-import           Kore.Variables.Int
-                 ( )
 
 {-|'simplify' simplifies an 'And' of 'OrOfExpandedPattern'.
 
@@ -141,9 +137,9 @@ See the comment for 'simplify' to find more details.
 makeEvaluate
     ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 makeEvaluate
     tools first second
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
@@ -158,9 +154,9 @@ makeEvaluate
 makeEvaluateNonBool
     ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> ExpandedPattern level Variable
+    -> ExpandedPattern level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 makeEvaluateNonBool
     tools
     ExpandedPattern
@@ -203,7 +199,7 @@ makeTermAnd
     ::  ( MetaOrObject level
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Counter (ExpandedPattern level variable, SimplificationProof level)
+    -> PureMLPattern level Variable
+    -> PureMLPattern level Variable
+    -> Simplifier (ExpandedPattern level Variable, SimplificationProof level)
 makeTermAnd = AndTerms.termAnd

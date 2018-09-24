@@ -49,10 +49,7 @@ import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
 import           Kore.Variables.Free
                  ( pureFreeVariables )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
 import Kore.SMT.SMT
-import           Kore.Variables.Fresh
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -220,12 +217,12 @@ substituteTermPredicate
         , Given (MetadataTools level SMTAttributes)
         , Given (SortTools level)
         )
-    => PureMLPattern level variable
-    -> Predicate level variable
-    -> ListSubstitution.Substitution (Unified variable) (PureMLPattern level variable)
-    -> UnificationSubstitution level variable
+    => PureMLPattern level Variable
+    -> Predicate level Variable
+    -> ListSubstitution.Substitution (Unified Variable) (PureMLPattern level Variable)
+    -> UnificationSubstitution level Variable
     -> Simplifier
-        (ExpandedPattern level variable, SimplificationProof level)
+        (ExpandedPattern level Variable, SimplificationProof level)
 substituteTermPredicate term predicate substitution globalSubstitution = do
     substitutedTerm <- substitute term substitution
     substitutedPredicate <-

@@ -47,8 +47,6 @@ import           Kore.Unification.Unifier
                  
 import Kore.SMT.SMT
 
-import           Kore.Variables.Fresh
-
 data ExpandedApplication level variable = ExpandedApplication
     { term         :: !(Application level (PureMLPattern level variable))
     , predicate    :: !(Predicate level variable)
