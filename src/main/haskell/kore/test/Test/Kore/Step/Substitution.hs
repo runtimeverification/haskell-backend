@@ -216,7 +216,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
   where
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+        Mock.makeMetadataTools mockSortTools Mock.attributesMapping []
     normalize
         :: UnificationSubstitution Object Variable
         -> UnificationSubstitution Object Variable

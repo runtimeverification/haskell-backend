@@ -16,7 +16,7 @@ import Data.Maybe
        ( fromMaybe )
 
 import           Kore.AST.Common
-                 ( SymbolOrAlias (..) )
+                 ( SymbolOrAlias (..), Sort )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.IndexedModule.MetadataTools
@@ -31,12 +31,14 @@ import qualified Kore.Step.StepperAttributes as StepperAttributes
 makeMetadataTools
     :: SortTools level
     -> [(SymbolOrAlias level, StepperAttributes)]
+    -> [(Sort level, Sort level)]
     -> MetadataTools level StepperAttributes
-makeMetadataTools sortTools attr =
+makeMetadataTools sortTools attr isSubsortOf =
     MetadataTools
         { symAttributes = attributesFunction attr
         , sortAttributes = const functionAttributes
         , sortTools = sortTools
+        , isSubsortOf = \first second -> (first, second) `elem` isSubsortOf
         }
 
 makeSortTools

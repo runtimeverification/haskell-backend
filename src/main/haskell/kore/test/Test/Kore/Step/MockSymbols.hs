@@ -52,6 +52,10 @@ aSort0Id :: Id Object
 aSort0Id = testId "aSort0"
 aSort1Id :: Id Object
 aSort1Id = testId "aSort1"
+aSubsortId :: Id Object
+aSubsortId = testId "aSubSubsort"
+aSubSubsortId :: Id Object
+aSubSubsortId = testId "aSubSubsort"
 bId :: Id Object
 bId = testId "b"
 bSort0Id :: Id Object
@@ -82,6 +86,12 @@ chId :: Id Object
 chId = testId "ch"
 plain00Id :: Id Object
 plain00Id = testId "plain00"
+plain00Sort0Id :: Id Object
+plain00Sort0Id = testId "plain00Sort0"
+plain00SubsortId :: Id Object
+plain00SubsortId = testId "plain00Subsort"
+plain00SubSubsortId :: Id Object
+plain00SubSubsortId = testId "plain00SubSubsort"
 plain10Id :: Id Object
 plain10Id = testId "plain10"
 plain11Id :: Id Object
@@ -128,6 +138,16 @@ aSort0Symbol = SymbolOrAlias
 aSort1Symbol :: SymbolOrAlias Object
 aSort1Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = aSort1Id
+    , symbolOrAliasParams      = []
+    }
+aSubsortSymbol :: SymbolOrAlias Object
+aSubsortSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = aSubsortId
+    , symbolOrAliasParams      = []
+    }
+aSubSubsortSymbol :: SymbolOrAlias Object
+aSubSubsortSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = aSubSubsortId
     , symbolOrAliasParams      = []
     }
 bSymbol :: SymbolOrAlias Object
@@ -203,6 +223,21 @@ chSymbol = SymbolOrAlias
 plain00Symbol :: SymbolOrAlias Object
 plain00Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = plain00Id
+    , symbolOrAliasParams      = []
+    }
+plain00Sort0Symbol :: SymbolOrAlias Object
+plain00Sort0Symbol = SymbolOrAlias
+    { symbolOrAliasConstructor = plain00Sort0Id
+    , symbolOrAliasParams      = []
+    }
+plain00SubsortSymbol :: SymbolOrAlias Object
+plain00SubsortSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = plain00SubsortId
+    , symbolOrAliasParams      = []
+    }
+plain00SubSubsortSymbol :: SymbolOrAlias Object
+plain00SubSubsortSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = plain00SubSubsortId
     , symbolOrAliasParams      = []
     }
 plain10Symbol :: SymbolOrAlias Object
@@ -290,6 +325,26 @@ sortInjection11Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [testSort1, testSort]
     }
+sortInjection0ToTopSymbol :: SymbolOrAlias Object
+sortInjection0ToTopSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = sortInjectionId
+    , symbolOrAliasParams      = [testSort0, topSort]
+    }
+sortInjectionSubToTopSymbol :: SymbolOrAlias Object
+sortInjectionSubToTopSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = sortInjectionId
+    , symbolOrAliasParams      = [subSort, topSort]
+    }
+sortInjectionSubSubToTopSymbol :: SymbolOrAlias Object
+sortInjectionSubSubToTopSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = sortInjectionId
+    , symbolOrAliasParams      = [subSubSort, topSort]
+    }
+sortInjectionSubSubToSubSymbol :: SymbolOrAlias Object
+sortInjectionSubSubToSubSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = sortInjectionId
+    , symbolOrAliasParams      = [subSubSort, subSort]
+    }
 
 x :: Variable Object
 x = Variable (testId "x") testSort
@@ -311,6 +366,16 @@ aSort1
     :: Given (SortTools Object)
     => PureMLPattern Object variable
 aSort1 = mkApp aSort1Symbol []
+
+aSubsort
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable
+aSubsort = mkApp aSubsortSymbol []
+
+aSubSubsort
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable
+aSubSubsort = mkApp aSubSubsortSymbol []
 
 b   :: Given (SortTools Object)
     => PureMLPattern Object variable
@@ -376,6 +441,21 @@ plain00
     :: Given (SortTools Object)
     => PureMLPattern Object variable
 plain00 = mkApp plain00Symbol []
+
+plain00Sort0
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable
+plain00Sort0 = mkApp plain00Sort0Symbol []
+
+plain00Subsort
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable
+plain00Subsort = mkApp plain00SubsortSymbol []
+
+plain00SubSubsort
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable
+plain00SubSubsort = mkApp plain00SubSubsortSymbol []
 
 plain10
     :: Given (SortTools Object)
@@ -480,6 +560,30 @@ sortInjection11
     -> PureMLPattern Object variable
 sortInjection11 arg = mkApp sortInjection11Symbol [arg]
 
+sortInjection0ToTop
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+sortInjection0ToTop arg = mkApp sortInjection0ToTopSymbol [arg]
+
+sortInjectionSubToTop
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+sortInjectionSubToTop arg = mkApp sortInjectionSubToTopSymbol [arg]
+
+sortInjectionSubSubToTop
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+sortInjectionSubSubToTop arg = mkApp sortInjectionSubSubToTopSymbol [arg]
+
+sortInjectionSubSubToSub
+    :: Given (SortTools Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+sortInjectionSubSubToSub arg = mkApp sortInjectionSubSubToSubSymbol [arg]
+
 sortToolsMapping :: [(SymbolOrAlias Object, ApplicationSorts Object)]
 sortToolsMapping =
     [   ( aSymbol
@@ -498,6 +602,18 @@ sortToolsMapping =
         , ApplicationSorts
             { applicationSortsOperands = []
             , applicationSortsResult = testSort1
+            }
+        )
+    ,   ( aSubsortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult = subSort
+            }
+        )
+    ,   ( aSubSubsortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult = subSubSort
             }
         )
     ,   ( bSymbol
@@ -588,6 +704,24 @@ sortToolsMapping =
         , ApplicationSorts
             { applicationSortsOperands = []
             , applicationSortsResult = testSort
+            }
+        )
+    ,   ( plain00Sort0Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult = testSort0
+            }
+        )
+    ,   ( plain00SubsortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult = subSort
+            }
+        )
+    ,   ( plain00SubSubsortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult = subSubSort
             }
         )
     ,   ( plain10Symbol
@@ -692,6 +826,30 @@ sortToolsMapping =
             , applicationSortsResult = testSort
             }
         )
+    ,   ( sortInjection0ToTopSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort0]
+            , applicationSortsResult = topSort
+            }
+        )
+    ,   ( sortInjectionSubToTopSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [subSort]
+            , applicationSortsResult = topSort
+            }
+        )
+    ,   ( sortInjectionSubSubToTopSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [subSubSort]
+            , applicationSortsResult = topSort
+            }
+        )
+    ,   ( sortInjectionSubSubToSubSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [subSubSort]
+            , applicationSortsResult = subSort
+            }
+        )
     ]
 
 attributesMapping :: [(SymbolOrAlias Object, StepperAttributes)]
@@ -703,6 +861,12 @@ attributesMapping =
         , Mock.constructorFunctionalAttributes
         )
     ,   ( aSort1Symbol
+        , Mock.constructorFunctionalAttributes
+        )
+    ,   ( aSubsortSymbol
+        , Mock.constructorFunctionalAttributes
+        )
+    ,   ( aSubSubsortSymbol
         , Mock.constructorFunctionalAttributes
         )
     ,   ( bSymbol
@@ -748,6 +912,15 @@ attributesMapping =
         , Mock.functionAttributes
         )
     ,   ( plain00Symbol
+        , Mock.defaultAttributes
+        )
+    ,   ( plain00Sort0Symbol
+        , Mock.defaultAttributes
+        )
+    ,   ( plain00SubsortSymbol
+        , Mock.defaultAttributes
+        )
+    ,   ( plain00SubSubsortSymbol
         , Mock.defaultAttributes
         )
     ,   ( plain10Symbol
@@ -798,7 +971,19 @@ attributesMapping =
     ,   ( sortInjection10Symbol
         , Mock.sortInjectionAttributes
         )
-    ,   ( sortInjection10Symbol
+    ,   ( sortInjection11Symbol
+        , Mock.sortInjectionAttributes
+        )
+    ,   ( sortInjection0ToTopSymbol
+        , Mock.sortInjectionAttributes
+        )
+    ,   ( sortInjectionSubToTopSymbol
+        , Mock.sortInjectionAttributes
+        )
+    ,   ( sortInjectionSubSubToTopSymbol
+        , Mock.sortInjectionAttributes
+        )
+    ,   ( sortInjectionSubSubToSubSymbol
         , Mock.sortInjectionAttributes
         )
     ]
@@ -823,3 +1008,27 @@ testSort1 =
         { sortActualName  = testId "testSort1"
         , sortActualSorts = []
         }
+
+topSort :: Sort Object
+topSort =
+    SortActualSort SortActual
+        { sortActualName  = testId "topSort"
+        , sortActualSorts = []
+        }
+
+subSort :: Sort Object
+subSort =
+    SortActualSort SortActual
+        { sortActualName  = testId "subSort"
+        , sortActualSorts = []
+        }
+
+subSubSort :: Sort Object
+subSubSort =
+    SortActualSort SortActual
+        { sortActualName  = testId "subSubSort"
+        , sortActualSorts = []
+        }
+
+subsorts :: [(Sort Object, Sort Object)]
+subsorts = [(subSubSort, subSort), (subSubSort, topSort), (subSort, topSort)]
