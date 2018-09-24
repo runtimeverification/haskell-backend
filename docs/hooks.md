@@ -168,3 +168,59 @@ the result is `\dv{Bool{}}("false")`.
     hooked-symbol inKeys{}(Map{}, Key{}) : Bool{}
         [hook{}("MAP.in_keys")]
 ~~~
+
+## LIST
+
+Depends on `INT`.
+
+The sort of list elements is arbitrary, but must be consistent between symbol
+declarations. The sort consistency of hooked symbols is *not* checked. The
+element sort is referred to as `Elem{}` below.
+
+### LIST.List
+
+The builtin sort of associative lists.
+
+~~~
+    hooked-sort List{}
+        [hook{}("LIST.List")]
+~~~
+
+### LIST.unit
+
+The empty list.
+
+~~~
+    hooked-symbol unit{}() : List{}
+        [hook{}("LIST.unit")]
+~~~
+
+### LIST.element
+
+The singleton list.
+
+~~~
+    hooked-symbol element{}(Elem{}) : List{}
+        [hook{}("LIST.element")]
+~~~
+
+### LIST.concat
+
+Concatenate both arguments.
+
+~~~
+    hooked-symbol concat{}(List{}, List{}) : List{}
+        [hook{}("LIST.concat")]
+~~~
+
+### LIST.get
+
+Get an element from the list by index. Positive indices count from the beginning
+of the list and negative indices count from the end. The first element is
+`\dv{Int{}}("0")` and the last element is `\dv{Int{}}("1")`. The result is
+`\bottom{}()` if the index is out-of-bounds.
+
+~~~
+    hooked-symbol get{}(List{}, Int{}) : Elem{}
+        [hook{}("LIST.concat")]
+~~~
