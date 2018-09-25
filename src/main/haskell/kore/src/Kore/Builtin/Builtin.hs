@@ -577,7 +577,8 @@ lookupSymbol
     -> Either (Error e) (SymbolOrAlias Object)
 lookupSymbol builtinName indexedModule
   = do
-    symbolOrAliasConstructor <- IndexedModule.resolveHook indexedModule builtinName
+    symbolOrAliasConstructor <-
+        IndexedModule.resolveHook indexedModule builtinName
     _ <- IndexedModule.resolveSymbol indexedModule symbolOrAliasConstructor
     return SymbolOrAlias
         { symbolOrAliasConstructor
