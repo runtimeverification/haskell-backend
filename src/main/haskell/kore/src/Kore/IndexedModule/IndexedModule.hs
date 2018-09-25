@@ -586,7 +586,9 @@ indexModuleObjectSentence
                         { sentenceSymbolSymbol = Symbol
                             { symbolConstructor = Id
                                 { getId = metaNameForObjectSort (getId sentenceSortName)
-                                , idLocation = AstLocationLifted (idLocation sentenceSortName)
+                                , idLocation =
+                                    AstLocationLifted
+                                        (idLocation sentenceSortName)
                                 }
                             , symbolParams = []
                             }
