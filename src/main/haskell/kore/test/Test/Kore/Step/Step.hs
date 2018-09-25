@@ -490,7 +490,6 @@ mockMetadataTools = MetadataTools
     , isSubsortOf = const $ const False
     }
 
-
 sigmaSymbol :: SymbolOrAlias Meta
 sigmaSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#sigma" AstLocationTest

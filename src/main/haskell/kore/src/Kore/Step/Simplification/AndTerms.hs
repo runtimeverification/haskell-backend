@@ -15,15 +15,14 @@ module Kore.Step.Simplification.AndTerms
 
 import Control.Exception
        ( assert )
-import Data.Functor.Foldable
-       ( project )
 import Data.Maybe
        ( fromMaybe )
 import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain (..), SortedVariable, SymbolOrAlias (..), Sort )
+                 ( BuiltinDomain (..), Sort, SortedVariable,
+                 SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )

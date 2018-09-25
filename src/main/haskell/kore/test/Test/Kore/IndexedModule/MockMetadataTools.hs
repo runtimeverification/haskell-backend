@@ -16,7 +16,7 @@ import Data.Maybe
        ( fromMaybe )
 
 import           Kore.AST.Common
-                 ( SymbolOrAlias (..), Sort )
+                 ( Sort, SymbolOrAlias (..) )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.IndexedModule.MetadataTools
