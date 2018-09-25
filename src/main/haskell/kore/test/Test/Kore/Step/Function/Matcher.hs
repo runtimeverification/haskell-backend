@@ -16,7 +16,7 @@ import Data.Reflection
 import           Control.Monad.Counter
                  ( runCounter )
 import           Kore.AST.Common
-                 ( CharLiteral (..), StringLiteral (..) )
+                 ( BuiltinDomain (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern )
@@ -128,8 +128,8 @@ test_matcherEqualHeads = give mockSortTools
                 }
             )
             (match mockMetaMetadataTools
-                (mkCharLiteral (CharLiteral 'a'))
-                (mkCharLiteral (CharLiteral 'a'))
+                (mkCharLiteral 'a')
+                (mkCharLiteral 'a')
             )
         )
     , testCase "DomainValue"
@@ -141,10 +141,10 @@ test_matcherEqualHeads = give mockSortTools
             )
             (match mockMetadataTools
                 (mkDomainValue Mock.testSort1
-                    (mkStringLiteral (StringLiteral "10"))
+                    (BuiltinDomainPattern  (mkStringLiteral "10"))
                 )
                 (mkDomainValue Mock.testSort1
-                    (mkStringLiteral (StringLiteral "10"))
+                    (BuiltinDomainPattern (mkStringLiteral "10"))
                 )
             )
         )
@@ -288,8 +288,8 @@ test_matcherEqualHeads = give mockSortTools
                 }
             )
             (match mockMetaMetadataTools
-                (mkStringLiteral (StringLiteral "10"))
-                (mkStringLiteral (StringLiteral "10"))
+                (mkStringLiteral "10")
+                (mkStringLiteral "10")
             )
         )
     , testCase "Top"

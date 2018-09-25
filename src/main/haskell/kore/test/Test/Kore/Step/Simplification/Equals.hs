@@ -13,8 +13,8 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( AstLocation (..), BuiltinDomain (..), CharLiteral (..), Equals (..), Id (..),
-                 Sort (..), SortActual (..), StringLiteral (..) )
+                 ( AstLocation (..), BuiltinDomain (..), Equals (..), Id (..),
+                 Sort (..), SortActual (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern )
@@ -254,11 +254,11 @@ test_equalsSimplification_Patterns = give mockSortTools
                 }
             (mkDomainValue
                 testSort
-                (mkStringLiteral (StringLiteral "a"))
+                (BuiltinDomainPattern (mkStringLiteral "a"))
             )
             (mkDomainValue
                 testSort
-                (mkStringLiteral (StringLiteral "a"))
+                (BuiltinDomainPattern (mkStringLiteral "a"))
             )
         )
     , testCase "domain-value != domain-value"
@@ -270,11 +270,11 @@ test_equalsSimplification_Patterns = give mockSortTools
                 }
             (mkDomainValue
                 testSort
-                (mkStringLiteral (StringLiteral "a"))
+                (BuiltinDomainPattern (mkStringLiteral "a"))
             )
             (mkDomainValue
                 testSort
-                (mkStringLiteral (StringLiteral "b"))
+                (BuiltinDomainPattern (mkStringLiteral "b"))
             )
         )
     , testCase "domain-value != domain-value because of sorts"
@@ -286,11 +286,11 @@ test_equalsSimplification_Patterns = give mockSortTools
                 }
             (mkDomainValue
                 testSort
-                (mkStringLiteral (StringLiteral "a"))
+                (BuiltinDomainPattern (mkStringLiteral "a"))
             )
             (mkDomainValue
                 testSort2
-                (mkStringLiteral (StringLiteral "a"))
+                (BuiltinDomainPattern (mkStringLiteral "a"))
             )
         )
     , testCase "\"a\" == \"a\""
@@ -300,8 +300,8 @@ test_equalsSimplification_Patterns = give mockSortTools
                 { predicate = makeTruePredicate
                 , substitution = []
                 }
-            (mkStringLiteral (StringLiteral "a"))
-            (mkStringLiteral (StringLiteral "a"))
+            (mkStringLiteral "a")
+            (mkStringLiteral "a")
         )
     , testCase "\"a\" != \"b\""
         (assertTermEqualsGeneric
@@ -310,8 +310,8 @@ test_equalsSimplification_Patterns = give mockSortTools
                 { predicate = makeFalsePredicate
                 , substitution = []
                 }
-            (mkStringLiteral (StringLiteral "a"))
-            (mkStringLiteral (StringLiteral "b"))
+            (mkStringLiteral "a")
+            (mkStringLiteral "b")
         )
     , testCase "'a' == 'a'"
         (assertTermEqualsGeneric
@@ -320,8 +320,8 @@ test_equalsSimplification_Patterns = give mockSortTools
                 { predicate = makeTruePredicate
                 , substitution = []
                 }
-            (mkCharLiteral (CharLiteral 'a'))
-            (mkCharLiteral (CharLiteral 'a'))
+            (mkCharLiteral 'a')
+            (mkCharLiteral 'a')
         )
     , testCase "'a' != 'b'"
         (assertTermEqualsGeneric
@@ -330,8 +330,8 @@ test_equalsSimplification_Patterns = give mockSortTools
                 { predicate = makeFalsePredicate
                 , substitution = []
                 }
-            (mkCharLiteral (CharLiteral 'a'))
-            (mkCharLiteral (CharLiteral 'b'))
+            (mkCharLiteral 'a')
+            (mkCharLiteral 'b')
         )
     , testCase "a != bottom"
         (assertTermEquals

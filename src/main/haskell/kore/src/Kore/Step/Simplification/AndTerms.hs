@@ -23,7 +23,7 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain(..), SortedVariable )
+                 ( BuiltinDomain (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
