@@ -158,18 +158,15 @@ verifyMetaSentence
   =
     withSentenceContext sentence verifyMetaSentence0
   where
-    findSort = fmap getIndexedSentence . resolveSort indexedModule
     verifyMetaSentence0 =
         case sentence of
             SentenceSymbolSentence symbolSentence ->
                 verifySymbolSentence
-                    findSort
                     indexedModule
                     attributesVerification
                     symbolSentence
             SentenceAliasSentence aliasSentence ->
                 verifyAliasSentence
-                    findSort
                     builtinVerifiers
                     indexedModule
                     attributesVerification
@@ -210,19 +207,16 @@ verifyObjectSentence
   =
     withSentenceContext sentence verifyObjectSentence1
   where
-    findSort = fmap getIndexedSentence . resolveSort indexedModule
     verifyObjectSentence1 =
         case sentence of
             SentenceAliasSentence aliasSentence ->
                 verifyAliasSentence
-                    findSort
                     builtinVerifiers
                     indexedModule
                     attributesVerification
                     aliasSentence
             SentenceSymbolSentence symbolSentence ->
                 verifySymbolSentence
-                    findSort
                     indexedModule
                     attributesVerification
                     symbolSentence
@@ -250,8 +244,6 @@ verifyHookSentence
         SentenceHookedSort s -> verifyHookedSort s
         SentenceHookedSymbol s -> verifyHookedSymbol s
   where
-    findSort = fmap getIndexedSentence . resolveSort indexedModule
-
     verifyHookedSort
         sentence@SentenceSort { sentenceSortAttributes }
       = do
@@ -267,11 +259,7 @@ verifyHookSentence
     verifyHookedSymbol
         sentence@SentenceSymbol { sentenceSymbolAttributes }
       = do
-        verifySymbolSentence
-            findSort
-            indexedModule
-            attributesVerification
-            sentence
+        verifySymbolSentence indexedModule attributesVerification sentence
         hook <-
             verifyHookAttribute
                 indexedModule
@@ -280,49 +268,50 @@ verifyHookSentence
         Builtin.symbolVerifier builtinVerifiers hook findSort sentence
         return (VerifySuccess ())
 
+    findSort = findIndexedSort indexedModule
+
 verifySymbolSentence
     :: (MetaOrObject level)
-    => (Id level -> Either (Error VerifyError) (SortDescription level))
-    -> KoreIndexedModule atts
+    => KoreIndexedModule atts
     -> AttributesVerification atts
     -> KoreSentenceSymbol level
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolSentence
-    findSortDeclaration _ attributesVerification sentence
+    indexedModule attributesVerification sentence
   =
     do
         variables <- buildDeclaredSortVariables sortParams
         mapM_
-            (verifySort findSortDeclaration variables)
+            (verifySort findSort variables)
             (sentenceSymbolSorts sentence)
         verifySort
-            findSortDeclaration
+            findSort
             variables
             (sentenceSymbolResultSort sentence)
         verifyAttributes
             (sentenceSymbolAttributes sentence)
             attributesVerification
   where
+    findSort = findIndexedSort indexedModule
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
 verifyAliasSentence
     :: (MetaOrObject level)
-    => (Id level -> Either (Error VerifyError) (SortDescription level))
-    -> Builtin.Verifiers
+    => Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
     -> KoreSentenceAlias level
     -> Either (Error VerifyError) VerifySuccess
 verifyAliasSentence
-    findSortDeclaration builtinVerifiers indexedModule attributesVerification sentence
+    builtinVerifiers indexedModule attributesVerification sentence
   =
     do
         variables <- buildDeclaredSortVariables sortParams
         mapM_
-            (verifySort findSortDeclaration variables)
+            (verifySort findSort variables)
             (sentenceAliasSorts sentence)
         verifySort
-            findSortDeclaration
+            findSort
             variables
             (sentenceAliasResultSort sentence)
         if leftPatternSort == rightPatternSort
@@ -346,6 +335,7 @@ verifyAliasSentence
             (sentenceAliasAttributes sentence)
             attributesVerification
   where
+    findSort         = findIndexedSort indexedModule
     sortParams       = (aliasParams . sentenceAliasAlias) sentence
     leftPatternSort  = patternSort leftPattern
     rightPatternSort = patternSort rightPattern
