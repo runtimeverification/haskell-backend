@@ -76,7 +76,13 @@ parseCommand pIx pFormula pDerivation
 
 --------------
 -- Printing --
-instance (Pretty ix, Unparse formula, Pretty (rule ix)) => Pretty (Command ix rule formula) where
+instance
+    ( Pretty ix
+    , Pretty (rule ix)
+    , Unparse formula
+    ) =>
+    Pretty (Command ix rule formula)
+  where
     pretty =
         \case
             Add ix formula ->
