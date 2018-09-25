@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 {-|
 Module      : Kore.Unification.SubstitutionNormalization
 Description : Normalization for substitutions resulting from unification, so
@@ -28,10 +29,12 @@ import           Data.Graph.TopologicalSort
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
+import           Kore.ASTUtils.SmartPatterns
+                 ( pattern Var_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (..) )
 import           Kore.Step.StepperAttributes
@@ -43,10 +46,7 @@ import           Kore.Unification.Error
 import           Kore.Unification.UnifierImpl
                  ( UnificationSubstitution )
 import           Kore.Variables.Free
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
-import           Kore.Variables.Int
-                 ( IntVariable )
+import           Kore.Variables.Fresh
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
 in which no variable that occurs on the left hand side also occurs on the
@@ -54,40 +54,66 @@ right side.
 
 Returns an error when the substitution is not normalizable (i.e. it contains
 x = f(x) or something equivalent).
-
-Also returns an error when the substitution contains x = x, although that
-should be solvable.
 -}
 normalizeSubstitution
-    ::  ( MetaOrObject level
+    ::  forall m level variable
+     .  ( MetaOrObject level
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
+        , MonadCounter m
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
         (SubstitutionError level variable)
-        (IntCounter (PredicateSubstitution level variable))
-normalizeSubstitution tools substitution = do
-    sorted <- topologicalSortConverted
-    let
-        sortedSubstitution =
-            map (variableToSubstitution variableToPattern) sorted
-    return $ normalizeSortedSubstitution sortedSubstitution [] []
+        (m (PredicateSubstitution level variable))
+normalizeSubstitution tools substitution =
+    maybe bottom normalizeSortedSubstitution' <$> topologicalSortConverted
+
   where
+    interestingVariables :: Map.Map (Unified variable) (variable level)
     interestingVariables = extractVariables substitution
+
+    variableToPattern :: Map.Map (variable level) (PureMLPattern level variable)
     variableToPattern = Map.fromList substitution
+
+    dependencies :: Map.Map (variable level) [variable level]
     dependencies = buildDependencies substitution interestingVariables
+
+    -- | Do a `topologicalSort` of variables using the `dependencies` Map.
+    -- Topological cycles with non-ctors are returned as Left errors.
+    -- Constructor cycles are returned as Right Nothing.
+    topologicalSortConverted
+        :: Either
+            (SubstitutionError level variable)
+            (Maybe [variable level])
     topologicalSortConverted =
         case topologicalSort dependencies of
             Left (ToplogicalSortCycles vars) -> do
                 checkCircularVariableDependency tools substitution vars
-                return (error "This should be unreachable")
-            Right result -> Right result
+                Right Nothing
+            Right result -> Right $ Just result
+
+    sortedSubstitution
+        :: [variable level]
+        -> [(variable level, PureMLPattern level variable)]
+    sortedSubstitution = fmap (variableToSubstitution variableToPattern)
+
+    normalizeSortedSubstitution'
+        :: [variable level]
+        -> m (PredicateSubstitution level variable)
+    normalizeSortedSubstitution' s =
+        normalizeSortedSubstitution (sortedSubstitution s) [] []
+
+    bottom :: m (PredicateSubstitution level variable)
+    bottom = return $ PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
 
 checkCircularVariableDependency
     :: (MetaOrObject level, Eq (variable level))
@@ -95,14 +121,13 @@ checkCircularVariableDependency
     -> UnificationSubstitution level variable
     -> [variable level]
     -> Either (SubstitutionError level variable) ()
-checkCircularVariableDependency tools substitution vars = do
+checkCircularVariableDependency tools substitution vars =
     traverse_
         ( checkThatApplicationUsesConstructors
             tools (NonCtorCircularVariableDependency vars)
         . (`lookup` substitution)
         )
         vars
-    Left (CtorCircularVariableDependency vars)
 
 checkThatApplicationUsesConstructors
     :: (MetaOrObject level)
@@ -141,15 +166,17 @@ variableToSubstitution varToPattern var =
 
 normalizeSortedSubstitution
     ::  ( MetaOrObject level
+        , Eq (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , MonadCounter m
+        , FreshVariable variable
         )
     => UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> [(Unified variable, PureMLPattern level variable)]
-    -> IntCounter (PredicateSubstitution level variable)
+    -> m (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
     return PredicateSubstitution
         { predicate = makeTruePredicate
@@ -159,13 +186,18 @@ normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result
     substitution
-  = do
-    substitutedVarPattern <-
-        substitute varPattern (ListSubstitution.fromList substitution)
-    normalizeSortedSubstitution
-        unprocessed
-        ((var, substitutedVarPattern) : result)
-        ((asUnified var, substitutedVarPattern) : substitution)
+  = if eqVar varPattern
+      then normalizeSortedSubstitution unprocessed result substitution
+      else do
+            substitutedVarPattern <-
+                substitute varPattern (ListSubstitution.fromList substitution)
+            normalizeSortedSubstitution
+                unprocessed
+                ((var, substitutedVarPattern) : result)
+                ((asUnified var, substitutedVarPattern) : substitution)
+    where
+        eqVar (Var_ var') = var == var'
+        eqVar _           = False
 
 extractVariables
     ::  ( MetaOrObject level
@@ -197,10 +229,14 @@ buildDependencies
   =
     Map.insert
         var
-        deps
+        deps'
         (buildDependencies reminder interestingVariables)
   where
     deps =
         mapMaybe
             (`Map.lookup` interestingVariables)
             (Set.toList (freeVariables patt))
+    isSameVar = case patt of
+        (Var_ v) -> v == var
+        _        -> False
+    deps' = if isSameVar then [] else deps

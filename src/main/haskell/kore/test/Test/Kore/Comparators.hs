@@ -11,8 +11,6 @@ Portability : portable
 -}
 module Test.Kore.Comparators where
 
-import Data.Functor.Foldable
-       ( Fix )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -181,15 +179,16 @@ instance
     (Eq level, Show level) =>
     SumEqualWithExplanation (StepProof level)
   where
+    sumConstructorPair (StepProof a1) (StepProof a2) =
+        SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
+
+instance
+    (Eq level, Show level) =>
+    SumEqualWithExplanation (StepProofAtom level)
+  where
     sumConstructorPair (StepProofUnification a1) (StepProofUnification a2) =
         SumConstructorSameWithArguments (EqWrap "StepProofUnification" a1 a2)
     sumConstructorPair a1@(StepProofUnification _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (StepProofCombined a1) (StepProofCombined a2) =
-        SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
-    sumConstructorPair a1@(StepProofCombined _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
@@ -210,6 +209,10 @@ instance
     sumConstructorPair a1@(StepProofSimplification _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
+
+instance (Eq level, Show level) => EqualWithExplanation (StepProofAtom level) where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
 
 instance (Eq level, Show level) => EqualWithExplanation (StepProof level) where
     compareWithExplanation = sumCompareWithExplanation
@@ -297,7 +300,7 @@ instance (EqualWithExplanation child, Show child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (DomainValue level (Fix (Pattern Meta Variable)))
+instance EqualWithExplanation (DomainValue level (BuiltinDomain (CommonPurePattern Meta)))
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -371,6 +374,33 @@ instance (Show child, EqualWithExplanation child)
     printWithExplanation = show
 
 instance
+    ( Eq child
+    , Eq (variable level)
+    , Show child
+    , Show (variable level)
+    , EqualWithExplanation child
+    , EqualWithExplanation (variable level)
+    )
+    => StructEqualWithExplanation (Forall level variable child)
+  where
+    structFieldsWithNames
+        expected@(Forall _ _ _)
+        actual@(Forall _ _ _)
+      = [ EqWrap
+            "forallSort = "
+            (forallSort expected)
+            (forallSort actual)
+        , EqWrap
+            "forallVariable = "
+            (forallVariable expected)
+            (forallVariable actual)
+        , EqWrap
+            "forallChild = "
+            (forallChild expected)
+            (forallChild actual)
+        ]
+    structConstructorName _ = "Forall"
+instance
     ( EqualWithExplanation child
     , Eq child
     , Show child
@@ -379,8 +409,9 @@ instance
     , Show (variable level)
     ) => EqualWithExplanation (Forall level variable child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Iff level child)
@@ -605,26 +636,11 @@ instance (Show (variable level), EqualWithExplanation (variable level))
     => SumEqualWithExplanation (SubstitutionError level variable)
   where
     sumConstructorPair
-        (CtorCircularVariableDependency a1) (CtorCircularVariableDependency a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "CtorCircularVariableDependency" a1 a2)
-    sumConstructorPair
-        a1@(CtorCircularVariableDependency _) a2
-      =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-    sumConstructorPair
         (NonCtorCircularVariableDependency a1)
         (NonCtorCircularVariableDependency a2)
       =
         SumConstructorSameWithArguments
             (EqWrap "NonCtorCircularVariableDependency" a1 a2)
-    sumConstructorPair
-        a1@(NonCtorCircularVariableDependency _) a2
-      =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
 
 
 instance (Show (variable level), EqualWithExplanation (variable level))

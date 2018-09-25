@@ -1,19 +1,23 @@
 module Test.Kore.Step.Simplification.Equals
-    ( test_equalsSimplification
+    ( test_equalsSimplification_ExpandedPatterns
+    , test_equalsSimplification_OrOfExpandedPatterns
+    , test_equalsSimplification_Patterns
     ) where
 
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
+       ( HasCallStack, testCase )
 
 import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( AstLocation (..), CharLiteral (..), Equals (..), Id (..),
-                 Sort (..), SortActual (..), StringLiteral (..) )
+                 ( AstLocation (..), BuiltinDomain (..), Equals (..), Id (..),
+                 Sort (..), SortActual (..) )
 import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkCharLiteral, mkDomainValue, mkStringLiteral,
                  mkStringLiteral, mkTop, mkVar )
@@ -21,14 +25,20 @@ import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SortTools )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeIffPredicate, makeNotPredicate, makeOrPredicate,
-                 makeTruePredicate )
+                 ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
+                 makeEqualsPredicate, makeFalsePredicate, makeIffPredicate,
+                 makeNotPredicate, makeOrPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
+                 ( CommonExpandedPattern, CommonPredicateSubstitution,
+                 ExpandedPattern (ExpandedPattern),
+                 PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..), bottom, top )
+import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -36,7 +46,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
-                 ( makeEvaluate, simplify )
+                 ( makeEvaluate, makeEvaluateTermsToPredicateSubstitution,
+                 simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -46,9 +57,9 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-test_equalsSimplification :: [TestTree]
-test_equalsSimplification = give mockSortTools
-    [ testCase "bottom == bottom for Or patterns"
+test_equalsSimplification_OrOfExpandedPatterns :: [TestTree]
+test_equalsSimplification_OrOfExpandedPatterns = give mockSortTools
+    [ testCase "bottom == bottom"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make [ ExpandedPattern.top ])
             (evaluateOr
@@ -61,7 +72,7 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "a == a for Or patterns"
+    , testCase "a == a"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make [ ExpandedPattern.top ])
             (evaluateOr
@@ -86,7 +97,7 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "a != bottom for Or patterns"
+    , testCase "a != bottom"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make [])
             (evaluateOr
@@ -105,7 +116,7 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "f(a) vs g(a) for or patterns"
+    , testCase "f(a) vs g(a)"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
@@ -137,356 +148,11 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "bottom == bottom for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ ExpandedPattern.top ])
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern.bottom
-                ExpandedPattern.bottom
-            )
-        )
-    , testCase "domain-value == domain-value for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ ExpandedPattern.top ])
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term =
-                        mkDomainValue
-                            testSort
-                            (mkStringLiteral (StringLiteral "a"))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term =
-                        mkDomainValue
-                            testSort
-                            (mkStringLiteral (StringLiteral "a"))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "domain-value != domain-value for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [])
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term =
-                        mkDomainValue
-                            testSort
-                            (mkStringLiteral (StringLiteral "a"))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term =
-                        mkDomainValue
-                            testSort
-                            (mkStringLiteral (StringLiteral "b"))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "domain-value != domain-value because of sorts for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [])
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term =
-                        mkDomainValue
-                            testSort
-                            (mkStringLiteral (StringLiteral "a"))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term =
-                        mkDomainValue
-                            testSort2
-                            (mkStringLiteral (StringLiteral "a"))
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "\"a\" == \"a\" for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ ExpandedPattern.top ])
-            (evaluateGeneric
-                mockMetaMetadataTools
-                ExpandedPattern
-                    { term = mkStringLiteral (StringLiteral "a")
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = mkStringLiteral (StringLiteral "a")
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "\"a\" != \"b\" for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [])
-            (evaluateGeneric
-                mockMetaMetadataTools
-                ExpandedPattern
-                    { term = mkStringLiteral (StringLiteral "a")
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = mkStringLiteral (StringLiteral "b")
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "'a' == 'a' for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ ExpandedPattern.top ])
-            (evaluateGeneric
-                mockMetaMetadataTools
-                ExpandedPattern
-                    { term = mkCharLiteral (CharLiteral 'a')
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = mkCharLiteral (CharLiteral 'a')
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "'a' != 'b' for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [])
-            (evaluateGeneric
-                mockMetaMetadataTools
-                ExpandedPattern
-                    { term = mkCharLiteral (CharLiteral 'a')
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = mkCharLiteral (CharLiteral 'b')
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "a != bottom for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [])
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern.bottom
-                ExpandedPattern
-                    { term = Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "a == a for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ ExpandedPattern.top ])
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "f(a) vs g(a) for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = fOfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = gOfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "constructor1(a) vs constructor1(a) for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern.top ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = constructor1OfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = constructor1OfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase
-        "functionalconstructor1(a) vs functionalconstructor2(a) for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                []
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = functionalConstructor1OfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = functionalConstructor2OfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "constructor1(a) vs constructor2(a) for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate =
-                        fst $ makeAndPredicate
-                            (fst $ makeNotPredicate
-                                (makeCeilPredicate constructor1OfA)
-                            )
-                            (fst $ makeNotPredicate
-                                (makeCeilPredicate constructor2OfA)
-                            )
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = constructor1OfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = constructor2OfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "constructor1(f(a)) vs constructor1(f(a)) for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = Mock.constr10 fOfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = Mock.constr10 fOfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "sigma(f(a), f(b)) vs sigma(g(a), g(b)) for patterns"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate =
-                        fst $ makeOrPredicate
-                            (fst $ makeAndPredicate
-                                (fst $ makeAndPredicate
-                                    (makeEqualsPredicate fOfA gOfA)
-                                    (makeEqualsPredicate fOfB gOfB)
-                                )
-                                (fst $ makeAndPredicate
-                                    (fst $ makeAndPredicate
-                                        (makeCeilPredicate fOfA)
-                                        (makeCeilPredicate fOfB)
-                                    )
-                                    (fst $ makeAndPredicate
-                                        (makeCeilPredicate gOfA)
-                                        (makeCeilPredicate gOfB)
-                                    )
-                                )
-                            )
-                            (fst $ makeAndPredicate
-                                (fst $ makeNotPredicate
-                                    (fst $ makeAndPredicate
-                                        (makeCeilPredicate fOfA)
-                                        (makeCeilPredicate fOfB)
-                                    )
-                                )
-                                (fst $ makeNotPredicate
-                                    (fst $ makeAndPredicate
-                                        (makeCeilPredicate gOfA)
-                                        (makeCeilPredicate gOfB)
-                                    )
-                                )
-                            )
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = Mock.functionalConstr20 fOfA fOfB
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = Mock.functionalConstr20 gOfA gOfB
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
-        )
-    , testCase "predicate-substitution vs predicate-substitution for patterns"
+    ]
+
+test_equalsSimplification_ExpandedPatterns :: [TestTree]
+test_equalsSimplification_ExpandedPatterns = give mockSortTools
+    [ testCase "predicate-substitution vs predicate-substitution"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
@@ -513,7 +179,7 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
-    , testCase "constructor-patt vs constructor-patt for patterns"
+    , testCase "constructor-patt vs constructor-patt"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
@@ -565,198 +231,412 @@ test_equalsSimplification = give mockSortTools
                     }
             )
         )
+    ]
+
+test_equalsSimplification_Patterns :: [TestTree]
+test_equalsSimplification_Patterns = give mockSortTools
+    [ testCase "bottom == bottom"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = []
+                }
+            mkBottom
+            mkBottom
+        )
+    , testCase "domain-value == domain-value"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = []
+                }
+            (mkDomainValue
+                testSort
+                (BuiltinDomainPattern (mkStringLiteral "a"))
+            )
+            (mkDomainValue
+                testSort
+                (BuiltinDomainPattern (mkStringLiteral "a"))
+            )
+        )
+    , testCase "domain-value != domain-value"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
+            (mkDomainValue
+                testSort
+                (BuiltinDomainPattern (mkStringLiteral "a"))
+            )
+            (mkDomainValue
+                testSort
+                (BuiltinDomainPattern (mkStringLiteral "b"))
+            )
+        )
+    , testCase "domain-value != domain-value because of sorts"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
+            (mkDomainValue
+                testSort
+                (BuiltinDomainPattern (mkStringLiteral "a"))
+            )
+            (mkDomainValue
+                testSort2
+                (BuiltinDomainPattern (mkStringLiteral "a"))
+            )
+        )
+    , testCase "\"a\" == \"a\""
+        (assertTermEqualsGeneric
+            mockMetaMetadataTools
+            PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = []
+                }
+            (mkStringLiteral "a")
+            (mkStringLiteral "a")
+        )
+    , testCase "\"a\" != \"b\""
+        (assertTermEqualsGeneric
+            mockMetaMetadataTools
+            PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
+            (mkStringLiteral "a")
+            (mkStringLiteral "b")
+        )
+    , testCase "'a' == 'a'"
+        (assertTermEqualsGeneric
+            mockMetaMetadataTools
+            PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = []
+                }
+            (mkCharLiteral 'a')
+            (mkCharLiteral 'a')
+        )
+    , testCase "'a' != 'b'"
+        (assertTermEqualsGeneric
+            mockMetaMetadataTools
+            PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
+            (mkCharLiteral 'a')
+            (mkCharLiteral 'b')
+        )
+    , testCase "a != bottom"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
+            mkBottom
+            Mock.a
+        )
+    , testCase "a == a"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = []
+                }
+            Mock.a
+            Mock.a
+        )
+    , testCase "f(a) vs g(a)"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeEqualsPredicate fOfA gOfA
+                , substitution = []
+                }
+            fOfA
+            gOfA
+        )
+    , testCase "constructor1(a) vs constructor1(a)"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = []
+                }
+            constructor1OfA
+            constructor1OfA
+        )
+    , testCase
+        "functionalconstructor1(a) vs functionalconstructor2(a)"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
+            functionalConstructor1OfA
+            functionalConstructor2OfA
+        )
+    , testCase "constructor1(a) vs constructor2(a)"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
+            constructor1OfA
+            constructor2OfA
+        )
+    , testCase "constructor1(f(a)) vs constructor1(f(a))"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = []
+                }
+            (Mock.constr10 fOfA)
+            (Mock.constr10 fOfA)
+        )
+    , testCase "sigma(f(a), f(b)) vs sigma(g(a), g(b))"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate =
+                    fst $ makeOrPredicate
+                        (fst $ makeAndPredicate
+                            (makeEqualsPredicate fOfA gOfA)
+                            (makeEqualsPredicate fOfB gOfB)
+                        )
+                        (fst $ makeAndPredicate
+                            (fst $ makeNotPredicate
+                                (fst $ makeAndPredicate
+                                    (makeCeilPredicate fOfA)
+                                    (makeCeilPredicate fOfB)
+                                )
+                            )
+                            (fst $ makeNotPredicate
+                                (fst $ makeAndPredicate
+                                    (makeCeilPredicate gOfA)
+                                    (makeCeilPredicate gOfB)
+                                )
+                            )
+                        )
+                , substitution = []
+                }
+            (Mock.functionalConstr20 fOfA fOfB)
+            (Mock.functionalConstr20 gOfA gOfB)
+        )
     , testCase "equals(x, functional) becomes a substitution"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeTruePredicate
-                    , substitution = [(Mock.x, functionalOfA)]
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = mkVar Mock.x
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = functionalOfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = [(Mock.x, functionalOfA)]
+                }
+                (mkVar Mock.x)
+                functionalOfA
         )
     , testCase "equals(functional, x) becomes a substitution"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeTruePredicate
-                    , substitution = [(Mock.x, functionalOfA)]
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = functionalOfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = mkVar Mock.x
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = [(Mock.x, functionalOfA)]
+                }
+                functionalOfA
+                (mkVar Mock.x)
         )
     , testCase "equals(x, function) becomes a substitution + ceil"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeCeilPredicate fOfA
-                    , substitution = [(Mock.x, fOfA)]
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = mkVar Mock.x
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = fOfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeCeilPredicate fOfA
+                , substitution = [(Mock.x, fOfA)]
+                }
+            (mkVar Mock.x)
+            fOfA
         )
     , testCase "equals(function, x) becomes a substitution + ceil"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeCeilPredicate fOfA
-                    , substitution = [(Mock.x, fOfA)]
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = fOfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = mkVar Mock.x
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeCeilPredicate fOfA
+                , substitution = [(Mock.x, fOfA)]
+                }
+            fOfA
+            (mkVar Mock.x)
         )
     , testCase "equals(x, constructor) becomes a predicate"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate =
-                        makeEqualsPredicate (mkVar Mock.x) constructor1OfA
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = mkVar Mock.x
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = constructor1OfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate =
+                    makeEqualsPredicate (mkVar Mock.x) constructor1OfA
+                , substitution = []
+                }
+            (mkVar Mock.x)
+            constructor1OfA
+        )
+    , testCase "equals(constructor, x) becomes a predicate"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate =
+                    makeEqualsPredicate constructor1OfA (mkVar Mock.x)
+                , substitution = []
+                }
+            constructor1OfA
+            (mkVar Mock.x)
+        )
+    , testCase "equals(x, something) becomes a predicate"
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate =
+                    makeEqualsPredicate (mkVar Mock.x) plain1OfA
+                , substitution = []
+                }
+            (mkVar Mock.x)
+            plain1OfA
         )
     , testCase "equals(something, x) becomes a predicate"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate =
-                        makeEqualsPredicate constructor1OfA (mkVar Mock.x)
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = constructor1OfA
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = mkVar Mock.x
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate =
+                    makeEqualsPredicate plain1OfA (mkVar Mock.x)
+                , substitution = []
+                }
+            plain1OfA
+            (mkVar Mock.x)
         )
     , testCase "equals(function, constructor) is not simplifiable"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                ExpandedPattern
-                    { term = Mock.f Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ExpandedPattern
-                    { term = Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-            )
+        (assertTermEquals
+            mockMetadataTools
+            PredicateSubstitution
+                { predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
+                , substitution = []
+                }
+                (Mock.f Mock.a)
+                Mock.a
         )
     ]
+
+assertTermEquals
+    :: HasCallStack
+    => MetadataTools Object StepperAttributes
+    -> CommonPredicateSubstitution Object
+    -> CommonPurePattern Object
+    -> CommonPurePattern Object
+    -> IO ()
+assertTermEquals = assertTermEqualsGeneric
+
+assertTermEqualsGeneric
+    :: (MetaOrObject level, HasCallStack)
+    => MetadataTools level StepperAttributes
+    -> CommonPredicateSubstitution level
+    -> CommonPurePattern level
+    -> CommonPurePattern level
+    -> IO ()
+assertTermEqualsGeneric tools expected first second =
+    give (MetadataTools.sortTools tools) $ do
+        assertEqualWithExplanation "ExpandedPattern"
+            (OrOfExpandedPattern.make [ predSubstToExpandedPattern expected ])
+            (evaluateGeneric
+                tools
+                (termToExpandedPattern first)
+                (termToExpandedPattern second)
+            )
+        assertEqualWithExplanation "PureMLPattern"
+            expected
+            (evaluateTermsGeneric tools first second)
   where
-    fOfA = give mockSortTools $ Mock.f Mock.a
-    fOfB = give mockSortTools $ Mock.f Mock.b
-    gOfA = give mockSortTools $ Mock.g Mock.a
-    gOfB = give mockSortTools $ Mock.g Mock.b
-    hOfA = give mockSortTools $ Mock.h Mock.a
-    hOfB = give mockSortTools $ Mock.h Mock.b
-    functionalOfA = give mockSortTools $ Mock.functional10 Mock.a
-    constructor1OfA = give mockSortTools $ Mock.constr10 Mock.a
-    constructor2OfA = give mockSortTools $ Mock.constr11 Mock.a
-    functionalConstructor1OfA =
-        give mockSortTools $ Mock.functionalConstr10 Mock.a
-    functionalConstructor2OfA =
-        give mockSortTools $ Mock.functionalConstr11 Mock.a
-    mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
-    mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
-    mockMetaSortTools :: SortTools Meta
-    mockMetaSortTools = Mock.makeSortTools []
-    mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-    mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSortTools []
+    termToExpandedPattern
+        :: MetaOrObject level
+        => CommonPurePattern level
+        -> CommonExpandedPattern level
+    termToExpandedPattern (Bottom_ _) =
+        ExpandedPattern.bottom
+    termToExpandedPattern term =
+        ExpandedPattern
+            { term = term
+            , predicate = makeTruePredicate
+            , substitution = []
+            }
+    predSubstToExpandedPattern
+        :: MetaOrObject level
+        => CommonPredicateSubstitution level
+        -> CommonExpandedPattern level
+    predSubstToExpandedPattern
+        PredicateSubstitution {predicate = PredicateFalse}
+      =
+        ExpandedPattern.bottom
+    predSubstToExpandedPattern
+        PredicateSubstitution {predicate, substitution}
+      =
+        ExpandedPattern
+            { term = mkTop
+            , predicate = predicate
+            , substitution = substitution
+            }
+
+fOfA :: CommonPurePattern Object
+fOfA = give mockSortTools $ Mock.f Mock.a
+
+fOfB :: CommonPurePattern Object
+fOfB = give mockSortTools $ Mock.f Mock.b
+
+gOfA :: CommonPurePattern Object
+gOfA = give mockSortTools $ Mock.g Mock.a
+
+gOfB :: CommonPurePattern Object
+gOfB = give mockSortTools $ Mock.g Mock.b
+
+hOfA :: CommonPurePattern Object
+hOfA = give mockSortTools $ Mock.h Mock.a
+
+hOfB :: CommonPurePattern Object
+hOfB = give mockSortTools $ Mock.h Mock.b
+
+functionalOfA :: CommonPurePattern Object
+functionalOfA = give mockSortTools $ Mock.functional10 Mock.a
+
+constructor1OfA :: CommonPurePattern Object
+constructor1OfA = give mockSortTools $ Mock.constr10 Mock.a
+
+constructor2OfA :: CommonPurePattern Object
+constructor2OfA = give mockSortTools $ Mock.constr11 Mock.a
+
+functionalConstructor1OfA :: CommonPurePattern Object
+functionalConstructor1OfA =
+    give mockSortTools $ Mock.functionalConstr10 Mock.a
+
+functionalConstructor2OfA :: CommonPurePattern Object
+functionalConstructor2OfA =
+    give mockSortTools $ Mock.functionalConstr11 Mock.a
+
+plain1OfA :: CommonPurePattern Object
+plain1OfA = give mockSortTools $ Mock.plain10 Mock.a
+
+mockSortTools :: SortTools Object
+mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
+
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+
+mockMetaSortTools :: SortTools Meta
+mockMetaSortTools = Mock.makeSortTools []
+
+mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
+mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSortTools []
 
 testSort :: Sort Object
 testSort =
@@ -794,3 +674,12 @@ evaluateGeneric
 evaluateGeneric tools first second =
     fst $ evalSimplifier $ makeEvaluate tools first second
 
+evaluateTermsGeneric
+    :: MetaOrObject level
+    => MetadataTools level StepperAttributes
+    -> CommonPurePattern level
+    -> CommonPurePattern level
+    -> CommonPredicateSubstitution level
+evaluateTermsGeneric tools first second =
+    fst $ evalSimplifier $
+        makeEvaluateTermsToPredicateSubstitution tools first second

@@ -2,12 +2,12 @@ module Test.Kore.Builtin.Builtin
     ( hookedSymbolDecl
     ) where
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.AST.Sentence
-import           Kore.Builtin.Hook
-                 ( hookAttribute )
+import Kore.AST.Common
+import Kore.AST.MetaOrObject
+       ( Object )
+import Kore.AST.Sentence
+import Kore.Builtin.Hook
+       ( hookAttribute )
 
 
 -- | Declare a symbol hooked to the given builtin name.

@@ -7,22 +7,24 @@ module Kore.ASTPrettyPrint
 import Data.Functor.Foldable
 import Data.List
        ( intersperse )
-
-import Data.Functor.Impredicative
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.Sentence
-import Kore.Parser.CString
-       ( escapeCString )
-import Kore.Step.PatternAttributes
-import Kore.Unification.Unifier
-
 import Data.String
        ( fromString )
 import Data.Text.Prettyprint.Doc as Doc
 import Data.Text.Prettyprint.Doc.Render.String
+
+import           Data.Functor.Impredicative
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+import qualified Kore.Builtin as Builtin
+import           Kore.Parser.CString
+                 ( escapeCString )
+import           Kore.Predicate.Predicate
+import           Kore.Step.ExpandedPattern
+import           Kore.Step.PatternAttributes
+import           Kore.Unification.Unifier
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
@@ -304,9 +306,18 @@ instance
             , writeFieldNewLine "ceilChild" ceilChild p
             ]
 
+instance PrettyPrint child => PrettyPrint (BuiltinDomain child) where
+    prettyPrint flags =
+        \case
+            BuiltinDomainPattern str ->
+                betweenParentheses flags
+                    ("BuiltinDomainString " <> prettyPrint NeedsParentheses str)
+            _ -> Builtin.notImplementedInternal
+
 instance
     ( MetaOrObject level
-    ) => PrettyPrint (DomainValue level (Fix (Pattern Meta Variable))) where
+    , PrettyPrint child
+    ) => PrettyPrint (DomainValue level child) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
             "DomainValue"
@@ -776,3 +787,15 @@ instance (MetaOrObject level, PrettyPrint (variable level))
         writeOneFieldStruct flags "FunctionalStringLiteral" l
     prettyPrint flags (FunctionalCharLiteral l) =
         writeOneFieldStruct flags "FunctionalCharLiteral" l
+
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (Predicate level variable)
+  where
+    prettyPrint flags pat =
+        prettyPrint flags (unwrapPredicate pat)
+
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (ExpandedPattern level variable)
+  where
+    prettyPrint flags (ExpandedPattern t p s) =
+        writeThreeFieldStruct flags "ExpandedPattern" t p s

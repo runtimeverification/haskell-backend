@@ -5,7 +5,7 @@ endmodule
 []
 
 module BOOL
-    hooked-sort Bool{} []
+    hooked-sort Bool{} [hook{}("NOT-BOOL.Bool")]
 endmodule
 []
 

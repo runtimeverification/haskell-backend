@@ -27,6 +27,7 @@ import qualified Data.Sequence as Seq
 import           Data.Text.Prettyprint.Doc
 
 import Kore.Error
+import Kore.Unparser
 import Logic.Matching.Error
 
 data Proof ix rule formula =
@@ -55,14 +56,17 @@ add verifier proof ix formula = do
     , derivations = derivations proof
     }
 
-renderProof :: (Ord ix, Pretty ix, Pretty (rule ix), Pretty formula)
+renderProof :: (Ord ix, Pretty ix, Pretty (rule ix), Unparse formula)
             => Proof ix rule formula -> Doc ann
 renderProof proof = vcat
-  [pretty ix<+>colon<+>pretty formula<>
-   case Map.lookup ix (derivations proof) of
-     Nothing   -> emptyDoc
-     Just rule -> emptyDoc <+> "by" <+> pretty rule
-  | (ix,formula) <- toList (claims proof)]
+    [ pretty ix <+> colon <+> unparse formula <> justification ix
+    | (ix,formula) <- toList (claims proof)
+    ]
+  where
+    justification ix =
+        case Map.lookup ix (derivations proof) of
+            Nothing   -> emptyDoc
+            Just rule -> emptyDoc <+> "by" <+> pretty rule
 
 class (Traversable rule, Eq formula)
     => ProofSystem error rule formula | rule -> formula error

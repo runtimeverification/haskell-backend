@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Exists
+Module      : Kore.Step.Simplification.Exists
 Description : Tools for Exists pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -53,10 +53,7 @@ import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
 import           Kore.Variables.Free
                  ( pureFreeVariables )
-import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
-import           Kore.Variables.Int
-                 ( IntVariable )
+import           Kore.Variables.Fresh
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -89,7 +86,7 @@ simplify
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PureMLPatternSimplifier level variable
@@ -104,9 +101,9 @@ simplify
     simplifier
     Exists { existsVariable = variable, existsChild = child }
   =
-    simplifyEvaluatedExists tools simplifier variable child
+    simplifyEvaluated tools simplifier variable child
 
-simplifyEvaluatedExists
+simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Given (SortTools level)
@@ -117,7 +114,7 @@ simplifyEvaluatedExists
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PureMLPatternSimplifier level variable
@@ -126,7 +123,7 @@ simplifyEvaluatedExists
     -> OrOfExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluatedExists tools simplifier variable simplified
+simplifyEvaluated tools simplifier variable simplified
   | OrOfExpandedPattern.isTrue simplified =
     return (simplified, SimplificationProof)
   | OrOfExpandedPattern.isFalse simplified =
@@ -137,6 +134,10 @@ simplifyEvaluatedExists tools simplifier variable simplified
             (makeEvaluate tools simplifier variable) simplified
     return ( evaluated, SimplificationProof )
 
+{-| evaluates an 'Exists' given its two 'ExpandedPattern' children.
+
+See 'simplify' for detailed documentation.
+-}
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
@@ -148,7 +149,7 @@ makeEvaluate
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PureMLPatternSimplifier level variable
@@ -257,13 +258,13 @@ substituteTermPredicate
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
-        , IntVariable variable
+        , FreshVariable variable
         )
     => PureMLPattern level variable
     -> Predicate level variable
     -> ListSubstitution.Substitution (Unified variable) (PureMLPattern level variable)
     -> UnificationSubstitution level variable
-    -> IntCounter
+    -> Simplifier
         (ExpandedPattern level variable, SimplificationProof level)
 substituteTermPredicate term predicate substitution globalSubstitution = do
     substitutedTerm <- substitute term substitution

@@ -52,8 +52,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
+import           Kore.Variables.Fresh
 
 {-| 'evaluateApplication' - evaluates functions on an application pattern.
 -}
@@ -64,7 +63,7 @@ evaluateApplication
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -204,7 +203,7 @@ mergeWithConditionAndSubstitution
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes

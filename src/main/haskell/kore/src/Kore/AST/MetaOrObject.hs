@@ -33,9 +33,6 @@ import Data.Proxy
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.Pretty
-       ( Pretty (..) )
-
 toProxy :: a -> Proxy a
 toProxy _ = Proxy
 
@@ -92,13 +89,6 @@ deriving instance (OrdMetaOrObject thing) => Ord (Unified thing)
 deriving instance (ShowMetaOrObject thing) => Show (Unified thing)
 
 instance (NFData (thing Meta), NFData (thing Object)) => NFData (Unified thing)
-
-instance
-    ( Pretty (thing Object)
-    , Pretty (thing Meta)
-    ) => Pretty (Unified thing)
-  where
-    pretty = applyUnified pretty pretty
 
 {-|Given a function transforming objects of 'Meta' type and another transforming
 objects of 'Object' type, 'applyUnified' builds the corresponding direct sum

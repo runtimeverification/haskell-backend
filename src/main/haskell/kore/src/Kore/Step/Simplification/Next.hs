@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Simplification.Next
+Module      : Kore.Step.Simplification.Next
 Description : Tools for Next pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -56,9 +56,9 @@ simplify
 simplify
     Next { nextChild = child }
   =
-    simplifyEvaluatedNext child
+    simplifyEvaluated child
 
-simplifyEvaluatedNext
+simplifyEvaluated
     ::  ( MetaOrObject Object
         , SortedVariable variable
         , Given (SortTools Object)
@@ -67,7 +67,7 @@ simplifyEvaluatedNext
         )
     => OrOfExpandedPattern Object variable
     -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
-simplifyEvaluatedNext simplified =
+simplifyEvaluated simplified =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern
             { term =

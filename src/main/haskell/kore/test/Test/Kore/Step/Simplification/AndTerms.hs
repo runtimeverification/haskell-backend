@@ -10,8 +10,9 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
+import           Control.Monad.Counter
 import           Kore.AST.Common
-                 ( CharLiteral (..), StringLiteral (..) )
+                 ( BuiltinDomain (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern )
@@ -30,8 +31,6 @@ import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termUnification )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -312,7 +311,7 @@ test_andTermsSimplification = give mockSortTools
             assertEqualWithExplanation "equal values"
                 (let
                     expected = ExpandedPattern
-                        { term = mkStringLiteral (StringLiteral "a")
+                        { term = mkStringLiteral "a"
                         , predicate = makeTruePredicate
                         , substitution = []
                         }
@@ -320,8 +319,8 @@ test_andTermsSimplification = give mockSortTools
                 )
                 (simplifyUnify
                     mockMetaMetadataTools
-                    (mkStringLiteral (StringLiteral "a"))
-                    (mkStringLiteral (StringLiteral "a"))
+                    (mkStringLiteral "a")
+                    (mkStringLiteral "a")
                 )
             assertEqualWithExplanation "different values"
                 ( ExpandedPattern.bottom
@@ -329,8 +328,8 @@ test_andTermsSimplification = give mockSortTools
                 )
                 (simplifyUnify
                     mockMetaMetadataTools
-                    (mkStringLiteral (StringLiteral "a"))
-                    (mkStringLiteral (StringLiteral "b"))
+                    (mkStringLiteral "a")
+                    (mkStringLiteral "b")
                 )
         )
     , give mockMetaSortTools $ testCase "char literal and"
@@ -338,7 +337,7 @@ test_andTermsSimplification = give mockSortTools
             assertEqualWithExplanation "equal values"
                 (let
                     expected = ExpandedPattern
-                        { term = mkCharLiteral (CharLiteral 'a')
+                        { term = mkCharLiteral 'a'
                         , predicate = makeTruePredicate
                         , substitution = []
                         }
@@ -346,8 +345,8 @@ test_andTermsSimplification = give mockSortTools
                 )
                 (simplifyUnify
                     mockMetaMetadataTools
-                    (mkCharLiteral (CharLiteral 'a'))
-                    (mkCharLiteral (CharLiteral 'a'))
+                    (mkCharLiteral 'a')
+                    (mkCharLiteral 'a')
                 )
             assertEqualWithExplanation "different values"
                 ( ExpandedPattern.bottom
@@ -355,8 +354,8 @@ test_andTermsSimplification = give mockSortTools
                 )
                 (simplifyUnify
                     mockMetaMetadataTools
-                    (mkCharLiteral (CharLiteral 'a'))
-                    (mkCharLiteral (CharLiteral 'b'))
+                    (mkCharLiteral 'a')
+                    (mkCharLiteral 'b')
                 )
         )
     , testCase "function and"
@@ -483,15 +482,15 @@ mockMetaMetadataTools =
 
 aDomainValue :: CommonPurePattern Object
 aDomainValue =
-    give mockSortTools $ mkDomainValue
-        Mock.testSort
-        (mkStringLiteral (StringLiteral "a"))
+    give mockSortTools
+        $ mkDomainValue  Mock.testSort
+        $ BuiltinDomainPattern (mkStringLiteral "a")
 
 bDomainValue :: CommonPurePattern Object
 bDomainValue =
-    give mockSortTools $ mkDomainValue
-        Mock.testSort
-        (mkStringLiteral (StringLiteral "b"))
+    give mockSortTools
+        $ mkDomainValue Mock.testSort
+        $ BuiltinDomainPattern (mkStringLiteral "b")
 
 simplifyUnify
     :: MetaOrObject level
@@ -512,7 +511,7 @@ unify
 unify tools first second =
     case termUnification tools first second of
         Nothing -> Nothing
-        Just result -> Just $ fst $ fst $ runIntCounter result 0
+        Just result -> Just $ fst $ evalCounter result
 
 simplify
     :: MetaOrObject level
@@ -521,5 +520,4 @@ simplify
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 simplify tools first second =
-    fst $ fst $ runIntCounter (termAnd tools first second) 0
-
+    fst $ evalCounter (termAnd tools first second)

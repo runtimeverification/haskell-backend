@@ -242,7 +242,7 @@ axiomEvaluator left right =
                 { axiomPatternLeft  = left
                 , axiomPatternRight = right
                 , axiomPatternRequires = makeTruePredicate
-                , axiomAttributes = def
+                , axiomPatternAttributes = def
                 }
         )
 

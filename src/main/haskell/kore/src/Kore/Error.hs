@@ -7,11 +7,23 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.Error where
+module Kore.Error
+    ( Error (..)
+    , printError
+    , koreError
+    , koreFail
+    , koreFailWhen
+    , withContext
+    , castError
+    , module Control.Monad.Except
+    ) where
 
-import           Control.Monad (when)
-import Control.Monad.Except ( MonadError (..) )
-import           Data.List     (intercalate)
+import Control.Monad
+       ( when )
+import Control.Monad.Except
+       ( MonadError (..) )
+import Data.List
+       ( intercalate )
 
 {-|'Error' represents a Kore error with a stacktrace-like context.
 

@@ -14,9 +14,14 @@ module Kore.IndexedModule.Resolvers
     , resolveSort
     , resolveAlias
     , resolveSymbol
+    , resolveHook
+    , resolveHooks
     ) where
 
+import qualified Data.List as List
 import qualified Data.Map as Map
+import           Data.Maybe
+                 ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
 import qualified Data.Set as Set
@@ -26,12 +31,12 @@ import Kore.AST.Error
        ( koreFailWithLocations )
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
-       ( IsMetaOrObject (..), MetaOrObject, isMetaOrObject )
+       ( IsMetaOrObject (..), MetaOrObject, Object, isMetaOrObject )
 import Kore.AST.Sentence
 import Kore.ASTHelpers
        ( ApplicationSorts, symbolOrAliasSorts )
 import Kore.Error
-       ( Error, printError )
+       ( Error, koreFail, printError )
 import Kore.IndexedModule.IndexedModule
        ( IndexedModule (..), KoreIndexedModule, SortDescription )
 
@@ -126,7 +131,7 @@ getSortAttributes
     => KoreIndexedModule atts
     -> Sort level
     -> atts
-getSortAttributes m (SortActualSort (SortActual sortId _)) = 
+getSortAttributes m (SortActualSort (SortActual sortId _)) =
   case resolveSort m sortId of
     Right (atts, _) -> atts
     Left _ -> error $ "Sort " ++ show sortId ++ " not defined."
@@ -234,3 +239,36 @@ resolveSort m sortId =
                 [sortId]
                 ("Sort '" ++ getId sortId ++  "' not declared.")
         Just sortDescription -> Right sortDescription
+
+resolveHook
+    :: KoreIndexedModule atts
+    -> String
+    -> Either (Error a) (Id Object)
+resolveHook indexedModule builtinName =
+    case resolveHooks indexedModule builtinName of
+        [hookId] -> return hookId
+        [] ->
+            koreFail ("Builtin '" ++ builtinName ++ "' is not hooked.")
+        hookIds ->
+            koreFail
+                ("Builtin '" ++ builtinName
+                    ++ "' is hooked to multiple identifiers: "
+                    ++ List.intercalate ", " (squotes . getId <$> hookIds)
+                )
+          where
+            squotes str = "'" ++ str ++ "'"
+
+resolveHooks
+    :: KoreIndexedModule atts
+    -> String
+    -> [Id Object]
+resolveHooks indexedModule builtinName =
+    foldMap resolveHooks1 allHooks
+  where
+    allHooks = allHooksOf indexedModule
+    allHooksOf _module =
+        let _imports =
+                (\(_, _, _import) -> _import) <$> indexedModuleImports _module
+        in
+            indexedModuleHooks _module : mconcat (allHooksOf <$> _imports)
+    resolveHooks1 hooks = fromMaybe [] (Map.lookup builtinName hooks)

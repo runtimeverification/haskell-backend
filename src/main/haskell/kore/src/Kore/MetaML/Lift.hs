@@ -19,16 +19,17 @@ module Kore.MetaML.Lift
 
 import Data.Functor.Foldable
 
-import Data.Functor.Impredicative
-       ( Rotate31 (..) )
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.MLPatterns
-import Kore.AST.PureML
-import Kore.AST.Sentence
-import Kore.Implicit.ImplicitSorts
-import Kore.MetaML.AST
+import           Data.Functor.Impredicative
+                 ( Rotate31 (..) )
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.MLPatterns
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+import qualified Kore.Builtin as Builtin
+import           Kore.Implicit.ImplicitSorts
+import           Kore.MetaML.AST
 
 {-|'LiftableToMetaML' describes functionality to lift mixed Kore
 'Object' and 'Meta' constructs to pure 'Meta' constructs.
@@ -163,7 +164,7 @@ liftObjectReducer p = case p of
     DomainValuePattern dvp ->
         applyMetaMLPatternHead DomainValuePatternType
             [ liftToMeta (domainValueSort dvp)
-            , domainValueChild dvp
+            , Builtin.asMetaPattern dvp
             ]
     EqualsPattern cp -> applyMetaMLPatternHead EqualsPatternType
         [ liftToMeta (equalsOperandSort cp)
