@@ -710,8 +710,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
                             termSortInjection firstOrigin firstDestination patt
                     return (result, SimplificationProof)
             else
-                Handled $ Just
-                    $ return (ExpandedPattern.bottom, SimplificationProof)
+                NotHandled
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools firstHead
@@ -757,6 +756,9 @@ sortInjectionAndEqualsAssumesDifferentHeads _ _ _ _ = NotHandled
 sortInjection heads.
 
 Returns NotHandled if it could not handle the input.
+
+TODO(virgil): This implementation is provisional, we're not sure yet if sort
+    injection should always clash with constructors. We should clarify this.
 -}
 constructorSortInjectionAndEquals
     ::  ( Eq (variable Object)
