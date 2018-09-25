@@ -123,7 +123,7 @@ expectBuiltinDomainSet ctx =
     \case
         Kore.DV_ _ domain ->
             case domain of
-                Kore.BuiltinDomainSet _set -> return _set
+                Kore.BuiltinDomainSet set -> return set
                 _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a set")
         _ ->
             Except.throwError NotApplicable
@@ -136,11 +136,11 @@ returnSet
     => Kore.Sort Object
     -> Builtin
     -> m (AttemptedFunction Object Kore.Variable)
-returnSet resultSort _set =
+returnSet resultSort set =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
         $ Kore.DV_ resultSort
-        $ Kore.BuiltinDomainSet _set
+        $ Kore.BuiltinDomainSet set
 
 evalElement :: Builtin.Function
 evalElement =
@@ -158,13 +158,13 @@ evalIn =
     evalIn0 _ _ resultSort = \arguments ->
         getAttemptedFunction
         (do
-            let (_elem, _set) =
+            let (elem', _set) =
                     case arguments of
-                        [_elem, _set] -> (_elem, _set)
+                        [elem'', _set] -> (elem'', _set)
                         _ -> Builtin.wrongArity "SET.in"
             _set <- expectBuiltinDomainSet "SET.in" _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
-                (Set.member _elem _set)
+                (Set.member elem' _set)
         )
       where
         asExpandedBoolPattern = Bool.asExpandedPattern resultSort
@@ -226,12 +226,12 @@ asPattern indexedModule _ = do
     symbolUnit <- lookupSymbolUnit indexedModule
     let applyUnit = Kore.App_ symbolUnit []
     symbolElement <- lookupSymbolElement indexedModule
-    let applyElement _elem = Kore.App_ symbolElement [_elem]
+    let applyElement elem' = Kore.App_ symbolElement [elem']
     symbolConcat <- lookupSymbolConcat indexedModule
-    let applyConcat _set1 _set2 = Kore.App_ symbolConcat [_set1, _set2]
-    let asPattern0 _set =
+    let applyConcat set1 set2 = Kore.App_ symbolConcat [set1, set2]
+    let asPattern0 set =
             foldr applyConcat applyUnit
-                (applyElement <$> Foldable.toList _set)
+                (applyElement <$> Foldable.toList set)
     return asPattern0
 
 {- | Render a 'Seq' as an extended domain value pattern.
