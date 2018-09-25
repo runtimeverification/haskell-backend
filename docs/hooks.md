@@ -97,7 +97,7 @@ Logical implication.
 
 Depends on `BOOL`.
 
-The sorts of keys and values is arbitrary, but must be consistent between symbol
+The sorts of keys and values are arbitrary, but must be consistent between symbol
 declarations. The sort consistency of hooked symbols is *not* checked. The key
 and value sorts are referred to as `Key{}` and `Value{}` respectively below.
 
