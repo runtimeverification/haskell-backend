@@ -88,7 +88,9 @@ C[f(y)]
         ∨ (¬P1 ∧ ¬P2 ... ∧ ¬Pn-1 ∧ ¬Pn ∧ C[f(y)])
 ```
 which, assuming confluence or disjoint predicates, and using
-`P ∧ C[φ] = P ∧ C[φ ∧ P])` (see the proof-ish section), becomes
+`P ∧ C[φ] = P ∧ C[φ ∧ P])` (see the proof-ish section) and `f(y)=⊥` if no
+function definition branch is matched (i.e. `¬P1 ∧ ¬P2 ... ∧ ¬Pn-1 ∧ ¬Pn`,
+probabily needs a separate axiom), becomes
 ```
 C[f(y)]
     = (P1 ∧ C[f(y) ∧ P1])
