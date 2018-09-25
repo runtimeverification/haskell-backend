@@ -123,7 +123,7 @@ expectBuiltinDomainList ctx =
     \case
         Kore.DV_ _ domain ->
             case domain of
-                Kore.BuiltinDomainList _list -> return _list
+                Kore.BuiltinDomainList list -> return list
                 _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a list")
         _ ->
             Except.throwError NotApplicable
@@ -136,11 +136,11 @@ returnList
     => Kore.Sort Object
     -> Builtin
     -> m (AttemptedFunction Object Kore.Variable)
-returnList resultSort _list =
+returnList resultSort list =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
         $ Kore.DV_ resultSort
-        $ Kore.BuiltinDomainList _list
+        $ Kore.BuiltinDomainList list
 
 evalElement :: Builtin.Function
 evalElement =
@@ -148,7 +148,7 @@ evalElement =
   where
     evalElement0 _ _ resultSort = \arguments ->
         case arguments of
-            [_elem] -> returnList resultSort (Seq.singleton _elem)
+            [elem'] -> returnList resultSort (Seq.singleton elem')
             _ -> Builtin.wrongArity "LIST.element"
 
 evalGet :: Builtin.Function
@@ -230,12 +230,12 @@ asPattern indexedModule _ = do
     symbolUnit <- lookupSymbolUnit indexedModule
     let applyUnit = Kore.App_ symbolUnit []
     symbolElement <- lookupSymbolElement indexedModule
-    let applyElement _elem = Kore.App_ symbolElement [_elem]
+    let applyElement elem' = Kore.App_ symbolElement [elem']
     symbolConcat <- lookupSymbolConcat indexedModule
-    let applyConcat _list1 _list2 = Kore.App_ symbolConcat [_list1, _list2]
-    let asPattern0 _list =
+    let applyConcat list1 list2 = Kore.App_ symbolConcat [list1, list2]
+    let asPattern0 list =
             foldr applyConcat applyUnit
-            $ Foldable.toList (applyElement <$> _list)
+            $ Foldable.toList (applyElement <$> list)
     return asPattern0
 
 {- | Render a 'Seq' as an extended domain value pattern.
