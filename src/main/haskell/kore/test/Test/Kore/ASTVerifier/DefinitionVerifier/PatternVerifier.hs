@@ -13,9 +13,8 @@ import           Kore.AST.AstWithLocation
 import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( asPurePattern )
 import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.Building.Implicit
 import           Kore.Building.Patterns as Patterns
 import qualified Kore.Builtin.Hook as Builtin.Hook
@@ -474,34 +473,6 @@ test_patternVerifier =
         , anotherSortSentence
         ]
         NeedsInternalDefinitions
-    , failureTestsForObjectPattern "Domain value - complex argument"
-        (ExpectedErrorMessage
-            "Domain value argument must be a literal string.")
-        (ErrorStack
-            [ "\\dv (<test data>)" ]
-        )
-        (DomainValuePattern DomainValue
-            { domainValueSort = objectSort
-            , domainValueChild =
-                (asPurePattern . AndPattern)
-                    And
-                        { andSort =
-                            updateAstLocation stringMetaSort AstLocationTest
-                        , andFirst =
-                            (asPurePattern . StringLiteralPattern)
-                                (StringLiteral "first")
-                        , andSecond =
-                            (asPurePattern . StringLiteralPattern)
-                                (StringLiteral "second")
-                        }
-            }
-        )
-        (NamePrefix "dummy")
-        (TestedPatternSort (updateAstLocation objectSort AstLocationTest))
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort objectSort)
-        [objectSortSentence]
-        NeedsInternalDefinitions
     , failureTestsForObjectPattern "Domain value - INT.Int"
         (ExpectedErrorMessage
             "<string literal>:1:1:\n\
@@ -516,8 +487,8 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                (asPurePattern . StringLiteralPattern)
-                    (StringLiteral "abcd")  -- Not a decimal integer
+                BuiltinDomainPattern
+                    (StringLiteral_ "abcd")  -- Not a decimal integer
             }
         )
         (NamePrefix "dummy")
@@ -530,8 +501,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                (asPurePattern . StringLiteralPattern)
-                    (StringLiteral "-256")
+                BuiltinDomainPattern (StringLiteral_ "-256")
             }
         )
         (NamePrefix "dummy")
@@ -544,8 +514,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                (asPurePattern . StringLiteralPattern)
-                    (StringLiteral "1024")
+                BuiltinDomainPattern (StringLiteral_ "1024")
             }
         )
         (NamePrefix "dummy")
@@ -558,8 +527,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                (asPurePattern . StringLiteralPattern)
-                    (StringLiteral "+128")
+                BuiltinDomainPattern (StringLiteral_ "+128")
             }
         )
         (NamePrefix "dummy")
@@ -582,8 +550,8 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                (asPurePattern . StringLiteralPattern)
-                    (StringLiteral "untrue")  -- Not a BOOL.Bool
+                BuiltinDomainPattern
+                    (StringLiteral_ "untrue")  -- Not a BOOL.Bool
             }
         )
         (NamePrefix "dummy")
@@ -596,8 +564,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                (asPurePattern . StringLiteralPattern)
-                    (StringLiteral "true")
+                BuiltinDomainPattern (StringLiteral_ "true")
             }
         )
         (NamePrefix "dummy")
@@ -610,8 +577,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                (asPurePattern . StringLiteralPattern)
-                    (StringLiteral "false")
+                BuiltinDomainPattern (StringLiteral_ "false")
             }
         )
         (NamePrefix "dummy")

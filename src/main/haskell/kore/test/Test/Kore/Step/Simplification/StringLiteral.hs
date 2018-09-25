@@ -34,7 +34,7 @@ test_stringLiteralSimplification =
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
-                    { term = mkStringLiteral (StringLiteral "a")
+                    { term = mkStringLiteral "a"
                     , predicate = makeTruePredicate
                     , substitution = []
                     }

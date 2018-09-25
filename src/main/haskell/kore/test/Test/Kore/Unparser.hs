@@ -1,4 +1,4 @@
-module Test.Kore.Unparser.Unparse
+module Test.Kore.Unparser
     ( test_parse, test_unparse ) where
 
 import Test.Tasty
@@ -12,13 +12,11 @@ import Data.Functor.Impredicative
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
-import Kore.AST.Pretty
-       ( Pretty (..) )
 import Kore.AST.Sentence
 import Kore.Parser.LexemeImpl
 import Kore.Parser.ParserImpl
 import Kore.Parser.ParserUtils
-import Kore.Unparser.Unparse
+import Kore.Unparser
 
 import Test.Kore
 
@@ -249,11 +247,11 @@ parse :: Parser a -> String -> Either String a
 parse parser =
     parseOnly (parser <* endOfInput) "<test-string>"
 
-unparseParseProp :: (Pretty a, Eq a) => Parser a -> a -> Bool
+unparseParseProp :: (Unparse a, Eq a) => Parser a -> a -> Bool
 unparseParseProp p a = parse p (unparseToString a) == Right a
 
 unparseParseTest
-    :: (Pretty a, Eq a, Show a) => Parser a -> a -> TestTree
+    :: (Unparse a, Eq a, Show a) => Parser a -> a -> TestTree
 unparseParseTest parser astInput =
     testCase
         "Parsing + unparsing."
@@ -261,7 +259,7 @@ unparseParseTest parser astInput =
             (Right astInput)
             (parse parser (unparseToString astInput)))
 
-unparseTest :: (Pretty a, Show a) => a -> String -> TestTree
+unparseTest :: (Unparse a, Show a) => a -> String -> TestTree
 unparseTest astInput expected =
     testCase
         "Unparsing"

@@ -20,7 +20,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Implicit.Attributes
 import           Kore.Implicit.ImplicitSorts
-import           Kore.Unparser.Unparse
+import           Kore.Unparser
 
 import Test.Kore
 

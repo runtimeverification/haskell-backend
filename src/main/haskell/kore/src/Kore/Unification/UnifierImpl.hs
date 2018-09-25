@@ -27,7 +27,6 @@ import Kore.AST.PureML
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.ASTUtils.SmartPatterns
-       ( pattern StringLiteral_ )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
@@ -270,7 +269,7 @@ preTransform tools (AndPattern ap) = if left == right
                 Left (mlProposition_5_24_3 tools vp left)
             DomainValuePattern (DomainValue _ dv2) ->
                 case dv2 of
-                    StringLiteral_ (StringLiteral sl2) ->
+                    BuiltinDomainPattern (StringLiteral_ sl2) ->
                         matchDomainValue tools p1 sl2
                     _ -> Left $ Left UnsupportedPatterns
             ApplicationPattern ap2 ->
@@ -295,7 +294,7 @@ matchApplicationPattern
         (UnFixedPureMLPattern level variable)
 matchApplicationPattern (DomainValuePattern (DomainValue _ dv1)) ap2
     | isConstructor_ head2 = case dv1 of
-        StringLiteral_ (StringLiteral sl1) ->
+        BuiltinDomainPattern (StringLiteral_ sl1) ->
             Left $ Left (PatternClash (DomainValueClash sl1) (HeadClash head2))
         _ ->  Left $ Left UnsupportedPatterns
     | otherwise = Left $ Left $ NonConstructorHead head2
@@ -382,7 +381,7 @@ matchDomainValue
         (UnFixedPureMLPattern level variable)
 matchDomainValue _ (DomainValuePattern (DomainValue _ dv1)) sl2 =
     case dv1 of
-        StringLiteral_ (StringLiteral sl1) ->
+        BuiltinDomainPattern (StringLiteral_ sl1) ->
             Left $ Left
                 (PatternClash (DomainValueClash sl1) (DomainValueClash sl2))
         _ ->  Left $ Left UnsupportedPatterns

@@ -33,25 +33,25 @@ module MAP
     // Combine ‘map1’ and ‘map2’ so that the association ‘key |-> value’ is in
     // the result if it is in one operand. The result is ‘\bottom{}()’ if
     // ‘map1’ and ‘map2’ have any keys in common.
-    symbol concat{}(Map{}, Map{}) : Map{}
+    hooked-symbol concat{}(Map{}, Map{}) : Map{}
         [hook{}("MAP.concat")]
 
     // update(map, key, value):
     // Update ‘map’ with the association ‘key |-> value’.
     // The ‘key’ may or may not be present in ‘map’.
-    symbol update{}(Map{}, K{}, K{}) : Map{}
+    hooked-symbol update{}(Map{}, K{}, K{}) : Map{}
         [hook{}("MAP.update")]
 
     // lookup(map, key):
     // If ‘map’ contains the association ‘key |-> value’, then the result
     // is ‘value’; otherwise the result is ‘\bottom{}()’.
-    symbol lookup{}(Map{}, K{}) : K{}
+    hooked-symbol lookup{}(Map{}, K{}) : K{}
         [hook{}("MAP.lookup")]
 
     // inKeys(map, key):
     // If ‘map’ contains any association ‘key |-> _’, then the result is
     // ‘\dv{Bool{}}("true")’; otherwise the result is ‘\dv{Bool{}}("false")’.
-    symbol inKeys{}(Map{}, K{}) : Bool{}
+    hooked-symbol inKeys{}(Map{}, K{}) : Bool{}
         [hook{}("MAP.in_keys")]
 endmodule
 ```
@@ -90,3 +90,8 @@ During a lookup, all the branches where the key does not unify can be discarded,
 so there may be fewer branches to explore.
 On the other hand, the result of evaluating an insertion is always the largest
 possible disjunction.
+
+Questions
+---------
+
+- How should substitution behave with respect to symbolic maps?

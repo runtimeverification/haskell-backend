@@ -13,7 +13,7 @@ Definition
                             { domainValueSort =
                                 SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                             , domainValueChild =
-                                Fix (StringLiteralPattern (StringLiteral "0"))
+                                BuiltinDomainString (Fix (StringLiteralPattern (StringLiteral "0")))
                             }))))
                     , sentenceAxiomAttributes = Attributes []
                     })

@@ -28,7 +28,8 @@ import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
                  ( KoreDefinition, ModuleName (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkApp, mkDomainValue, mkStringLiteral )
+                 ( mkApp, mkDomainValue )
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification, verifyAndIndexDefinition )
@@ -61,7 +62,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Unparser.Unparse
+import           Kore.Unparser
                  ( unparseToString )
 
 import GlobalMain
@@ -224,8 +225,11 @@ main = do
                             stepLimit
                             (initialPattern, mempty)
             let
-                outputString = unparseToString
-                    (ExpandedPattern.term finalExpandedPattern)
+                finalPattern = ExpandedPattern.term finalExpandedPattern
+                finalExternalPattern =
+                    either (error . printError) id
+                    (Builtin.externalizePattern indexedModule finalPattern)
+                outputString = unparseToString finalExternalPattern
             if outputFileName /= ""
                 then
                     writeFile outputFileName outputString
@@ -341,7 +345,8 @@ makeKInitConfig pat =
             [ mkApp kSeqHead
                 [ mkApp (injHead configVarSort kItemSort)
                     [ mkDomainValue configVarSort
-                      $ mkStringLiteral (StringLiteral "$PGM")
+                        $ BuiltinDomainPattern
+                        $ StringLiteral_ "$PGM"
                     ]
                 , mkApp dotKHead []
                 ]

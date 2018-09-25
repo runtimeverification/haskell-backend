@@ -34,7 +34,7 @@ test_charLiteralSimplification =
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
-                    { term = mkCharLiteral (CharLiteral 'a')
+                    { term = mkCharLiteral 'a'
                     , predicate = makeTruePredicate
                     , substitution = []
                     }

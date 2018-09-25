@@ -13,7 +13,7 @@ import qualified Data.ByteString.Lazy.Char8 as LazyChar8
 import Kore.AST.Sentence
 import Kore.Implicit.Verified
        ( implicitKoreDefinition )
-import Kore.Unparser.Unparse
+import Kore.Unparser
        ( unparseToString )
 
 import qualified Paths

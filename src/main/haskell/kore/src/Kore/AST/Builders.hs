@@ -54,6 +54,7 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.ASTHelpers
+import Kore.ASTUtils.SmartPatterns
 import Kore.Error
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
@@ -418,8 +419,12 @@ parameterizedDomainValue_ sort str =
     SortedPatternStub
         SortedPattern
         { sortedPatternSort = sort
-        , sortedPatternPattern = DomainValuePattern
-            (DomainValue sort (Fix (StringLiteralPattern (StringLiteral str))))
+        , sortedPatternPattern =
+            DomainValuePattern DomainValue
+                { domainValueSort = sort
+                , domainValueChild =
+                    BuiltinDomainPattern (StringLiteral_ str)
+                }
         }
 
 -- |Builds a 'PatternStub' representing 'Rewrites' given 'PatternStub's for its

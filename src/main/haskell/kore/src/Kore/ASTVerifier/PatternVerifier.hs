@@ -15,11 +15,11 @@ module Kore.ASTVerifier.PatternVerifier
 
 import           Control.Monad
                  ( foldM, zipWithM_ )
-import           Data.Functor.Foldable
-                 ( Fix )
-import qualified Data.Functor.Foldable as Functor.Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import           Data.Text.Prettyprint.Doc
+                 ( (<+>) )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Text.Prettyprint.Doc.Render.String
                  ( renderString )
 
@@ -28,11 +28,11 @@ import           Kore.AST.Error
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import           Kore.AST.MLPatterns
-import           Kore.AST.Pretty
-                 ( Pretty (..), (<+>), (<>) )
-import qualified Kore.AST.Pretty as Pretty
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Builtin as Builtin
@@ -40,6 +40,7 @@ import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import           Kore.Unparser
 import           Kore.Variables.Free
                  ( freeVariables )
 
@@ -457,7 +458,7 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
 
 verifyDomainValue
     :: (MetaOrObject level)
-    => DomainValue Object (Fix (Pattern Meta Variable))
+    => DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (Sort Object)
@@ -476,8 +477,8 @@ verifyDomainValue
                 (verifyHelpersFindSort verifyHelpers)
                 declaredSortVariables
                 domainValueSort
-            case Functor.Foldable.project domainValueChild of
-                StringLiteralPattern _ -> return ()
+            case domainValueChild of
+                BuiltinDomainPattern (StringLiteral_ _) -> return ()
                 _ -> koreFail "Domain value argument must be a literal string."
             return domainValueSort
 
@@ -584,9 +585,9 @@ verifySameSort (UnifiedObject expectedSort) (UnifiedObject actualSort) = do
         [expectedSort, actualSort]
         ((renderString . Pretty.layoutCompact)
          ("Expecting sort"
-          <+> Pretty.squotes (pretty expectedSort)
+          <+> Pretty.squotes (unparse expectedSort)
           <+> "but got"
-          <+> Pretty.squotes (pretty actualSort)
+          <+> Pretty.squotes (unparse actualSort)
           <> Pretty.dot)
         )
     verifySuccess
@@ -596,9 +597,9 @@ verifySameSort (UnifiedMeta expectedSort) (UnifiedMeta actualSort) = do
         [expectedSort, actualSort]
         ((renderString . Pretty.layoutCompact)
          ("Expecting sort"
-          <+> Pretty.squotes (pretty expectedSort)
+          <+> Pretty.squotes (unparse expectedSort)
           <+> "but got"
-          <+> Pretty.squotes (pretty actualSort)
+          <+> Pretty.squotes (unparse actualSort)
           <> Pretty.dot)
         )
     verifySuccess
@@ -608,9 +609,9 @@ verifySameSort (UnifiedMeta expectedSort) (UnifiedObject actualSort) = do
         [asUnified expectedSort, asUnified actualSort]
         ((renderString . Pretty.layoutCompact)
          ("Expecting meta sort"
-          <+> Pretty.squotes (pretty expectedSort)
+          <+> Pretty.squotes (unparse expectedSort)
           <+> "but got object sort"
-          <+> Pretty.squotes (pretty actualSort)
+          <+> Pretty.squotes (unparse actualSort)
           <> Pretty.dot)
         )
     verifySuccess
@@ -620,9 +621,9 @@ verifySameSort (UnifiedObject expectedSort) (UnifiedMeta actualSort) = do
         [asUnified expectedSort, asUnified actualSort]
         ((renderString . Pretty.layoutCompact)
          ("Expecting object sort"
-          <+> Pretty.squotes (pretty expectedSort)
+          <+> Pretty.squotes (unparse expectedSort)
           <+> "but got meta sort"
-          <+> Pretty.squotes (pretty actualSort)
+          <+> Pretty.squotes (unparse actualSort)
           <> Pretty.dot)
         )
     verifySuccess
@@ -664,9 +665,13 @@ checkVariable var vars =
         Just v ->
             koreFailWithLocations
                 [v, var]
-                ((renderString . Pretty.layoutCompact)
-                 ("Inconsistent free variable usage:"
-                  <+> pretty v <+> "and" <+> pretty var <> Pretty.dot)
+                ( (renderString . Pretty.layoutCompact)
+                  ("Inconsistent free variable usage:"
+                     <+> unparse v
+                     <+> "and"
+                     <+> unparse var
+                     <> Pretty.dot
+                  )
                 )
 
 patternNameForContext :: Pattern level Variable p -> String

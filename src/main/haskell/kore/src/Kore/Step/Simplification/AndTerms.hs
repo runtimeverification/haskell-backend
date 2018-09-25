@@ -23,7 +23,7 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( SortedVariable )
+                 ( BuiltinDomain(..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
@@ -696,8 +696,8 @@ domainValueAndEqualsAssumesDifferent
     -> PureMLPattern level variable
     -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
 domainValueAndEqualsAssumesDifferent
-    first@(DV_ _ (StringLiteral_ _))
-    second@(DV_ _ (StringLiteral_ _))
+    first@(DV_ _ (BuiltinDomainPattern _))
+    second@(DV_ _ (BuiltinDomainPattern _))
   =
     assert (first /= second) $
         Handled (mkBottom, SimplificationProof)

@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Test.Logic.Matching.Rules.Minimal where
 
 import Test.Tasty
@@ -6,12 +8,15 @@ import Test.Tasty.HUnit
 
 import Control.Applicative
        ( some )
+import Data.String
+       ( fromString )
 import Data.Text.Prettyprint.Doc
 import Text.Megaparsec hiding
        ( some )
 import Text.Megaparsec.Char
 
 import Kore.Parser.ParserUtils ()
+import Kore.Unparser
 import Logic.Matching.Rules.Minimal
 import Logic.Matching.Rules.Minimal.Syntax
 
@@ -103,6 +108,12 @@ type DummyLabel = String
 type DummyIx    = Int
 type DummyVar   = String
 type DummyTerm  = String
+
+-- TODO (thomas.tuegel): This instance is bad, and we should feel bad for
+-- writing it. Not just because it's an orphan, but because it doesn't even
+-- pretend to conform to the concrete syntax.
+instance Unparse String where
+    unparse = fromString
 
 sortParser       :: DummyParser DummySort
 labelParser      :: DummyParser DummyLabel

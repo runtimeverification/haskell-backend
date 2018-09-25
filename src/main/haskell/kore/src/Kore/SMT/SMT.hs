@@ -150,9 +150,12 @@ patternToSMT p = goTranslate
             => CommonPurePattern Object
             -> String
             -> Symbolic (SBV a)
-        goLiteral (DV_ s (StringLiteral_ (StringLiteral i))) hookName
-         | (getHookString $ getSortHook s) == hookName
-             = return $ literal $ read i
+        goLiteral (DV_ s dv) hookName =
+            case dv of
+                BuiltinDomainPattern (StringLiteral_ i)
+                    | (getHookString $ getSortHook s) == hookName
+                      -> return $ literal $ read i
+                _ -> error "Domain value must be a string literal"
         goLiteral pat _ =
           error $ "Expected a domain value literal: " ++ show pat
         tryLookupVar v table hookName

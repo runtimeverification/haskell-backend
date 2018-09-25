@@ -12,12 +12,22 @@ module Kore.AST.Error
     , koreFailWithLocationsWhen
     , withLocationAndContext
     , withLocationsContext
+    , withSentenceAliasContext
+    , withSentenceAxiomContext
+    , withSentenceHookContext
+    , withSentenceImportContext
+    , withSentenceSortContext
+    , withSentenceSymbolContext
+    , withSentenceContext
     ) where
 
 import Data.List
        ( intercalate )
 
 import Kore.AST.AstWithLocation
+import Kore.AST.Common
+import Kore.AST.Kore
+import Kore.AST.Sentence
 import Kore.Error
 
 {-|'koreFailWithLocations' produces an error result with a context containing
@@ -54,10 +64,95 @@ withLocationsContext locations =
 location, to the error context whenever the given action fails.
 -}
 withLocationAndContext
-    :: AstWithLocation astWithLocation
+    :: (AstWithLocation astWithLocation, MonadError (Error e) m)
     => astWithLocation
     -> String
-    -> Either (Error a) result
-    -> Either (Error a) result
+    -> m result
+    -> m result
 withLocationAndContext location message =
     withContext (message ++ " (" ++ prettyPrintLocationFromAst location ++ ")")
+
+{- | Identify and locate the given symbol declaration in the error context.
+ -}
+withSentenceSymbolContext
+    :: MonadError (Error e) m
+    => KoreSentenceSymbol level
+    -> m a
+    -> m a
+withSentenceSymbolContext
+    SentenceSymbol { sentenceSymbolSymbol = Symbol { symbolConstructor } }
+  =
+    withLocationAndContext symbolConstructor
+        ("symbol '" ++ getId symbolConstructor ++ "' declaration")
+
+{- | Identify and locate the given alias declaration in the error context.
+ -}
+withSentenceAliasContext
+    :: KoreSentenceAlias level
+    -> Either (Error e) a
+    -> Either (Error e) a
+withSentenceAliasContext
+    SentenceAlias { sentenceAliasAlias = Alias { aliasConstructor } }
+  =
+    withLocationAndContext aliasConstructor
+        ("alias '" ++ getId aliasConstructor ++ "' declaration")
+
+{- | Identify and locate the given axiom declaration in the error context.
+ -}
+withSentenceAxiomContext
+    :: KoreSentenceAxiom
+    -> Either (Error e) a
+    -> Either (Error e) a
+withSentenceAxiomContext _ = withContext "axiom declaration"
+
+{- | Identify and locate the given sort declaration in the error context.
+ -}
+withSentenceSortContext
+    :: KoreSentenceSort level
+    -> Either (Error e) a
+    -> Either (Error e) a
+withSentenceSortContext
+    SentenceSort { sentenceSortName }
+  =
+    withLocationAndContext sentenceSortName
+        ("sort '" ++ getId sentenceSortName ++ "' declaration")
+
+{- | Identify and locate the given hooked declaration in the error context.
+ -}
+withSentenceHookContext
+    :: KoreSentenceHook
+    -> Either (Error e) a
+    -> Either (Error e) a
+withSentenceHookContext =
+    \case
+        SentenceHookedSort SentenceSort { sentenceSortName } ->
+            withLocationAndContext sentenceSortName
+                ("hooked-sort '" ++ getId sentenceSortName ++ "' declaration")
+
+        SentenceHookedSymbol SentenceSymbol
+            { sentenceSymbolSymbol = Symbol { symbolConstructor } } ->
+            withLocationAndContext symbolConstructor
+                ("hooked-symbol '" ++ getId symbolConstructor ++ "' declaration")
+
+{- | Locate the given import declaration in the error context.
+ -}
+withSentenceImportContext
+    :: KoreSentenceImport
+    -> Either (Error e) a
+    -> Either (Error e) a
+withSentenceImportContext _ = \go -> go
+
+{- | Identify and  locate the given sentence in the error context.
+ -}
+withSentenceContext
+    :: Sentence level UnifiedSortVariable UnifiedPattern Variable
+    -> Either (Error e) a
+    -> Either (Error e) a
+withSentenceContext =
+    \case
+        SentenceAliasSentence s -> withSentenceAliasContext s
+        SentenceAxiomSentence s -> withSentenceAxiomContext s
+        SentenceHookSentence s -> withSentenceHookContext s
+        SentenceImportSentence s -> withSentenceImportContext s
+        SentenceSortSentence s -> withSentenceSortContext s
+        SentenceSymbolSentence s -> withSentenceSymbolContext s

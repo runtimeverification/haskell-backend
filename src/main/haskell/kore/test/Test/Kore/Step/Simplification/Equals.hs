@@ -11,8 +11,8 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( AstLocation (..), CharLiteral (..), Equals (..), Id (..),
-                 Sort (..), SortActual (..), StringLiteral (..) )
+                 ( AstLocation (..), BuiltinDomain (..), Equals (..), Id (..),
+                 Sort (..), SortActual (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkCharLiteral, mkDomainValue, mkStringLiteral,
@@ -155,7 +155,7 @@ test_equalsSimplification = give mockSortTools
                     { term =
                         mkDomainValue
                             testSort
-                            (mkStringLiteral (StringLiteral "a"))
+                            (BuiltinDomainPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -163,7 +163,7 @@ test_equalsSimplification = give mockSortTools
                     { term =
                         mkDomainValue
                             testSort
-                            (mkStringLiteral (StringLiteral "a"))
+                            (BuiltinDomainPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -178,7 +178,7 @@ test_equalsSimplification = give mockSortTools
                     { term =
                         mkDomainValue
                             testSort
-                            (mkStringLiteral (StringLiteral "a"))
+                            (BuiltinDomainPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -186,7 +186,7 @@ test_equalsSimplification = give mockSortTools
                     { term =
                         mkDomainValue
                             testSort
-                            (mkStringLiteral (StringLiteral "b"))
+                            (BuiltinDomainPattern (mkStringLiteral "b"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -201,7 +201,7 @@ test_equalsSimplification = give mockSortTools
                     { term =
                         mkDomainValue
                             testSort
-                            (mkStringLiteral (StringLiteral "a"))
+                            (BuiltinDomainPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -209,7 +209,7 @@ test_equalsSimplification = give mockSortTools
                     { term =
                         mkDomainValue
                             testSort2
-                            (mkStringLiteral (StringLiteral "a"))
+                            (BuiltinDomainPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -221,12 +221,12 @@ test_equalsSimplification = give mockSortTools
             (evaluateGeneric
                 mockMetaMetadataTools
                 ExpandedPattern
-                    { term = mkStringLiteral (StringLiteral "a")
+                    { term = mkStringLiteral "a"
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 ExpandedPattern
-                    { term = mkStringLiteral (StringLiteral "a")
+                    { term = mkStringLiteral "a"
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -238,12 +238,12 @@ test_equalsSimplification = give mockSortTools
             (evaluateGeneric
                 mockMetaMetadataTools
                 ExpandedPattern
-                    { term = mkStringLiteral (StringLiteral "a")
+                    { term = mkStringLiteral "a"
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 ExpandedPattern
-                    { term = mkStringLiteral (StringLiteral "b")
+                    { term = mkStringLiteral "b"
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -255,12 +255,12 @@ test_equalsSimplification = give mockSortTools
             (evaluateGeneric
                 mockMetaMetadataTools
                 ExpandedPattern
-                    { term = mkCharLiteral (CharLiteral 'a')
+                    { term = mkCharLiteral 'a'
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 ExpandedPattern
-                    { term = mkCharLiteral (CharLiteral 'a')
+                    { term = mkCharLiteral 'a'
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -272,12 +272,12 @@ test_equalsSimplification = give mockSortTools
             (evaluateGeneric
                 mockMetaMetadataTools
                 ExpandedPattern
-                    { term = mkCharLiteral (CharLiteral 'a')
+                    { term = mkCharLiteral 'a'
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 ExpandedPattern
-                    { term = mkCharLiteral (CharLiteral 'b')
+                    { term = mkCharLiteral 'b'
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -779,4 +779,3 @@ evaluateGeneric
     -> CommonOrOfExpandedPattern level
 evaluateGeneric tools first second =
     fst $ evalSimplifier $ makeEvaluate tools first second
-
