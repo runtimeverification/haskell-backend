@@ -10,6 +10,7 @@ Portability : POSIX
 module Kore.ASTVerifier.AttributesVerifier
     ( verifyAttributes
     , verifyHookAttribute
+    , verifyNoHookAttribute
     , AttributesVerification (..)
     ) where
 
@@ -98,3 +99,26 @@ verifyHookAttribute indexedModule =
                     _ <- resolveHook indexedModule hookId
                     return ()
             return hook
+
+{- | Verify that the @hook{}()@ attribute is not present.
+
+    It is an error if a non-@hooked@ declaration has a @hook@ attribute.
+
+ -}
+verifyNoHookAttribute
+    :: AttributesVerification atts
+    -> Attributes
+    -> Either (Error VerifyError) ()
+verifyNoHookAttribute =
+    \case
+        DoNotVerifyAttributes ->
+            -- Do not verify anything.
+            \_ -> return ()
+        VerifyAttributes _ -> \attributes -> do
+            Hook { getHook } <- castError (parseAttributes attributes)
+            case getHook of
+                Nothing ->
+                    -- The hook attribute is (correctly) absent.
+                    return ()
+                Just _ -> do
+                    koreFail "Unexpected 'hook' attribute"
