@@ -1,3 +1,5 @@
+{-# LANGUAGE MagicHash #-}
+
 module Test.Kore.Builtin.Int where
 
 import Test.QuickCheck
@@ -8,6 +10,12 @@ import           Data.Map
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
+import           GHC.Integer
+                 ( smallInteger )
+import           GHC.Integer.GMP.Internals
+                 ( powModInteger, recipModInteger )
+import           GHC.Integer.Logarithms
+                 ( integerLog2# )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -79,10 +87,9 @@ propComparison
     -> SymbolOrAlias Object
     -- ^ symbol
     -> (Integer -> Integer -> Property)
-propComparison impl symb =
-    \a b ->
-        let pat = App_ symb (asPattern <$> [a, b])
-        in Test.Bool.asExpandedPattern (impl a b) === evaluate pat
+propComparison impl symb a b =
+    let pat = App_ symb (asPattern <$> [a, b])
+    in Test.Bool.asExpandedPattern (impl a b) === evaluate pat
 
 prop_min :: Integer -> Integer -> Property
 prop_min = propBinary min minSymbol
@@ -125,10 +132,9 @@ propBinary
     -> SymbolOrAlias Object
     -- ^ hooked symbol
     -> (Integer -> Integer -> Property)
-propBinary impl symb =
-    \a b ->
-        let pat = App_ symb (asPattern <$> [a, b])
-        in asExpandedPattern (impl a b) === evaluate pat
+propBinary impl symb a b =
+    let pat = App_ symb (asPattern <$> [a, b])
+    in asExpandedPattern (impl a b) === evaluate pat
 
 prop_abs :: Integer -> Property
 prop_abs = propUnary abs absSymbol
@@ -143,10 +149,9 @@ propUnary
     -> SymbolOrAlias Object
     -- ^ hooked symbol
     -> (Integer -> Property)
-propUnary impl symb =
-    \a ->
-        let pat = App_ symb (asPattern <$> [a])
-        in asExpandedPattern (impl a) === evaluate pat
+propUnary impl symb a =
+    let pat = App_ symb (asPattern <$> [a])
+    in asExpandedPattern (impl a) === evaluate pat
 
 prop_tdiv :: Integer -> Integer -> Property
 prop_tdiv = propPartialBinary tdiv tdivSymbol
@@ -177,10 +182,9 @@ propPartialBinary
     -> SymbolOrAlias Object
     -- ^ hooked symbol
     -> (Integer -> Integer -> Property)
-propPartialBinary impl symb =
-    \a b ->
-        let pat = App_ symb (asPattern <$> [a, b])
-        in asPartialExpandedPattern (impl a b) === evaluate pat
+propPartialBinary impl symb a b =
+    let pat = App_ symb (asPattern <$> [a, b])
+    in asPartialExpandedPattern (impl a b) === evaluate pat
 
 prop_tdivZero :: Integer -> Property
 prop_tdivZero = propPartialBinaryZero tdiv tdivSymbol
@@ -188,17 +192,73 @@ prop_tdivZero = propPartialBinaryZero tdiv tdivSymbol
 prop_tmodZero :: Integer -> Property
 prop_tmodZero = propPartialBinaryZero tmod tmodSymbol
 
--- | Test a partial unary operator hooked to the given symbol.
+-- | Test a partial binary operator hooked to the given symbol, passing zero as
+-- the second argument.
 propPartialBinaryZero
     :: (Integer -> Integer -> Maybe Integer)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
     -> (Integer -> Property)
-propPartialBinaryZero impl symb =
-    \a ->
-        let pat = App_ symb (asPattern <$> [a, 0])
-        in asPartialExpandedPattern (impl a 0) === evaluate pat
+propPartialBinaryZero impl symb a =
+    let pat = App_ symb (asPattern <$> [a, 0])
+    in asPartialExpandedPattern (impl a 0) === evaluate pat
+
+pow :: Integer -> Integer -> Maybe Integer
+pow b e
+    | e < 0 = Nothing
+    | otherwise = Just (b ^ e)
+
+prop_pow :: Integer -> Integer -> Property
+prop_pow = propPartialBinary pow powSymbol
+
+powSymbol :: SymbolOrAlias Object
+powSymbol = builtinSymbol "powInt"
+
+powmod :: Integer -> Integer -> Integer -> Maybe Integer
+powmod b e m
+    | m == 0 = Nothing
+    | e < 0 && recipModInteger b m == 0 = Nothing
+    | otherwise = Just (powModInteger b e m)
+
+prop_powmod :: Integer -> Integer -> Integer -> Property
+prop_powmod = propPartialTernary powmod powmodSymbol
+
+powmodSymbol :: SymbolOrAlias Object
+powmodSymbol = builtinSymbol "powmodInt"
+
+log2 :: Integer -> Maybe Integer
+log2 n
+    | n > 0 = Just (smallInteger (integerLog2# n))
+    | otherwise = Nothing
+
+prop_log2 :: Integer -> Property
+prop_log2 = propPartialUnary log2 log2Symbol
+
+log2Symbol :: SymbolOrAlias Object
+log2Symbol = builtinSymbol "log2Int"
+
+-- | Test a partial unary operator hooked to the given symbol.
+propPartialUnary
+    :: (Integer -> Maybe Integer)
+    -- ^ operator
+    -> SymbolOrAlias Object
+    -- ^ hooked symbol
+    -> (Integer -> Property)
+propPartialUnary impl symb a =
+    let pat = App_ symb (asPattern <$> [a])
+    in asPartialExpandedPattern (impl a) === evaluate pat
+
+-- | Test a partial ternary operator hooked to the given symbol.
+propPartialTernary
+    :: (Integer -> Integer -> Integer -> Maybe Integer)
+    -- ^ operator
+    -> SymbolOrAlias Object
+    -- ^ hooked symbol
+    -> (Integer -> Integer -> Integer -> Property)
+propPartialTernary impl symb a b c =
+    let pat = App_ symb (asPattern <$> [a, b, c])
+    in asPartialExpandedPattern (impl a b c) === evaluate pat
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
 asPattern :: Integer -> CommonPurePattern Object
@@ -240,6 +300,15 @@ builtinSymbol name =
         , symbolOrAliasParams = []
         }
 
+{- | Declare a hooked symbol with one argument.
+
+  The result and argument have sort 'intSort'.
+
+ -}
+unarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
+unarySymbolDecl builtinName symbol =
+    hookedSymbolDecl builtinName symbol intSort [intSort]
+
 {- | Declare a hooked symbol with two arguments.
 
   The result and arguments all have sort 'intSort'.
@@ -249,14 +318,14 @@ binarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
 binarySymbolDecl builtinName symbol =
     hookedSymbolDecl builtinName symbol intSort [intSort, intSort]
 
-{- | Declare a hooked symbol with one argument.
+{- | Declare a hooked symbol with three arguments.
 
-  The result and argument have sort 'intSort'.
+  The result and arguments all have sort 'intSort'.
 
- -}
-unarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
-unarySymbolDecl builtinName symbol =
-    hookedSymbolDecl builtinName symbol intSort [intSort]
+  -}
+ternarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
+ternarySymbolDecl builtinName symbol =
+    hookedSymbolDecl builtinName symbol intSort [intSort, intSort, intSort]
 
 {- | Declare a hooked symbol with two arguments.
 
@@ -304,6 +373,9 @@ intModule =
             , unarySymbolDecl "INT.abs" absSymbol
             , binarySymbolDecl "INT.tdiv" tdivSymbol
             , binarySymbolDecl "INT.tmod" tmodSymbol
+            , binarySymbolDecl "INT.pow" powSymbol
+            , ternarySymbolDecl "INT.powmod" powmodSymbol
+            , unarySymbolDecl "INT.log2" log2Symbol
             ]
         }
 

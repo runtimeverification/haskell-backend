@@ -14,6 +14,9 @@ builtin modules.
     import qualified Kore.Builtin.Int as Int
 @
  -}
+
+{-# LANGUAGE MagicHash #-}
+
 module Kore.Builtin.Int
     ( sort
     , assertSort
@@ -37,6 +40,12 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           GHC.Integer
+                 ( smallInteger )
+import           GHC.Integer.GMP.Internals
+                 ( powModInteger, recipModInteger )
+import           GHC.Integer.Logarithms
+                 ( integerLog2# )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
 import qualified Kore.AST.Common as Kore
@@ -252,10 +261,9 @@ builtinFunctions =
     , ("INT.shr", Builtin.notImplemented)
 
       -- Exponential and logarithmic operations
-      -- TODO (thomas.tuegel): Implement exponential and logarithmic operations
-    , ("INT.pow", Builtin.notImplemented)
-    , ("INT.powmod", Builtin.notImplemented)
-    , ("INT.log2", Builtin.notImplemented)
+    , partialBinaryOperator "INT.pow" pow
+    , partialTernaryOperator "INT.powmod" powmod
+    , partialUnaryOperator "INT.log2" log2
     ]
   where
     unaryOperator name op =
@@ -264,11 +272,25 @@ builtinFunctions =
         (name, Builtin.binaryOperator parse asExpandedPattern name op)
     comparator name op =
         (name, Builtin.binaryOperator parse Bool.asExpandedPattern name op)
+    partialUnaryOperator name op =
+        (name, Builtin.unaryOperator parse asPartialExpandedPattern name op)
     partialBinaryOperator name op =
         (name, Builtin.binaryOperator parse asPartialExpandedPattern name op)
+    partialTernaryOperator name op =
+        (name, Builtin.ternaryOperator parse asPartialExpandedPattern name op)
     tdiv n d
         | d == 0 = Nothing
         | otherwise = Just (quot n d)
     tmod n d
         | d == 0 = Nothing
         | otherwise = Just (rem n d)
+    pow b e
+        | e < 0 = Nothing
+        | otherwise = Just (b ^ e)
+    powmod b e m
+        | m == 0 = Nothing
+        | e < 0 && recipModInteger b m == 0 = Nothing
+        | otherwise = Just (powModInteger b e m)
+    log2 n
+        | n > 0 = Just (smallInteger (integerLog2# n))
+        | otherwise = Nothing
