@@ -117,7 +117,7 @@ type Builtin = Map (CommonPurePattern Object) (CommonPurePattern Object)
 {- | Abort function evaluation if the argument is not a Map domain value.
 
     If the operand pattern is not a domain value, the function is simply
-    'NotApplicatible'. If the operand is a domain value, but not represented
+    'NotApplicable'. If the operand is a domain value, but not represented
     by a 'BuiltinDomainMap', it is a bug.
 
  -}
