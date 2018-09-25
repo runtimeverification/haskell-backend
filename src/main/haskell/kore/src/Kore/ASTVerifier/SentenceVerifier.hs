@@ -158,33 +158,28 @@ verifyMetaSentence
   =
     withSentenceContext sentence verifyMetaSentence0
   where
-    verifyMetaSentence0 =
+    verifyMetaSentence0 = do
         case sentence of
             SentenceSymbolSentence symbolSentence ->
                 verifySymbolSentence
                     indexedModule
-                    attributesVerification
                     symbolSentence
             SentenceAliasSentence aliasSentence ->
                 verifyAliasSentence
                     builtinVerifiers
                     indexedModule
-                    attributesVerification
                     aliasSentence
             SentenceAxiomSentence axiomSentence ->
                 verifyAxiomSentence
                     axiomSentence
                     builtinVerifiers
                     indexedModule
-                    attributesVerification
             SentenceSortSentence sortSentence -> do
                 koreFailWhen
                     (sortParams /= [])
                     ("Malformed meta sort '" ++ getId sortId
                         ++ "' with non-empty Parameter sorts.")
-                verifyAttributes
-                    (sentenceSortAttributes sortSentence)
-                    attributesVerification
+                verifySuccess
               where
                 sortId     = sentenceSortName sortSentence
                 sortParams = sentenceSortParameters sortSentence
@@ -192,6 +187,9 @@ verifyMetaSentence
                 -- Since we have an IndexedModule, we assume that imports were
                 -- already resolved, so there is nothing left to verify here.
                 verifySuccess
+        verifySentenceAttributes
+            attributesVerification
+            sentence
 
 verifyObjectSentence
     :: Builtin.Verifiers
@@ -207,27 +205,41 @@ verifyObjectSentence
   =
     withSentenceContext sentence verifyObjectSentence1
   where
-    verifyObjectSentence1 =
+    verifyObjectSentence1 = do
         case sentence of
             SentenceAliasSentence aliasSentence ->
                 verifyAliasSentence
                     builtinVerifiers
                     indexedModule
-                    attributesVerification
                     aliasSentence
             SentenceSymbolSentence symbolSentence ->
                 verifySymbolSentence
                     indexedModule
-                    attributesVerification
                     symbolSentence
             SentenceSortSentence sortSentence ->
-                verifySortSentence sortSentence attributesVerification
+                verifySortSentence sortSentence
             SentenceHookSentence hookSentence ->
                 verifyHookSentence
                     builtinVerifiers
                     indexedModule
                     attributesVerification
                     hookSentence
+        verifySentenceAttributes
+            attributesVerification
+            sentence
+
+verifySentenceAttributes
+    :: AttributesVerification atts
+    -> Sentence level UnifiedSortVariable UnifiedPattern Variable
+    -> Either (Error VerifyError) VerifySuccess
+verifySentenceAttributes attributesVerification sentence =
+    do
+        let attributes = sentenceAttributes sentence
+        verifyAttributes attributes attributesVerification
+        case sentence of
+            SentenceHookSentence _ -> return ()
+            _ -> verifyNoHookAttribute attributesVerification attributes
+        verifySuccess
 
 verifyHookSentence
     :: Builtin.Verifiers
@@ -247,7 +259,7 @@ verifyHookSentence
     verifyHookedSort
         sentence@SentenceSort { sentenceSortAttributes }
       = do
-        verifySortSentence sentence attributesVerification
+        verifySortSentence sentence
         hook <-
             verifyHookAttribute
                 indexedModule
@@ -259,7 +271,7 @@ verifyHookSentence
     verifyHookedSymbol
         sentence@SentenceSymbol { sentenceSymbolAttributes }
       = do
-        verifySymbolSentence indexedModule attributesVerification sentence
+        verifySymbolSentence indexedModule sentence
         hook <-
             verifyHookAttribute
                 indexedModule
@@ -273,11 +285,10 @@ verifyHookSentence
 verifySymbolSentence
     :: (MetaOrObject level)
     => KoreIndexedModule atts
-    -> AttributesVerification atts
     -> KoreSentenceSymbol level
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolSentence
-    indexedModule attributesVerification sentence
+    indexedModule sentence
   =
     do
         variables <- buildDeclaredSortVariables sortParams
@@ -288,9 +299,6 @@ verifySymbolSentence
             findSort
             variables
             (sentenceSymbolResultSort sentence)
-        verifyAttributes
-            (sentenceSymbolAttributes sentence)
-            attributesVerification
   where
     findSort = findIndexedSort indexedModule
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
@@ -299,11 +307,10 @@ verifyAliasSentence
     :: (MetaOrObject level)
     => Builtin.Verifiers
     -> KoreIndexedModule atts
-    -> AttributesVerification atts
     -> KoreSentenceAlias level
     -> Either (Error VerifyError) VerifySuccess
 verifyAliasSentence
-    builtinVerifiers indexedModule attributesVerification sentence
+    builtinVerifiers indexedModule sentence
   =
     do
         variables <- buildDeclaredSortVariables sortParams
@@ -331,9 +338,6 @@ verifyAliasSentence
             variables
             (Just $ asUnified rightPatternSort)
             (asKorePattern $ sentenceAliasRightPattern sentence)
-        verifyAttributes
-            (sentenceAliasAttributes sentence)
-            attributesVerification
   where
     findSort         = findIndexedSort indexedModule
     sortParams       = (aliasParams . sentenceAliasAlias) sentence
@@ -348,9 +352,8 @@ verifyAxiomSentence
     :: KoreSentenceAxiom
     -> Builtin.Verifiers
     -> KoreIndexedModule atts
-    -> AttributesVerification atts
     -> Either (Error VerifyError) VerifySuccess
-verifyAxiomSentence axiom builtinVerifiers indexedModule attributesVerification =
+verifyAxiomSentence axiom builtinVerifiers indexedModule =
     do
         variables <-
             buildDeclaredUnifiedSortVariables
@@ -361,21 +364,13 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule attributesVerification 
             variables
             Nothing
             (sentenceAxiomPattern axiom)
-        verifyAttributes
-            (sentenceAxiomAttributes axiom)
-            attributesVerification
 
 verifySortSentence
     :: KoreSentenceSort Object
-    -> AttributesVerification atts
     -> Either (Error VerifyError) VerifySuccess
-verifySortSentence sentenceSort attributesVerification =
-    do
-        _ <-
-            buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
-        verifyAttributes
-            (sentenceSortAttributes sentenceSort)
-            attributesVerification
+verifySortSentence sentenceSort = do
+    _ <- buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
+    verifySuccess
 
 buildDeclaredSortVariables
     :: MetaOrObject level
