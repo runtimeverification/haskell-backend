@@ -167,8 +167,8 @@ asPattern
     case domainValueChild of
         Kore.BuiltinDomainPattern _ ->
             return (Kore.DV_ domainValueSort domainValueChild)
-        Kore.BuiltinDomainMap _map ->
-            Map.asPattern indexedModule domainValueSort <*> pure _map
+        Kore.BuiltinDomainMap map' ->
+            Map.asPattern indexedModule domainValueSort <*> pure map'
 
 {- | Externalize all builtin domain values in the given pattern.
 

@@ -130,7 +130,7 @@ expectBuiltinDomainMap ctx =
     \case
         Kore.DV_ _ domain ->
             case domain of
-                Kore.BuiltinDomainMap _map -> return _map
+                Kore.BuiltinDomainMap map' -> return map'
                 _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a map")
         _ ->
             Except.throwError NotApplicable
@@ -143,11 +143,11 @@ returnMap
     => Kore.Sort Object
     -> Builtin
     -> m (AttemptedFunction Object Kore.Variable)
-returnMap resultSort _map =
+returnMap resultSort map' =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
         $ Kore.DV_ resultSort
-        $ Kore.BuiltinDomainMap _map
+        $ Kore.BuiltinDomainMap map'
 
 evalLookup :: Builtin.Function
 evalLookup =
@@ -156,14 +156,14 @@ evalLookup =
     evalLookup0 _ _ _ arguments =
         getAttemptedFunction
         (do
-            let (_map, _key) =
+            let (_map, key) =
                     case arguments of
-                        [_map, _key] -> (_map, _key)
+                        [_map, key'] -> (_map, key')
                         _ -> Builtin.wrongArity "MAP.lookup"
             _map <- expectBuiltinDomainMap "MAP.lookup" _map
             Builtin.appliedFunction
                 $ maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
-                $ Map.lookup _key _map
+                $ Map.lookup key _map
         )
 
 evalElement :: Builtin.Function
@@ -214,12 +214,12 @@ evalUpdate =
     evalUpdate0 _ _ resultSort = \arguments ->
         getAttemptedFunction
         (do
-            let (_map, _key, _value) =
+            let (_map, key, value) =
                     case arguments of
-                        [_map, _key, _value] -> (_map, _key, _value)
+                        [_map, key', value'] -> (_map, key', value')
                         _ -> Builtin.wrongArity "MAP.update"
             _map <- expectBuiltinDomainMap "MAP.update" _map
-            returnMap resultSort (Map.insert _key _value _map)
+            returnMap resultSort (Map.insert key value _map)
         )
 
 evalInKeys :: Builtin.Function
@@ -229,14 +229,14 @@ evalInKeys =
     evalInKeys0 _ _ resultSort = \arguments ->
         getAttemptedFunction
         (do
-            let (_key, _map) =
+            let (key, _map) =
                     case arguments of
-                        [_key, _map] -> (_key, _map)
+                        [key', _map] -> (key', _map)
                         _ -> Builtin.wrongArity "MAP.in_keys"
             _map <- expectBuiltinDomainMap "MAP.in_keys" _map
             Builtin.appliedFunction
                 $ Bool.asExpandedPattern resultSort
-                $ Map.member _key _map
+                $ Map.member key _map
         )
 
 {- | Implement builtin function evaluation.
