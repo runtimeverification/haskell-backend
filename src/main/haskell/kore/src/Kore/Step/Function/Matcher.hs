@@ -1,6 +1,6 @@
 {-|
 Module      : Kore.Step.Function.Matcher
-Description : Matches free-form patterns which ca n be used wheh applying
+Description : Matches free-form patterns which can be used when applying
               Equals rules.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -70,7 +70,7 @@ import           Kore.Variables.Fresh
 
 {- Matches two patterns based on their form.
 
-Assumes that the two patetrns have no common variables (quantified or not).
+Assumes that the two patterns have no common variables (quantified or not).
 
 Returns Right bottom or Left when it can't handle the patterns. The
 returned substitution substitutes only variables from the first pattern.
