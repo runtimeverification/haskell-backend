@@ -200,9 +200,7 @@ propPartialBinaryZero
     -> SymbolOrAlias Object
     -- ^ hooked symbol
     -> (Integer -> Property)
-propPartialBinaryZero impl symb a =
-    let pat = App_ symb (asPattern <$> [a, 0])
-    in asPartialExpandedPattern (impl a 0) === evaluate pat
+propPartialBinaryZero impl symb a = propPartialBinary impl symb a 0
 
 pow :: Integer -> Integer -> Maybe Integer
 pow b e
