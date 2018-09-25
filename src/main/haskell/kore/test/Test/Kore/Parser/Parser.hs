@@ -462,9 +462,9 @@ domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
-            ( patternPureToKore
-            $ DV_ (sortVariableSort "s1") (BuiltinDomainPattern (StringLiteral_ "a"))
-            )
+            $ patternPureToKore
+            $ DV_ (sortVariableSort "s1")
+            $ BuiltinDomainPattern (StringLiteral_ "a")
         , FailureWithoutMessage
             [ ""
             , "\\dv{s1, s2}(\"a\")"
