@@ -18,7 +18,6 @@ module Kore.SMT.SMT
 )
 where
 
-import           Control.Lens ( traverseOf )
 import           Data.Proxy
 import           Data.Default
 import qualified Data.Map as Map
@@ -43,7 +42,6 @@ import           Data.SBV
 
 import           GHC.IO.Unsafe
 
-import Debug.Trace
 
 data TranslatePredicateError
  = UnknownHookedSort (Sort Object) 

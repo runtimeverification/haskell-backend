@@ -128,6 +128,7 @@ patternLens
   App_ h children -> App_ h <$> traverse c children
   StringLiteral_ s -> pure (StringLiteral_ s)
   CharLiteral_   c -> pure (CharLiteral_   c)
+  _ -> error "The impossible happened."
   -- p -> pure p
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc.
