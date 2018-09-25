@@ -10,6 +10,10 @@ Portability : portable
 -}
 module Kore.Unification.UnifierImpl where
 
+import Control.Error.Safe
+       ( tryAssert )
+import Control.Error.Util
+       ( note )
 import Control.Monad
        ( foldM )
 import Control.Monad.Counter
@@ -26,6 +30,7 @@ import Data.List
 
 import Kore.Predicate.Predicate (Predicate, unwrapPredicate, wrapPredicate)
 import Kore.AST.Common
+import Kore.ASTUtils.SmartPatterns
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.IndexedModule.MetadataTools
@@ -35,12 +40,16 @@ import Kore.Unification.UnificationSolution
 import Kore.Unification.Procedure (unificationProcedure)
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
+import Kore.Step.ExpandedPattern
+       ( ExpandedPattern, isBottom )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..), top )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import {-# SOURCE #-} Kore.Step.Substitution (mergePredicatesAndSubstitutions)
-
+import {-# SOURCE #-} Kore.Step.Simplification.AndTerms (termUnification)
 
 {-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
@@ -98,39 +107,41 @@ simplifyAnds
     -> ExceptT
         UnificationError
         m
-        ( UnificationSolution level variable
+        ( ExpandedPattern level variable
         , UnificationProof level variable
         )
 simplifyAnds _ [] = throwE UnsupportedPatterns
-simplifyAnds tools (p:ps) = do
-    (predicate, ls) <- foldM
+simplifyAnds tools patterns = do
+     result <- foldM
         simplifyAnds'
-        (wrapPredicate p, [])
-        ps
-    (predSubst, _) <- mergePredicatesAndSubstitutions tools [predicate] ls
-    return $
-        ( UnificationSolution
-            (unwrapPredicate . PredicateSubstitution.predicate $ predSubst)
-            (PredicateSubstitution.substitution predSubst)
-        , EmptyUnificationProof
-        )
+        ExpandedPattern.top
+        patterns
+     -- TODO(Vladimir) this fixes ~15 tests. Should we change the tests instead?
+     tryAssert UnsupportedPatterns . not . isBottom $ result
+     return ( result, EmptyUnificationProof )
   where
     simplifyAnds'
-        :: ( Predicate level variable
-           , [UnificationSubstitution level variable]
-           )
+        :: ExpandedPattern level variable
         -> PureMLPattern level variable
         -> ExceptT
             UnificationError
             m
-            ( Predicate level variable
-            , [UnificationSubstitution level variable]
-            )
-    simplifyAnds' (predicate, ls) pat = do
-        (predSubst, _) <- unificationProcedure tools (unwrapPredicate predicate) pat
-        return ( PredicateSubstitution.predicate predSubst
-               , PredicateSubstitution.substitution predSubst : ls
-               )
+            ( ExpandedPattern level variable )
+    simplifyAnds' intermediate (And_ _ lhs rhs) =
+        foldM simplifyAnds' intermediate [lhs, rhs]
+    simplifyAnds' intermediate pat = do
+        (result, _) <- ExceptT . sequence
+            $ note UnsupportedPatterns
+            $ termUnification tools (ExpandedPattern.term intermediate) pat
+        (predSubst, _) <- mergePredicatesAndSubstitutions tools
+          [ ExpandedPattern.predicate result, ExpandedPattern.predicate intermediate ]
+          [ ExpandedPattern.substitution result, ExpandedPattern.substitution intermediate ]
+
+        return $ ExpandedPattern.ExpandedPattern
+            ( ExpandedPattern.term result )
+            ( PredicateSubstitution.predicate predSubst )
+            ( PredicateSubstitution.substitution predSubst )
+
 
 groupSubstitutionByVariable
     :: Ord (variable level)
@@ -170,8 +181,8 @@ solveGroupedSubstitution _ [] = throwE UnsupportedPatterns
 solveGroupedSubstitution tools ((x,p):subst) = do
     (solution, proof) <- simplifyAnds tools (p : map snd subst)
     return
-        ( (x,unificationSolutionTerm solution)
-          : unificationSolutionConstraints solution
+        ( (x, ExpandedPattern.term solution)
+          : ExpandedPattern.substitution solution
         , proof)
 
 -- |Takes a potentially non-normalized substitution,

@@ -41,6 +41,9 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..), bottom, top )
+import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.PatternAttributes
 import           Kore.Step.Simplification.Data
@@ -244,10 +247,11 @@ unificationSubstitution = map trans
 unificationResult
     :: UnificationResultTerm Object
     -> Substitution Object
-    -> UnificationSolution Object Variable
-unificationResult (UnificationResultTerm pat) sub = UnificationSolution
-    { unificationSolutionTerm = extractPurePattern pat
-    , unificationSolutionConstraints = unificationSubstitution sub
+    -> ExpandedPattern Object Variable
+unificationResult (UnificationResultTerm pat) sub = ExpandedPattern.ExpandedPattern
+    { term = extractPurePattern pat
+    , predicate = makeTruePredicate
+    , substitution = unificationSubstitution sub
     }
 
 newtype UnificationTerm level =
@@ -275,8 +279,8 @@ andSimplifySuccess message term1 term2 resultTerm subst proof =
   where
     Right (subst', proof') = evalCounter . runExceptT $ simplifyAnds tools [(unificationProblem term1 term2)]
     subst'' = subst'
-        { unificationSolutionConstraints =
-            sortBy (compare `on` fst) (unificationSolutionConstraints subst')
+        { substitution =
+            sortBy (compare `on` fst) (ExpandedPattern.substitution subst')
         }
 
 
@@ -321,7 +325,7 @@ unificationProcedureSuccess
             (sortBy (compare `on` fst) substitution, predicate, proof')
         )
   where
-    Right ( ExpandedPattern.PredicateSubstitution {substitution, predicate}
+    Right ( PredicateSubstitution.PredicateSubstitution {substitution, predicate}
           , proof'
           ) =
         evalCounter . runExceptT $
@@ -338,46 +342,31 @@ test_unification =
         (UnificationTerm aA)
         (UnificationResultTerm aA)
         []
-        (ConjunctionIdempotency (extractPurePattern aA))
+        EmptyUnificationProof
     , andSimplifySuccess "Variable"
         (UnificationTerm x)
         (UnificationTerm aA)
         (UnificationResultTerm aA)
         [("x", aA)]
-        (Proposition_5_24_3
-            [FunctionalHead (symbolHead a)]
-            (var x)
-            (extractPurePattern aA)
-        )
+        EmptyUnificationProof
     , andSimplifySuccess "one level"
         (UnificationTerm (applyS f [x]))
         (UnificationTerm (applyS f [aA]))
         (UnificationResultTerm (applyS f [aA]))
         [("x", aA)]
-        (AndDistributionAndConstraintLifting
-            (getSentenceSymbolOrAliasHead f [])
-            [ Proposition_5_24_3
-                [FunctionalHead (symbolHead a)]
-                (var x)
-                (extractPurePattern aA)
-            ]
-        )
+        EmptyUnificationProof
     , andSimplifySuccess "equal non-constructor patterns"
         (UnificationTerm a2A)
         (UnificationTerm a2A)
         (UnificationResultTerm a2A)
         []
-        (ConjunctionIdempotency (extractPurePattern a2A))
+        EmptyUnificationProof
     , andSimplifySuccess "variable + non-constructor pattern"
         (UnificationTerm a2A)
         (UnificationTerm x)
         (UnificationResultTerm a2A)
         [("x", a2A)]
-        (Proposition_5_24_3
-            [FunctionalHead (symbolHead a2)]
-            (var x)
-            (extractPurePattern a2A)
-        )
+        EmptyUnificationProof
     , andSimplifySuccess
         "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
         (UnificationTerm (applyS ef [ex1, applyS eh [ex1], ex2]))
@@ -592,63 +581,31 @@ injUnificationTests =
         (UnificationTerm (applyInj s1 s2 aA))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
-        (AndDistributionAndConstraintLifting
-            (injHead s1 s2)
-            [Proposition_5_24_3
-                [FunctionalHead (symbolHead a)]
-                (var x)
-                (extractPurePattern aA)
-            ]
-        )
+        EmptyUnificationProof
     , andSimplifySuccess "Variable"
         (UnificationTerm xs2)
         (UnificationTerm (applyInj s1 s2 aA))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("xs2", applyInj s1 s2 aA)]
-        (Proposition_5_24_3
-            [FunctionalHead (injHead s1 s2), FunctionalHead (symbolHead a)]
-            (var xs2)
-            (extractPurePattern (applyInj s1 s2 aA))
-        )
+        EmptyUnificationProof
     , andSimplifySuccess "Injected Variable vs doubly injected term"
         (UnificationTerm (applyInj s1 s2 x))
         (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
-        (AndDistributionAndConstraintLifting
-            (injHead s1 s2)
-            [Proposition_5_24_3
-                [FunctionalHead (symbolHead a)]
-                (var x)
-                (extractPurePattern aA)
-            ]
-        )
+        EmptyUnificationProof
     , andSimplifySuccess "doubly injected variable vs injected term"
         (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 x))))
         (UnificationTerm (applyInj s1 s2 aA))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
-        (AndDistributionAndConstraintLifting
-            (injHead s1 s2)
-            [Proposition_5_24_3
-                [FunctionalHead (symbolHead a)]
-                (var x)
-                (extractPurePattern aA)
-            ]
-        )
+        EmptyUnificationProof
     , andSimplifySuccess "doubly injected variable vs doubly injected term"
         (simplifyPattern (UnificationTerm (applyInj s4 s2 (applyInj s1 s4 x))))
         (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
-        (AndDistributionAndConstraintLifting
-            (injHead s1 s2)
-            [Proposition_5_24_3
-                [FunctionalHead (symbolHead a)]
-                (var x)
-                (extractPurePattern aA)
-            ]
-        )
+        EmptyUnificationProof
     , andSimplifyFailure "constant vs injection"
         (UnificationTerm aA)
         (UnificationTerm (applyInj s2 s1 xs2))
