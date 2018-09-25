@@ -260,8 +260,9 @@ powmodSymbol = builtinSymbol "powmodInt"
 log2Symbol :: SymbolOrAlias Object
 log2Symbol = builtinSymbol "log2Int"
 
+-- | Another name for asPattern.
 intLiteral :: Integer -> CommonPurePattern Object
-intLiteral n = DV_ intSort (BuiltinDomainPattern $ StringLiteral_ $ show n)
+intLiteral = asPattern
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
 asPattern :: Integer -> CommonPurePattern Object
