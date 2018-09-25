@@ -36,6 +36,7 @@ dependencies:
   - groom
   - hashable
   - haskeline
+  - integer-gmp
   - lens
   - megaparsec >= 6.4.0
   - mtl
