@@ -72,7 +72,7 @@ pattern Ceil_
 pattern DV_
   :: () => (level ~ Object) =>
      Sort level
-  -> PureMLPattern Meta Variable
+  -> BuiltinDomain (PureMLPattern Meta Variable)
   -> PureMLPattern level var
 
 pattern Equals_
@@ -152,12 +152,12 @@ pattern Var_
 
 pattern StringLiteral_
   :: () => (level ~ Meta)
-  => StringLiteral
+  => String
   -> PureMLPattern level var
 
 pattern CharLiteral_
   :: () => (level ~ Meta)
-  => CharLiteral
+  => Char
   -> PureMLPattern level var
 
 -- No way to make multiline pragma?
@@ -186,5 +186,5 @@ pattern Var_             v     = Fix (VariablePattern v)
 pattern V :: var level -> PureMLPattern level var
 pattern V x = Var_ x
 
-pattern StringLiteral_ s = Fix (StringLiteralPattern s)
-pattern CharLiteral_   c = Fix (CharLiteralPattern   c)
+pattern StringLiteral_ s = Fix (StringLiteralPattern (StringLiteral s))
+pattern CharLiteral_   c = Fix (CharLiteralPattern   (CharLiteral c))

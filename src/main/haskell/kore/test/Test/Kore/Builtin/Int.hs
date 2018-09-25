@@ -27,7 +27,6 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
@@ -116,7 +115,7 @@ mulSymbol :: SymbolOrAlias Object
 mulSymbol = builtinSymbol "mulInt"
 
 intLiteral :: Integer -> CommonPurePattern Object
-intLiteral n = DV_ intSort (StringLiteral_ $ StringLiteral $ show n)
+intLiteral n = DV_ intSort (BuiltinDomainPattern $ StringLiteral_ $ show n)
 
 
 -- | Test a binary operator hooked to the given symbol.
@@ -182,9 +181,6 @@ propPartialBinary impl symb =
     \a b ->
         let pat = App_ symb (asPattern <$> [a, b])
         in asPartialExpandedPattern (impl a b) === evaluate pat
-  where
-    asPartialExpandedPattern =
-        maybe ExpandedPattern.bottom asExpandedPattern
 
 prop_tdivZero :: Integer -> Property
 prop_tdivZero = propPartialBinaryZero tdiv tdivSymbol
@@ -203,9 +199,6 @@ propPartialBinaryZero impl symb =
     \a ->
         let pat = App_ symb (asPattern <$> [a, 0])
         in asPartialExpandedPattern (impl a 0) === evaluate pat
-  where
-    asPartialExpandedPattern =
-        maybe ExpandedPattern.bottom asExpandedPattern
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
 asPattern :: Integer -> CommonPurePattern Object
@@ -214,6 +207,10 @@ asPattern = Int.asPattern intSort
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
 asExpandedPattern :: Integer -> CommonExpandedPattern Object
 asExpandedPattern = Int.asExpandedPattern intSort
+
+-- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
+asPartialExpandedPattern :: Maybe Integer -> CommonExpandedPattern Object
+asPartialExpandedPattern = Int.asPartialExpandedPattern intSort
 
 -- | A sort to hook to the builtin @INT.Int@.
 intSort :: Sort Object

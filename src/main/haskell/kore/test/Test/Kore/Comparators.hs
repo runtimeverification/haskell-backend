@@ -11,8 +11,6 @@ Portability : portable
 -}
 module Test.Kore.Comparators where
 
-import Data.Functor.Foldable
-       ( Fix )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -302,7 +300,7 @@ instance (EqualWithExplanation child, Show child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (DomainValue level (Fix (Pattern Meta Variable)))
+instance EqualWithExplanation (DomainValue level (BuiltinDomain (CommonPurePattern Meta)))
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

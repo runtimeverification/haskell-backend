@@ -20,6 +20,7 @@ module Kore.IndexedModule.IndexedModule
         , indexedModuleObjectSortDescriptions
         , indexedModuleMetaSortDescriptions, indexedModuleAxioms
         , indexedModuleAttributes, indexedModuleImports
+        , indexedModuleHooks
         )
     , KoreImplicitIndexedModule
     , KoreIndexedModule
@@ -43,11 +44,13 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import Kore.AST.Common
+import Kore.AST.Error
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Attribute.Parser
        ( ParseAttributes, parseAttributes )
+import Kore.Builtin.Hook
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
 
@@ -95,6 +98,15 @@ data IndexedModule sortParam pat variable atts =
             ]
     , indexedModuleHookedIdentifiers
         :: !(Set.Set (Id Object))
+        -- ^ set of hooked identifiers
+
+    -- TODO (thomas.tuegel): Having multiple identifiers hooked to the same
+    -- builtin is not actually valid, but the index must admit invalid data
+    -- because verification only happens after.
+    , indexedModuleHooks
+        :: !(Map.Map String [Id Object])
+        -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
+        -- identifiers
     }
 
 -- |Convenient notation for retrieving a sentence from a
@@ -181,6 +193,7 @@ emptyIndexedModule name =
     , indexedModuleAttributes = (def, Attributes [])
     , indexedModuleImports = []
     , indexedModuleHookedIdentifiers = Set.empty
+    , indexedModuleHooks = Map.empty
     }
 
 {-|'indexedModuleWithDefaultImports' provides an 'IndexedModule' with the given
@@ -380,111 +393,113 @@ indexModuleMetaSentence
         (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
 indexModuleMetaSentence
-    _ _ _
+    implicitModule
+    importingModules
+    nameToModule
     ( indexedModules
     , indexedModule@IndexedModule
-        { indexedModuleMetaAliasSentences = sentences }
+        { indexedModuleMetaAliasSentences
+        , indexedModuleMetaSymbolSentences
+        , indexedModuleAxioms
+        , indexedModuleImports
+        , indexedModuleMetaSortDescriptions
+        }
     )
-    (SentenceAliasSentence sentence@SentenceAlias
-        { sentenceAliasAlias, sentenceAliasAttributes })
+    sentence
   =
-    do
+    withSentenceContext sentence indexModuleMetaSentence0
+  where
+    indexModuleMetaSentence0 =
+        case sentence of
+            SentenceAliasSentence s -> indexSentenceAlias s
+            SentenceSymbolSentence s -> indexSentenceSymbol s
+            SentenceAxiomSentence s -> indexSentenceAxiom s
+            SentenceImportSentence s -> indexSentenceImport s
+            SentenceSortSentence s -> indexSentenceSort s
+
+    indexSentenceAlias
+        _sentence@SentenceAlias
+            { sentenceAliasAlias = Alias { aliasConstructor }
+            , sentenceAliasAttributes
+            }
+      = do
         atts <- parseAttributesInModule sentenceAliasAttributes
         return
             ( indexedModules
             , indexedModule
                 { indexedModuleMetaAliasSentences =
-                    Map.insert
-                        (aliasConstructor sentenceAliasAlias)
-                        (atts, sentence)
-                        sentences
+                    Map.insert aliasConstructor (atts, _sentence)
+                        indexedModuleMetaAliasSentences
                 }
             )
-indexModuleMetaSentence
-    _ _ _
-    ( indexedModules
-    , indexedModule@IndexedModule
-        { indexedModuleMetaSymbolSentences = sentences }
-    )
-    (SentenceSymbolSentence sentence@SentenceSymbol
-        { sentenceSymbolSymbol, sentenceSymbolAttributes })
-  =
-    do
+
+    indexSentenceSymbol
+        _sentence@SentenceSymbol
+            { sentenceSymbolSymbol = Symbol { symbolConstructor }
+            , sentenceSymbolAttributes
+            }
+      = do
         atts <- parseAttributesInModule sentenceSymbolAttributes
         return
             ( indexedModules
             , indexedModule
                 { indexedModuleMetaSymbolSentences =
                     Map.insert
-                        (symbolConstructor sentenceSymbolSymbol)
-                        (atts, sentence)
-                        sentences
+                        symbolConstructor
+                        (atts, _sentence)
+                        indexedModuleMetaSymbolSentences
                 }
             )
 
-indexModuleMetaSentence
-    _ _ _
-    ( indexedModules
-    , indexedModule@IndexedModule { indexedModuleAxioms = sentences }
-    )
-    (SentenceAxiomSentence sentence@SentenceAxiom
-        { sentenceAxiomAttributes })
-  =
-    do
+    indexSentenceAxiom
+        _sentence@SentenceAxiom { sentenceAxiomAttributes }
+      = do
         atts <- parseAttributesInModule sentenceAxiomAttributes
         return
             ( indexedModules
             , indexedModule
-                { indexedModuleAxioms = (atts, sentence) : sentences }
+                { indexedModuleAxioms =
+                    (atts, _sentence) : indexedModuleAxioms
+                }
             )
 
-indexModuleMetaSentence
-    implicitModule
-    importingModules
-    nameToModule
-    ( indexedModules
-    , indexedModule@IndexedModule { indexedModuleImports = indexedImports }
-    )
-    (SentenceImportSentence SentenceImport
-        { sentenceImportModuleName = importedModuleName
-        , sentenceImportAttributes = attributes
-        }
-    )
-  = do
-    (newIndexedModules, importedModule) <-
-        indexImportedModule
-            implicitModule
-            importingModules
-            nameToModule
-            indexedModules
-            importedModuleName
-    atts <- parseAttributesInModule attributes
-    return
-        ( newIndexedModules
-        , indexedModule
-            { indexedModuleImports =
-                (atts, attributes, importedModule) : indexedImports
+    indexSentenceImport
+        SentenceImport
+            { sentenceImportModuleName = importedModuleName
+            , sentenceImportAttributes = attributes
             }
-        )
+      = do
+        (newIndexedModules, importedModule) <-
+            indexImportedModule
+                implicitModule
+                importingModules
+                nameToModule
+                indexedModules
+                importedModuleName
+        atts <- parseAttributesInModule attributes
+        return
+            ( newIndexedModules
+            , indexedModule
+                { indexedModuleImports =
+                    (:) (atts, attributes, importedModule)
+                        indexedModuleImports
+                }
+            )
 
-indexModuleMetaSentence
-    _ _ _
-    ( indexedModules
-    , indexedModule
-    )
-    ( SentenceSortSentence sentence )
-  =
-    do
-        atts <- parseAttributesInModule (sentenceSortAttributes sentence)
+    indexSentenceSort
+        _sentence@SentenceSort
+            { sentenceSortAttributes
+            , sentenceSortName
+            }
+      = do
+        atts <- parseAttributesInModule sentenceSortAttributes
         return
             ( indexedModules
             , indexedModule
-              { indexedModuleMetaSortDescriptions =
-                  Map.insert
-                  (sentenceSortName sentence)
-                  (atts, sentence)
-                  (indexedModuleMetaSortDescriptions indexedModule)
-              }
+                { indexedModuleMetaSortDescriptions =
+                    Map.insert sentenceSortName (atts, _sentence)
+                        indexedModuleMetaSortDescriptions
+                }
             )
 
 indexModuleObjectSentence
@@ -498,134 +513,153 @@ indexModuleObjectSentence
         (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
 indexModuleObjectSentence
-    _ _ _
+    implicitModule
+    importingModules
+    nameToModule
     ( indexedModules
     , indexedModule@IndexedModule
-        { indexedModuleObjectAliasSentences = sentences }
+        { indexedModuleObjectAliasSentences
+        , indexedModuleObjectSymbolSentences
+        , indexedModuleObjectSortDescriptions
+        , indexedModuleHookedIdentifiers
+        , indexedModuleHooks
+        }
     )
-    (SentenceAliasSentence sentence@SentenceAlias
-        { sentenceAliasAlias, sentenceAliasAttributes })
+    _sentence
   =
-    do
+    withSentenceContext _sentence indexModuleObjectSentence0
+  where
+    indexModuleObjectSentence0 =
+        case _sentence of
+            SentenceAliasSentence s -> indexSentenceAlias s
+            SentenceSymbolSentence s -> indexSentenceSymbol s
+            SentenceSortSentence s -> indexSentenceSort s
+            SentenceHookSentence s -> indexSentenceHook s
+
+    indexSentenceAlias
+        _sentence@SentenceAlias
+            { sentenceAliasAlias = Alias { aliasConstructor }
+            , sentenceAliasAttributes
+            }
+      = do
         atts <- parseAttributesInModule sentenceAliasAttributes
         return
             ( indexedModules
             , indexedModule
                 { indexedModuleObjectAliasSentences =
-                    Map.insert
-                        (aliasConstructor sentenceAliasAlias)
-                        (atts, sentence)
-                        sentences
+                    Map.insert aliasConstructor (atts, _sentence)
+                        indexedModuleObjectAliasSentences
                 }
             )
-indexModuleObjectSentence
-    _ _ _
-    ( indexedModules
-    , indexedModule@IndexedModule
-        { indexedModuleObjectSymbolSentences = sentences }
-    )
-    (SentenceSymbolSentence sentence@SentenceSymbol
-        { sentenceSymbolSymbol, sentenceSymbolAttributes })
-  =
-    do
+
+    indexSentenceSymbol
+        _sentence@SentenceSymbol
+            { sentenceSymbolSymbol = Symbol { symbolConstructor }
+            , sentenceSymbolAttributes
+            }
+      = do
         atts <- parseAttributesInModule sentenceSymbolAttributes
         return
             ( indexedModules
             , indexedModule
                 { indexedModuleObjectSymbolSentences =
-                    Map.insert
-                        (symbolConstructor sentenceSymbolSymbol)
-                        (atts, sentence)
-                        sentences
+                    Map.insert symbolConstructor (atts, _sentence)
+                        indexedModuleObjectSymbolSentences
                 }
             )
-indexModuleObjectSentence
-    implicitModule
-    importingModules
-    nameToModule
-    indexedStuff
-    (SentenceSortSentence sentence@SentenceSort
-        { sentenceSortName
-        , sentenceSortParameters
-        , sentenceSortAttributes
-        })
-  = do
-    (indexedModules, indexedModule) <-
-        indexModuleMetaSentence
-            implicitModule
-            importingModules
-            nameToModule
-            indexedStuff
-            (SentenceSymbolSentence
-                SentenceSymbol
-                    { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor = Id
-                            { getId = metaNameForObjectSort (getId sentenceSortName)
-                            , idLocation = AstLocationLifted (idLocation sentenceSortName)
+
+    indexSentenceSort
+        _sentence@SentenceSort
+            { sentenceSortName
+            , sentenceSortParameters
+            , sentenceSortAttributes
+            }
+      = do
+        (indexedModules', indexedModule') <-
+            indexModuleMetaSentence
+                implicitModule
+                importingModules
+                nameToModule
+                (indexedModules, indexedModule)
+                (SentenceSymbolSentence
+                    SentenceSymbol
+                        { sentenceSymbolSymbol = Symbol
+                            { symbolConstructor = Id
+                                { getId = metaNameForObjectSort (getId sentenceSortName)
+                                , idLocation =
+                                    AstLocationLifted
+                                        (idLocation sentenceSortName)
+                                }
+                            , symbolParams = []
                             }
-                        , symbolParams = []
+                        , sentenceSymbolSorts =
+                            map (const sortMetaSort) sentenceSortParameters
+                        , sentenceSymbolResultSort = sortMetaSort
+                        , sentenceSymbolAttributes = Attributes []
                         }
-                    , sentenceSymbolSorts =
-                        map (const sortMetaSort) sentenceSortParameters
-                    , sentenceSymbolResultSort = sortMetaSort
-                    , sentenceSymbolAttributes = Attributes []
-                    }
+                )
+        atts <- parseAttributesInModule sentenceSortAttributes
+        return
+            ( indexedModules'
+            , indexedModule'
+                { indexedModuleObjectSortDescriptions =
+                    Map.insert sentenceSortName (atts, _sentence)
+                        indexedModuleObjectSortDescriptions
+                }
             )
 
-    atts <- parseAttributesInModule sentenceSortAttributes
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleObjectSortDescriptions =
-                Map.insert
-                    sentenceSortName
-                    (atts, sentence)
-                    (indexedModuleObjectSortDescriptions indexedModule)
+    indexSentenceHook
+        (SentenceHookedSort _sentence@SentenceSort
+            { sentenceSortName
+            , sentenceSortAttributes
             }
         )
-indexModuleObjectSentence
-    implicitModule
-    importingModules
-    nameToModule
-    indexedStuff
-    (SentenceHookSentence (SentenceHookedSort sentence))
-  = do
-    let sortId = sentenceSortName sentence
-    (indexedModules, indexedModule) <-
-        indexModuleObjectSentence implicitModule importingModules nameToModule
-            indexedStuff (SentenceSortSentence sentence)
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleHookedIdentifiers =
-                Set.insert sortId (indexedModuleHookedIdentifiers indexedModule)
+      = do
+        (indexedModules', indexedModule') <-
+            indexModuleObjectSentence
+                implicitModule
+                importingModules
+                nameToModule
+                (indexedModules, indexedModule)
+                (SentenceSortSentence _sentence)
+        hook <- getHookAttribute sentenceSortAttributes
+        return
+            ( indexedModules'
+            , indexedModule'
+                { indexedModuleHookedIdentifiers =
+                    Set.insert sentenceSortName indexedModuleHookedIdentifiers
+                , indexedModuleHooks =
+                    Map.alter
+                        (Just . maybe [sentenceSortName] (sentenceSortName :))
+                        hook
+                        indexedModuleHooks
+                }
+            )
 
+    indexSentenceHook
+        (SentenceHookedSymbol _sentence@SentenceSymbol
+            { sentenceSymbolAttributes
+            , sentenceSymbolSymbol = Symbol { symbolConstructor }
             }
         )
-indexModuleObjectSentence
-    _ _ _
-    ( indexedModules
-    , indexedModule@IndexedModule
-        { indexedModuleObjectSymbolSentences = sentences
-        , indexedModuleHookedIdentifiers = hookedIds
-        }
-    )
-    (SentenceHookSentence (SentenceHookedSymbol sentence@SentenceSymbol
-        { sentenceSymbolAttributes }))
-    =
-      do
-          atts <- parseAttributesInModule sentenceSymbolAttributes
-          return
-              ( indexedModules
-              , indexedModule
-                  { indexedModuleObjectSymbolSentences =
-                      Map.insert symbolId (atts, sentence) sentences
-                  , indexedModuleHookedIdentifiers =
-                      Set.insert symbolId hookedIds
-                  }
-              )
-  where
-    symbolId = symbolConstructor (sentenceSymbolSymbol sentence)
+      = do
+        atts <- parseAttributesInModule sentenceSymbolAttributes
+        hook <- getHookAttribute sentenceSymbolAttributes
+        return
+            ( indexedModules
+            , indexedModule
+                { indexedModuleObjectSymbolSentences =
+                    Map.insert symbolConstructor (atts, _sentence)
+                        indexedModuleObjectSymbolSentences
+                , indexedModuleHookedIdentifiers =
+                    Set.insert symbolConstructor indexedModuleHookedIdentifiers
+                , indexedModuleHooks =
+                    Map.alter
+                        (Just . maybe [symbolConstructor] (symbolConstructor :))
+                        hook
+                        indexedModuleHooks
+                }
+            )
 
 indexImportedModule
     :: ParseAttributes atts

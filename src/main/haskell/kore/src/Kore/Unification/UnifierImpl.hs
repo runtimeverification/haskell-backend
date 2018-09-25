@@ -33,6 +33,9 @@ import Kore.AST.Common
 import Kore.ASTUtils.SmartPatterns
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
+import Kore.ASTHelpers
+       ( ApplicationSorts (..) )
+import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 import Kore.Step.StepperAttributes
 import Kore.Unification.Error

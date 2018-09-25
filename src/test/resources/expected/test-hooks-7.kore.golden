@@ -1,0 +1,1 @@
+Parse error: Error in module 'T' -> hooked-symbol 'g' declaration (../../../test/resources//test-hooks-7.kore 16:17): Builtin 'S.f' is hooked to multiple identifiers: 'g', 'f'

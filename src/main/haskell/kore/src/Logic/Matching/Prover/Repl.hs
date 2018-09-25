@@ -14,25 +14,23 @@ module Logic.Matching.Prover.Repl
   , defaultSettings )
 where
 
-import Control.Monad
-       ( when )
-import Control.Monad.Reader
-       ( reader )
-import Control.Monad.State.Strict
-       ( get, gets, modify, put )
-
+import           Control.Monad
+                 ( when )
+import           Control.Monad.Reader
+                 ( reader )
+import           Control.Monad.State.Strict
+                 ( get, gets, modify, put )
 import qualified Data.Map.Strict as Map
 import           Data.Sequence
                  ( Seq ((:|>)) )
+import           Data.Text.Prettyprint.Doc
+                 ( Pretty (pretty) )
+import           Text.Megaparsec
+                 ( parse, parseErrorPretty )
 
-import Data.Text.Prettyprint.Doc
-       ( Pretty (pretty) )
-import Text.Megaparsec
-       ( parse, parseErrorPretty )
-
-import Kore.Error
-import Kore.Parser.ParserUtils ()
-
+import           Kore.Error
+import           Kore.Parser.ParserUtils ()
+import           Kore.Unparser
 import           Logic.Matching.Prover.Command
                  ( Command (..), Parser )
 import           Logic.Matching.Prover.Repl.Class
@@ -68,7 +66,7 @@ type ProofConstraints ix rule formula error =
   , ProofSystem error rule formula
   , Pretty ix
   , Pretty (rule ix)
-  , Pretty formula
+  , Unparse formula
   )
 
 -- | Monad that encorporates the actions and side effects characteristic of a

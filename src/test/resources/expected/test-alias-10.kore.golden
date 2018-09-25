@@ -31,7 +31,7 @@ Definition
                             { domainValueSort =
                                 SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                             , domainValueChild =
-                                Fix (StringLiteralPattern (StringLiteral "f"))
+                                BuiltinDomainString (Fix (StringLiteralPattern (StringLiteral "f")))
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

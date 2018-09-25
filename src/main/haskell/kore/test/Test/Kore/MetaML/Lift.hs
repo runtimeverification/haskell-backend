@@ -447,7 +447,7 @@ test_lift =
             (DomainValuePattern DomainValue
                 { domainValueSort =
                     SortVariableSort (SortVariable (testId "Int"))
-                , domainValueChild = metaStringPattern
+                , domainValueChild = BuiltinDomainPattern metaStringPattern
                 }
             )
         :: CommonKorePattern)

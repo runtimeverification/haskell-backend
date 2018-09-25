@@ -22,6 +22,7 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
        ( SentenceSymbolOrAlias (..) )
+import Kore.ASTUtils.SmartPatterns
 import Kore.Implicit.ImplicitKore
        ( mlPatternP, variable )
 import Kore.Implicit.ImplicitSorts
@@ -254,9 +255,20 @@ unliftUnaryOpPattern _ _ _ = Nothing
 unliftDomainValuePattern
     :: [UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern)
 unliftDomainValuePattern [rSort, rChild] =
-    DomainValuePattern <$> (pure DomainValue
-        <*> unliftFromMeta (unliftResultOriginal rSort)
-        <*> pure (unliftResultOriginal rChild))
+    do
+        domainValueSort <- unliftFromMeta (unliftResultOriginal rSort)
+        domainValueChild <-
+            case project (unliftResultOriginal rChild) of
+                StringLiteralPattern (StringLiteral str) ->
+                    pure (BuiltinDomainPattern (StringLiteral_ str))
+                _ ->
+                    Nothing
+        pure
+            (DomainValuePattern DomainValue
+                { domainValueSort
+                , domainValueChild
+                }
+            )
 unliftDomainValuePattern _ = Nothing
 
 unliftTopBottomPattern

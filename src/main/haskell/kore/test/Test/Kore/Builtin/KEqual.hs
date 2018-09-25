@@ -191,9 +191,9 @@ test_KEqual =
                 (Pattern.simplify tools evaluators
                     (App_ keqSymbol
                         [ DV_ idSort
-                            (StringLiteral_ (StringLiteral "t"))
+                            (BuiltinDomainPattern (StringLiteral_ "t"))
                         , DV_ idSort
-                            (StringLiteral_ (StringLiteral "x"))
+                            (BuiltinDomainPattern (StringLiteral_ "x"))
                         ]
                     )
                 )
@@ -209,11 +209,11 @@ test_KEqual =
                     (App_ keqSymbol
                         [ App_ (injHead idSort kItemSort)
                             [ DV_ idSort
-                                (StringLiteral_ (StringLiteral "t"))
+                                (BuiltinDomainPattern (StringLiteral_ "t"))
                             ]
                         , App_ (injHead idSort kItemSort)
                             [ DV_ idSort
-                                (StringLiteral_ (StringLiteral "x"))
+                                (BuiltinDomainPattern (StringLiteral_ "x"))
                             ]
                         ]
                     )
@@ -231,14 +231,14 @@ test_KEqual =
                         [ App_ kSeqHead
                             [ App_ (injHead idSort kItemSort)
                                 [ DV_ idSort
-                                    (StringLiteral_ (StringLiteral "t"))
+                                    (BuiltinDomainPattern (StringLiteral_ "t"))
                                 ]
                             , App_ dotKHead []
                             ]
                         , App_ kSeqHead
                             [ App_ (injHead idSort kItemSort)
                                 [ DV_ idSort
-                                    (StringLiteral_ (StringLiteral "x"))
+                                    (BuiltinDomainPattern (StringLiteral_ "x"))
                                 ]
                             , App_ dotKHead []
                             ]
@@ -337,4 +337,3 @@ constructorFunctions tools =
         getId (symbolOrAliasConstructor h) == "inj"
     isCons :: SymbolOrAlias Object -> Bool
     isCons h = getId (symbolOrAliasConstructor h) `elem` ["kseq", "dotk"]
-
