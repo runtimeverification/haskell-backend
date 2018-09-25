@@ -62,6 +62,8 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
 
+import Debug.Trace
+
 data SimplificationType = SimplifyAnd | SimplifyEquals
 
 {-| equals for two terms. It assumes that this will be part of a predicate
@@ -420,8 +422,8 @@ firstHandledWithDefault
     :: a -> [FunctionResult a] -> a
 firstHandledWithDefault default' [] = default'
 firstHandledWithDefault default' (NotHandled : results) =
-    firstHandledWithDefault default' results
-firstHandledWithDefault _ (Handled result : _) = result
+    trace "nope" $ firstHandledWithDefault default' results
+firstHandledWithDefault _ (Handled result : _) = trace "yep" $ result
 
 
 {-| And simplification when one of the terms is a bool.
@@ -691,7 +693,7 @@ constructorAndEqualsAssumesDifferentHeads
         Handled (mkBottom, SimplificationProof)
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
-    secondHeadAttributes = MetadataTools.symAttributes tools firstHead
+    secondHeadAttributes = MetadataTools.symAttributes tools secondHead
 constructorAndEqualsAssumesDifferentHeads _ _ _ = NotHandled
 
 {-| And simplification for domain values.
