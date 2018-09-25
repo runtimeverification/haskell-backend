@@ -13,7 +13,6 @@ module Kore.Step.Function.UserDefined
     ) where
 
 import Data.Reflection
-       ( give )
 
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SortedVariable )
@@ -198,7 +197,7 @@ evaluatePredicate
             , substitution = evaluatedSubstitution
             }
         , _proof
-        ) <- give (sortTools tools) Predicate.evaluate simplifier predicate
+        ) <- give (sortTools tools) $ give tools $ Predicate.evaluate simplifier predicate
     (   PredicateSubstitution
             { predicate = mergedPredicate
             , substitution = mergedSubstitution

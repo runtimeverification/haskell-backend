@@ -15,7 +15,7 @@ module Kore.SMT.SMT
     , provePatternIO
     , provePattern
     , provePredicate
-    , SMTAttributes
+    , SMTAttributes(..)
     ) where
 
 import           Data.Default

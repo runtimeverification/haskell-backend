@@ -18,7 +18,6 @@ import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, unwrapPredicate,
                  wrapPredicate )
@@ -33,6 +32,19 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier (..),
                  SimplificationProof (SimplificationProof), Simplifier )
+import           Kore.Step.StepperAttributes
+import           Kore.SMT.SMT
+
+convertStepperToSMT 
+    :: MetadataTools level StepperAttributes 
+    -> MetadataTools level SMTAttributes
+convertStepperToSMT tools = 
+    MetadataTools
+    { symAttributes  = convert . symAttributes  tools
+    , sortAttributes = convert . sortAttributes tools
+    , sortTools = sortTools tools
+    }
+    where convert (StepperAttributes _ _ _ _ _ hook) = SMTAttributes hook
 
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
@@ -41,6 +53,7 @@ evaluate
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level)
+        , Given (MetadataTools level StepperAttributes)
         )
     => PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
@@ -52,8 +65,12 @@ evaluate
         (PredicateSubstitution level variable, SimplificationProof level)
 evaluate
     (PureMLPatternSimplifier simplifier)
-    predicate'
+    predicate''
   = do
+    let predicate' = 
+            if unsafeTryRefutePredicate predicate'' == Just False 
+            then makeFalsePredicate 
+            else predicate''
     (patt, _proof) <- simplifier (unwrapPredicate predicate')
     let
         (subst, _proof) =

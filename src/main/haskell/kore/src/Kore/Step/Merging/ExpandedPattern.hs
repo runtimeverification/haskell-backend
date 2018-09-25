@@ -12,7 +12,6 @@ module Kore.Step.Merging.ExpandedPattern
     ) where
 
 import Data.Reflection
-       ( give )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -40,7 +39,6 @@ import           Kore.Step.Substitution
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
-
 {-| 'mergeWithPredicateSubstitution' ands the given predicate-substitution
 with the given pattern.
 -}
@@ -53,6 +51,7 @@ mergeWithPredicateSubstitution
         , Ord (variable Object)
         , FreshVariable variable
         , Hashable variable
+        , Given (MetadataTools level StepperAttributes)
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
