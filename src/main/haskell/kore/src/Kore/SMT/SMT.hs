@@ -224,7 +224,7 @@ patternToSMT sloppy p =
             => CommonPurePattern Object 
             -> String 
             -> Translating (SBV a) 
-        goLiteral (DV_ s (StringLiteral_ (StringLiteral i))) hookName
+        goLiteral (DV_ s (BuiltinDomainPattern (StringLiteral_ i))) hookName
          | (getHookString $ getSortHook s) == hookName
              = return $ literal $ read i
         goLiteral pat _ = 

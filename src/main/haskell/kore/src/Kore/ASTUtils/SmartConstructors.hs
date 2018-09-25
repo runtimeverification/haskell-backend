@@ -69,7 +69,6 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
-       ( PureMLPattern )
 import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 
@@ -331,7 +330,7 @@ mkCeil a = Ceil_ (getSort a) predicateSort a
 mkDomainValue
     :: (MetaOrObject Object, Given (SortTools Object))
     => Sort Object
-    -> PureMLPattern Meta Variable
+    -> BuiltinDomain (CommonPurePattern Meta)
     -> PureMLPattern Object var
 mkDomainValue = DV_
 

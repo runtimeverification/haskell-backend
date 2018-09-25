@@ -12,14 +12,14 @@ module Kore.Step.Condition.Evaluator
     ) where
 
 import Data.Reflection
-       ( Given )
 
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, unwrapPredicate,
+                 ( Predicate, makeAndPredicate, makeFalsePredicate,
+                 unwrapPredicate,
                  wrapPredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
@@ -48,10 +48,12 @@ convertStepperToSMT tools =
 
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
-    ::  ( MetaOrObject level
+    ::  forall level variable . 
+        ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
         , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Given (MetadataTools level StepperAttributes)
         )
@@ -66,7 +68,8 @@ evaluate
 evaluate
     (PureMLPatternSimplifier simplifier)
     predicate''
-  = do
+  = give (convertStepperToSMT (given :: MetadataTools level StepperAttributes)) 
+    $ do
     let predicate' = 
             if unsafeTryRefutePredicate predicate'' == Just False 
             then makeFalsePredicate 
