@@ -940,7 +940,8 @@ data Pattern level variable child where
 
 data BuiltinDomain child
     = BuiltinDomainPattern !child
-    | BuiltinDomainMap !(Map (Fix (Pattern Object Variable)) (Fix (Pattern Object Variable)))
+    | BuiltinDomainMap
+        !(Map (Fix (Pattern Object Variable)) (Fix (Pattern Object Variable)))
     deriving (Generic)
 
 instance Hashable child => Hashable (BuiltinDomain child) where
