@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Builtin.Hook
     ( Hook (..)
+    , emptyHook
     , hookAttribute
     , getHookAttribute
     ) where
@@ -41,8 +42,14 @@ import           Kore.Implicit.Attributes
 newtype Hook = Hook { getHook :: Maybe String }
   deriving (Eq, Generic, Ord, Read, Show)
 
+{- | The missing @hook@ attribute.
+
+ -}
+emptyHook :: Hook
+emptyHook = Hook Nothing
+
 instance Default Hook where
-    def = Hook Nothing
+    def = emptyHook
 
 instance Hashable Hook
 
