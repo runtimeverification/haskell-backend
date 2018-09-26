@@ -110,7 +110,7 @@ type Builtin = Seq (CommonPurePattern Object)
 {- | Abort function evaluation if the argument is not a List domain value.
 
     If the operand pattern is not a domain value, the function is simply
-    'NotApplicatible'. If the operand is a domain value, but not represented
+    'NotApplicable'. If the operand is a domain value, but not represented
     by a 'BuiltinDomainList', it is a bug.
 
  -}

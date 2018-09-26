@@ -145,10 +145,10 @@ parse = Parsec.signed noSpace Parsec.decimal
   where
     noSpace = pure ()
 
-{- | Abort function evaluation if the argument is not a Map domain value.
+{- | Abort function evaluation if the argument is not a Int domain value.
 
     If the operand pattern is not a domain value, the function is simply
-    'NotApplicatible'. If the operand is a domain value, but not represented
+    'NotApplicable'. If the operand is a domain value, but not represented
     by a 'BuiltinDomainMap', it is a bug.
 
  -}
