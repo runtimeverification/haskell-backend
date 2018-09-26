@@ -65,8 +65,8 @@ prop_getUnit k =
         get{}(concat{}(element{}(e), ...), 0) === e
     @
  -}
-prop_getFirstElement :: [Integer] -> Property
-prop_getFirstElement (Seq.fromList -> values) =
+prop_getFirstElement :: Seq Integer -> Property
+prop_getFirstElement values =
     let patGet = App_ symbolGet [ patList , Test.Int.asPattern 0 ]
         patList = asPattern (Test.Int.asPattern <$> values)
         value =
@@ -86,8 +86,8 @@ prop_getFirstElement (Seq.fromList -> values) =
         get{}(concat{}(..., element{}(e)), -1) === e
     @
  -}
-prop_getLastElement :: [Integer] -> Property
-prop_getLastElement (Seq.fromList -> values) =
+prop_getLastElement :: Seq Integer -> Property
+prop_getLastElement values =
     let patGet = App_ symbolGet [ patList , Test.Int.asPattern (-1) ]
         patList = asPattern (Test.Int.asPattern <$> values)
         value =
@@ -107,8 +107,8 @@ prop_getLastElement (Seq.fromList -> values) =
         concat{}(unit{}(), ...) === concat{}(..., unit{}()) === ...
     @
  -}
-prop_concatUnit :: [Integer] -> Property
-prop_concatUnit (Seq.fromList -> values) =
+prop_concatUnit :: Seq Integer -> Property
+prop_concatUnit values =
     let patUnit = App_ symbolUnit []
         patValues = asPattern (Test.Int.asPattern <$> values)
         patConcat1 = App_ symbolConcat [ patUnit, patValues ]
@@ -130,12 +130,8 @@ prop_concatUnit (Seq.fromList -> values) =
         concat{}(as : List{}, concat{}(bs : List{}, cs : List{}))
     @
  -}
-prop_concatAssociates :: [Integer] -> [Integer] -> [Integer] -> Property
-prop_concatAssociates
-    (Seq.fromList -> values1)
-    (Seq.fromList -> values2)
-    (Seq.fromList -> values3)
-  =
+prop_concatAssociates :: Seq Integer -> Seq Integer -> Seq Integer -> Property
+prop_concatAssociates values1 values2 values3 =
     let patList1 = asPattern $ Test.Int.asPattern <$> values1
         patList2 = asPattern $ Test.Int.asPattern <$> values2
         patList3 = asPattern $ Test.Int.asPattern <$> values3
