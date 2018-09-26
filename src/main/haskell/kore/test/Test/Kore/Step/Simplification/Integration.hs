@@ -124,7 +124,8 @@ test_simplificationIntegration = give mockSortTools
   where
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+        Mock.makeMetadataTools
+            mockSortTools Mock.attributesMapping Mock.subsorts
 
 evaluate
     :: MetadataTools Object StepperAttributes

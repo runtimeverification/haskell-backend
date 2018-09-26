@@ -440,7 +440,7 @@ mockSortTools :: SortTools Object
 mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+    Mock.makeMetadataTools mockSortTools Mock.attributesMapping Mock.subsorts
 
 testSort :: MetaOrObject level => Sort level
 testSort =

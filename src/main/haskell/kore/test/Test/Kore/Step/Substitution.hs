@@ -5,28 +5,28 @@ module Test.Kore.Step.Substitution
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase, assertEqual )
+       ( assertEqual, testCase )
 
-import           Control.Monad.Counter
-                 ( evalCounter )
-import           Data.Reflection
-                 ( give )
+import Control.Monad.Counter
+       ( evalCounter )
+import Data.Reflection
+       ( give )
 
-import           Kore.AST.Common
-                 ( Variable )
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar )
-import           Kore.Predicate.Predicate
-                 ( makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution (..) )
-import           Kore.Step.Substitution
-                 ( mergeAndNormalizeSubstitutions )
-import           Kore.Unification.Error
-import           Kore.Unification.Unifier
-                 ( UnificationSubstitution )
+import Kore.AST.Common
+       ( Variable )
+import Kore.AST.MetaOrObject
+       ( Object )
+import Kore.ASTUtils.SmartConstructors
+       ( mkVar )
+import Kore.Predicate.Predicate
+       ( makeFalsePredicate, makeTruePredicate )
+import Kore.Step.ExpandedPattern
+       ( PredicateSubstitution (..) )
+import Kore.Step.Substitution
+       ( mergeAndNormalizeSubstitutions )
+import Kore.Unification.Error
+import Kore.Unification.Unifier
+       ( UnificationSubstitution )
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSortTools )
@@ -216,7 +216,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
   where
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+        Mock.makeMetadataTools mockSortTools Mock.attributesMapping []
     normalize
         :: UnificationSubstitution Object Variable
         -> UnificationSubstitution Object Variable
