@@ -618,19 +618,27 @@ injUnificationTests =
         (UnificationTerm aA)
         (UnificationTerm (applyInj s2 s1 xs2))
         UnsupportedPatterns
-    , andSimplifyFailure "unmatching injections"
-        (UnificationTerm (applyInj s1 s3 aA))
-        (UnificationTerm (applyInj s2 s3 bA))
-        UnsupportedPatterns
-    , andSimplifyFailure "unmatching nested injections"
+    , andSimplifySuccess "unmatching nested injections"
         (simplifyPattern (UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA))))
         (simplifyPattern (UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA))))
-        UnsupportedPatterns
-    , andSimplifyFailure "unmatching injections"
+        (UnificationResultTerm (applyInj s1 s4 aA))
+        []
+        (makeEqualsPredicate
+            (applyInj s1 s4 aA)
+            (applyInj s2 s4 bA)
+        )
+        EmptyUnificationProof
+    , andSimplifySuccess "unmatching injections"
         -- TODO(traiansf): this should succeed if s1 < s2 < s3
+        -- TODO(Vladimir): changed when unification was implemented as
+        -- simplification; it should fail once we implement subsorting checks.
+        -- The test should be updated then.
         (UnificationTerm (applyInj s1 s3 aA))
         (UnificationTerm (applyInj s2 s3 xs2))
-        UnsupportedPatterns
+        (UnificationResultTerm (applyInj s1 s3 aA))
+        []
+        (makeEqualsPredicate (applyInj s1 s3 aA) (applyInj s2 s3 xs2))
+        EmptyUnificationProof
     ]
 
 simplifyPattern :: UnificationTerm Object -> UnificationTerm Object

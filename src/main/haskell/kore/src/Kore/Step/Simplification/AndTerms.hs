@@ -727,7 +727,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
                 NotHandled
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
-    secondHeadAttributes = MetadataTools.symAttributes tools firstHead
+    secondHeadAttributes = MetadataTools.symAttributes tools secondHead
     isSubsortOf = MetadataTools.isSubsortOf tools
     termSortInjection
         :: Sort level
@@ -797,7 +797,7 @@ constructorSortInjectionAndEquals
         Handled (mkBottom, SimplificationProof)
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
-    secondHeadAttributes = MetadataTools.symAttributes tools firstHead
+    secondHeadAttributes = MetadataTools.symAttributes tools secondHead
 constructorSortInjectionAndEquals _ _ _ = NotHandled
 
 {-| And simplification for patterns with constructor heads.
