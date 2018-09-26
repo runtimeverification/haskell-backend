@@ -223,6 +223,37 @@ Remainder of the first argument divided by the second (truncated toward zero).
         [hook{}("INT.tmod")]
 ~~~
 
+### INT.pow
+
+The first argument raised to the power of the second argument. The second
+argument must be non-negative.
+
+~~~
+    hooked-symbol pow{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.pow")]
+~~~
+
+### INT.powmod
+
+The first argument raised to the power of the second argument, but performed
+modulo the third argument. The second argument must not be zero. If the second
+argument is negative, then the first argument and the third argument must not be
+coprime.
+
+~~~
+    hooked-symbol powmod{}(Int{}, Int{}, Int{}) : Int{}
+        [hook{}("INT.powmod")]
+~~~
+
+### INT.log2
+
+The base 2 logarithm of the argument. The argument must be positive.
+
+~~~
+    hooked-symbol log2{}(Int{}) : Int{}
+        [hook{}("INT.log2")]
+~~~
+
 ## MAP
 
 Depends on `BOOL`.
