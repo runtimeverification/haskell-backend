@@ -1,15 +1,17 @@
 {-| Description: Module for constructing, parsing, printing prover commands -}
 module Logic.Matching.Prover.Command
-  (Command(..), Parser, parseCommand,)
-where
+    ( Command (..)
+    , Parser
+    , parseCommand
+    ) where
 
-import Data.Text
-       ( Text )
-import Data.Text.Prettyprint.Doc
-       ( Pretty (pretty), colon, (<+>) )
+import           Data.Text.Prettyprint.Doc
+                 ( Pretty (..) )
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
 
-import Text.Megaparsec
-import Text.Megaparsec.Char
+import Kore.Unparser
 
 -- | Prover command data type
 --   TODO: better way of expressing the inherent
@@ -74,12 +76,30 @@ parseCommand pIx pFormula pDerivation
 
 --------------
 -- Printing --
-instance (Pretty ix, Pretty formula, Pretty (rule ix)) => Pretty (Command ix rule formula) where
-  pretty (Add ix formula)              =  pretty(  "add"::Text)<+>pretty ix<+>colon<+>pretty formula
-  pretty (Prove ix rule)               =  pretty("prove"::Text)<+>pretty ix<+>colon
-                                      <+> pretty(   "by"::Text)<+>pretty rule
-  pretty (AddAndProve ix formula rule) =  pretty(  "add"::Text)<+>pretty ix<+>colon<+>pretty formula
-                                      <+> pretty(   "by"::Text)<+>pretty rule
-  pretty Undo                          =  pretty( "undo"::Text)
-  pretty Show                          =  pretty( "show"::Text)
-  pretty Help                          =  pretty( "help"::Text)
+instance
+    ( Pretty ix
+    , Pretty (rule ix)
+    , Unparse formula
+    ) =>
+    Pretty (Command ix rule formula)
+  where
+    pretty =
+        \case
+            Add ix formula ->
+                Pretty.sep [ "add", pretty ix, Pretty.colon, unparse formula ]
+            Prove ix rule ->
+                Pretty.sep
+                    [ "prove", pretty ix, Pretty.colon
+                    , "by", pretty rule
+                    ]
+            AddAndProve ix formula rule ->
+                Pretty.sep
+                    [ "add", pretty ix, Pretty.colon, unparse formula
+                    , "by", pretty rule
+                    ]
+            Undo ->
+                "undo"
+            Show ->
+                "show"
+            Help ->
+                "help"

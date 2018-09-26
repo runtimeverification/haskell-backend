@@ -1,12 +1,10 @@
-{-# LANGUAGE NamedFieldPuns #-}
-
 module Main where
 
 import Data.Semigroup
        ( (<>) )
 import Data.Text.Prettyprint.Doc
        ( LayoutOptions (..), PageWidth (..), defaultLayoutOptions,
-       layoutPretty, pretty )
+       layoutPretty )
 import Data.Text.Prettyprint.Doc.Render.Text
        ( renderIO )
 import Options.Applicative
@@ -17,6 +15,7 @@ import Kore.AST.Sentence
        ( KoreDefinition )
 import Kore.Parser.Parser
        ( fromKore )
+import Kore.Unparser
 
 import GlobalMain
 
@@ -64,7 +63,7 @@ main =
                                 then AvailablePerLine width 1.0
                                 else Unbounded
                             }
-                    renderIO stdout (layoutPretty layoutOptions $ pretty defn)
+                    renderIO stdout (layoutPretty layoutOptions $ unparse defn)
 
 -- | Read a 'KoreDefinition' from the given file name or signal an error.
 readKoreOrDie :: FilePath -> IO KoreDefinition

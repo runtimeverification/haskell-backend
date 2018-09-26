@@ -7,7 +7,16 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.Error where
+module Kore.Error
+    ( Error (..)
+    , printError
+    , koreError
+    , koreFail
+    , koreFailWhen
+    , withContext
+    , castError
+    , module Control.Monad.Except
+    ) where
 
 import Control.Monad
        ( when )

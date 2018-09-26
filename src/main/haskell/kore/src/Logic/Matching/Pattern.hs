@@ -50,9 +50,9 @@ import Data.Coerce
 import Data.Deriving
        ( deriveEq1, deriveShow1 )
 import Data.Functor.Foldable
-import Data.Text.Prettyprint.Doc
 
 import Data.Functor.Foldable.Orphans ()
+import Kore.Unparser
 import Logic.Matching.Signature
 
 -- | The base functor of patterns
@@ -115,10 +115,10 @@ patternSort p = case p of
 newtype WFPattern sig var = WFPattern {fromWFPattern :: SigPattern sig var}
 deriving instance (Eq (Sort sig), Eq (Label sig), Eq var) => Eq (WFPattern sig var)
 deriving instance (Show (Sort sig), Show (Label sig), Show var) => Show (WFPattern sig var)
-deriving instance (Pretty (SigPatternF sig var (SigPattern sig var)))
+deriving instance (Unparse (SigPatternF sig var (SigPattern sig var)))
                   -- expanded according to Pretty (f (Fix f)) => Pretty (Fix f)
                   -- to avoid warning
-                => Pretty (WFPattern sig var)
+                => Unparse (WFPattern sig var)
 
 -- | Get sort of a well-formed pattern
 wfPatSort :: (IsSignature sig) => WFPattern sig var -> Sort sig

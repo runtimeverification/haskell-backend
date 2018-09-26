@@ -9,7 +9,9 @@ import Data.Functor.Foldable
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
+import Kore.AST.PureML
 import Kore.AST.Sentence
+import Kore.ASTUtils.SmartPatterns
 import Kore.MetaML.AST
 import Kore.Parser.LexemeImpl
 
@@ -211,10 +213,16 @@ equalsGen childGen x = equalsInGen childGen x Equals
 
 domainValueGen
     :: MetaOrObject level
-    => level -> Gen (DomainValue level (Fix (Pattern Meta Variable)))
-domainValueGen x = pure DomainValue
-    <*> scale (`div` 2) (sortGen x)
-    <*> (Fix . StringLiteralPattern <$> stringLiteralGen)
+    => level
+    -> Gen (DomainValue level (BuiltinDomain (CommonPurePattern Meta)))
+domainValueGen x =
+    DomainValue
+        <$> scale (`div` 2) (sortGen x)
+        <*> builtinPatternGen
+  where
+    builtinPatternGen =
+        BuiltinDomainPattern . StringLiteral_ . getStringLiteral
+            <$> stringLiteralGen
 
 existsGen
     :: MetaOrObject level

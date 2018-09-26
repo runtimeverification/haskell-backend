@@ -22,6 +22,7 @@ import Text.Megaparsec hiding
        ( some )
 import Text.Megaparsec.Char
 
+import Kore.Unparser
 import Logic.Matching.Rules.Minimal
 
 type Parser = Parsec String String
@@ -108,22 +109,44 @@ parseMLRule pLabel pVar pTerm pIx =
 
 -- | Displays proof rules in the documented concrete syntax,
 -- assuming pretty-printing instances for all the type parameters
-instance (Pretty label, Pretty var, Pretty term, Pretty hyp)
-       => Pretty (MLRule label var term hyp) where
-  pretty proofRule = let
-      rule :: Text -> [Doc ann] -> Doc ann
-      rule prefix args = pretty prefix <> tupled args
-    in case proofRule of
-    Propositional1 p1 p2 -> rule "propositional1" [pretty p1,pretty p2]
-    Propositional2 p1 p2 p3 -> rule "propositional2" [pretty p1,pretty p2,pretty p3]
-    Propositional3 p1 p2 -> rule "propositional3" [pretty p1, pretty p2]
-    ModusPonens h1 h2 -> rule "mp" [pretty h1,pretty h2]
-    Generalization v h -> rule "ug" [pretty v,pretty h]
-    VariableSubstitution (SubstitutedVariable x) h (SubstitutingVariable y) ->
-      rule "varsubst" [pretty x,pretty h,pretty y]
-    ForallRule v p1 p2 -> rule "forall" [pretty v,pretty p1,pretty p2]
-    Framing lbl pos h -> rule "framing" [pretty lbl,pretty pos,pretty h]
-    PropagateOr lbl pos p1 p2 -> rule "propagate-or" [pretty lbl,pretty pos,pretty p1,pretty p2]
-    PropagateExists lbl pos x p -> rule "propagate-exists" [pretty lbl,pretty pos,pretty x,pretty p]
-    Existence x -> rule "exists" [pretty x]
-    Singvar v p path1 path2 -> rule "singvar" [pretty v,pretty p,sep (map pretty path1),sep (map pretty path2)]
+instance
+    ( Unparse label, Unparse var, Unparse term, Pretty hyp
+    ) =>
+    Pretty (MLRule label var term hyp)
+  where
+    pretty =
+        \case
+            Propositional1 p1 p2 ->
+                rule "propositional1" [unparse p1,unparse p2]
+            Propositional2 p1 p2 p3 ->
+                rule "propositional2" [unparse p1, unparse p2, unparse p3]
+            Propositional3 p1 p2 ->
+                rule "propositional3" [unparse p1, unparse p2]
+            ModusPonens h1 h2 ->
+                rule "mp" [pretty h1,pretty h2]
+            Generalization v h ->
+                rule "ug" [unparse v,pretty h]
+            VariableSubstitution x h y ->
+                rule "varsubst" [unparse x, unparse h, unparse y]
+            ForallRule v p1 p2 ->
+                rule "forall" [unparse v, unparse p1, unparse p2]
+            Framing lbl pos h ->
+                rule "framing" [unparse lbl, pretty pos, pretty h]
+            PropagateOr lbl pos p1 p2 ->
+                rule "propagate-or"
+                    [unparse lbl, pretty pos, unparse p1, unparse p2]
+            PropagateExists lbl pos x p ->
+                rule "propagate-exists"
+                    [unparse lbl, pretty pos, unparse x, unparse p]
+            Existence x ->
+                rule "exists" [unparse x]
+            Singvar v p path1 path2 ->
+                rule "singvar"
+                    [ unparse v
+                    , unparse p
+                    , sep (map pretty path1)
+                    , sep (map pretty path2)
+                    ]
+      where
+        rule :: Text -> [Doc ann] -> Doc ann
+        rule prefix args = pretty prefix <> tupled args

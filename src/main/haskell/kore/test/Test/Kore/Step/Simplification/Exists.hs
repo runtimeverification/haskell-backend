@@ -272,7 +272,8 @@ test_existsSimplification = give mockSortTools
         }
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+        Mock.makeMetadataTools
+            mockSortTools Mock.attributesMapping Mock.subsorts
 
 makeExists
     :: variable Object

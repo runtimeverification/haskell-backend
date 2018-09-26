@@ -208,6 +208,7 @@ tools = MetadataTools
     { symAttributes = mockStepperAttributes
     , sortAttributes = undefined
     , sortTools = mockSortTools
+    , isSubsortOf = const $ const False
     }
 
 unificationProblem

@@ -1101,7 +1101,7 @@ Definition
                                     , sortActualSorts = []
                                     }
                             , domainValueChild =
-                                Fix (StringLiteralPattern (StringLiteral "0"))
+                                BuiltinDomainString (Fix (StringLiteralPattern (StringLiteral "0")))
                             }
                     , sentenceAliasAttributes = Attributes []
                     })
@@ -1134,7 +1134,7 @@ Definition
                                     , sortActualSorts = []
                                     }
                             , domainValueChild =
-                                Fix (StringLiteralPattern (StringLiteral "1"))
+                                BuiltinDomainString (Fix (StringLiteralPattern (StringLiteral "1")))
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

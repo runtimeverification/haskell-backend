@@ -14,8 +14,6 @@ import Control.DeepSeq
        ( NFData (..) )
 import Data.Hashable
        ( Hashable (..) )
-import Data.Text.Prettyprint.Doc
-       ( Pretty (..) )
 
 import Data.Functor.Foldable
 
@@ -24,6 +22,3 @@ instance Hashable (f (Fix f)) => Hashable (Fix f) where
 
 instance NFData (f (Fix f)) => NFData (Fix f) where
     rnf (Fix f) = rnf f
-
-instance Pretty (f (Fix f)) => Pretty (Fix f) where
-    pretty (Fix fx) = pretty fx

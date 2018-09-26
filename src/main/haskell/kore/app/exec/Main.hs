@@ -28,7 +28,8 @@ import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
                  ( KoreDefinition, ModuleName (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkApp, mkDomainValue, mkStringLiteral )
+                 ( mkApp, mkDomainValue )
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification, verifyAndIndexDefinition )
@@ -61,7 +62,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Unparser.Unparse
+import           Kore.Unparser
                  ( unparseToString )
 
 import GlobalMain
@@ -79,6 +80,8 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for a file containing a definition to verify and use for execution
     , patternFileName     :: !String
     -- ^ Name for file containing a pattern to verify and use for execution
+    , outputFileName     :: !String
+    -- ^ Name for file to contain the output pattern
     , mainModuleName      :: !String
     -- ^ The name of the main module in the definition
     , isKProgram          :: !Bool
@@ -100,6 +103,11 @@ commandLineParser =
         (  metavar "PATTERN_FILE"
         <> long "pattern"
         <> help "Kore pattern source file to verify and execute. Needs --module."
+        <> value "" )
+    <*> strOption
+        (  metavar "PATTERN_OUTPUT_FILE"
+        <> long "output"
+        <> help "Output file to contain final Kore pattern."
         <> value "" )
     <*> strOption
         (  metavar "MODULE"
@@ -161,6 +169,7 @@ main = do
     Just KoreExecOptions
         { definitionFileName
         , patternFileName
+        , outputFileName
         , mainModuleName
         , isKProgram
         , stepLimit
@@ -215,8 +224,17 @@ main = do
                             (strategy axiomPatterns)
                             stepLimit
                             (initialPattern, mempty)
-            putStrLn $ unparseToString
-                (ExpandedPattern.term finalExpandedPattern)
+            let
+                finalPattern = ExpandedPattern.term finalExpandedPattern
+                finalExternalPattern =
+                    either (error . printError) id
+                    (Builtin.externalizePattern indexedModule finalPattern)
+                outputString = unparseToString finalExternalPattern
+            if outputFileName /= ""
+                then
+                    writeFile outputFileName outputString
+                else
+                    putStrLn $ outputString
 
 mainModule
     :: ModuleName
@@ -327,7 +345,8 @@ makeKInitConfig pat =
             [ mkApp kSeqHead
                 [ mkApp (injHead configVarSort kItemSort)
                     [ mkDomainValue configVarSort
-                      $ mkStringLiteral (StringLiteral "$PGM")
+                        $ BuiltinDomainPattern
+                        $ StringLiteral_ "$PGM"
                     ]
                 , mkApp dotKHead []
                 ]
