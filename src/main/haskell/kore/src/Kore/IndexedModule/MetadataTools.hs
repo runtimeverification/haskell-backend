@@ -27,8 +27,11 @@ data MetadataTools level attributes = MetadataTools
     { symAttributes :: SymbolOrAlias level -> attributes
     , sortAttributes :: Sort level -> attributes
     , sortTools  :: SortTools level
+    , isSubsortOf :: Sort level -> Sort level -> Bool
     }
 
+-- TODO: Rename this as `SortGetter` or something similar, `Tools` is
+-- too general.
 type SortTools level = SymbolOrAlias level -> ApplicationSorts level
 
 -- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
@@ -45,6 +48,8 @@ extractMetadataTools m =
     { symAttributes = getHeadAttributes m
     , sortAttributes = getSortAttributes m
     , sortTools  = getHeadApplicationSorts m
+    -- TODO: Implement.
+    , isSubsortOf = const $ const $ False
     }
 
 {- | Look up the result sort of a symbol or alias

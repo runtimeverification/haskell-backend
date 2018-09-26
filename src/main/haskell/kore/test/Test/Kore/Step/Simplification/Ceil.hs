@@ -332,7 +332,8 @@ test_ceilSimplification = give mockSortTools
         }
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+        Mock.makeMetadataTools
+            mockSortTools Mock.attributesMapping Mock.subsorts
 
 makeCeil
     :: [ExpandedPattern Object variable]

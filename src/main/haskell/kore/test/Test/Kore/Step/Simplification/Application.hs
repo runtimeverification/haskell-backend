@@ -405,7 +405,8 @@ test_applicationSimplification =
             )
         ]
     mockSortTools = Mock.makeSortTools sortToolsMapping
-    mockMetadataTools = Mock.makeMetadataTools mockSortTools attributesMapping
+    mockMetadataTools =
+        Mock.makeMetadataTools mockSortTools attributesMapping []
 
 makeApplication
     :: SymbolOrAlias level

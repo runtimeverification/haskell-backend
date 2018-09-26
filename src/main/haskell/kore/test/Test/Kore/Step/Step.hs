@@ -413,8 +413,8 @@ mockMetadataTools = MetadataTools
     { symAttributes = const Mock.constructorFunctionalAttributes
     , sortAttributes = const Mock.constructorFunctionalAttributes
     , sortTools = mockSortTools
+    , isSubsortOf = const $ const False
     }
-
 
 sigmaSymbol :: SymbolOrAlias Meta
 sigmaSymbol = SymbolOrAlias
