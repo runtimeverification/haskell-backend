@@ -264,4 +264,5 @@ mockMetadataTools = MetadataTools
     { symAttributes = const Mock.functionalAttributes
     , sortAttributes = const Mock.functionalAttributes
     , sortTools = mockSortTools
+    , isSubsortOf = const $ const False
     }
