@@ -347,7 +347,7 @@ Concatenate both arguments.
 
 Get an element from the list by index. Positive indices count from the beginning
 of the list and negative indices count from the end. The first element is
-`\dv{Int{}}("0")` and the last element is `\dv{Int{}}("1")`. The result is
+`\dv{Int{}}("0")` and the last element is `\dv{Int{}}("-1")`. The result is
 `\bottom{}()` if the index is out-of-bounds.
 
 ~~~
