@@ -34,6 +34,7 @@ module Kore.Builtin.Builtin
     , verifyDomainValue
     , verifyStringLiteral
     , parseDomainValue
+    , parseString
       -- * Implementing builtin functions
     , notImplemented
     , binaryOperator
@@ -41,6 +42,7 @@ module Kore.Builtin.Builtin
     , functionEvaluator
     , verifierBug
     , wrongArity
+    , runParser
     , appliedFunction
     , lookupSymbol
     ) where
@@ -412,14 +414,20 @@ parseDomainValue
     Kore.Error.withContext "While parsing domain value"
         (case domainValueChild of
             BuiltinDomainPattern (StringLiteral_ lit) ->
-                let parsed =
-                        Parsec.parse
-                            (parser <* Parsec.eof)
-                            "<string literal>"
-                            lit
-                in castParseError parsed
+                parseString parser lit
             _ -> Kore.Error.koreFail "Expected literal string"
         )
+
+{- | Run a parser on a string.
+
+ -}
+parseString
+    :: Parser a
+    -> String
+    -> Either (Error VerifyError) a
+parseString parser lit =
+    let parsed = Parsec.parse (parser <* Parsec.eof) "<string literal>" lit
+    in castParseError parsed
   where
     castParseError =
         either (Kore.Error.koreFail . Parsec.parseErrorPretty) pure

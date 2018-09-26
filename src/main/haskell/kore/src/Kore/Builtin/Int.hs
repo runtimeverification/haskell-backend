@@ -21,6 +21,7 @@ module Kore.Builtin.Int
     , symbolVerifiers
     , patternVerifier
     , builtinFunctions
+    , expectBuiltinDomainInt
     , asMetaPattern
     , asPattern
     , asExpandedPattern
@@ -29,6 +30,9 @@ module Kore.Builtin.Int
 
 import           Control.Monad
                  ( void )
+import           Control.Monad.Except
+                 ( ExceptT )
+import qualified Control.Monad.Except as Except
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
@@ -46,6 +50,8 @@ import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Function.Data
+                 ( AttemptedFunction (..) )
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -138,6 +144,31 @@ parse :: Builtin.Parser Integer
 parse = Parsec.signed noSpace Parsec.decimal
   where
     noSpace = pure ()
+
+{- | Abort function evaluation if the argument is not a Int domain value.
+
+    If the operand pattern is not a domain value, the function is simply
+    'NotApplicable'. If the operand is a domain value, but not represented
+    by a 'BuiltinDomainMap', it is a bug.
+
+ -}
+expectBuiltinDomainInt
+    :: Monad m
+    => String  -- ^ Context for error message
+    -> CommonPurePattern Object  -- ^ Operand pattern
+    -> ExceptT (AttemptedFunction Object Kore.Variable) m Integer
+expectBuiltinDomainInt ctx =
+    \case
+        Kore.DV_ _ domain ->
+            case domain of
+                Kore.BuiltinDomainPattern (Kore.StringLiteral_ lit) ->
+                    (return . Builtin.runParser ctx)
+                        (Builtin.parseString parse lit)
+                _ ->
+                    Builtin.verifierBug
+                        (ctx ++ ": Domain value argument is not a string")
+        _ ->
+            Except.throwError NotApplicable
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
