@@ -3,9 +3,11 @@ module Test.Kore.Unification.Unifier (test_unification) where
 import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
-       ( testCase )
+       ( testCase, assertFailure, assertEqual )
 import Test.Tasty.HUnit.Extensions
 
+import           Control.Exception
+                 ( ErrorCall (ErrorCall), catch, evaluate )
 import           Control.Monad.Counter
                  ( evalCounter )
 import           Control.Monad.Except
@@ -38,6 +40,8 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, makeFalsePredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
+                 ( makeEqualsPredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -247,12 +251,14 @@ unificationSubstitution = map trans
 unificationResult
     :: UnificationResultTerm Object
     -> Substitution Object
+    -> Predicate Object Variable
     -> ExpandedPattern Object Variable
-unificationResult (UnificationResultTerm pat) sub = ExpandedPattern.ExpandedPattern
-    { term = extractPurePattern pat
-    , predicate = makeTruePredicate
-    , substitution = unificationSubstitution sub
-    }
+unificationResult (UnificationResultTerm pat) sub pred =
+    ExpandedPattern.ExpandedPattern
+        { term = extractPurePattern pat
+        , predicate = pred
+        , substitution = unificationSubstitution sub
+        }
 
 newtype UnificationTerm level =
     UnificationTerm (CommonPurePatternStub level)
@@ -266,14 +272,15 @@ andSimplifySuccess
     -> UnificationTerm Object
     -> UnificationResultTerm Object
     -> Substitution Object
+    -> Predicate Object Variable
     -> UnificationProof Object Variable
     -> TestTree
-andSimplifySuccess message term1 term2 resultTerm subst proof =
+andSimplifySuccess message term1 term2 resultTerm subst predicate proof =
     testCase
         message
         (assertEqualWithExplanation
             ""
-            (unificationResult resultTerm subst, proof)
+            (unificationResult resultTerm subst predicate, proof)
             (subst'', proof')
         )
   where
@@ -300,6 +307,27 @@ andSimplifyFailure message term1 term2 err =
             (Left err)
             (evalCounter . runExceptT $ simplifyAnds tools [(unificationProblem term1 term2)])
         )
+
+andSimplifyException
+    :: (HasCallStack)
+    => String
+    -> UnificationTerm Object
+    -> UnificationTerm Object
+    -> String
+    -> TestTree
+andSimplifyException message term1 term2 exceptionMessage =
+    testCase
+        message
+        ( catch test handler )
+    where
+        test = do
+            let var = evalCounter . runExceptT $ simplifyAnds tools [(unificationProblem term1 term2)]
+            evaluate (var)
+            assertFailure "This evaluation should fail"
+        handler (ErrorCall s) =
+            assertEqual ""
+                exceptionMessage
+                s
 
 unificationProcedureSuccess
     :: (HasCallStack)
@@ -342,30 +370,35 @@ test_unification =
         (UnificationTerm aA)
         (UnificationResultTerm aA)
         []
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifySuccess "Variable"
         (UnificationTerm x)
         (UnificationTerm aA)
         (UnificationResultTerm aA)
         [("x", aA)]
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifySuccess "one level"
         (UnificationTerm (applyS f [x]))
         (UnificationTerm (applyS f [aA]))
         (UnificationResultTerm (applyS f [aA]))
         [("x", aA)]
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifySuccess "equal non-constructor patterns"
         (UnificationTerm a2A)
         (UnificationTerm a2A)
         (UnificationResultTerm a2A)
         []
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifySuccess "variable + non-constructor pattern"
         (UnificationTerm a2A)
         (UnificationTerm x)
         (UnificationResultTerm a2A)
         [("x", a2A)]
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifySuccess
         "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
@@ -376,28 +409,10 @@ test_unification =
         )
         [ ("ex1", applyS eg [ex3])
         , ("ex2", ex3)
-        , ("ex4", applyS eh [ex1])
+        , ("ex4", applyS eh [applyS eg [ex3]])
         ]
-        (AndDistributionAndConstraintLifting
-            (getSentenceSymbolOrAliasHead ef [])
-            [ Proposition_5_24_3
-                [ FunctionalHead (symbolHead eg)
-                , FunctionalVariable (var ex3)
-                ]
-                (var ex1)
-                (extractPurePattern $ applyS eg [ex3])
-            , Proposition_5_24_3
-                [ FunctionalHead (symbolHead eh)
-                , FunctionalVariable (var ex1)
-                ]
-                (var ex4)
-                (extractPurePattern $ applyS eh [ex1])
-            , Proposition_5_24_3
-                [FunctionalVariable (var ex3)]
-                (var ex2)
-                (extractPurePattern ex3)
-            ]
-        )
+        makeTruePredicate
+        EmptyUnificationProof
     , andSimplifySuccess
         "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms"
         (UnificationTerm
@@ -407,21 +422,12 @@ test_unification =
         (UnificationResultTerm
             (applyS nonLinF [applyS nonLinG [nonLinX], nonLinA])
         )
-        [ ("x", nonLinA), ("y", applyS nonLinG [nonLinX])]
-        (AndDistributionAndConstraintLifting
-            (symbolHead nonLinF)
-            [ Proposition_5_24_3
-                [ FunctionalHead (symbolHead nonLinG)
-                , FunctionalVariable (var nonLinX)
-                ]
-                (var nonLinY)
-                (extractPurePattern (applyS nonLinG [nonLinX]))
-            , Proposition_5_24_3
-                [ FunctionalHead (symbolHead nonLinAS) ]
-                (var nonLinX)
-                (extractPurePattern nonLinA)
-            ]
-        )
+        -- [ ("x", nonLinA), ("y", applyS nonLinG [nonLinX])]
+        [ ("x", nonLinA)
+        , ("y", applyS nonLinG [nonLinA])
+        ]
+        makeTruePredicate
+        EmptyUnificationProof
     , andSimplifySuccess
         "times(times(a, y), x) = times(x, times(y, a))"
         (UnificationTerm (applyS expBin [applyS expBin [expA, expY], expX]))
@@ -432,27 +438,11 @@ test_unification =
             , applyS expBin [expY, expA]
             ]
         ))
-        [ ("x", applyS expBin [expA, expY])
-        , ("x", applyS expBin [expY, expA])
+        [ ("a", expY)
+        , ("x", applyS expBin [expY, expY])
         ]
-        (AndDistributionAndConstraintLifting
-            (symbolHead expBin)
-            [ Proposition_5_24_3
-                [ FunctionalHead (symbolHead expBin)
-                , FunctionalVariable (var expA)
-                , FunctionalVariable (var expY)
-                ]
-                (var expX)
-                (extractPurePattern (applyS expBin [expA, expY]))
-            , Proposition_5_24_3
-                [ FunctionalHead (symbolHead expBin)
-                , FunctionalVariable (var expY)
-                , FunctionalVariable (var expA)
-                ]
-                (var expX)
-                (extractPurePattern (applyS expBin [expY, expA]))
-            ]
-        )
+        makeTruePredicate
+        EmptyUnificationProof
     , unificationProcedureSuccess
         "times(x, g(x)) = times(a, a) -- cycle bottom"
         (UnificationTerm (applyS expBin [expX, applyS eg [expX]]))
@@ -478,34 +468,46 @@ test_unification =
         (UnificationTerm dv1)
         (UnificationTerm dv2)
         UnsupportedPatterns
-    , andSimplifyFailure "Unmatching constant + domain value"
+    , andSimplifyException "Unmatching constructor constant + domain value"
         (UnificationTerm aA)
         (UnificationTerm dv2)
-        UnsupportedPatterns
-    , andSimplifyFailure "Unmatching domain value + constructor constant"
+        "Cannot handle DomainValue and Constructor"
+    , andSimplifyException "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
-        (UnificationTerm a1A)
-        UnsupportedPatterns
-    , andSimplifyFailure "Unmatching domain value + nonconstructor constant"
+        (UnificationTerm aA)
+        "Cannot handle DomainValue and Constructor"
+    , andSimplifySuccess "Unmatching domain value + nonconstructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a2A)
-        UnsupportedPatterns
-    , andSimplifyFailure "Unmatching nonconstructor constant + domain value"
+        (UnificationResultTerm dv1)
+        []
+        (makeEqualsPredicate dv1 a2A)
+        EmptyUnificationProof
+    , andSimplifySuccess "Unmatching nonconstructor constant + domain value"
         (UnificationTerm a2A)
         (UnificationTerm dv1)
-        UnsupportedPatterns
+        (UnificationResultTerm a2A)
+        []
+        (makeEqualsPredicate a2A dv1)
+        EmptyUnificationProof
     , andSimplifyFailure "non-functional pattern"
         (UnificationTerm x)
         (UnificationTerm a3A)
         UnsupportedPatterns
-    , andSimplifyFailure "non-constructor symbolHead right"
+    , andSimplifySuccess "non-constructor symbolHead right"
         (UnificationTerm aA)
         (UnificationTerm a2A)
-        UnsupportedPatterns
-    , andSimplifyFailure "non-constructor symbolHead left"
+        (UnificationResultTerm aA)
+        []
+        (makeEqualsPredicate aA a2A)
+        EmptyUnificationProof
+    , andSimplifySuccess "non-constructor symbolHead left"
         (UnificationTerm a2A)
         (UnificationTerm aA)
-        UnsupportedPatterns
+        (UnificationResultTerm a2A)
+        []
+        (makeEqualsPredicate a2A aA)
+        EmptyUnificationProof
     , andSimplifyFailure "nested failure"
         (UnificationTerm (applyS f [aA]))
         (UnificationTerm (applyS f [a1A]))
@@ -581,30 +583,35 @@ injUnificationTests =
         (UnificationTerm (applyInj s1 s2 aA))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifySuccess "Variable"
         (UnificationTerm xs2)
         (UnificationTerm (applyInj s1 s2 aA))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("xs2", applyInj s1 s2 aA)]
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifySuccess "Injected Variable vs doubly injected term"
         (UnificationTerm (applyInj s1 s2 x))
         (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifySuccess "doubly injected variable vs injected term"
         (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 x))))
         (UnificationTerm (applyInj s1 s2 aA))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifySuccess "doubly injected variable vs doubly injected term"
         (simplifyPattern (UnificationTerm (applyInj s4 s2 (applyInj s1 s4 x))))
         (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
         (UnificationResultTerm (applyInj s1 s2 aA))
         [("x", aA)]
+        makeTruePredicate
         EmptyUnificationProof
     , andSimplifyFailure "constant vs injection"
         (UnificationTerm aA)
@@ -651,3 +658,12 @@ simplifyPattern (UnificationTerm pStub) =
         , predicate = makeTruePredicate
         , substitution = []
         }
+
+makeEqualsPredicate
+    :: CommonPurePatternStub Object
+    -> CommonPurePatternStub Object
+    -> Predicate Object Variable
+makeEqualsPredicate t1 t2 =
+        give mockSortTools
+            $ Predicate.makeEqualsPredicate
+                (extractPurePattern t1) (extractPurePattern t2)

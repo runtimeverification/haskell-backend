@@ -298,6 +298,7 @@ maybeTermAnd =
         , liftE sortInjectionAndEqualsAssumesDifferentHeads
         , liftE constructorSortInjectionAndEquals
         , liftE constructorAndEqualsAssumesDifferentHeads
+        , liftE domainValueAndConstructorErrors
         , liftET domainValueAndEqualsAssumesDifferent
         , liftET stringLiteralAndEqualsAssumesDifferent
         , liftET charLiteralAndEqualsAssumesDifferent
@@ -754,6 +755,36 @@ constructorAndEqualsAssumesDifferentHeads
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools secondHead
 constructorAndEqualsAssumesDifferentHeads _ _ _ = NotHandled
+
+{-| And simplification for domain values and constructors.
+
+Currently throws an error.
+
+Returns NotHandled if the arguments are not a domain value and a constructor.
+-}
+domainValueAndConstructorErrors
+    :: ( Eq (variable Object)
+       , MetaOrObject level
+       )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
+domainValueAndConstructorErrors
+    tools
+    first@(DV_ _ _)
+    second@(App_ secondHead _)
+    | StepperAttributes.isConstructor
+        (MetadataTools.symAttributes tools secondHead)
+    = error "Cannot handle DomainValue and Constructor"
+domainValueAndConstructorErrors
+    tools
+    first@(App_ firstHead _)
+    second@(DV_ _ _)
+    | StepperAttributes.isConstructor
+        (MetadataTools.symAttributes tools firstHead)
+    = error "Cannot handle DomainValue and Constructor"
+domainValueAndConstructorErrors _ _ _ = NotHandled
 
 {-| And simplification for domain values.
 
