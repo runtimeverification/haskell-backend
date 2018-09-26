@@ -62,8 +62,8 @@ prop_lookupUnit k =
         lookup{}(update{}(m : Map{}, k : Key{}, v : Value{}), k) === v
     @
  -}
-prop_lookupUpdate :: (Integer, Integer) -> [(Integer, Integer)] -> Property
-prop_lookupUpdate (key, value) (Map.fromList -> map') =
+prop_lookupUpdate :: (Integer, Integer) -> Map Integer Integer -> Property
+prop_lookupUpdate (key, value) map' =
     let patLookup =
             App_ symbolLookup
                 [ App_ symbolUpdate [ patMap, patKey , patValue ]
@@ -87,8 +87,8 @@ prop_lookupUpdate (key, value) (Map.fromList -> map') =
         concat{}(unit{}(), map : Map{}) === map
     @
  -}
-prop_concatUnit :: [(Integer, Integer)] -> Property
-prop_concatUnit (Map.fromList -> map') =
+prop_concatUnit :: Map Integer Integer -> Property
+prop_concatUnit map' =
     let patConcat2 = App_ symbolConcat [ patUnit, patMap ]
         patConcat1 = App_ symbolConcat [ patMap, patUnit ]
         patUnit = App_ symbolUnit []
@@ -186,8 +186,8 @@ prop_concatDuplicateKeys key value1 value2 =
         concat{}(as : Map{}, bs : Map{}) === concat{}(bs, as)
     @
  -}
-prop_concatCommutes :: [(Integer, Integer)] -> [(Integer, Integer)] -> Property
-prop_concatCommutes (Map.fromList -> map1) (Map.fromList -> map2) =
+prop_concatCommutes :: Map Integer Integer -> Map Integer Integer -> Property
+prop_concatCommutes map1 map2 =
     let patConcat1 = App_ symbolConcat [ patMap1, patMap2 ]
         patConcat2 = App_ symbolConcat [ patMap2, patMap1 ]
         patMap1 =
@@ -213,15 +213,11 @@ prop_concatCommutes (Map.fromList -> map1) (Map.fromList -> map2) =
     @
  -}
 prop_concatAssociates
-    :: [(Integer, Integer)]
-    -> [(Integer, Integer)]
-    -> [(Integer, Integer)]
+    :: Map Integer Integer
+    -> Map Integer Integer
+    -> Map Integer Integer
     -> Property
-prop_concatAssociates
-    (Map.fromList -> map1)
-    (Map.fromList -> map2)
-    (Map.fromList -> map3)
-  =
+prop_concatAssociates map1 map2 map3 =
     let patMap1 =
             asPattern
             $ Map.mapKeys Test.Int.asPattern
