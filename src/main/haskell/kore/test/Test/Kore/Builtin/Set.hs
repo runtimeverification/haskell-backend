@@ -10,6 +10,8 @@ import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
                  ( give )
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
@@ -82,11 +84,11 @@ prop_inElement value =
         in{}(concat{}(..., element{}(e)), e) === \dv{Bool{}}("true")
     @
  -}
-prop_inConcat :: Integer -> [Integer] -> Property
-prop_inConcat _elem (Set.fromList -> values) =
+prop_inConcat :: Integer -> Set Integer -> Property
+prop_inConcat elem' values =
     let patIn = App_ symbolIn [ patElem , patSet ]
-        patSet = asPattern (Set.map Test.Int.asPattern $ Set.insert _elem values)
-        patElem = Test.Int.asPattern _elem
+        patSet = asPattern (Set.map Test.Int.asPattern $ Set.insert elem' values)
+        patElem = Test.Int.asPattern elem'
         patTrue = Test.Bool.asPattern True
         predicate = give testSortTools $ mkEquals patTrue patIn
     in
@@ -100,8 +102,8 @@ prop_inConcat _elem (Set.fromList -> values) =
         concat{}(unit{}(), ...) === concat{}(..., unit{}()) === ...
     @
  -}
-prop_concatUnit :: [Integer] -> Property
-prop_concatUnit (Set.fromList -> values) =
+prop_concatUnit :: Set Integer -> Property
+prop_concatUnit values =
     let patUnit = App_ symbolUnit []
         patValues = asPattern (Set.map Test.Int.asPattern values)
         patConcat1 = App_ symbolConcat [ patUnit, patValues ]
@@ -123,12 +125,8 @@ prop_concatUnit (Set.fromList -> values) =
         concat{}(as : List{}, concat{}(bs : List{}, cs : List{}))
     @
  -}
-prop_concatAssociates :: [Integer] -> [Integer] -> [Integer] -> Property
-prop_concatAssociates
-    (Set.fromList -> values1)
-    (Set.fromList -> values2)
-    (Set.fromList -> values3)
-  =
+prop_concatAssociates :: Set Integer -> Set Integer -> Set Integer -> Property
+prop_concatAssociates values1 values2 values3 =
     let patSet1 = asPattern $ Set.map Test.Int.asPattern values1
         patSet2 = asPattern $ Set.map Test.Int.asPattern values2
         patSet3 = asPattern $ Set.map Test.Int.asPattern values3
