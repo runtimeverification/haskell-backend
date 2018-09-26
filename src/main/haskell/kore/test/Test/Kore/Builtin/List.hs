@@ -11,7 +11,7 @@ import           Data.Proxy
 import           Data.Reflection
                  ( give )
 import           Data.Sequence
-                 ( Seq (..) )
+                 ( Seq )
 import qualified Data.Sequence as Seq
 
 import           Kore.AST.Common
@@ -71,8 +71,8 @@ prop_getFirstElement (Seq.fromList -> values) =
         patList = asPattern (Test.Int.asPattern <$> values)
         value =
             case values of
-                Empty -> Nothing
-                v :<| _ -> Just v
+                Seq.Empty -> Nothing
+                v Seq.:<| _ -> Just v
         patFirst = maybe mkBottom Test.Int.asPattern value
         predicate = give testSortTools $ mkEquals patGet patFirst
     in
@@ -92,8 +92,8 @@ prop_getLastElement (Seq.fromList -> values) =
         patList = asPattern (Test.Int.asPattern <$> values)
         value =
             case values of
-                Empty -> Nothing
-                _ :|> v -> Just v
+                Seq.Empty -> Nothing
+                _ Seq.:|> v -> Just v
         patFirst = maybe mkBottom Test.Int.asPattern value
         predicate = give testSortTools $ mkEquals patGet patFirst
     in
