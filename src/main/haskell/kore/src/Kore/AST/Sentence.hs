@@ -207,6 +207,11 @@ deriving instance
     , Show (variable level)
     ) => Show (Sentence level sortParam pat variable)
 
+{- | The attributes associated with a sentence.
+
+    Every sentence type has attributes, so this operation is total.
+
+ -}
 sentenceAttributes :: Sentence level sortParam pat variable -> Attributes
 sentenceAttributes =
     \case
