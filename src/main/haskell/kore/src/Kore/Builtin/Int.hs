@@ -166,7 +166,7 @@ expectBuiltinDomainInt ctx =
                         (Builtin.parseString parse lit)
                 _ ->
                     Builtin.verifierBug
-                        (ctx ++ ": Domain value is not an integer")
+                        (ctx ++ ": Domain value argument is not a string")
         _ ->
             Except.throwError NotApplicable
 
