@@ -258,12 +258,13 @@ test_patternAttributes = give mockSortTools
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools :: MetadataTools Object StepperAttributes
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+        Mock.makeMetadataTools
+            mockSortTools Mock.attributesMapping Mock.subsorts
 
     mockMetaSortTools :: SortTools Meta
     mockMetaSortTools = Mock.makeSortTools []
     mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-    mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSortTools []
+    mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSortTools [] []
 
 testSort :: Sort Object
 testSort =

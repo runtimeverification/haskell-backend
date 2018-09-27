@@ -205,30 +205,86 @@ test_andTermsSimplification = give mockSortTools
                     (Mock.sortInjection10 Mock.cfSort0)
                     (Mock.sortInjection10 Mock.cfSort0)
                 )
-            assertEqualWithExplanation "different head constructors"
-                ( ExpandedPattern.bottom
-                , Just ExpandedPattern.bottom
+            assertEqualWithExplanation "different head not subsort"
+                ( ExpandedPattern
+                    { term =
+                        mkAnd
+                            (Mock.sortInjectionSubToTop Mock.plain00Subsort)
+                            (Mock.sortInjection0ToTop Mock.plain00Sort0)
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                , Nothing
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    (Mock.sortInjectionSubToTop Mock.plain00Subsort)
+                    (Mock.sortInjection0ToTop Mock.plain00Sort0)
+                )
+            assertEqualWithExplanation "different head subsort first"
+                ( ExpandedPattern
+                    { term =
+                        Mock.sortInjectionSubToTop
+                            (mkAnd
+                                (Mock.sortInjectionSubSubToSub
+                                    Mock.plain00SubSubsort
+                                )
+                                Mock.plain00Subsort
+                            )
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                , Nothing
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    (Mock.sortInjectionSubSubToTop Mock.plain00SubSubsort)
+                    (Mock.sortInjectionSubToTop Mock.plain00Subsort)
+                )
+            assertEqualWithExplanation "different head subsort second"
+                ( ExpandedPattern
+                    { term =
+                        Mock.sortInjectionSubToTop
+                            (mkAnd
+                                Mock.plain00Subsort
+                                (Mock.sortInjectionSubSubToSub
+                                    Mock.plain00SubSubsort
+                                )
+                            )
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                , Nothing
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    (Mock.sortInjectionSubToTop Mock.plain00Subsort)
+                    (Mock.sortInjectionSubSubToTop Mock.plain00SubSubsort)
+                )
+            assertEqualWithExplanation "different head constructors not subsort"
+                ( ExpandedPattern
+                    { term =
+                        mkAnd
+                            (Mock.sortInjection10 Mock.aSort0)
+                            (Mock.sortInjection11 Mock.aSort1)
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                , Nothing
                 )
                 (simplifyUnify
                     mockMetadataTools
                     (Mock.sortInjection10 Mock.aSort0)
                     (Mock.sortInjection11 Mock.aSort1)
                 )
-            assertEqualWithExplanation "different head non-constructors"
-                ( ExpandedPattern
-                        { term =
-                            mkAnd
-                                (Mock.sortInjection10 Mock.cfSort0)
-                                (Mock.sortInjection11 Mock.cfSort1)
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                , Nothing
+            assertEqualWithExplanation "different head constructors subsort"
+                ( ExpandedPattern.bottom
+                , Just ExpandedPattern.bottom
                 )
                 (simplifyUnify
                     mockMetadataTools
-                    (Mock.sortInjection10 Mock.cfSort0)
-                    (Mock.sortInjection11 Mock.cfSort1)
+                    (Mock.sortInjectionSubToTop Mock.aSubsort)
+                    (Mock.sortInjectionSubSubToTop Mock.aSubSubsort)
                 )
         )
     , testCase "constructor and"
@@ -474,11 +530,11 @@ mockMetaSortTools = Mock.makeSortTools []
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+    Mock.makeMetadataTools mockSortTools Mock.attributesMapping Mock.subsorts
 
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools =
-    Mock.makeMetadataTools mockMetaSortTools []
+    Mock.makeMetadataTools mockMetaSortTools [] []
 
 aDomainValue :: CommonPurePattern Object
 aDomainValue =

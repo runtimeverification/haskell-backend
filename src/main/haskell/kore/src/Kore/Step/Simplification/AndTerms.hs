@@ -15,15 +15,14 @@ module Kore.Step.Simplification.AndTerms
 
 import Control.Exception
        ( assert )
-import Data.Functor.Foldable
-       ( project )
 import Data.Maybe
        ( fromMaybe )
 import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain(..), SortedVariable )
+                 ( BuiltinDomain (..), Sort, SortedVariable,
+                 SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern )
@@ -38,16 +37,17 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeTruePredicate )
+                 ( pattern PredicateTrue, makeEqualsPredicate,
+                 makeNotPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern),
                  PredicateSubstitution (PredicateSubstitution) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, fromPurePattern )
+                 ( ExpandedPattern (..), bottom, fromPurePattern, isBottom )
 import           Kore.Step.PatternAttributes
-                 ( isConstructorLikeTop, isFunctionPattern )
+                 ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
@@ -86,12 +86,16 @@ termEquals
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
-        (Counter (ExpandedPattern level variable, SimplificationProof level))
+        (Counter (PredicateSubstitution level variable, SimplificationProof level))
 termEquals tools first second = do  -- Maybe monad
-    result <-termEqualsAnd tools first second
-    return $ do  -- IntCounter monad
-        (patt, _pred) <- result
-        return (patt {ExpandedPattern.term = mkTop}, SimplificationProof)
+    result <- termEqualsAnd tools first second
+    return $ do  -- Counter monad
+        (ExpandedPattern {predicate, substitution}, _pred) <- result
+        return
+            ( PredicateSubstitution
+                {predicate = predicate, substitution = substitution}
+            , SimplificationProof
+            )
 
 termEqualsAnd
     ::  ( MetaOrObject level
@@ -166,10 +170,12 @@ maybeTermEquals
 maybeTermEquals =
     maybeTransformTerm
         [ liftET equalAndEquals
+        , lift   bottomTermEquals
+        , lift   termBottomEquals
         , lift   (variableFunctionAndEquals SimplifyEquals)
         , lift   (functionVariableAndEquals SimplifyEquals)
         ,        equalInjectiveHeadsAndEquals
-        , liftE  sortInjectionAndEqualsAssumesDifferentHeads
+        ,        sortInjectionAndEqualsAssumesDifferentHeads
         , liftE  constructorSortInjectionAndEquals
         , liftE  constructorAndEqualsAssumesDifferentHeads
         , liftET domainValueAndEqualsAssumesDifferent
@@ -279,7 +285,7 @@ maybeTermAnd =
         , lift (variableFunctionAndEquals SimplifyAnd)
         , lift (functionVariableAndEquals SimplifyAnd)
         , equalInjectiveHeadsAndEquals
-        , liftE sortInjectionAndEqualsAssumesDifferentHeads
+        , sortInjectionAndEqualsAssumesDifferentHeads
         , liftE constructorSortInjectionAndEquals
         , liftE constructorAndEqualsAssumesDifferentHeads
         , liftET domainValueAndEqualsAssumesDifferent
@@ -448,6 +454,58 @@ equalAndEquals first second
     Handled (first, SimplificationProof)
 equalAndEquals _ _ = NotHandled
 
+{-| Equals simplification for `bottom == term`.
+
+Returns NotHandled if it could not handle the input.
+-}
+bottomTermEquals
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> FunctionResult
+        (ExpandedPattern level variable, SimplificationProof level)
+bottomTermEquals
+    tools
+    (Bottom_ _)
+    second
+  = case Ceil.makeEvaluateTerm tools second of
+    (PredicateTrue, _proof) ->
+        Handled (ExpandedPattern.bottom, SimplificationProof)
+    (predicate, _proof) ->
+        Handled
+            ( ExpandedPattern
+                { term = mkTop
+                , predicate = give (MetadataTools.sortTools tools) $
+                    case makeNotPredicate predicate of
+                        (predicate', _proof) -> predicate'
+                , substitution = []
+                }
+            , SimplificationProof
+            )
+bottomTermEquals _ _ _ = NotHandled
+
+{-| Equals simplification for `term == bottom`.
+
+Returns NotHandled if it could not handle the input.
+-}
+termBottomEquals
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        )
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> FunctionResult
+        (ExpandedPattern level variable, SimplificationProof level)
+termBottomEquals tools first second = bottomTermEquals tools second first
+
 {-| And simplification for `variable and function`.
 
 Returns NotHandled if it could not handle the input.
@@ -538,8 +596,10 @@ equalInjectiveHeadsAndEquals
     -> PureMLPattern level variable
     -> FunctionResult
         (Maybe
-            ( Counter (ExpandedPattern level variable
-            , SimplificationProof level)
+            ( Counter
+                ( ExpandedPattern level variable
+                , SimplificationProof level
+                )
             )
         )
 equalInjectiveHeadsAndEquals
@@ -553,7 +613,7 @@ equalInjectiveHeadsAndEquals
   = Handled $ do -- Maybe monad
     intCounterChildren <- sequenceA $
         zipWith termMerger firstChildren secondChildren
-    return $ do -- IntCounter monad
+    return $ do -- Counter monad
         children <- sequenceA intCounterChildren
         (   PredicateSubstitution
                 { predicate = mergedPredicate
@@ -586,47 +646,118 @@ to be different.
 Returns NotHandled if it could not handle the input.
 -}
 sortInjectionAndEqualsAssumesDifferentHeads
-    ::  ( Eq (variable Object)
+    ::  forall level variable .
+        ( Eq (variable Object)
         , MetaOrObject level
         )
     => MetadataTools level StepperAttributes
+    -> TermSimplifier level variable
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
+    -> FunctionResult
+        (Maybe
+            ( Counter
+                ( ExpandedPattern level variable
+                , SimplificationProof level
+                )
+            )
+        )
 sortInjectionAndEqualsAssumesDifferentHeads
     tools
-    (App_ firstHead [firstChild])
-    (App_ secondHead [secondChild])
+    termMerger
+    (App_
+        firstHead@SymbolOrAlias
+            { symbolOrAliasConstructor = firstConstructor
+            , symbolOrAliasParams = [firstOrigin, firstDestination]
+            }
+        [firstChild])
+    (App_
+        secondHead@SymbolOrAlias
+            { symbolOrAliasConstructor = secondConstructor
+            , symbolOrAliasParams = [secondOrigin, secondDestination]
+            }
+        [secondChild]
+    )
   | StepperAttributes.isSortInjection firstHeadAttributes
     && StepperAttributes.isSortInjection secondHeadAttributes
-    && isConstructorLikeTop tools (project firstChild)
-    && isConstructorLikeTop tools (project secondChild)
   =
-    assert (firstHead /= secondHead) $
-        -- TODO(virgil): This is copied from the unification code, but
-        -- it's not obvious that this is correct.
-        -- It should work for two constructors, but it may not work
-        -- for domainvalue-domainvalue pairs - can't these be obtained
-        -- through sort injections?
-        --
-        -- To give an example, if we have
-        -- inj{Integer, s}(\dv{Nat}("1")) vs inj{Nat, s}(\dv{Nat}("1"))
-        -- can it happen that
-        -- \dv{Integer}("1") = inj{Nat, Integer}(\dv{Nat}("1"))?
-        -- If yes, then the conditions above are not enough for returning
-        -- bottom here.
-        --
-        -- For now we will assume that inj does not work like that.
-        Handled (mkBottom, SimplificationProof)
+    assert (firstHead /= secondHead)
+    $ assert (firstDestination == secondDestination)
+    $ assert (firstConstructor == secondConstructor)
+    $ if firstOrigin `isSubsortOf` secondOrigin
+        then Handled $ do  -- Maybe monad
+            merged <-
+                termMerger
+                    (sortInjection firstOrigin secondOrigin firstChild)
+                    secondChild
+            return $ do  -- Counter monad
+                (patt, _proof) <- merged
+                let
+                    (result, _proof) =
+                        termSortInjection secondOrigin secondDestination patt
+                return (result, SimplificationProof)
+        else if secondOrigin `isSubsortOf` firstOrigin
+            then Handled $ do  -- Maybe monad
+                merged <-
+                    termMerger
+                        firstChild
+                        (sortInjection secondOrigin firstOrigin secondChild)
+                return $ do  -- Counter monad
+                    (patt, _proof) <- merged
+                    let
+                        (result, _proof) =
+                            termSortInjection firstOrigin firstDestination patt
+                    return (result, SimplificationProof)
+            else
+                NotHandled
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools firstHead
-sortInjectionAndEqualsAssumesDifferentHeads _ _ _ = NotHandled
+    isSubsortOf = MetadataTools.isSubsortOf tools
+    termSortInjection
+        :: Sort level
+        -> Sort level
+        -> ExpandedPattern level variable
+        -> (ExpandedPattern level variable, SimplificationProof level)
+    termSortInjection
+        originSort
+        destinationSort
+        patt@ExpandedPattern
+            {term, predicate, substitution}
+      =
+        if ExpandedPattern.isBottom patt
+        then (ExpandedPattern.bottom, SimplificationProof)
+        else
+            ( ExpandedPattern
+                { term = sortInjection originSort destinationSort term
+                , predicate = predicate
+                , substitution = substitution
+                }
+            , SimplificationProof
+            )
+    sortInjection
+        :: Sort level
+        -> Sort level
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
+    sortInjection originSort destinationSort term =
+        give (MetadataTools.sortTools tools)
+            $ mkApp
+                SymbolOrAlias
+                    { symbolOrAliasConstructor = firstConstructor
+                    , symbolOrAliasParams = [originSort, destinationSort]
+                    }
+                [term]
+
+sortInjectionAndEqualsAssumesDifferentHeads _ _ _ _ = NotHandled
 
 {-| And simplification for patterns with constructor heads vs
 sortInjection heads.
 
 Returns NotHandled if it could not handle the input.
+
+TODO(virgil): This implementation is provisional, we're not sure yet if sort
+    injection should always clash with constructors. We should clarify this.
 -}
 constructorSortInjectionAndEquals
     ::  ( Eq (variable Object)
