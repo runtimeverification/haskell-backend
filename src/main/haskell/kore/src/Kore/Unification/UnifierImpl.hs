@@ -26,31 +26,24 @@ import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
 
-import           Kore.Predicate.Predicate
-                 ( Predicate, unwrapPredicate, wrapPredicate )
-import qualified Kore.Predicate.Predicate as Predicate
-                 ( isFalse )
 import           Kore.AST.Common
-import           Kore.ASTUtils.SmartPatterns
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.StepperAttributes
-import           Kore.Unification.Error
-import           Kore.Unification.UnificationSolution
-import           Kore.Unification.Procedure
-                 ( unificationProcedure )
+import qualified Kore.Predicate.Predicate as Predicate
+                 ( isFalse )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..), top, bottom )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, isBottom )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), top, bottom )
+                 ( ExpandedPattern )
+import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
+import           Kore.Unification.Error
+import           Kore.Unification.UnificationSolution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 

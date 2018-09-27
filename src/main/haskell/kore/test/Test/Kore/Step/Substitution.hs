@@ -24,8 +24,6 @@ import           Kore.Predicate.Predicate
                  ( makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.PredicateSubstitution
                  ( PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( bottom )
 import           Kore.Step.Substitution
                  ( mergeAndNormalizeSubstitutions )
 import           Kore.Unification.Error

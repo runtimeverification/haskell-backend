@@ -45,11 +45,10 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, top )
+                 ( ExpandedPattern (..), bottom )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-import           Kore.Step.PatternAttributes
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -66,9 +65,6 @@ import Test.Kore.AST.MLPatterns
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Comparators ()
 
-
-bottom :: Sort Object -> CommonPurePatternStub Object
-bottom n = withSort n bottom_
 
 bottomPredicate :: CommonPurePatternStub Object
 bottomPredicate = withSort (mkSort "PREDICATE") bottom_
@@ -178,10 +174,6 @@ symbolInj =
         [sortParamSort "From"]
         (sortParamSort "To")
 
-injHead :: Sort level -> Sort level -> SymbolOrAlias level
-injHead sortFrom sortTo =
-    getSentenceSymbolOrAliasHead symbolInj [sortFrom, sortTo]
-
 isInjHead :: SymbolOrAlias level -> Bool
 isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
 
@@ -261,10 +253,10 @@ unificationResult
     -> Substitution Object
     -> Predicate Object Variable
     -> ExpandedPattern Object Variable
-unificationResult (UnificationResultTerm pat) sub pred =
+unificationResult (UnificationResultTerm pat) sub predicate =
     ExpandedPattern.ExpandedPattern
         { term = extractPurePattern pat
-        , predicate = pred
+        , predicate = predicate
         , substitution = unificationSubstitution sub
         }
 
@@ -330,7 +322,7 @@ andSimplifyException message term1 term2 exceptionMessage =
     where
         test = do
             let var = evalCounter . runExceptT $ simplifyAnds tools [(unificationProblem term1 term2)]
-            evaluate (var)
+            _ <- evaluate (var)
             assertFailure "This evaluation should fail"
         handler (ErrorCall s) =
             assertEqual ""
@@ -547,17 +539,6 @@ test_unification =
             )
         )
     ]
-
-var :: CommonPurePatternStub Object -> Variable Object
-var ps = case project (extractPurePattern ps) of
-    VariablePattern v -> v
-    _                 -> error "Expecting a variable"
-
-symbolHead
-    :: SentenceSymbolOrAlias s
-    => s level (Pattern level) variable
-    -> SymbolOrAlias level
-symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
 
 newtype V level = V Integer
     deriving (Show, Eq, Ord)

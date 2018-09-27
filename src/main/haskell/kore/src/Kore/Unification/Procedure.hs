@@ -11,15 +11,15 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import           Control.Error.Util
-                 ( note )
-import           Control.Monad.Counter
-                 ( MonadCounter )
-import           Control.Monad.Except
-                 ( ExceptT(..)  )
-import           Data.Functor.Foldable
-import           Data.Reflection
-                 ( give )
+import Control.Error.Util
+       ( note )
+import Control.Monad.Counter
+       ( MonadCounter )
+import Control.Monad.Except
+       ( ExceptT(..)  )
+import Data.Functor.Foldable
+import Data.Reflection
+       ( give )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -41,6 +41,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..) )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution(..) )
+import           Kore.Step.Simplification.AndTerms
+                 ( termUnification )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
@@ -52,8 +54,6 @@ import           Kore.Unification.UnificationSolution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
-                      ( termUnification )
 
 -- |'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
 -- are terms (functional patterns) to a substitution.

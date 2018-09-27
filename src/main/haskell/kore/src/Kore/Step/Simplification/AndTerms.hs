@@ -847,15 +847,15 @@ domainValueAndConstructorErrors
     -> FunctionResult (PureMLPattern level variable, SimplificationProof level)
 domainValueAndConstructorErrors
     tools
-    first@(DV_ _ _)
-    second@(App_ secondHead _)
+    (DV_ _ _)
+    (App_ secondHead _)
     | StepperAttributes.isConstructor
         (MetadataTools.symAttributes tools secondHead)
     = error "Cannot handle DomainValue and Constructor"
 domainValueAndConstructorErrors
     tools
-    first@(App_ firstHead _)
-    second@(DV_ _ _)
+    (App_ firstHead _)
+    (DV_ _ _)
     | StepperAttributes.isConstructor
         (MetadataTools.symAttributes tools firstHead)
     = error "Cannot handle DomainValue and Constructor"

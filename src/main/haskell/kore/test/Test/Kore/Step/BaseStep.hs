@@ -39,8 +39,6 @@ import Kore.Step.ExpandedPattern as ExpandedPattern
 import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
 import Kore.Step.StepperAttributes
-import Kore.Unification.Error
-       ( SubstitutionError (..) )
 import Kore.Unification.Unifier
        ( UnificationProof (..) )
 import Kore.Variables.Fresh
