@@ -25,9 +25,14 @@ import Kore.IndexedModule.Resolvers
 -- access the metadata needed during the unification process.
 data MetadataTools level attributes = MetadataTools
     { symAttributes :: SymbolOrAlias level -> attributes
+    -- ^ get the attributes of a symbol or alias
     , sortAttributes :: Sort level -> attributes
-    , sortTools  :: SortTools level
+    -- ^ get the attributes of a sort
+    , sortTools :: SortTools level
+    -- ^ get the signature of a symbol or alias
     , isSubsortOf :: Sort level -> Sort level -> Bool
+    {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
+       including when @a@ equals @b@. -}
     }
 
 -- TODO: Rename this as `SortGetter` or something similar, `Tools` is
