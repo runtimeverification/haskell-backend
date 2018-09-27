@@ -99,7 +99,7 @@ test_sortUsage =
             { testConfigurationDescription = "The variable is declared"
             , testConfigurationAdditionalSentences = []
             , testConfigurationAdditionalSortVariables =
-                [ sortVariable Object (SortVariableName "s") ]
+                [ sortVariable @Object "s" ]
             , testConfigurationCaseBasedConfiguration =
                 [
                     ( [CannotSeeSortDeclarations, CannotSeeSortVariables]
@@ -117,7 +117,7 @@ test_sortUsage =
         )
         (ExpectedErrorMessage "Sort variable 's' not declared.")
         (ErrorStack ["(<test data>)"])
-        (TestedSort (objectVariableSort (SortVariableName "s")))
+        (TestedSort (objectVariableSort "s"))
         (NamePrefix "internal")
     , let
         referencingSortVariableTestConfiguration = TestConfiguration
@@ -125,7 +125,7 @@ test_sortUsage =
             , testConfigurationAdditionalSentences =
                 [ simpleSortSentence additionalSortName ]
             , testConfigurationAdditionalSortVariables =
-                [ sortVariable Object (SortVariableName "s") ]
+                [ sortVariable @Object "s" ]
             , testConfigurationCaseBasedConfiguration =
                 [
                     ( [CannotSeeSortDeclarations, CannotSeeSortVariables]
@@ -138,7 +138,7 @@ test_sortUsage =
             (SuccessConfiguration referencingSortVariableTestConfiguration)
             (flaggedObjectTestsForSort
                 referencingSortVariableTestConfiguration
-                (TestedSort (objectVariableSort (SortVariableName "s")))
+                (TestedSort (objectVariableSort "s"))
                 (SortActualThatIsDeclared
                     (simpleSortActual additionalSortName))
                 (NamePrefix "internal")
@@ -175,12 +175,12 @@ test_sortUsage =
             { testConfigurationDescription = "The sort is declared"
             , testConfigurationAdditionalSentences = []
             , testConfigurationAdditionalSortVariables =
-                [ sortVariable Meta (SortVariableName "#s") ]
+                [ sortVariable @Meta "#s" ]
             , testConfigurationCaseBasedConfiguration =
                 [([CannotSeeSortVariables], SkipTest)]
             }
         )
-        (TestedSort (sortVariableSort (SortVariableName "#s")))
+        (TestedSort (sortVariableSort "#s"))
         (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))
         (NamePrefix "#internal")
     , testsForObjectSort
@@ -508,7 +508,7 @@ newtype SortActualThatIsDeclared level =
     SortActualThatIsDeclared (SortActual level)
 
 unfilteredTestExamplesForSort
-    :: MetaOrObject level
+    :: forall level . MetaOrObject level
     => level
     -> TestedSort level
     -> SortActualThatIsDeclared level
@@ -518,7 +518,7 @@ unfilteredTestExamplesForSort
     -> (KoreSentenceSymbol level -> KoreSentence)
     -> [FlaggedTestData]
 unfilteredTestExamplesForSort
-    x
+    _x
     (TestedSort sort)
     (SortActualThatIsDeclared additionalSortActual)
     sortVariables
@@ -673,7 +673,7 @@ unfilteredTestExamplesForSort
                         (symbolSentenceWithSortParameters
                             (SymbolName rawAliasName)
                             additionalSortName
-                            [sortVariable x sortVariableName1]
+                            [sortVariable @level sortVariableName1]
                         )
                     : additionalSentences
                     )
@@ -685,7 +685,7 @@ unfilteredTestExamplesForSort
     aliasName = AliasName rawAliasName
     rawVariableName = identifierPrefix ++ "_variable"
     variableName1 = VariableName rawVariableName
-    sortVariableName1 = SortVariableName (identifierPrefix ++ "_sortVariable")
+    sortVariableName1 = identifierPrefix ++ "_sortVariable"
     additionalSortRawName = getId (sortActualName additionalSortActual)
     additionalSortName = SortName additionalSortRawName
     additionalSort = SortActualSort additionalSortActual
@@ -739,18 +739,18 @@ unfilteredTestExamplesForObjectSort
                                 [ objectVariableSort sortVariableName1 ]
                             }
                         )
-                        [sortVariable Object sortVariableName1]
+                        [sortVariable @Object sortVariableName1]
                     : sortSentenceWithSortParameters
                         differentAdditionalSortName
-                        [sortVariable Object sortVariableName2]
+                        [sortVariable @Object sortVariableName2]
                     : additionalSentences
                     )
             }
         }
     ]
   where
-    sortVariableName1 = SortVariableName (namePrefix ++ "_sortVariable1")
-    sortVariableName2 = SortVariableName (namePrefix ++ "_sortVariable2")
+    sortVariableName1 = namePrefix ++ "_sortVariable1"
+    sortVariableName2 = namePrefix ++ "_sortVariable2"
     additionalSortRawName = getId (sortActualName additionalSortActual)
     differentAdditionalSortRawName = additionalSortRawName ++ "1"
     differentAdditionalSortName = SortName differentAdditionalSortRawName
