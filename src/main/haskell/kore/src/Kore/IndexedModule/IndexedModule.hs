@@ -30,6 +30,7 @@ module Kore.IndexedModule.IndexedModule
     , SortDescription
     , getIndexedSentence
     , hookedObjectSymbolSentences
+    , indexedModuleSubsorts
     ) where
 
 import           Control.Arrow
@@ -41,6 +42,7 @@ import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix )
 import qualified Data.Map as Map
+import           Data.Proxy
 import qualified Data.Set as Set
 
 import Kore.AST.Common
@@ -724,3 +726,23 @@ hookedObjectSymbolSentences
     Map.restrictKeys
         indexedModuleObjectSymbolSentences
         indexedModuleHookedIdentifiers
+
+indexedModuleSubsorts
+    :: forall level sortParam pat variables atts .
+       MetaOrObject level
+    => IndexedModule sortParam pat variables atts
+    -> [(Sort level,Sort level)]
+indexedModuleSubsorts imod =
+    let axiomAttrs = concat $ [attrs | (_,SentenceAxiom{sentenceAxiomAttributes = Attributes attrs})
+                                  <- indexedModuleAxioms imod] :: [CommonKorePattern]
+        levelAttrs :: [Pattern level Variable CommonKorePattern]
+        levelAttrs = [attr | Just attr <- map checkLevel axiomAttrs]
+        checkLevel = case isMetaOrObject @level Proxy of
+            IsObject -> \attr -> case attr of
+                KoreObjectPattern pat -> Just pat
+                _ -> Nothing
+            IsMeta -> \attr -> case attr of
+                KoreMetaPattern pat -> Just pat
+                _ -> Nothing
+    in [(s1,s2) | ApplicationPattern (Application (SymbolOrAlias (Id "subsort" _) [s1,s2]) [])
+                  <- levelAttrs]

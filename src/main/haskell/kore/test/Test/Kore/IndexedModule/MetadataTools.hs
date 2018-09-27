@@ -1,16 +1,20 @@
 module Test.Kore.IndexedModule.MetadataTools (test_metadataTools) where
 
 import Test.Tasty
-       ( TestTree )
+       ( TestTree, testGroup )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+       ( assertBool, assertEqual, testCase )
 
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
 
+import Data.Functor.Foldable
+       ( Fix (..) )
+
 import           Kore.AST.Builders
 import           Kore.AST.Common
+import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
 import           Kore.AST.PureToKore
@@ -166,6 +170,86 @@ test_metadataTools =
             (applicationSortsResult
                 (sortTools metadataTools (symbolHead metaA)))
         )
+    , testGroup "subsort" testSubsorts
     ]
   where
     symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
+
+sortA, sortB, sortC, sortD,sortE, sortF, sortG :: Sort Object
+[sortA, sortB, sortC, sortD, sortE, sortF, sortG] =
+    [sortActual [c] [] | c <- "ABCDEFG"]
+
+sortVarR :: Sort Object
+sortVarR = sortVariableSort "R"
+
+testSubsorts :: [TestTree]
+testSubsorts =
+    [test "direct subsort" (isSubsortOf meta sortA sortB)
+    ,test "transitive subsort" (isSubsortOf meta sortA sortC)
+    ,test "not subsort, known sorts" (not (isSubsortOf meta sortD sortE))
+    ,test "not subsort, unknown sorts" (not (isSubsortOf meta sortF sortG))
+    ]
+  where
+    test name cond = testCase name (assertBool "" cond)
+    moduleIndex :: Map.Map ModuleName (KoreIndexedModule ImplicitAttributes)
+    Right moduleIndex = verifyAndIndexDefinition DoNotVerifyAttributes
+        Builtin.koreVerifiers
+        testSubsortDefinition
+    meta :: MetadataTools Object ImplicitAttributes
+    meta = extractMetadataTools $ moduleIndex Map.! testObjectModuleName
+
+
+testSubsortDefinition :: KoreDefinition
+testSubsortDefinition =
+    Definition
+        { definitionAttributes = Attributes []
+        , definitionModules = [ testSubsortModule ]
+        }
+
+testSubsortModule :: KoreModule
+testSubsortModule =
+    Module
+        { moduleName = testObjectModuleName
+        , moduleSentences =
+            [ sortDecl sortA
+            , sortDecl sortB
+            , sortDecl sortC
+            , sortDecl sortD
+            , sortDecl sortE
+            , subsortAxiom sortA sortB
+            , subsortAxiom sortB sortC
+            ]
+        , moduleAttributes = Attributes []
+        }
+  where
+    subsortAxiom :: Sort Object -> Sort Object -> KoreSentence
+    subsortAxiom subSort superSort =
+        constructUnifiedSentence SentenceAxiomSentence
+        SentenceAxiom
+        { sentenceAxiomParameters = [UnifiedObject (sortVariable "R")]
+        , sentenceAxiomPattern =
+                Fix . asUnifiedPattern $ TopPattern (Top sortVarR)
+        , sentenceAxiomAttributes = Attributes
+            [subsortAttribute subSort superSort]
+        }
+    subsortAttribute :: Sort Object -> Sort Object -> KorePattern Variable
+    subsortAttribute subSort superSort = Fix . asUnifiedPattern $
+        (ApplicationPattern (Application
+            (SymbolOrAlias (testId "subsort") [subSort,superSort])
+            []))
+    sortDecl :: Sort Object -> KoreSentence
+    sortDecl (SortActualSort (SortActual {sortActualName = name, sortActualSorts = []})) =
+        constructUnifiedSentence SentenceSortSentence
+        (SentenceSort
+            { sentenceSortName = name
+            , sentenceSortParameters = []
+            , sentenceSortAttributes = Attributes []
+            })
+    sortDecl _ = error "Cannot make sort declaration from this Sort expression"
+
+{- subsorting axioms look like this:
+ axiom{R} \exists{R} (Val:SortKResult{},
+    \equals{SortKResult{}, R}
+       (Val:SortKResult{},
+        inj{SortBool{}, SortKResult{}} (From:SortBool{}))) [subsort{SortBool{}, SortKResult{}}()] // subsort
+ -}

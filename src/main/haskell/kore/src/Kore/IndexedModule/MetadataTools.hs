@@ -15,6 +15,9 @@ module Kore.IndexedModule.MetadataTools
     , getResultSort
     ) where
 
+import           Data.Graph
+import qualified Data.Map as Map
+
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
@@ -53,9 +56,19 @@ extractMetadataTools m =
     { symAttributes = getHeadAttributes m
     , sortAttributes = getSortAttributes m
     , sortTools  = getHeadApplicationSorts m
-    -- TODO: Implement.
-    , isSubsortOf = const $ const $ False
+    , isSubsortOf = checkSubsort
     }
+  where
+    subsortTable = Map.unionsWith (++)
+        [ Map.insert subsort [] $ Map.singleton supersort [subsort]
+        | (subsort,supersort) <- indexedModuleSubsorts m]
+    (sortGraph,_,getSortId) = graphFromEdges [((),supersort,subsorts)
+                                             |(supersort,subsorts)
+                                                 <- Map.toList subsortTable]
+    checkSubsort subsort supersort
+      | Just subId <- getSortId subsort,
+        Just supId <- getSortId supersort = path sortGraph supId subId
+    checkSubsort _ _ = False
 
 {- | Look up the result sort of a symbol or alias
  -}
