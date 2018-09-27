@@ -42,8 +42,8 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
+import           Kore.Unification.Data
 import           Kore.Unification.Error
-import           Kore.Unification.UnificationSolution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 

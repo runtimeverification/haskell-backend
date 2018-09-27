@@ -712,20 +712,6 @@ instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
                 , prettyPrint MaySkipParentheses y
                 ])
 
-instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (UnificationSolution level variable)
-  where
-    prettyPrint _ us@(UnificationSolution _ _) =
-        writeStructure
-            "UnificationSolution"
-            [ writeFieldNewLine
-                "unificationSolutionTerm" unificationSolutionTerm us
-            , writeListField
-                "unificationSolutionConstraints"
-                unificationSolutionConstraints
-                us
-            ]
-
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 -- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
 instance (MetaOrObject level, PrettyPrint (variable level))

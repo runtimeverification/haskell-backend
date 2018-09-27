@@ -711,37 +711,6 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance
-    ( Eq level, Eq (variable level)
-    , Show level, Show (variable level)
-    , EqualWithExplanation (variable level)
-    )
-    => StructEqualWithExplanation (UnificationSolution level variable)
-  where
-    structFieldsWithNames
-        expected@(UnificationSolution _ _)
-        actual@(UnificationSolution _ _)
-      = [ EqWrap
-            "unificationSolutionTerm = "
-            (unificationSolutionTerm expected)
-            (unificationSolutionTerm actual)
-        , EqWrap
-            "unificationSolutionConstraints = "
-            (unificationSolutionConstraints expected)
-            (unificationSolutionConstraints actual)
-        ]
-    structConstructorName _ = "UnificationSolution"
-
-instance
-    ( Eq level, Eq (variable level)
-    , Show level, Show (variable level)
-    , EqualWithExplanation (variable level)
-    )
-    => EqualWithExplanation (UnificationSolution level variable)
-  where
-    compareWithExplanation = structCompareWithExplanation
-    printWithExplanation = show
-
 instance StructEqualWithExplanation (VariableRenaming level)
   where
     structFieldsWithNames

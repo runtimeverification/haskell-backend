@@ -32,11 +32,11 @@ import           Kore.MetaML.AST
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.StepperAttributes
+import           Kore.Unification.Data
+                 ( UnificationSubstitution )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import           Kore.Unification.SubstitutionNormalization
-import           Kore.Unification.UnificationSolution
-                 ( UnificationSubstitution )
 import           Kore.Variables.Fresh
 
 test_substitutionNormalization :: [TestTree]

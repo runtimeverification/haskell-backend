@@ -47,10 +47,10 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
                  ( Hashable )
+import           Kore.Unification.Data
+                 ( UnificationProof (..) )
 import           Kore.Unification.Error
                  ( UnificationError (..) )
-import           Kore.Unification.UnificationSolution
-                 ( UnificationProof (..) )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 

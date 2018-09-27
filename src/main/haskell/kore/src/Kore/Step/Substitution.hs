@@ -34,13 +34,13 @@ import Kore.Step.ExpandedPattern
 import Kore.Step.StepperAttributes
 import Kore.Substitution.Class
        ( Hashable )
+import Kore.Unification.Data
+       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution )
 import Kore.Unification.Error
        ( UnificationError (..), UnificationOrSubstitutionError (..),
        substitutionToUnifyOrSubError, unificationToUnifyOrSubError )
 import Kore.Unification.SubstitutionNormalization
        ( normalizeSubstitution )
-import Kore.Unification.UnificationSolution
-       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution )
 import Kore.Unification.UnifierImpl ( normalizeSubstitutionDuplication )
 import Kore.Variables.Fresh
 

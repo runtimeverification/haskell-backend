@@ -63,13 +63,13 @@ import           Kore.Step.Substitution
 import           Kore.Substitution.Class
                  ( Hashable (..), PatternSubstitutionClass (..) )
 import qualified Kore.Substitution.List as ListSubstitution
+import           Kore.Unification.Data
+                 ( UnificationProof (..), UnificationSubstitution,
+                 mapSubstitutionVariables )
 import           Kore.Unification.Error
                  ( UnificationError )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
-import           Kore.Unification.UnificationSolution
-                 ( UnificationProof (..), UnificationSubstitution,
-                 mapSubstitutionVariables )
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh

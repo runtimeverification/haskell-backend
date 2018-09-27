@@ -15,12 +15,10 @@ import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Predicate.Predicate
        ( Predicate )
-import Kore.Unification.UnificationSolution
-       ( UnificationSubstitution )
+import Kore.Unification.Data
+       ( UnificationSubstitution, UnificationProof )
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution )
-import Kore.Unification.UnificationSolution
-       ( UnificationProof )
 
 mergePredicatesAndSubstitutions
     :: ( Show (variable level)

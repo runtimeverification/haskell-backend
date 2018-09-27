@@ -54,9 +54,9 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
+import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.UnifierImpl
-import           Kore.Unification.UnificationSolution
 import           Kore.Unification.Procedure
 
 import Test.Kore

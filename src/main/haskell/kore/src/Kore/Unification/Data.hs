@@ -8,29 +8,15 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Unification.UnificationSolution where
+module Kore.Unification.Data where
 
-import Data.Functor.Foldable
 import Kore.AST.Common
-import Kore.AST.MLPatterns
 import Kore.AST.PureML
-import Kore.IndexedModule.MetadataTools
-import Kore.Step.StepperAttributes
-       ( StepperAttributes )
 import Kore.Step.PatternAttributes
        ( FunctionalProof (..) )
 
 type UnificationSubstitution level variable
     = [(variable level, PureMLPattern level variable)]
-
--- |'UnificationSolution' describes the solution of an unification problem,
--- consisting of the unified term and the set of constraints (equalities)
--- obtained during unification.
-data UnificationSolution level variable = UnificationSolution
-    { unificationSolutionTerm        :: !(PureMLPattern level variable)
-    , unificationSolutionConstraints :: !(UnificationSubstitution level variable)
-    }
-  deriving (Eq, Show)
 
 -- |'mapSubstitutionVariables' changes all the variables in the substitution
 -- with the given function.
@@ -50,38 +36,6 @@ mapSubstitutionVariables variableMapper =
         (variable, patt)
       =
         (mapper variable, mapPatternVariables mapper patt)
-
--- |'unificationSolutionToPurePattern' packages an unification solution into
--- a 'CommonPurePattern' by transforming the constraints into a conjunction of
--- equalities and conjoining them with the unified term.
-unificationSolutionToPurePattern
-    :: SortedVariable variable
-    => MetadataTools level StepperAttributes
-    -> UnificationSolution level variable
-    -> PureMLPattern level variable
-unificationSolutionToPurePattern tools ucp =
-    case unificationSolutionConstraints ucp of
-        [] -> unifiedTerm
-        (constraint:constraints) ->
-            andPat unifiedTerm (foldr andEquals (equals constraint) constraints)
-  where
-    resultSort =
-        getPatternResultSort (sortTools tools) (project unifiedTerm)
-    unifiedTerm = unificationSolutionTerm ucp
-    andEquals = andPat . equals
-    andPat first second =
-        Fix $ AndPattern And
-            { andSort = resultSort
-            , andFirst = first
-            , andSecond = second
-            }
-    equals (var, p) =
-        Fix $ EqualsPattern Equals
-            { equalsOperandSort = sortedVariableSort var
-            , equalsResultSort = resultSort
-            , equalsFirst = Fix $ VariablePattern var
-            , equalsSecond = p
-            }
 
 -- |'UnificationProof' is meant to represent proof term stubs for various
 -- steps performed during unification
