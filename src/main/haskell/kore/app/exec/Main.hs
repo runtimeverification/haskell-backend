@@ -7,6 +7,8 @@ import           Control.Monad
                  ( when )
 import           Data.Functor.Foldable
                  ( Fix (..), cata )
+import           Data.List
+                 ( intercalate )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -52,7 +54,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue, makeTruePredicate )
+                 ( pattern PredicateTrue, makeMultipleOrPredicate,
+                 makePredicate, makeTruePredicate, unwrapPredicate )
 import           Kore.SMT.Config
 import           Kore.Step.AxiomPatterns
                  ( AxiomPattern (..), koreIndexedModuleToAxiomPatterns )
@@ -64,6 +67,8 @@ import           Kore.Step.Function.Registry
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Search
+                 ( SearchConfiguration (..), SearchType (..), search )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  PureMLPatternSimplifier, SimplificationProof (..), Simplifier,
@@ -100,7 +105,9 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for a file containing a definition to verify and use for execution
     , patternFileName     :: !FilePath
     -- ^ Name for file containing a pattern to verify and use for execution
-    , outputFileName     :: !FilePath
+    , searchFileName      :: !FilePath
+    -- ^ Name for file containing a pattern to search for during execution
+    , outputFileName      :: !FilePath
     -- ^ Name for file to contain the output pattern
     , mainModuleName      :: !Text
     -- ^ The name of the main module in the definition
@@ -109,8 +116,10 @@ data KoreExecOptions = KoreExecOptions
     -- initial configuration before execution
     , smtTimeOut          :: !SMTTimeOut
     , stepLimit           :: !(Limit Natural)
+    , boundLimit          :: !(Limit Natural)
     , strategy
         :: !([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
+    , searchType          :: !(Maybe SearchType)
     }
 
 -- | Command Line Argument Parser
@@ -124,6 +133,12 @@ commandLineParser =
         (  metavar "PATTERN_FILE"
         <> long "pattern"
         <> help "Kore pattern source file to verify and execute. Needs --module."
+        <> value "" )
+    <*> strOption
+        (  metavar "SEARCH_FILE"
+        <> long "search"
+        <> help "Kore source file representing pattern to search for.\
+                \Needs --module."
         <> value "" )
     <*> strOption
         (  metavar "PATTERN_OUTPUT_FILE"
@@ -150,9 +165,12 @@ commandLineParser =
         <> value defaultSMTTimeOut
         )
     <*> parseStepLimit
+    <*> parseBoundLimit
     <*> parseStrategy
+    <*> parseSearchType
   where
     parseStepLimit = Limit <$> depth <|> pure Unlimited
+    parseBoundLimit = Limit <$> bound <|> pure Unlimited
     parseStrategy =
         option readStrategy
             (  metavar "STRATEGY"
@@ -180,6 +198,43 @@ commandLineParser =
             <> long "depth"
             <> help "Execute up to DEPTH steps."
             )
+    bound =
+        option auto
+            (  metavar "BOUND"
+            <> long "bound"
+            <> help "Maximum number of solutions."
+            )
+    parseSearchType =
+        parseSumOption
+            "SEARCH_TYPE"
+            "searchType"
+            Nothing
+            "Search type (selects potential solutions)"
+            (map (\ s -> (show s, Just s)) [ ONE, FINAL, STAR, PLUS ])
+
+
+parseSumOption
+    :: Eq value
+    => String -> String -> value -> String -> [(String,value)] -> Parser value
+parseSumOption metaName longName defaultValue helpMsg options =
+    option readSumOption
+        (  metavar metaName
+        <> long longName
+        <> value defaultValue
+        <> help helpMsg
+        )
+  where
+    readSumOption = do
+        opt <- str
+        case lookup opt options of
+            Just val -> pure val
+            _ ->
+                let
+                    unknown = "Unknown " ++  longName ++ " '" ++ opt ++ "'. "
+                    known = "Known " ++ longName ++ "s are: " ++
+                        intercalate ", " (map fst options) ++ "."
+                in
+                    readerError (unknown ++ known)
 
 
 -- | modifiers for the Command line parser description
@@ -241,82 +296,34 @@ main = do
         , isKProgram
         , stepLimit
         , strategy
+        , searchFileName
+        , boundLimit
+        , searchType
         }
       -> do
         parsedDefinition <- mainDefinitionParse definitionFileName
         indexedModules <- mainVerify True parsedDefinition
         when (patternFileName /= "") $ do
-            parsedPattern <- mainPatternParse patternFileName
             indexedModule <-
                 constructorFunctions <$> mainModule (ModuleName mainModuleName) indexedModules
-            mainPatternVerify indexedModule parsedPattern
+            purePattern <-
+                mainPatternParseAndVerify indexedModule patternFileName
             let
                 metadataTools = extractMetadataTools indexedModule
-                preSimplifier
-                    ::  ( SortedVariable variable
-                        , Ord (variable Meta)
-                        , Ord (variable Object)
-                        , Show (variable Meta)
-                        , Show (variable Object)
-                        , FreshVariable variable
-                        , Hashable variable
-                        )
-                    => PureMLPatternSimplifier Object variable
-                preSimplifier = Simplifier.create metadataTools Map.empty
-                preSubstitutionSimplifier
-                    :: PredicateSubstitutionSimplifier Object Simplifier
-                preSubstitutionSimplifier =
-                    PredicateSubstitution.create metadataTools preSimplifier
-                prePatternSimplifier =
-                    ExpandedPattern.simplify
-                        metadataTools
-                        preSubstitutionSimplifier
-                        preSimplifier
-                    . makeExpandedPattern
-                preFunctionAxiomPatterns =
-                    extractAxiomPatterns Object indexedModule
-                preAxiomPatterns =
-                    koreIndexedModuleToAxiomPatterns Object indexedModule
-            (finalExpandedPattern, _) <-
-                clockSomething "Executing"
+            finalPattern <- case searchType of
+                Nothing -> clockSomething "Executing"
                     $ evalSimplifierWithTimeout smtTimeOut
                     $ do
-                        functionAxiomPatterns <-
-                            mapM (mapM (preSimplify prePatternSimplifier))
-                                preFunctionAxiomPatterns
-                        axiomPatterns <-
-                            mapM (preSimplify prePatternSimplifier)
-                                preAxiomPatterns
+                        axiomsAndSimplifiers <-
+                            makeAxiomsAndSimplifiers indexedModule metadataTools
                         let
-                            functionEvaluators =
-                                axiomPatternsToEvaluators functionAxiomPatterns
-                            functionRegistry =
-                                Map.unionWith (++)
-                                    -- user-defined functions
-                                    functionEvaluators
-                                    -- builtin functions
-                                    (Builtin.koreEvaluators indexedModule)
-                            simplifier
-                                ::  ( SortedVariable variable
-                                    , Ord (variable Meta)
-                                    , Ord (variable Object)
-                                    , Show (variable Meta)
-                                    , Show (variable Object)
-                                    , FreshVariable variable
-                                    , Hashable variable
-                                    )
-                                => PureMLPatternSimplifier Object variable
-                            simplifier =
-                                Simplifier.create
-                                    metadataTools functionRegistry
-                            substitutionSimplifier
-                                :: PredicateSubstitutionSimplifier
-                                    Object
-                                    Simplifier
-                            substitutionSimplifier =
-                                PredicateSubstitution.create
-                                    metadataTools simplifier
-                            purePattern = makePurePattern parsedPattern
+                            (rewriteAxioms, simplifier, substitutionSimplifier) =
+                                axiomsAndSimplifiers
+                            computeStrategy limit pat = runStrategy
+                                (transitionRule metadataTools substitutionSimplifier simplifier)
+                                (strategy rewriteAxioms)
+                                limit
+                                (pat, mempty)
                             runningPattern =
                                 if isKProgram
                                     then give (symbolOrAliasSorts metadataTools)
@@ -336,17 +343,67 @@ main = do
                                         (fst simplifiedPatterns) of
                                     [] -> ExpandedPattern.bottom
                                     (config : _) -> config
-                        pickLongest <$> runStrategy
-                            (transitionRule
-                                metadataTools
-                                substitutionSimplifier
-                                simplifier
-                            )
-                            (strategy axiomPatterns)
-                            stepLimit
-                            (initialPattern, mempty)
+                        give (symbolOrAliasSorts metadataTools)
+                            ExpandedPattern.toMLPattern . fst . pickLongest
+                            <$> computeStrategy stepLimit initialPattern
+                Just sType -> do
+                    searchPattern <-
+                        mainParseSearchPattern indexedModule metadataTools
+                            searchFileName
+                    clockSomething "Searching"
+                        $ evalSimplifierWithTimeout smtTimeOut
+                        $ do
+                            axiomsAndSimplifiers <-
+                                makeAxiomsAndSimplifiers indexedModule metadataTools
+                            let
+                                (rewriteAxioms, simplifier, substitutionSimplifier) =
+                                    axiomsAndSimplifiers
+                                computeStrategy limit pat = runStrategy
+                                    (transitionRule metadataTools substitutionSimplifier simplifier)
+                                    (strategy rewriteAxioms)
+                                    limit
+                                    (pat, mempty)
+                                runningPattern =
+                                    if isKProgram
+                                        then give (symbolOrAliasSorts metadataTools)
+                                            $ makeKInitConfig purePattern
+                                        else purePattern
+                                expandedPattern = makeExpandedPattern runningPattern
+                            simplifiedPatterns <-
+                                ExpandedPattern.simplify
+                                    metadataTools
+                                    substitutionSimplifier
+                                    simplifier
+                                    expandedPattern
+                            let
+                                initialPattern =
+                                    case
+                                        OrOfExpandedPattern.extractPatterns
+                                            (fst simplifiedPatterns) of
+                                        [] -> ExpandedPattern.bottom
+                                        (config : _) -> config
+                            solutions <-
+                                search
+                                    metadataTools
+                                    substitutionSimplifier
+                                    simplifier
+                                    computeStrategy
+                                    SearchConfiguration
+                                        { start = initialPattern
+                                        , depth = stepLimit
+                                        , bound = boundLimit
+                                        , goal = searchPattern
+                                        , searchType = sType
+                                        }
+                            let
+                                (orPredicate, _proof) =
+                                    give (symbolOrAliasSorts metadataTools)
+                                    $ makeMultipleOrPredicate
+                                    $ map
+                                        ExpandedPattern.substitutionToPredicate
+                                        solutions
+                            return (unwrapPredicate orPredicate)
             let
-                finalPattern = ExpandedPattern.term finalExpandedPattern
                 finalExternalPattern =
                     either (error . printError) id
                     (Builtin.externalizePattern indexedModule finalPattern)
@@ -381,6 +438,39 @@ mainDefinitionParse = mainParse fromKore
 -- information.
 mainPatternParse :: String -> IO CommonKorePattern
 mainPatternParse = mainParse fromKorePattern
+
+-- | IO action that parses a kore pattern from a filename, verifies it,
+-- converts it to a pure patterm, and prints timing information.
+mainPatternParseAndVerify
+    :: KoreIndexedModule StepperAttributes
+    -> String
+    -> IO (CommonPurePattern Object)
+mainPatternParseAndVerify indexedModule patternFileName
+  = do
+    parsedPattern <- mainPatternParse patternFileName
+    mainPatternVerify indexedModule parsedPattern
+    return (makePurePattern parsedPattern)
+
+mainParseSearchPattern
+    :: KoreIndexedModule StepperAttributes
+    -> MetadataTools Object StepperAttributes
+    -> String
+    -> IO (CommonExpandedPattern Object)
+mainParseSearchPattern indexedModule tools patternFileName
+  = do
+    purePattern <- mainPatternParseAndVerify indexedModule patternFileName
+    case purePattern of
+        And_ _ term predicateTerm -> return
+            Predicated
+                { term
+                , predicate =
+                    either (error . printError) fst
+                        (give (symbolOrAliasSorts tools)
+                            makePredicate predicateTerm
+                        )
+                , substitution = []
+                }
+        _ -> error "Unexpected non-conjunctive pattern"
 
 -- | IO action that parses a kore AST entity from a filename and prints timing
 -- information.
@@ -588,3 +678,67 @@ preSimplify simplifier
         , axiomPatternRequires = newRequires
         , axiomPatternAttributes = atts
         }
+
+makeAxiomsAndSimplifiers
+    :: KoreIndexedModule StepperAttributes
+    -> MetadataTools Object StepperAttributes
+    -> Simplifier
+        (  [AxiomPattern Object]
+        , PureMLPatternSimplifier Object Variable
+        , PredicateSubstitutionSimplifier Object Simplifier
+        )
+makeAxiomsAndSimplifiers indexedModule tools =
+    do
+        functionAxioms <-
+            simplifyFunctionAxioms
+                (extractAxiomPatterns Object indexedModule)
+        rewriteAxioms <-
+            simplifyRewriteAxioms
+                (koreIndexedModuleToAxiomPatterns Object indexedModule)
+        let
+            functionEvaluators =
+                axiomPatternsToEvaluators functionAxioms
+            functionRegistry =
+                Map.unionWith (++)
+                    -- user-defined functions
+                    functionEvaluators
+                    -- builtin functions
+                    (Builtin.koreEvaluators indexedModule)
+            simplifier
+                ::  ( SortedVariable variable
+                    , Ord (variable Meta)
+                    , Ord (variable Object)
+                    , Show (variable Meta)
+                    , Show (variable Object)
+                    , FreshVariable variable
+                    , Hashable variable
+                    )
+                => PureMLPatternSimplifier Object variable
+            simplifier = Simplifier.create tools functionRegistry
+            substitutionSimplifier
+                :: PredicateSubstitutionSimplifier Object Simplifier
+            substitutionSimplifier =
+                PredicateSubstitution.create tools simplifier
+        return (rewriteAxioms, simplifier, substitutionSimplifier)
+  where
+    simplifyFunctionAxioms = mapM (mapM (preSimplify emptyPatternSimplifier))
+    simplifyRewriteAxioms = mapM (preSimplify emptyPatternSimplifier)
+    emptySimplifier
+        ::  ( SortedVariable variable
+            , Ord (variable Meta)
+            , Ord (variable Object)
+            , Show (variable Meta)
+            , Show (variable Object)
+            , FreshVariable variable
+            , Hashable variable
+            )
+        => PureMLPatternSimplifier Object variable
+    emptySimplifier = Simplifier.create tools Map.empty
+    emptySubstitutionSimplifier =
+        PredicateSubstitution.create tools emptySimplifier
+    emptyPatternSimplifier =
+        ExpandedPattern.simplify
+            tools
+            emptySubstitutionSimplifier
+            emptySimplifier
+        . makeExpandedPattern

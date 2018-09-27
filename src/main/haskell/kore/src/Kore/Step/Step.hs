@@ -23,7 +23,7 @@ module Kore.Step.Step
     , Natural
     , Strategy
     , pickLongest
-    , pickStuck
+    , pickFinal
     , runStrategy
     ) where
 
@@ -59,7 +59,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
-                 ( Limit (..), Strategy, pickLongest, pickStuck, runStrategy )
+                 ( Limit (..), Strategy, pickFinal, pickLongest, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
 
 {- | A strategy primitive: a rewrite axiom or builtin simplification step.

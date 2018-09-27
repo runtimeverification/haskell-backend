@@ -21,7 +21,10 @@ module Kore.Step.Strategy
       -- * Running strategies
     , runStrategy
     , pickLongest
-    , pickStuck
+    , pickFinal
+    , pickStar
+    , pickPlus
+    , pickOne
       -- * Re-exports
     , module Data.Limit
     , Tree (..)
@@ -370,11 +373,42 @@ pickLongestAt (_, config) children =
 
 {- | Return all 'stuck' configurations, i.e. all leaves of the 'Tree'.
  -}
-pickStuck :: Tree (Strategy prim, config) -> [config]
-pickStuck = Tree.foldTree pickStuckAt
+pickFinal :: Tree (Strategy prim, config) -> [config]
+pickFinal = Tree.foldTree pickStuckAt
 
 pickStuckAt :: (Strategy prim, config) -> [[config]] -> [config]
 pickStuckAt (instr, config) children =
     case instr of
         Stuck -> [config]
         _ -> mconcat children
+
+{- | Return all configurations, i.e. all nodes of the 'Tree'.
+ -}
+pickStar :: Tree (Strategy prim, config) -> [config]
+pickStar root = snd (Tree.rootLabel root) : pickPlus root
+
+{- | Return all configurations accessible in at least one step,
+i.e. all nodes of the 'Tree' except the root.
+ -}
+pickPlus :: Tree (Strategy prim, config) -> [config]
+pickPlus root = map (snd . Tree.rootLabel) (pickPlusFrom [root])
+
+{- | Return all configurations accessible in one step,
+i.e. all nodes of the 'Tree' except the root.
+ -}
+pickOne :: Tree (Strategy prim, config) -> [config]
+pickOne root = map (snd . Tree.rootLabel) (pickOneFrom [root])
+
+pickOneFrom
+    :: [Tree (Strategy prim, config)] -> [Tree (Strategy prim, config)]
+pickOneFrom [] = []
+pickOneFrom (h:t) =
+    case fst(Tree.rootLabel h) of
+        Apply _ _ -> (Tree.subForest h) ++ pickOneFrom t
+        _ -> pickOneFrom (Tree.subForest h ++ t)
+
+pickPlusFrom :: [Tree (Strategy prim, config)] -> [Tree (Strategy prim, config)]
+pickPlusFrom [] = []
+pickPlusFrom l = next ++ pickPlusFrom next
+  where
+    next = pickOneFrom l
