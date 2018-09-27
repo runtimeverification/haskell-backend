@@ -27,8 +27,7 @@ import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
                  ( Object (..) )
 import           Kore.AST.PureML
-                 ( CommonPurePattern, PureMLPattern, UnfixedCommonPurePattern,
-                 groundHead )
+                 ( CommonPurePattern, UnfixedCommonPurePattern, groundHead )
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
