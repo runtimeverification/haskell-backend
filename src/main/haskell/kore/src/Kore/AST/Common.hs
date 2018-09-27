@@ -39,6 +39,8 @@ import qualified Data.Map.Strict as Map
 import           Data.Proxy
 import           Data.Sequence
                  ( Seq )
+import           Data.Set
+                 ( Set )
 import           GHC.Generics
                  ( Generic )
 
@@ -946,6 +948,7 @@ data BuiltinDomain child
     | BuiltinDomainMap
         !(Map (Fix (Pattern Object Variable)) (Fix (Pattern Object Variable)))
     | BuiltinDomainList !(Seq (Fix (Pattern Object Variable)))
+    | BuiltinDomainSet !(Set (Fix (Pattern Object Variable)))
     deriving (Generic)
 
 instance Hashable child => Hashable (BuiltinDomain child) where
@@ -957,6 +960,8 @@ instance Hashable child => Hashable (BuiltinDomain child) where
                 salt `hashWithSalt` (1::Int) `hashWithSalt` map'
             BuiltinDomainList (Foldable.toList -> list) ->
                 salt `hashWithSalt` (2::Int) `hashWithSalt` list
+            BuiltinDomainSet (Foldable.toList -> set) ->
+                salt `hashWithSalt` (3::Int) `hashWithSalt` set
 
 instance NFData child => NFData (BuiltinDomain child)
 
