@@ -1,12 +1,14 @@
 module Test.Kore.Predicate.Predicate (test_predicate) where
 
 import Test.Tasty
-       ( TestTree )
+       ( TestTree, testGroup )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
+import Data.Foldable
+       ( traverse_ )
 import Data.Reflection
-       ( give )
+       ( Given, give )
 
 import           Kore.AST.Common
                  ( AstLocation (..) )
@@ -18,7 +20,8 @@ import           Kore.AST.PureToKore
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkEquals, mkIff, mkImplies, mkNot, mkOr )
+                 ( mkAnd, mkBottom, mkCeil, mkEquals, mkExists, mkFloor,
+                 mkForall, mkIff, mkImplies, mkIn, mkNot, mkOr, mkTop )
 import           Kore.Building.AsAst
 import           Kore.Building.Patterns
 import           Kore.Building.Sorts
@@ -27,11 +30,12 @@ import           Kore.IndexedModule.MetadataTools
                  ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, compactPredicatePredicate,
-                 makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeIffPredicate, makeImpliesPredicate,
-                 makeMultipleAndPredicate, makeMultipleOrPredicate,
-                 makeNotPredicate, makeOrPredicate, makeTruePredicate,
-                 stringFromPredicate, wrapPredicate )
+                 makeAndPredicate, makeEqualsPredicate, makeExistsPredicate,
+                 makeFalsePredicate, makeForallPredicate, makeIffPredicate,
+                 makeImpliesPredicate, makeMultipleAndPredicate,
+                 makeMultipleOrPredicate, makeNotPredicate, makeOrPredicate,
+                 makePredicate, makeTruePredicate, stringFromPredicate,
+                 wrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
 
@@ -341,7 +345,65 @@ test_predicate = give mockSymbolOrAliasSorts
                     makeMultipleOrPredicate [pr1, makeFalsePredicate, pr2, pr1]
                 )
         )
+    , let
+        makeExists :: CommonPredicate Meta -> CommonPredicate Meta
+        makeExists p = fst (makeExistsPredicate (asVariable (a PatternSort)) p)
+      in
+        testCase "Exists truth table"
+            (do
+                assertEqualWithExplanation "(exists a . true) = true"
+                    makeTruePredicate
+                    (makeExists makeTruePredicate)
+                assertEqualWithExplanation "(exists a . false) = false"
+                    makeFalsePredicate
+                    (makeExists makeFalsePredicate)
+            )
+    , let
+        makeForall :: CommonPredicate Meta -> CommonPredicate Meta
+        makeForall p = fst (makeForallPredicate (asVariable (a PatternSort)) p)
+      in
+        testCase "Forall truth table"
+            (do
+                assertEqualWithExplanation "(forall a . true) = true"
+                    makeTruePredicate
+                    (makeForall makeTruePredicate)
+                assertEqualWithExplanation "(forall a . false) = false"
+                    makeFalsePredicate
+                    (makeForall makeFalsePredicate)
+            )
+    , testGroup "makePredicate"
+        [testCase "makePredicate yields wrapPredicate"
+            (traverse_ (uncurry makePredicateYieldsWrapPredicate)
+                [ ("Top", mkTop)
+                , ("Bottom", mkBottom)
+                , ("And", mkAnd pa1 pa2)
+                , ("Or", mkOr pa1 pa2)
+                , ("Iff", mkIff pa1 pa2)
+                , ("Implies", mkImplies pa1 pa2)
+                , ("Not", mkNot pa1)
+                , ("Exists", mkExists (asVariable (a PatternSort)) pa1)
+                , ("Forall", mkForall (asVariable (a PatternSort)) pa1)
+
+                , ("Equals", pa1)
+                , ("Ceil", ceilA)
+                , ("Floor", floorA)
+                , ("In", inA)
+                ]
+            )
+        ]
     ]
+
+makePredicateYieldsWrapPredicate
+    ::  ( Given (SymbolOrAliasSorts level)
+        , Eq level
+        , Show level
+        , MetaOrObject level)
+    => String -> CommonPurePattern level -> IO ()
+makePredicateYieldsWrapPredicate msg p =
+    assertEqual msg
+        (Right (wrapPredicate p))
+        (fst <$> makePredicate p)
+
 
 pr1 :: CommonPredicate Meta
 pr1 = makeEquals (a PatternSort) (b PatternSort)
@@ -355,6 +417,19 @@ pa2 :: CommonPurePattern Meta
 pa2 = give mockSymbolOrAliasSorts $ mkEquals
     (asPureMetaPattern $ c PatternSort)
     (asPureMetaPattern $ d PatternSort)
+
+ceilA :: CommonPurePattern Meta
+ceilA = give mockSymbolOrAliasSorts $ mkCeil
+    (asPureMetaPattern $ a PatternSort)
+
+inA :: CommonPurePattern Meta
+inA = give mockSymbolOrAliasSorts $ mkIn
+    (asPureMetaPattern $ a PatternSort)
+    (asPureMetaPattern $ b PatternSort)
+
+floorA :: CommonPurePattern Meta
+floorA = give mockSymbolOrAliasSorts $ mkFloor
+    (asPureMetaPattern $ a PatternSort)
 
 asPureMetaPattern
     :: ProperPattern Meta sort patt => patt -> CommonPurePattern Meta

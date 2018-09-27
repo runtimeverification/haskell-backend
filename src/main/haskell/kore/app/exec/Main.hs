@@ -7,7 +7,7 @@ import           Control.Monad
 import           Data.Functor.Foldable
                  ( Fix (..), cata )
 import           Data.List
-                 ( isPrefixOf )
+                 ( intercalate, isPrefixOf )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -46,11 +46,13 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts, extractMetadataTools )
+                 ( MetadataTools (..), SymbolOrAliasSorts,
+                 extractMetadataTools )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeMultipleOrPredicate, makePredicate, makeTruePredicate,
+                 unwrapPredicate )
 import           Kore.Step.AxiomPatterns
                  ( koreIndexedModuleToAxiomPatterns )
 import           Kore.Step.ExpandedPattern
@@ -59,6 +61,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Registry
                  ( extractEvaluators )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Search
+                 ( SearchConfiguration (..), SearchType (..), search )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -89,7 +93,9 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for a file containing a definition to verify and use for execution
     , patternFileName     :: !String
     -- ^ Name for file containing a pattern to verify and use for execution
-    , outputFileName     :: !String
+    , searchFileName      :: !String
+    -- ^ Name for file containing a pattern to search for during execution
+    , outputFileName      :: !String
     -- ^ Name for file to contain the output pattern
     , mainModuleName      :: !String
     -- ^ The name of the main module in the definition
@@ -97,8 +103,10 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Whether the pattern file represents a program to be put in the
     -- initial configuration before execution
     , stepLimit           :: !(Limit Natural)
+    , boundLimit          :: !(Limit Natural)
     , strategy
         :: !([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
+    , searchType          :: !(Maybe SearchType)
     }
 
 -- | Command Line Argument Parser
@@ -114,6 +122,12 @@ commandLineParser =
         <> help "Kore pattern source file to verify and execute. Needs --module."
         <> value "" )
     <*> strOption
+        (  metavar "SEARCH_FILE"
+        <> long "search"
+        <> help "Kore source file representing pattern to search for.\
+                \Needs --module."
+        <> value "" )
+    <*> strOption
         (  metavar "PATTERN_OUTPUT_FILE"
         <> long "output"
         <> help "Output file to contain final Kore pattern."
@@ -127,9 +141,12 @@ commandLineParser =
         True False False
         "Whether the pattern represents a program."
     <*> parseStepLimit
+    <*> parseBoundLimit
     <*> parseStrategy
+    <*> parseSearchType
   where
     parseStepLimit = Limit <$> depth <|> pure Unlimited
+    parseBoundLimit = Limit <$> bound <|> pure Unlimited
     parseStrategy =
         option readStrategy
             (  metavar "STRATEGY"
@@ -157,6 +174,43 @@ commandLineParser =
             <> long "depth"
             <> help "Execute up to DEPTH steps."
             )
+    bound =
+        option auto
+            (  metavar "BOUND"
+            <> long "bound"
+            <> help "Maximum number of solutions."
+            )
+    parseSearchType =
+        parseSumOption
+            "SEARCH_TYPE"
+            "searchType"
+            Nothing
+            "Search type (selects potential solutions)"
+            (map (\ s -> (show s, Just s)) [ ONE, FINAL, STAR, PLUS ])
+
+
+parseSumOption
+    :: Eq value
+    => String -> String -> value -> String -> [(String,value)] -> Parser value
+parseSumOption metaName longName defaultValue helpMsg options =
+    option readSumOption
+        (  metavar metaName
+        <> long longName
+        <> value defaultValue
+        <> help helpMsg
+        )
+  where
+    readSumOption = do
+        opt <- str
+        case lookup opt options of
+            Just val -> pure val
+            _ ->
+                let
+                    unknown = "Unknown " ++  longName ++ " '" ++ opt ++ "'. "
+                    known = "Known " ++ longName ++ "s are: " ++
+                        intercalate ", " (map fst options) ++ "."
+                in
+                    readerError (unknown ++ known)
 
 
 -- | modifiers for the Command line parser description
@@ -217,15 +271,18 @@ main = do
         , isKProgram
         , stepLimit
         , strategy
+        , searchFileName
+        , boundLimit
+        , searchType
         }
       -> do
         parsedDefinition <- mainDefinitionParse definitionFileName
         indexedModules <- mainVerify True parsedDefinition
         when (patternFileName /= "") $ do
-            parsedPattern <- mainPatternParse patternFileName
             indexedModule <-
                 mainModule (ModuleName mainModuleName) indexedModules
-            mainPatternVerify indexedModule parsedPattern
+            purePattern <-
+                mainPatternParseAndVerify indexedModule patternFileName
             let
                 functionRegistry =
                     Map.unionWith (++)
@@ -237,23 +294,25 @@ main = do
                     koreIndexedModuleToAxiomPatterns Object indexedModule
                 metadataTools = constructorFunctions (extractMetadataTools indexedModule)
                 simplifier = Simplifier.create metadataTools functionRegistry
-                purePattern = makePurePattern parsedPattern
+                computeStrategy limit pat = runStrategy
+                    (transitionRule metadataTools simplifier)
+                    (strategy axiomPatterns)
+                    limit
+                    (pat, mempty)
                 runningPattern =
                     if isKProgram
                         then give (symbolOrAliasSorts metadataTools)
                             $ makeKInitConfig purePattern
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
-            (finalExpandedPattern, _) <-
-                clockSomething "Executing"
+            finalPattern <- case searchType of
+                Nothing -> clockSomething "Executing"
                     $ evalSimplifier
                     $ do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
                                 metadataTools
-                                (Simplifier.create
-                                    metadataTools functionRegistry
-                                )
+                                simplifier
                                 expandedPattern
                         let
                             initialPattern =
@@ -262,13 +321,34 @@ main = do
                                         (fst simplifiedPatterns) of
                                     [] -> ExpandedPattern.bottom
                                     (config : _) -> config
-                        pickLongest <$> runStrategy
-                            (transitionRule metadataTools simplifier)
-                            (strategy axiomPatterns)
-                            stepLimit
-                            (initialPattern, mempty)
+                        give (symbolOrAliasSorts metadataTools)
+                            ExpandedPattern.toMLPattern . fst . pickLongest
+                            <$> computeStrategy stepLimit initialPattern
+                Just sType -> do
+                    searchPattern <-
+                        mainParseSearchPattern indexedModule metadataTools
+                            searchFileName
+                    clockSomething "Searching"
+                        $ evalSimplifier
+                        $ do
+                            solutions <-
+                                search metadataTools simplifier computeStrategy
+                                    SearchConfiguration
+                                    { start = expandedPattern
+                                    , depth = stepLimit
+                                    , bound = boundLimit
+                                    , goal = searchPattern
+                                    , searchType = sType
+                                    }
+                            let
+                                (orPredicate, _proof) =
+                                    give (symbolOrAliasSorts metadataTools)
+                                    $ makeMultipleOrPredicate
+                                    $ map
+                                        ExpandedPattern.substitutionToPredicate
+                                        solutions
+                            return (unwrapPredicate orPredicate)
             let
-                finalPattern = ExpandedPattern.term finalExpandedPattern
                 finalExternalPattern =
                     either (error . printError) id
                     (Builtin.externalizePattern indexedModule finalPattern)
@@ -303,6 +383,39 @@ mainDefinitionParse = mainParse fromKore
 -- information.
 mainPatternParse :: String -> IO CommonKorePattern
 mainPatternParse = mainParse fromKorePattern
+
+-- | IO action that parses a kore pattern from a filename, verifies it,
+-- converts it to a pure patterm, and prints timing information.
+mainPatternParseAndVerify
+    :: KoreIndexedModule StepperAttributes
+    -> String
+    -> IO (CommonPurePattern Object)
+mainPatternParseAndVerify indexedModule patternFileName
+  = do
+    parsedPattern <- mainPatternParse patternFileName
+    mainPatternVerify indexedModule parsedPattern
+    return (makePurePattern parsedPattern)
+
+mainParseSearchPattern
+    :: KoreIndexedModule StepperAttributes
+    -> MetadataTools Object StepperAttributes
+    -> String
+    -> IO (CommonExpandedPattern Object)
+mainParseSearchPattern indexedModule tools patternFileName
+  = do
+    purePattern <- mainPatternParseAndVerify indexedModule patternFileName
+    case purePattern of
+        And_ _ term predicateTerm -> return
+            Predicated
+                { term
+                , predicate =
+                    either (error . printError) fst
+                        (give (symbolOrAliasSorts tools)
+                            makePredicate predicateTerm
+                        )
+                , substitution = []
+                }
+        _ -> error "Unexpected non-conjunctive pattern"
 
 -- | IO action that parses a kore AST entity from a filename and prints timing
 -- information.

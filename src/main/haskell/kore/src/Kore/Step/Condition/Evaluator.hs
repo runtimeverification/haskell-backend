@@ -55,7 +55,6 @@ nonTrivial _ = True
 evaluate
     ::  forall level variable .
         ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Ord (variable level)
@@ -73,7 +72,7 @@ evaluate
 evaluate
     (PureMLPatternSimplifier simplifier)
     predicate''
-  = give (convertStepperToSMT (given :: MetadataTools level StepperAttributes))
+  = give (convertStepperToSMT tools)
     $ do
     let predicate' =
             if nonTrivial (unwrapPredicate predicate'')
@@ -84,8 +83,12 @@ evaluate
     (patt, _proof) <- simplifier (unwrapPredicate predicate')
     let
         (subst, _proof) =
-            asPredicateSubstitution (OrOfExpandedPattern.toExpandedPattern patt)
+            give (symbolOrAliasSorts tools)
+            $ asPredicateSubstitution (OrOfExpandedPattern.toExpandedPattern patt)
     return ( subst, SimplificationProof)
+  where
+    tools :: MetadataTools level StepperAttributes
+    tools = given
 
 asPredicateSubstitution
     ::  ( MetaOrObject level

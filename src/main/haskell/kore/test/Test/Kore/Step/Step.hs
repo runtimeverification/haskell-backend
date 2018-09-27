@@ -515,7 +515,7 @@ runStep
     -> [AxiomPattern level]
     -> [(CommonExpandedPattern level, StepProof level)]
 runStep metadataTools configuration axioms =
-    pickStuck
+    pickFinal
         $ evalSimplifier
         $ runStrategy
             (transitionRule metadataTools simplifier)

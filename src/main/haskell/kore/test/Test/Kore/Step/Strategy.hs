@@ -155,16 +155,41 @@ prop_pickLongest i =
     expect = n
     actual = Strategy.pickLongest (enumerate n)
 
+prop_pickOne :: Integer -> Property
+prop_pickOne i =
+    (i > 0) ==> (expect === actual)
+  where
+    n = fromInteger i
+    expect = [1]
+    actual = Strategy.pickOne (enumerate n)
+
+prop_pickStar :: Integer -> Property
+prop_pickStar i =
+    (i > 0) ==> (expect === actual)
+  where
+    n = fromInteger i
+    expect = [0..n]
+    actual = Strategy.pickStar (enumerate n)
+
+prop_pickPlus :: Integer -> Property
+prop_pickPlus i =
+    (i > 0) ==> (expect === actual)
+  where
+    n = fromInteger i
+    expect = [1..n]
+    actual = Strategy.pickPlus (enumerate n)
+
 -- | Enumerate values from zero to @n@, getting stuck after every result.
 enumerate'
     :: Natural  -- ^ @n@
     -> Tree (Strategy Prim, Natural)
 enumerate' n = runStrategy (many (enumStrategy $ and stuck) stuck) (Limit n) 0
 
-prop_pickStuck :: Integer -> Property
-prop_pickStuck i =
+prop_pickFinal :: Integer -> Property
+prop_pickFinal i =
     (i >= 0) ==> (expect === actual)
   where
     n = fromInteger i
     expect = [0..n]
-    actual = Strategy.pickStuck (enumerate' n)
+    actual = Strategy.pickFinal (enumerate' n)
+

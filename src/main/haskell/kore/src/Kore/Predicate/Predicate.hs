@@ -16,11 +16,13 @@ module Kore.Predicate.Predicate
     , pattern PredicateTrue
     , compactPredicatePredicate
     , isFalse
+    , makePredicate
     , makeAndPredicate
     , makeMultipleAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeExistsPredicate
+    , makeForallPredicate
     , makeFalsePredicate
     , makeFloorPredicate
     , makeIffPredicate
@@ -37,6 +39,8 @@ module Kore.Predicate.Predicate
     , wrapPredicate
     ) where
 
+import Data.Functor.Foldable
+       ( elgot, project )
 import Data.List
        ( foldl', nub )
 import Data.Reflection
@@ -45,15 +49,17 @@ import Data.Set
        ( Set )
 
 import Kore.AST.Common
-       ( SortedVariable, Variable )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern, mapPatternVariables )
 import Kore.ASTUtils.SmartConstructors
-       ( mkAnd, mkBottom, mkCeil, mkEquals, mkExists, mkFloor, mkIff,
+       ( mkAnd, mkBottom, mkCeil, mkEquals, mkExists, mkFloor, mkForall, mkIff,
        mkImplies, mkIn, mkNot, mkOr, mkTop )
 import Kore.ASTUtils.SmartPatterns
-       ( pattern Bottom_, pattern Top_ )
+       ( pattern Bottom_, pattern Ceil_, pattern Equals_, pattern Floor_,
+       pattern In_, pattern Top_ )
+import Kore.Error
+       ( Error, koreFail )
 import Kore.IndexedModule.MetadataTools
        ( SymbolOrAliasSorts )
 import Kore.Variables.Free
@@ -349,6 +355,23 @@ makeExistsPredicate v (GenericPredicate p) =
     , PredicateProof
     )
 
+{-| Universal quantification for the given variable in the given predicate.
+-}
+makeForallPredicate
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Show (variable level))
+    => variable level
+    -> Predicate level variable
+    -> (Predicate level variable, PredicateProof level)
+makeForallPredicate _ p@PredicateFalse = (p, PredicateProof)
+makeForallPredicate _ t@PredicateTrue = (t, PredicateProof)
+makeForallPredicate v (GenericPredicate p) =
+    ( GenericPredicate $ mkForall v p
+    , PredicateProof
+    )
+
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
 makeTruePredicate
@@ -364,6 +387,56 @@ makeFalsePredicate
     => Predicate level variable
 makeFalsePredicate =
     GenericPredicate mkBottom
+
+
+
+makePredicate
+    :: forall level variable e . ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Eq (variable level)
+        , Show (variable level))
+    => PureMLPattern level variable
+    -> Either (Error e) (Predicate level variable, PredicateProof level)
+makePredicate = elgot makePredicateBottomUp makePredicateTopDown
+  where
+    makePredicateBottomUp
+        :: Pattern level variable
+            (Either (Error e) (Predicate level variable, PredicateProof level))
+        ->  Either (Error e) (Predicate level variable, PredicateProof level)
+    makePredicateBottomUp patE = do
+        pat <- sequence patE
+        case fst <$> pat of
+            TopPattern _ -> return (makeTruePredicate, PredicateProof)
+            BottomPattern _ -> return (makeFalsePredicate, PredicateProof)
+            AndPattern p -> return $ makeAndPredicate (andFirst p) (andSecond p)
+            OrPattern p -> return $ makeOrPredicate (orFirst p) (orSecond p)
+            IffPattern p -> return $ makeIffPredicate (iffFirst p) (iffSecond p)
+            ImpliesPattern p -> return $
+                makeImpliesPredicate (impliesFirst p) (impliesSecond p)
+            NotPattern p -> return $ makeNotPredicate (notChild p)
+            ExistsPattern p -> return $
+                makeExistsPredicate (existsVariable p) (existsChild p)
+            ForallPattern p -> return $
+                makeForallPredicate (forallVariable p) (forallChild p)
+            p -> koreFail
+                ("Cannot translate to predicate: " ++ show p)
+    makePredicateTopDown
+        :: PureMLPattern level variable
+        ->  Either
+            (Either (Error e) (Predicate level variable, PredicateProof level))
+            (Pattern level variable (PureMLPattern level variable))
+    makePredicateTopDown =
+        \case
+            Ceil_ _ _ p ->
+                Left (pure (makeCeilPredicate p, PredicateProof))
+            Floor_ _ _ p ->
+                Left (pure (makeFloorPredicate p, PredicateProof))
+            Equals_ _ _ p1 p2 ->
+                Left (pure (makeEqualsPredicate p1 p2, PredicateProof))
+            In_ _ _ p1 p2 ->
+                Left (pure (makeInPredicate p1 p2, PredicateProof))
+            p -> Right (project p)
 
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
