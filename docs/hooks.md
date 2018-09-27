@@ -354,3 +354,56 @@ of the list and negative indices count from the end. The first element is
     hooked-symbol get{}(List{}, Int{}) : Elem{}
         [hook{}("LIST.concat")]
 ~~~
+
+## SET
+
+Depends on `BOOL`.
+
+The sort of set elements is arbitrary, but must be consistent between symbol
+declarations. The sort consistency of hooked symbols is *not* checked. The
+element sort is referred to as `Elem{}` below.
+
+### SET.Set
+
+The builtin sort of sets.
+
+~~~
+    hooked-sort Set{}
+        [hook{}("SET.Set")]
+~~~
+
+### SET.unit
+
+The empty set.
+
+~~~
+    hooked-symbol unit{}() : Set{}
+        [hook{}("SET.unit")]
+~~~
+
+### SET.element
+
+The singleton set.
+
+~~~
+    hooked-symbol element{}(Elem{}) : Set{}
+        [hook{}("SET.element")]
+~~~
+
+### SET.concat
+
+The union of both arguments.
+
+~~~
+    hooked-symbol concat{}(Set{}, Set{}) : Set{}
+        [hook{}("SET.concat")]
+~~~
+
+### SET.in
+
+Is the element a member of the given set?
+
+~~~
+    hooked-symbol in{}(Elem{}, Set{}) : Bool{}
+        [hook{}("SET.in")]
+~~~
