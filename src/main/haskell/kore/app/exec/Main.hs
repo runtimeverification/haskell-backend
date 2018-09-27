@@ -177,8 +177,8 @@ externalizeFreshVars pat = cata renameFreshLocal pat
     computeFreshPrefix :: String -> (Set.Set String) -> String
     computeFreshPrefix pref strings
       | Set.null matchingStrings = pref
-      -- TODO(traiansf): if executing multiple times (like in stepping), and
-      -- names for generated fresh variables will grow longer nad longer.
+      -- TODO(traiansf): if executing multiple times (like in stepping),
+      -- names for generated fresh variables will grow longer and longer.
       -- Consider a mechanism to avoid this.
       | otherwise = computeFreshPrefix (pref ++ "-") matchingStrings
       where
