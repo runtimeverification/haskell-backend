@@ -27,6 +27,7 @@ module Kore.Builtin.Set
     , lookupSymbolElement
     , lookupSymbolConcat
     , lookupSymbolIn
+    , lookupSymbolDifference
     ) where
 
 import           Control.Monad.Except
@@ -99,6 +100,9 @@ symbolVerifiers =
       )
     , ( "SET.in"
       , Builtin.verifySymbol Bool.assertSort [anySort, assertSort]
+      )
+    , ( "SET.difference"
+      , Builtin.verifySymbol assertSort [assertSort, assertSort]
       )
     ]
   where
@@ -194,6 +198,23 @@ evalConcat =
             returnSet resultSort (_set1 <> _set2)
         )
 
+evalDifference :: Builtin.Function
+evalDifference =
+    Builtin.functionEvaluator evalConcat0
+  where
+    ctx = "SET.difference"
+    evalConcat0 _ _ resultSort = \arguments ->
+        getAttemptedFunction
+        (do
+            let (_set1, _set2) =
+                    case arguments of
+                        [_set1, _set2] -> (_set1, _set2)
+                        _ -> Builtin.wrongArity ctx
+            _set1 <- expectBuiltinDomainSet ctx _set1
+            _set2 <- expectBuiltinDomainSet ctx _set2
+            returnSet resultSort (Set.difference _set1 _set2)
+        )
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map String Builtin.Function
@@ -203,6 +224,7 @@ builtinFunctions =
         , ("SET.element", evalElement)
         , ("SET.unit", evalUnit)
         , ("SET.in", evalIn)
+        , ("SET.difference", evalDifference)
         ]
 
 {- | Render a 'Set' as a domain value pattern of the given sort.
@@ -274,3 +296,10 @@ lookupSymbolIn
     :: KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolIn = Builtin.lookupSymbol "SET.in"
+
+{- | Find the symbol hooked to @SET.difference@ in an indexed module.
+ -}
+lookupSymbolDifference
+    :: KoreIndexedModule attrs
+    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+lookupSymbolDifference = Builtin.lookupSymbol "SET.difference"

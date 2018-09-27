@@ -87,7 +87,7 @@ prop_inElement value =
 prop_inConcat :: Integer -> Set Integer -> Property
 prop_inConcat elem' values =
     let patIn = App_ symbolIn [ patElem , patSet ]
-        patSet = asPattern (Set.map Test.Int.asPattern $ Set.insert elem' values)
+        patSet = asPattern (Set.insert elem' values)
         patElem = Test.Int.asPattern elem'
         patTrue = Test.Bool.asPattern True
         predicate = give testSortTools $ mkEquals patTrue patIn
@@ -105,7 +105,7 @@ prop_inConcat elem' values =
 prop_concatUnit :: Set Integer -> Property
 prop_concatUnit values =
     let patUnit = App_ symbolUnit []
-        patValues = asPattern (Set.map Test.Int.asPattern values)
+        patValues = asPattern values
         patConcat1 = App_ symbolConcat [ patUnit, patValues ]
         patConcat2 = App_ symbolConcat [ patValues, patUnit ]
         predicate1 = give testSortTools $ mkEquals patValues patConcat1
@@ -127,9 +127,9 @@ prop_concatUnit values =
  -}
 prop_concatAssociates :: Set Integer -> Set Integer -> Set Integer -> Property
 prop_concatAssociates values1 values2 values3 =
-    let patSet1 = asPattern $ Set.map Test.Int.asPattern values1
-        patSet2 = asPattern $ Set.map Test.Int.asPattern values2
-        patSet3 = asPattern $ Set.map Test.Int.asPattern values3
+    let patSet1 = asPattern values1
+        patSet2 = asPattern values2
+        patSet3 = asPattern values3
         patConcat12 = App_ symbolConcat [ patSet1, patSet2 ]
         patConcat23 = App_ symbolConcat [ patSet2, patSet3 ]
         patConcat12_3 = App_ symbolConcat [ patConcat12, patSet3 ]
@@ -141,9 +141,23 @@ prop_concatAssociates values1 values2 values3 =
             , ExpandedPattern.top === evaluate predicate
             ]
 
+prop_difference :: Set Integer -> Set Integer -> Property
+prop_difference set1 set2 =
+    let patSet1 = asPattern set1
+        patSet2 = asPattern set2
+        set3 = Set.difference set1 set2
+        patSet3 = asPattern set3
+        patDifference = App_ symbolDifference [ patSet1, patSet2 ]
+        predicate = give testSortTools (mkEquals patSet3 patDifference)
+    in
+        allProperties
+            [ evaluate patSet3 === evaluate patDifference
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
-asPattern :: Set.Builtin -> CommonPurePattern Object
-Right asPattern = Set.asPattern indexedModule setSort
+asPattern :: Set Integer -> CommonPurePattern Object
+Right asPattern = (. Set.map Test.Int.asPattern) <$> Set.asPattern indexedModule setSort
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object
@@ -212,6 +226,9 @@ Right symbolConcat = Set.lookupSymbolConcat indexedModule
 symbolIn :: SymbolOrAlias Object
 Right symbolIn = Set.lookupSymbolIn indexedModule
 
+symbolDifference :: SymbolOrAlias Object
+Right symbolDifference = Set.lookupSymbolDifference indexedModule
+
 {- | Declare the @SET@ builtins.
  -}
 setModule :: KoreModule
@@ -231,6 +248,8 @@ setModule =
                 setSort [setSort, setSort]
             , hookedSymbolDecl "SET.in" (builtinSymbol "inSet")
                 Test.Bool.boolSort [Test.Int.intSort, setSort]
+            , hookedSymbolDecl "SET.difference" (builtinSymbol "differenceSet")
+                setSort [setSort, setSort]
             ]
         }
 
