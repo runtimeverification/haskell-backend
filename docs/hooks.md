@@ -208,6 +208,7 @@ The absolute value of the argument.
 ### INT.tdiv
 
 Quotient of the first argument divided by the second (truncated toward zero).
+The result is `bottom{}()` if the second argument is zero.
 
 ~~~
     hooked-symbol tdiv{}(Int{}, Int{}) : Int{}
@@ -217,6 +218,7 @@ Quotient of the first argument divided by the second (truncated toward zero).
 ### INT.tmod
 
 Remainder of the first argument divided by the second (truncated toward zero).
+The result is `bottom{}()` if the second argument is zero.
 
 ~~~
     hooked-symbol tmod{}(Int{}, Int{}) : Int{}
@@ -225,8 +227,8 @@ Remainder of the first argument divided by the second (truncated toward zero).
 
 ### INT.pow
 
-The first argument raised to the power of the second argument. The second
-argument must be non-negative.
+The first argument raised to the power of the second argument. The result is
+`bottom{}()` if the second argument is negative.
 
 ~~~
     hooked-symbol pow{}(Int{}, Int{}) : Int{}
@@ -236,9 +238,10 @@ argument must be non-negative.
 ### INT.powmod
 
 The first argument raised to the power of the second argument, but performed
-modulo the third argument. The second argument must not be zero. If the second
-argument is negative, then the first argument and the third argument must not be
-coprime.
+modulo the third argument. The result is `\bottom{}()` if either
+- The second argument is zero, or
+- The second argument is negative and the first and third arguments are not
+  coprime
 
 ~~~
     hooked-symbol powmod{}(Int{}, Int{}, Int{}) : Int{}
@@ -247,7 +250,8 @@ coprime.
 
 ### INT.log2
 
-The base 2 logarithm of the argument. The argument must be positive.
+The base 2 logarithm of the argument. The result is `bottom{}()` if the second
+argument is not positive.
 
 ~~~
     hooked-symbol log2{}(Int{}) : Int{}
