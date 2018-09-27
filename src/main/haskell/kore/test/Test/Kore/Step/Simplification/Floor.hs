@@ -68,12 +68,7 @@ test_floorSimplification =
             -- floor(top) = top
             assertEqualWithExplanation "floor(top)"
                 (OrOfExpandedPattern.make
-                    [ ExpandedPattern
-                        { term = mkTop
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    ]
+                    [ ExpandedPattern.top ]
                 )
                 (give mockSortTools $ evaluate
                     (makeFloor
@@ -96,12 +91,7 @@ test_floorSimplification =
             -- floor(top) = top
             assertEqualWithExplanation "floor(top)"
                 (OrOfExpandedPattern.make
-                    [ ExpandedPattern
-                        { term = mkTop
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    ]
+                    [ ExpandedPattern.top ]
                 )
                 (give mockSortTools $ makeEvaluate
                     (ExpandedPattern.top :: CommonExpandedPattern Object)

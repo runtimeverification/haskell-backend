@@ -41,14 +41,15 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeTruePredicate )
+                 ( makeAndPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution (PredicateSubstitution),
-                 substitutionToPredicate )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+                 ( substitutionToPredicate )
 import           Kore.Step.PatternAttributes
                  ( isFunctionPattern )
+import           Kore.Step.PredicateSubstitution
+                 ( PredicateSubstitution (PredicateSubstitution) )
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSubstitution (..), top )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -180,7 +181,7 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                 _ -> Nothing
         (Bottom_ _) ->
             case second of
-                (Bottom_ _) -> Just $ return topPredicateSubstitution
+                (Bottom_ _) -> Just $ return PredicateSubstitution.top
                 _ -> Nothing
         (Ceil_ _ _ firstChild) ->
             case second of
@@ -191,14 +192,14 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
             case second of
                 (CharLiteral_ _) ->
                     if first == second
-                    then Just $ return topPredicateSubstitution
+                    then Just $ return PredicateSubstitution.top
                     else Nothing
                 _ -> Nothing
         (DV_ _ _) ->
             case second of
                 (DV_ _ _) ->
                     if first == second
-                    then Just $ return topPredicateSubstitution
+                    then Just $ return PredicateSubstitution.top
                     else Nothing
                 _ -> Nothing
         (Equals_ _ _ firstFirst firstSecond) ->
@@ -302,12 +303,12 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
             case second of
                 (StringLiteral_ _) ->
                     if first == second
-                    then Just $ return topPredicateSubstitution
+                    then Just $ return PredicateSubstitution.top
                     else Nothing
                 _ -> Nothing
         (Top_ _) ->
             case second of
-                (Top_ _) -> Just $ return topPredicateSubstitution
+                (Top_ _) -> Just $ return PredicateSubstitution.top
                 _ -> Nothing
         (Var_ firstVariable) ->
             case second of
@@ -316,18 +317,9 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         Nothing -> Nothing
                         Just variable ->
                             if variable == secondVariable
-                            then Just $ return topPredicateSubstitution
+                            then Just $ return PredicateSubstitution.top
                             else Nothing
                 _ -> Nothing
-
-topPredicateSubstitution
-    :: MetaOrObject level
-    => PredicateSubstitution level variable
-topPredicateSubstitution =
-    PredicateSubstitution
-        { predicate = makeTruePredicate
-        , substitution = []
-        }
 
 matchJoin
     :: ( Hashable variable

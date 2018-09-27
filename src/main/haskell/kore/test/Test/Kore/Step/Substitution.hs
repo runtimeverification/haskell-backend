@@ -12,21 +12,23 @@ import Control.Monad.Counter
 import Data.Reflection
        ( give )
 
-import Kore.AST.Common
-       ( Variable )
-import Kore.AST.MetaOrObject
-       ( Object )
-import Kore.ASTUtils.SmartConstructors
-       ( mkVar )
-import Kore.Predicate.Predicate
-       ( makeFalsePredicate, makeTruePredicate )
-import Kore.Step.ExpandedPattern
-       ( PredicateSubstitution (..) )
-import Kore.Step.Substitution
-       ( mergeAndNormalizeSubstitutions )
-import Kore.Unification.Error
-import Kore.Unification.Unifier
-       ( UnificationSubstitution )
+import           Kore.AST.Common
+                 ( Variable )
+import           Kore.AST.MetaOrObject
+                 ( Object )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkVar )
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
+import           Kore.Step.PredicateSubstitution
+                 ( PredicateSubstitution (PredicateSubstitution) )
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( bottom )
+import           Kore.Step.Substitution
+                 ( mergeAndNormalizeSubstitutions )
+import           Kore.Unification.Error
+import           Kore.Unification.Unifier
+                 ( UnificationSubstitution )
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSortTools )
@@ -176,13 +178,10 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === bottom
         (assertEqual ""
-            ( Right
-                ( PredicateSubstitution makeFalsePredicate []
-                )
-            )
+            ( Right PredicateSubstitution.bottom )
             ( normalize
                 [   ( Mock.x
-                    , (mkVar Mock.y)
+                    , mkVar Mock.y
                     )
                 ]
                 [   ( Mock.y
@@ -202,7 +201,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
             ( normalize
                 [   ( Mock.x
-                    , (mkVar Mock.y)
+                    , mkVar Mock.y
                     )
                 ]
                 [   ( Mock.y
