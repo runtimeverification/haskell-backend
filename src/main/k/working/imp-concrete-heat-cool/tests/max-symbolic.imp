@@ -1,0 +1,10 @@
+// This program calculates in sum
+// the sum of numbers from 1 to n.
+
+int x, y, z, max;
+x = symInt;
+y = symInt;
+z = symInt;
+max = x;
+if (y <= max) {max = y;} else {}
+if (y <= max) {max = z;} else {}
