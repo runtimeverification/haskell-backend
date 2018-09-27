@@ -16,6 +16,7 @@ module Kore.IndexedModule.Resolvers
     , resolveSymbol
     , resolveHook
     , resolveHooks
+    , findIndexedSort
     ) where
 
 import qualified Data.List as List
@@ -38,7 +39,8 @@ import Kore.ASTHelpers
 import Kore.Error
        ( Error, koreFail, printError )
 import Kore.IndexedModule.IndexedModule
-       ( IndexedModule (..), KoreIndexedModule, SortDescription )
+       ( IndexedModule (..), KoreIndexedModule, SortDescription,
+       getIndexedSentence )
 
 symbolSentencesMap
     :: MetaOrObject level
@@ -272,3 +274,18 @@ resolveHooks indexedModule builtinName =
         in
             indexedModuleHooks _module : mconcat (allHooksOf <$> _imports)
     resolveHooks1 hooks = fromMaybe [] (Map.lookup builtinName hooks)
+
+{- | Find a sort by name in an indexed module and its imports.
+
+    Similar to 'resolveSort', but does not retrieve the sentence attributes.
+
+ -}
+findIndexedSort
+    :: MetaOrObject level
+    => KoreIndexedModule atts
+    -- ^ indexed module
+    -> Id level
+    -- ^ sort identifier
+    -> Either (Error e) (SortDescription level)
+findIndexedSort indexedModule sort =
+    fmap getIndexedSentence (resolveSort indexedModule sort)
