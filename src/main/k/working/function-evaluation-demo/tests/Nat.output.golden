@@ -1,22 +1,3 @@
-kseq{}(
-    inj{SortNat{}, SortKItem{}}(
-        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                        LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                            LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                    LblSucc'LParUndsRParUnds'PEANO'UndsUnds'Nat{}(
-                                        LblZero'Unds'PEANO'Unds'{}()
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        )
-    ),
-    dotk{}()
-)
+<k>
+  Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) )
+</k>
