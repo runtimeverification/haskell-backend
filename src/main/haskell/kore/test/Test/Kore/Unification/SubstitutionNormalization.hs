@@ -6,8 +6,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Data.Default
-       ( def )
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
 import           Kore.AST.Common
                  ( AstLocation (..), Sort (..), SortVariable (..), Variable,
@@ -36,8 +35,7 @@ import           Kore.Unification.Error
 import           Kore.Unification.SubstitutionNormalization
 import           Kore.Unification.UnifierImpl
                  ( UnificationSubstitution )
-import           Kore.Variables.Fresh.IntCounter
-                 ( runIntCounter )
+import           Kore.Variables.Fresh
 
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =
@@ -120,7 +118,7 @@ test_substitutionNormalization =
       in
         testCase "Simplest cycle"
             (assertEqual ""
-                (Left (CtorCircularVariableDependency [var1]))
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (v1 PatternSort)
@@ -132,9 +130,44 @@ test_substitutionNormalization =
         var1 = asVariable (v1 PatternSort)
         varx1 = asVariable (x1 PatternSort)
       in
+        testCase "Cycle with extra substitution"
+            (assertEqual ""
+                (Right
+                    [   ( asVariable (x1 PatternSort)
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ]
+                )
+                (runNormalizeSubstitution
+                    [   ( var1
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ,   ( varx1
+                        , asPureMetaPattern (v1 PatternSort)
+                        )
+                    ]
+                )
+            )
+    , let
+        var1 = asVariable (v1 PatternSort)
+      in
+        testCase "Function cycle"
+            (assertEqual ""
+                (Left (NonCtorCircularVariableDependency [var1]))
+                (runNormalizeSubstitution
+                    [   ( var1
+                        , App_ f [Var_ var1]
+                        )
+                    ]
+                )
+            )
+    , let
+        var1 = asVariable (v1 PatternSort)
+        varx1 = asVariable (x1 PatternSort)
+      in
         testCase "Length 2 cycle"
             (assertEqual ""
-                (Left (CtorCircularVariableDependency [var1, varx1]))
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (x1 PatternSort)
@@ -151,7 +184,7 @@ test_substitutionNormalization =
       in
         testCase "Cycle with 'and'"
             (assertEqual ""
-                (Left (CtorCircularVariableDependency [var1, varx1]))
+                (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern
@@ -212,16 +245,11 @@ runNormalizeSubstitution
 runNormalizeSubstitution substitution =
     case normalizeSubstitution mockMetadataTools substitution of
         Left err     -> Left err
-        Right action -> Right $ PredicateSubstitution.substitution
-                        $ fst $ runIntCounter action 0
+        Right action ->
+            Right
+                $ PredicateSubstitution.substitution
+                $ evalCounter action
 
-mockStepperAttributes :: StepperAttributes
-mockStepperAttributes = StepperAttributes
-    { isConstructor = False
-    , isFunctional = True
-    , isFunction = False
-    , hook = def
-    }
 
 mockSortTools :: MetaOrObject level => SortTools level
 mockSortTools = const ApplicationSorts
@@ -233,7 +261,8 @@ mockSortTools = const ApplicationSorts
 
 mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
 mockMetadataTools = MetadataTools
-    { attributes = const mockStepperAttributes
+    { symAttributes = const Mock.functionalAttributes
+    , sortAttributes = const Mock.functionalAttributes
     , sortTools = mockSortTools
+    , isSubsortOf = const $ const False
     }
-

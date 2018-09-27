@@ -2,7 +2,7 @@
 Module      : Kore.Parser.ParserImpl
 Description : Parser definition for Kore. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -64,7 +64,7 @@ import           Kore.Parser.Lexeme
 import           Kore.Parser.ParserUtils
                  ( Parser )
 import qualified Kore.Parser.ParserUtils as ParserUtils
-import           Kore.Unparser.Unparse
+import           Kore.Unparser
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
 @meta-sort-variable@.
@@ -708,7 +708,8 @@ mlConstructorRemainderParser childParser x patternType =
                     DomainValuePattern <$>
                     (   DomainValue
                     <$> inCurlyBracesRemainderParser (sortParser Object)
-                    <*> inParenthesesParser (purePatternParser Meta)
+                    <*> inParenthesesParser
+                        (BuiltinDomainPattern <$> purePatternParser Meta)
                     )
         NextPatternType ->
             case isMetaOrObject (toProxy x) of

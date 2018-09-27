@@ -1,8 +1,8 @@
 {-|
-Module      : Kore.Simplification.Application
+Module      : Kore.Step.Simplification.Application
 Description : Tools for Application pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -11,7 +11,6 @@ module Kore.Step.Simplification.Application
     ( simplify
     ) where
 
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
@@ -49,8 +48,7 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
-import           Kore.Variables.Int
-                 ( IntVariable (..) )
+import           Kore.Variables.Fresh
 
 data ExpandedApplication level variable = ExpandedApplication
     { term         :: !(Application level (PureMLPattern level variable))
@@ -76,7 +74,7 @@ simplify
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -121,7 +119,7 @@ makeAndEvaluateApplications
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -155,7 +153,7 @@ evaluateApplicationFunction
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -192,7 +190,7 @@ makeExpandedApplication
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , IntVariable variable
+        , FreshVariable variable
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
@@ -206,12 +204,11 @@ makeExpandedApplication tools symbol children
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , _proof) <- Monad.Trans.lift
-            (mergePredicatesAndSubstitutions
+        , _proof) <-
+            mergePredicatesAndSubstitutions
                 tools
                 (map ExpandedPattern.predicate children)
                 (map ExpandedPattern.substitution children)
-            )
     return
         ( ExpandedApplication
             { term = Application

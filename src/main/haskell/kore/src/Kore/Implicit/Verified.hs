@@ -2,7 +2,7 @@
 Module      : Kore.Implicit.Verified
 Description : Builds and verifies the implicit kore definitions.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -17,20 +17,21 @@ module Kore.Implicit.Verified
 import Data.Proxy
        ( Proxy (..) )
 
-import Kore.AST.PureToKore
-import Kore.AST.Sentence
-import Kore.ASTVerifier.DefinitionVerifier
-       ( defaultAttributesVerification, verifyImplicitKoreDefinition )
-import Kore.ASTVerifier.Error
-       ( VerifyError )
+import           Kore.AST.PureToKore
+import           Kore.AST.Sentence
+import           Kore.ASTVerifier.DefinitionVerifier
+                 ( defaultAttributesVerification,
+                 verifyImplicitKoreDefinition )
+import           Kore.ASTVerifier.Error
+                 ( VerifyError )
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-       ( Error, printError )
-import Kore.Implicit.Attributes
-       ( ImplicitAttributes )
-import Kore.Implicit.Definitions
-       ( uncheckedKoreDefinition, uncheckedMetaDefinition )
-import Kore.MetaML.AST
+import           Kore.Error
+                 ( Error, printError )
+import           Kore.Implicit.Attributes
+                 ( ImplicitAttributes )
+import           Kore.Implicit.Definitions
+                 ( uncheckedKoreDefinition, uncheckedMetaDefinition )
+import           Kore.MetaML.AST
 
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do

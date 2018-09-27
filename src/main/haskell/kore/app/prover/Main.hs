@@ -39,9 +39,10 @@ pCommand = parseCommand parseName parseFormula parseRule
                                parseName
 
 main :: IO ()
-main = defaultMainGlobal
-       >> execReplT runProver defaultSettings proverEnv initialState
-       >> return ()
+main = do
+    _ <- defaultMainGlobal
+    _ <- execReplT runProver defaultSettings proverEnv initialState
+    return ()
   where
     initialState = ProverState
                    { proofState = emptyProof

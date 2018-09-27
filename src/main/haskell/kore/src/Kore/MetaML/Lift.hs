@@ -2,7 +2,7 @@
 Module      : Kore.MetaML.Lift
 Description : Lifts mixed 'Object' and 'Meta' constructs into pure 'Meta' ones.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -19,17 +19,17 @@ module Kore.MetaML.Lift
 
 import Data.Functor.Foldable
 
-import Data.Functor.Impredicative
-       ( Rotate31 (..) )
-import Data.Functor.Traversable
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.MLPatterns
-import Kore.AST.PureML
-import Kore.AST.Sentence
-import Kore.Implicit.ImplicitSorts
-import Kore.MetaML.AST
+import           Data.Functor.Impredicative
+                 ( Rotate31 (..) )
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.MLPatterns
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+import qualified Kore.Builtin as Builtin
+import           Kore.Implicit.ImplicitSorts
+import           Kore.MetaML.AST
 
 {-|'LiftableToMetaML' describes functionality to lift mixed Kore
 'Object' and 'Meta' constructs to pure 'Meta' constructs.
@@ -126,7 +126,7 @@ instance LiftableToMetaML (Variable Object) where
 
 -- Section 9.2.8 Lift Patterns
 instance LiftableToMetaML CommonKorePattern where
-    liftToMeta = fixBottomUpVisitor liftReducer
+    liftToMeta = cata liftReducer
 
 liftReducer
     :: UnifiedPattern Variable CommonMetaPattern
@@ -164,7 +164,7 @@ liftObjectReducer p = case p of
     DomainValuePattern dvp ->
         applyMetaMLPatternHead DomainValuePatternType
             [ liftToMeta (domainValueSort dvp)
-            , domainValueChild dvp
+            , Builtin.asMetaPattern dvp
             ]
     EqualsPattern cp -> applyMetaMLPatternHead EqualsPatternType
         [ liftToMeta (equalsOperandSort cp)

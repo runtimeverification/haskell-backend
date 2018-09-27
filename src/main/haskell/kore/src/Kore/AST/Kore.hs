@@ -3,7 +3,7 @@ Module      : Kore.AST.Kore
 Description : Data Structures for representing the Kore language AST with
               unified constructs.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -48,9 +48,6 @@ import Data.Functor.Impredicative
        ( Rotate31 (..) )
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.AST.Pretty
-       ( Pretty (..) )
-
 
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
@@ -103,10 +100,6 @@ instance (ShowMetaOrObject variable) => Show1 (UnifiedPattern variable) where
             showString "Rotate31 { unRotate31 = "
             . liftShowsPrec showsPrec_ showList_ 0 (unRotate31 r)
             . showString " }"
-
-instance (Pretty child, Pretty (variable Meta), Pretty (variable Object)) =>
-    Pretty (UnifiedPattern variable child) where
-    pretty = applyUnified (pretty . unRotate31) (pretty . unRotate31) . getUnifiedPattern
 
 -- |View a 'Meta' or an 'Object' 'Pattern' as an 'UnifiedPattern'
 asUnifiedPattern

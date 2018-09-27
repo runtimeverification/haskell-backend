@@ -3,7 +3,7 @@ Module      : Kore.Variables.Sort
 Description : Specifies the 'TermWithSortVariablesClass' which is meant to
               define a term with sort variables and exports 'sortVariables'
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -25,7 +25,6 @@ import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
-import Kore.ASTTraversals
 import Kore.MetaML.AST
 
 

@@ -3,7 +3,7 @@ Module      : Kore.Parser.LexemeImpl
 Description : Lexical unit definitions for Kore and simple ways of composing
               parsers. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -32,9 +32,12 @@ import           Control.Monad.Combinators
 import qualified Data.ByteString.Char8 as Char8
 import           Data.Char
                  ( isHexDigit, isOctDigit )
-import           Data.Maybe
-                 ( isJust )
-import qualified Data.Trie as Trie
+import           Data.HashMap.Strict
+                 ( HashMap )
+import qualified Data.HashMap.Strict as HashMap
+import           Data.HashSet
+                 ( HashSet )
+import qualified Data.HashSet as HashSet
 import           Text.Megaparsec
                  ( SourcePos (..), eof, getPosition, unPos )
 import qualified Text.Megaparsec.Char as Parser
@@ -119,9 +122,10 @@ skipWhitespace = L.space Parser.space1 (L.skipLineComment "//") blockComment
     blockComment = Parser.string "/*" >> void (manyTill commentBody (Parser.string "*/"))
     commentBody = Parser.anyChar <|> (eof >> fail "Unfinished comment.")
 
-koreKeywordsSet :: Trie.Trie ()
-koreKeywordsSet = Trie.fromList $ map (\s -> (Char8.pack s, ()))
-    ["module", "endmodule", "sort", "symbol", "alias", "axiom"]
+koreKeywordsSet :: HashSet Char8.ByteString
+koreKeywordsSet = HashSet.fromList (Char8.pack <$> keywords)
+  where
+    keywords = ["module", "endmodule", "sort", "symbol", "alias", "axiom"]
 
 data IdKeywordParsing
     = KeywordsPermitted
@@ -143,7 +147,7 @@ genericIdRawParser firstCharSet bodyCharSet idKeywordParsing = do
         else ParserUtils.takeWhile (`CharSet.elem` bodyCharSet)
     when
         (  (idKeywordParsing == KeywordsForbidden)
-        && isJust (Trie.lookup (Char8.pack idChar) koreKeywordsSet)
+        && HashSet.member (Char8.pack idChar) koreKeywordsSet
         )
         (fail
             (  "Identifiers should not be keywords: '"
@@ -449,9 +453,9 @@ prefixBasedParsersWithDefault prefixParser defaultParser stringParsers = do
             else defaultParser
 
 {-|'metaSortTrie' is a trie containing all the possible metasorts.-}
-metaSortTrie :: Trie.Trie MetaSortType
+metaSortTrie :: HashMap Char8.ByteString MetaSortType
 metaSortTrie =
-    Trie.fromList $
+    HashMap.fromList $
         map (\s -> (Char8.pack (show s), s)) metaSortsListWithString
 
 {-|'metaSortConverter' converts a string representation of a metasort name
@@ -460,4 +464,4 @@ metaSortTrie =
 metaSortConverter :: String -> Maybe MetaSortType
 -- TODO(virgil): Does the pack call matter for performance? Should we try to
 -- improve it?
-metaSortConverter identifier = Trie.lookup (Char8.pack identifier) metaSortTrie
+metaSortConverter identifier = HashMap.lookup (Char8.pack identifier) metaSortTrie

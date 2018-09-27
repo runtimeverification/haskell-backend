@@ -11,14 +11,23 @@ import Data.Functor.Foldable
        ( Fix (..) )
 
 import Kore.Error
+import Kore.Unparser
+       ( Unparse (..) )
 import Logic.Matching.Error
 import Logic.Matching.Pattern as Pattern
 import Logic.Proof.Hilbert
 
 newtype SubstitutedVariable var = SubstitutedVariable var
     deriving (Eq, Show)
+
+instance Unparse var => Unparse (SubstitutedVariable var) where
+    unparse (SubstitutedVariable var) = unparse var
+
 newtype SubstitutingVariable var = SubstitutingVariable var
     deriving (Eq, Show)
+
+instance Unparse var => Unparse (SubstitutingVariable var) where
+    unparse (SubstitutingVariable var) = unparse var
 
 {-|
   This type has constructors for each rule of the

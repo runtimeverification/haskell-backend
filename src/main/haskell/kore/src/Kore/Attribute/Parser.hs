@@ -2,7 +2,7 @@
 Module      : Kore.Attribute.Parser
 Description : Attribute parsers
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -30,6 +30,7 @@ module Kore.Attribute.Parser
     , runParser
     , withContext
     , choose
+    , optional
       -- ** Parsing idioms
     , parseAttribute
     , assertKeyOnlyAttribute
@@ -120,6 +121,10 @@ choose first second =
           Except.catchError second
               (\_ -> Except.throwError firstError)
       )
+
+optional :: Parser a -> Parser (Maybe a)
+optional parser =
+    choose (Just <$> parser) (pure Nothing)
 
 {- | Run an attribute 'Parser' with the given list of attributes.
  -}

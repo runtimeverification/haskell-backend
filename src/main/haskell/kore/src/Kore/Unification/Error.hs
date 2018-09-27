@@ -2,7 +2,7 @@
 Module      : Kore.Unification.Error
 Description : Utilities for unification errors
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -11,11 +11,11 @@ module Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationError (..)
     , UnificationOrSubstitutionError (..)
+    , ClashReason (..)
     , mapSubstitutionErrorVariables
     , substitutionErrorVariables
     , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
-    , ctorSubstitutionCycleToBottom
     ) where
 
 import qualified Data.Set as Set
@@ -26,11 +26,12 @@ import Kore.AST.Common
 data UnificationOrSubstitutionError level variable
     = UnificationError (UnificationError level)
     | SubstitutionError (SubstitutionError level variable)
+    deriving (Eq, Show)
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
 data UnificationError level
-    = ConstructorClash (SymbolOrAlias level) (SymbolOrAlias level)
+    = PatternClash (ClashReason level) (ClashReason level)
     | SortClash (Sort level) (Sort level)
     | NonConstructorHead (SymbolOrAlias level)
     | NonFunctionalHead (SymbolOrAlias level)
@@ -39,13 +40,18 @@ data UnificationError level
     | EmptyPatternList
     deriving (Eq, Show)
 
+-- |@ClashReason@ describes the head of a pattern involved in a clash.
+data ClashReason level
+    = HeadClash (SymbolOrAlias level)
+    | DomainValueClash String
+    | SortInjectionClash (Sort level) (Sort level)
+    deriving (Eq, Show)
+
 {-| 'SubstitutionError' specifies the various error cases related to
 substitutions.
 -}
 data SubstitutionError level variable
-    = CtorCircularVariableDependency [variable level]
-    -- ^the circularity path passes only through constructors: unsolvable.
-    | NonCtorCircularVariableDependency [variable level]
+    = NonCtorCircularVariableDependency [variable level]
     -- ^the circularity path may pass through non-constructors: maybe solvable.
     deriving (Eq, Show)
 
@@ -56,8 +62,6 @@ substitutionErrorVariables
     :: Ord (variable level)
     => SubstitutionError level variable
     -> Set.Set (variable level)
-substitutionErrorVariables (CtorCircularVariableDependency variables) =
-    Set.fromList variables
 substitutionErrorVariables (NonCtorCircularVariableDependency variables) =
     Set.fromList variables
 
@@ -68,9 +72,6 @@ mapSubstitutionErrorVariables
     :: (variableFrom level -> variableTo level)
     -> SubstitutionError level variableFrom
     -> SubstitutionError level variableTo
-mapSubstitutionErrorVariables mapper
-    (CtorCircularVariableDependency variables) =
-        CtorCircularVariableDependency (map mapper variables)
 mapSubstitutionErrorVariables mapper
     (NonCtorCircularVariableDependency variables) =
         NonCtorCircularVariableDependency (map mapper variables)
@@ -88,12 +89,3 @@ unificationToUnifyOrSubError
     -> Either (UnificationOrSubstitutionError level variable) a
 unificationToUnifyOrSubError (Left err) = Left $ UnificationError err
 unificationToUnifyOrSubError (Right a)  = Right a
-
--- Catches a Constructor cycle in substitution error as a 'bottom' value
-ctorSubstitutionCycleToBottom
-    :: result -- ^ bottom value to catch cycle error
-    -> Either (UnificationOrSubstitutionError level variable) result
-    -> Either (UnificationOrSubstitutionError level variable) result
-ctorSubstitutionCycleToBottom bottom
-    (Left (SubstitutionError (CtorCircularVariableDependency _))) = Right bottom
-ctorSubstitutionCycleToBottom _ owise = owise

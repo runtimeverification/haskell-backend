@@ -9,18 +9,18 @@ import Data.Functor.Foldable
 import Data.Proxy
        ( Proxy (..) )
 
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.Sentence
-import Kore.ASTPrettyPrint
-import Kore.ASTVerifier.DefinitionVerifier
-import Kore.ASTVerifier.Error
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.Sentence
+import           Kore.ASTPrettyPrint
+import           Kore.ASTVerifier.DefinitionVerifier
+import           Kore.ASTVerifier.Error
 import qualified Kore.Builtin as Builtin
-import Kore.Error
-import Kore.Implicit.Attributes
-import Kore.Implicit.ImplicitSorts
-import Kore.Unparser.Unparse
+import           Kore.Error
+import           Kore.Implicit.Attributes
+import           Kore.Implicit.ImplicitSorts
+import           Kore.Unparser
 
 import Test.Kore
 

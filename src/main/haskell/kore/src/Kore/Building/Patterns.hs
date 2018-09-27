@@ -3,29 +3,29 @@
 Module      : Kore.Building.Patterns
 Description : Builders for the standard Kore patterns, without 'Application'.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
 module Kore.Building.Patterns where
 
-import Data.Proxy
-       ( Proxy (Proxy) )
+import qualified Data.Functor.Foldable as Functor.Foldable
+import           Data.Proxy
+                 ( Proxy (Proxy) )
 
 import Kore.AST.Common
-       ( And (..), AstLocation, Bottom (..), Ceil (..), CharLiteral (..),
-       DomainValue (..), Equals (..), Exists (..), Floor (..), Forall (..),
-       Id (..), Iff (..), Implies (..), In (..), Next (..), Not (..), Or (..),
-       Pattern (..), Rewrites (..), StringLiteral (..), Top (..),
-       Variable (..) )
+       ( And (..), AstLocation, Bottom (..), BuiltinDomain (..), Ceil (..),
+       CharLiteral (..), DomainValue (..), Equals (..), Exists (..),
+       Floor (..), Forall (..), Id (..), Iff (..), Implies (..), In (..),
+       Next (..), Not (..), Or (..), Pattern (..), Rewrites (..),
+       StringLiteral (..), Top (..), Variable (..) )
 import Kore.AST.Kore
-       ( CommonKorePattern, asKorePattern )
+       ( CommonKorePattern, pattern UnifiedMetaPattern, asKorePattern )
 import Kore.AST.MetaOrObject
+import Kore.ASTUtils.SmartPatterns
 import Kore.Building.AsAst
 import Kore.Building.Sorts
-import Kore.MetaML.Lift
-       (liftToMeta)
 
 {-| When defining new patterns (e.g. for new symbols and aliases),
 users are expected to instantiate either
@@ -185,10 +185,17 @@ instance
     ) => ProperPattern Object sort (ObjectDomainValue pattern1 sort)
   where
     asProperPattern (ObjectDomainValue sort child) =
-        DomainValuePattern (DomainValue (asAst sort) (liftToMeta ast))
+        DomainValuePattern DomainValue
+            { domainValueSort = asAst sort
+            , domainValueChild = BuiltinDomainPattern (StringLiteral_ literal)
+            }
       where
-        ast :: CommonKorePattern
-        ast = asAst child
+        literal =
+            case Functor.Foldable.project (asAst child :: CommonKorePattern) of
+                UnifiedMetaPattern
+                    (StringLiteralPattern (StringLiteral str)) -> str
+                _ -> error "Domain value must be a string literal"
+
 objectDomainValue
     :: (ObjectSort sort, MetaPattern CharListSort pattern1)
     => sort -> pattern1 -> ObjectDomainValue pattern1 sort

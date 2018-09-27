@@ -11,7 +11,7 @@ import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.PureToKore
-       (patternPureToKore)
+       ( patternPureToKore )
 import Kore.AST.Sentence
 import Kore.ASTUtils.SmartPatterns
 import Kore.Implicit.ImplicitSorts
@@ -462,9 +462,9 @@ domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
-            ( patternPureToKore
-            $ DV_ (sortVariableSort "s1") (StringLiteral_ (StringLiteral "a"))
-            )
+            $ patternPureToKore
+            $ DV_ (sortVariableSort "s1")
+            $ BuiltinDomainPattern (StringLiteral_ "a")
         , FailureWithoutMessage
             [ ""
             , "\\dv{s1, s2}(\"a\")"
@@ -945,7 +945,8 @@ sentenceAliasParserTests =
                         (App_ aliasHead [])
                     , sentenceAliasRightPattern =
                         (fmap patternPureToKore . Functor.Foldable.project)
-                        (DV_ resultSort (StringLiteral_ (StringLiteral "f")))
+                        (DV_ resultSort
+                            (BuiltinDomainPattern (StringLiteral_ "f")))
                     , sentenceAliasAttributes = Attributes []
                     }
                 )

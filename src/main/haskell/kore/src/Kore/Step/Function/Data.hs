@@ -2,7 +2,7 @@
 Module      : Kore.Step.Function.Data
 Description : Data structures used for function evaluation.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -12,6 +12,8 @@ module Kore.Step.Function.Data
     , CommonApplicationFunctionEvaluator
     , AttemptedFunction (..)
     , CommonAttemptedFunction
+    , notApplicableFunctionEvaluator
+    , purePatternFunctionEvaluator
     ) where
 
 import Kore.AST.Common
@@ -23,10 +25,9 @@ import Kore.AST.PureML
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.OrOfExpandedPattern
-       ( OrOfExpandedPattern )
+       ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import Kore.Step.Simplification.Data
-       ( PureMLPatternSimplifier, Simplifier,
-       SimplificationProof (..) )
+       ( PureMLPatternSimplifier, SimplificationProof (..), Simplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 
@@ -79,3 +80,21 @@ data AttemptedFunction level variable
 following the same pattern as the other `Common*` types.
 -}
 type CommonAttemptedFunction level = AttemptedFunction level Variable
+
+-- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
+notApplicableFunctionEvaluator
+    :: Simplifier
+         (AttemptedFunction level1 variable, SimplificationProof level2)
+notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
+
+-- |Yields a pure 'Simplifier' which produces a given 'PureMLPattern'
+purePatternFunctionEvaluator
+    :: (MetaOrObject level)
+    => PureMLPattern level variable
+    -> Simplifier (AttemptedFunction level variable, SimplificationProof level')
+purePatternFunctionEvaluator p =
+    pure
+        (Applied (makeFromSinglePurePattern p)
+        , SimplificationProof
+        )
+

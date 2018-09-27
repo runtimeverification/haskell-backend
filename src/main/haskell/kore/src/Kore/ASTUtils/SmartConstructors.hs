@@ -3,26 +3,22 @@ Module      : Kore.ASTUtils.SmartConstructors
 Description : Tree-based proof system, which can be
               hash-consed into a list-based one.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
-{-# OPTIONS_GHC -Wno-missing-signatures #-}
-{-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
-
 module Kore.ASTUtils.SmartConstructors
-    ( -- * Utility funcs for dealing with sorts
+    ( -- * Utility functions for dealing with sorts
       getSort
     , forceSort
-    , flexibleSort
-    , isRigid
-    , isFlexible
+    , predicateSort
+    , hasRigidHead
+    , hasFlexibleHead
     , makeSortsAgree
     , ensureSortAgreement
+    , isObviouslyPredicate
     -- * Lenses -- all applicative
     , patternLens
     , inputSort   -- | will have 0 or 1 inhabitants
@@ -68,7 +64,7 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
-       ( PureMLPattern )
+       ( CommonPurePattern, PureMLPattern )
 import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 
@@ -87,12 +83,10 @@ getSort x = getPatternResultSort given $ project x
 -- But we don't know yet where it's going to be attached.
 -- No particular way to avoid this, unfortunately.
 -- This will probably happen often during proof routines.
-flexibleSort
+predicateSort
     :: MetaOrObject level
     => Sort level
-flexibleSort =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId "*" } --FIXME
+predicateSort = mkSort "PREDICATE"
 
 patternLens
     :: (Applicative f, MetaOrObject level)
@@ -127,12 +121,15 @@ patternLens
   Fix (RewritesPattern (Rewrites s2 a b)) -> Rewrites_ <$> o s2 <*> c a <*> c b
   Top_       s2       -> Top_      <$>          o s2
   Var_          v     -> Var_      <$>                   var v
-  App_ h children -> App_ h <$> traverse c children
+  App_ h ps -> App_ h <$> traverse c ps
   -- StringLiteral_ s -> pure (StringLiteral_ s)
   -- CharLiteral_   c -> pure (CharLiteral_   c)
   p -> pure p
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc.
+inputSort
+    :: MetaOrObject level
+    => Traversal' (PureMLPattern level var) (Sort level)
 inputSort        f = patternLens f    pure pure pure
 -- | The sort returned by a top level constructor.
 -- NOTE ABOUT NOTATION:
@@ -140,16 +137,27 @@ inputSort        f = patternLens f    pure pure pure
 -- In the semantics.pdf documentation, the sorts are written
 -- {s1} if there is one sort parameter, and {s1, s2}
 -- if there are two sort parameters. This has the effect
--- that the result sort is sometimes s1 and sometimes s2.
+-- that the result sort is sometimes `s1` and sometimes `s2`.
+-- I always refer to the result sort as `s2`, even if
+-- there is no `s1`.
 -- I believe this convention is less confusing.
--- Note that a few constructors like App, StringLiteral and Var
--- Lack a result sort.
+-- Note that a few constructors like App and StringLiteral
+-- lack a result sort in the AST.
+resultSort
+    :: MetaOrObject level
+    => Traversal' (PureMLPattern level var) (Sort level)
 resultSort       f = patternLens pure f    pure pure
 -- | Points to the bound variable in Forall/Exists,
 -- and also the Variable in VariablePattern
+variable
+    :: MetaOrObject level
+    => Traversal' (PureMLPattern level var) (var level)
 variable         f = patternLens pure pure f    pure
 -- All sub-expressions which are Patterns.
 -- use partsOf allChildren to get a lens to a List.
+allChildren
+    :: MetaOrObject level
+    => Traversal' (PureMLPattern level var) (PureMLPattern level var)
 allChildren      f = patternLens pure pure pure f
 
 
@@ -174,14 +182,14 @@ inPath
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 
--- | Rigid patterns are those which have a
+-- | Rigid pattern heads are those which have a
 -- single uniquely determined sort,
 -- which we can't change.
-isRigid
+hasRigidHead
     :: MetaOrObject level
     => PureMLPattern level var
     -> Bool
-isRigid p = case project p of
+hasRigidHead p = case project p of
     ApplicationPattern   _ -> True
     DomainValuePattern   _ -> True
     VariablePattern      _ -> True
@@ -190,17 +198,17 @@ isRigid p = case project p of
     _                      -> False
 
 
--- | Flexible patterns are those which can be
+-- | Flexible pattern heads are those which can be
 -- any sort, like predicates \equals, \ceil etc.
--- The 3rd possibility (not isFlexible && not isRigid)
+-- The 3rd possibility (not hasFlexibleHead && not hasRigidHead)
 -- is a constructor whose sort
 -- must match the sort of of its subexpressions:
 -- \and, \or, \implies, etc.
-isFlexible
+hasFlexibleHead
     :: MetaOrObject level
     => PureMLPattern level var
     -> Bool
-isFlexible p = case project p of
+hasFlexibleHead p = case project p of
     BottomPattern _ -> True
     CeilPattern   _ -> True
     EqualsPattern _ -> True
@@ -209,25 +217,17 @@ isFlexible p = case project p of
     TopPattern    _ -> True
     _               -> False
 
--- | Tries to modify p to have sort s.
+-- | Attempts to modify p to have sort s.
 forceSort
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => Sort level
     -> PureMLPattern level var
     -> Maybe (PureMLPattern level var)
 forceSort s p
-   | isRigid    p = checkIfAlreadyCorrectSort s p
-   | isFlexible p = Just $ p & resultSort .~ s
-   | otherwise = traverseOf allChildren (forceSort s) p
-
-checkIfAlreadyCorrectSort
-    :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
-    => Sort level
-    -> PureMLPattern level var
-    -> Maybe (PureMLPattern level var)
-checkIfAlreadyCorrectSort s p
-   | getSort p == s = Just p
-   | otherwise = Nothing
+  | getSort p == s = Just p
+  | hasRigidHead    p   = Nothing
+  | hasFlexibleHead p   = Just $ p & resultSort .~ s
+  | otherwise      = traverseOf allChildren (forceSort s) p
 
 -- | Modify all patterns in a list to have the same sort.
 makeSortsAgree
@@ -237,7 +237,7 @@ makeSortsAgree
 makeSortsAgree ps =
     forM ps $ forceSort $
         case asum $ getRigidSort <$> ps of
-          Nothing -> flexibleSort
+          Nothing -> predicateSort
           Just a  -> a
 
 getRigidSort
@@ -245,7 +245,7 @@ getRigidSort
     => PureMLPattern level var
     -> Maybe (Sort level)
 getRigidSort p =
-    case forceSort flexibleSort p of
+    case forceSort predicateSort p of
       Nothing -> Just $ getSort p
       Just _  -> Nothing
 
@@ -262,17 +262,45 @@ ensureSortAgreement
     -> PureMLPattern level var
 ensureSortAgreement p =
   case makeSortsAgree $ p ^. partsOf allChildren of
-    Just []    -> p & resultSort .~ flexibleSort
-    Just children ->
-      p & (partsOf allChildren) .~ children
+    Just []    -> p & resultSort .~ predicateSort
+    Just ps@(c : _) ->
+      p & (partsOf allChildren) .~ ps
         & inputSort  .~ childSort
         & resultSort .~ (
-          if isFlexible p
-            then flexibleSort
+          if hasFlexibleHead p
+            then predicateSort
             else childSort
           )
-      where childSort = getSort $ head children
+      where childSort = getSort c
     Nothing -> error $ "Can't unify sorts of subpatterns: " ++ show p
+
+-- | In practice, all the predicate patterns we use are
+-- composed of =, \floor, \ceil, and \in. I haven't come
+-- across a single counterexample. Thus this function can
+-- probably be trusted to tell you if something is a
+-- predicate. Note that `isObviouslyPredicate` and
+-- `hasFlexibleHead` are NOT the same. `hasFlexibleHead` only
+-- looks at the head of the pattern, it will return false
+-- for `a = b /\ c = d`, whereas `isObviouslyPredicate` will
+-- traverse the whole pattern and return True.
+-- Also, in practice, having a flexible sort and being a predicate
+-- are synonymous. But don't quote me on this.
+isObviouslyPredicate
+    :: PureMLPattern level var
+    -> Bool
+isObviouslyPredicate = \case
+  And_ _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Or_  _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Implies_ _   a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Iff_ _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Not_ _       a   -> isObviouslyPredicate a
+  Forall_ _ _  a   -> isObviouslyPredicate a
+  Exists_ _ _  a   -> isObviouslyPredicate a
+  Equals_ _ _ _ _  -> True
+  Ceil_ _ _ _      -> True
+  Floor_ _ _ _     -> True
+  In_ _ _ _ _      -> True
+  _ -> False
 
 -- | Constructors that handle sort information automatically.
 -- To use, put `give metadatatools` at the top of the computation.
@@ -286,6 +314,7 @@ mkAnd
     -> PureMLPattern level var
 mkAnd a b = ensureSortAgreement $ And_ fixmeSort a b
 
+-- TODO: Should this check for sort agreement?
 mkApp
     :: (MetaOrObject level, Given (SortTools level))
     => SymbolOrAlias level
@@ -296,18 +325,18 @@ mkApp = App_
 mkBottom
     :: MetaOrObject level
     => PureMLPattern level var
-mkBottom = Bottom_ flexibleSort
+mkBottom = Bottom_ predicateSort
 
 mkCeil
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => PureMLPattern level var
     -> PureMLPattern level var
-mkCeil a = Ceil_ (getSort a) flexibleSort a
+mkCeil a = Ceil_ (getSort a) predicateSort a
 
 mkDomainValue
     :: (MetaOrObject Object, Given (SortTools Object))
     => Sort Object
-    -> PureMLPattern Meta Variable
+    -> BuiltinDomain (CommonPurePattern Meta)
     -> PureMLPattern Object var
 mkDomainValue = DV_
 
@@ -421,7 +450,7 @@ mkRewrites a b = ensureSortAgreement $ Rewrites_ fixmeSort a b
 mkTop
     :: MetaOrObject level
     => PureMLPattern level var
-mkTop = Top_ flexibleSort
+mkTop = Top_ predicateSort
 
 mkVar
     :: (MetaOrObject level, Given (SortTools level))
@@ -429,16 +458,17 @@ mkVar
     -> PureMLPattern level var
 mkVar = Var_
 
+mkStringLiteral :: String -> PureMLPattern Meta var
 mkStringLiteral = StringLiteral_
-mkCharLiteral   = CharLiteral_
+mkCharLiteral :: Char -> PureMLPattern Meta var
+mkCharLiteral = CharLiteral_
 
 mkSort
   :: MetaOrObject level
   => String
   -> Sort level
 mkSort name =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId name }
+    SortActualSort $ SortActual (noLocationId name) []
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s

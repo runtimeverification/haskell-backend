@@ -3,7 +3,7 @@
 Module      : Kore.Implicit.ImplicitVarsInternal
 Description : Variable defimitions shared by modules defining kore.kore
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -48,5 +48,5 @@ v2 = implicitUnparameterizedVariable "#v2"
 vx = implicitUnparameterizedVariable "#x"
 vx' = implicitUnparameterizedVariable "#x'"
 
-pS = sortParameter Meta "#sp" AstLocationImplicit
+pS = sortParameter (pure Meta) "#sp" AstLocationImplicit
 spS = SortVariableSort pS

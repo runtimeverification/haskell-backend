@@ -2,7 +2,7 @@
 Module      : Kore.Builtin.Int
 Description : Built-in arbitrary-precision integer sort
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -21,12 +21,18 @@ module Kore.Builtin.Int
     , symbolVerifiers
     , patternVerifier
     , builtinFunctions
+    , expectBuiltinDomainInt
+    , asMetaPattern
     , asPattern
     , asExpandedPattern
+    , asPartialExpandedPattern
     ) where
 
 import           Control.Monad
                  ( void )
+import           Control.Monad.Except
+                 ( ExceptT )
+import qualified Control.Monad.Except as Except
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
@@ -35,7 +41,7 @@ import qualified Text.Megaparsec.Char.Lexer as Parsec
 
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
-                 ( Object )
+                 ( Meta, Object )
 import           Kore.AST.PureML
                  ( CommonPurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
@@ -44,6 +50,8 @@ import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Function.Data
+                 ( AttemptedFunction (..) )
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -137,6 +145,31 @@ parse = Parsec.signed noSpace Parsec.decimal
   where
     noSpace = pure ()
 
+{- | Abort function evaluation if the argument is not a Int domain value.
+
+    If the operand pattern is not a domain value, the function is simply
+    'NotApplicable'. If the operand is a domain value, but not represented
+    by a 'BuiltinDomainMap', it is a bug.
+
+ -}
+expectBuiltinDomainInt
+    :: Monad m
+    => String  -- ^ Context for error message
+    -> CommonPurePattern Object  -- ^ Operand pattern
+    -> ExceptT (AttemptedFunction Object Kore.Variable) m Integer
+expectBuiltinDomainInt ctx =
+    \case
+        Kore.DV_ _ domain ->
+            case domain of
+                Kore.BuiltinDomainPattern (Kore.StringLiteral_ lit) ->
+                    (return . Builtin.runParser ctx)
+                        (Builtin.parseString parse lit)
+                _ ->
+                    Builtin.verifierBug
+                        (ctx ++ ": Domain value argument is not a string")
+        _ ->
+            Except.throwError NotApplicable
+
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
   The result sort should be hooked to the builtin @Int@ sort, but this is not
@@ -151,8 +184,11 @@ asPattern
     -> CommonPurePattern Object
 asPattern resultSort result =
     Kore.DV_ resultSort
-        (Kore.StringLiteral_ Kore.StringLiteral
-            { getStringLiteral = show result })
+        $ Kore.BuiltinDomainPattern
+        $ asMetaPattern result
+
+asMetaPattern :: Integer -> CommonPurePattern Meta
+asMetaPattern result = Kore.StringLiteral_ $ show result
 
 asExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort

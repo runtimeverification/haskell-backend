@@ -3,7 +3,7 @@ Module      : Kore.IndexedModule.MetadataTools
 Description : Datastructures and functionality for retrieving metadata
               information from patterns
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -12,6 +12,7 @@ module Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
     , SortTools
     , extractMetadataTools
+    , getResultSort
     ) where
 
 import Kore.AST.Common
@@ -23,10 +24,14 @@ import Kore.IndexedModule.Resolvers
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
 data MetadataTools level attributes = MetadataTools
-    { attributes :: SymbolOrAlias level -> attributes
+    { symAttributes :: SymbolOrAlias level -> attributes
+    , sortAttributes :: Sort level -> attributes
     , sortTools  :: SortTools level
+    , isSubsortOf :: Sort level -> Sort level -> Bool
     }
 
+-- TODO: Rename this as `SortGetter` or something similar, `Tools` is
+-- too general.
 type SortTools level = SymbolOrAlias level -> ApplicationSorts level
 
 -- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
@@ -40,6 +45,17 @@ extractMetadataTools
     -> MetadataTools level atts
 extractMetadataTools m =
   MetadataTools
-    { attributes = getHeadAttributes m
+    { symAttributes = getHeadAttributes m
+    , sortAttributes = getSortAttributes m
     , sortTools  = getHeadApplicationSorts m
+    -- TODO: Implement.
+    , isSubsortOf = const $ const $ False
     }
+
+{- | Look up the result sort of a symbol or alias
+ -}
+getResultSort :: MetadataTools level attrs -> SymbolOrAlias level -> Sort level
+getResultSort MetadataTools { sortTools } symbol =
+    case sortTools symbol of
+        ApplicationSorts { applicationSortsResult } -> applicationSortsResult
+

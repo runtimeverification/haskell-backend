@@ -5,6 +5,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import           Data.Default
+                 ( def )
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
@@ -16,8 +18,6 @@ import           Kore.AST.PureML
                  ( CommonPurePattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr, mkVar )
-import           Kore.Error
-                 ( printError )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SortTools )
 import           Kore.Predicate.Predicate
@@ -242,6 +242,7 @@ axiomEvaluator left right =
                 { axiomPatternLeft  = left
                 , axiomPatternRight = right
                 , axiomPatternRequires = makeTruePredicate
+                , axiomPatternAttributes = def
                 }
         )
 
@@ -270,7 +271,7 @@ evaluate
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 evaluate metadataTools functionIdToEvaluator patt =
-    either (error . printError) fst
+    fst
         $ evalSimplifier
         $ Pattern.simplify metadataTools functionIdToEvaluator patt
 
@@ -278,4 +279,5 @@ mockSortTools :: SortTools Object
 mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
-mockMetadataTools = Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+mockMetadataTools =
+    Mock.makeMetadataTools mockSortTools Mock.attributesMapping Mock.subsorts

@@ -2,7 +2,7 @@
 Module      : Data.Map.Class
 Description : Class for representing a @key@ |-> @value@ map functionality.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

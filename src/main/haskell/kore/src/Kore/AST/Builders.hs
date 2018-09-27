@@ -2,7 +2,7 @@
 Module      : Kore.MetaML.Builders
 Description : Safe way to build larger 'level' patterns from components.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -16,6 +16,7 @@ module Kore.AST.Builders
     , bottom_ -- TODO: not used yet
     , ceilS_ -- TODO: not used yet
     , ceil_ -- TODO: not used yet
+    , parameterizedDomainValue_
     , equalsAxiom_
     , equalsS_
     , equals_
@@ -53,11 +54,12 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.ASTHelpers
+import Kore.ASTUtils.SmartPatterns
 import Kore.Error
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}
-sortParameter :: level -> String -> AstLocation -> SortVariable level
+sortParameter :: Proxy level -> String -> AstLocation -> SortVariable level
 sortParameter _ name location =
     SortVariable Id
         { getId = name
@@ -408,6 +410,22 @@ next_ =
                 , nextChild  = pattern1
                 }
         )
+
+-- |Builds a 'PatternStub' representing 'DomainValue' given a 'Sort' and
+-- a'String' for its operand.
+parameterizedDomainValue_
+    :: Sort Object -> String -> CommonPurePatternStub Object
+parameterizedDomainValue_ sort str =
+    SortedPatternStub
+        SortedPattern
+        { sortedPatternSort = sort
+        , sortedPatternPattern =
+            DomainValuePattern DomainValue
+                { domainValueSort = sort
+                , domainValueChild =
+                    BuiltinDomainPattern (StringLiteral_ str)
+                }
+        }
 
 -- |Builds a 'PatternStub' representing 'Rewrites' given 'PatternStub's for its
 -- operands.

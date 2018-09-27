@@ -11,8 +11,8 @@ import Data.Reflection
        ( give )
 
 import Kore.AST.Common
-       ( CharLiteral (..), DomainValue (..), Sort (..), SortActual (..),
-       StringLiteral (..) )
+       ( BuiltinDomain (..), CharLiteral (..), DomainValue (..), Sort (..),
+       SortActual (..), StringLiteral (..) )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( CommonPurePattern )
@@ -56,7 +56,8 @@ test_patternAttributes = give mockSortTools
             let
                 dv = DomainValue
                     { domainValueSort = testSort
-                    , domainValueChild = mkStringLiteral (StringLiteral "10")
+                    , domainValueChild =
+                        BuiltinDomainPattern (mkStringLiteral "10")
                     }
             assertEqualWithExplanation "FunctionalDomainValue"
                 (FunctionalDomainValue dv)
@@ -102,7 +103,7 @@ test_patternAttributes = give mockSortTools
                 )
             let
                 str :: CommonPurePattern Meta
-                str = mkStringLiteral (StringLiteral "10")
+                str = mkStringLiteral "10"
             assertEqualWithExplanation "string literals are functional"
                 (Right [FunctionalStringLiteral (StringLiteral "10")])
                 (isFunctionalPattern
@@ -111,7 +112,7 @@ test_patternAttributes = give mockSortTools
                 )
             let
                 chr :: CommonPurePattern Meta
-                chr = mkCharLiteral (CharLiteral 'a')
+                chr = mkCharLiteral 'a'
             assertEqualWithExplanation "char literals are functional"
                 (Right [FunctionalCharLiteral (CharLiteral 'a')])
                 (isFunctionalPattern
@@ -183,7 +184,7 @@ test_patternAttributes = give mockSortTools
                 )
             let
                 str :: CommonPurePattern Meta
-                str = mkStringLiteral (StringLiteral "10")
+                str = mkStringLiteral "10"
             assertEqualWithExplanation "string literals are function-like"
                 (Right
                     [ FunctionProofFunctional
@@ -196,7 +197,7 @@ test_patternAttributes = give mockSortTools
                 )
             let
                 chr :: CommonPurePattern Meta
-                chr = mkCharLiteral (CharLiteral 'a')
+                chr = mkCharLiteral 'a'
             assertEqualWithExplanation "char literals are function-like"
                 (Right
                     [ FunctionProofFunctional
@@ -257,12 +258,13 @@ test_patternAttributes = give mockSortTools
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools :: MetadataTools Object StepperAttributes
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+        Mock.makeMetadataTools
+            mockSortTools Mock.attributesMapping Mock.subsorts
 
     mockMetaSortTools :: SortTools Meta
     mockMetaSortTools = Mock.makeSortTools []
     mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-    mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSortTools []
+    mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSortTools [] []
 
 testSort :: Sort Object
 testSort =

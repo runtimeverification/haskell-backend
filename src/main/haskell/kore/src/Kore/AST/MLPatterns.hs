@@ -2,7 +2,7 @@
 Module      : Kore.MLPatterns
 Description : Data structures and functions for handling patterns uniformly.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -18,14 +18,12 @@ module Kore.AST.MLPatterns
     , undefinedHeadSort
     ) where
 
-import Data.Functor.Foldable
-       (Fix)
-
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
+import Kore.AST.PureML
 import Kore.ASTHelpers
-       (ApplicationSorts (..))
+       ( ApplicationSorts (..) )
 import Kore.Implicit.ImplicitSorts
 
 {-|'MLPatternClass' offers a common interface to ML patterns
@@ -204,7 +202,8 @@ data PatternLeveledFunction level variable child result = PatternLeveledFunction
     , stringLeveledFunction :: StringLiteral -> result Meta
     , charLeveledFunction :: CharLiteral -> result Meta
     , domainValueLeveledFunction
-        :: DomainValue Object (Fix (Pattern Meta Variable)) -> result Object
+        :: DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+        -> result Object
     , applicationLeveledFunction :: !(Application level child -> result level)
     , variableLeveledFunction :: !(variable level -> result level)
     }
@@ -274,7 +273,8 @@ data PatternFunction level variable child result = PatternFunction
     , applicationFunction :: !(Application level child -> result)
     , variableFunction :: !(variable level -> result)
     , domainValueFunction
-        :: DomainValue Object (Fix (Pattern Meta Variable)) -> result
+        :: DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+        -> result
     }
 
 newtype ParameterizedProxy result level = ParameterizedProxy

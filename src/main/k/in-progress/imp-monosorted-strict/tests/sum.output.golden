@@ -1,0 +1,18 @@
+Lbl'-LT-'T'-GT-'{}(
+    Lbl'-LT-'k'-GT-'{}(dotk{}()),
+    Lbl'-LT-'state'-GT-'{}(
+        Lbl'UndsUndsUnds'IMP-STATE'UndsUnds'Assignment'Unds'State{}(
+            Lbl'UndsPipe'-'-GT-UndsUnds'IMP-STATE'UndsUnds'Id'Unds'Int{}(
+                \dv{SortId{}}("n"),
+                \dv{SortInt{}}("0")
+            ),
+            Lbl'UndsUndsUnds'IMP-STATE'UndsUnds'Assignment'Unds'State{}(
+                Lbl'UndsPipe'-'-GT-UndsUnds'IMP-STATE'UndsUnds'Id'Unds'Int{}(
+                    \dv{SortId{}}("sum"),
+                    \dv{SortInt{}}("15")
+                ),
+                Lbl'Stop'State'Unds'IMP-STATE'Unds'{}()
+            )
+        )
+    )
+)

@@ -1,16 +1,17 @@
-module Test.Kore.AST.Common (test_withSort, test_id, test_prettyPrintAstLocation) where
+module Test.Kore.AST.Common (test_withSort, test_id, test_prettyPrintAstLocation, test_astTraversals) where
 
 import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
        ( assertBool, assertEqual, assertFailure, testCase )
+import Test.Tasty.HUnit.Extensions
 
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.Implicit.ImplicitSorts
-
-import Test.Tasty.HUnit.Extensions
+import Test.Kore
+       ( testId )
 
 test_withSort :: TestTree
 test_withSort =
@@ -153,3 +154,52 @@ test_id =
                 (noLocationId "a")
             )
         ]
+
+test_astTraversals :: [TestTree]
+test_astTraversals =
+    [ testCase "Testing patternBottomUpVisitor"
+        (assertEqual ""
+            samplePatternExpected
+            (patternBottomUpVisitor leftImplies samplePattern)
+        )
+    ]
+  where
+    leftImplies (ImpliesPattern ip) = impliesFirst ip
+    leftImplies p = asKorePattern p
+    samplePatternExpected :: CommonKorePattern
+    samplePatternExpected =
+        asKorePattern $ ApplicationPattern Application
+            { applicationSymbolOrAlias = SymbolOrAlias
+                { symbolOrAliasConstructor = testId "sigma"
+                , symbolOrAliasParams = []
+                } :: SymbolOrAlias Object
+            , applicationChildren =
+                [ asKorePattern $ StringLiteralPattern $ StringLiteral "left1"
+                ,  asKorePattern $ StringLiteralPattern $ StringLiteral "left2"
+                ]
+            }
+    samplePattern =
+        asKorePattern $ ApplicationPattern Application
+            { applicationSymbolOrAlias = SymbolOrAlias
+                { symbolOrAliasConstructor = testId "sigma"
+                , symbolOrAliasParams = []
+                } :: SymbolOrAlias Object
+            , applicationChildren =
+                [ asKorePattern $ ImpliesPattern Implies
+                    { impliesSort = SortVariableSort $ SortVariable $
+                        testId "#a" :: Sort Meta
+                    , impliesFirst = asKorePattern $ StringLiteralPattern
+                        (StringLiteral "left1")
+                    , impliesSecond = asKorePattern $ StringLiteralPattern
+                        (StringLiteral "right1")
+                    }
+                ,  asKorePattern $ ImpliesPattern Implies
+                    { impliesSort = SortVariableSort $ SortVariable $
+                        testId "#b" :: Sort Meta
+                    , impliesFirst = asKorePattern $ StringLiteralPattern
+                        (StringLiteral "left2")
+                    , impliesSecond = asKorePattern $ StringLiteralPattern
+                        (StringLiteral "right2")
+                    }
+                ]
+            }

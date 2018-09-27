@@ -10,6 +10,8 @@ import Test.Tasty.HUnit
 
 import Data.CallStack
 import Data.Functor.Foldable
+import Data.Proxy
+       ( Proxy (..) )
 
 import Kore.AST.Builders
 import Kore.AST.BuildersImpl
@@ -445,7 +447,7 @@ test_lift =
             (DomainValuePattern DomainValue
                 { domainValueSort =
                     SortVariableSort (SortVariable (testId "Int"))
-                , domainValueChild = metaStringPattern
+                , domainValueChild = BuiltinDomainPattern metaStringPattern
                 }
             )
         :: CommonKorePattern)
@@ -525,7 +527,7 @@ test_lift =
                 (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
             , SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
-                    [ sortParameter Meta "#s" AstLocationTest ]
+                    [ sortParameter Proxy "#s" AstLocationTest ]
                 , sentenceAxiomPattern = Fix
                     (EqualsPattern Equals
                         { equalsOperandSort =
@@ -535,7 +537,7 @@ test_lift =
                                 }
                         , equalsResultSort =
                             SortVariableSort
-                                (sortParameter Meta "#s" AstLocationTest)
+                                (sortParameter Proxy "#s" AstLocationTest)
                         , equalsFirst = Fix
                             (apply (groundHead "#\\top" AstLocationImplicit)
                                 [ Fix (apply (groundHead "#`s3" AstLocationImplicit) []) ]
@@ -576,14 +578,14 @@ test_lift =
                 )
             , SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
-                    [sortParameter Meta "#s" AstLocationTest]
+                    [sortParameter Proxy "#s" AstLocationTest]
                 , sentenceAxiomPattern =
                     Fix
                         (EqualsPattern Equals
                             { equalsOperandSort = patternMetaSort
                             , equalsResultSort =
                                 SortVariableSort
-                                    (sortParameter Meta "#s" AstLocationTest)
+                                    (sortParameter Proxy "#s" AstLocationTest)
                             , equalsFirst =
                                 Fix
                                     (apply
@@ -653,19 +655,19 @@ test_lift =
                 }
             , SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
-                    [ sortParameter Meta "#s" AstLocationTest ]
+                    [ sortParameter Proxy "#s" AstLocationTest ]
                 , sentenceAxiomPattern = Fix
                     (ImpliesPattern Implies
                         { impliesSort =
                             SortVariableSort
-                                (sortParameter Meta "#s" AstLocationTest)
+                                (sortParameter Proxy "#s" AstLocationTest)
                         , impliesFirst =
                             Fix
                                 (apply
                                     (sortsDeclaredHead
                                         (SortVariableSort
                                             (sortParameter
-                                                Meta "#s" AstLocationTest)
+                                                Proxy "#s" AstLocationTest)
                                         )
                                     )
                                     [ Fix
@@ -689,7 +691,7 @@ test_lift =
                                     (symbolDeclaredHead
                                         (SortVariableSort
                                             (sortParameter
-                                                Meta "#s" AstLocationTest)
+                                                Proxy "#s" AstLocationTest)
                                         )
                                     )
                                     [ Fix
@@ -795,13 +797,13 @@ test_lift =
                 }
             , SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
-                    [ sortParameter Meta "#s" AstLocationTest ]
+                    [ sortParameter Proxy "#s" AstLocationTest ]
                 , sentenceAxiomPattern = Fix
                         (EqualsPattern Equals
                             { equalsOperandSort = sortMetaSort
                             , equalsResultSort =
                                 SortVariableSort
-                                    (sortParameter Meta "#s" AstLocationTest)
+                                    (sortParameter Proxy "#s" AstLocationTest)
                             , equalsFirst = Fix
                                 (apply (groundHead "#`List" AstLocationTest)
                                     [ variablePattern "#a" sortMetaSort ]
@@ -827,19 +829,19 @@ test_lift =
                 }
             , SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
-                    [sortParameter Meta "#s" AstLocationTest]
+                    [sortParameter Proxy "#s" AstLocationTest]
                 , sentenceAxiomPattern = Fix
                         (ImpliesPattern Implies
                             { impliesSort =
                                 SortVariableSort
                                     (sortParameter
-                                        Meta "#s" AstLocationTest)
+                                        Proxy "#s" AstLocationTest)
                             , impliesFirst = Fix
                                 (apply
                                     (sortsDeclaredHead
                                         (SortVariableSort
                                             (sortParameter
-                                                Meta "#s" AstLocationTest)
+                                                Proxy "#s" AstLocationTest)
                                         )
                                     )
                                     [ Fix
@@ -856,7 +858,7 @@ test_lift =
                                     (sortDeclaredHead
                                         (SortVariableSort
                                             (sortParameter
-                                                Meta "#s" AstLocationTest)
+                                                Proxy "#s" AstLocationTest)
                                         )
                                     )
                                     [ Fix
@@ -891,7 +893,7 @@ test_lift =
         (prettyAssertEqual ""
             [ SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
-                    [sortParameter Meta "#a" AstLocationTest]
+                    [sortParameter Proxy "#a" AstLocationTest]
                 , sentenceAxiomPattern = Fix
                     (ImpliesPattern Implies
                         { impliesSort = patternMetaSort

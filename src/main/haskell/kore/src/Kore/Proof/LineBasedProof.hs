@@ -3,7 +3,7 @@ Module      : Kore.Proof.LineBasedProof
 Description : Tree-based proof system, which can be
               hash-consed into a list-based one.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -53,6 +53,7 @@ import Data.Hashable
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Util
 import Kore.Proof.Proof
+import Kore.Unparser
 
 data LineBasedProof = LineBasedProof
     { unLineBasedProof :: M.Map Int (PropF Term LargeRule Int Int)}
@@ -103,7 +104,7 @@ instance Pretty LineBasedProof where
              <> " : "
              <> encloseSep mempty mempty "," (map pretty $ S.toList assumptions)
              <> " |- "
-             <> align (pretty claim)
+             <> align (unparse claim)
              <> space
            )
            <> line
@@ -114,11 +115,3 @@ instance Pretty LineBasedProof where
 
 printLineProof :: Proof -> IO ()
 printLineProof = putDocW 100 . pretty . toLineProof
-
-
-
-
-
-
-
-

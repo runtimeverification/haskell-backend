@@ -184,9 +184,9 @@ boolModule =
 
 evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
-    case evalSimplifier (Pattern.simplify tools evaluators pat) of
-        Left err -> error (Kore.Error.printError err)
-        Right (ExpandedPattern { term }, _) -> term
+    let (ExpandedPattern { term }, _) =
+            evalSimplifier (Pattern.simplify tools evaluators pat)
+    in term
   where
     tools = extractMetadataTools indexedModule
 
@@ -198,7 +198,7 @@ boolDefinition =
         }
 
 indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
-Right indexedModules = verify boolDefinition
+indexedModules = either (error . Kore.Error.printError) id (verify boolDefinition)
 
 indexedModule :: KoreIndexedModule StepperAttributes
 Just indexedModule = Map.lookup boolModuleName indexedModules
@@ -210,14 +210,6 @@ verify
     :: KoreDefinition
     -> Either (Kore.Error.Error VerifyError)
         (Map ModuleName (KoreIndexedModule StepperAttributes))
-verify = verifyAndIndexDefinition attrVerify builtinVerifiers
+verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
   where
     attrVerify = defaultAttributesVerification Proxy
-
-builtinVerifiers :: Builtin.Verifiers
-builtinVerifiers =
-    Builtin.Verifiers
-        { sortDeclVerifiers = Bool.sortDeclVerifiers
-        , symbolVerifiers = Bool.symbolVerifiers
-        , patternVerifier = Bool.patternVerifier
-        }

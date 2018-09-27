@@ -17,6 +17,8 @@ import           Kore.AST.PureML
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
+import           Kore.Attribute.Parser
+                 ( ParseAttributes (..) )
 import qualified Kore.Builtin as Builtin
 import           Kore.Builtin.Hook
                  ( hookAttribute )
@@ -25,7 +27,6 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
@@ -113,6 +114,10 @@ subSymbol = builtinSymbol "subInt"
 mulSymbol :: SymbolOrAlias Object
 mulSymbol = builtinSymbol "mulInt"
 
+intLiteral :: Integer -> CommonPurePattern Object
+intLiteral n = DV_ intSort (BuiltinDomainPattern $ StringLiteral_ $ show n)
+
+
 -- | Test a binary operator hooked to the given symbol.
 propBinary
     :: (Integer -> Integer -> Integer)
@@ -176,9 +181,6 @@ propPartialBinary impl symb =
     \a b ->
         let pat = App_ symb (asPattern <$> [a, b])
         in asPartialExpandedPattern (impl a b) === evaluate pat
-  where
-    asPartialExpandedPattern =
-        maybe ExpandedPattern.bottom asExpandedPattern
 
 prop_tdivZero :: Integer -> Property
 prop_tdivZero = propPartialBinaryZero tdiv tdivSymbol
@@ -197,9 +199,6 @@ propPartialBinaryZero impl symb =
     \a ->
         let pat = App_ symb (asPattern <$> [a, 0])
         in asPartialExpandedPattern (impl a 0) === evaluate pat
-  where
-    asPartialExpandedPattern =
-        maybe ExpandedPattern.bottom asExpandedPattern
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
 asPattern :: Integer -> CommonPurePattern Object
@@ -208,6 +207,10 @@ asPattern = Int.asPattern intSort
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
 asExpandedPattern :: Integer -> CommonExpandedPattern Object
 asExpandedPattern = Int.asExpandedPattern intSort
+
+-- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
+asPartialExpandedPattern :: Maybe Integer -> CommonExpandedPattern Object
+asPartialExpandedPattern = Int.asPartialExpandedPattern intSort
 
 -- | A sort to hook to the builtin @INT.Int@.
 intSort :: Sort Object
@@ -306,9 +309,7 @@ intModule =
 
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
-    case evalSimplifier (Pattern.simplify tools evaluators pat) of
-        Left err -> error (Kore.Error.printError err)
-        Right (epat, _) -> epat
+    fst $ evalSimplifier $ Pattern.simplify tools evaluators pat
   where
     tools = extractMetadataTools indexedModule
 
@@ -329,18 +330,11 @@ evaluators :: Map (Id Object) [Builtin.Function]
 evaluators = Builtin.evaluators Int.builtinFunctions indexedModule
 
 verify
-    :: KoreDefinition
-    -> Map ModuleName (KoreIndexedModule StepperAttributes)
+    :: ParseAttributes a
+    => KoreDefinition
+    -> Map ModuleName (KoreIndexedModule a)
 verify defn =
     either (error . Kore.Error.printError) id
-        (verifyAndIndexDefinition attrVerify builtinVerifiers defn)
+        (verifyAndIndexDefinition attrVerify Builtin.koreVerifiers defn)
   where
     attrVerify = defaultAttributesVerification Proxy
-
-builtinVerifiers :: Builtin.Verifiers
-builtinVerifiers =
-    Builtin.Verifiers
-        { sortDeclVerifiers = Int.sortDeclVerifiers
-        , symbolVerifiers = Int.symbolVerifiers
-        , patternVerifier = Int.patternVerifier
-        }

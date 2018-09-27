@@ -1,5 +1,7 @@
 module Main (main) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import           Control.Monad
                  ( when )
 import qualified Data.Map as Map
@@ -10,8 +12,9 @@ import           Data.Reflection
 import           Data.Semigroup
                  ( (<>) )
 import           Options.Applicative
-                 ( InfoMod, Parser, argument, fullDesc, header, help, long,
-                 metavar, progDesc, str, strOption, value )
+                 ( InfoMod, Parser, argument, auto, fullDesc, header, help,
+                 long, metavar, option, progDesc, readerError, str, strOption,
+                 value )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -25,7 +28,8 @@ import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
                  ( KoreDefinition, ModuleName (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkApp, mkDomainValue, mkStringLiteral )
+                 ( mkApp, mkDomainValue )
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification, verifyAndIndexDefinition )
@@ -53,11 +57,12 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.Step
-                 ( MaxStepCount (AnyStepCount), pickFirstStepper )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Unparser.Unparse
+import           Kore.Unparser
                  ( unparseToString )
 
 import GlobalMain
@@ -75,11 +80,16 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for a file containing a definition to verify and use for execution
     , patternFileName     :: !String
     -- ^ Name for file containing a pattern to verify and use for execution
+    , outputFileName     :: !String
+    -- ^ Name for file to contain the output pattern
     , mainModuleName      :: !String
     -- ^ The name of the main module in the definition
     , isKProgram          :: !Bool
     -- ^ Whether the pattern file represents a program to be put in the
     -- initial configuration before execution
+    , stepLimit           :: !(Limit Natural)
+    , strategy
+        :: !([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
     }
 
 -- | Command Line Argument Parser
@@ -95,6 +105,11 @@ commandLineParser =
         <> help "Kore pattern source file to verify and execute. Needs --module."
         <> value "" )
     <*> strOption
+        (  metavar "PATTERN_OUTPUT_FILE"
+        <> long "output"
+        <> help "Output file to contain final Kore pattern."
+        <> value "" )
+    <*> strOption
         (  metavar "MODULE"
         <> long "module"
         <> help "The name of the main module in the Kore definition."
@@ -102,6 +117,37 @@ commandLineParser =
     <*> enableDisableFlag "is-program"
         True False False
         "Whether the pattern represents a program."
+    <*> parseStepLimit
+    <*> parseStrategy
+  where
+    parseStepLimit = Limit <$> depth <|> pure Unlimited
+    parseStrategy =
+        option readStrategy
+            (  metavar "STRATEGY"
+            <> long "strategy"
+            -- TODO (thomas.tuegel): Make defaultStrategy the default when it
+            -- works correctly.
+            <> value simpleStrategy
+            <> help "Select rewrites using STRATEGY."
+            )
+      where
+        readStrategy = do
+            strat <- str
+            case strat of
+                "simple" -> pure simpleStrategy
+                "default" -> pure defaultStrategy
+                _ ->
+                    let
+                        unknown = "Unknown strategy '" ++ strat ++ "'. "
+                        known = "Known strategies are: simple, default."
+                    in
+                        readerError (unknown ++ known)
+    depth =
+        option auto
+            (  metavar "DEPTH"
+            <> long "depth"
+            <> help "Execute up to DEPTH steps."
+            )
 
 
 -- | modifiers for the Command line parser description
@@ -123,8 +169,11 @@ main = do
     Just KoreExecOptions
         { definitionFileName
         , patternFileName
+        , outputFileName
         , mainModuleName
         , isKProgram
+        , stepLimit
+        , strategy
         }
       -> do
         parsedDefinition <- mainDefinitionParse definitionFileName
@@ -144,6 +193,7 @@ main = do
                 axiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
                 metadataTools = constructorFunctions (extractMetadataTools indexedModule)
+                simplifier = Simplifier.create metadataTools functionRegistry
                 purePattern = makePurePattern parsedPattern
                 runningPattern =
                     if isKProgram
@@ -151,14 +201,16 @@ main = do
                             $ makeKInitConfig purePattern
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
-            finalExpandedPattern <- clockSomething "Executing"
-                    $ either (error . Kore.Error.printError) fst
+            (finalExpandedPattern, _) <-
+                clockSomething "Executing"
                     $ evalSimplifier
                     $ do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
                                 metadataTools
-                                functionRegistry
+                                (Simplifier.create
+                                    metadataTools functionRegistry
+                                )
                                 expandedPattern
                         let
                             initialPattern =
@@ -167,14 +219,22 @@ main = do
                                         (fst simplifiedPatterns) of
                                     [] -> ExpandedPattern.bottom
                                     (config : _) -> config
-                        pickFirstStepper
-                            metadataTools
-                            functionRegistry
-                            axiomPatterns
-                            AnyStepCount
-                            initialPattern
-            putStrLn $ unparseToString
-                (ExpandedPattern.term finalExpandedPattern)
+                        pickLongest <$> runStrategy
+                            (transitionRule metadataTools simplifier)
+                            (strategy axiomPatterns)
+                            stepLimit
+                            (initialPattern, mempty)
+            let
+                finalPattern = ExpandedPattern.term finalExpandedPattern
+                finalExternalPattern =
+                    either (error . printError) id
+                    (Builtin.externalizePattern indexedModule finalPattern)
+                outputString = unparseToString finalExternalPattern
+            if outputFileName /= ""
+                then
+                    writeFile outputFileName outputString
+                else
+                    putStrLn $ outputString
 
 mainModule
     :: ModuleName
@@ -282,9 +342,13 @@ makeKInitConfig
 makeKInitConfig pat =
     mkApp initTCellHead
         [ mkApp mapElementHead
-            [ mkApp (injHead configVarSort kSort)
-                [ mkDomainValue configVarSort
-                  $ mkStringLiteral (StringLiteral "$PGM")
+            [ mkApp kSeqHead
+                [ mkApp (injHead configVarSort kItemSort)
+                    [ mkDomainValue configVarSort
+                        $ BuiltinDomainPattern
+                        $ StringLiteral_ "$PGM"
+                    ]
+                , mkApp dotKHead []
                 ]
             , pat
             ]
@@ -292,6 +356,12 @@ makeKInitConfig pat =
 
 initTCellHead :: SymbolOrAlias Object
 initTCellHead = groundHead "LblinitTCell" AstLocationImplicit
+
+kSeqHead :: SymbolOrAlias Object
+kSeqHead = groundHead "kseq" AstLocationImplicit
+
+dotKHead :: SymbolOrAlias Object
+dotKHead = groundHead "dotk" AstLocationImplicit
 
 mapElementHead :: SymbolOrAlias Object
 mapElementHead = groundHead "Lbl'UndsPipe'-'-GT-Unds'" AstLocationImplicit
@@ -322,23 +392,29 @@ groundObjectSort name =
 configVarSort :: Sort Object
 configVarSort = groundObjectSort "SortKConfigVar"
 
-kSort :: Sort Object
-kSort = groundObjectSort "SortK"
+kItemSort :: Sort Object
+kItemSort = groundObjectSort "SortKItem"
 
 -- TODO (traiansf): Get rid of this.
 -- The function below works around several limitations of
 -- the current tool by tricking the tool into believing that
 -- functions are constructors (so that function patterns can match)
--- and that @inj@ is both functional and constructor.
+-- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions :: MetadataTools Object StepperAttributes -> MetadataTools Object StepperAttributes
 constructorFunctions tools =
     tools
-    { attributes = \h -> let atts = attributes tools h in
+    { symAttributes = \h -> let atts = symAttributes tools h in
         atts
-        { isConstructor = isConstructor atts || isFunction atts || isInj h
-        , isFunctional = isFunctional atts || isInj h
+        { isConstructor = isConstructor atts || isFunction atts || isCons h
+        , isFunctional = isFunctional atts || isCons h || isInj h
+        , isInjective =
+            isInjective atts || isFunction atts || isCons h || isInj h
+        , isSortInjection = isSortInjection atts || isInj h
         }
     }
   where
     isInj :: SymbolOrAlias Object -> Bool
-    isInj h = getId (symbolOrAliasConstructor h) == "inj"
+    isInj h =
+        getId (symbolOrAliasConstructor h) == "inj"
+    isCons :: SymbolOrAlias Object -> Bool
+    isCons h = getId (symbolOrAliasConstructor h) `elem` ["kseq", "dotk"]

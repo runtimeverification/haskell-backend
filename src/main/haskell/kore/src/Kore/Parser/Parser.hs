@@ -2,7 +2,7 @@
 Module      : Kore.Parser.Parser
 Description : Parser for the Kore language
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
@@ -51,8 +51,8 @@ import           Kore.MetaML.AST
 import           Kore.Parser.Lexeme
                  ( skipWhitespace )
 import qualified Kore.Parser.ParserImpl as KoreParser
-                 ( koreDefinitionParser, korePatternParser, metaPatternParser,
-                 headParser, variableParser )
+                 ( headParser, koreDefinitionParser, korePatternParser,
+                 metaPatternParser, variableParser )
 import           Kore.Parser.ParserUtils
 
 {-|'koreParser' is a parser for Kore.

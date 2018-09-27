@@ -2,7 +2,7 @@
 Module      : Kore.Step.Condition.Evaluator
 Description : Evaluates conditions.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -31,14 +31,15 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( toExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), Simplifier,
-                 SimplificationProof (SimplificationProof) )
+                 ( PureMLPatternSimplifier (..),
+                 SimplificationProof (SimplificationProof), Simplifier )
 
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level)
         )
     => PureMLPatternSimplifier level variable
@@ -63,6 +64,7 @@ asPredicateSubstitution
     ::  ( MetaOrObject level
         , Given (SortTools level)
         , SortedVariable variable
+        , Eq (variable level)
         , Show (variable level)
         )
     => ExpandedPattern level variable
