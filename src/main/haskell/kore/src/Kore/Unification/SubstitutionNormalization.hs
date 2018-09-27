@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-|
 Module      : Kore.Unification.SubstitutionNormalization
 Description : Normalization for substitutions resulting from unification, so
@@ -34,9 +34,11 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution (..) )
+                 ( makeTruePredicate )
+import           Kore.Step.PredicateSubstitution
+                 ( PredicateSubstitution (PredicateSubstitution) )
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSubstitution (..), bottom )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
@@ -72,7 +74,8 @@ normalizeSubstitution
         (SubstitutionError level variable)
         (m (PredicateSubstitution level variable))
 normalizeSubstitution tools substitution =
-    maybe bottom normalizeSortedSubstitution' <$> topologicalSortConverted
+    maybe (return PredicateSubstitution.bottom) normalizeSortedSubstitution'
+    <$> topologicalSortConverted
 
   where
     interestingVariables :: Map.Map (Unified variable) (variable level)
@@ -108,12 +111,6 @@ normalizeSubstitution tools substitution =
         -> m (PredicateSubstitution level variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) [] []
-
-    bottom :: m (PredicateSubstitution level variable)
-    bottom = return $ PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
 
 checkCircularVariableDependency
     :: (MetaOrObject level, Eq (variable level))

@@ -15,7 +15,7 @@ import           Kore.AST.Common
                  SortActual (..), Variable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkApp, mkCeil, mkEquals, mkForall, mkTop, mkVar )
+                 ( mkAnd, mkApp, mkCeil, mkEquals, mkForall, mkVar )
 import           Kore.IndexedModule.MetadataTools
                  ( SortTools )
 import           Kore.Predicate.Predicate
@@ -67,12 +67,7 @@ test_forallSimplification = give mockSortTools
             -- forall(top) = top
             assertEqualWithExplanation "forall(top)"
                 (OrOfExpandedPattern.make
-                    [ ExpandedPattern
-                        { term = mkTop
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    ]
+                    [ ExpandedPattern.top ]
                 )
                 (evaluate
                     (makeForall
@@ -96,11 +91,7 @@ test_forallSimplification = give mockSortTools
         (do
             -- forall(top) = top
             assertEqualWithExplanation "forall(top)"
-                ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
+                ExpandedPattern.top
                 (makeEvaluate
                     Mock.x
                     (ExpandedPattern.top :: CommonExpandedPattern Object)

@@ -1,7 +1,7 @@
 {-|
 Module      : Kore.Step.ExpandedPattern
 Description : Data structures and functions for manipulating
-              ExpandedPatterns, i.e. a representation of paterns
+              ExpandedPatterns, i.e. a representation of patterns
               optimized for the stepper.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -11,9 +11,9 @@ Portability : portable
 -}
 module Kore.Step.ExpandedPattern
     ( CommonExpandedPattern
-    , CommonPredicateSubstitution
+    , CommonPredicateSubstitution  -- TODO(virgil): Stop exporting this.
     , ExpandedPattern (..)
-    , PredicateSubstitution (..)
+    , PredicateSubstitution (..)  -- TODO(virgil): Stop exporting this.
     , allVariables
     , bottom
     , isBottom
@@ -47,8 +47,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
                  makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeFalsePredicate, makeTruePredicate, unwrapPredicate )
+                 makeTruePredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.PredicateSubstitution
+                 ( CommonPredicateSubstitution, PredicateSubstitution (..) )
 import           Kore.Unification.Unifier
                  ( UnificationSubstitution, mapSubstitutionVariables )
 import           Kore.Variables.Free
@@ -69,26 +71,9 @@ data ExpandedPattern level variable = ExpandedPattern
     }
     deriving (Eq, Show)
 
-{-|'PredicateSubstitution' is a representation of a specific type of
-PureMLPattern that occurs in certain cases when executing Kore.
--}
-data PredicateSubstitution level variable = PredicateSubstitution
-    { predicate    :: !(Predicate level variable)
-    -- ^ pattern that only evaluates to Top or Bottom.
-    , substitution :: !(UnificationSubstitution level variable)
-    -- ^ special kind of predicate of the type
-    -- variable1 = term1 /\ variable2 = term2 /\ ...
-    }
-    deriving (Eq, Show)
-
 {-|'CommonExpandedPattern' particularizes ExpandedPattern to Variable.
 -}
 type CommonExpandedPattern level = ExpandedPattern level Variable
-
-{-| 'CommonPredicateSubstitution' particularizes PredicateSubstitution to
-Variable.
--}
-type CommonPredicateSubstitution level = PredicateSubstitution level Variable
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
 in an ExpandedPattern.

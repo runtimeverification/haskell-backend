@@ -29,20 +29,21 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
-                 makeEqualsPredicate, makeFalsePredicate, makeIffPredicate,
-                 makeNotPredicate, makeOrPredicate, makeTruePredicate )
+                 makeEqualsPredicate, makeIffPredicate, makeNotPredicate,
+                 makeOrPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, CommonPredicateSubstitution,
-                 ExpandedPattern (ExpandedPattern),
-                 PredicateSubstitution (PredicateSubstitution) )
+                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..), bottom, top )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.PredicateSubstitution
+                 ( CommonPredicateSubstitution,
+                 PredicateSubstitution (PredicateSubstitution) )
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSubstitution (..), bottom, top )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
@@ -238,20 +239,14 @@ test_equalsSimplification_Patterns = give mockSortTools
     [ testCase "bottom == bottom"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.top
             mkBottom
             mkBottom
         )
     , testCase "domain-value == domain-value"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.top
             (mkDomainValue
                 testSort
                 (BuiltinDomainPattern (mkStringLiteral "a"))
@@ -264,10 +259,7 @@ test_equalsSimplification_Patterns = give mockSortTools
     , testCase "domain-value != domain-value"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.bottom
             (mkDomainValue
                 testSort
                 (BuiltinDomainPattern (mkStringLiteral "a"))
@@ -280,10 +272,7 @@ test_equalsSimplification_Patterns = give mockSortTools
     , testCase "domain-value != domain-value because of sorts"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.bottom
             (mkDomainValue
                 testSort
                 (BuiltinDomainPattern (mkStringLiteral "a"))
@@ -296,60 +285,42 @@ test_equalsSimplification_Patterns = give mockSortTools
     , testCase "\"a\" == \"a\""
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.top
             (mkStringLiteral "a")
             (mkStringLiteral "a")
         )
     , testCase "\"a\" != \"b\""
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.bottom
             (mkStringLiteral "a")
             (mkStringLiteral "b")
         )
     , testCase "'a' == 'a'"
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.top
             (mkCharLiteral 'a')
             (mkCharLiteral 'a')
         )
     , testCase "'a' != 'b'"
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.bottom
             (mkCharLiteral 'a')
             (mkCharLiteral 'b')
         )
     , testCase "a != bottom"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.bottom
             mkBottom
             Mock.a
         )
     , testCase "a == a"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.top
             Mock.a
             Mock.a
         )
@@ -366,10 +337,7 @@ test_equalsSimplification_Patterns = give mockSortTools
     , testCase "constructor1(a) vs constructor1(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.top
             constructor1OfA
             constructor1OfA
         )
@@ -377,30 +345,21 @@ test_equalsSimplification_Patterns = give mockSortTools
         "functionalconstructor1(a) vs functionalconstructor2(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.bottom
             functionalConstructor1OfA
             functionalConstructor2OfA
         )
     , testCase "constructor1(a) vs constructor2(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.bottom
             constructor1OfA
             constructor2OfA
         )
     , testCase "constructor1(f(a)) vs constructor1(f(a))"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
+            PredicateSubstitution.top
             (Mock.constr10 fOfA)
             (Mock.constr10 fOfA)
         )

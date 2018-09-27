@@ -23,7 +23,7 @@ import           Kore.AST.PureToKore
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkBottom, mkTop )
+                 ( mkTop )
 import           Kore.Building.AsAst
 import           Kore.Building.Patterns
 import           Kore.Building.Sorts
@@ -62,12 +62,7 @@ test_userDefinedFunction =
     [ testCase "Cannot apply function if step fails"
         (assertEqualWithExplanation ""
             (AttemptedFunction.Applied $ OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkBottom
-                    , predicate = makeFalsePredicate
-                    , substitution = []
-                    }
-                ]
+                [ ExpandedPattern.bottom ]
             )
             (evaluateWithAxiom
                 mockMetadataTools

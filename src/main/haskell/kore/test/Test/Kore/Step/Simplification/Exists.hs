@@ -75,12 +75,7 @@ test_existsSimplification = give mockSortTools
             -- exists(top) = top
             assertEqualWithExplanation "exists(top)"
                 (OrOfExpandedPattern.make
-                    [ ExpandedPattern
-                        { term = mkTop
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    ]
+                    [ ExpandedPattern.top ]
                 )
                 (evaluate mockMetadataTools
                     (makeExists
@@ -105,12 +100,7 @@ test_existsSimplification = give mockSortTools
             -- exists(top) = top
             assertEqualWithExplanation "exists(top)"
                 (OrOfExpandedPattern.make
-                    [ ExpandedPattern
-                        { term = mkTop
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    ]
+                    [ ExpandedPattern.top ]
                 )
                 (makeEvaluate mockMetadataTools
                     Mock.x
