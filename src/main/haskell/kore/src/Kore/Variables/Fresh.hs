@@ -11,6 +11,7 @@ Portability : portable
 module Kore.Variables.Fresh
     ( FreshVariable (..)
     , freshVariable
+    , freshVariablePrefix
     , freshVariableSuchThat
     , module Control.Monad.Counter
     ) where
@@ -44,12 +45,17 @@ class FreshVariable var where
             then var'
             else error "Cannot generate variable satisfying predicate"
 
+{-| The prefix used to generate fresh variables.  It intentionally contains
+a non-id symbol @_@ to avoid clashing with user-defined ids.
+-}
+freshVariablePrefix :: String
+freshVariablePrefix = "var_"
 
 instance FreshVariable Variable where
     freshVariableWith var n =
         var
             { variableName = Id
-                { getId = metaObjectPrefix ++ "var_" ++ show n
+                { getId = metaObjectPrefix ++ freshVariablePrefix ++ show n
                 , idLocation = AstLocationGeneratedVariable
                 }
             }

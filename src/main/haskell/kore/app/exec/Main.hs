@@ -71,6 +71,8 @@ import           Kore.Unparser
                  ( unparseToString )
 import           Kore.Variables.Free
                  ( pureAllVariables )
+import           Kore.Variables.Fresh
+                 ( freshVariablePrefix )
 
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,
@@ -168,24 +170,36 @@ parserInfoModifiers =
 externalizeFreshVars :: CommonPurePattern level -> CommonPurePattern level
 externalizeFreshVars pat = cata renameFreshLocal pat
   where
+    allVarsIds :: Set.Set String
     allVarsIds = Set.map (getId . variableName) (pureAllVariables pat)
-    freshVarsIds = Set.filter (isPrefixOf "var_") allVarsIds
+    freshVarsIds :: Set.Set String
+    freshVarsIds = Set.filter (isPrefixOf freshVariablePrefix) allVarsIds
     computeFreshPrefix :: String -> (Set.Set String) -> String
     computeFreshPrefix pref strings
       | Set.null matchingStrings = pref
+      -- TODO(traiansf): if executing multiple times (like in stepping), and
+      -- names for generated fresh variables will grow longer nad longer.
+      -- Consider a mechanism to avoid this.
       | otherwise = computeFreshPrefix (pref ++ "-") matchingStrings
       where
+        matchingStrings :: Set.Set String
         matchingStrings = Set.filter (isPrefixOf pref) strings
+    freshPrefix :: String
     freshPrefix =
         computeFreshPrefix "var"
-            (Set.filter (not . (isPrefixOf "var_")) allVarsIds)
+            (Set.filter (not . (isPrefixOf freshVariablePrefix)) allVarsIds)
     renameFreshLocal :: UnfixedCommonPurePattern level -> CommonPurePattern level
     renameFreshLocal (VariablePattern v@(Variable {variableName}))
       | name `Set.member` freshVarsIds =
-        Fix (VariablePattern v {
-            variableName = variableName { getId = freshPrefix ++ (drop 4 name) }
-        })
-      where name = getId variableName
+        Var_ v {
+            variableName = variableName
+                { getId =
+                    freshPrefix ++ (drop (length freshVariablePrefix) name)
+                }
+        }
+      where
+        name :: String
+        name = getId variableName
     renameFreshLocal pat' = Fix pat'
 
 -- TODO(virgil): Maybe add a regression test for main.

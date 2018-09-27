@@ -1,5 +1,5 @@
-// This program calculates in max
-// the maximum of x, y, and z.
+// This program calculates in `max`
+// the maximum of `x`, `y`, and `z`.
 
 int x, y, z, max;
 x = symInt;
