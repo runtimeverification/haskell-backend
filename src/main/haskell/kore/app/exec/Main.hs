@@ -4,6 +4,10 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Monad
                  ( when )
+import           Data.Functor.Foldable
+                 ( Fix (..), cata )
+import           Data.List
+                 ( isPrefixOf )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -11,6 +15,7 @@ import           Data.Reflection
                  ( Given, give )
 import           Data.Semigroup
                  ( (<>) )
+import qualified Data.Set as Set
 import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
                  long, metavar, option, progDesc, readerError, str, strOption,
@@ -22,7 +27,8 @@ import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
                  ( Object (..) )
 import           Kore.AST.PureML
-                 ( CommonPurePattern, groundHead )
+                 ( CommonPurePattern, PureMLPattern, UnfixedCommonPurePattern,
+                 groundHead )
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
@@ -64,6 +70,8 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Unparser
                  ( unparseToString )
+import           Kore.Variables.Free
+                 ( pureAllVariables )
 
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,
@@ -158,6 +166,28 @@ parserInfoModifiers =
                 \in PATTERN_FILE."
     <> header "kore-exec - an interpreter for Kore definitions"
 
+externalizeFreshVars :: CommonPurePattern level -> CommonPurePattern level
+externalizeFreshVars pat = cata renameFreshLocal pat
+  where
+    allVarsIds = Set.map (getId . variableName) (pureAllVariables pat)
+    freshVarsIds = Set.filter (isPrefixOf "var_") allVarsIds
+    computeFreshPrefix :: String -> (Set.Set String) -> String
+    computeFreshPrefix pref strings
+      | Set.null matchingStrings = pref
+      | otherwise = computeFreshPrefix (pref ++ "-") matchingStrings
+      where
+        matchingStrings = Set.filter (isPrefixOf pref) strings
+    freshPrefix =
+        computeFreshPrefix "var"
+            (Set.filter (not . (isPrefixOf "var_")) allVarsIds)
+    renameFreshLocal :: UnfixedCommonPurePattern level -> CommonPurePattern level
+    renameFreshLocal (VariablePattern v@(Variable {variableName}))
+      | name `Set.member` freshVarsIds =
+        Fix (VariablePattern v {
+            variableName = variableName { getId = freshPrefix ++ (drop 4 name) }
+        })
+      where name = getId variableName
+    renameFreshLocal pat' = Fix pat'
 
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
@@ -229,7 +259,8 @@ main = do
                 finalExternalPattern =
                     either (error . printError) id
                     (Builtin.externalizePattern indexedModule finalPattern)
-                outputString = unparseToString finalExternalPattern
+                outputString =
+                    unparseToString (externalizeFreshVars finalExternalPattern)
             if outputFileName /= ""
                 then
                     writeFile outputFileName outputString
