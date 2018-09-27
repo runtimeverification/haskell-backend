@@ -50,7 +50,6 @@ convertStepperToSMT tools =
 evaluate
     ::  forall level variable .
         ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Ord (variable level)
@@ -70,7 +69,7 @@ evaluate
     substitutionSimplifier
     (PureMLPatternSimplifier simplifier)
     predicate''
-  = give (convertStepperToSMT (given :: MetadataTools level StepperAttributes))
+  = give (convertStepperToSMT tools)
     $ do
     smtTimeOut <- ask
     (patt, _proof) <-
@@ -80,10 +79,16 @@ evaluate
                && not(OrOfExpandedPattern.isFalse patt)
                && unsafeTryRefutePredicate smtTimeOut predicate'' == Just False
             then ExpandedPattern.bottom
-            else OrOfExpandedPattern.toExpandedPattern patt
+            else
+                give symbolOrAliasSorts
+                $ OrOfExpandedPattern.toExpandedPattern patt
     let
-        (subst, _proof) = asPredicateSubstitution patt'
+        (subst, _proof) =
+            give symbolOrAliasSorts $ asPredicateSubstitution patt'
     return ( subst, SimplificationProof)
+  where
+    tools :: MetadataTools level StepperAttributes
+    tools@MetadataTools { symbolOrAliasSorts } = given
 
 asPredicateSubstitution
     ::  ( MetaOrObject level
