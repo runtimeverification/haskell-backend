@@ -1,2 +1,25 @@
-Parse error: ../../../test/resources//test-meta-1.kore:5:13:
-Keyword Based Parsers - unexpected character.
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-META-1"
+            , moduleSentences =
+                [ MetaSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "#\f" AstLocationNone) :: Id Meta
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }

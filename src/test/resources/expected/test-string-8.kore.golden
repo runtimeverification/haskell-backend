@@ -15,7 +15,7 @@ Definition
                                 , sortActualSorts = []
                                 }
                         , domainValueChild =
-                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "test string")))))
+                            BuiltinDomainString (Fix (StringLiteralPattern (StringLiteral "test string")))
                         }))))
                     ]
                 }))))
