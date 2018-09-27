@@ -12,8 +12,12 @@ module Kore.Step.Substitution
     , mergeAndNormalizeSubstitutions
     ) where
 
-import Data.List
-       ( foldl' )
+import Control.Monad
+       ( foldM )
+import Control.Monad.Counter
+       ( MonadCounter )
+import Control.Monad.Except
+       ( ExceptT, runExceptT, withExceptT )
 import Data.Reflection
        ( give )
 
@@ -35,9 +39,9 @@ import Kore.Unification.Error
        substitutionToUnifyOrSubError, unificationToUnifyOrSubError )
 import Kore.Unification.SubstitutionNormalization
        ( normalizeSubstitution )
-import Kore.Unification.Unifier
-       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution,
-       normalizeSubstitutionDuplication )
+import Kore.Unification.UnificationSolution
+       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution )
+import Kore.Unification.UnifierImpl ( normalizeSubstitutionDuplication )
 import Kore.Variables.Fresh
 
 {-|'mergeSubstitutions' merges a list of substitutions into
@@ -47,16 +51,22 @@ Note that it currently returns makeTruePredicate and has a TODO to return
 the correct condition.
 -}
 mergeSubstitutions
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        , SortedVariable variable
-        , Show (variable level)
-        )
+    :: ( MetaOrObject level
+       , Ord (variable level)
+       , Ord (variable Meta)
+       , Ord (variable Object)
+       , SortedVariable variable
+       , Show (variable level)
+       , Hashable variable
+       , FreshVariable variable
+       , MonadCounter m
+       )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
-    -> Either
-          (UnificationError level)
+    -> ExceptT
+          UnificationError
+          m
           ( Predicate level variable
           , UnificationSubstitution level variable
           , UnificationProof level variable
@@ -81,12 +91,11 @@ mergeAndNormalizeSubstitutions
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
-    -> Either
+    -> ExceptT
           ( UnificationOrSubstitutionError level variable )
-          ( m
-              ( PredicateSubstitution level variable
-              , UnificationProof level variable
-              )
+          m
+          ( PredicateSubstitution level variable
+          , UnificationProof level variable
           )
 mergeAndNormalizeSubstitutions tools first second =
     normalizeSubstitutionAfterMerge tools (first ++ second)
@@ -103,24 +112,25 @@ normalizeSubstitutionAfterMerge
         )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
-    -> Either
+    -> ExceptT
           ( UnificationOrSubstitutionError level variable )
-          ( m
-              ( PredicateSubstitution level variable
-              , UnificationProof level variable
-              )
+          m
+          ( PredicateSubstitution level variable
+          , UnificationProof level variable
           )
 normalizeSubstitutionAfterMerge tools substit = do
     (substitutionList, proof) <-
           normalizeSubstitutionDuplication' substit
     predSubstitution <- normalizeSubstitution' substitutionList
     -- TODO(virgil): Return the actual condition here. and proofs
-    return $ (,) <$> predSubstitution <*> pure proof
+    return (predSubstitution, proof)
   where
     normalizeSubstitutionDuplication' =
-        unificationToUnifyOrSubError . normalizeSubstitutionDuplication tools
+        withExceptT unificationToUnifyOrSubError
+            . normalizeSubstitutionDuplication tools
     normalizeSubstitution' =
-        substitutionToUnifyOrSubError . normalizeSubstitution tools
+        withExceptT substitutionToUnifyOrSubError
+            . normalizeSubstitution tools
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
@@ -131,6 +141,8 @@ predicates and redo the merge.
 
 TODO(virgil): Reconsider: should this return an Either or is it safe to just
 make everything a Predicate?
+
+hs-boot: Please remember to update the hs-boot file when changing the signature.
 -}
 mergePredicatesAndSubstitutions
     :: ( Show (variable level)
@@ -150,62 +162,64 @@ mergePredicatesAndSubstitutions
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-mergePredicatesAndSubstitutions tools predicates substitutions =
-    let
-        (substitutionMergePredicate, mergedSubstitution) =
-            foldl'
-                (mergeSubstitutionWithPredicate tools)
-                (predicates, [])
-                substitutions
-    in
-        case normalizeSubstitutionAfterMerge tools mergedSubstitution of
-            Left _ ->
-                let
-                    (mergedPredicate, _proof) =
-                        give (sortTools tools) $ makeMultipleAndPredicate
-                            (  predicates
-                            ++ map substitutionToPredicate substitutions
-                            )
-                in
-                    return
-                        ( PredicateSubstitution
-                            { predicate = mergedPredicate
-                            , substitution = []
-                            }
-                        , EmptyUnificationProof
+mergePredicatesAndSubstitutions tools predicates substitutions = do
+    (substitutionMergePredicate, mergedSubstitution) <-
+        foldM
+            (mergeSubstitutionWithPredicate tools)
+            (predicates, [])
+            substitutions
+    result <- runExceptT $ normalizeSubstitutionAfterMerge tools mergedSubstitution
+    case result of
+        Left _ ->
+            let
+                (mergedPredicate, _proof) =
+                    give (sortTools tools) $ makeMultipleAndPredicate
+                        (  predicates
+                        ++ map substitutionToPredicate substitutions
                         )
-            Right counterPredicateSubstitution -> do
-                (PredicateSubstitution {predicate, substitution}, proof) <-
-                    counterPredicateSubstitution
-                let
-                    (mergedPredicate, _proof) =
-                        give (sortTools tools) $
-                            makeMultipleAndPredicate
-                                (predicate : substitutionMergePredicate)
+            in
                 return
-                    (PredicateSubstitution
+                    ( PredicateSubstitution
                         { predicate = mergedPredicate
-                        , substitution = substitution
+                        , substitution = []
                         }
-                    , proof
+                    , EmptyUnificationProof
                     )
+        Right (PredicateSubstitution {predicate, substitution}, proof) -> do
+            let
+                (mergedPredicate, _proof) =
+                    give (sortTools tools) $
+                        makeMultipleAndPredicate
+                            (predicate : substitutionMergePredicate)
+            return
+                (PredicateSubstitution
+                    { predicate = mergedPredicate
+                    , substitution = substitution
+                    }
+                , proof
+                )
 
 mergeSubstitutionWithPredicate
     :: ( Ord (variable level)
+       , Ord (variable Meta)
+       , Ord (variable Object)
        , SortedVariable variable
        , MetaOrObject level
        , Show (variable level)
+       , Hashable variable
+       , FreshVariable variable
+       , MonadCounter m
        )
     => MetadataTools level StepperAttributes
     -> ([Predicate level variable], UnificationSubstitution level variable)
     -> UnificationSubstitution level variable
-    -> ([Predicate level variable], UnificationSubstitution level variable)
+    -> m ([Predicate level variable], UnificationSubstitution level variable)
 mergeSubstitutionWithPredicate
     tools
     (predicates, subst1)
     subst2
-  =
-    case mergeSubstitutions tools subst1 subst2 of
-        Left _ -> (makeFalsePredicate : predicates, [])
-        Right (predicate, subst, _) ->
-            (predicate : predicates, subst)
+  = do
+    merge <- runExceptT $ mergeSubstitutions tools subst1 subst2
+    case merge of
+        Left _ -> return (makeFalsePredicate : predicates, [])
+        Right (predicate, subst, _) -> return (predicate : predicates, subst)

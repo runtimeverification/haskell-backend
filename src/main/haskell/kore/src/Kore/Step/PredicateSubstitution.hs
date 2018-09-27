@@ -21,7 +21,7 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Predicate.Predicate
        ( Predicate, makeFalsePredicate, makeTruePredicate )
-import Kore.Unification.Unifier
+import Kore.Unification.UnificationSolution
        ( UnificationSubstitution )
 
 {-|'PredicateSubstitution' is a representation of a specific type of

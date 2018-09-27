@@ -575,54 +575,12 @@ instance EqualWithExplanation (SymbolOrAlias level)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance SumEqualWithExplanation (UnificationError level)
+instance SumEqualWithExplanation UnificationError
   where
-    sumConstructorPair (PatternClash a1 a2) (PatternClash b1 b2) =
-        SumConstructorSameWithArguments
-            (EqWrap "PatternClash" (a1, a2) (b1, b2))
-    sumConstructorPair a1@(PatternClash _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (SortClash a1 a2) (SortClash b1 b2) =
-        SumConstructorSameWithArguments (EqWrap "SortClash" (a1, a2) (b1,b2))
-    sumConstructorPair a1@(SortClash _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (NonConstructorHead a1) (NonConstructorHead a2) =
-        SumConstructorSameWithArguments
-            (EqWrap "NonConstructorHead" a1 a2)
-    sumConstructorPair a1@(NonConstructorHead _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (NonFunctionalHead a1) (NonFunctionalHead a2) =
-        SumConstructorSameWithArguments
-            (EqWrap "NonFunctionalHead" a1 a2)
-    sumConstructorPair a1@(NonFunctionalHead _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair NonFunctionalPattern NonFunctionalPattern =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@NonFunctionalPattern a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
     sumConstructorPair UnsupportedPatterns UnsupportedPatterns =
         SumConstructorSameNoArguments
-    sumConstructorPair a1@UnsupportedPatterns a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
 
-    sumConstructorPair EmptyPatternList EmptyPatternList =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@EmptyPatternList a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance EqualWithExplanation (UnificationError level)
+instance EqualWithExplanation UnificationError
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

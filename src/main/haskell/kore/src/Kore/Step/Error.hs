@@ -6,6 +6,7 @@ module Kore.Step.Error
     , unificationOrSubstitutionToStepError
     ) where
 
+import Data.Bifunctor ( first )
 import qualified Data.Set as Set
 
 import Kore.Unification.Error
@@ -14,7 +15,7 @@ import Kore.Unification.Error
 a single step.
 -}
 data StepError level variable
-    = StepErrorUnification (UnificationError level)
+    = StepErrorUnification UnificationError
     | StepErrorSubstitution (SubstitutionError level variable)
     deriving (Show, Eq)
 
@@ -40,16 +41,11 @@ mapStepErrorVariables mapper (StepErrorSubstitution a) =
 
 {-| 'unificationToStepError' converts an action with a 'UnificationError' into
 an action with a 'StepError'.
-It takes a @bottom@ default value to convert unification errors into
-'Bottom' if necessary.
 -}
 unificationToStepError
-    :: a
-    -> Either (UnificationError level) a
+    :: Either UnificationError a
     -> Either (StepError level variable) a
-unificationToStepError bottom (Left (PatternClash _ _)) = Right bottom
-unificationToStepError _ (Left err)     = Left (StepErrorUnification err)
-unificationToStepError _ (Right result) = Right result
+unificationToStepError = first StepErrorUnification
 
 {-| Converts a Unification or Substitution error to a step error
 -}

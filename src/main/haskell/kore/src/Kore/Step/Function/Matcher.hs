@@ -100,7 +100,7 @@ matchAsUnification
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Either
-        (UnificationError level)
+        UnificationError
         (Counter
             ( PredicateSubstitution level variable
             , UnificationProof level variable

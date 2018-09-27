@@ -11,11 +11,13 @@ Portability : portable
 module Kore.Unification.Unifier
     ( module UnifierImpl
     , module Error
+    , module UnificationSolution
     ) where
 
 import Kore.Unification.Error as Error
        ( ClashReason (..), UnificationError (..) )
 import Kore.Unification.UnifierImpl as UnifierImpl
-       ( UnificationProof (..), UnificationSolution (..),
-       UnificationSubstitution, mapSubstitutionVariables,
-       normalizeSubstitutionDuplication, unificationProcedure )
+       ( normalizeSubstitutionDuplication )
+import Kore.Unification.UnificationSolution as UnificationSolution
+       ( UnificationSolution (..), UnificationSubstitution,
+         mapSubstitutionVariables, UnificationProof (..) )

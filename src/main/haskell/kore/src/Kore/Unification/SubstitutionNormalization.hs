@@ -16,6 +16,8 @@ module Kore.Unification.SubstitutionNormalization
 
 import           Control.Monad
                  ( (>=>) )
+import           Control.Monad.Except
+                 ( ExceptT (..) )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor.Foldable
@@ -30,7 +32,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Var_ )
+                 ( pattern Var_, pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -45,7 +47,7 @@ import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
-import           Kore.Unification.UnifierImpl
+import           Kore.Unification.UnificationSolution
                  ( UnificationSubstitution )
 import           Kore.Variables.Free
 import           Kore.Variables.Fresh
@@ -70,12 +72,13 @@ normalizeSubstitution
         )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
-    -> Either
+    -> ExceptT
         (SubstitutionError level variable)
-        (m (PredicateSubstitution level variable))
+        m
+        (PredicateSubstitution level variable)
 normalizeSubstitution tools substitution =
-    maybe (return PredicateSubstitution.bottom) normalizeSortedSubstitution'
-    <$> topologicalSortConverted
+    ExceptT . sequence $
+        maybe (return PredicateSubstitution.bottom) normalizeSortedSubstitution' <$> topologicalSortConverted
 
   where
     interestingVariables :: Map.Map (Unified variable) (variable level)
@@ -179,6 +182,8 @@ normalizeSortedSubstitution [] result _ =
         { predicate = makeTruePredicate
         , substitution = result
         }
+normalizeSortedSubstitution ((_, Bottom_ _) : _) _ _ =
+    return PredicateSubstitution.bottom
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result
