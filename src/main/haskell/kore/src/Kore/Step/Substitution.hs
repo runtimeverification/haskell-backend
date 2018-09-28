@@ -17,7 +17,9 @@ import Control.Monad
 import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
-       ( ExceptT, runExceptT, withExceptT )
+       ( ExceptT, liftEither, runExceptT, withExceptT )
+import Data.List
+       ( foldl' )
 import Data.Reflection
        ( give )
 
@@ -31,6 +33,8 @@ import Kore.Predicate.Predicate
        makeTruePredicate )
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution (..), substitutionToPredicate )
+import Kore.Step.Simplification.Data
+       ( SimplificationProof (..) )
 import Kore.Step.StepperAttributes
 import Kore.Substitution.Class
        ( Hashable )
@@ -40,8 +44,13 @@ import Kore.Unification.Error
        ( UnificationError (..), UnificationOrSubstitutionError (..),
        substitutionToUnifyOrSubError, unificationToUnifyOrSubError )
 import Kore.Unification.SubstitutionNormalization
-       ( normalizeSubstitution )
-import Kore.Unification.UnifierImpl ( normalizeSubstitutionDuplication )
+       ( normalizePredicateSubstitution )
+-- TODO: Do not import the impl here.
+import Kore.Unification.Unifier
+       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution,
+       normalizeSubstitutionDuplication )
+import Kore.Unification.UnifierImpl
+       ( normalizeSubstitutionDuplication )
 import Kore.Variables.Fresh
 
 {-|'mergeSubstitutions' merges a list of substitutions into
@@ -89,19 +98,32 @@ mergeAndNormalizeSubstitutions
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    ->  (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> ExceptT
-          ( UnificationOrSubstitutionError level variable )
-          m
-          ( PredicateSubstitution level variable
-          , UnificationProof level variable
-          )
-mergeAndNormalizeSubstitutions tools first second =
-    normalizeSubstitutionAfterMerge tools (first ++ second)
+        ( UnificationOrSubstitutionError level variable )
+        m
+        ( PredicateSubstitution level variable
+        , UnificationProof level variable
+        )
+mergeAndNormalizeSubstitutions tools predicateSimplifier first second =
+    normalizePredicateSubstitutionAfterMerge
+        tools
+        predicateSimplifier
+        PredicateSubstitution
+            { predicate = makeTruePredicate
+            , substitution = first ++ second
+            }
 
-normalizeSubstitutionAfterMerge
-    ::  ( MetaOrObject level
+normalizePredicateSubstitutionAfterMerge
+    ::  forall level variable m .
+        ( MetaOrObject level
         , Ord (variable level)
         , OrdMetaOrObject variable
         , SortedVariable variable
@@ -111,26 +133,55 @@ normalizeSubstitutionAfterMerge
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
+    ->  (  Predicate level variable  -- TODO: Use a wrapper type here.
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
+    -> PredicateSubstitution level variable
     -> ExceptT
-          ( UnificationOrSubstitutionError level variable )
-          m
-          ( PredicateSubstitution level variable
-          , UnificationProof level variable
-          )
-normalizeSubstitutionAfterMerge tools substit = do
+        ( UnificationOrSubstitutionError level variable )
+        m
+        ( PredicateSubstitution level variable
+        , UnificationProof level variable
+        )
+normalizePredicateSubstitutionAfterMerge
+    tools
+    predicateSimplifier
+    PredicateSubstitution {predicate, substitution}
+  = do
     (substitutionList, proof) <-
-          normalizeSubstitutionDuplication' substit
-    predSubstitution <- normalizeSubstitution' substitutionList
-    -- TODO(virgil): Return the actual condition here. and proofs
+        -- TODO: Do I need to send the predicate here?
+        normalizeSubstitutionDuplication' substitution
+    predSubstitution <-
+        normalizeSubstitution'
+            PredicateSubstitution
+                { predicate = predicate
+                , substitution = substitutionList
+                }
     return (predSubstitution, proof)
   where
+    normalizeSubstitutionDuplication'
+        :: UnificationSubstitution level variable
+        -> ExceptT
+            (UnificationOrSubstitutionError level variable)
+            m
+            ( UnificationSubstitution level variable
+            , UnificationProof level variable
+            )
     normalizeSubstitutionDuplication' =
-        withExceptT unificationToUnifyOrSubError
+        withExceptT unificationToUnifyOrSubError  -- TODO: liftEither
             . normalizeSubstitutionDuplication tools
+    normalizeSubstitution'
+        :: PredicateSubstitution level variable
+        -> ExceptT
+            (UnificationOrSubstitutionError level variable)
+            m
+            (PredicateSubstitution level variable)
     normalizeSubstitution' =
-        withExceptT substitutionToUnifyOrSubError
-            . normalizeSubstitution tools
+        substitutionToUnifyOrSubError
+        . normalizePredicateSubstitution tools predicateSimplifier
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
@@ -156,19 +207,39 @@ mergePredicatesAndSubstitutions
        , Hashable variable
        )
     => MetadataTools level StepperAttributes
+    ->  (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
     -> [Predicate level variable]
     -> [UnificationSubstitution level variable]
     -> m
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-mergePredicatesAndSubstitutions tools predicates substitutions = do
+mergePredicatesAndSubstitutions
+    tools predicateSimplifier predicates substitutions
+  = do  -- MonadCounter m
     (substitutionMergePredicate, mergedSubstitution) <-
         foldM
             (mergeSubstitutionWithPredicate tools)
             (predicates, [])
             substitutions
-    result <- runExceptT $ normalizeSubstitutionAfterMerge tools mergedSubstitution
+    let
+        (andPredicate, _proof) = give (sortTools tools) $
+            makeMultipleAndPredicate substitutionMergePredicate
+    result <-
+        runExceptT
+            (normalizePredicateSubstitutionAfterMerge
+                tools
+                predicateSimplifier
+                PredicateSubstitution
+                    { predicate = andPredicate
+                    , substitution = mergedSubstitution
+                    }
+            )
     case result of
         Left _ ->
             let
@@ -185,19 +256,8 @@ mergePredicatesAndSubstitutions tools predicates substitutions = do
                         }
                     , EmptyUnificationProof
                     )
-        Right (PredicateSubstitution {predicate, substitution}, proof) -> do
-            let
-                (mergedPredicate, _proof) =
-                    give (sortTools tools) $
-                        makeMultipleAndPredicate
-                            (predicate : substitutionMergePredicate)
-            return
-                (PredicateSubstitution
-                    { predicate = mergedPredicate
-                    , substitution = substitution
-                    }
-                , proof
-                )
+        Right (counterPredicateSubstitution, _proof) ->
+            return (counterPredicateSubstitution, EmptyUnificationProof)
 
 mergeSubstitutionWithPredicate
     :: ( Ord (variable level)

@@ -18,6 +18,8 @@ module Kore.Unification.Error
     , unificationToUnifyOrSubError
     ) where
 
+import           Control.Monad.Except
+                 ( ExceptT, withExceptT )
 import qualified Data.Set as Set
 
 import Kore.AST.Common
@@ -42,7 +44,7 @@ data ClashReason level
 {-| 'SubstitutionError' specifies the various error cases related to
 substitutions.
 -}
-data SubstitutionError level variable
+newtype SubstitutionError level variable
     = NonCtorCircularVariableDependency [variable level]
     -- ^the circularity path may pass through non-constructors: maybe solvable.
     deriving (Eq, Show)
@@ -70,9 +72,10 @@ mapSubstitutionErrorVariables mapper
 
 -- Trivially promote substitution errors to sum-type errors
 substitutionToUnifyOrSubError
-    :: SubstitutionError level variable
-    -> UnificationOrSubstitutionError level variable
-substitutionToUnifyOrSubError = SubstitutionError
+    :: Monad m
+    => ExceptT (SubstitutionError level variable) m a
+    -> ExceptT (UnificationOrSubstitutionError level variable) m a
+substitutionToUnifyOrSubError = withExceptT SubstitutionError
 
 -- Trivially promote unification errors to sum-type errors
 unificationToUnifyOrSubError

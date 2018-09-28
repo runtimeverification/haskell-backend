@@ -51,7 +51,9 @@ import           Kore.Step.PatternAttributes
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( PureMLPatternSimplifier, SimplificationProof (..) )
+import qualified Kore.Step.Simplification.Predicate as Predicate
+                 ( simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -165,6 +167,7 @@ maybeTermEquals
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
+    -> PureMLPatternSimplifier level variable
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable
@@ -281,6 +284,7 @@ maybeTermAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
+    -> PureMLPatternSimplifier level variable
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable
@@ -306,12 +310,50 @@ maybeTermAnd =
         , lift functionAnd
         ]
   where
+    lift
+        ::  (  MetadataTools level StepperAttributes
+            -> PureMLPatternSimplifier level variable
+            -> PureMLPattern level variable
+            -> PureMLPattern level variable
+            -> FunctionResult
+                (ExpandedPattern level variable, SimplificationProof level)
+            )
+        -> TermTransformation level variable
     lift = transformerLift
-    liftE = lift . toExpanded
-    liftET = liftE . addToolsArg
 
-type TermTransformation level variable m =
-     ( MetadataTools level StepperAttributes
+    liftE
+        ::  (  MetadataTools level StepperAttributes
+            -> PureMLPatternSimplifier level variable
+            -> PureMLPattern level variable
+            -> PureMLPattern level variable
+            -> FunctionResult
+                (PureMLPattern level variable, SimplificationProof level)
+            )
+        -> TermTransformation level variable
+    liftE = lift . toExpanded
+
+    liftP
+        ::  (  MetadataTools level StepperAttributes
+            -> PureMLPattern level variable
+            -> PureMLPattern level variable
+            -> FunctionResult
+                (ExpandedPattern level variable, SimplificationProof level)
+            )
+        -> TermTransformation level variable
+    liftP = lift . addSimplifierArg
+
+    liftETP
+        ::  (  PureMLPattern level variable
+            -> PureMLPattern level variable
+            -> FunctionResult
+                (PureMLPattern level variable, SimplificationProof level)
+            )
+        -> TermTransformation level variable
+    liftETP = liftE . addSimplifierArg . addToolsArg
+
+type TermTransformation level variable =
+    (  MetadataTools level StepperAttributes
+    -> PureMLPatternSimplifier level variable
     -> TermSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
@@ -338,6 +380,7 @@ maybeTransformTerm
         )
     => [TermTransformation level variable m]
     -> MetadataTools level StepperAttributes
+    -> PureMLPatternSimplifier level variable
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm pairs.
     -> PureMLPattern level variable
@@ -346,10 +389,15 @@ maybeTransformTerm
         ( m (ExpandedPattern level variable
         , SimplificationProof level)
         )
-maybeTransformTerm topTransformers tools childTransformers first second =
+maybeTransformTerm
+    topTransformers tools patternSimplifier childTransformers first second
+  =
     firstHandledWithDefault
         Nothing
-        (map (\f -> f tools childTransformers first second) topTransformers)
+        (map
+            (\f -> f tools patternSimplifier childTransformers first second)
+            topTransformers
+        )
 
 addToolsArg
     ::  (  PureMLPattern level variable
@@ -365,22 +413,40 @@ addToolsArg
         )
 addToolsArg = pure
 
-toExpanded
-    :: MetaOrObject level
-    =>   (  MetadataTools level StepperAttributes
+addSimplifierArg
+    ::  (  MetadataTools level StepperAttributes
         -> PureMLPattern level variable
         -> PureMLPattern level variable
         -> FunctionResult
             (PureMLPattern level variable, SimplificationProof level)
         )
     ->  (  MetadataTools level StepperAttributes
+        -> PureMLPatternSimplifier level variable
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> FunctionResult
+            (PureMLPattern level variable, SimplificationProof level)
+        )
+addSimplifierArg f tools = pure (f tools)
+
+toExpanded
+    :: MetaOrObject level
+    =>  (  MetadataTools level StepperAttributes
+        -> PureMLPatternSimplifier level variable
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> FunctionResult
+            (PureMLPattern level variable, SimplificationProof level)
+        )
+    ->  (  MetadataTools level StepperAttributes
+        -> PureMLPatternSimplifier level variable
         -> PureMLPattern level variable
         -> PureMLPattern level variable
         -> FunctionResult
             (ExpandedPattern level variable, SimplificationProof level)
         )
-toExpanded transformer tools first second =
-    case transformer tools first second of
+toExpanded transformer tools patternSimplifier first second =
+    case transformer tools patternSimplifier first second of
         NotHandled -> NotHandled
         Handled (Bottom_ _, _proof) ->
             Handled (ExpandedPattern.bottom, SimplificationProof)
@@ -397,6 +463,7 @@ toExpanded transformer tools first second =
 transformerLift
     :: MonadCounter m
     =>  (  MetadataTools level StepperAttributes
+        -> PureMLPatternSimplifier level variable
         -> PureMLPattern level variable
         -> PureMLPattern level variable
         -> FunctionResult
@@ -406,10 +473,11 @@ transformerLift
 transformerLift
     transformation
     tools
+    patternSimplifier
     _childSimplifier
     first
     second
-  = liftExpandedPattern (transformation tools first second)
+  = liftExpandedPattern (transformation tools patternSimplifier first second)
 
 liftExpandedPattern
     :: MonadCounter m
@@ -606,6 +674,7 @@ equalInjectiveHeadsAndEquals
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
+    -> PureMLPatternSimplifier level variable
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable
@@ -620,6 +689,7 @@ equalInjectiveHeadsAndEquals
         )
 equalInjectiveHeadsAndEquals
     tools
+    patternSimplifier
     termMerger
     (App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
@@ -638,6 +708,7 @@ equalInjectiveHeadsAndEquals
             , _proof
             ) <- mergePredicatesAndSubstitutions
                 tools
+                (Predicate.simplify patternSimplifier)
                 (map (ExpandedPattern.predicate . fst) children)
                 (map (ExpandedPattern.substitution . fst) children)
         return
@@ -652,7 +723,7 @@ equalInjectiveHeadsAndEquals
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools secondHead
-equalInjectiveHeadsAndEquals _ _ _ _ = NotHandled
+equalInjectiveHeadsAndEquals _ _ _ _ _ = NotHandled
 
 {-| And simplification for patterns with sortInjection heads.
 

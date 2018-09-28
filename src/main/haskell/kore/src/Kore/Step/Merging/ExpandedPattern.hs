@@ -33,6 +33,8 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier )
+import           Kore.Step.Simplification.Predicate
+                 ( simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -123,6 +125,7 @@ mergeWithEvaluatedCondition
         , _proof
         ) <- mergePredicatesAndSubstitutions
             tools
+            Predicate.simplify
             [predPredicate]
             [pattSubstitution, predSubstitution]
     return

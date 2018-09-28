@@ -11,13 +11,16 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Unification.SubstitutionNormalization
-    ( normalizeSubstitution
+    ( normalizePredicateSubstitution
     ) where
 
+import qualified Control.Arrow
 import           Control.Monad
                  ( (>=>) )
 import           Control.Monad.Except
-                 ( ExceptT (..) )
+                 ( ExceptT, lift )
+import qualified Control.Monad.Except as Except
+                 ( throwError )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor.Foldable
@@ -25,6 +28,8 @@ import           Data.Functor.Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( mapMaybe )
+import           Data.Reflection
+                 ( give )
 import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
@@ -32,24 +37,28 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Var_, pattern Bottom_ )
+                 ( pattern Bottom_, pattern Var_ )
 import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( Predicate, makeAndPredicate, makeTruePredicate )
 import           Kore.Step.PredicateSubstitution
                  ( PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), bottom )
+import           Kore.Step.Simplification.Data
+                 ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Unification.Data
-                 ( UnificationSubstitution )
-import           Kore.Variables.Free
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
+import           Kore.Unification.Data
+                 ( UnificationSubstitution )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
+import           Kore.Variables.Free
 import           Kore.Variables.Fresh
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
@@ -57,7 +66,7 @@ in which no variable that occurs on the left hand side also occurs on the
 right side.
 
 Returns an error when the substitution is not normalizable (i.e. it contains
-x = f(x) or something equivalent).
+x = f(y) and x=g(y) or something equivalent).
 -}
 normalizeSubstitution
     ::  forall m level variable
@@ -150,7 +159,7 @@ checkApplicationConstructor
     -> Pattern level variable ()
     -> Either checkError ()
 checkApplicationConstructor tools err (ApplicationPattern (Application h _))
-    | isConstructor (symAttributes tools h) = return ()
+    | isConstructor (MetadataTools.symAttributes tools h) = return ()
     | otherwise = Left err
 checkApplicationConstructor _ _ _ = return ()
 
@@ -242,3 +251,82 @@ buildDependencies
         (Var_ v) -> v == var
         _        -> False
     deps' = if isSameVar then [] else deps
+
+normalizePredicateSubstitution
+    ::  forall m level variable
+     .  ( MetaOrObject level
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Hashable variable
+        , FreshVariable variable
+        , MonadCounter m
+        , Show (variable level)
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    ->  (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
+    -> PredicateSubstitution level variable
+    -> ExceptT
+        (SubstitutionError level variable)
+        m
+        (PredicateSubstitution level variable)
+normalizePredicateSubstitution
+    tools
+    predicateSimplifier
+    PredicateSubstitution {predicate, substitution}
+  = do
+    PredicateSubstitution
+        { predicate = simplifiedPredicate
+        , substitution = simplifiedSubstitution
+        } <- case normalizeSubstitution tools substitution of
+            Left err -> Except.throwError err
+            Right result -> lift result
+
+    let
+        mergedPredicate :: Predicate level variable
+        (mergedPredicate, _proof) =
+            give (MetadataTools.sortTools tools)
+                $ makeAndPredicate predicate simplifiedPredicate
+        substitute'
+            :: UnificationSubstitution level variable
+            -> PureMLPattern level variable
+            -> m (PureMLPattern level variable)
+        substitute' substitution' patt =
+            substitute
+                patt
+                (ListSubstitution.fromList
+                    (map
+                        (Control.Arrow.first asUnified)
+                        substitution'
+                    )
+                )
+    substitutedPredicate <-
+        traverse (lift . substitute' simplifiedSubstitution) mergedPredicate
+    -- TODO(virgil): Do I need to test equality modulo variable renaming?
+    if substitutedPredicate == predicate
+        then return PredicateSubstitution
+            { predicate = predicate
+            , substitution = simplifiedSubstitution
+            }
+        else do
+            (PredicateSubstitution
+                    { predicate = resultPredicate
+                    , substitution = predicateSubstitution
+                    }
+                , _proof
+                ) <- lift $ predicateSimplifier substitutedPredicate
+            normalizePredicateSubstitution
+                tools
+                predicateSimplifier
+                PredicateSubstitution
+                    { predicate = resultPredicate
+                    , substitution =
+                        simplifiedSubstitution ++ predicateSubstitution
+                    }
+
