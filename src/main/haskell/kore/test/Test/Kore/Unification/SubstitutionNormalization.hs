@@ -246,7 +246,9 @@ runNormalizeSubstitution
         (UnificationSubstitution level Variable)
 runNormalizeSubstitution substitution =
     fmap PredicateSubstitution.substitution
-        $ evalCounter . runExceptT $ normalizeSubstitution mockMetadataTools substitution
+    . evalCounter
+    . runExceptT
+    $ normalizeSubstitution mockMetadataTools substitution
 
 mockSortTools :: MetaOrObject level => SortTools level
 mockSortTools = const ApplicationSorts

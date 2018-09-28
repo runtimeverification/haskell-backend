@@ -5,13 +5,13 @@ stack = $(stack_yaml) stack
 pattern = ""
 
 build:
-	$(stack) build $(package)
+	$(stack) build $(package) --pedantic
 
 build-dirty:
-	$(stack) build --ghc-options=-fforce-recomp $(package)
+	$(stack) build --ghc-options=-fforce-recomp --pedantic $(package)
 
 run:
-	$(stack) build --fast && $(stack) exec -- $(package)
+	$(stack) build --pedantic --fast && $(stack) exec -- $(package)
 
 install:
 	$(stack) install
@@ -20,13 +20,13 @@ ghci:
 	$(stack) ghci $(package)
 
 test:
-	$(stack) test $(package) --test-arguments "--hide-successes"
+	$(stack) test $(package) --test-arguments "--hide-successes" --pedantic
 
 testp:
-	$(stack) test --test-arguments '-p "$(pattern)"'
+	$(stack) test --test-arguments '-p "$(pattern)"' --pedantic
 
 test-ghci:
-	$(stack) ghci $(package):test:$(package)-test
+	$(stack) ghci $(package):test:$(package)-test --pedantic
 
 pedantic:
 	$(stack) build --haddock --no-haddock-deps --coverage --bench --no-run-benchmarks --test --no-run-tests --pedantic
@@ -43,5 +43,8 @@ hoogle:
 
 dev-deps:
 	stack install ghcid
+
+tags:
+	hasktags -e .
 
 .PHONY : build build-dirty run install ghci test test-ghci ghcid dev-deps

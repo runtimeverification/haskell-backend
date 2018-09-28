@@ -468,6 +468,8 @@ test_baseStep =
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, h(b)) with substitution b=a
+    -- TODO(Vladimir): This was broken by the normalization as substitution PR,
+    -- and should be fixed to be impossible (return Left or bottom).
     , testCase "Impossible substitution (non-ctor)."
         (assertEqualWithExplanation ""
             (Right ExpandedPattern
@@ -994,4 +996,7 @@ runStep
         (StepError level Variable)
         (CommonExpandedPattern level, StepProof level)
 runStep metadataTools configuration axiom =
-    first evalCounter . evalCounter . runExceptT $ stepWithAxiom metadataTools configuration axiom
+    first evalCounter
+    . evalCounter
+    . runExceptT
+    $ stepWithAxiom metadataTools configuration axiom

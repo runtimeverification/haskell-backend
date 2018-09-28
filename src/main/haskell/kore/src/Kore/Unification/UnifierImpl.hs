@@ -179,6 +179,8 @@ solveGroupedSubstitution
         , UnificationProof level variable
         )
 solveGroupedSubstitution _ [] = throwE UnsupportedPatterns
+-- TODO(Vladimir): We are dropping the predicate here. Most likely, this should
+-- return the ExpandedPattern instead.
 solveGroupedSubstitution tools ((x,p):subst) = do
     (solution, proof) <- simplifyAnds tools (p : map snd subst)
     return

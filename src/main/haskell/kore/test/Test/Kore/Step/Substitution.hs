@@ -116,7 +116,6 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
         )
 
-    -- TODO(Vladimir): figure out why this is different than the one below.
     , testCase "Constructor and constructor of function"
         -- [x=constructor(a)] + [x=constructor(f(a))]
         (assertEqual ""
@@ -141,6 +140,8 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
         )
 
+    -- TODO(Vladimir): this should be fixed by making use of the predicate from
+    -- `solveGroupSubstitutions`.
     , testCase "Constructor and constructor of function with variables"
         -- [x=constructor(y)] + [x=constructor(f(y))]
         (assertEqual ""

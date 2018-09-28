@@ -284,7 +284,11 @@ andSimplifySuccess message term1 term2 resultTerm subst predicate proof =
             (subst'', proof')
         )
   where
-    Right (subst', proof') = evalCounter . runExceptT $ simplifyAnds tools [(unificationProblem term1 term2)]
+    Right (subst', proof') =
+        evalCounter
+        . runExceptT
+        $ simplifyAnds tools [(unificationProblem term1 term2)]
+
     subst'' = subst'
         { substitution =
             sortBy (compare `on` fst) (ExpandedPattern.substitution subst')
@@ -305,7 +309,10 @@ andSimplifyFailure message term1 term2 err =
             prettyPrintToString
             ""
             (Left err)
-            (evalCounter . runExceptT $ simplifyAnds tools [(unificationProblem term1 term2)])
+            ( evalCounter
+              . runExceptT
+              $ simplifyAnds tools [(unificationProblem term1 term2)]
+            )
         )
 
 andSimplifyException
@@ -321,7 +328,10 @@ andSimplifyException message term1 term2 exceptionMessage =
         ( catch test handler )
     where
         test = do
-            let var = evalCounter . runExceptT $ simplifyAnds tools [(unificationProblem term1 term2)]
+            let var =
+                    evalCounter
+                    . runExceptT
+                    $ simplifyAnds tools [(unificationProblem term1 term2)]
             _ <- evaluate (var)
             assertFailure "This evaluation should fail"
         handler (ErrorCall s) =
@@ -353,7 +363,10 @@ unificationProcedureSuccess
             (sortBy (compare `on` fst) substitution, predicate, proof')
         )
   where
-    Right ( PredicateSubstitution.PredicateSubstitution {substitution, predicate}
+    Right ( PredicateSubstitution.PredicateSubstitution
+              { substitution
+              , predicate
+              }
           , proof'
           ) =
         evalCounter . runExceptT $
