@@ -21,6 +21,8 @@ import qualified Data.Map as Map
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
+       ( ApplicationSorts (..) )
+import Kore.Attribute.Subsort
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
 
@@ -48,7 +50,7 @@ type SortTools level = SymbolOrAlias level -> ApplicationSorts level
 -- its argument and result sorts.
 --
 extractMetadataTools
-    :: MetaOrObject level
+    ::forall level atts . MetaOrObject level
     => KoreIndexedModule atts
     -> MetadataTools level atts
 extractMetadataTools m =
@@ -59,16 +61,21 @@ extractMetadataTools m =
     , isSubsortOf = checkSubsort
     }
   where
-    subsortTable = Map.unionsWith (++)
-        [ Map.insert subsort [] $ Map.singleton supersort [subsort]
-        | (subsort,supersort) <- indexedModuleSubsorts m]
-    (sortGraph,_,getSortId) = graphFromEdges [((),supersort,subsorts)
-                                             |(supersort,subsorts)
-                                                 <- Map.toList subsortTable]
-    checkSubsort subsort supersort
-      | Just subId <- getSortId subsort,
-        Just supId <- getSortId supersort = path sortGraph supId subId
-    checkSubsort _ _ = False
+    checkSubsort = case isMetaOrObject @level [] of
+        IsMeta -> (==)
+        IsObject -> let
+              subsortTable = Map.unionsWith (++)
+                  [ Map.insert subsort [] $ Map.singleton supersort [subsort]
+                  | Subsort subsort supersort <- indexedModuleSubsorts m]
+              (sortGraph, _, getSortId) =
+                  graphFromEdges [((),supersort,subsorts)
+                                 |(supersort,subsorts)
+                                     <- Map.toList subsortTable]
+              realCheckSubsort subsort supersort
+                  | Just subId <- getSortId subsort,
+                    Just supId <- getSortId supersort = path sortGraph supId subId
+              realCheckSubsort _ _ = False
+            in realCheckSubsort
 
 {- | Look up the result sort of a symbol or alias
  -}

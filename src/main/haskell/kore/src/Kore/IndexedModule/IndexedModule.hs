@@ -42,7 +42,6 @@ import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix )
 import qualified Data.Map as Map
-import           Data.Proxy
 import qualified Data.Set as Set
 
 import Kore.AST.Common
@@ -51,7 +50,8 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Attribute.Parser
-       ( ParseAttributes, parseAttributes )
+       ( ParseAttributes, parseAttributes, parseAttributesM )
+import Kore.Attribute.Subsort
 import Kore.Builtin.Hook
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
@@ -359,6 +359,10 @@ internalIndexModuleIfNeeded
                             nameToModule)
                         indexedModulesAndStartingIndexedModule
                         (moduleSentences koreModule)
+                    -- Parse subsorts to fail now if subsort attributes are malformed,
+                    -- so indexedModuleSubsorts can appear total
+                    -- TODO: consider making subsorts an IndexedModule field
+                    _ <- internalIndexedModuleSubsorts newModule
                     return
                         ( Map.insert koreModuleName newModule newIndex
                         , newModule
@@ -728,21 +732,22 @@ hookedObjectSymbolSentences
         indexedModuleHookedIdentifiers
 
 indexedModuleSubsorts
-    :: forall level sortParam pat variables atts .
-       MetaOrObject level
-    => IndexedModule sortParam pat variables atts
-    -> [(Sort level,Sort level)]
+    :: IndexedModule sortParam pat variables atts
+    -> [Subsort]
 indexedModuleSubsorts imod =
-    let axiomAttrs = concat $ [attrs | (_,SentenceAxiom{sentenceAxiomAttributes = Attributes attrs})
-                                  <- indexedModuleAxioms imod] :: [CommonKorePattern]
-        levelAttrs :: [Pattern level Variable CommonKorePattern]
-        levelAttrs = [attr | Just attr <- map checkLevel axiomAttrs]
-        checkLevel = case isMetaOrObject @level Proxy of
-            IsObject -> \attr -> case attr of
-                KoreObjectPattern pat -> Just pat
-                _ -> Nothing
-            IsMeta -> \attr -> case attr of
-                KoreMetaPattern pat -> Just pat
-                _ -> Nothing
-    in [(s1,s2) | ApplicationPattern (Application (SymbolOrAlias (Id "subsort" _) [s1,s2]) [])
-                  <- levelAttrs]
+    case internalIndexedModuleSubsorts imod of
+        Right subsorts -> subsorts
+        Left err -> error $ "IndexedModule should already have checked"
+                         ++ "form of subsort attributes, but parsing failed\n:"
+                         ++ show err
+
+internalIndexedModuleSubsorts
+    :: IndexedModule sortParam pat variables atts
+    -> Either
+        (Error IndexModuleError)
+        [Subsort]
+internalIndexedModuleSubsorts imod = let
+    attributes = [sentenceAxiomAttributes
+                 | (_,SentenceAxiom { sentenceAxiomAttributes })
+                     <- indexedModuleAxioms imod]
+    in concat <$> mapM parseAttributesM attributes
