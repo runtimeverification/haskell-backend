@@ -225,6 +225,66 @@ The result is `bottom{}()` if the second argument is zero.
         [hook{}("INT.tmod")]
 ~~~
 
+### INT.and
+
+Bitwise and of the arguments.
+
+~~~
+    hooked-symbol and{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.and")]
+~~~
+
+### INT.or
+
+Bitwise or of the arguments.
+
+~~~
+    hooked-symbol or{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.or")]
+~~~
+
+### INT.xor
+
+Bitwise exclusive or of the arguments.
+
+~~~
+    hooked-symbol xor{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.xor")]
+~~~
+
+### INT.not
+
+Bitwise complement of the argument.
+
+~~~
+    hooked-symbol not{}(Int{}) : Int{}
+        [hook{}("INT.not")]
+~~~
+
+### INT.shl
+
+Shift the bits of the first argument to the left. The second argument specifies
+how many bits to shift by, and will be truncated to the least-significant
+Haskell Int. The second argument can be negative, in which case the first
+argument will be shifted right.
+
+~~~
+    hooked-symbol shl{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.shl")]
+~~~
+
+### INT.shr
+
+Shift the bits of the first argument to the right. The second argument specifies
+how many bits to shift by, and will be truncated to the least-significant
+Haskell Int. The second argument can be negative, in which case the first
+argument will be shifted left.
+
+~~~
+    hooked-symbol shr{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.shr")]
+~~~
+
 ### INT.pow
 
 The first argument raised to the power of the second argument. The result is

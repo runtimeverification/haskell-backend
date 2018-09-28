@@ -5,6 +5,8 @@ module Test.Kore.Builtin.Int where
 import Test.QuickCheck
        ( Property, (===) )
 
+import           Data.Bits
+                 ( complement, shift, xor, (.&.), (.|.) )
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -225,6 +227,36 @@ prop_tdivZero = propPartialBinaryZero tdiv tdivSymbol
 prop_tmodZero :: Integer -> Property
 prop_tmodZero = propPartialBinaryZero tmod tmodSymbol
 
+-- Bitwise operations
+prop_and :: Integer -> Integer -> Property
+prop_and = propBinary (.&.) andSymbol
+
+prop_or :: Integer -> Integer -> Property
+prop_or = propBinary (.|.) orSymbol
+
+prop_xor :: Integer -> Integer -> Property
+prop_xor = propBinary xor xorSymbol
+
+prop_not :: Integer -> Property
+prop_not = propUnary complement notSymbol
+
+prop_shl :: Integer -> Integer -> Property
+prop_shl = propBinary shl shlSymbol
+  where shl a = shift a . fromInteger
+
+prop_shr :: Integer -> Integer -> Property
+prop_shr = propBinary shr shrSymbol
+  where shr a = shift a . fromInteger . negate
+
+andSymbol, orSymbol, xorSymbol, notSymbol, shlSymbol, shrSymbol
+    :: SymbolOrAlias Object
+andSymbol = builtinSymbol "andInt"
+orSymbol = builtinSymbol "orInt"
+xorSymbol = builtinSymbol "xorInt"
+notSymbol = builtinSymbol "notInt"
+shlSymbol = builtinSymbol "shlInt"
+shrSymbol = builtinSymbol "shrInt"
+
 -- Exponential and logarithmic operations
 pow :: Integer -> Integer -> Maybe Integer
 pow b e
@@ -377,6 +409,12 @@ intModule =
             , unarySymbolDecl "INT.abs" absSymbol
             , binarySymbolDecl "INT.tdiv" tdivSymbol
             , binarySymbolDecl "INT.tmod" tmodSymbol
+            , binarySymbolDecl "INT.and" andSymbol
+            , binarySymbolDecl "INT.or" orSymbol
+            , binarySymbolDecl "INT.xor" xorSymbol
+            , unarySymbolDecl "INT.not" notSymbol
+            , binarySymbolDecl "INT.shl" shlSymbol
+            , binarySymbolDecl "INT.shr" shrSymbol
             , binarySymbolDecl "INT.pow" powSymbol
             , ternarySymbolDecl "INT.powmod" powmodSymbol
             , unarySymbolDecl "INT.log2" log2Symbol
