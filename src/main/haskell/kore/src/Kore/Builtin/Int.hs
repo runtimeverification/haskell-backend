@@ -36,6 +36,8 @@ import           Control.Monad
 import           Control.Monad.Except
                  ( ExceptT )
 import qualified Control.Monad.Except as Except
+import           Data.Bits
+                 ( complement, shift, xor, (.&.), (.|.) )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
@@ -252,13 +254,12 @@ builtinFunctions =
     , partialBinaryOperator "INT.tmod" tmod
 
       -- Bitwise operations
-      -- TODO (thomas.tuegel): Implement bitwise operations.
-    , ("INT.and", Builtin.notImplemented)
-    , ("INT.or", Builtin.notImplemented)
-    , ("INT.xor", Builtin.notImplemented)
-    , ("INT.not", Builtin.notImplemented)
-    , ("INT.shl", Builtin.notImplemented)
-    , ("INT.shr", Builtin.notImplemented)
+    , binaryOperator "INT.and" (.&.)
+    , binaryOperator "INT.or" (.|.)
+    , binaryOperator "INT.xor" xor
+    , unaryOperator "INT.not" complement
+    , binaryOperator "INT.shl" (\a -> shift a . fromInteger)
+    , binaryOperator "INT.shr" (\a -> shift a . fromInteger . negate)
 
       -- Exponential and logarithmic operations
     , partialBinaryOperator "INT.pow" pow
