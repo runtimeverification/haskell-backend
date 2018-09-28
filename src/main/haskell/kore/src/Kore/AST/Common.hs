@@ -1,4 +1,6 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE EmptyDataDeriving #-}
+{-# LANGUAGE TemplateHaskell   #-}
+
 {-|
 Module      : Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -341,6 +343,21 @@ data Variable level = Variable
 instance Hashable (Variable level)
 
 instance NFData (Variable level)
+
+{- | @Concrete level@ is a variable occuring in a concrete pattern.
+
+    Concrete patterns do not contain variables, so this is an uninhabited type
+    (it has no constructors).
+
+    See also: 'Data.Void.Void'
+
+ -}
+data Concrete level
+    deriving (Eq, Generic, Ord, Read, Show)
+
+instance Hashable (Concrete level)
+
+instance NFData (Concrete level)
 
 {-| 'SortedVariable' is a variable which has a sort.
 -}
