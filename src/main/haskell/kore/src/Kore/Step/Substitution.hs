@@ -17,9 +17,7 @@ import Control.Monad
 import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
-       ( ExceptT, liftEither, runExceptT, withExceptT )
-import Data.List
-       ( foldl' )
+       ( ExceptT, runExceptT, withExceptT )
 import Data.Reflection
        ( give )
 
@@ -47,9 +45,6 @@ import Kore.Unification.SubstitutionNormalization
        ( normalizePredicateSubstitution )
 -- TODO: Do not import the impl here.
 import Kore.Unification.Unifier
-       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution,
-       normalizeSubstitutionDuplication )
-import Kore.Unification.UnifierImpl
        ( normalizeSubstitutionDuplication )
 import Kore.Variables.Fresh
 
@@ -71,6 +66,13 @@ mergeSubstitutions
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
+    -- TODO: Define a type for this.
+    ->  (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> ExceptT
@@ -80,9 +82,10 @@ mergeSubstitutions
           , UnificationSubstitution level variable
           , UnificationProof level variable
           )
-mergeSubstitutions tools first second = do
+mergeSubstitutions tools predicateSimplifier first second = do
     (substitution, proof) <-
-        normalizeSubstitutionDuplication tools (first ++ second)
+        normalizeSubstitutionDuplication
+            tools predicateSimplifier (first ++ second)
     -- TODO(virgil): Return the actual condition here.
     return (makeTruePredicate, substitution, proof)
 
@@ -172,7 +175,7 @@ normalizePredicateSubstitutionAfterMerge
             )
     normalizeSubstitutionDuplication' =
         withExceptT unificationToUnifyOrSubError  -- TODO: liftEither
-            . normalizeSubstitutionDuplication tools
+            . normalizeSubstitutionDuplication tools predicateSimplifier
     normalizeSubstitution'
         :: PredicateSubstitution level variable
         -> ExceptT
@@ -224,7 +227,7 @@ mergePredicatesAndSubstitutions
   = do  -- MonadCounter m
     (substitutionMergePredicate, mergedSubstitution) <-
         foldM
-            (mergeSubstitutionWithPredicate tools)
+            (mergeSubstitutionWithPredicate tools predicateSimplifier)
             (predicates, [])
             substitutions
     let
@@ -271,15 +274,23 @@ mergeSubstitutionWithPredicate
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
+    ->  (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
     -> ([Predicate level variable], UnificationSubstitution level variable)
     -> UnificationSubstitution level variable
     -> m ([Predicate level variable], UnificationSubstitution level variable)
 mergeSubstitutionWithPredicate
     tools
+    predicateSimplifier
     (predicates, subst1)
     subst2
   = do
-    merge <- runExceptT $ mergeSubstitutions tools subst1 subst2
+    merge <-
+        runExceptT $ mergeSubstitutions tools predicateSimplifier subst1 subst2
     case merge of
         Left _ -> return (makeFalsePredicate : predicates, [])
         Right (predicate, subst, _) -> return (predicate : predicates, subst)

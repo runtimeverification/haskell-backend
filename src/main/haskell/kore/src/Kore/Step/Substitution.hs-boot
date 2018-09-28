@@ -11,6 +11,8 @@ import Kore.Substitution.Class
        ( Hashable )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
+import Kore.Step.Simplification.Data
+       ( SimplificationProof (..) )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Predicate.Predicate
@@ -32,6 +34,12 @@ mergePredicatesAndSubstitutions
        , Hashable variable
        )
     => MetadataTools level StepperAttributes
+    ->  (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
     -> [Predicate level variable]
     -> [UnificationSubstitution level variable]
     -> m

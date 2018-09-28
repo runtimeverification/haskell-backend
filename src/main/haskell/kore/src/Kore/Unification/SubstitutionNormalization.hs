@@ -18,9 +18,7 @@ import qualified Control.Arrow
 import           Control.Monad
                  ( (>=>) )
 import           Control.Monad.Except
-                 ( ExceptT, lift )
-import qualified Control.Monad.Except as Except
-                 ( throwError )
+                 ( ExceptT (ExceptT), lift )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor.Foldable
@@ -284,9 +282,7 @@ normalizePredicateSubstitution
     PredicateSubstitution
         { predicate = simplifiedPredicate
         , substitution = simplifiedSubstitution
-        } <- case normalizeSubstitution tools substitution of
-            Left err -> Except.throwError err
-            Right result -> lift result
+        } <- normalizeSubstitution tools substitution
 
     let
         mergedPredicate :: Predicate level variable

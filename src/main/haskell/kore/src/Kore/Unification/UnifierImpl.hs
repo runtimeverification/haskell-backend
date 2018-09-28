@@ -17,7 +17,9 @@ import Control.Monad
 import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
-       ( ExceptT(..)  )
+       ( ExceptT (..) )
+import Control.Monad.Trans.Class
+       ( lift )
 import Control.Monad.Trans.Except
        ( throwE )
 import Data.Function
@@ -31,14 +33,20 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Predicate.Predicate
+                 ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), top, bottom )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..), bottom, top )
+import           Kore.Step.PredicateSubstitution
+                 ( PredicateSubstitution )
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import           Kore.Step.Simplification.Data
+                 ( SimplificationProof )
 import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
@@ -47,10 +55,10 @@ import           Kore.Unification.Error
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-import {-# SOURCE #-} Kore.Step.Substitution
-                      ( mergePredicatesAndSubstitutions )
 import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
-                      ( termUnification )
+       ( termUnification )
+import {-# SOURCE #-} Kore.Step.Substitution
+       ( mergePredicatesAndSubstitutions )
 
 {-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
@@ -104,6 +112,12 @@ simplifyAnds
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
+    ->  (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
     -> [PureMLPattern level variable]
     -> ExceptT
         UnificationError
@@ -111,15 +125,15 @@ simplifyAnds
         ( ExpandedPattern level variable
         , UnificationProof level variable
         )
-simplifyAnds _ [] = throwE UnsupportedPatterns
-simplifyAnds tools patterns = do
-     result <- foldM
+simplifyAnds _ _ [] = throwE UnsupportedPatterns
+simplifyAnds tools predicateSimplifier patterns = do
+    result <- foldM
         simplifyAnds'
         ExpandedPattern.top
         patterns
-     if Predicate.isFalse . ExpandedPattern.predicate $ result
-         then return ( ExpandedPattern.bottom, EmptyUnificationProof )
-         else return ( result, EmptyUnificationProof )
+    if Predicate.isFalse . ExpandedPattern.predicate $ result
+        then return ( ExpandedPattern.bottom, EmptyUnificationProof )
+        else return ( result, EmptyUnificationProof )
   where
     simplifyAnds'
         :: ExpandedPattern level variable
@@ -134,9 +148,16 @@ simplifyAnds tools patterns = do
         (result, _) <- ExceptT . sequence
             $ note UnsupportedPatterns
             $ termUnification tools (ExpandedPattern.term intermediate) pat
-        (predSubst, _) <- mergePredicatesAndSubstitutions tools
-          [ ExpandedPattern.predicate result, ExpandedPattern.predicate intermediate ]
-          [ ExpandedPattern.substitution result, ExpandedPattern.substitution intermediate ]
+        (predSubst, _) <-
+            lift $ mergePredicatesAndSubstitutions
+                tools
+                predicateSimplifier
+                [     ExpandedPattern.predicate result
+                    , ExpandedPattern.predicate intermediate
+                    ]
+                [     ExpandedPattern.substitution result
+                    , ExpandedPattern.substitution intermediate
+                    ]
 
         return $ ExpandedPattern.ExpandedPattern
             ( ExpandedPattern.term result )
@@ -171,6 +192,12 @@ solveGroupedSubstitution
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
+    ->  (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
     -> UnificationSubstitution level variable
     -> ExceptT
         UnificationError
@@ -178,11 +205,12 @@ solveGroupedSubstitution
         ( UnificationSubstitution level variable
         , UnificationProof level variable
         )
-solveGroupedSubstitution _ [] = throwE UnsupportedPatterns
+solveGroupedSubstitution _ _ [] = throwE UnsupportedPatterns
 -- TODO(Vladimir): We are dropping the predicate here. Most likely, this should
 -- return the ExpandedPattern instead.
-solveGroupedSubstitution tools ((x,p):subst) = do
-    (solution, proof) <- simplifyAnds tools (p : map snd subst)
+solveGroupedSubstitution tools predicateSimplifier ((x,p):subst) = do
+    (solution, proof) <-
+        simplifyAnds tools predicateSimplifier (p : map snd subst)
     return
         ( (x, ExpandedPattern.term solution)
           : ExpandedPattern.substitution solution
@@ -207,6 +235,12 @@ normalizeSubstitutionDuplication
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
+    ->  (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )
     -> UnificationSubstitution level variable
     -> ExceptT
         UnificationError
@@ -214,14 +248,16 @@ normalizeSubstitutionDuplication
         ( UnificationSubstitution level variable
         , UnificationProof level variable
         )
-normalizeSubstitutionDuplication tools subst =
+normalizeSubstitutionDuplication tools predicateSimplifier subst =
     if null nonSingletonSubstitutions
         then return (subst, EmptyUnificationProof)
         else do
             (subst', proof') <- mconcat <$>
-                mapM (solveGroupedSubstitution tools) nonSingletonSubstitutions
+                mapM
+                    (solveGroupedSubstitution tools predicateSimplifier)
+                    nonSingletonSubstitutions
             (finalSubst, proof) <-
-                normalizeSubstitutionDuplication tools
+                normalizeSubstitutionDuplication tools predicateSimplifier
                     (concat singletonSubstitutions
                      ++ subst'
                     )
