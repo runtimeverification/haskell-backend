@@ -254,12 +254,12 @@ builtinFunctions =
 
 {- | Render a 'Map' as a domain value pattern of the given sort.
 
-    The result sort should be hooked to the builtin @Int@ sort, but this is not
+    The result sort should be hooked to the builtin @Map@ sort, but this is not
     checked.
 
     The constructed pattern will be valid in the contexed of the given indexed
     module. It is an error if the indexed module does not define symbols hooked
-    to @MAP.unit@ and @MAP.update@.
+    to @MAP.unit@, @MAP.element@, and @MAP.concat@.
 
     See also: 'sort'
 
@@ -273,9 +273,14 @@ asPattern indexedModule _
   = do
     symbolUnit <- lookupSymbolUnit indexedModule
     let applyUnit = Kore.App_ symbolUnit []
-    symbolUpdate <- lookupSymbolUpdate indexedModule
-    let applyUpdate (k, v) m = Kore.App_ symbolUpdate [m, k, v]
-    return $ \result -> foldr applyUpdate applyUnit (Map.toAscList result)
+    symbolElement <- lookupSymbolElement indexedModule
+    let applyElement (k, v) = Kore.App_ symbolElement [k, v]
+    symbolConcat <- lookupSymbolConcat indexedModule
+    let applyConcat map1 map2 = Kore.App_ symbolConcat [map1, map2]
+        asPattern0 result =
+            foldr applyConcat applyUnit
+                (applyElement <$> Map.toAscList result)
+    return asPattern0
 
 {- | Render a 'Map' as an extended domain value pattern.
 
