@@ -38,7 +38,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( ExpandedPattern (..), isBottom )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution(..) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
@@ -90,21 +90,27 @@ unificationProcedure tools p1 p2
     | otherwise = do
       let
           unifiedTerm = termUnification tools p1 p2
-      -- TODO(Vladimir): Since unification is a central piece, we should test if
-      -- the predicate is false and, if so, return PredicateSubstitution.bottom.
       (pat, _) <- ExceptT . sequence $ note UnsupportedPatterns unifiedTerm
-      let
-          (pred', _) = Ceil.makeEvaluateTerm tools (ExpandedPattern.term pat)
-      return
-          ( PredicateSubstitution
-                (fst $ give sortTools $
-                     makeAndPredicate (ExpandedPattern.predicate pat) pred')
-                (ExpandedPattern.substitution pat)
-          , EmptyUnificationProof
-          )
+      if ExpandedPattern.isBottom pat
+         then return ( PredicateSubstitution.bottom, EmptyUnificationProof )
+         else return
+             ( PredicateSubstitution
+                 (predicateAndCeilPat pat)
+                 (ExpandedPattern.substitution pat)
+             , EmptyUnificationProof
+             )
   where
       sortTools = MetadataTools.sortTools tools
       resultSort = getPatternResultSort sortTools
 
       p1Sort = resultSort (project p1)
       p2Sort = resultSort (project p2)
+
+      predicateAndCeilPat pat =
+          fst
+          $ give sortTools
+          ( makeAndPredicate (ExpandedPattern.predicate pat)
+          . fst
+          . Ceil.makeEvaluateTerm tools
+          . ExpandedPattern.term $ pat
+          )
