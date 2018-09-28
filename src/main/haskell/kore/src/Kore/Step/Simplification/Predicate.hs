@@ -11,6 +11,8 @@ module Kore.Step.Simplification.Predicate
     ( simplify
     ) where
 
+import           Control.Monad.Counter
+                 ( MonadCounter (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Top_ )
@@ -27,22 +29,21 @@ import           Kore.Step.PredicateSubstitution
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), bottom )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (PureMLPatternSimplifier),
-                 Simplifier )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
+                 SimplificationProof (..) )
 
 simplify
     ::  ( MetaOrObject level
+        , MonadCounter m
         , Show (variable level)
         )
-    => PureMLPatternSimplifier level variable
+    => MonadPureMLPatternSimplifier level variable m
     -> Predicate level variable
-    -> Simplifier
+    -> m
         ( PredicateSubstitution level variable
         , SimplificationProof level
         )
-simplify (PureMLPatternSimplifier simplifier) predicate = do
+simplify (MonadPureMLPatternSimplifier simplifier) predicate = do
     (patternOr, _proof) <- simplifier (unwrapPredicate predicate)
     case OrOfExpandedPattern.extractPatterns patternOr of
         [] -> return

@@ -11,7 +11,8 @@ module Kore.Step.Simplification.Data
     ( Simplifier
     , runSimplifier
     , evalSimplifier
-    , PureMLPatternSimplifier (..)
+    , MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier)
+    , PureMLPatternSimplifier
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
     ) where
@@ -60,10 +61,16 @@ evalSimplifier simplifier =
 {-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.
 -}
-newtype PureMLPatternSimplifier level variable =
-    PureMLPatternSimplifier
+type PureMLPatternSimplifier level variable =
+    MonadPureMLPatternSimplifier level variable Simplifier
+
+{-| 'PureMLPatternSimplifier' wraps a function that evaluates
+Kore functions on PureMLPatterns.
+-}
+newtype MonadPureMLPatternSimplifier level variable m =
+    MonadPureMLPatternSimplifier
         ( PureMLPattern level variable
-        -> Simplifier
+        -> m
             ( OrOfExpandedPattern level variable
             , SimplificationProof level
             )

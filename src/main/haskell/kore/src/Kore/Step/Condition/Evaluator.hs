@@ -31,7 +31,8 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( toExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..),
+                 ( MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
+                 PureMLPatternSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier )
 
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
@@ -51,7 +52,7 @@ evaluate
     -> Simplifier
         (PredicateSubstitution level variable, SimplificationProof level)
 evaluate
-    (PureMLPatternSimplifier simplifier)
+    (MonadPureMLPatternSimplifier simplifier)
     predicate'
   = do
     (patt, _proof) <- simplifier (unwrapPredicate predicate')
