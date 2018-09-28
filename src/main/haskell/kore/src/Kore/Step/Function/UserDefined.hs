@@ -17,11 +17,12 @@ import Control.Monad.Except
 import Data.Reflection
 
 import           Kore.AST.Common
-                 ( Application (..), Pattern (..), SortedVariable )
+                 ( Application (..), CommonPurePattern, Pattern (..),
+                 PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
                  ( Meta, MetaOrObject, Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern, PureMLPattern, asPurePattern )
+                 ( asPurePattern )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate

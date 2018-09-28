@@ -32,7 +32,6 @@ import Data.Reflection
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools

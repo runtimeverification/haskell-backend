@@ -53,8 +53,6 @@ import qualified Text.Megaparsec.Char.Lexer as Parsec
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -166,7 +164,7 @@ parse = Parsec.signed noSpace Parsec.decimal
 expectBuiltinDomainInt
     :: Monad m
     => String  -- ^ Context for error message
-    -> CommonPurePattern Object  -- ^ Operand pattern
+    -> Kore.CommonPurePattern Object  -- ^ Operand pattern
     -> ExceptT (AttemptedFunction Object Kore.Variable) m Integer
 expectBuiltinDomainInt ctx =
     \case
@@ -192,13 +190,13 @@ expectBuiltinDomainInt ctx =
 asPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> CommonPurePattern Object
+    -> Kore.CommonPurePattern Object
 asPattern resultSort result =
     Kore.DV_ resultSort
         $ Kore.BuiltinDomainPattern
         $ asMetaPattern result
 
-asMetaPattern :: Integer -> CommonPurePattern Meta
+asMetaPattern :: Integer -> Kore.CommonPurePattern Meta
 asMetaPattern result = Kore.StringLiteral_ $ show result
 
 asExpandedPattern

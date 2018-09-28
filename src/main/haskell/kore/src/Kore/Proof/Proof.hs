@@ -61,7 +61,6 @@ import           Data.Reflection
 import qualified Data.Set as S
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
 import           Kore.IndexedModule.MetadataTools
 
 import Data.Text.Prettyprint.Doc as P

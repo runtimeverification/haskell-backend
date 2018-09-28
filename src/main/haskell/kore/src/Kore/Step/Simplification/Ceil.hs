@@ -20,10 +20,8 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( Ceil (..), SortedVariable )
+                 ( Ceil (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
 import           Kore.ASTUtils.SmartPatterns

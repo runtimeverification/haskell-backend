@@ -40,8 +40,6 @@ import qualified Text.Megaparsec.Char as Parsec
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
@@ -114,13 +112,13 @@ parse = (Parsec.<|>) true false
 asPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> CommonPurePattern Object
+    -> Kore.CommonPurePattern Object
 asPattern resultSort result =
     Kore.DV_ resultSort
         $ Kore.BuiltinDomainPattern
         $ asMetaPattern result
 
-asMetaPattern :: Bool -> CommonPurePattern Meta
+asMetaPattern :: Bool -> Kore.CommonPurePattern Meta
 asMetaPattern True = Kore.StringLiteral_ "true"
 asMetaPattern False = Kore.StringLiteral_ "false"
 

@@ -28,8 +28,6 @@ import           Kore.AST.Error
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import           Kore.AST.MLPatterns
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
 import           Kore.ASTUtils.SmartPatterns

@@ -11,11 +11,9 @@ import Data.Reflection
        ( give )
 
 import Kore.AST.Common
-       ( BuiltinDomain (..), CharLiteral (..), DomainValue (..), Sort (..),
-       SortActual (..), StringLiteral (..) )
+       ( BuiltinDomain (..), CharLiteral (..), CommonPurePattern,
+       DomainValue (..), Sort (..), SortActual (..), StringLiteral (..) )
 import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( CommonPurePattern )
 import Kore.ASTUtils.SmartConstructors
        ( mkCharLiteral, mkOr, mkStringLiteral, mkVar )
 import Kore.IndexedModule.MetadataTools

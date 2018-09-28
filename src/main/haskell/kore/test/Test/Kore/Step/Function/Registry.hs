@@ -15,7 +15,7 @@ import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( CommonPurePattern, groundHead )
+                 ( groundHead )
 import           Kore.AST.PureToKore
                  ( patternPureToKore )
 import           Kore.AST.Sentence
@@ -267,4 +267,3 @@ test_functionRegistry =
         , predicate = makeTruePredicate
         , substitution = []
         }
-

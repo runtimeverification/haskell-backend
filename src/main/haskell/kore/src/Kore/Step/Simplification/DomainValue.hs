@@ -12,11 +12,11 @@ module Kore.Step.Simplification.DomainValue
     ) where
 
 import           Kore.AST.Common
-                 ( BuiltinDomain, DomainValue (..),
+                 ( BuiltinDomain, CommonPurePattern, DomainValue (..),
                  Pattern (DomainValuePattern) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( CommonPurePattern, asPurePattern )
+                 ( asPurePattern )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern

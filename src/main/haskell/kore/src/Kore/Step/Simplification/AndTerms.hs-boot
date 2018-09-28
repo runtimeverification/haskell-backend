@@ -3,11 +3,9 @@ module Kore.Step.Simplification.AndTerms where
 import Control.Monad.Counter
        ( MonadCounter )
 import Kore.AST.Common
-       ( SortedVariable )
+       ( PureMLPattern, SortedVariable )
 import Kore.AST.MetaOrObject
        ( Meta, MetaOrObject, Object )
-import Kore.AST.PureML
-       ( PureMLPattern )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.ExpandedPattern

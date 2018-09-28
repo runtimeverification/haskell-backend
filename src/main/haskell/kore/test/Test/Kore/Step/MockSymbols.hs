@@ -25,11 +25,9 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( Id (..), Sort (..), SortActual (..), SymbolOrAlias (..),
-                 Variable (..) )
+                 ( Id (..), PureMLPattern, Sort (..), SortActual (..),
+                 SymbolOrAlias (..), Variable (..) )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors

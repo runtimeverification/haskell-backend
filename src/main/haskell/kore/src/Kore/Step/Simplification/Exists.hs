@@ -20,10 +20,8 @@ import           Data.Reflection
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
-                 ( Exists (..), SortedVariable )
+                 ( Exists (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkExists )
 import           Kore.IndexedModule.MetadataTools

@@ -44,8 +44,6 @@ import qualified Data.Sequence as Seq
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
@@ -105,7 +103,7 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin = Seq (CommonPurePattern Object)
+type Builtin = Seq (Kore.CommonPurePattern Object)
 
 {- | Abort function evaluation if the argument is not a List domain value.
 
@@ -117,7 +115,7 @@ type Builtin = Seq (CommonPurePattern Object)
 expectBuiltinDomainList
     :: Monad m
     => String  -- ^ Context for error message
-    -> CommonPurePattern Object  -- ^ Operand pattern
+    -> Kore.CommonPurePattern Object  -- ^ Operand pattern
     -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
 expectBuiltinDomainList ctx =
     \case
@@ -225,7 +223,7 @@ asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonPurePattern Object)
+    -> Either (Kore.Error e) (Builtin -> Kore.CommonPurePattern Object)
 asPattern indexedModule _ = do
     symbolUnit <- lookupSymbolUnit indexedModule
     let applyUnit = Kore.App_ symbolUnit []

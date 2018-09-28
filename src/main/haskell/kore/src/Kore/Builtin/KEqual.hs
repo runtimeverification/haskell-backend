@@ -25,11 +25,9 @@ import           Data.Map
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Application (..), Variable (..) )
+                 ( Application (..), PureMLPattern, Variable (..) )
 import           Kore.AST.MetaOrObject
                  ( Object )
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -102,4 +100,3 @@ evalKEq true false tools _ pat =
       where
         ep1 = ExpandedPattern.fromPurePattern t1
         ep2 = ExpandedPattern.fromPurePattern t2
-

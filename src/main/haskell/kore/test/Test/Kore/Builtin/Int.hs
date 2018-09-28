@@ -22,8 +22,6 @@ import           GHC.Integer.Logarithms
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier

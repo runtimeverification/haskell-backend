@@ -66,7 +66,6 @@ import Data.Reflection
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
-import Kore.AST.PureML
 import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 

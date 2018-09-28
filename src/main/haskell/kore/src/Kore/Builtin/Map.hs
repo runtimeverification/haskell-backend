@@ -44,8 +44,6 @@ import qualified Data.Set as Set
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -112,7 +110,7 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin = Map (CommonPurePattern Object) (CommonPurePattern Object)
+type Builtin = Map (Kore.CommonPurePattern Object) (Kore.CommonPurePattern Object)
 
 {- | Abort function evaluation if the argument is not a Map domain value.
 
@@ -124,7 +122,7 @@ type Builtin = Map (CommonPurePattern Object) (CommonPurePattern Object)
 expectBuiltinDomainMap
     :: Monad m
     => String  -- ^ Context for error message
-    -> CommonPurePattern Object  -- ^ Operand pattern
+    -> Kore.CommonPurePattern Object  -- ^ Operand pattern
     -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
 expectBuiltinDomainMap ctx =
     \case
@@ -268,7 +266,7 @@ asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonPurePattern Object)
+    -> Either (Kore.Error e) (Builtin -> Kore.CommonPurePattern Object)
 asPattern indexedModule _
   = do
     symbolUnit <- lookupSymbolUnit indexedModule

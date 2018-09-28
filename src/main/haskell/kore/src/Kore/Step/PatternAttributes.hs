@@ -25,12 +25,11 @@ import Data.Functor.Foldable
        ( cata )
 
 import           Kore.AST.Common
-                 ( Application (..), BuiltinDomain, CharLiteral, DomainValue,
-                 Pattern (..), StringLiteral, SymbolOrAlias )
+                 ( Application (..), BuiltinDomain, CharLiteral,
+                 CommonPurePattern, DomainValue, Pattern (..), PureMLPattern,
+                 StringLiteral, SymbolOrAlias )
 import           Kore.AST.MetaOrObject
                  ( Meta )
-import           Kore.AST.PureML
-                 ( CommonPurePattern, PureMLPattern )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools

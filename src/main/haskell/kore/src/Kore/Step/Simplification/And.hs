@@ -14,10 +14,8 @@ module Kore.Step.Simplification.And
     ) where
 
 import           Kore.AST.Common
-                 ( And (..), SortedVariable )
+                 ( And (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern

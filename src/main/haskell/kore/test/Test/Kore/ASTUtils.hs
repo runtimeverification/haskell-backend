@@ -22,7 +22,6 @@ import Data.Reflection
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.AST.PureML
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.ASTUtils.SmartConstructors

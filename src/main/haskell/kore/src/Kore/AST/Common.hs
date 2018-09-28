@@ -960,6 +960,21 @@ data Pattern level variable child where
     VariablePattern
         :: !(variable level) -> Pattern level variable child
 
+{-|'PureMLPattern' corresponds to "fixed point" representations
+of the 'Pattern' class where the level is fixed to a given @level@.
+
+@var@ is the type of variables.
+-}
+type PureMLPattern level var = Fix (Pattern level var)
+
+-- |'CommonPurePattern' is the instantiation of 'PureMLPattern' with common
+-- 'Variable's.
+type CommonPurePattern level = PureMLPattern level Variable
+
+{- | @ConcretePurePattern level@ is a concrete pattern at level @level@.
+ -}
+type ConcretePurePattern level = PureMLPattern level Concrete
+
 data BuiltinDomain child
     = BuiltinDomainPattern !child
     | BuiltinDomainMap

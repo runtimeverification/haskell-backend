@@ -21,7 +21,6 @@ module Kore.AST.MLPatterns
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
-import Kore.AST.PureML
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.Implicit.ImplicitSorts

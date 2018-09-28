@@ -56,8 +56,6 @@ import           Data.Functor.Impredicative
 import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import           Kore.AST.Sentence
 import           Kore.MetaML.AST
 import           Kore.Parser.Lexeme

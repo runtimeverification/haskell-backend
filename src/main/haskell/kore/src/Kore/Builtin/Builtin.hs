@@ -66,16 +66,14 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 
 import           Kore.AST.Common
-                 ( Application (..), BuiltinDomain (..), DomainValue (..),
-                 Id (..), Pattern (DomainValuePattern), Sort (..),
-                 SortActual (..), SortVariable (..), SymbolOrAlias (..),
-                 Variable )
+                 ( Application (..), BuiltinDomain (..), CommonPurePattern,
+                 DomainValue (..), Id (..), Pattern (DomainValuePattern),
+                 Sort (..), SortActual (..), SortVariable (..),
+                 SymbolOrAlias (..), Variable )
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )

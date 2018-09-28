@@ -35,10 +35,10 @@ import           Data.Reflection
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
-                 ( SortedVariable, Variable )
+                 ( PureMLPattern, SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( PureMLPattern, mapPatternVariables )
+                 ( mapPatternVariables )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkBottom, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns

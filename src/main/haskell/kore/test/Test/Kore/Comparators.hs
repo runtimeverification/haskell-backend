@@ -11,10 +11,8 @@ Portability : portable
 -}
 module Test.Kore.Comparators where
 
-
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
 import           Kore.Predicate.Predicate
 import           Kore.Step.BaseStep
 import           Kore.Step.Error

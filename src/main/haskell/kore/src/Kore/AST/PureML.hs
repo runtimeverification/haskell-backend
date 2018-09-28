@@ -18,13 +18,6 @@ import Data.Functor.Foldable
 import Kore.AST.Common
 import Kore.AST.Sentence
 
-{-|'PureMLPattern' corresponds to "fixed point" representations
-of the 'Pattern' class where the level is fixed to a given @level@.
-
-@var@ is the type of variables.
--}
-type PureMLPattern level var = Fix (Pattern level var)
-
 asPurePattern
     :: Pattern level var (PureMLPattern level var) -> PureMLPattern level var
 asPurePattern = embed
@@ -98,9 +91,6 @@ constant
     :: SymbolOrAlias level -> Pattern level variable child
 constant patternHead = apply patternHead []
 
--- |'CommonPurePattern' is the instantiation of 'PureMLPattern' with common
--- 'Variable's.
-type CommonPurePattern level = PureMLPattern level Variable
 type UnFixedPureMLPattern level variable =
     Pattern level variable (PureMLPattern level variable)
 type UnfixedCommonPurePattern level = UnFixedPureMLPattern level Variable

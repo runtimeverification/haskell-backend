@@ -44,9 +44,6 @@ import Data.Functor.Foldable
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( PureMLPattern )
-
 
 pattern And_
     :: Sort level

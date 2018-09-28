@@ -38,10 +38,8 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( SortedVariable, Variable )
+                 ( PureMLPattern, SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr )
 import           Kore.ASTUtils.SmartPatterns

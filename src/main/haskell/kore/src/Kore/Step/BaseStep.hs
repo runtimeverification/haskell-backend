@@ -38,7 +38,7 @@ import qualified Data.Set as Set
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( CommonPurePattern, PureMLPattern, mapPatternVariables )
+                 ( mapPatternVariables )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom )
 import           Kore.IndexedModule.MetadataTools

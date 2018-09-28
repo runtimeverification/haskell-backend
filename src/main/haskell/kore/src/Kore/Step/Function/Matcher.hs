@@ -25,10 +25,8 @@ import           Data.Reflection
 import           Control.Monad.Counter
                  ( Counter )
 import           Kore.AST.Common
-                 ( SortedVariable )
+                 ( PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern And_, pattern App_, pattern Bottom_, pattern Ceil_,
                  pattern CharLiteral_, pattern DV_, pattern Equals_,

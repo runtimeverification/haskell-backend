@@ -7,17 +7,14 @@ import Test.QuickCheck
 import Data.Map
 import Data.Reflection
 
-import           Kore.AST.PureML
-import           Kore.AST.Sentence
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-import           Kore.ASTUtils.SmartPatterns
-import           Kore.Proof.Dummy
-
-
-
+import Kore.AST.Common
+import Kore.AST.MetaOrObject
+import Kore.AST.Sentence
+import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
+import Kore.Proof.Dummy
 import Kore.SMT.SMT
 
 import Test.Kore.Builtin.Bool
@@ -49,9 +46,9 @@ p, q :: CommonPurePattern Object
 p = vBool "p"
 q = vBool "q"
 
-add, sub, mul, div 
-    :: CommonPurePattern Object 
-    -> CommonPurePattern Object 
+add, sub, mul, div
+    :: CommonPurePattern Object
+    -> CommonPurePattern Object
     -> CommonPurePattern Object
 add  a b = App_ addSymbol  [a, b]
 sub a b = App_ subSymbol  [a, b]
@@ -62,20 +59,20 @@ run :: CommonPurePattern Object -> Property
 run prop = (give tools $ unsafeTryRefutePattern prop) === Just False
 
 
-prop_1 :: Property 
-prop_1 = run $ dummyEnvironment $ 
-  App_ ltSymbol [a, intLiteral 0] 
-  `mkAnd` 
+prop_1 :: Property
+prop_1 = run $ dummyEnvironment $
+  App_ ltSymbol [a, intLiteral 0]
+  `mkAnd`
   App_ ltSymbol [intLiteral 0, a]
 
 prop_2 :: Property
-prop_2 = run $ dummyEnvironment $ 
+prop_2 = run $ dummyEnvironment $
   App_ ltSymbol [a `add` a, a `add` b]
-  `mkAnd` 
+  `mkAnd`
   App_ ltSymbol [b `add` b, a `add` b]
 
-prop_3 :: Property 
-prop_3 = run $ dummyEnvironment $ mkNot $ 
+prop_3 :: Property
+prop_3 = run $ dummyEnvironment $ mkNot $
   App_ ltSymbol [a, b]
   `mkImplies`
   (App_ ltSymbol [b, c]
@@ -84,13 +81,13 @@ prop_3 = run $ dummyEnvironment $ mkNot $
 
 prop_4 :: Property
 prop_4 = run $ dummyEnvironment $
-  App_ eqSymbol 
+  App_ eqSymbol
   [ intLiteral 1 `add` (intLiteral 2 `mul` a)
   , intLiteral 2 `mul` b
   ]
- 
-prop_5 :: Property 
-prop_5 = run $ dummyEnvironment $ mkNot $ 
+
+prop_5 :: Property
+prop_5 = run $ dummyEnvironment $ mkNot $
   App_ eqSymbol
   [ intLiteral 0 `sub` (a `mul` a)
   , b `mul` b
@@ -102,24 +99,24 @@ prop_5 = run $ dummyEnvironment $ mkNot $
   ]
 
 
-prop_div :: Property 
-prop_div = run $ dummyEnvironment $ mkNot $ 
+prop_div :: Property
+prop_div = run $ dummyEnvironment $ mkNot $
   App_ ltSymbol [intLiteral 0, a]
   `mkImplies`
   App_ ltSymbol [App_ tdivSymbol [a, intLiteral 2], a]
 
-prop_mod :: Property 
-prop_mod = run $ dummyEnvironment $ mkNot $ 
-  App_ eqSymbol 
+prop_mod :: Property
+prop_mod = run $ dummyEnvironment $ mkNot $
+  App_ eqSymbol
     [ App_ tmodSymbol [a `mul` intLiteral 2, intLiteral 2]
     , intLiteral 0
     ]
 
-prop_pierce :: Property 
-prop_pierce = run $ dummyEnvironment $ mkNot $ 
+prop_pierce :: Property
+prop_pierce = run $ dummyEnvironment $ mkNot $
   ((p `mkImplies` q) `mkImplies` p) `mkImplies` p
 
-prop_demorgan :: Property 
+prop_demorgan :: Property
 prop_demorgan = run $ dummyEnvironment $ mkNot $
   (mkNot $ p `mkOr` q) `mkIff` (mkNot p `mkAnd` mkNot q)
 
@@ -128,5 +125,3 @@ prop_true = run $ dummyEnvironment $ mkNot $ mkTop
 
 prop_false :: Property
 prop_false = run $ dummyEnvironment $ mkNot $ mkIff (mkNot p) (p `mkImplies` mkBottom)
-
-

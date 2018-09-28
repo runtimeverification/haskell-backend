@@ -22,13 +22,11 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( SortedVariable )
+                 ( PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
                  ( Meta, MetaOrObject, Object )
 import           Kore.AST.MLPatterns
                  ( getPatternResultSort )
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools

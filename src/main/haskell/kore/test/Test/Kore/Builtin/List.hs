@@ -17,8 +17,6 @@ import qualified Data.Sequence as Seq
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
