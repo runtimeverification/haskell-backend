@@ -9,23 +9,7 @@ Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes       #-}
-{-# LANGUAGE ConstraintKinds           #-}
-{-# LANGUAGE DeriveFoldable            #-}
-{-# LANGUAGE DeriveFunctor             #-}
-{-# LANGUAGE DeriveGeneric             #-}
-{-# LANGUAGE DeriveTraversable         #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE FlexibleInstances         #-}
-{-# LANGUAGE FunctionalDependencies    #-}
-{-# LANGUAGE LambdaCase                #-}
-{-# LANGUAGE MultiParamTypeClasses     #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE PatternSynonyms           #-}
-{-# LANGUAGE Rank2Types                #-}
-{-# LANGUAGE TypeApplications          #-}
-{-# LANGUAGE TypeFamilies              #-}
-{-# LANGUAGE TypeSynonymInstances      #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -Wno-unused-matches    #-}
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
