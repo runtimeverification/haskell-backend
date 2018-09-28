@@ -30,6 +30,7 @@ dependencies:
   - data-default
   - deepseq
   - deriving-compat
+  - errors
   - free
   - gitrev
   - groom
@@ -46,6 +47,7 @@ dependencies:
   - sbv
   - text
   - time
+  - transformers
   - unordered-containers
 
 build-tools:

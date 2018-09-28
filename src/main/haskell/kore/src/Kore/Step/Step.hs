@@ -27,6 +27,8 @@ module Kore.Step.Step
     , runStrategy
     ) where
 
+import Control.Monad.Except
+       ( runExceptT )
 import Data.Foldable
        ( toList )
 import Data.Semigroup
@@ -110,11 +112,11 @@ transitionRule tools simplifier =
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = ExpandedPattern.filterOr configs
             return (prove <$> toList nonEmptyConfigs)
-    transitionAxiom a (config, proof) =
-        case stepWithAxiom tools config a of
+    transitionAxiom a (config, proof) = do
+        result <- runExceptT $ stepWithAxiom tools config a
+        case result of
             Left _ -> pure []
-            Right apply -> do
-                (config', proof') <- apply
+            Right (config', proof') ->
                 if ExpandedPattern.isBottom config'
                     then return []
                     else return [(config', proof <> proof')]
