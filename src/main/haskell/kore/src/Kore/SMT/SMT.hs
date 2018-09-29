@@ -52,7 +52,8 @@ data TranslatePredicateError
  deriving(Eq, Ord, Show)
 
 type Pat = PureMLPattern Object Variable
-type Translating = ExceptT TranslatePredicateError (StateT TranslationState Symbolic)
+type Translating 
+    = ExceptT TranslatePredicateError (StateT TranslationState Symbolic)
 
 data SMTAttributes
   = SMTAttributes
