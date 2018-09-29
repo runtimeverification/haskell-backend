@@ -9,9 +9,7 @@ Stability   : experimental
 Portability : portable
 -}
 
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
--- {-# OPTIONS_GHC -Wno-missing-signatures #-}
--- {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
+-- {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Kore.ASTUtils.SmartConstructors
     ( -- * Utility functionss for dealing with sorts
@@ -125,9 +123,9 @@ patternLens
   Fix (RewritesPattern (Rewrites s2 a b)) -> Rewrites_ <$> o s2 <*> c a <*> c b
   Top_       s2       -> Top_      <$>          o s2
   Var_          v     -> Var_      <$>                   var v
-  App_ h children -> App_ h <$> traverse c children
-  StringLiteral_ s -> pure (StringLiteral_ s)
-  CharLiteral_   c -> pure (CharLiteral_   c)
+  App_ h ps -> App_ h <$> traverse c ps
+  StringLiteral_ str  -> pure (StringLiteral_ str)
+  CharLiteral_   char -> pure (CharLiteral_   char)
   _ -> error "The impossible happened."
   -- p -> pure p
 

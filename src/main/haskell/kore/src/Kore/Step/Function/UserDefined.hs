@@ -197,7 +197,9 @@ evaluatePredicate
             , substitution = evaluatedSubstitution
             }
         , _proof
-        ) <- give (sortTools tools) $ give tools $ Predicate.evaluate simplifier predicate
+        ) <- give (sortTools tools) $
+             give tools $
+                 Predicate.evaluate simplifier predicate
     (   PredicateSubstitution
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
