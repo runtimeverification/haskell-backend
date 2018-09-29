@@ -10,11 +10,11 @@ Portability : portable
 -}
 
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-{-# OPTIONS_GHC -Wno-missing-signatures #-}
-{-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
+-- {-# OPTIONS_GHC -Wno-missing-signatures #-}
+-- {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 
 module Kore.ASTUtils.SmartConstructors
-    ( -- * Utility funcs for dealing with sorts
+    ( -- * Utility functionss for dealing with sorts
       getSort
     , forceSort
     , predicateSort
@@ -132,6 +132,9 @@ patternLens
   -- p -> pure p
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc.
+inputSort
+    :: MetaOrObject level
+    => Traversal' (PureMLPattern level var) (Sort level)
 inputSort        f = patternLens f    pure pure pure
 -- | The sort returned by a top level constructor.
 -- NOTE ABOUT NOTATION:
@@ -145,15 +148,28 @@ inputSort        f = patternLens f    pure pure pure
 -- I believe this convention is less confusing.
 -- Note that a few constructors like App and StringLiteral
 -- lack a result sort in the AST.
+resultSort
+    :: MetaOrObject level
+    => Traversal' (PureMLPattern level var) (Sort level)
 resultSort       f = patternLens pure f    pure pure
 -- | Points to the bound variable in Forall/Exists,
 -- and also the Variable in VariablePattern
+variable
+    :: MetaOrObject level
+    => Traversal' (PureMLPattern level var) (var level)
 variable         f = patternLens pure pure f    pure
 -- All sub-expressions which are Patterns.
 -- use partsOf allChildren to get a lens to a List.
+allChildren
+    :: MetaOrObject level
+    => Traversal' (PureMLPattern level var) (PureMLPattern level var)
 allChildren      f = patternLens pure pure pure f
 
-
+changeVar
+    :: (MetaOrObject level, Applicative f)
+    => (var level -> f (var1 level))
+    -> (PureMLPattern level var -> f (PureMLPattern level var1))
+    -> (PureMLPattern level var -> f (PureMLPattern level var1))
 changeVar v f = patternLens pure pure v f
 
 -- | Applies a function at an `[Int]` path.
@@ -258,15 +274,14 @@ ensureSortAgreement
 ensureSortAgreement p =
   case makeSortsAgree $ p ^. partsOf allChildren of
     Just []    -> p & resultSort .~ predicateSort
-    Just children ->
-      p & (partsOf allChildren) .~ children
-        & inputSort  .~ childSort
+    Just ps@(c : _) ->
+      p & (partsOf allChildren) .~ ps
+        & inputSort  .~ getSort c
         & resultSort .~ (
           if hasFlexibleHead p
             then predicateSort
-            else childSort
+            else getSort c
           )
-      where childSort = getSort $ head children
     Nothing -> error $ "Can't unify sorts of subpatterns: " ++ show p
 
 -- | In practice, all the predicate patterns we use are
@@ -453,8 +468,11 @@ mkVar
     -> PureMLPattern level var
 mkVar = Var_
 
+mkStringLiteral :: String -> PureMLPattern Meta var
 mkStringLiteral = StringLiteral_
-mkCharLiteral   = CharLiteral_
+
+mkCharLiteral :: Char -> PureMLPattern Meta var
+mkCharLiteral = CharLiteral_
 
 mkSort
   :: MetaOrObject level

@@ -105,8 +105,8 @@ goUnaryOp
     -> t2 
     -> m b
 goUnaryOp op cont x1 = do
-  tx1 <- cont x1
-  return (op tx1)
+    tx1 <- cont x1
+    return (op tx1)
 
 goBinaryOp 
     :: Monad m 
@@ -115,12 +115,12 @@ goBinaryOp
     -> t2 -> t2 
     -> m b
 goBinaryOp op cont x1 x2 = do
-  tx1 <- cont x1
-  tx2 <- cont x2
-  return (tx1 `op` tx2)
+    tx1 <- cont x1
+    tx2 <- cont x2
+    return (tx1 `op` tx2)
 
 config :: SMTConfig
-config = z3
+config = z3 -- { transcript = Just "/Users/phillip/smt.log"}
 
 -- | Returns `Just True` if the sentence is satisfied in all models,
 -- `Just False` if it has a counterexample,
@@ -133,14 +133,15 @@ unsafeTryRefutePattern
     => PureMLPattern Object variable
     -> Maybe Bool
 unsafeTryRefutePattern p = unsafePerformIO $ do 
-  let smtPredicate = 
-            patternToSMT True p 
-        >>= (\case { Right p' -> return p' ; Left _ -> return true }) 
-        >> setTimeOut 20
+  let smtPredicate = setTimeOut 20 >> patternToSMT True p 
+        >>= (\case {
+               Right p' -> return $ bnot p' ; 
+               Left _ -> sBool "Translation failed"
+          }) 
   res <- proveWith config smtPredicate
   return $ case res of 
-    ThmResult (Satisfiable   _ _) -> Just False
-    ThmResult (Unsatisfiable _ _) -> Just True --confusing, i know...
+    ThmResult (Satisfiable   _ _) -> Nothing
+    ThmResult (Unsatisfiable _ _) -> Just False --confusing, i know...
     _ -> Nothing
 
 unsafeTryRefutePredicate
@@ -148,11 +149,12 @@ unsafeTryRefutePredicate
        ( Given (MetadataTools level SMTAttributes)
        , MetaOrObject level
        , Ord (variable level)
+       , Show (variable level)
        , SortedVariable variable
        )
     => KorePredicate.Predicate level variable
     -> Maybe Bool
-unsafeTryRefutePredicate p = 
+unsafeTryRefutePredicate p =
   case isMetaOrObject (Proxy :: Proxy level) of
     IsMeta   -> Nothing
     IsObject -> unsafeTryRefutePattern $ KorePredicate.unwrapPredicate p

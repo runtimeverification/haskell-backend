@@ -14,8 +14,9 @@ module Kore.Step.Condition.Evaluator
 import Data.Reflection
 
 import           Kore.AST.Common
-                 ( SortedVariable )
+import           Kore.AST.PureML
 import           Kore.AST.MetaOrObject
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeFalsePredicate,
@@ -35,6 +36,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
 import           Kore.SMT.SMT
 
+import Debug.Trace
+
 convertStepperToSMT 
     :: MetadataTools level StepperAttributes 
     -> MetadataTools level SMTAttributes
@@ -45,6 +48,12 @@ convertStepperToSMT tools =
     , sortTools = sortTools tools
     }
     where convert (StepperAttributes _ _ _ _ _ hook) = SMTAttributes hook
+
+-- TODO: May add more checks later
+-- but the vast majority of predicates are just `top`.
+nonTrivial :: PureMLPattern level variable -> Bool
+nonTrivial (Top_ _) = False
+nonTrivial _ = True
 
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
@@ -70,8 +79,10 @@ evaluate
     predicate''
   = give (convertStepperToSMT (given :: MetadataTools level StepperAttributes)) 
     $ do
-    let predicate' = 
-            if unsafeTryRefutePredicate predicate'' == Just False 
+    let predicate' =
+            if nonTrivial (unwrapPredicate predicate'') 
+               && (traceShowId $ unsafeTryRefutePredicate predicate'') 
+                   == Just False 
             then makeFalsePredicate 
             else predicate''
     (patt, _proof) <- simplifier (unwrapPredicate predicate')
