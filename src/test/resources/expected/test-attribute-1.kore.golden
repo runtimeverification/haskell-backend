@@ -4,7 +4,7 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-ATTRIBUTE-1"
             , moduleSentences =
-                [ ObjectSentence (SentenceSortSentence SentenceSort
+                [ ObjectSentence (SentenceHookSentence (SentenceHookedSort SentenceSort
                     { sentenceSortName = (Id "Nat" AstLocationNone) :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
@@ -20,7 +20,7 @@ Definition
                                     ]
                                 }))))
                             ]
-                    })
+                    }))
                 ]
             , moduleAttributes = Attributes []
             }

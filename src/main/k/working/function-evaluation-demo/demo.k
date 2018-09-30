@@ -96,4 +96,8 @@ endmodule
 
 module DEMO
   imports NAT-LIST
+
+  imports STRING-SYNTAX
+  imports BOOL
+  imports MAP
 endmodule

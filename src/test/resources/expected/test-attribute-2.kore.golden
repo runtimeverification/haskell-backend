@@ -4,7 +4,7 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-ATTRIBUTE-2"
             , moduleSentences =
-                [ ObjectSentence (SentenceSortSentence SentenceSort
+                [ ObjectSentence (SentenceHookSentence (SentenceHookedSort SentenceSort
                     { sentenceSortName = (Id "Nat" AstLocationNone) :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
@@ -16,12 +16,12 @@ Definition
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "NAT.Nat")))))
                                     ]
                                 }))))
                             ]
-                    })
-                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = (Id "plus" AstLocationNone) :: Id Object
@@ -51,7 +51,7 @@ Definition
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "NAT.plus")))))
                                     ]
                                 }))))
                             , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
@@ -71,7 +71,7 @@ Definition
                                 , applicationChildren = []
                                 }))))
                             ]
-                    })
+                    }))
                 ]
             , moduleAttributes = Attributes []
             }

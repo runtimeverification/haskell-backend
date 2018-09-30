@@ -145,6 +145,8 @@ instance
         \case
             BuiltinDomainPattern child -> unparse child
             BuiltinDomainMap _ -> Builtin.notImplementedInternal
+            BuiltinDomainList _ -> Builtin.notImplementedInternal
+            BuiltinDomainSet _ -> Builtin.notImplementedInternal
 
 instance Unparse child => Unparse (Equals level child) where
     unparse

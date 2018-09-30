@@ -85,14 +85,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
         (assertEqual ""
-            ( Left
-                ( UnificationError
-                    ( PatternClash
-                        ( HeadClash Mock.aSymbol )
-                        ( HeadClash Mock.constr10Symbol )
-                    )
-                )
-            )
+            ( Right $ PredicateSubstitution makeFalsePredicate [] )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 Mock.a
@@ -108,7 +101,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     , testCase "Double constructor is bottom with variables"
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
         (assertEqual ""
-            ( Left (UnificationError NonFunctionalPattern) )
+            ( Left (UnificationError UnsupportedPatterns) )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 (mkVar Mock.y)
@@ -121,10 +114,18 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
         )
 
-    , testCase "Constructor and constructor of function errors"
-        -- [x=constructor(a)] + [x=constructor(f(a))]  === error
+    , testCase "Constructor and constructor of function"
+        -- [x=constructor(a)] + [x=constructor(f(a))]
         (assertEqual ""
-            ( Left (UnificationError (NonConstructorHead Mock.fSymbol)) )
+            ( Right
+                ( PredicateSubstitution
+                    makeTruePredicate
+                    [   ( Mock.x
+                        , Mock.constr10 Mock.a
+                        )
+                    ]
+                )
+            )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 Mock.a
@@ -137,10 +138,20 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
         )
 
-    , testCase "Constructor and constructor of function errors with variables"
-        -- [x=constructor(y)] + [x=constructor(f(y))]  === error
+    -- TODO(Vladimir): this should be fixed by making use of the predicate from
+    -- `solveGroupSubstitutions`.
+    , testCase "Constructor and constructor of function with variables"
+        -- [x=constructor(y)] + [x=constructor(f(y))]
         (assertEqual ""
-            ( Left (UnificationError (NonFunctionalPattern)) )
+            ( Right
+                ( PredicateSubstitution
+                    makeTruePredicate
+                    [   ( Mock.x
+                        , Mock.constr10 (Mock.f (mkVar Mock.y))
+                        )
+                    ]
+                )
+            )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 (mkVar Mock.y)
@@ -153,12 +164,16 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
         )
 
-    , testCase "Constructor and constructor of functional symbol errors"
-        -- [x=constructor(y)] + [x=constructor(functional(y))]  === error
+    , testCase "Constructor and constructor of functional symbol"
+        -- [x=constructor(y)] + [x=constructor(functional(y))]
         (assertEqual ""
-            ( Left
-                ( SubstitutionError
-                    ( NonCtorCircularVariableDependency [ Mock.y ] )
+            ( Right
+                ( PredicateSubstitution
+                    makeTruePredicate
+                    [   ( Mock.x
+                        , Mock.constr10 (Mock.functional10 (mkVar Mock.y))
+                        )
+                    ]
                 )
             )
             ( normalize
@@ -174,18 +189,15 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
         )
 
     , testCase "Constructor circular dependency?"
-        -- [x=y] + [y=constructor(x)]  === bottom
+        -- [x=y] + [y=constructor(x)]  === error
         (assertEqual ""
-            ( Right
-                ( PredicateSubstitution makeFalsePredicate []
-                )
-            )
+            ( Left $ UnificationError UnsupportedPatterns )
             ( normalize
                 [   ( Mock.x
-                    , (mkVar Mock.y)
+                    , mkVar Mock.y
                     )
                 ]
-                [   ( Mock.y
+                [   ( Mock.x
                     , Mock.constr10 (mkVar Mock.x)
                     )
                 ]
@@ -202,7 +214,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
             )
             ( normalize
                 [   ( Mock.x
-                    , (mkVar Mock.y)
+                    , mkVar Mock.y
                     )
                 ]
                 [   ( Mock.y
@@ -216,7 +228,7 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
   where
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+        Mock.makeMetadataTools mockSortTools Mock.attributesMapping []
     normalize
         :: UnificationSubstitution Object Variable
         -> UnificationSubstitution Object Variable
@@ -224,6 +236,10 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
               ( UnificationOrSubstitutionError Object Variable )
               ( PredicateSubstitution Object Variable )
     normalize s1 s2 =
-        case mergeAndNormalizeSubstitutions mockMetadataTools s1 s2 of
-            Left e -> Left e
-            Right res -> Right . fst $ evalCounter res
+        let
+            result =
+                evalCounter
+                . runExceptT
+                $ mergeAndNormalizeSubstitutions mockMetadataTools s1 s2
+        in
+            fmap fst result

@@ -121,7 +121,7 @@ metaVariableSubstitute :: Int -> Variable Meta
 metaVariableSubstitute n =
     metaVariable
         { variableName = Id
-            { getId = "#var_" ++ show n
+            { getId = "#" ++ freshVariablePrefix ++ show n
             , idLocation = AstLocationGeneratedVariable
             }
         }
@@ -134,7 +134,7 @@ objectVariableSubstitute :: Int -> Variable Object
 objectVariableSubstitute n =
     objectVariable
         { variableName = Id
-            { getId = "var_" ++ show n
+            { getId = freshVariablePrefix ++ show n
             , idLocation = AstLocationGeneratedVariable
             }
         }

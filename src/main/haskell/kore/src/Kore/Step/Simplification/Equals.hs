@@ -34,18 +34,19 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, pattern PredicateTrue,
                  makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
-                 makeOrPredicate, makeTruePredicate )
+                 makeOrPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern),
-                 PredicateSubstitution (PredicateSubstitution) )
+                 ( ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..), top )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, toExpandedPattern )
+import           Kore.Step.PredicateSubstitution
+                 ( PredicateSubstitution (PredicateSubstitution) )
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSubstitution (..), top )
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -385,10 +386,7 @@ makeEvaluateTermsToPredicateSubstitution
 makeEvaluateTermsToPredicateSubstitution tools first second
   | first == second =
     return
-        ( PredicateSubstitution
-            { predicate = makeTruePredicate
-            , substitution = []
-            }
+        ( PredicateSubstitution.top
         , SimplificationProof
         )
   | otherwise = give sortTools $

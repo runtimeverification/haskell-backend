@@ -97,6 +97,7 @@ unificationForwardsProof a b = do
 data UnificationError
   = ConstructorClash Term Term
   | OccursCheck Term
+  | UnsupportedPatterns
   deriving(Show, Generic)
 
 instance Hashable UnificationError

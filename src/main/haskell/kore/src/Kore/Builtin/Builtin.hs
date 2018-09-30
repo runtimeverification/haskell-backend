@@ -34,13 +34,16 @@ module Kore.Builtin.Builtin
     , verifyDomainValue
     , verifyStringLiteral
     , parseDomainValue
+    , parseString
       -- * Implementing builtin functions
     , notImplemented
-    , binaryOperator
     , unaryOperator
+    , binaryOperator
+    , ternaryOperator
     , functionEvaluator
     , verifierBug
     , wrongArity
+    , runParser
     , appliedFunction
     , lookupSymbol
     ) where
@@ -412,14 +415,20 @@ parseDomainValue
     Kore.Error.withContext "While parsing domain value"
         (case domainValueChild of
             BuiltinDomainPattern (StringLiteral_ lit) ->
-                let parsed =
-                        Parsec.parse
-                            (parser <* Parsec.eof)
-                            "<string literal>"
-                            lit
-                in castParseError parsed
+                parseString parser lit
             _ -> Kore.Error.koreFail "Expected literal string"
         )
+
+{- | Run a parser on a string.
+
+ -}
+parseString
+    :: Parser a
+    -> String
+    -> Either (Error VerifyError) a
+parseString parser lit =
+    let parsed = Parsec.parse (parser <* Parsec.eof) "<string literal>" lit
+    in castParseError parsed
   where
     castParseError =
         either (Kore.Error.koreFail . Parsec.parseErrorPretty) pure
@@ -436,6 +445,43 @@ appliedFunction
     -> m (AttemptedFunction Object Variable)
 appliedFunction epat =
     (return . Applied . OrOfExpandedPattern.make) [epat]
+
+{- | Construct a builtin unary operator.
+
+  The operand type may differ from the result type.
+
+  The function is skipped if its arguments are not domain values.
+  It is an error if the wrong number of arguments is given; this must be checked
+  during verification.
+
+ -}
+unaryOperator
+    :: Parser a
+    -- ^ Parse operand
+    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -- ^ Render result as pattern with given sort
+    -> String
+    -- ^ Builtin function name (for error messages)
+    -> (a -> b)
+    -- ^ Operation on builtin types
+    -> Function
+unaryOperator
+    parser
+    asPattern
+    ctx
+    op
+  =
+    functionEvaluator unaryOperator0
+  where
+    get = runParser ctx . parseDomainValue parser
+    unaryOperator0 _ _ resultSort children =
+        case Functor.Foldable.project <$> children of
+            [DomainValuePattern a] -> do
+                -- Apply the operator to a domain value
+                let r = op (get a)
+                (appliedFunction . asPattern resultSort) r
+            [_] -> return NotApplicable
+            _ -> wrongArity ctx
 
 {- | Construct a builtin binary operator.
 
@@ -475,41 +521,42 @@ binaryOperator
             [_, _] -> return NotApplicable
             _ -> wrongArity ctx
 
-{- | Construct a builtin unary operator.
+{- | Construct a builtin ternary operator.
 
-  The operand type may differ from the result type.
+  All three operands have the same builtin type, which may be different from the
+  result type.
 
   The function is skipped if its arguments are not domain values.
   It is an error if the wrong number of arguments is given; this must be checked
   during verification.
 
  -}
-unaryOperator
+ternaryOperator
     :: Parser a
     -- ^ Parse operand
     -> (Sort Object -> b -> CommonExpandedPattern Object)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
-    -> (a -> b)
+    -> (a -> a -> a -> b)
     -- ^ Operation on builtin types
     -> Function
-unaryOperator
+ternaryOperator
     parser
     asPattern
     ctx
     op
   =
-    functionEvaluator unaryOperator0
+    functionEvaluator ternaryOperator0
   where
     get = runParser ctx . parseDomainValue parser
-    unaryOperator0 _ _ resultSort children =
+    ternaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
-            [DomainValuePattern a] -> do
-                -- Apply the operator to a domain value
-                let r = op (get a)
+            [DomainValuePattern a, DomainValuePattern b, DomainValuePattern c] -> do
+                -- Apply the operator to three domain values
+                let r = op (get a) (get b) (get c)
                 (appliedFunction . asPattern resultSort) r
-            [_] -> return NotApplicable
+            [_, _, _] -> return NotApplicable
             _ -> wrongArity ctx
 
 functionEvaluator

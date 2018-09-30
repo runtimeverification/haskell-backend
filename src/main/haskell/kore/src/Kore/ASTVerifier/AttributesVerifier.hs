@@ -10,6 +10,7 @@ Portability : POSIX
 module Kore.ASTVerifier.AttributesVerifier
     ( verifyAttributes
     , verifyHookAttribute
+    , verifyNoHookAttribute
     , AttributesVerification (..)
     ) where
 
@@ -26,7 +27,6 @@ import Kore.ASTVerifier.Error
 import Kore.Attribute.Parser
        ( parseAttributes )
 import Kore.Builtin.Hook
-       ( Hook (..) )
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
        ( KoreIndexedModule )
@@ -69,13 +69,11 @@ verifyAttributePattern (ApplicationPattern _) = verifySuccess
 verifyAttributePattern _
      = koreFail "Non-application attributes are not supported"
 
-{- | Verify that the @hook{}()@ attribute is present.
+{- | Verify that the @hook{}()@ attribute is present and well-formed.
 
-    It is an error if the hook attribute is missing or if any builtin has been
-    hooked multiple times.
+    It is an error if any builtin has been hooked multiple times.
 
-    If attribute verification is disabled, then these conditions are not
-    checked. However, attribute parser errors will still be reported!
+    If attribute verification is disabled, then 'emptyHook' is returned.
 
  -}
 verifyHookAttribute
@@ -83,18 +81,44 @@ verifyHookAttribute
     -> AttributesVerification atts
     -> Attributes
     -> Either (Error VerifyError) Hook
-verifyHookAttribute
-    indexedModule
-    attributesVerification
-    attributes
-  = do
-    hook@Hook { getHook } <- castError (parseAttributes attributes)
-    case attributesVerification of
-        DoNotVerifyAttributes -> return hook  -- caveat emptor
-        VerifyAttributes _ -> do
-            hookId <- maybe (koreFail "Missing hook attribute") return getHook
-            -- Ensures that the builtin is hooked only once.
-            -- The module is already indexed, so if it is hooked only once then
-            -- it must be hooked here.
-            _ <- resolveHook indexedModule hookId
+verifyHookAttribute indexedModule =
+    \case
+        DoNotVerifyAttributes ->
+            -- Do not attempt to parse, verify, or return the hook attribute.
+            \_ -> return emptyHook
+        VerifyAttributes _ -> \attributes -> do
+            hook@Hook { getHook } <- castError (parseAttributes attributes)
+            case getHook of
+                Nothing ->
+                    -- The hook attribute is absent; nothing more to verify.
+                    return ()
+                Just hookId -> do
+                    -- Verify that the builtin is only hooked once.
+                    -- The module is already indexed, so if it is hooked only
+                    -- once then it must be hooked here.
+                    _ <- resolveHook indexedModule hookId
+                    return ()
             return hook
+
+{- | Verify that the @hook{}()@ attribute is not present.
+
+    It is an error if a non-@hooked@ declaration has a @hook@ attribute.
+
+ -}
+verifyNoHookAttribute
+    :: AttributesVerification atts
+    -> Attributes
+    -> Either (Error VerifyError) ()
+verifyNoHookAttribute =
+    \case
+        DoNotVerifyAttributes ->
+            -- Do not verify anything.
+            \_ -> return ()
+        VerifyAttributes _ -> \attributes -> do
+            Hook { getHook } <- castError (parseAttributes attributes)
+            case getHook of
+                Nothing ->
+                    -- The hook attribute is (correctly) absent.
+                    return ()
+                Just _ -> do
+                    koreFail "Unexpected 'hook' attribute"

@@ -712,20 +712,6 @@ instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
                 , prettyPrint MaySkipParentheses y
                 ])
 
-instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (UnificationSolution level variable)
-  where
-    prettyPrint _ us@(UnificationSolution _ _) =
-        writeStructure
-            "UnificationSolution"
-            [ writeFieldNewLine
-                "unificationSolutionTerm" unificationSolutionTerm us
-            , writeListField
-                "unificationSolutionConstraints"
-                unificationSolutionConstraints
-                us
-            ]
-
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 -- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
 instance (MetaOrObject level, PrettyPrint (variable level))
@@ -748,18 +734,8 @@ instance (MetaOrObject level, PrettyPrint (variable level))
         writeThreeFieldStruct flags "SubstitutionMerge" var pat1 pat2
 
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
-instance MetaOrObject level => PrettyPrint (UnificationError level) where
-    prettyPrint flags (PatternClash h1 h2) =
-        writeTwoFieldStruct flags "PatternClash" h1 h2
-    prettyPrint flags (SortClash s1 s2) =
-        writeTwoFieldStruct flags "SortClash" s1 s2
-    prettyPrint flags (NonConstructorHead h) =
-        writeOneFieldStruct flags "NonConstructorHead" h
-    prettyPrint flags (NonFunctionalHead h) =
-        writeOneFieldStruct flags "NonFunctionalHead" h
-    prettyPrint _ NonFunctionalPattern = "NonFunctionalPattern"
+instance PrettyPrint UnificationError where
     prettyPrint _ UnsupportedPatterns = "UnsupportedPatterns"
-    prettyPrint _ EmptyPatternList = "EmptyPatternList"
 
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 instance MetaOrObject level => PrettyPrint (ClashReason level) where

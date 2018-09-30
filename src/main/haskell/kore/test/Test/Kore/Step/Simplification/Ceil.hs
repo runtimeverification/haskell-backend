@@ -70,12 +70,7 @@ test_ceilSimplification = give mockSortTools
             -- ceil(top) = top
             assertEqualWithExplanation "ceil(top)"
                 (OrOfExpandedPattern.make
-                    [ ExpandedPattern
-                        { term = mkTop
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    ]
+                    [ ExpandedPattern.top ]
                 )
                 (evaluate mockMetadataTools
                     (makeCeil
@@ -98,12 +93,7 @@ test_ceilSimplification = give mockSortTools
             -- ceil(top) = top
             assertEqualWithExplanation "ceil(top)"
                 (OrOfExpandedPattern.make
-                    [ ExpandedPattern
-                        { term = mkTop
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    ]
+                    [ ExpandedPattern.top ]
                 )
                 (makeEvaluate mockMetadataTools
                     (ExpandedPattern.top :: CommonExpandedPattern Object)
@@ -332,7 +322,8 @@ test_ceilSimplification = give mockSortTools
         }
     mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+        Mock.makeMetadataTools
+            mockSortTools Mock.attributesMapping Mock.subsorts
 
 makeCeil
     :: [ExpandedPattern Object variable]

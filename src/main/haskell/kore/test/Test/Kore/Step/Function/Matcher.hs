@@ -29,14 +29,14 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SortTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( CommonPredicateSubstitution,
-                 PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+                 makeTruePredicate )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
+import           Kore.Step.PredicateSubstitution
+                 ( CommonPredicateSubstitution,
+                 PredicateSubstitution (PredicateSubstitution) )
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSubstitution (..), bottom, top )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -98,11 +98,7 @@ test_matcherEqualHeads = give mockSortTools
         )
     , testCase "Bottom"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
-            )
+            (Just PredicateSubstitution.top)
             (match mockMetadataTools
                 mkBottom
                 mkBottom
@@ -122,11 +118,7 @@ test_matcherEqualHeads = give mockSortTools
         )
     , testCase "CharLiteral"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
-            )
+            (Just PredicateSubstitution.top)
             (match mockMetaMetadataTools
                 (mkCharLiteral 'a')
                 (mkCharLiteral 'a')
@@ -134,11 +126,7 @@ test_matcherEqualHeads = give mockSortTools
         )
     , testCase "DomainValue"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
-            )
+            (Just PredicateSubstitution.top)
             (match mockMetadataTools
                 (mkDomainValue Mock.testSort1
                     (BuiltinDomainPattern  (mkStringLiteral "10"))
@@ -282,11 +270,7 @@ test_matcherEqualHeads = give mockSortTools
         )
     , testCase "StringLiteral"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
-            )
+            (Just PredicateSubstitution.top)
             (match mockMetaMetadataTools
                 (mkStringLiteral "10")
                 (mkStringLiteral "10")
@@ -294,11 +278,7 @@ test_matcherEqualHeads = give mockSortTools
         )
     , testCase "Top"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
-            )
+            (Just PredicateSubstitution.top)
             (match mockMetadataTools
                 mkTop
                 mkTop
@@ -306,11 +286,7 @@ test_matcherEqualHeads = give mockSortTools
         )
     , testCase "Variable (quantified)"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
-                , substitution = []
-                }
-            )
+            (Just PredicateSubstitution.top)
             (match mockMetadataTools
                 (mkExists Mock.x (Mock.plain10 (mkVar Mock.x)))
                 (mkExists Mock.y (Mock.plain10 (mkVar Mock.y)))
@@ -575,11 +551,7 @@ test_matcherMergeSubresults = give mockSortTools
         )
     , testCase "Merge conflict"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
-            )
+            (Just PredicateSubstitution.bottom)
             (match mockMetadataTools
                 (mkAnd (mkVar Mock.x) (mkVar Mock.x))
                 (mkAnd    Mock.a         Mock.b)
@@ -592,13 +564,12 @@ mockSortTools :: SortTools Object
 mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSortTools Mock.attributesMapping
+    Mock.makeMetadataTools mockSortTools Mock.attributesMapping Mock.subsorts
 
 mockMetaSortTools :: SortTools Meta
 mockMetaSortTools = Mock.makeSortTools []
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSortTools []
-
+mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSortTools [] []
 
 match
     :: MetaOrObject level
