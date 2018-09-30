@@ -6,7 +6,7 @@ import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
-
+import Control.Monad.Except
 import Control.Monad.Counter
        ( evalCounter )
 import Data.Reflection
