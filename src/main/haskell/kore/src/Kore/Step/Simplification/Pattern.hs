@@ -22,7 +22,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern, fromPurePattern )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymSorts )
+                 ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
@@ -111,7 +111,7 @@ simplify
 simplify tools symbolIdToEvaluator patt = do
     (orPatt, proof) <- simplifyToOr tools symbolIdToEvaluator patt
     return
-        ( give (MetadataTools.symSorts tools)
+        ( give (MetadataTools.symbolOrAliasSorts tools)
             $ OrOfExpandedPattern.toExpandedPattern orPatt
         , proof
         )
@@ -141,7 +141,7 @@ simplifyToOr
         )
 simplifyToOr tools symbolIdToEvaluator patt =
     give
-        (MetadataTools.symSorts tools)
+        (MetadataTools.symbolOrAliasSorts tools)
         (simplifyInternal
             tools
             simplifier
@@ -155,7 +155,7 @@ simplifyToOr tools symbolIdToEvaluator patt =
 simplifyInternal
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         , Ord (variable Meta)

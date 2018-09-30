@@ -179,7 +179,7 @@ simplifyEvaluated tools first second
       of
         ([firstP], [secondP]) -> makeEvaluate tools firstP secondP
         _ ->
-            give (MetadataTools.symSorts tools)
+            give (MetadataTools.symbolOrAliasSorts tools)
                 $ makeEvaluate tools
                     (OrOfExpandedPattern.toExpandedPattern first)
                     (OrOfExpandedPattern.toExpandedPattern second)
@@ -214,7 +214,7 @@ makeEvaluate
         { term = Top_ _ }
   =
     let
-        (result, _proof) = give (MetadataTools.symSorts tools )
+        (result, _proof) = give (MetadataTools.symbolOrAliasSorts tools )
             $ Iff.makeEvaluate first second
     in
         return (result, SimplificationProof)
@@ -268,9 +268,9 @@ makeEvaluate
                         if termsAreEqual then mkTop else secondTerm
                     }
         (firstCeilNegation, _proof3) =
-            give symSorts $ Not.simplifyEvaluated firstCeil
+            give symbolOrAliasSorts $ Not.simplifyEvaluated firstCeil
         (secondCeilNegation, _proof4) =
-            give symSorts $ Not.simplifyEvaluated secondCeil
+            give symbolOrAliasSorts $ Not.simplifyEvaluated secondCeil
     (termEquality, _proof) <-
         makeEvaluateTermsAssumesNoBottom tools firstTerm secondTerm
     (negationAnd, _proof) <-
@@ -280,10 +280,10 @@ makeEvaluate
         And.simplifyEvaluated tools termEquality ceilAnd
     let
         (finalOr, _proof) =
-            give symSorts $ Or.simplifyEvaluated equalityAnd negationAnd
+            give symbolOrAliasSorts $ Or.simplifyEvaluated equalityAnd negationAnd
     return (finalOr, SimplificationProof)
   where
-    symSorts = MetadataTools.symSorts tools
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it
@@ -313,7 +313,7 @@ makeEvaluateTermsAssumesNoBottom
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
                     { term = mkTop
-                    , predicate = give (MetadataTools.symSorts tools)
+                    , predicate = give (MetadataTools.symbolOrAliasSorts tools)
                         $ makeEqualsPredicate firstTerm secondTerm
                     , substitution = []
                     }
@@ -389,7 +389,7 @@ makeEvaluateTermsToPredicateSubstitution tools first second
         ( PredicateSubstitution.top
         , SimplificationProof
         )
-  | otherwise = give symSorts $
+  | otherwise = give symbolOrAliasSorts $
     case AndTerms.termEquals tools first second of
         Nothing -> return
             ( PredicateSubstitution
@@ -418,5 +418,5 @@ makeEvaluateTermsToPredicateSubstitution tools first second
                 , SimplificationProof
                 )
   where
-    symSorts = MetadataTools.symSorts tools
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
 

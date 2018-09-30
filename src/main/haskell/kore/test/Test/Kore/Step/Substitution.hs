@@ -31,11 +31,11 @@ import Kore.Unification.Unifier
        ( UnificationSubstitution )
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymSorts )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
-test_mergeAndNormalizeSubstitutions = give mockSymSorts
+test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     [ testCase "Constructor normalization"
         -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
         (assertEqual ""
@@ -228,9 +228,9 @@ test_mergeAndNormalizeSubstitutions = give mockSymSorts
     ]
 
   where
-    mockSymSorts = Mock.makeSymSorts Mock.symSortsMapping
+    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSymSorts Mock.attributesMapping []
+        Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping []
     normalize
         :: UnificationSubstitution Object Variable
         -> UnificationSubstitution Object Variable

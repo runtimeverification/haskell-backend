@@ -31,7 +31,7 @@ import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.IndexedModule.MetadataTools
-       ( SymSorts )
+       ( SymbolOrAliasSorts )
 
 import Kore.ASTUtils.SmartConstructors
 
@@ -51,13 +51,13 @@ defaultSort = mkSort "*"
 
 
 dummyEnvironment
-  :: forall r . (Given (SymSorts Object) => r)
+  :: forall r . (Given (SymbolOrAliasSorts Object) => r)
   -> r
-dummyEnvironment = give (dummySymSorts @Object)
+dummyEnvironment = give (dummySymbolOrAliasSorts @Object)
 
-dummySymSorts
-    :: MetaOrObject level => SymSorts level
-dummySymSorts = const ApplicationSorts
+dummySymbolOrAliasSorts
+    :: MetaOrObject level => SymbolOrAliasSorts level
+dummySymbolOrAliasSorts = const ApplicationSorts
     { applicationSortsOperands = []
     , applicationSortsResult = defaultSort
     }

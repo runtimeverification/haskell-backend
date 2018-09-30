@@ -41,7 +41,7 @@ import Kore.Proof.Util
 -- x_1 = y_1 /\ x_2 = y_2 /\ ... /\ x_n = y_n
 -- where x_i, y_i : s_i
 generateInjectivityAxiom
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => SymbolOrAlias Object
     -> Sort Object
     -> [Sort Object]
@@ -59,7 +59,7 @@ generateInjectivityAxiom head resultSort childrenSorts =
 -- | No confusion: two different constructors cannot generate the same term.
 -- `not (f(x_1,...,x_n) = g(y_1,...,y_m))`
 generateNoConfusionAxiom
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => SymbolOrAlias Object
     -> [Sort Object]
     -> SymbolOrAlias Object
@@ -74,7 +74,7 @@ generateNoConfusionAxiom h1 c1 h2 c2 =
 
 
 generateCoveringAxiom
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Sort Object
     -> [(SymbolOrAlias Object, [Sort Object])]
     -> Term

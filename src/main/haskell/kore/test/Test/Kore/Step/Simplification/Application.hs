@@ -51,7 +51,7 @@ import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( constructorFunctionalAttributes, functionAttributes,
-                 makeMetadataTools, makeSymSorts )
+                 makeMetadataTools, makeSymbolOrAliasSorts )
 import           Test.Kore.Step.Simplifier
                  ( mockSimplifier )
 import           Test.Tasty.HUnit.Extensions
@@ -64,25 +64,25 @@ test_applicationSimplification =
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
-                    { term = give mockSymSorts $
+                    { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [a, c]
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 , ExpandedPattern
-                    { term = give mockSymSorts $
+                    { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [a, d]
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 , ExpandedPattern
-                    { term = give mockSymSorts $
+                    { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [b, c]
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 ,  ExpandedPattern
-                    { term = give mockSymSorts $
+                    { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [b, d]
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -152,9 +152,9 @@ test_applicationSimplification =
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
-                    { term = give mockSymSorts $
+                    { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [a, b]
-                    , predicate = fst $ give mockSymSorts $ makeAndPredicate
+                    , predicate = fst $ give mockSymbolOrAliasSorts $ makeAndPredicate
                         (makeEqualsPredicate fOfA fOfB)
                         (makeEqualsPredicate gOfA gOfB)
                     , substitution =
@@ -172,14 +172,14 @@ test_applicationSimplification =
                     sigmaSymbol
                     [   [ ExpandedPattern
                             { term = a
-                            , predicate = give mockSymSorts $
+                            , predicate = give mockSymbolOrAliasSorts $
                                 makeEqualsPredicate fOfA fOfB
                             , substitution = [ (x, fOfA) ]
                             }
                         ]
                     ,   [ ExpandedPattern
                             { term = b
-                            , predicate = give mockSymSorts $
+                            , predicate = give mockSymbolOrAliasSorts $
                                 makeEqualsPredicate gOfA gOfB
                             , substitution = [ (y, gOfA) ]
                             }
@@ -199,10 +199,10 @@ test_applicationSimplification =
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
-                    { term = give mockSymSorts $
+                    { term = give mockSymbolOrAliasSorts $
                         mkApp fSymbol [a]
                     , predicate =
-                        fst $ give mockSymSorts $ makeAndPredicate
+                        fst $ give mockSymbolOrAliasSorts $ makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (fst $ makeAndPredicate
                                 (makeEqualsPredicate fOfA fOfB)
@@ -226,10 +226,10 @@ test_applicationSimplification =
                             ( AttemptedFunction.Applied
                                 (OrOfExpandedPattern.make
                                     [ ExpandedPattern
-                                        { term = give mockSymSorts $
+                                        { term = give mockSymbolOrAliasSorts $
                                             mkApp fSymbol [a]
                                         , predicate =
-                                            give mockSymSorts $
+                                            give mockSymbolOrAliasSorts $
                                                 makeEqualsPredicate fOfA gOfA
                                         , substitution =
                                             [ (z, gOfB) ]
@@ -245,14 +245,14 @@ test_applicationSimplification =
                     sigmaSymbol
                     [   [ ExpandedPattern
                             { term = a
-                            , predicate = give mockSymSorts $
+                            , predicate = give mockSymbolOrAliasSorts $
                                 makeEqualsPredicate fOfA fOfB
                             , substitution = [ (x, fOfA) ]
                             }
                         ]
                     ,   [ ExpandedPattern
                             { term = b
-                            , predicate = give mockSymSorts $
+                            , predicate = give mockSymbolOrAliasSorts $
                                 makeEqualsPredicate gOfA gOfB
                             , substitution = [ (y, gOfA) ]
                             }
@@ -298,14 +298,14 @@ test_applicationSimplification =
     y = Variable (testId "y") testSort
     z = Variable (testId "z") testSort
 
-    a = give mockSymSorts $ mkApp aSymbol []
-    b = give mockSymSorts $ mkApp bSymbol []
-    c = give mockSymSorts $ mkApp cSymbol []
-    d = give mockSymSorts $ mkApp dSymbol []
-    fOfA = give mockSymSorts $ mkApp fSymbol [a]
-    fOfB = give mockSymSorts $ mkApp fSymbol [b]
-    gOfA = give mockSymSorts $ mkApp gSymbol [a]
-    gOfB = give mockSymSorts $ mkApp gSymbol [b]
+    a = give mockSymbolOrAliasSorts $ mkApp aSymbol []
+    b = give mockSymbolOrAliasSorts $ mkApp bSymbol []
+    c = give mockSymbolOrAliasSorts $ mkApp cSymbol []
+    d = give mockSymbolOrAliasSorts $ mkApp dSymbol []
+    fOfA = give mockSymbolOrAliasSorts $ mkApp fSymbol [a]
+    fOfB = give mockSymbolOrAliasSorts $ mkApp fSymbol [b]
+    gOfA = give mockSymbolOrAliasSorts $ mkApp gSymbol [a]
+    gOfB = give mockSymbolOrAliasSorts $ mkApp gSymbol [b]
     aExpanded = ExpandedPattern
         { term = a
         , predicate = makeTruePredicate
@@ -331,7 +331,7 @@ test_applicationSimplification =
         , predicate = makeTruePredicate
         , substitution = []
         }
-    symSortsMapping =
+    symbolOrAliasSortsMapping =
         [   ( aSymbol
             , ApplicationSorts
                 { applicationSortsOperands = []
@@ -398,9 +398,9 @@ test_applicationSimplification =
             , Mock.constructorFunctionalAttributes
             )
         ]
-    mockSymSorts = Mock.makeSymSorts symSortsMapping
+    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts symbolOrAliasSortsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSymSorts attributesMapping []
+        Mock.makeMetadataTools mockSymbolOrAliasSorts attributesMapping []
 
 makeApplication
     :: SymbolOrAlias level

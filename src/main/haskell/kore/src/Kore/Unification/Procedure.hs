@@ -97,14 +97,14 @@ unificationProcedure tools p1 p2
           (pred', _) = Ceil.makeEvaluateTerm tools (ExpandedPattern.term pat)
       return
           ( PredicateSubstitution
-                (fst $ give symSorts $
+                (fst $ give symbolOrAliasSorts $
                      makeAndPredicate (ExpandedPattern.predicate pat) pred')
                 (ExpandedPattern.substitution pat)
           , EmptyUnificationProof
           )
   where
-      symSorts = MetadataTools.symSorts tools
-      resultSort = getPatternResultSort symSorts
+      symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
+      resultSort = getPatternResultSort symbolOrAliasSorts
 
       p1Sort = resultSort (project p1)
       p2Sort = resultSort (project p2)

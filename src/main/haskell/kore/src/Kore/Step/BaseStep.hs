@@ -262,7 +262,7 @@ stepWithAxiom
                 (makeUnifiedSubstitution normalizedSubstitution)
     -- Merge all conditions collected so far
         (mergedConditionWithCounter, _) = -- TODO: Use this proof
-            give (symSorts tools)
+            give (symbolOrAliasSorts tools)
             $ makeMultipleAndPredicate
                 [ startCondition  -- from initial configuration
                 , axiomRequires  -- from axiom

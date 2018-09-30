@@ -18,7 +18,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkEquals, mkExists, mkTop, mkVar )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymSorts )
+                 ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeExistsPredicate,
                  makeTruePredicate )
@@ -41,12 +41,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymSorts )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_existsSimplification :: [TestTree]
-test_existsSimplification = give mockSymSorts
+test_existsSimplification = give mockSymbolOrAliasSorts
     [ testCase "Exists - or distribution"
         -- exists(a or b) = exists(a) or exists(b)
         (assertEqualWithExplanation ""
@@ -244,12 +244,12 @@ test_existsSimplification = give mockSymSorts
         )
     ]
   where
-    fOfA = give mockSymSorts $ Mock.f Mock.a
-    fOfX = give mockSymSorts $ Mock.f (mkVar Mock.x)
-    gOfA = give mockSymSorts $ Mock.g Mock.a
-    hOfA = give mockSymSorts $ Mock.h Mock.a
-    something1OfX = give mockSymSorts $ Mock.plain10 (mkVar Mock.x)
-    something2OfX = give mockSymSorts $ Mock.plain11 (mkVar Mock.x)
+    fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
+    fOfX = give mockSymbolOrAliasSorts $ Mock.f (mkVar Mock.x)
+    gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
+    hOfA = give mockSymbolOrAliasSorts $ Mock.h Mock.a
+    something1OfX = give mockSymbolOrAliasSorts $ Mock.plain10 (mkVar Mock.x)
+    something2OfX = give mockSymbolOrAliasSorts $ Mock.plain11 (mkVar Mock.x)
     something1OfXExpanded = ExpandedPattern
         { term = something1OfX
         , predicate = makeTruePredicate
@@ -260,10 +260,10 @@ test_existsSimplification = give mockSymSorts
         , predicate = makeTruePredicate
         , substitution = []
         }
-    mockSymSorts = Mock.makeSymSorts Mock.symSortsMapping
+    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymSorts Mock.attributesMapping Mock.subsorts
+            mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
 
 makeExists
     :: variable Object
@@ -285,7 +285,7 @@ testSort =
 
 evaluate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         )
     => MetadataTools level StepperAttributes
     -> Exists level Variable (CommonOrOfExpandedPattern level)
@@ -296,7 +296,7 @@ evaluate tools exists =
 
 makeEvaluate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         )
     => MetadataTools level StepperAttributes
     -> Variable level

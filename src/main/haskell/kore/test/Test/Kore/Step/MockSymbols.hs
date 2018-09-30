@@ -2,7 +2,7 @@ module Test.Kore.Step.MockSymbols where
 
 -- Intended usage:
 -- * Import qualified.
--- * use symSortsMapping and attributesMapping to build mock SymSorts and
+-- * use symbolOrAliasSortsMapping and attributesMapping to build mock SymbolOrAliasSorts and
 --   MetadataTools.
 -- * Use things like a, b, c, x, y, z for testing.
 
@@ -34,7 +34,7 @@ import           Kore.ASTHelpers
 import           Kore.ASTUtils.SmartConstructors
                  ( mkApp )
 import           Kore.IndexedModule.MetadataTools
-                 ( SymSorts )
+                 ( SymbolOrAliasSorts )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -353,239 +353,239 @@ y = Variable (testId "y") testSort
 z :: Variable Object
 z = Variable (testId "z") testSort
 
-a   :: Given (SymSorts Object)
+a   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 a = mkApp aSymbol []
 
 aSort0
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 aSort0 = mkApp aSort0Symbol []
 
 aSort1
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 aSort1 = mkApp aSort1Symbol []
 
 aSubsort
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 aSubsort = mkApp aSubsortSymbol []
 
 aSubSubsort
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 aSubSubsort = mkApp aSubSubsortSymbol []
 
-b   :: Given (SymSorts Object)
+b   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 b = mkApp bSymbol []
 
 bSort0
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 bSort0 = mkApp bSort0Symbol []
 
-c   :: Given (SymSorts Object)
+c   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 c = mkApp cSymbol []
 
-d   :: Given (SymSorts Object)
+d   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 d = mkApp dSymbol []
 
-e   :: Given (SymSorts Object)
+e   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 e = mkApp eSymbol []
 
-f   :: Given (SymSorts Object)
+f   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable -> PureMLPattern Object variable
 f arg = mkApp fSymbol [arg]
 
-g   :: Given (SymSorts Object)
+g   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable -> PureMLPattern Object variable
 g arg = mkApp gSymbol [arg]
 
-h   :: Given (SymSorts Object)
+h   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable -> PureMLPattern Object variable
 h arg = mkApp hSymbol [arg]
 
-cf  :: Given (SymSorts Object)
+cf  :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 cf = mkApp cfSymbol []
 
 cfSort0
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 cfSort0 = mkApp cfSort0Symbol []
 
 cfSort1
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 cfSort1 = mkApp cfSort1Symbol []
 
-cg  :: Given (SymSorts Object)
+cg  :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 cg = mkApp cgSymbol []
 
 cgSort0
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 cgSort0 = mkApp cgSort0Symbol []
 
-ch  :: Given (SymSorts Object)
+ch  :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 ch = mkApp chSymbol []
 
 plain00
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 plain00 = mkApp plain00Symbol []
 
 plain00Sort0
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 plain00Sort0 = mkApp plain00Sort0Symbol []
 
 plain00Subsort
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 plain00Subsort = mkApp plain00SubsortSymbol []
 
 plain00SubSubsort
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 plain00SubSubsort = mkApp plain00SubSubsortSymbol []
 
 plain10
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable -> PureMLPattern Object variable
 plain10 arg = mkApp plain10Symbol [arg]
 
 plain11
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable -> PureMLPattern Object variable
 plain11 arg = mkApp plain11Symbol [arg]
 
 plain20
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
     -> PureMLPattern Object variable
 plain20 arg1 arg2 = mkApp plain20Symbol [arg1, arg2]
 
 constr10
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 constr10 arg = mkApp constr10Symbol [arg]
 
 constr11
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 constr11 arg = mkApp constr11Symbol [arg]
 
 constr20
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
     -> PureMLPattern Object variable
 constr20 arg1 arg2 = mkApp constr20Symbol [arg1, arg2]
 
 functional00
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 functional00 = mkApp functional00Symbol []
 
 functional10
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 functional10 arg = mkApp functional10Symbol [arg]
 
 functional11
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 functional11 arg = mkApp functional11Symbol [arg]
 
 functional20
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
     -> PureMLPattern Object variable
 functional20 arg1 arg2 = mkApp functional20Symbol [arg1, arg2]
 
 functionalConstr10
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 functionalConstr10 arg = mkApp functionalConstr10Symbol [arg]
 
 functionalConstr11
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 functionalConstr11 arg = mkApp functionalConstr11Symbol [arg]
 
 functionalConstr20
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
     -> PureMLPattern Object variable
 functionalConstr20 arg1 arg2 = mkApp functionalConstr20Symbol [arg1, arg2]
 
 injective10
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 injective10 arg = mkApp injective10Symbol [arg]
 
 injective11
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 injective11 arg = mkApp injective11Symbol [arg]
 
 sortInjection10
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 sortInjection10 arg = mkApp sortInjection10Symbol [arg]
 
 sortInjection11
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 sortInjection11 arg = mkApp sortInjection11Symbol [arg]
 
 sortInjection0ToTop
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 sortInjection0ToTop arg = mkApp sortInjection0ToTopSymbol [arg]
 
 sortInjectionSubToTop
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 sortInjectionSubToTop arg = mkApp sortInjectionSubToTopSymbol [arg]
 
 sortInjectionSubSubToTop
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 sortInjectionSubSubToTop arg = mkApp sortInjectionSubSubToTopSymbol [arg]
 
 sortInjectionSubSubToSub
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 sortInjectionSubSubToSub arg = mkApp sortInjectionSubSubToSubSymbol [arg]
 
-symSortsMapping :: [(SymbolOrAlias Object, ApplicationSorts Object)]
-symSortsMapping =
+symbolOrAliasSortsMapping :: [(SymbolOrAlias Object, ApplicationSorts Object)]
+symbolOrAliasSortsMapping =
     [   ( aSymbol
         , ApplicationSorts
             { applicationSortsOperands = []

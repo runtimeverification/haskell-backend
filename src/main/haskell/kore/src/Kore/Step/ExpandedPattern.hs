@@ -43,7 +43,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_, pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( SymSorts )
+                 ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
                  makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
@@ -119,7 +119,7 @@ allVariables
 -}
 toMLPattern
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
@@ -134,7 +134,7 @@ toMLPattern
     -- TODO: Most likely I defined this somewhere.
     simpleAnd
         ::  ( MetaOrObject level
-            , Given (SymSorts level)
+            , Given (SymbolOrAliasSorts level)
             , SortedVariable variable
             , Show (variable level))
         => PureMLPattern level variable
@@ -151,7 +151,7 @@ toMLPattern
 -}
 substitutionToPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
@@ -168,7 +168,7 @@ substitutionToPredicate =
 
 singleSubstitutionToPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
     => (variable level, PureMLPattern level variable)

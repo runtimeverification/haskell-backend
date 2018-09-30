@@ -55,7 +55,7 @@ import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
        ( pattern Bottom_, pattern Top_ )
 import Kore.IndexedModule.MetadataTools
-       ( SymSorts )
+       ( SymbolOrAliasSorts )
 import Kore.Variables.Free
        ( pureAllVariables )
 
@@ -133,7 +133,7 @@ doing some simplification.
 -}
 makeMultipleAndPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
@@ -151,7 +151,7 @@ doing some simplification.
 -}
 makeMultipleOrPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
@@ -171,7 +171,7 @@ makeAndPredicate
     -- TODO(virgil): Group these constraints in a class
     -- or, even better, a type (like ShowMetaOrObject in MetaOrObject).
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
@@ -197,7 +197,7 @@ some simplification.
 -}
 makeOrPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
@@ -223,7 +223,7 @@ implication, doing some simplification.
 -}
 makeImpliesPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
     => Predicate level variable
@@ -244,7 +244,7 @@ some simplification.
 -}
 makeIffPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
     => Predicate level variable
@@ -266,7 +266,7 @@ simplification.
 -}
 makeNotPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
     => Predicate level variable
@@ -283,7 +283,7 @@ predicate.
 -}
 makeEqualsPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
     => PureMLPattern level variable
@@ -297,7 +297,7 @@ predicate.
 -}
 makeInPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
     => PureMLPattern level variable
@@ -311,7 +311,7 @@ predicate.
 -}
 makeCeilPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
     => PureMLPattern level variable
@@ -324,7 +324,7 @@ predicate.
 -}
 makeFloorPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
     => PureMLPattern level variable
@@ -336,7 +336,7 @@ makeFloorPredicate patt =
 -}
 makeExistsPredicate
     ::  ( MetaOrObject level
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
     => variable level

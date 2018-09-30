@@ -209,8 +209,8 @@ mockGetResultSort patternHead
             getSentenceSymbolOrAliasResultSort
             (lookup patternHead symbols)
 
-mockSymSorts :: SymSorts Object
-mockSymSorts pHead = ApplicationSorts
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+mockSymbolOrAliasSorts pHead = ApplicationSorts
     { applicationSortsOperands = mockGetArgumentSorts pHead
     , applicationSortsResult = mockGetResultSort pHead
     }
@@ -219,7 +219,7 @@ tools :: MetadataTools Object StepperAttributes
 tools = MetadataTools
     { symAttributes = mockStepperAttributes
     , sortAttributes = undefined
-    , symSorts = mockSymSorts
+    , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
     }
 
@@ -242,7 +242,7 @@ unificationSubstitution = map trans
         let pp = extractPurePattern p in
             ( Variable
                 { variableSort =
-                    getPatternResultSort mockSymSorts (project pp)
+                    getPatternResultSort mockSymbolOrAliasSorts (project pp)
                 , variableName = testId v
                 }
             , pp
@@ -573,13 +573,13 @@ showVar :: V level -> W level
 showVar (V i) = W (show i)
 
 var' :: Integer -> PureMLPattern Meta V
-var' i = give mockSymSorts' (mkVar (V i))
+var' i = give mockSymbolOrAliasSorts' (mkVar (V i))
 
 war' :: String -> PureMLPattern Meta W
-war' s = give mockSymSorts' (mkVar (W s))
+war' s = give mockSymbolOrAliasSorts' (mkVar (W s))
 
-mockSymSorts' :: SymSorts Meta
-mockSymSorts' = const ApplicationSorts
+mockSymbolOrAliasSorts' :: SymbolOrAliasSorts Meta
+mockSymbolOrAliasSorts' = const ApplicationSorts
     { applicationSortsOperands = [sortVar, sortVar]
     , applicationSortsResult = sortVar
     }
@@ -671,7 +671,7 @@ simplifyPattern (UnificationTerm pStub) =
                         (fst simplifiedPatterns) of
                     [] -> return ExpandedPattern.bottom
                     (config : _) -> return config
-        resultSort = getPatternResultSort mockSymSorts pat
+        resultSort = getPatternResultSort mockSymbolOrAliasSorts pat
     in UnificationTerm (SortedPatternStub (SortedPattern pat resultSort))
   where
     functionRegistry = Map.empty
@@ -686,6 +686,6 @@ makeEqualsPredicate
     -> CommonPurePatternStub Object
     -> Predicate Object Variable
 makeEqualsPredicate t1 t2 =
-        give mockSymSorts
+        give mockSymbolOrAliasSorts
             $ Predicate.makeEqualsPredicate
                 (extractPurePattern t1) (extractPurePattern t2)

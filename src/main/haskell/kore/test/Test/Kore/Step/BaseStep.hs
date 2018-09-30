@@ -27,7 +27,7 @@ import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..), SymSorts )
+       ( MetadataTools (..), SymbolOrAliasSorts )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -872,8 +872,8 @@ mockStepperAttributes patternHead =
     , hook            = def
     }
 
-mockSymSorts :: SymSorts Meta
-mockSymSorts = const ApplicationSorts
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
+mockSymbolOrAliasSorts = const ApplicationSorts
     { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
     , applicationSortsResult = asAst PatternSort
     }
@@ -882,7 +882,7 @@ mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = mockStepperAttributes
     , sortAttributes = undefined
-    , symSorts = mockSymSorts
+    , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
     }
 
@@ -897,7 +897,7 @@ makeEquals
     :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
     => patt1 -> patt2 -> CommonPredicate Meta
 makeEquals patt1 patt2 =
-    give (symSorts mockMetadataTools)
+    give (symbolOrAliasSorts mockMetadataTools)
         (makeEqualsPredicate
             (asPureMetaPattern patt1)
             (asPureMetaPattern patt2)

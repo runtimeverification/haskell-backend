@@ -60,7 +60,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Proof.Proof
 
 modusPonensN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Proof]
     -> Proof
     -> Proof
@@ -68,7 +68,7 @@ modusPonensN as b =
     foldl (\b a -> useRule $ ModusPonens a b) b as
 
 mkImpliesN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Term]
     -> Term
     -> Term
@@ -76,7 +76,7 @@ mkImpliesN as b =
     foldr (\a b -> a `mkImplies` b) b as
 
 tryDischarge
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Proof
     -> Proof
     -> Proof
@@ -88,7 +88,7 @@ tryDischarge a b =
             b' = getConclusion b
 
 tryDischargeN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Proof]
     -> Proof
     -> Proof
@@ -97,7 +97,7 @@ tryDischargeN as b = foldr tryDischarge b as
 --------------------------------------------------------------------------------
 
 mkForallN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Var]
     -> Term
     -> Term
@@ -105,7 +105,7 @@ mkForallN vars pat =
     foldr mkForall pat vars
 
 forallIntroN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Var]
     -> Proof
     -> Proof
@@ -114,7 +114,7 @@ forallIntroN vars pat =
 
 
 forallElimN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Term]
     -> Proof
     -> Proof
@@ -124,7 +124,7 @@ forallElimN args pat =
 --------------------------------------------------------------------------------
 
 mkExistsN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Var]
     -> Term
     -> Term
@@ -132,7 +132,7 @@ mkExistsN vars pat =
     foldr mkExists pat vars
 
 existsIntroN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [(Var, Term)]
     -> Proof
     -> Proof
@@ -142,21 +142,21 @@ existsIntroN terms pat =
 --------------------------------------------------------------------------------
 
 mkAndN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Term]
     -> Term
 mkAndN [] = mkTop
 mkAndN es = foldr1 mkAnd es
 
 andIntroN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Proof]
     -> Proof
 andIntroN [] = useRule TopIntro
 andIntroN ps = foldr1 (\a b -> useRule $ AndIntro a b) ps
 
 andElimN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Proof
     -> [Proof]
 andElimN p = case getConclusion p of
@@ -168,7 +168,7 @@ andElimN p = case getConclusion p of
 --------------------------------------------------------------------------------
 
 mkOrN
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Term]
     -> Term
 mkOrN [] = mkBottom
@@ -177,7 +177,7 @@ mkOrN es = foldr1 mkOr es
 --------------------------------------------------------------------------------
 
 provablySubstitute
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Proof
     -> Path
     -> Proof
@@ -198,13 +198,13 @@ provablySubstitute eq path pat = case getConclusion eq of
     _ -> impossible
 
 eqSymmetry
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Proof
     -> Proof
 eqSymmetry = undefined
 
 eqTransitivity
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Proof
     -> Proof
     -> Proof
@@ -213,7 +213,7 @@ eqTransitivity = undefined
 --------------------------------------------------------------------------------
 
 generateVarList
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => [Sort Object]
     -> String
     -> ([Variable Object], [Term])

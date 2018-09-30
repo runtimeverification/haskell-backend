@@ -24,7 +24,7 @@ import           Kore.Building.Patterns
 import           Kore.Building.Sorts
 import           Kore.Error
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymSorts )
+                 ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.MetaML.AST
                  ( CommonMetaPattern )
 import           Kore.Predicate.Predicate
@@ -402,8 +402,8 @@ actualStepLimit =
             }
         axiomsSimpleStrategy
 
-mockSymSorts :: SymSorts Meta
-mockSymSorts = const ApplicationSorts
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
+mockSymbolOrAliasSorts = const ApplicationSorts
     { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
     , applicationSortsResult = asAst PatternSort
     }
@@ -412,7 +412,7 @@ mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.constructorFunctionalAttributes
     , sortAttributes = const Mock.constructorFunctionalAttributes
-    , symSorts = mockSymSorts
+    , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
     }
 

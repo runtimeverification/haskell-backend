@@ -139,7 +139,7 @@ makeEvaluateNonBoolCeil
     let
         (termCeil, _proof1) = makeEvaluateTerm tools term
         (ceilPredicate, _proof2) =
-            give symSorts $ makeAndPredicate predicate termCeil
+            give symbolOrAliasSorts $ makeAndPredicate predicate termCeil
     in
         ( OrOfExpandedPattern.make
             [ ExpandedPattern
@@ -151,7 +151,7 @@ makeEvaluateNonBoolCeil
         , SimplificationProof
         )
   where
-    symSorts = MetadataTools.symSorts tools
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -189,7 +189,7 @@ makeEvaluateTerm
   =
     let
         (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) children)
-        (result, _proof) = give (MetadataTools.symSorts tools )
+        (result, _proof) = give (MetadataTools.symbolOrAliasSorts tools )
             $ makeMultipleAndPredicate ceils
     in
         (result, SimplificationProof)
@@ -198,7 +198,7 @@ makeEvaluateTerm
 makeEvaluateTerm
     tools term
   =
-    ( give (MetadataTools.symSorts tools ) $ makeCeilPredicate term
+    ( give (MetadataTools.symbolOrAliasSorts tools ) $ makeCeilPredicate term
     , SimplificationProof
     )
 

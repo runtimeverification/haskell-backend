@@ -20,7 +20,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkRewrites )
 import           Kore.IndexedModule.MetadataTools
-                 ( SymSorts )
+                 ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -44,7 +44,7 @@ TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 simplify
     ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Given (SymSorts Object)
+        , Given (SymbolOrAliasSorts Object)
         , Show (variable Object)
         , Ord (variable Object)
         )
@@ -63,7 +63,7 @@ simplify
 simplifyEvaluatedRewrites
     ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Given (SymSorts Object)
+        , Given (SymbolOrAliasSorts Object)
         , Show (variable Object)
         , Ord (variable Object)
         )
@@ -78,7 +78,7 @@ simplifyEvaluatedRewrites first second =
 makeEvaluateRewrites
     ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Given (SymSorts Object)
+        , Given (SymbolOrAliasSorts Object)
         , Show (variable Object)
         , Ord (variable Object)
         )

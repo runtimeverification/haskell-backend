@@ -174,7 +174,7 @@ mergePredicatesAndSubstitutions tools predicates substitutions = do
         Left _ ->
             let
                 (mergedPredicate, _proof) =
-                    give (symSorts tools) $ makeMultipleAndPredicate
+                    give (symbolOrAliasSorts tools) $ makeMultipleAndPredicate
                         (  predicates
                         ++ map substitutionToPredicate substitutions
                         )
@@ -189,7 +189,7 @@ mergePredicatesAndSubstitutions tools predicates substitutions = do
         Right (PredicateSubstitution {predicate, substitution}, proof) -> do
             let
                 (mergedPredicate, _proof) =
-                    give (symSorts tools) $
+                    give (symbolOrAliasSorts tools) $
                         makeMultipleAndPredicate
                             (predicate : substitutionMergePredicate)
             return

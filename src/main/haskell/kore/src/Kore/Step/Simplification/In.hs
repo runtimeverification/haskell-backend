@@ -136,7 +136,7 @@ makeEvaluateNonBoolIn tools patt1 patt2 =
     ( OrOfExpandedPattern.make
         [ ExpandedPattern
             { term = mkTop
-            , predicate = give symSorts $ makeInPredicate
+            , predicate = give symbolOrAliasSorts $ makeInPredicate
                 -- TODO: Wrap in 'contained' and 'container'.
                 (ExpandedPattern.toMLPattern patt1)
                 (ExpandedPattern.toMLPattern patt2)
@@ -146,4 +146,4 @@ makeEvaluateNonBoolIn tools patt1 patt2 =
     , SimplificationProof
     )
   where
-    symSorts = MetadataTools.symSorts tools
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools

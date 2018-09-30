@@ -24,7 +24,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymSorts )
+                 ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -54,12 +54,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymSorts )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_equalsSimplification_OrOfExpandedPatterns :: [TestTree]
-test_equalsSimplification_OrOfExpandedPatterns = give mockSymSorts
+test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
     [ testCase "bottom == bottom"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make [ ExpandedPattern.top ])
@@ -152,7 +152,7 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymSorts
     ]
 
 test_equalsSimplification_ExpandedPatterns :: [TestTree]
-test_equalsSimplification_ExpandedPatterns = give mockSymSorts
+test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
     [ testCase "predicate-substitution vs predicate-substitution"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
@@ -235,7 +235,7 @@ test_equalsSimplification_ExpandedPatterns = give mockSymSorts
     ]
 
 test_equalsSimplification_Patterns :: [TestTree]
-test_equalsSimplification_Patterns = give mockSymSorts
+test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     [ testCase "bottom == bottom"
         (assertTermEquals
             mockMetadataTools
@@ -505,7 +505,7 @@ assertTermEqualsGeneric
     -> CommonPurePattern level
     -> IO ()
 assertTermEqualsGeneric tools expected first second =
-    give (MetadataTools.symSorts tools) $ do
+    give (MetadataTools.symbolOrAliasSorts tools) $ do
         assertEqualWithExplanation "ExpandedPattern"
             (OrOfExpandedPattern.make [ predSubstToExpandedPattern expected ])
             (evaluateGeneric
@@ -547,55 +547,55 @@ assertTermEqualsGeneric tools expected first second =
             }
 
 fOfA :: CommonPurePattern Object
-fOfA = give mockSymSorts $ Mock.f Mock.a
+fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
 
 fOfB :: CommonPurePattern Object
-fOfB = give mockSymSorts $ Mock.f Mock.b
+fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
 
 gOfA :: CommonPurePattern Object
-gOfA = give mockSymSorts $ Mock.g Mock.a
+gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
 
 gOfB :: CommonPurePattern Object
-gOfB = give mockSymSorts $ Mock.g Mock.b
+gOfB = give mockSymbolOrAliasSorts $ Mock.g Mock.b
 
 hOfA :: CommonPurePattern Object
-hOfA = give mockSymSorts $ Mock.h Mock.a
+hOfA = give mockSymbolOrAliasSorts $ Mock.h Mock.a
 
 hOfB :: CommonPurePattern Object
-hOfB = give mockSymSorts $ Mock.h Mock.b
+hOfB = give mockSymbolOrAliasSorts $ Mock.h Mock.b
 
 functionalOfA :: CommonPurePattern Object
-functionalOfA = give mockSymSorts $ Mock.functional10 Mock.a
+functionalOfA = give mockSymbolOrAliasSorts $ Mock.functional10 Mock.a
 
 constructor1OfA :: CommonPurePattern Object
-constructor1OfA = give mockSymSorts $ Mock.constr10 Mock.a
+constructor1OfA = give mockSymbolOrAliasSorts $ Mock.constr10 Mock.a
 
 constructor2OfA :: CommonPurePattern Object
-constructor2OfA = give mockSymSorts $ Mock.constr11 Mock.a
+constructor2OfA = give mockSymbolOrAliasSorts $ Mock.constr11 Mock.a
 
 functionalConstructor1OfA :: CommonPurePattern Object
 functionalConstructor1OfA =
-    give mockSymSorts $ Mock.functionalConstr10 Mock.a
+    give mockSymbolOrAliasSorts $ Mock.functionalConstr10 Mock.a
 
 functionalConstructor2OfA :: CommonPurePattern Object
 functionalConstructor2OfA =
-    give mockSymSorts $ Mock.functionalConstr11 Mock.a
+    give mockSymbolOrAliasSorts $ Mock.functionalConstr11 Mock.a
 
 plain1OfA :: CommonPurePattern Object
-plain1OfA = give mockSymSorts $ Mock.plain10 Mock.a
+plain1OfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
 
-mockSymSorts :: SymSorts Object
-mockSymSorts = Mock.makeSymSorts Mock.symSortsMapping
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSymSorts Mock.attributesMapping Mock.subsorts
+    Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
 
-mockMetaSymSorts :: SymSorts Meta
-mockMetaSymSorts = Mock.makeSymSorts []
+mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
+mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
 
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymSorts [] []
+mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] []
 
 testSort :: Sort Object
 testSort =

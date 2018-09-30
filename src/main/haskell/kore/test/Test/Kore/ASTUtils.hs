@@ -139,11 +139,11 @@ sortAgreement2 = dummyEnvironment $
         (mkEquals (Var_ $ var_ "foo" "X") (Var_ $ var_ "bar" "X"))
         (Var_ $ var_ "y" "Y")
 
-varX :: (Given (SymSorts Object)) => CommonPurePattern Object
+varX :: (Given (SymbolOrAliasSorts Object)) => CommonPurePattern Object
 varX = mkVar $ var_ "x" "X"
 
 sortAgreementManySimplePatterns
-  :: (Given (SymSorts Object))
+  :: (Given (SymbolOrAliasSorts Object))
   => [TestTree]
 sortAgreementManySimplePatterns = do
     flexibleZeroArg <- [mkBottom, mkTop]
@@ -189,12 +189,12 @@ substitutionGetSetIdentity a b pat =
   (subst b a $ subst a b pat)
 
 generatePatterns
-  :: Given (SymSorts Object)
+  :: Given (SymbolOrAliasSorts Object)
   => Int
   -> [CommonPurePattern Object]
 generatePatterns size = genBinaryPatterns size ++ genUnaryPatterns size
 genBinaryPatterns
-  :: Given (SymSorts Object)
+  :: Given (SymbolOrAliasSorts Object)
   => Int
   -> [CommonPurePattern Object]
 genBinaryPatterns 0 = []
@@ -205,7 +205,7 @@ genBinaryPatterns size = do
   b <- generatePatterns sb
   [mkAnd a b, mkOr a b, mkImplies a b, mkIff a b, mkRewrites a b]
 genUnaryPatterns
-  :: Given (SymSorts Object)
+  :: Given (SymbolOrAliasSorts Object)
   => Int
   -> [CommonPurePattern Object]
 genUnaryPatterns 0 = []
@@ -234,12 +234,12 @@ var_ x s =
 
 dummyEnvironment
   :: forall r . MetaOrObject Object
-  => (Given (SymSorts Object) => r)
+  => (Given (SymbolOrAliasSorts Object) => r)
   -> r
-dummyEnvironment = give (dummySymSorts @Object)
+dummyEnvironment = give (dummySymbolOrAliasSorts @Object)
 
-dummySymSorts :: MetaOrObject level => SymSorts level
-dummySymSorts = const ApplicationSorts
+dummySymbolOrAliasSorts :: MetaOrObject level => SymbolOrAliasSorts level
+dummySymbolOrAliasSorts = const ApplicationSorts
     { applicationSortsOperands = []
     , applicationSortsResult   = mkSort "S"
     }

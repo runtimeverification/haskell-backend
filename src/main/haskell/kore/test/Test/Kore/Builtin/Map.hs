@@ -50,7 +50,7 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 prop_lookupUnit :: Integer -> Property
 prop_lookupUnit k =
     let patLookup = App_ symbolLookup [App_ symbolUnit [], Test.Int.asPattern k]
-        predicate = give testSymSorts $ mkEquals mkBottom patLookup
+        predicate = give testSymbolOrAliasSorts $ mkEquals mkBottom patLookup
     in
         allProperties
             [ ExpandedPattern.bottom === evaluate patLookup
@@ -75,7 +75,7 @@ prop_lookupUpdate (key, value) map' =
             $ Map.map Test.Int.asPattern map'
         patKey = Test.Int.asPattern key
         patValue = Test.Int.asPattern value
-        predicate = give testSymSorts $ mkEquals patLookup patValue
+        predicate = give testSymbolOrAliasSorts $ mkEquals patLookup patValue
     in
         allProperties
             [ Test.Int.asExpandedPattern value === evaluate patLookup
@@ -96,8 +96,8 @@ prop_concatUnit map' =
             asPattern
             $ Map.mapKeys Test.Int.asPattern
             $ Map.map Test.Int.asPattern map'
-        predicate1 = give testSymSorts $ mkEquals patMap patConcat1
-        predicate2 = give testSymSorts $ mkEquals patMap patConcat2
+        predicate1 = give testSymbolOrAliasSorts $ mkEquals patMap patConcat1
+        predicate2 = give testSymbolOrAliasSorts $ mkEquals patMap patConcat2
     in
         allProperties
             [ evaluate patMap === evaluate patConcat1
@@ -144,7 +144,7 @@ prop_lookupConcatUniqueKeys (key1, value1) (key2, value2) =
         patLookup1 = App_ symbolLookup [ patConcat, patKey1 ]
         patLookup2 = App_ symbolLookup [ patConcat, patKey2 ]
         predicate =
-            give testSymSorts
+            give testSymbolOrAliasSorts
             (mkImplies
                 (mkNot (mkEquals patKey1 patKey2))
                 (mkAnd
@@ -174,7 +174,7 @@ prop_concatDuplicateKeys key value1 value2 =
         patMap1 = App_ symbolElement [ patKey, patValue1 ]
         patMap2 = App_ symbolElement [ patKey, patValue2 ]
         patConcat = App_ symbolConcat [ patMap1, patMap2 ]
-        predicate = give testSymSorts (mkEquals mkBottom patConcat)
+        predicate = give testSymbolOrAliasSorts (mkEquals mkBottom patConcat)
     in
         allProperties
             [ ExpandedPattern.bottom === evaluate patConcat
@@ -198,7 +198,7 @@ prop_concatCommutes map1 map2 =
             asPattern
             $ Map.mapKeys Test.Int.asPattern
             $ Map.map Test.Int.asPattern map2
-        predicate = give testSymSorts (mkEquals patConcat1 patConcat2)
+        predicate = give testSymbolOrAliasSorts (mkEquals patConcat1 patConcat2)
     in
         allProperties
             [ evaluate patConcat1 === evaluate patConcat2
@@ -234,7 +234,7 @@ prop_concatAssociates map1 map2 map3 =
         patConcat23 = App_ symbolConcat [ patMap2, patMap3 ]
         patConcat12_3 = App_ symbolConcat [ patConcat12, patMap3 ]
         patConcat1_23 = App_ symbolConcat [ patMap1, patConcat23 ]
-        predicate = give testSymSorts (mkEquals patConcat12_3 patConcat1_23)
+        predicate = give testSymbolOrAliasSorts (mkEquals patConcat12_3 patConcat1_23)
     in
         allProperties
             [ evaluate patConcat12_3 === evaluate patConcat1_23
@@ -252,7 +252,7 @@ prop_inKeysUnit key =
         patUnit = App_ symbolUnit []
         patInKeys = App_ symbolInKeys [ patKey, patUnit ]
         predicate =
-            give testSymSorts (mkEquals (Test.Bool.asPattern False) patInKeys)
+            give testSymbolOrAliasSorts (mkEquals (Test.Bool.asPattern False) patInKeys)
     in
         allProperties
             [ Test.Bool.asExpandedPattern False === evaluate patInKeys
@@ -271,7 +271,7 @@ prop_inKeysElement (key, value) =
         patMap = App_ symbolElement [ patKey, patValue ]
         patInKeys = App_ symbolInKeys [ patKey, patMap ]
         predicate =
-            give testSymSorts
+            give testSymbolOrAliasSorts
                 (mkEquals (Test.Bool.asPattern True) patInKeys)
     in
         allProperties
@@ -418,8 +418,8 @@ verify defn =
   where
     attrVerify = defaultAttributesVerification Proxy
 
-testSymSorts :: SymSorts Object
-MetadataTools { symSorts = testSymSorts } = extractMetadataTools indexedModule
+testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } = extractMetadataTools indexedModule
 
 allProperties :: [Property] -> Property
 allProperties = foldr (.&&.) (property True)

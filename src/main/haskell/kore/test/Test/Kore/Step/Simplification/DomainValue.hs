@@ -20,7 +20,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( SymSorts )
+                 ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -34,7 +34,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeSymSorts )
+                 ( makeSymbolOrAliasSorts )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -46,7 +46,7 @@ test_domainValueSimplification =
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
                     { term =
-                        give mockSymSorts $
+                        give mockSymbolOrAliasSorts $
                             mkDomainValue
                                 testSort
                                 (BuiltinDomainPattern (mkStringLiteral "a"))
@@ -64,9 +64,9 @@ test_domainValueSimplification =
         )
     ]
   where
-    mockSymSorts =
-        Mock.makeSymSorts []
-            :: SymSorts Object
+    mockSymbolOrAliasSorts =
+        Mock.makeSymbolOrAliasSorts []
+            :: SymbolOrAliasSorts Object
 
 testSort :: Sort Object
 testSort =

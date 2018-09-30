@@ -37,7 +37,7 @@ import Kore.Proof.Util
 -- `t1 /\ t2 <-> t1 /\ <MGU EQNS>`, where `<MGU EQNS>` is
 -- a conjunction of the most general unifier equations.
 unificationProof
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Term
     -> Term
     -> Either UnificationError Proof
@@ -51,7 +51,7 @@ unificationProof a b = do
     return $ useRule $ AndIntro forwards backwards
 
 unificationBackwardsProof
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Term -- conjunction of eqs
     -> Term -- LHS
     -> Term -- RHS
@@ -67,7 +67,7 @@ unificationBackwardsProof eqns a b = useRule $ Discharge eqns aEqb
           aEqb = provablySubstitute substBEqB [1] aEqSubstA
 
 unificationForwardsProof
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Term
     -> Term
     -> Either UnificationError Proof
@@ -106,7 +106,7 @@ instance Hashable UnificationError
 -- | Returns False if the eq x = t fails the occurs check,
 -- i.e. returns False iff x appears in t.
 occursCheck
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Proof
     -> Bool
 occursCheck eq = case getConclusion eq of
@@ -114,7 +114,7 @@ occursCheck eq = case getConclusion eq of
     _                        -> impossible
 
 splitConstructor
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Proof
     -> Either UnificationError Proof
 splitConstructor eq =
@@ -131,7 +131,7 @@ splitConstructor eq =
     otherwise -> impossible
 
 flipEqn
-    :: Given (SymSorts Object)
+    :: Given (SymbolOrAliasSorts Object)
     => Proof
     -> Proof
 flipEqn eq = case getConclusion eq of

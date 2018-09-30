@@ -20,7 +20,7 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkBottom, mkCharLiteral, mkDomainValue,
                  mkStringLiteral, mkTop, mkVar )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymSorts )
+                 ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -34,12 +34,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymSorts )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_andTermsSimplification :: [TestTree]
-test_andTermsSimplification = give mockSymSorts
+test_andTermsSimplification = give mockSymbolOrAliasSorts
     [ testCase "boolean and"
         (do
             assertEqualWithExplanation "pattern and top"
@@ -362,7 +362,7 @@ test_andTermsSimplification = give mockSymSorts
                     aDomainValue bDomainValue
                 )
         )
-    , give mockMetaSymSorts $ testCase "string literal and"
+    , give mockMetaSymbolOrAliasSorts $ testCase "string literal and"
         (do
             assertEqualWithExplanation "equal values"
                 (let
@@ -388,7 +388,7 @@ test_andTermsSimplification = give mockSymSorts
                     (mkStringLiteral "b")
                 )
         )
-    , give mockMetaSymSorts $ testCase "char literal and"
+    , give mockMetaSymbolOrAliasSorts $ testCase "char literal and"
         (do
             assertEqualWithExplanation "equal values"
                 (let
@@ -505,46 +505,46 @@ test_andTermsSimplification = give mockSymSorts
     ]
 
 fOfA :: CommonPurePattern Object
-fOfA = give mockSymSorts $ Mock.f Mock.a
+fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
 
 gOfA :: CommonPurePattern Object
-gOfA = give mockSymSorts $ Mock.g Mock.a
+gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
 
 plain0OfA :: CommonPurePattern Object
-plain0OfA = give mockSymSorts $ Mock.plain10 Mock.a
+plain0OfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
 
 plain1OfA :: CommonPurePattern Object
-plain1OfA = give mockSymSorts $ Mock.plain11 Mock.a
+plain1OfA = give mockSymbolOrAliasSorts $ Mock.plain11 Mock.a
 
 plain0OfB :: CommonPurePattern Object
-plain0OfB = give mockSymSorts $ Mock.plain10 Mock.b
+plain0OfB = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.b
 
 plain1OfB :: CommonPurePattern Object
-plain1OfB = give mockSymSorts $ Mock.plain11 Mock.b
+plain1OfB = give mockSymbolOrAliasSorts $ Mock.plain11 Mock.b
 
-mockSymSorts :: SymSorts Object
-mockSymSorts = Mock.makeSymSorts Mock.symSortsMapping
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
-mockMetaSymSorts :: SymSorts Meta
-mockMetaSymSorts = Mock.makeSymSorts []
+mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
+mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSymSorts Mock.attributesMapping Mock.subsorts
+    Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
 
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools =
-    Mock.makeMetadataTools mockMetaSymSorts [] []
+    Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] []
 
 aDomainValue :: CommonPurePattern Object
 aDomainValue =
-    give mockSymSorts
+    give mockSymbolOrAliasSorts
         $ mkDomainValue  Mock.testSort
         $ BuiltinDomainPattern (mkStringLiteral "a")
 
 bDomainValue :: CommonPurePattern Object
 bDomainValue =
-    give mockSymSorts
+    give mockSymbolOrAliasSorts
         $ mkDomainValue Mock.testSort
         $ BuiltinDomainPattern (mkStringLiteral "b")
 

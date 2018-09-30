@@ -21,7 +21,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( SymSorts )
+                 ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.ExpandedPattern
@@ -41,7 +41,7 @@ children by merging the two children.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -64,7 +64,7 @@ See 'simplify' for detailed documentation.
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -90,7 +90,7 @@ simplifyEvaluated first second =
 halfSimplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )

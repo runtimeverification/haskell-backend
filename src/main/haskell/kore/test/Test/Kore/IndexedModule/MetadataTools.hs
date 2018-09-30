@@ -20,6 +20,7 @@ import           Kore.AST.PureML
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -150,25 +151,25 @@ test_metadataTools =
         (assertEqual ""
             []
             (applicationSortsOperands
-                (symSorts metadataTools (symbolHead objectA)))
+                (symbolOrAliasSorts metadataTools (symbolHead objectA)))
         )
     , testCase "getArgumentSorts meta"
         (assertEqual ""
             []
             (applicationSortsOperands
-                (symSorts metadataTools (symbolHead metaA)))
+                (symbolOrAliasSorts metadataTools (symbolHead metaA)))
         )
     , testCase "getResultSort object"
         (assertEqual ""
             objectS1
             (applicationSortsResult
-                (symSorts metadataTools (symbolHead objectA)))
+                (symbolOrAliasSorts metadataTools (symbolHead objectA)))
         )
     , testCase "getResultSort meta"
         (assertEqual ""
             charListMetaSort
             (applicationSortsResult
-                (symSorts metadataTools (symbolHead metaA)))
+                (symbolOrAliasSorts metadataTools (symbolHead metaA)))
         )
     , testGroup "subsort" testSubsorts
     ]

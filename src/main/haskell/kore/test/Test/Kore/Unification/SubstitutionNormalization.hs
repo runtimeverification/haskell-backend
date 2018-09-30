@@ -26,7 +26,7 @@ import           Kore.Building.Patterns
 import           Kore.Building.Sorts
 import           Kore.Error
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymSorts )
+                 ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.MetaML.AST
                  ( CommonMetaPattern )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
@@ -250,8 +250,8 @@ runNormalizeSubstitution substitution =
     . runExceptT
     $ normalizeSubstitution mockMetadataTools substitution
 
-mockSymSorts :: MetaOrObject level => SymSorts level
-mockSymSorts = const ApplicationSorts
+mockSymbolOrAliasSorts :: MetaOrObject level => SymbolOrAliasSorts level
+mockSymbolOrAliasSorts = const ApplicationSorts
     { applicationSortsOperands = []
     , applicationSortsResult   =
         SortVariableSort SortVariable
@@ -262,6 +262,6 @@ mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.functionalAttributes
     , sortAttributes = const Mock.functionalAttributes
-    , symSorts = mockSymSorts
+    , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
     }

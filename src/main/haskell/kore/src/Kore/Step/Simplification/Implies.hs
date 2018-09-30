@@ -22,7 +22,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( SymSorts )
+                 ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeImpliesPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -55,7 +55,7 @@ and it has a special case for children with top terms.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -75,7 +75,7 @@ simplify
 simplifyEvaluatedImplies
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -103,7 +103,7 @@ simplifyEvaluatedImplies first second
 simplifyEvaluateHalfImplies
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -131,7 +131,7 @@ simplifyEvaluateHalfImplies first second
 makeEvaluateImplies
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -154,7 +154,7 @@ makeEvaluateImplies
 makeEvaluateImpliesNonBool
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymSorts level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )

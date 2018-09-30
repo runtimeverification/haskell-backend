@@ -19,7 +19,7 @@ import Kore.AST.PureML
 import Kore.ASTUtils.SmartConstructors
        ( mkCharLiteral, mkOr, mkStringLiteral, mkVar )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools, SymSorts )
+       ( MetadataTools, SymbolOrAliasSorts )
 import Kore.Step.PatternAttributes
 import Kore.Step.PatternAttributesError
        ( FunctionError (..), FunctionalError (..) )
@@ -31,7 +31,7 @@ import           Test.Kore
                  ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymSorts )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as MockSymbols
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -44,7 +44,7 @@ levelShow :: LevelInt level -> LevelString level
 levelShow (LevelInt i) = LevelString (show i)
 
 test_patternAttributes :: [TestTree]
-test_patternAttributes = give mockSymSorts
+test_patternAttributes = give mockSymbolOrAliasSorts
     [ testCase "variable mapping"
         (do
             assertEqualWithExplanation "FunctionalVariable"
@@ -254,17 +254,17 @@ test_patternAttributes = give mockSymSorts
         )
     ]
   where
-    mockSymSorts :: SymSorts Object
-    mockSymSorts = Mock.makeSymSorts Mock.symSortsMapping
+    mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools :: MetadataTools Object StepperAttributes
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymSorts Mock.attributesMapping Mock.subsorts
+            mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
 
-    mockMetaSymSorts :: SymSorts Meta
-    mockMetaSymSorts = Mock.makeSymSorts []
+    mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
+    mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
     mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-    mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymSorts [] []
+    mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] []
 
 testSort :: Sort Object
 testSort =

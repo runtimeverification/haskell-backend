@@ -38,12 +38,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymSorts )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_simplificationIntegration :: [TestTree]
-test_simplificationIntegration = give mockSymSorts
+test_simplificationIntegration = give mockSymbolOrAliasSorts
     [ testCase "owise condition - main case"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make [])
@@ -122,10 +122,10 @@ test_simplificationIntegration = give mockSymSorts
         )
     ]
   where
-    mockSymSorts = Mock.makeSymSorts Mock.symSortsMapping
+    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymSorts Mock.attributesMapping Mock.subsorts
+            mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
 
 evaluate
     :: MetadataTools Object StepperAttributes

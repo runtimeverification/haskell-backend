@@ -26,7 +26,7 @@ import           Kore.ASTUtils.SmartConstructors
                  mkNext, mkNot, mkOr, mkRewrites, mkStringLiteral, mkTop,
                  mkVar )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymSorts )
+                 ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
@@ -42,12 +42,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymSorts )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_matcherEqualHeads :: [TestTree]
-test_matcherEqualHeads = give mockSymSorts
+test_matcherEqualHeads = give mockSymbolOrAliasSorts
     [ testCase "And"
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
@@ -303,7 +303,7 @@ test_matcherEqualHeads = give mockSymSorts
     ]
 
 test_matcherVariableFunction :: [TestTree]
-test_matcherVariableFunction = give mockSymSorts
+test_matcherVariableFunction = give mockSymbolOrAliasSorts
     [ testCase "Functional"
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
@@ -364,7 +364,7 @@ test_matcherVariableFunction = give mockSymSorts
     ]
 
 test_matcherNonVarToPattern :: [TestTree]
-test_matcherNonVarToPattern = give mockSymSorts
+test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
     [ testCase "no-var - no-var"
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
@@ -410,7 +410,7 @@ test_matcherNonVarToPattern = give mockSymSorts
     ]
 
 test_matcherMergeSubresults :: [TestTree]
-test_matcherMergeSubresults = give mockSymSorts
+test_matcherMergeSubresults = give mockSymbolOrAliasSorts
     [ testCase "And"
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
@@ -560,16 +560,16 @@ test_matcherMergeSubresults = give mockSymSorts
     ]
 
 
-mockSymSorts :: SymSorts Object
-mockSymSorts = Mock.makeSymSorts Mock.symSortsMapping
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSymSorts Mock.attributesMapping Mock.subsorts
+    Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
 
-mockMetaSymSorts :: SymSorts Meta
-mockMetaSymSorts = Mock.makeSymSorts []
+mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
+mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymSorts [] []
+mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] []
 
 match
     :: MetaOrObject level
