@@ -46,6 +46,7 @@ convertStepperToSMT tools =
     { symAttributes  = convert . symAttributes  tools
     , sortAttributes = convert . sortAttributes tools
     , sortTools = sortTools tools
+    , isSubsortOf = const $ const False -- no subsort info needed by SMT
     }
     where convert (StepperAttributes _ _ _ _ _ hook) = SMTAttributes hook
 
