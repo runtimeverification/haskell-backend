@@ -43,15 +43,15 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_, pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SymSorts )
 import           Kore.Predicate.Predicate
                  ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
                  makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Unification.Data
 import           Kore.Step.PredicateSubstitution
                  ( CommonPredicateSubstitution, PredicateSubstitution (..) )
+import           Kore.Unification.Data
 import           Kore.Variables.Free
                  ( pureAllVariables )
 
@@ -119,7 +119,7 @@ allVariables
 -}
 toMLPattern
     ::  ( MetaOrObject level
-        , Given (SortTools level)
+        , Given (SymSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
@@ -134,7 +134,7 @@ toMLPattern
     -- TODO: Most likely I defined this somewhere.
     simpleAnd
         ::  ( MetaOrObject level
-            , Given (SortTools level)
+            , Given (SymSorts level)
             , SortedVariable variable
             , Show (variable level))
         => PureMLPattern level variable
@@ -151,7 +151,7 @@ toMLPattern
 -}
 substitutionToPredicate
     ::  ( MetaOrObject level
-        , Given (SortTools level)
+        , Given (SymSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
@@ -168,7 +168,7 @@ substitutionToPredicate =
 
 singleSubstitutionToPredicate
     ::  ( MetaOrObject level
-        , Given (SortTools level)
+        , Given (SymSorts level)
         , SortedVariable variable
         , Show (variable level))
     => (variable level, PureMLPattern level variable)

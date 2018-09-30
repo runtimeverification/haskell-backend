@@ -10,7 +10,7 @@ Portability : portable
 -}
 module Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
-    , SortTools
+    , SymSorts
     , extractMetadataTools
     , getResultSort
     ) where
@@ -33,16 +33,14 @@ data MetadataTools level attributes = MetadataTools
     -- ^ get the attributes of a symbol or alias
     , sortAttributes :: Sort level -> attributes
     -- ^ get the attributes of a sort
-    , sortTools :: SortTools level
+    , symSorts :: SymSorts level
     -- ^ get the signature of a symbol or alias
     , isSubsortOf :: Sort level -> Sort level -> Bool
     {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
        including when @a@ equals @b@. -}
     }
 
--- TODO: Rename this as `SortGetter` or something similar, `Tools` is
--- too general.
-type SortTools level = SymbolOrAlias level -> ApplicationSorts level
+type SymSorts level = SymbolOrAlias level -> ApplicationSorts level
 
 -- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
 -- 'KoreIndexedModule'.  The metadata tools are functions yielding information
@@ -57,7 +55,7 @@ extractMetadataTools m =
   MetadataTools
     { symAttributes = getHeadAttributes m
     , sortAttributes = getSortAttributes m
-    , sortTools  = getHeadApplicationSorts m
+    , symSorts  = getHeadApplicationSorts m
     , isSubsortOf = checkSubsort
     }
   where
@@ -80,7 +78,5 @@ extractMetadataTools m =
 {- | Look up the result sort of a symbol or alias
  -}
 getResultSort :: MetadataTools level attrs -> SymbolOrAlias level -> Sort level
-getResultSort MetadataTools { sortTools } symbol =
-    case sortTools symbol of
-        ApplicationSorts { applicationSortsResult } -> applicationSortsResult
-
+getResultSort tools symbol =
+    applicationSortsResult (symSorts tools symbol)

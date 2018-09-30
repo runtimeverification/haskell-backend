@@ -20,7 +20,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkNext )
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SymSorts )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -45,7 +45,7 @@ Right now this does not do any actual simplification.
 simplify
     ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Given (SortTools Object)
+        , Given (SymSorts Object)
         , Show (variable Object)
         , Ord (variable Object)
         )
@@ -61,7 +61,7 @@ simplify
 simplifyEvaluated
     ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Given (SortTools Object)
+        , Given (SymSorts Object)
         , Show (variable Object)
         , Ord (variable Object)
         )

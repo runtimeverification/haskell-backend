@@ -7,10 +7,10 @@ import Test.Tasty.HUnit
 
 import Control.Monad.Except
        ( runExceptT )
-import Data.Default
-       ( def )
 import Data.Bifunctor
        ( first )
+import Data.Default
+       ( def )
 import Data.Reflection
        ( give )
 
@@ -27,7 +27,7 @@ import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..), SortTools )
+       ( MetadataTools (..), SymSorts )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -872,8 +872,8 @@ mockStepperAttributes patternHead =
     , hook            = def
     }
 
-mockSortTools :: SortTools Meta
-mockSortTools = const ApplicationSorts
+mockSymSorts :: SymSorts Meta
+mockSymSorts = const ApplicationSorts
     { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
     , applicationSortsResult = asAst PatternSort
     }
@@ -882,7 +882,7 @@ mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = mockStepperAttributes
     , sortAttributes = undefined
-    , sortTools = mockSortTools
+    , symSorts = mockSymSorts
     , isSubsortOf = const $ const False
     }
 
@@ -897,7 +897,7 @@ makeEquals
     :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
     => patt1 -> patt2 -> CommonPredicate Meta
 makeEquals patt1 patt2 =
-    give (sortTools mockMetadataTools)
+    give (symSorts mockMetadataTools)
         (makeEqualsPredicate
             (asPureMetaPattern patt1)
             (asPureMetaPattern patt2)

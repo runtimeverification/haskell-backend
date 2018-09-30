@@ -150,25 +150,25 @@ test_metadataTools =
         (assertEqual ""
             []
             (applicationSortsOperands
-                (sortTools metadataTools (symbolHead objectA)))
+                (symSorts metadataTools (symbolHead objectA)))
         )
     , testCase "getArgumentSorts meta"
         (assertEqual ""
             []
             (applicationSortsOperands
-                (sortTools metadataTools (symbolHead metaA)))
+                (symSorts metadataTools (symbolHead metaA)))
         )
     , testCase "getResultSort object"
         (assertEqual ""
             objectS1
             (applicationSortsResult
-                (sortTools metadataTools (symbolHead objectA)))
+                (symSorts metadataTools (symbolHead objectA)))
         )
     , testCase "getResultSort meta"
         (assertEqual ""
             charListMetaSort
             (applicationSortsResult
-                (sortTools metadataTools (symbolHead metaA)))
+                (symSorts metadataTools (symbolHead metaA)))
         )
     , testGroup "subsort" testSubsorts
     ]

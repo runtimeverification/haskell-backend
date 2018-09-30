@@ -46,7 +46,7 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SortTools, extractMetadataTools )
+                 ( MetadataTools (..), SymSorts, extractMetadataTools )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Predicate.Predicate
@@ -240,7 +240,7 @@ main = do
                 purePattern = makePurePattern parsedPattern
                 runningPattern =
                     if isKProgram
-                        then give (sortTools metadataTools)
+                        then give (symSorts metadataTools)
                             $ makeKInitConfig purePattern
                         else purePattern
                 expandedPattern = makeExpandedPattern runningPattern
@@ -380,7 +380,7 @@ makeExpandedPattern pat =
     }
 
 makeKInitConfig
-    :: (Given (SortTools Object))
+    :: (Given (SymSorts Object))
     => CommonPurePattern Object
     -> CommonPurePattern Object
 makeKInitConfig pat =

@@ -14,28 +14,28 @@ import Control.Monad.Except
 import Data.Reflection
        ( give )
 
-import           Kore.AST.Common
-                 ( Variable )
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar )
-import           Kore.Predicate.Predicate
-                 ( makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import           Kore.Step.Substitution
-                 ( mergeAndNormalizeSubstitutions )
-import           Kore.Unification.Error
-import           Kore.Unification.Unifier
-                 ( UnificationSubstitution )
+import Kore.AST.Common
+       ( Variable )
+import Kore.AST.MetaOrObject
+       ( Object )
+import Kore.ASTUtils.SmartConstructors
+       ( mkVar )
+import Kore.Predicate.Predicate
+       ( makeFalsePredicate, makeTruePredicate )
+import Kore.Step.PredicateSubstitution
+       ( PredicateSubstitution (PredicateSubstitution) )
+import Kore.Step.Substitution
+       ( mergeAndNormalizeSubstitutions )
+import Kore.Unification.Error
+import Kore.Unification.Unifier
+       ( UnificationSubstitution )
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSortTools )
+                 ( makeMetadataTools, makeSymSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
-test_mergeAndNormalizeSubstitutions = give mockSortTools
+test_mergeAndNormalizeSubstitutions = give mockSymSorts
     [ testCase "Constructor normalization"
         -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
         (assertEqual ""
@@ -228,9 +228,9 @@ test_mergeAndNormalizeSubstitutions = give mockSortTools
     ]
 
   where
-    mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
+    mockSymSorts = Mock.makeSymSorts Mock.symSortsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSortTools Mock.attributesMapping []
+        Mock.makeMetadataTools mockSymSorts Mock.attributesMapping []
     normalize
         :: UnificationSubstitution Object Variable
         -> UnificationSubstitution Object Variable

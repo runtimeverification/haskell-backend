@@ -29,7 +29,7 @@ import           Kore.Building.Patterns
 import           Kore.Building.Sorts
 import           Kore.Error
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SortTools )
+                 ( MetadataTools (..), SymSorts )
 import           Kore.MetaML.AST
                  ( CommonMetaPattern )
 import           Kore.Predicate.Predicate
@@ -294,8 +294,8 @@ test_userDefinedFunction =
     -- TODO: Add a test for the stepper giving up
     ]
 
-mockSortTools :: SortTools Meta
-mockSortTools = const ApplicationSorts
+mockSymSorts :: SymSorts Meta
+mockSymSorts = const ApplicationSorts
     { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
     , applicationSortsResult = asAst PatternSort
     }
@@ -304,7 +304,7 @@ mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.constructorFunctionalAttributes
     , sortAttributes = const Mock.constructorFunctionalAttributes
-    , sortTools  = mockSortTools
+    , symSorts  = mockSymSorts
     , isSubsortOf = const $ const False
     }
 

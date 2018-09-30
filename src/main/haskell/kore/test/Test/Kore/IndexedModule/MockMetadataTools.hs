@@ -1,6 +1,6 @@
 module Test.Kore.IndexedModule.MockMetadataTools
     ( makeMetadataTools
-    , makeSortTools
+    , makeSymSorts
     , constructorFunctionalAttributes
     , constructorAttributes
     , defaultAttributes
@@ -20,7 +20,7 @@ import           Kore.AST.Common
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (MetadataTools), SortTools )
+                 ( MetadataTools (MetadataTools), SymSorts )
 import qualified Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.StepperAttributes
@@ -29,22 +29,22 @@ import qualified Kore.Step.StepperAttributes as StepperAttributes
                  ( StepperAttributes (..) )
 
 makeMetadataTools
-    :: SortTools level
+    :: SymSorts level
     -> [(SymbolOrAlias level, StepperAttributes)]
     -> [(Sort level, Sort level)]
     -> MetadataTools level StepperAttributes
-makeMetadataTools sortTools attr isSubsortOf =
+makeMetadataTools symSorts attr isSubsortOf =
     MetadataTools
         { symAttributes = attributesFunction attr
         , sortAttributes = const functionAttributes
-        , sortTools = sortTools
+        , symSorts = symSorts
         , isSubsortOf = \first second -> (first, second) `elem` isSubsortOf
         }
 
-makeSortTools
+makeSymSorts
     :: [(SymbolOrAlias level, ApplicationSorts level)]
     -> SymbolOrAlias level -> ApplicationSorts level
-makeSortTools = caseBasedFunction
+makeSymSorts = caseBasedFunction
 
 attributesFunction
     :: [(SymbolOrAlias level, StepperAttributes)]

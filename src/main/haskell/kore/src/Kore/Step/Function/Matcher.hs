@@ -410,7 +410,7 @@ matchNonVarToPattern
     -> Maybe (Counter (PredicateSubstitution level variable))
 matchNonVarToPattern tools first second
   | null (pureFreeVariables (Proxy :: Proxy level) first)
-  = give (MetadataTools.sortTools tools) $
+  = give (MetadataTools.symSorts tools) $
     return $ do -- Counter monad
         (PredicateSubstitution {predicate, substitution}, _proof) <-
             Equals.makeEvaluateTermsToPredicateSubstitution tools first second

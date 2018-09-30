@@ -24,7 +24,7 @@ import           Kore.Building.Patterns
 import           Kore.Building.Sorts
 import           Kore.Error
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SymSorts )
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, compactPredicatePredicate,
                  makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
@@ -39,7 +39,7 @@ import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
 test_predicate :: [TestTree]
-test_predicate = give mockSortTools
+test_predicate = give mockSymSorts
     [ testCase "And truth table"
         (do
             assertEqualWithExplanation "false and false = false"
@@ -348,11 +348,11 @@ pr1 = makeEquals (a PatternSort) (b PatternSort)
 pr2 :: CommonPredicate Meta
 pr2 = makeEquals (c PatternSort) (d PatternSort)
 pa1 :: CommonPurePattern Meta
-pa1 = give mockSortTools $ mkEquals
+pa1 = give mockSymSorts $ mkEquals
     (asPureMetaPattern $ a PatternSort)
     (asPureMetaPattern $ b PatternSort)
 pa2 :: CommonPurePattern Meta
-pa2 = give mockSortTools $ mkEquals
+pa2 = give mockSymSorts $ mkEquals
     (asPureMetaPattern $ c PatternSort)
     (asPureMetaPattern $ d PatternSort)
 
@@ -367,7 +367,7 @@ makeEquals
     :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
     => patt1 -> patt2 -> CommonPredicate Meta
 makeEquals patt1 patt2 =
-    give mockSortTools
+    give mockSymSorts
         (makeEqualsPredicate
             (asPureMetaPattern patt1)
             (asPureMetaPattern patt2)
@@ -378,7 +378,7 @@ makeAnd
     -> CommonPredicate Meta
     -> CommonPredicate Meta
 makeAnd p1 p2 =
-    fst $ give mockSortTools (makeAndPredicate p1 p2)
+    fst $ give mockSymSorts (makeAndPredicate p1 p2)
 
 a :: MetaSort sort => sort -> MetaVariable sort
 a = metaVariable "#a" AstLocationTest
@@ -393,8 +393,8 @@ d :: MetaSort sort => sort -> MetaVariable sort
 d = metaVariable "#d" AstLocationTest
 
 
-mockSortTools :: SortTools Meta
-mockSortTools = const ApplicationSorts
+mockSymSorts :: SymSorts Meta
+mockSymSorts = const ApplicationSorts
     { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
     , applicationSortsResult = asAst PatternSort
     }

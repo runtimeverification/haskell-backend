@@ -21,7 +21,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SymSorts )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
                  makeTruePredicate )
@@ -40,7 +40,7 @@ import           Test.Kore
                  ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeSortTools )
+                 ( makeSymSorts )
 import           Test.Tasty.HUnit.Extensions
 
 test_floorSimplification :: [TestTree]
@@ -51,13 +51,13 @@ test_floorSimplification =
             (OrOfExpandedPattern.make
                 [ ExpandedPattern
                     { term = mkTop
-                    , predicate = give mockSortTools $
+                    , predicate = give mockSymSorts $
                         makeFloorPredicate (mkOr a b)
                     , substitution = []
                     }
                 ]
             )
-            (give mockSortTools $ evaluate
+            (give mockSymSorts $ evaluate
                 (makeFloor
                     [aExpanded, bExpanded]
                 )
@@ -70,7 +70,7 @@ test_floorSimplification =
                 (OrOfExpandedPattern.make
                     [ ExpandedPattern.top ]
                 )
-                (give mockSortTools $ evaluate
+                (give mockSymSorts $ evaluate
                     (makeFloor
                         [ExpandedPattern.top]
                     )
@@ -80,7 +80,7 @@ test_floorSimplification =
                 (OrOfExpandedPattern.make
                     []
                 )
-                (give mockSortTools $ evaluate
+                (give mockSymSorts $ evaluate
                     (makeFloor
                         []
                     )
@@ -93,7 +93,7 @@ test_floorSimplification =
                 (OrOfExpandedPattern.make
                     [ ExpandedPattern.top ]
                 )
-                (give mockSortTools $ makeEvaluate
+                (give mockSymSorts $ makeEvaluate
                     (ExpandedPattern.top :: CommonExpandedPattern Object)
                 )
             -- floor(bottom) = bottom
@@ -101,7 +101,7 @@ test_floorSimplification =
                 (OrOfExpandedPattern.make
                     []
                 )
-                (give mockSortTools $ makeEvaluate
+                (give mockSymSorts $ makeEvaluate
                     (ExpandedPattern.bottom :: CommonExpandedPattern Object)
                 )
         )
@@ -113,14 +113,14 @@ test_floorSimplification =
                 [ ExpandedPattern
                     { term = mkTop
                     , predicate =
-                        fst $ give mockSortTools $ makeAndPredicate
+                        fst $ give mockSymSorts $ makeAndPredicate
                             (makeFloorPredicate a)
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution = [(x, fOfB)]
                     }
                 ]
             )
-            (give mockSortTools $ makeEvaluate
+            (give mockSymSorts $ makeEvaluate
                 ExpandedPattern
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
@@ -150,11 +150,11 @@ test_floorSimplification =
         , symbolOrAliasParams      = []
         }
     x = Variable (testId "x") testSort
-    a = give mockSortTools $ mkApp aSymbol []
-    b = give mockSortTools $ mkApp bSymbol []
-    fOfA = give mockSortTools $ mkApp fSymbol [a]
-    fOfB = give mockSortTools $ mkApp fSymbol [b]
-    gOfA = give mockSortTools $ mkApp gSymbol [a]
+    a = give mockSymSorts $ mkApp aSymbol []
+    b = give mockSymSorts $ mkApp bSymbol []
+    fOfA = give mockSymSorts $ mkApp fSymbol [a]
+    fOfB = give mockSymSorts $ mkApp fSymbol [b]
+    gOfA = give mockSymSorts $ mkApp gSymbol [a]
     aExpanded = ExpandedPattern
         { term = a
         , predicate = makeTruePredicate
@@ -165,7 +165,7 @@ test_floorSimplification =
         , predicate = makeTruePredicate
         , substitution = []
         }
-    sortToolsMapping =
+    symSortsMapping =
         [   ( aSymbol
             , ApplicationSorts
                 { applicationSortsOperands = []
@@ -191,7 +191,7 @@ test_floorSimplification =
                 }
             )
         ]
-    mockSortTools = Mock.makeSortTools sortToolsMapping
+    mockSymSorts = Mock.makeSymSorts symSortsMapping
 
 makeFloor
     :: [ExpandedPattern Object variable]
@@ -211,7 +211,7 @@ testSort =
 
 evaluate
     ::  ( MetaOrObject level
-        , Given (SortTools level)
+        , Given (SymSorts level)
         )
     => Floor level (CommonOrOfExpandedPattern level)
     -> CommonOrOfExpandedPattern level
@@ -222,7 +222,7 @@ evaluate floor' =
 
 makeEvaluate
     ::  ( MetaOrObject level
-        , Given (SortTools level)
+        , Given (SymSorts level)
         )
     => CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level

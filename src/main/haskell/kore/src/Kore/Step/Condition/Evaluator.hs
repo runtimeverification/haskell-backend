@@ -18,7 +18,7 @@ import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SymSorts )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, unwrapPredicate,
                  wrapPredicate )
@@ -37,7 +37,7 @@ import           Kore.Step.Simplification.Data
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
     ::  ( MetaOrObject level
-        , Given (SortTools level)
+        , Given (SymSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level)
@@ -62,7 +62,7 @@ evaluate
 
 asPredicateSubstitution
     ::  ( MetaOrObject level
-        , Given (SortTools level)
+        , Given (SymSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level)

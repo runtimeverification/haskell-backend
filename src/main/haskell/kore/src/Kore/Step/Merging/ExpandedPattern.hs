@@ -86,7 +86,7 @@ mergeWithPredicateSubstitution
                 [pattPredicate, conditionToMerge]
                 [pattSubstitution, substitutionToMerge]
     (evaluatedCondition, _) <-
-        give (MetadataTools.sortTools tools)
+        give (MetadataTools.symSorts tools)
             $ Predicate.evaluate simplifier mergedCondition
     mergeWithEvaluatedCondition
         tools

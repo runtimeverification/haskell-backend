@@ -20,7 +20,7 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkBottom, mkCharLiteral, mkDomainValue,
                  mkStringLiteral, mkTop, mkVar )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SortTools )
+                 ( MetadataTools, SymSorts )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -34,12 +34,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSortTools )
+                 ( makeMetadataTools, makeSymSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_andTermsSimplification :: [TestTree]
-test_andTermsSimplification = give mockSortTools
+test_andTermsSimplification = give mockSymSorts
     [ testCase "boolean and"
         (do
             assertEqualWithExplanation "pattern and top"
@@ -362,7 +362,7 @@ test_andTermsSimplification = give mockSortTools
                     aDomainValue bDomainValue
                 )
         )
-    , give mockMetaSortTools $ testCase "string literal and"
+    , give mockMetaSymSorts $ testCase "string literal and"
         (do
             assertEqualWithExplanation "equal values"
                 (let
@@ -388,7 +388,7 @@ test_andTermsSimplification = give mockSortTools
                     (mkStringLiteral "b")
                 )
         )
-    , give mockMetaSortTools $ testCase "char literal and"
+    , give mockMetaSymSorts $ testCase "char literal and"
         (do
             assertEqualWithExplanation "equal values"
                 (let
@@ -505,46 +505,46 @@ test_andTermsSimplification = give mockSortTools
     ]
 
 fOfA :: CommonPurePattern Object
-fOfA = give mockSortTools $ Mock.f Mock.a
+fOfA = give mockSymSorts $ Mock.f Mock.a
 
 gOfA :: CommonPurePattern Object
-gOfA = give mockSortTools $ Mock.g Mock.a
+gOfA = give mockSymSorts $ Mock.g Mock.a
 
 plain0OfA :: CommonPurePattern Object
-plain0OfA = give mockSortTools $ Mock.plain10 Mock.a
+plain0OfA = give mockSymSorts $ Mock.plain10 Mock.a
 
 plain1OfA :: CommonPurePattern Object
-plain1OfA = give mockSortTools $ Mock.plain11 Mock.a
+plain1OfA = give mockSymSorts $ Mock.plain11 Mock.a
 
 plain0OfB :: CommonPurePattern Object
-plain0OfB = give mockSortTools $ Mock.plain10 Mock.b
+plain0OfB = give mockSymSorts $ Mock.plain10 Mock.b
 
 plain1OfB :: CommonPurePattern Object
-plain1OfB = give mockSortTools $ Mock.plain11 Mock.b
+plain1OfB = give mockSymSorts $ Mock.plain11 Mock.b
 
-mockSortTools :: SortTools Object
-mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
+mockSymSorts :: SymSorts Object
+mockSymSorts = Mock.makeSymSorts Mock.symSortsMapping
 
-mockMetaSortTools :: SortTools Meta
-mockMetaSortTools = Mock.makeSortTools []
+mockMetaSymSorts :: SymSorts Meta
+mockMetaSymSorts = Mock.makeSymSorts []
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSortTools Mock.attributesMapping Mock.subsorts
+    Mock.makeMetadataTools mockSymSorts Mock.attributesMapping Mock.subsorts
 
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools =
-    Mock.makeMetadataTools mockMetaSortTools [] []
+    Mock.makeMetadataTools mockMetaSymSorts [] []
 
 aDomainValue :: CommonPurePattern Object
 aDomainValue =
-    give mockSortTools
+    give mockSymSorts
         $ mkDomainValue  Mock.testSort
         $ BuiltinDomainPattern (mkStringLiteral "a")
 
 bDomainValue :: CommonPurePattern Object
 bDomainValue =
-    give mockSortTools
+    give mockSymSorts
         $ mkDomainValue Mock.testSort
         $ BuiltinDomainPattern (mkStringLiteral "b")
 

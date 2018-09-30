@@ -3,7 +3,7 @@ module Test.Kore.Unification.Unifier (test_unification) where
 import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
-       ( testCase, assertFailure, assertEqual )
+       ( assertEqual, assertFailure, testCase )
 import Test.Tasty.HUnit.Extensions
 
 import           Control.Exception
@@ -36,7 +36,7 @@ import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTPrettyPrint
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar, mkSort )
+                 ( mkSort, mkVar )
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, makeFalsePredicate, makeTruePredicate )
@@ -56,8 +56,8 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
 import           Kore.Unification.Error
-import           Kore.Unification.UnifierImpl
 import           Kore.Unification.Procedure
+import           Kore.Unification.UnifierImpl
 
 import Test.Kore
 import Test.Kore.AST.MLPatterns
@@ -209,8 +209,8 @@ mockGetResultSort patternHead
             getSentenceSymbolOrAliasResultSort
             (lookup patternHead symbols)
 
-mockSortTools :: SortTools Object
-mockSortTools pHead = ApplicationSorts
+mockSymSorts :: SymSorts Object
+mockSymSorts pHead = ApplicationSorts
     { applicationSortsOperands = mockGetArgumentSorts pHead
     , applicationSortsResult = mockGetResultSort pHead
     }
@@ -219,7 +219,7 @@ tools :: MetadataTools Object StepperAttributes
 tools = MetadataTools
     { symAttributes = mockStepperAttributes
     , sortAttributes = undefined
-    , sortTools = mockSortTools
+    , symSorts = mockSymSorts
     , isSubsortOf = const $ const False
     }
 
@@ -242,7 +242,7 @@ unificationSubstitution = map trans
         let pp = extractPurePattern p in
             ( Variable
                 { variableSort =
-                    getPatternResultSort mockSortTools (project pp)
+                    getPatternResultSort mockSymSorts (project pp)
                 , variableName = testId v
                 }
             , pp
@@ -573,13 +573,13 @@ showVar :: V level -> W level
 showVar (V i) = W (show i)
 
 var' :: Integer -> PureMLPattern Meta V
-var' i = give mockSortTools' (mkVar (V i))
+var' i = give mockSymSorts' (mkVar (V i))
 
 war' :: String -> PureMLPattern Meta W
-war' s = give mockSortTools' (mkVar (W s))
+war' s = give mockSymSorts' (mkVar (W s))
 
-mockSortTools' :: SortTools Meta
-mockSortTools' = const ApplicationSorts
+mockSymSorts' :: SymSorts Meta
+mockSymSorts' = const ApplicationSorts
     { applicationSortsOperands = [sortVar, sortVar]
     , applicationSortsResult = sortVar
     }
@@ -671,7 +671,7 @@ simplifyPattern (UnificationTerm pStub) =
                         (fst simplifiedPatterns) of
                     [] -> return ExpandedPattern.bottom
                     (config : _) -> return config
-        resultSort = getPatternResultSort mockSortTools pat
+        resultSort = getPatternResultSort mockSymSorts pat
     in UnificationTerm (SortedPatternStub (SortedPattern pat resultSort))
   where
     functionRegistry = Map.empty
@@ -686,6 +686,6 @@ makeEqualsPredicate
     -> CommonPurePatternStub Object
     -> Predicate Object Variable
 makeEqualsPredicate t1 t2 =
-        give mockSortTools
+        give mockSymSorts
             $ Predicate.makeEqualsPredicate
                 (extractPurePattern t1) (extractPurePattern t2)
