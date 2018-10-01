@@ -12,6 +12,8 @@ module Kore.Step.Function.UserDefined
     , axiomFunctionEvaluator
     ) where
 
+import Control.Monad.Except
+       ( runExceptT )
 import Data.Reflection
        ( give )
 
@@ -76,13 +78,13 @@ axiomFunctionEvaluator
     tools
     simplifier
     app
-  =
-    case stepResult of
+  = do
+    result <- runExceptT stepResult
+    case result of
         Left _ ->
             return (AttemptedFunction.NotApplicable, SimplificationProof)
-        Right stepPatternWithProof ->
+        Right (stepPattern, _) ->
             do
-                (stepPattern, _) <- stepPatternWithProof
                 (   rewrittenPattern@ExpandedPattern
                         { predicate = rewritingCondition }
                     , _

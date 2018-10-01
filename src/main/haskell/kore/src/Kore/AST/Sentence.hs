@@ -29,12 +29,12 @@ import Data.Functor.Foldable
 import GHC.Generics
        ( Generic )
 
-import           Data.Functor.Foldable.Orphans ()
-import           Data.Functor.Impredicative
-                 ( Rotate41 (..) )
-import           Kore.AST.Common
-import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
+import Data.Functor.Foldable.Orphans ()
+import Data.Functor.Impredicative
+       ( Rotate41 (..) )
+import Kore.AST.Common
+import Kore.AST.Kore
+import Kore.AST.MetaOrObject
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
 It is parameterized by the types of Patterns, @pat@.
@@ -206,6 +206,38 @@ deriving instance
     , Show sortParam
     , Show (variable level)
     ) => Show (Sentence level sortParam pat variable)
+
+{- | The attributes associated with a sentence.
+
+    Every sentence type has attributes, so this operation is total.
+
+ -}
+sentenceAttributes :: Sentence level sortParam pat variable -> Attributes
+sentenceAttributes =
+    \case
+        SentenceAliasSentence
+            SentenceAlias { sentenceAliasAttributes } ->
+                sentenceAliasAttributes
+        SentenceSymbolSentence
+            SentenceSymbol { sentenceSymbolAttributes } ->
+                sentenceSymbolAttributes
+        SentenceImportSentence
+            SentenceImport { sentenceImportAttributes } ->
+                sentenceImportAttributes
+        SentenceAxiomSentence
+            SentenceAxiom { sentenceAxiomAttributes } ->
+                sentenceAxiomAttributes
+        SentenceSortSentence
+            SentenceSort { sentenceSortAttributes } ->
+                sentenceSortAttributes
+        SentenceHookSentence sentence ->
+            case sentence of
+                SentenceHookedSort
+                    SentenceSort { sentenceSortAttributes } ->
+                        sentenceSortAttributes
+                SentenceHookedSymbol
+                    SentenceSymbol { sentenceSymbolAttributes } ->
+                        sentenceSymbolAttributes
 
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
 'Attributes'.

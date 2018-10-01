@@ -28,7 +28,6 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Error as Error
 import           Kore.IndexedModule.IndexedModule
@@ -135,17 +134,9 @@ verify
     :: KoreDefinition
     -> Either (Error.Error VerifyError)
         (Map ModuleName (KoreIndexedModule StepperAttributes))
-verify = verifyAndIndexDefinition attrVerify builtinVerifiers
+verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
     where
     attrVerify = defaultAttributesVerification Proxy
-
-builtinVerifiers :: Builtin.Verifiers
-builtinVerifiers =
-    Builtin.Verifiers
-        { sortDeclVerifiers = Bool.sortDeclVerifiers
-        , symbolVerifiers = Bool.symbolVerifiers
-        , patternVerifier = Bool.patternVerifier
-        }
 
 test_KEqual :: [TestTree]
 test_KEqual =

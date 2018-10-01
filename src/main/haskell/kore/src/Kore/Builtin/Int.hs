@@ -14,6 +14,9 @@ builtin modules.
     import qualified Kore.Builtin.Int as Int
 @
  -}
+
+{-# LANGUAGE MagicHash #-}
+
 module Kore.Builtin.Int
     ( sort
     , assertSort
@@ -21,6 +24,7 @@ module Kore.Builtin.Int
     , symbolVerifiers
     , patternVerifier
     , builtinFunctions
+    , expectBuiltinDomainInt
     , asMetaPattern
     , asPattern
     , asExpandedPattern
@@ -29,10 +33,21 @@ module Kore.Builtin.Int
 
 import           Control.Monad
                  ( void )
+import           Control.Monad.Except
+                 ( ExceptT )
+import qualified Control.Monad.Except as Except
+import           Data.Bits
+                 ( complement, shift, xor, (.&.), (.|.) )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           GHC.Integer
+                 ( smallInteger )
+import           GHC.Integer.GMP.Internals
+                 ( powModInteger, recipModInteger )
+import           GHC.Integer.Logarithms
+                 ( integerLog2# )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
 import qualified Kore.AST.Common as Kore
@@ -46,6 +61,8 @@ import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Function.Data
+                 ( AttemptedFunction (..) )
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -139,6 +156,31 @@ parse = Parsec.signed noSpace Parsec.decimal
   where
     noSpace = pure ()
 
+{- | Abort function evaluation if the argument is not a Int domain value.
+
+    If the operand pattern is not a domain value, the function is simply
+    'NotApplicable'. If the operand is a domain value, but not represented
+    by a 'BuiltinDomainMap', it is a bug.
+
+ -}
+expectBuiltinDomainInt
+    :: Monad m
+    => String  -- ^ Context for error message
+    -> CommonPurePattern Object  -- ^ Operand pattern
+    -> ExceptT (AttemptedFunction Object Kore.Variable) m Integer
+expectBuiltinDomainInt ctx =
+    \case
+        Kore.DV_ _ domain ->
+            case domain of
+                Kore.BuiltinDomainPattern (Kore.StringLiteral_ lit) ->
+                    (return . Builtin.runParser ctx)
+                        (Builtin.parseString parse lit)
+                _ ->
+                    Builtin.verifierBug
+                        (ctx ++ ": Domain value argument is not a string")
+        _ ->
+            Except.throwError NotApplicable
+
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
   The result sort should be hooked to the builtin @Int@ sort, but this is not
@@ -212,19 +254,17 @@ builtinFunctions =
     , partialBinaryOperator "INT.tmod" tmod
 
       -- Bitwise operations
-      -- TODO (thomas.tuegel): Implement bitwise operations.
-    , ("INT.and", Builtin.notImplemented)
-    , ("INT.or", Builtin.notImplemented)
-    , ("INT.xor", Builtin.notImplemented)
-    , ("INT.not", Builtin.notImplemented)
-    , ("INT.shl", Builtin.notImplemented)
-    , ("INT.shr", Builtin.notImplemented)
+    , binaryOperator "INT.and" (.&.)
+    , binaryOperator "INT.or" (.|.)
+    , binaryOperator "INT.xor" xor
+    , unaryOperator "INT.not" complement
+    , binaryOperator "INT.shl" (\a -> shift a . fromInteger)
+    , binaryOperator "INT.shr" (\a -> shift a . fromInteger . negate)
 
       -- Exponential and logarithmic operations
-      -- TODO (thomas.tuegel): Implement exponential and logarithmic operations
-    , ("INT.pow", Builtin.notImplemented)
-    , ("INT.powmod", Builtin.notImplemented)
-    , ("INT.log2", Builtin.notImplemented)
+    , partialBinaryOperator "INT.pow" pow
+    , partialTernaryOperator "INT.powmod" powmod
+    , partialUnaryOperator "INT.log2" log2
     ]
   where
     unaryOperator name op =
@@ -233,11 +273,25 @@ builtinFunctions =
         (name, Builtin.binaryOperator parse asExpandedPattern name op)
     comparator name op =
         (name, Builtin.binaryOperator parse Bool.asExpandedPattern name op)
+    partialUnaryOperator name op =
+        (name, Builtin.unaryOperator parse asPartialExpandedPattern name op)
     partialBinaryOperator name op =
         (name, Builtin.binaryOperator parse asPartialExpandedPattern name op)
+    partialTernaryOperator name op =
+        (name, Builtin.ternaryOperator parse asPartialExpandedPattern name op)
     tdiv n d
         | d == 0 = Nothing
         | otherwise = Just (quot n d)
     tmod n d
         | d == 0 = Nothing
         | otherwise = Just (rem n d)
+    pow b e
+        | e < 0 = Nothing
+        | otherwise = Just (b ^ e)
+    powmod b e m
+        | m == 0 = Nothing
+        | e < 0 && recipModInteger b m == 0 = Nothing
+        | otherwise = Just (powModInteger b e m)
+    log2 n
+        | n > 0 = Just (smallInteger (integerLog2# n))
+        | otherwise = Nothing

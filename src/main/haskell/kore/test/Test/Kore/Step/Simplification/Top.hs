@@ -14,12 +14,8 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Top_ )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -35,12 +31,7 @@ test_topSimplification =
     [ testCase "Top evaluates to top"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ]
+                [ ExpandedPattern.top ]
             )
             (evaluate
                 Top {topSort = testSort}

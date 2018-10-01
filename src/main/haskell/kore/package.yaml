@@ -30,11 +30,13 @@ dependencies:
   - data-default
   - deepseq
   - deriving-compat
+  - errors
   - free
   - gitrev
   - groom
   - hashable
   - haskeline
+  - integer-gmp
   - lens
   - megaparsec >= 6.4.0
   - mtl
@@ -46,6 +48,7 @@ dependencies:
   - sbv
   - text
   - time
+  - transformers
   - unordered-containers
 
 build-tools:

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-|
 Module      : Kore.Unification.SubstitutionNormalization
 Description : Normalization for substitutions resulting from unification, so
@@ -16,6 +16,8 @@ module Kore.Unification.SubstitutionNormalization
 
 import           Control.Monad
                  ( (>=>) )
+import           Control.Monad.Except
+                 ( ExceptT (..) )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor.Foldable
@@ -30,22 +32,24 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Var_ )
+                 ( pattern Var_, pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution (..) )
+                 ( makeTruePredicate )
+import           Kore.Step.PredicateSubstitution
+                 ( PredicateSubstitution (PredicateSubstitution) )
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSubstitution (..), bottom )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
+import           Kore.Unification.Data
+                 ( UnificationSubstitution )
+import           Kore.Variables.Free
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
-import           Kore.Unification.UnifierImpl
-                 ( UnificationSubstitution )
-import           Kore.Variables.Free
 import           Kore.Variables.Fresh
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
@@ -68,11 +72,13 @@ normalizeSubstitution
         )
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
-    -> Either
+    -> ExceptT
         (SubstitutionError level variable)
-        (m (PredicateSubstitution level variable))
+        m
+        (PredicateSubstitution level variable)
 normalizeSubstitution tools substitution =
-    maybe bottom normalizeSortedSubstitution' <$> topologicalSortConverted
+    ExceptT . sequence $
+        maybe (return PredicateSubstitution.bottom) normalizeSortedSubstitution' <$> topologicalSortConverted
 
   where
     interestingVariables :: Map.Map (Unified variable) (variable level)
@@ -108,12 +114,6 @@ normalizeSubstitution tools substitution =
         -> m (PredicateSubstitution level variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) [] []
-
-    bottom :: m (PredicateSubstitution level variable)
-    bottom = return $ PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
 
 checkCircularVariableDependency
     :: (MetaOrObject level, Eq (variable level))
@@ -182,6 +182,8 @@ normalizeSortedSubstitution [] result _ =
         { predicate = makeTruePredicate
         , substitution = result
         }
+normalizeSortedSubstitution ((_, Bottom_ _) : _) _ _ =
+    return PredicateSubstitution.bottom
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result

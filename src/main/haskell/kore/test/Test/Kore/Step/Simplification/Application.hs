@@ -24,12 +24,11 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeTruePredicate )
+                 ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( ExpandedPattern (..), bottom )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
                  CommonApplicationFunctionEvaluator )
@@ -106,12 +105,7 @@ test_applicationSimplification =
         -- sigma(a or b, bottom) = bottom
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
-                    { term = mkBottom
-                    , predicate = makeFalsePredicate
-                    , substitution = []
-                    }
-                ]
+                [ ExpandedPattern.bottom ]
             )
             (evaluate
                 mockMetadataTools
@@ -405,7 +399,8 @@ test_applicationSimplification =
             )
         ]
     mockSortTools = Mock.makeSortTools sortToolsMapping
-    mockMetadataTools = Mock.makeMetadataTools mockSortTools attributesMapping
+    mockMetadataTools =
+        Mock.makeMetadataTools mockSortTools attributesMapping []
 
 makeApplication
     :: SymbolOrAlias level

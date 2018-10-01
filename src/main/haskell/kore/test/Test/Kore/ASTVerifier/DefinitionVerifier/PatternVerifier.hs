@@ -647,9 +647,9 @@ test_patternVerifier =
     intSortName = SortName "Int"
     intSort :: Sort Object
     intSort = simpleSort intSortName
-    intSortSentence :: KoreSentenceSort Object
+    intSortSentence :: KoreSentenceHook
     intSortSentence =
-        SentenceSort
+        SentenceHookedSort SentenceSort
             { sentenceSortName = testId name
             , sentenceSortParameters = []
             , sentenceSortAttributes =
@@ -660,9 +660,9 @@ test_patternVerifier =
     boolSortName = SortName "Int"
     boolSort :: Sort Object
     boolSort = simpleSort boolSortName
-    boolSortSentence :: KoreSentenceSort Object
+    boolSortSentence :: KoreSentenceHook
     boolSortSentence =
-        SentenceSort
+        SentenceHookedSort SentenceSort
             { sentenceSortName = testId name
             , sentenceSortParameters = []
             , sentenceSortAttributes =
