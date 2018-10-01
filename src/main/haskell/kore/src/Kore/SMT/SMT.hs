@@ -38,27 +38,27 @@ import           Kore.Builtin.Hook
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as KorePredicate
 
-import Data.Reflection
-import Data.SBV
+import           Data.Reflection
+import           Data.SBV
 
-import GHC.IO.Unsafe
+import           GHC.IO.Unsafe
 
 
 data TranslatePredicateError
- = UnknownHookedSort (Sort Object)
- | UnknownHookedSymbol (SymbolOrAlias Object)
- | UnknownPatternConstructor Pat
- | ExpectedDVPattern Pat
- deriving(Eq, Ord, Show)
+    = UnknownHookedSort (Sort Object)
+    | UnknownHookedSymbol (SymbolOrAlias Object)
+    | UnknownPatternConstructor Pat
+    | ExpectedDVPattern Pat
+    deriving(Eq, Ord, Show)
 
 type Pat = PureMLPattern Object Variable
 type Translating
     = ExceptT TranslatePredicateError (StateT TranslationState Symbolic)
 
 data SMTAttributes
-  = SMTAttributes
-  { hook :: !Hook
-  } deriving(Eq, Show)
+    = SMTAttributes
+    { hook :: !Hook
+    } deriving(Eq, Show)
 
 instance Default SMTAttributes where
     def = SMTAttributes def
