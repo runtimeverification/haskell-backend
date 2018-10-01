@@ -233,7 +233,7 @@ module MAP
 
   symbol merge{S1,S2}(Map{S1,S2}, Map{S1,S2}) : Map{S1,S2} []
 
-  symbol domains{S1,S2}(Map{S1,S2}) : Set{S1} []
+  symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
 
   /* Builtin theories are in this PR
    * https://github.com/kframework/kore/pull/101
