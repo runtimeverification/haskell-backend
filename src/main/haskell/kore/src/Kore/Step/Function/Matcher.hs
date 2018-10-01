@@ -180,28 +180,22 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                     else Nothing
                 _ -> Nothing
         (Bottom_ _) ->
-            case second of
-                (Bottom_ _) -> Just $ return PredicateSubstitution.top
-                _ -> Nothing
+            if first == second
+                then Just $ return PredicateSubstitution.top
+                else Nothing
         (Ceil_ _ _ firstChild) ->
             case second of
                 (Ceil_ _ _ secondChild) ->
                     match tools quantifiedVariables firstChild secondChild
                 _ -> Nothing
         (CharLiteral_ _) ->
-            case second of
-                (CharLiteral_ _) ->
-                    if first == second
-                    then Just $ return PredicateSubstitution.top
-                    else Nothing
-                _ -> Nothing
+            if first == second
+                then Just $ return PredicateSubstitution.top
+                else Nothing
         (DV_ _ _) ->
-            case second of
-                (DV_ _ _) ->
-                    if first == second
-                    then Just $ return PredicateSubstitution.top
-                    else Nothing
-                _ -> Nothing
+            if first == second
+                then Just $ return PredicateSubstitution.top
+                else Nothing
         (Equals_ _ _ firstFirst firstSecond) ->
             case second of
                 (Equals_ _ _ secondFirst secondSecond) ->
@@ -300,16 +294,13 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         ]
                 _ -> Nothing
         (StringLiteral_ _) ->
-            case second of
-                (StringLiteral_ _) ->
-                    if first == second
-                    then Just $ return PredicateSubstitution.top
-                    else Nothing
-                _ -> Nothing
+            if first == second
+                then Just $ return PredicateSubstitution.top
+                else Nothing
         (Top_ _) ->
-            case second of
-                (Top_ _) -> Just $ return PredicateSubstitution.top
-                _ -> Nothing
+            if first == second
+                then Just $ return PredicateSubstitution.top
+                else Nothing
         (Var_ firstVariable) ->
             case second of
                 (Var_ secondVariable) ->
