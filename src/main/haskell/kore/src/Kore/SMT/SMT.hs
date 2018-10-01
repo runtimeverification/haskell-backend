@@ -52,7 +52,7 @@ data TranslatePredicateError
  deriving(Eq, Ord, Show)
 
 type Pat = PureMLPattern Object Variable
-type Translating 
+type Translating
     = ExceptT TranslatePredicateError (StateT TranslationState Symbolic)
 
 data SMTAttributes
@@ -73,10 +73,10 @@ instance ParseAttributes SMTAttributes where
 type VarOrUF = Either (Id Object) Pat
 
 data TranslationState
- = TranslationState
-   { _boolVars :: Map.Map VarOrUF SBool
-   , _intVars  :: Map.Map VarOrUF SInteger
-   }
+    = TranslationState
+      { _boolVars :: Map.Map VarOrUF SBool
+      , _intVars  :: Map.Map VarOrUF SInteger
+      }
 
 makeLenses ''TranslationState
 
@@ -125,7 +125,7 @@ config :: SMTConfig
 config = z3 -- { transcript = Just "/Users/phillip/smt.log"}
 
 -- | Returns `Just False` if the SMT solver can prove the pattern
--- is undecidable, and `Nothing` otherwise. 
+-- is undecidable, and `Nothing` otherwise.
 unsafeTryRefutePattern
     :: ( Given (MetadataTools Object SMTAttributes)
        , Ord (variable Object)
@@ -134,7 +134,7 @@ unsafeTryRefutePattern
     => PureMLPattern Object variable
     -> Maybe Bool
 unsafeTryRefutePattern p = unsafePerformIO $ do
-  let smtPredicate = setTimeOut 20 >> patternToSMT True p -- 20ms 
+  let smtPredicate = setTimeOut 20 >> patternToSMT True p -- 20ms
         >>= (\case {
                Right p' -> return $ bnot p' ;
                Left _ -> sBool "TranslationFailed"

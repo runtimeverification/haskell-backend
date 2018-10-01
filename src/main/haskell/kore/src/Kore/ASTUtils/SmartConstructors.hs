@@ -12,7 +12,7 @@ Portability : portable
 -- {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Kore.ASTUtils.SmartConstructors
-    ( -- * Utility functionss for dealing with sorts
+    ( -- * Utility functions for dealing with sorts
       getSort
     , forceSort
     , predicateSort
