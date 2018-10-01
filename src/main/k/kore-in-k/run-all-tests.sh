@@ -10,11 +10,11 @@ fail=0
 pass=0
 
 echo "Testing ..."
-for f in ../../test/resources/*.kore
+for f in ../../../test/resources/*.kore
 do
   if [[ $f = *"exception"* ]] || [[ $f = *"string"* ]]
   then
-    continue 
+    continue
   fi
   (( total += 1 ))
   echo "Parsing $f"
