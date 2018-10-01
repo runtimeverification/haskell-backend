@@ -166,7 +166,6 @@ module KORE-SYNTAX
 
   syntax AliasDeclaration ::= ObjectAliasDeclaration | MetaAliasDeclaration
 
-  /*
   syntax ObjectAliasDeclaration ::= "alias" ObjectHeadConstructor "{" ObjectSortVariableList "}"
         "(" ObjectSortList ")" ":" ObjectSort "where"
         ObjectHeadConstructor "{" ObjectSortVariableList "}"
@@ -176,19 +175,6 @@ module KORE-SYNTAX
         "(" MetaSortList ")" ":" MetaSort "where"
         MetaHeadConstructor "{" MetaSortVariableList "}"
         "(" MetaVariableList ")" ":=" MetaPattern Attribute
-  */
-  // The above is the correct syntax for aliases w.r.t. the semantics of K document.
-  // Currently, the tests are using an out-dated syntax for alises, so we use the following
-  // definitions instead.
-
-  syntax ObjectAliasDeclaration ::= "alias" ObjectHeadConstructor "{" ObjectSortVariableList "}"
-                                     "(" ObjectSortList ")" ":" ObjectSort Attribute
-
-  syntax MetaAliasDeclaration ::= "alias" MetaHeadConstructor "{" MetaSortVariableList "}"
-                                     "(" MetaSortList ")" ":" MetaSort Attribute
-
-
-
 
   syntax AxiomDeclaration ::= "axiom" "{" SortVariableList "}" Pattern Attribute
 
