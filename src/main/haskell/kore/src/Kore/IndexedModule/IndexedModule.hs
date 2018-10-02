@@ -738,8 +738,8 @@ indexedModuleSubsorts imod =
     case internalIndexedModuleSubsorts imod of
         Right subsorts -> subsorts
         Left err -> error $ "IndexedModule should already have checked"
-                         ++ "form of subsort attributes, but parsing failed\n:"
-                         ++ show err
+            ++ "form of subsort attributes, but parsing failed\n:"
+            ++ show err
 
 internalIndexedModuleSubsorts
     :: IndexedModule sortParam pat variables atts

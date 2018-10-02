@@ -84,8 +84,8 @@ parseAttributes = runParser attributesParser
      using a @MonadError@ to report errors.
  -}
 parseAttributesM
-    :: (ParseAttributes att
-       ,MonadError (Error e) m)
+    :: ( ParseAttributes att
+       , MonadError (Error e) m)
     => Attributes
     -> m att
 parseAttributesM = either throwError return . castError . parseAttributes
@@ -176,9 +176,9 @@ runParser Parser { getParser } (Attributes attrs) = do
         attrMap
         Application
             { applicationSymbolOrAlias =
-              SymbolOrAlias { symbolOrAliasConstructor
-                            , symbolOrAliasParams
-                            }
+                SymbolOrAlias { symbolOrAliasConstructor
+                              , symbolOrAliasParams
+                              }
             , applicationChildren = args
             }
       =

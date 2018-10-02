@@ -225,27 +225,27 @@ testSubsortModule =
   where
     subsortAxiom :: Sort Object -> Sort Object -> KoreSentence
     subsortAxiom subSort superSort =
-        constructUnifiedSentence SentenceAxiomSentence
-        SentenceAxiom
-        { sentenceAxiomParameters = [UnifiedObject (sortVariable "R")]
-        , sentenceAxiomPattern =
-                Fix . asUnifiedPattern $ TopPattern (Top sortVarR)
-        , sentenceAxiomAttributes = Attributes
-            [subsortAttribute subSort superSort]
-        }
+        constructUnifiedSentence SentenceAxiomSentence $
+          (SentenceAxiom
+              { sentenceAxiomParameters = [UnifiedObject (sortVariable "R")]
+              , sentenceAxiomPattern =
+                  Fix . asUnifiedPattern $ TopPattern (Top sortVarR)
+              , sentenceAxiomAttributes = Attributes
+                  [subsortAttribute subSort superSort]
+              })
     subsortAttribute :: Sort Object -> Sort Object -> KorePattern Variable
     subsortAttribute subSort superSort = Fix . asUnifiedPattern $
         (ApplicationPattern (Application
             (SymbolOrAlias (testId "subsort") [subSort,superSort])
             []))
     sortDecl :: Sort Object -> KoreSentence
-    sortDecl (SortActualSort (SortActual {sortActualName = name, sortActualSorts = []})) =
-        constructUnifiedSentence SentenceSortSentence
-        (SentenceSort
-            { sentenceSortName = name
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes []
-            })
+    sortDecl (SortActualSort (SortActual name [])) =
+        constructUnifiedSentence SentenceSortSentence $
+          (SentenceSort
+              { sentenceSortName = name
+              , sentenceSortParameters = []
+              , sentenceSortAttributes = Attributes []
+              })
     sortDecl _ = error "Cannot make sort declaration from this Sort expression"
 
 {- subsorting axioms look like this:

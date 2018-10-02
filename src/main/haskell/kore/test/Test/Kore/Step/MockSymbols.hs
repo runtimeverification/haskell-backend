@@ -1,24 +1,25 @@
 module Test.Kore.Step.MockSymbols where
 
--- Intended usage:
--- * Import qualified.
--- * use symbolOrAliasSortsMapping and attributesMapping to build mock SymbolOrAliasSorts and
---   MetadataTools.
--- * Use things like a, b, c, x, y, z for testing.
+{- Intended usage:
+   * Import qualified.
+   * use symbolOrAliasSortsMapping and attributesMapping to build
+     mock SymbolOrAliasSorts and MetadataTools.
+   * Use things like a, b, c, x, y, z for testing.
 
--- RULES:
--- * Everything that does not obey the default rules must be clearly
---   specified in the name, e.g. 'constantNotFunctional'.
--- * constant symbols are, by default, functional.
--- * constant functions are called cf, cg, ch.
--- * constant constructors are called a, b, c, ...
--- * one-element functions are called f, g, h.
--- * constructors are called "constr<n><k>" where n is the arity and k is used
---   to differentiate between them (both are one-digit).
--- * functional constructors are called "functionallConstr<n><k>"
--- * functional symbols are called "functional<n><k>"
--- * symbols without any special attribute are called "plain<n><k>"
--- * variables are called x, y, z...
+   RULES:
+   * Everything that does not obey the default rules must be clearly
+     specified in the name, e.g. 'constantNotFunctional'.
+   * constant symbols are, by default, functional.
+   * constant functions are called cf, cg, ch.
+   * constant constructors are called a, b, c, ...
+   * one-element functions are called f, g, h.
+   * constructors are called "constr<n><k>" where n is the arity and k is used
+     to differentiate between them (both are one-digit).
+   * functional constructors are called "functionallConstr<n><k>"
+   * functional symbols are called "functional<n><k>"
+   * symbols without any special attribute are called "plain<n><k>"
+   * variables are called x, y, z...
+-}
 
 import Data.Reflection
        ( Given )
