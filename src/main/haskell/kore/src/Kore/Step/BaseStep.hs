@@ -278,7 +278,7 @@ stepWithAxiom
                 ListSubstitution.fromList
                     (makeUnifiedSubstitution normalizedSubstitution)
         -- Merge all conditions collected so far
-        (mergedConditionWithCounter, _proof) =
+        (mergedConditionWithCounter, _proof) <-
             give (sortTools tools)
             $ mergeConditionsWithAnd
                 [ startCondition  -- from initial configuration

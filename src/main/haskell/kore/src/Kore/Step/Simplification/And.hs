@@ -34,7 +34,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), Simplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -90,6 +90,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSimplifier level variable
     -> And level (OrOfExpandedPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -97,12 +98,13 @@ simplify
         )
 simplify
     tools
+    predicateSimplifier
     And
         { andFirst = first
         , andSecond = second
         }
   =
-    simplifyEvaluated tools first second
+    simplifyEvaluated tools predicateSimplifier first second
 
 {-| simplifies an And given its two 'OrOfExpandedPattern' children.
 
@@ -119,11 +121,12 @@ simplifyEvaluated
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSimplifier level variable
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluated tools first second
+simplifyEvaluated tools predicateSimplifier first second
   | OrOfExpandedPattern.isFalse first =
     return (OrOfExpandedPattern.make [], SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
@@ -137,7 +140,7 @@ simplifyEvaluated tools first second
   | otherwise = do
     orWithProof <-
         OrOfExpandedPattern.crossProductGenericF
-            (makeEvaluate tools) first second
+            (makeEvaluate tools predicateSimplifier) first second
     return
         -- TODO: It's not obvious at all when filtering occurs and when it doesn't.
         ( OrOfExpandedPattern.filterOr
@@ -161,11 +164,12 @@ makeEvaluate
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSimplifier level variable
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
-    tools first second
+    tools predicateSimplifier first second
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
     return (ExpandedPattern.bottom, SimplificationProof)
   | ExpandedPattern.isTop first =
@@ -173,7 +177,7 @@ makeEvaluate
   | ExpandedPattern.isTop second =
     return (first, SimplificationProof)
   | otherwise =
-    makeEvaluateNonBool tools first second
+    makeEvaluateNonBool tools predicateSimplifier first second
 
 makeEvaluateNonBool
     ::  ( MetaOrObject level
@@ -186,11 +190,13 @@ makeEvaluateNonBool
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSimplifier level variable
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBool
     tools
+    predicateSimplifier
     ExpandedPattern
         { term = firstTerm
         , predicate = firstPredicate
@@ -208,7 +214,7 @@ makeEvaluateNonBool
             , substitution = termSubstitution
             }
         , _proof
-        ) <- makeTermAnd tools firstTerm secondTerm
+        ) <- makeTermAnd tools predicateSimplifier firstTerm secondTerm
     (   PredicateSubstitution
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
@@ -216,6 +222,7 @@ makeEvaluateNonBool
         , _proof
         ) <- mergePredicatesAndSubstitutions
             tools
+            predicateSimplifier
             [firstPredicate, secondPredicate, termPredicate]
             [firstSubstitution, secondSubstitution, termSubstitution]
     return
@@ -238,7 +245,7 @@ makeTermAnd
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> PredicateSimplifier level variable
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Counter (ExpandedPattern level variable, SimplificationProof level)

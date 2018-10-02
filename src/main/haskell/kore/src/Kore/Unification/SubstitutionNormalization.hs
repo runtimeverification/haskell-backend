@@ -47,7 +47,7 @@ import           Kore.Step.PredicateSubstitution
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), bottom )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( MonadPredicateSimplifier (MonadPredicateSimplifier) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
@@ -263,12 +263,7 @@ normalizePredicateSubstitution
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    ->  (  Predicate level variable
-        -> m
-            ( PredicateSubstitution level variable
-            , SimplificationProof level
-            )
-        )
+    -> MonadPredicateSimplifier level variable m
     -> PredicateSubstitution level variable
     -> ExceptT
         (SubstitutionError level variable)
@@ -276,7 +271,7 @@ normalizePredicateSubstitution
         (PredicateSubstitution level variable)
 normalizePredicateSubstitution
     tools
-    predicateSimplifier
+    unwrappedPredicateSimplifier@(MonadPredicateSimplifier predicateSimplifier)
     PredicateSubstitution {predicate, substitution}
   = do
     PredicateSubstitution
@@ -319,7 +314,7 @@ normalizePredicateSubstitution
                 ) <- lift $ predicateSimplifier substitutedPredicate
             normalizePredicateSubstitution
                 tools
-                predicateSimplifier
+                unwrappedPredicateSimplifier
                 PredicateSubstitution
                     { predicate = resultPredicate
                     , substitution =

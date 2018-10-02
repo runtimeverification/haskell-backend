@@ -51,9 +51,7 @@ import           Kore.Step.PatternAttributes
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( MonadPureMLPatternSimplifier, SimplificationProof (..) )
-import qualified Kore.Step.Simplification.Predicate as Predicate
-                 ( simplify )
+                 ( MonadPredicateSimplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -86,13 +84,13 @@ termEquals
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
         (m (PredicateSubstitution level variable, SimplificationProof level))
-termEquals tools patternSimplifier first second = do  -- Maybe monad
-    result <- termEqualsAnd tools patternSimplifier first second
+termEquals tools predicateSimplifier first second = do  -- Maybe monad
+    result <- termEqualsAnd tools predicateSimplifier first second
     return $ do  -- Counter monad
         (ExpandedPattern {predicate, substitution}, _pred) <- result
         return
@@ -113,16 +111,16 @@ termEqualsAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
         (m (ExpandedPattern level variable, SimplificationProof level))
-termEqualsAnd tools patternSimplifier =
+termEqualsAnd tools predicateSimplifier =
     maybeTermEquals
         tools
-        patternSimplifier
-        (\p1 p2 -> Just $ termEqualsAndChild tools patternSimplifier p1 p2)
+        predicateSimplifier
+        (\p1 p2 -> Just $ termEqualsAndChild tools predicateSimplifier p1 p2)
 
 termEqualsAndChild
     ::  ( MetaOrObject level
@@ -136,11 +134,11 @@ termEqualsAndChild
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
-termEqualsAndChild tools patternSimplifier first second =
+termEqualsAndChild tools predicateSimplifier first second =
     fromMaybe
         (give (MetadataTools.sortTools tools) $
             return
@@ -154,8 +152,9 @@ termEqualsAndChild tools patternSimplifier first second =
         )
         (maybeTermEquals
             tools
-            patternSimplifier
-            (\p1 p2 -> Just $ termEqualsAndChild tools patternSimplifier p1 p2)
+            predicateSimplifier
+            (\p1 p2 ->
+                Just $ termEqualsAndChild tools predicateSimplifier p1 p2)
             first
             second
         )
@@ -172,7 +171,7 @@ maybeTermEquals
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable
@@ -220,16 +219,16 @@ termUnification
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
         (m (ExpandedPattern level variable, SimplificationProof level))
-termUnification tools patternSimplifier =
+termUnification tools predicateSimplifier =
     maybeTermAnd
         tools
-        patternSimplifier
-        (termUnification tools patternSimplifier)
+        predicateSimplifier
+        (termUnification tools predicateSimplifier)
 
 {-| "and" simplification for two terms. The comment for
 'Kore.Step.Simplification.And.simplify' describes all the special cases
@@ -249,11 +248,11 @@ termAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
-termAnd tools patternSimplifier first second =
+termAnd tools predicateSimplifier first second =
     fromMaybe
         (give (MetadataTools.sortTools tools) $
             return
@@ -263,8 +262,8 @@ termAnd tools patternSimplifier first second =
         )
         (maybeTermAnd
             tools
-            patternSimplifier
-            (\p1 p2 -> Just $ termAnd tools patternSimplifier p1 p2)
+            predicateSimplifier
+            (\p1 p2 -> Just $ termAnd tools predicateSimplifier p1 p2)
             first
             second
         )
@@ -294,7 +293,7 @@ maybeTermAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable
@@ -320,7 +319,7 @@ maybeTermAnd =
 
 type TermTransformation level variable m =
     (  MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> TermSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
@@ -347,7 +346,7 @@ maybeTransformTerm
         )
     => [TermTransformation level variable m]
     -> MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm pairs.
     -> PureMLPattern level variable
@@ -357,12 +356,12 @@ maybeTransformTerm
         , SimplificationProof level)
         )
 maybeTransformTerm
-    topTransformers tools patternSimplifier childTransformers first second
+    topTransformers tools predicateSimplifier childTransformers first second
   =
     firstHandledWithDefault
         Nothing
         (map
-            (\f -> f tools patternSimplifier childTransformers first second)
+            (\f -> f tools predicateSimplifier childTransformers first second)
             topTransformers
         )
 
@@ -639,7 +638,7 @@ equalInjectiveHeadsAndEquals
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable
@@ -654,7 +653,7 @@ equalInjectiveHeadsAndEquals
         )
 equalInjectiveHeadsAndEquals
     tools
-    patternSimplifier
+    predicateSimplifier
     termMerger
     (App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
@@ -673,8 +672,7 @@ equalInjectiveHeadsAndEquals
             , _proof
             ) <- mergePredicatesAndSubstitutions
                 tools
-                patternSimplifier
-                (Predicate.simplify patternSimplifier)
+                predicateSimplifier
                 (map (ExpandedPattern.predicate . fst) children)
                 (map (ExpandedPattern.substitution . fst) children)
         return

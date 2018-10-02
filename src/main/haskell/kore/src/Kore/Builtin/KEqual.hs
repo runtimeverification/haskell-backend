@@ -42,6 +42,8 @@ import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
 import qualified Kore.Step.Simplification.Equals as Equals
+import qualified Kore.Step.Simplification.Predicate as Predicate
+                 ( monadSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -83,7 +85,7 @@ evalKEq
         ( AttemptedFunction Object Variable
         , SimplificationProof Object
         )
-evalKEq true false tools _ pat =
+evalKEq true false tools simplifier pat =
     case pat of
         Application
             { applicationSymbolOrAlias =
@@ -93,7 +95,12 @@ evalKEq true false tools _ pat =
         _ -> notApplicableFunctionEvaluator
   where
     evalEq resultSort t1 t2 = do
-        (result, _proof) <- Equals.makeEvaluate tools ep1 ep2
+        (result, _proof) <-
+            Equals.makeEvaluate
+                tools
+                (Predicate.monadSimplifier simplifier)
+                ep1
+                ep2
         if OrOfExpandedPattern.isTrue result
             then purePatternFunctionEvaluator (Bool.asPattern resultSort true)
         else if OrOfExpandedPattern.isFalse result

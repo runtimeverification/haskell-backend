@@ -33,10 +33,8 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
 import qualified Kore.Step.Simplification.Predicate as Predicate
-                 ( simplify )
+                 ( monadSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -87,6 +85,7 @@ mergeWithPredicateSubstitution
         , _proof ) <-
             mergePredicatesAndSubstitutions
                 tools
+                (Predicate.monadSimplifier simplifier)
                 [pattPredicate, conditionToMerge]
                 [pattSubstitution, substitutionToMerge]
     (evaluatedCondition, _) <-
@@ -94,6 +93,7 @@ mergeWithPredicateSubstitution
             $ Predicate.evaluate simplifier mergedCondition
     mergeWithEvaluatedCondition
         tools
+        simplifier
         patt {substitution = mergedSubstitution}
         evaluatedCondition
 
@@ -108,11 +108,14 @@ mergeWithEvaluatedCondition
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PureMLPatternSimplifier level variable
+    -- ^ Evaluates functions in a pattern.
     -> ExpandedPattern level variable
     -> PredicateSubstitution level variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
+    simplifier
     ExpandedPattern
         { term = pattTerm
         , substitution = pattSubstitution
@@ -127,8 +130,7 @@ mergeWithEvaluatedCondition
         , _proof
         ) <- mergePredicatesAndSubstitutions
             tools
-            Pattern.simplify
-            Predicate.simplify
+            (Predicate.monadSimplifier simplifier)
             [predPredicate]
             [pattSubstitution, predSubstitution]
     return

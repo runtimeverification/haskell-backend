@@ -45,6 +45,8 @@ import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
+import           Kore.Step.Simplification.Data
+                 ( MonadPredicateSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
@@ -74,7 +76,7 @@ unificationProcedure
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -- ^left-hand-side of unification
     -> PureMLPattern level variable
@@ -85,12 +87,12 @@ unificationProcedure
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-unificationProcedure tools patternSimplifier p1 p2
+unificationProcedure tools predicateSimplifier p1 p2
     | p1Sort /= p2Sort =
       return (PredicateSubstitution.bottom, EmptyUnificationProof)
     | otherwise = do
       let
-          unifiedTerm = termUnification tools patternSimplifier p1 p2
+          unifiedTerm = termUnification tools predicateSimplifier p1 p2
       -- TODO(Vladimir): Since unification is a central piece, we should test if
       -- the predicate is false and, if so, return PredicateSubstitution.bottom.
       (pat, _) <- ExceptT . sequence $ note UnsupportedPatterns unifiedTerm

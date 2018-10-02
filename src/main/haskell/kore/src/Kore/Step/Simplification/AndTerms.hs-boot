@@ -13,7 +13,7 @@ import           Kore.AST.PureML
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Step.Simplification.Data
-                 ( MonadPureMLPatternSimplifier )
+                 ( MonadPredicateSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.ExpandedPattern
@@ -35,7 +35,7 @@ termAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
@@ -52,7 +52,7 @@ termUnification
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe

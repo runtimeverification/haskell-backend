@@ -44,7 +44,8 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
+                 PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
@@ -68,6 +69,8 @@ import qualified Kore.Step.Simplification.Not as Not
                  ( simplify )
 import qualified Kore.Step.Simplification.Or as Or
                  ( simplify )
+import qualified Kore.Step.Simplification.Predicate as Predicate
+                 ( monadSimplifier )
 import qualified Kore.Step.Simplification.Rewrites as Rewrites
                  ( simplify )
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
@@ -149,7 +152,7 @@ simplifyToOr tools symbolIdToEvaluator patt =
             (fromPurePattern patt)
         )
   where
-    simplifier = PureMLPatternSimplifier
+    simplifier = MonadPureMLPatternSimplifier
         (simplifyToOr tools symbolIdToEvaluator)
 
 simplifyInternal
@@ -176,14 +179,14 @@ simplifyInternal
         )
 simplifyInternal
     tools
-    simplifier@(PureMLPatternSimplifier unwrappedSimplifier)
+    simplifier@(MonadPureMLPatternSimplifier unwrappedSimplifier)
     symbolIdToEvaluator
     patt
   = do
     halfSimplified <- traverse unwrappedSimplifier patt
     -- TODO: Remove fst
     case fmap fst halfSimplified of
-        AndPattern p -> And.simplify tools p
+        AndPattern p -> And.simplify tools predicateSimplifier p
         ApplicationPattern p ->
             --  TODO: Re-evaluate outside of the application and stop passing
             -- the simplifier.
@@ -195,7 +198,7 @@ simplifyInternal
         BottomPattern p -> return $ Bottom.simplify p
         CeilPattern p -> return $ Ceil.simplify tools p
         DomainValuePattern p -> return $ DomainValue.simplify p
-        EqualsPattern p -> Equals.simplify tools p
+        EqualsPattern p -> Equals.simplify tools predicateSimplifier p
         ExistsPattern p -> Exists.simplify tools simplifier p
         FloorPattern p -> return $ Floor.simplify p
         ForallPattern p -> return $ Forall.simplify p
@@ -211,3 +214,9 @@ simplifyInternal
         CharLiteralPattern p -> return $ CharLiteral.simplify p
         TopPattern p -> return $ Top.simplify p
         VariablePattern p -> return $ Variable.simplify p
+  where
+    predicateSimplifier =
+        Predicate.monadSimplifier
+            (MonadPureMLPatternSimplifier
+                (simplifyToOr tools symbolIdToEvaluator)
+            )

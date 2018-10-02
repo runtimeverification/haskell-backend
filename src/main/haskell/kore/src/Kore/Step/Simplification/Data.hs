@@ -15,12 +15,18 @@ module Kore.Step.Simplification.Data
     , PureMLPatternSimplifier
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
+    , MonadPredicateSimplifier (..)
+    , PredicateSimplifier
     ) where
 
 import Kore.AST.Common
        ( Variable )
 import Kore.AST.PureML
        ( PureMLPattern )
+import Kore.Predicate.Predicate
+       ( Predicate )
+import Kore.Step.ExpandedPattern
+       ( PredicateSubstitution )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
 import Kore.Variables.Fresh
@@ -64,6 +70,7 @@ Kore functions on PureMLPatterns.
 type PureMLPatternSimplifier level variable =
     MonadPureMLPatternSimplifier level variable Simplifier
 
+-- TODO: Delete.
 {-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.
 -}
@@ -81,3 +88,15 @@ Kore functions on CommonPurePatterns.
 -}
 type CommonPureMLPatternSimplifier level =
     PureMLPatternSimplifier level Variable
+
+type PredicateSimplifier level variable =
+    MonadPredicateSimplifier level variable Simplifier
+
+newtype MonadPredicateSimplifier level variable m =
+    MonadPredicateSimplifier
+        (  Predicate level variable
+        -> m
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )

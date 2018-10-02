@@ -38,8 +38,10 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
+import qualified Kore.Step.Simplification.Predicate as Predicate
+                 ( monadSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -139,7 +141,7 @@ makeAndEvaluateApplications
     children
   = do
     (expandedApplication, _proof) <-
-        makeExpandedApplication tools symbol children
+        makeExpandedApplication tools simplifier symbol children
     (functionApplication, _proof) <-
         evaluateApplicationFunction
             tools simplifier symbolIdToEvaluator
@@ -194,11 +196,13 @@ makeExpandedApplication
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PureMLPatternSimplifier level variable
+    -- ^ Evaluates functions.
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
     -> Simplifier
         (ExpandedApplication level variable, SimplificationProof level)
-makeExpandedApplication tools symbol children
+makeExpandedApplication tools simplifier symbol children
   = do
     (   PredicateSubstitution
             { predicate = mergedPredicate
@@ -207,6 +211,7 @@ makeExpandedApplication tools symbol children
         , _proof) <-
             mergePredicatesAndSubstitutions
                 tools
+                (Predicate.monadSimplifier simplifier)
                 (map ExpandedPattern.predicate children)
                 (map ExpandedPattern.substitution children)
     return

@@ -32,7 +32,7 @@ import Kore.Predicate.Predicate
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution (..), substitutionToPredicate )
 import Kore.Step.Simplification.Data
-       ( MonadPureMLPatternSimplifier, SimplificationProof (..) )
+       ( MonadPredicateSimplifier )
 import Kore.Step.StepperAttributes
 import Kore.Substitution.Class
        ( Hashable )
@@ -67,13 +67,7 @@ mergeSubstitutions
        )
     => MetadataTools level StepperAttributes
     -- TODO: Define a type for this.
-    -> MonadPureMLPatternSimplifier level variable m
-    ->  (  Predicate level variable
-        -> m
-            ( PredicateSubstitution level variable
-            , SimplificationProof level
-            )
-        )
+    -> MonadPredicateSimplifier level variable m
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> ExceptT
@@ -83,10 +77,10 @@ mergeSubstitutions
           , UnificationSubstitution level variable
           , UnificationProof level variable
           )
-mergeSubstitutions tools patternSimplifier predicateSimplifier first second = do
+mergeSubstitutions tools predicateSimplifier first second = do
     (substitution, proof) <-
         normalizeSubstitutionDuplication
-            tools patternSimplifier predicateSimplifier (first ++ second)
+            tools predicateSimplifier (first ++ second)
     -- TODO(virgil): Return the actual condition here.
     return (makeTruePredicate, substitution, proof)
 
@@ -102,13 +96,7 @@ mergeAndNormalizeSubstitutions
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
-    ->  (  Predicate level variable
-        -> m
-            ( PredicateSubstitution level variable
-            , SimplificationProof level
-            )
-        )
+    -> MonadPredicateSimplifier level variable m
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> ExceptT
@@ -117,12 +105,9 @@ mergeAndNormalizeSubstitutions
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-mergeAndNormalizeSubstitutions
-    tools patternSimplifier predicateSimplifier first second
-  =
+mergeAndNormalizeSubstitutions tools predicateSimplifier first second =
     normalizePredicateSubstitutionAfterMerge
         tools
-        patternSimplifier
         predicateSimplifier
         PredicateSubstitution
             { predicate = makeTruePredicate
@@ -141,13 +126,7 @@ normalizePredicateSubstitutionAfterMerge
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
-    ->  (  Predicate level variable  -- TODO: Use a wrapper type here.
-        -> m
-            ( PredicateSubstitution level variable
-            , SimplificationProof level
-            )
-        )
+    -> MonadPredicateSimplifier level variable m
     -> PredicateSubstitution level variable
     -> ExceptT
         ( UnificationOrSubstitutionError level variable )
@@ -157,7 +136,6 @@ normalizePredicateSubstitutionAfterMerge
         )
 normalizePredicateSubstitutionAfterMerge
     tools
-    patternSimplifier
     predicateSimplifier
     PredicateSubstitution {predicate, substitution}
   = do
@@ -183,7 +161,7 @@ normalizePredicateSubstitutionAfterMerge
     normalizeSubstitutionDuplication' =
         withExceptT unificationToUnifyOrSubError  -- TODO: liftEither
             . normalizeSubstitutionDuplication
-                tools patternSimplifier predicateSimplifier
+                tools predicateSimplifier
     normalizeSubstitution'
         :: PredicateSubstitution level variable
         -> ExceptT
@@ -218,13 +196,7 @@ mergePredicatesAndSubstitutions
        , Hashable variable
        )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
-    ->  (  Predicate level variable
-        -> m
-            ( PredicateSubstitution level variable
-            , SimplificationProof level
-            )
-        )
+    -> MonadPredicateSimplifier level variable m
     -> [Predicate level variable]
     -> [UnificationSubstitution level variable]
     -> m
@@ -232,12 +204,12 @@ mergePredicatesAndSubstitutions
         , UnificationProof level variable
         )
 mergePredicatesAndSubstitutions
-    tools patternSimplifier predicateSimplifier predicates substitutions
+    tools predicateSimplifier predicates substitutions
   = do  -- MonadCounter m
     (substitutionMergePredicate, mergedSubstitution) <-
         foldM
             (mergeSubstitutionWithPredicate
-                tools patternSimplifier predicateSimplifier
+                tools predicateSimplifier
             )
             (predicates, [])
             substitutions
@@ -248,7 +220,6 @@ mergePredicatesAndSubstitutions
         runExceptT
             (normalizePredicateSubstitutionAfterMerge
                 tools
-                patternSimplifier
                 predicateSimplifier
                 PredicateSubstitution
                     { predicate = andPredicate
@@ -286,27 +257,19 @@ mergeSubstitutionWithPredicate
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
-    -> MonadPureMLPatternSimplifier level variable m
-    ->  (  Predicate level variable
-        -> m
-            ( PredicateSubstitution level variable
-            , SimplificationProof level
-            )
-        )
+    -> MonadPredicateSimplifier level variable m
     -> ([Predicate level variable], UnificationSubstitution level variable)
     -> UnificationSubstitution level variable
     -> m ([Predicate level variable], UnificationSubstitution level variable)
 mergeSubstitutionWithPredicate
     tools
-    patternSimplifier
     predicateSimplifier
     (predicates, subst1)
     subst2
   = do
     merge <-
         runExceptT
-            $ mergeSubstitutions
-                tools patternSimplifier predicateSimplifier subst1 subst2
+            $ mergeSubstitutions tools predicateSimplifier subst1 subst2
     case merge of
         Left _ -> return (makeFalsePredicate : predicates, [])
         Right (predicate, subst, _) -> return (predicate : predicates, subst)

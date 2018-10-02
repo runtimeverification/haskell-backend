@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Predicate
     ( simplify
+    , monadSimplifier
     ) where
 
 import           Control.Monad.Counter
@@ -29,7 +30,8 @@ import           Kore.Step.PredicateSubstitution
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), bottom )
 import           Kore.Step.Simplification.Data
-                 ( MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
+                 ( MonadPredicateSimplifier (MonadPredicateSimplifier),
+                 MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
                  SimplificationProof (..) )
 
 simplify
@@ -64,3 +66,13 @@ simplify (MonadPureMLPatternSimplifier simplifier) predicate = do
                 )
         [patt] -> error ("Expecting a top term! " ++ show patt)
         _ -> error ("Expecting at most one result " ++ show patternOr)
+
+monadSimplifier
+    ::  ( MetaOrObject level
+        , MonadCounter m
+        , Show (variable level)
+        )
+    => MonadPureMLPatternSimplifier level variable m
+    -> MonadPredicateSimplifier level variable m
+monadSimplifier simplifier =
+    MonadPredicateSimplifier (simplify simplifier)

@@ -30,7 +30,8 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
+                 PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -62,7 +63,7 @@ simplify
         )
 simplify
     tools
-    wrappedSimplifier@(PureMLPatternSimplifier simplifier)
+    wrappedSimplifier@(MonadPureMLPatternSimplifier simplifier)
     ExpandedPattern {term, predicate, substitution}
   = do
     (simplifiedTerm, _)
