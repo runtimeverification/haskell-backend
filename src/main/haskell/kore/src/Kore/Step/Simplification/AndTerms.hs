@@ -21,6 +21,8 @@ import Data.Functor.Foldable
        ( project )
 import Data.Reflection
        ( give )
+import Prelude hiding
+       ( concat )
 
 import           Data.Result
 import           Kore.AST.Common
@@ -30,9 +32,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkBottom, mkTop )
 import           Kore.ASTUtils.SmartPatterns
-                 ( pattern App_, pattern Bottom_, pattern CharLiteral_,
-                 pattern DV_, pattern StringLiteral_, pattern Top_,
-                 pattern Var_ )
+import qualified Kore.Builtin.Map as Builtin.Map
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
@@ -76,9 +76,9 @@ termEquals
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
         )
@@ -105,9 +105,9 @@ termEqualsAnd
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
         )
@@ -126,9 +126,9 @@ termEqualsAndChild
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
         )
@@ -160,9 +160,9 @@ maybeTermEquals
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
         )
@@ -211,9 +211,9 @@ termUnification
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
         )
@@ -239,9 +239,9 @@ termAnd
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
         )
@@ -269,9 +269,9 @@ maybeTermAnd
     ::  ( MetaOrObject level
         , Hashable variable
         , FreshVariable variable
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
         , SortedVariable variable
         , MonadCounter m
@@ -296,6 +296,7 @@ maybeTermAnd =
         , liftET domainValueAndEqualsAssumesDifferent
         , liftET stringLiteralAndEqualsAssumesDifferent
         , liftET charLiteralAndEqualsAssumesDifferent
+        , Builtin.Map.unify
         , lift functionAnd
         ]
   where
@@ -345,7 +346,7 @@ addToolsArg
 addToolsArg = pure
 
 toExpanded
-    :: 
+    ::
     ( MetaOrObject level
     , SortedVariable variable
     , Show (variable level)
@@ -577,9 +578,9 @@ equalInjectiveHeadsAndEquals
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
         )

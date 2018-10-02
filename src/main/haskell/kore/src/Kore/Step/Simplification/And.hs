@@ -81,8 +81,8 @@ simplify
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -110,8 +110,8 @@ simplifyEvaluated
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -152,8 +152,8 @@ makeEvaluate
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -177,8 +177,8 @@ makeEvaluateNonBool
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -229,9 +229,9 @@ makeTermAnd
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes

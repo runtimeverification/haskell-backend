@@ -42,8 +42,8 @@ mergeWithPredicateSubstitution
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )

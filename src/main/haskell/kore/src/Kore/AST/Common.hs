@@ -1079,16 +1079,21 @@ deriving instance
     ( Eq child
     , Eq (variable level)
     ) => Eq (Pattern level variable child)
+
 deriving instance
     ( Show child
     , Show (variable level)
     ) => Show (Pattern level variable child)
+
 deriving instance
     ( Ord child
     , Ord (variable level)
     ) => Ord (Pattern level variable child)
+
 deriving instance Functor (Pattern level variable)
+
 deriving instance Foldable (Pattern level variable)
+
 deriving instance Traversable (Pattern level variable)
 
 data SortedPattern level variable child = SortedPattern

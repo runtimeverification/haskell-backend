@@ -71,8 +71,8 @@ simplify
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -116,8 +116,8 @@ makeAndEvaluateApplications
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -150,8 +150,8 @@ evaluateApplicationFunction
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -187,8 +187,8 @@ makeExpandedApplication
         , Ord (variable level)
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )

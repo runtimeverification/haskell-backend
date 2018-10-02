@@ -24,7 +24,6 @@ import Data.Reflection
 import           Kore.AST.Common
                  ( PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( Meta, MetaOrObject, Object )
 import           Kore.AST.MLPatterns
                  ( getPatternResultSort )
 import           Kore.IndexedModule.MetadataTools
@@ -62,12 +61,12 @@ import           Kore.Variables.Fresh
 unificationProcedure
     ::  ( SortedVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , MetaOrObject level
         , Hashable variable
         , FreshVariable variable
-        , Show (variable level)
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes

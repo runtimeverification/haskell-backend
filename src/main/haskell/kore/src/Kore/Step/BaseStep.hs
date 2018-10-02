@@ -188,10 +188,10 @@ stepWithAxiom
         , Hashable variable
         , MetaOrObject level
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , SortedVariable variable
         , Show (variable level)
+        , ShowMetaOrObject variable
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern.ExpandedPattern level variable
