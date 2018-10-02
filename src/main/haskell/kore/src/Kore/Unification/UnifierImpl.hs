@@ -17,7 +17,7 @@ import Control.Monad
 import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
-       ( ExceptT(..)  )
+       ( ExceptT (..) )
 import Control.Monad.Trans.Except
        ( throwE )
 import Data.Function
@@ -33,12 +33,12 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), top, bottom )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..), bottom, top )
+import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
 import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
@@ -47,10 +47,10 @@ import           Kore.Unification.Error
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-import {-# SOURCE #-} Kore.Step.Substitution
-                      ( mergePredicatesAndSubstitutions )
 import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
-                      ( termUnification )
+       ( termUnification )
+import {-# SOURCE #-} Kore.Step.Substitution
+       ( mergePredicatesAndSubstitutions )
 
 {-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
