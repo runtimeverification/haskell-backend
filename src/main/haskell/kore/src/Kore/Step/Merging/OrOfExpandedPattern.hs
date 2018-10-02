@@ -11,6 +11,8 @@ module Kore.Step.Merging.OrOfExpandedPattern
     ( mergeWithPredicateSubstitution
     ) where
 
+import           Data.Reflection
+
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
@@ -32,7 +34,6 @@ import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
-
 {-| 'mergeWithPredicateSubstitution' ands the given predicate/substitution
 to the given Or.
 -}
@@ -64,7 +65,7 @@ mergeWithPredicateSubstitution
   = do
     (evaluated, _proofs) <-
         OrOfExpandedPattern.traverseWithPairs
-            (ExpandedPattern.mergeWithPredicateSubstitution
+            (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
                 tools
                 simplifier
                 toMerge

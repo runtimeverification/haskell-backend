@@ -100,7 +100,5 @@ getHookAttribute
     => Attributes
     -> m String
 getHookAttribute attributes = do
-    case castError (Attribute.parseAttributes attributes) of
-        Left e -> throwError e
-        Right Hook { getHook } ->
-            maybe (koreFail "missing hook attribute") return getHook
+    hook <- Attribute.parseAttributesM attributes
+    maybe (koreFail "missing hook attribute") return (getHook hook)

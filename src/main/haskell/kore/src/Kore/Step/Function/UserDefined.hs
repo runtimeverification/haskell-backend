@@ -15,7 +15,6 @@ module Kore.Step.Function.UserDefined
 import Control.Monad.Except
        ( runExceptT )
 import Data.Reflection
-       ( give )
 
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SortedVariable )
@@ -200,7 +199,9 @@ evaluatePredicate
             , substitution = evaluatedSubstitution
             }
         , _proof
-        ) <- give (sortTools tools) Predicate.evaluate simplifier predicate
+        ) <- give (symbolOrAliasSorts tools) $
+             give tools $
+                 Predicate.evaluate simplifier predicate
     (   PredicateSubstitution
             { predicate = mergedPredicate
             , substitution = mergedSubstitution

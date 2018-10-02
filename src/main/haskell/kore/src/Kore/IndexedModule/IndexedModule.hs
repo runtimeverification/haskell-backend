@@ -30,6 +30,7 @@ module Kore.IndexedModule.IndexedModule
     , SortDescription
     , getIndexedSentence
     , hookedObjectSymbolSentences
+    , indexedModuleSubsorts
     ) where
 
 import           Control.Arrow
@@ -49,7 +50,8 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Attribute.Parser
-       ( ParseAttributes, parseAttributes )
+       ( ParseAttributes, parseAttributes, parseAttributesM )
+import Kore.Attribute.Subsort
 import Kore.Builtin.Hook
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
@@ -357,6 +359,10 @@ internalIndexModuleIfNeeded
                             nameToModule)
                         indexedModulesAndStartingIndexedModule
                         (moduleSentences koreModule)
+                    -- Parse subsorts to fail now if subsort attributes are malformed,
+                    -- so indexedModuleSubsorts can appear total
+                    -- TODO: consider making subsorts an IndexedModule field
+                    _ <- internalIndexedModuleSubsorts newModule
                     return
                         ( Map.insert koreModuleName newModule newIndex
                         , newModule
@@ -724,3 +730,24 @@ hookedObjectSymbolSentences
     Map.restrictKeys
         indexedModuleObjectSymbolSentences
         indexedModuleHookedIdentifiers
+
+indexedModuleSubsorts
+    :: IndexedModule sortParam pat variables atts
+    -> [Subsort]
+indexedModuleSubsorts imod =
+    case internalIndexedModuleSubsorts imod of
+        Right subsorts -> subsorts
+        Left err -> error $ "IndexedModule should already have checked"
+            ++ "form of subsort attributes, but parsing failed\n:"
+            ++ show err
+
+internalIndexedModuleSubsorts
+    :: IndexedModule sortParam pat variables atts
+    -> Either
+        (Error IndexModuleError)
+        [Subsort]
+internalIndexedModuleSubsorts imod = let
+    attributes = [sentenceAxiomAttributes
+                 | (_,SentenceAxiom { sentenceAxiomAttributes })
+                     <- indexedModuleAxioms imod]
+    in concat <$> mapM parseAttributesM attributes

@@ -16,7 +16,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( getSort, mkAnd, mkEquals, mkNext, mkOr )
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -32,12 +32,12 @@ import           Kore.Step.Simplification.Next
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeSortTools )
+                 ( makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_nextSimplification :: [TestTree]
-test_nextSimplification = give mockSortTools
+test_nextSimplification = give mockSymbolOrAliasSorts
     [ testCase "Next evaluates to Next"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
@@ -92,21 +92,21 @@ test_nextSimplification = give mockSortTools
         )
     ]
 
-mockSortTools :: SortTools Object
-mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
 findSort :: [CommonExpandedPattern Object] -> Sort Object
 findSort [] = Mock.testSort
 findSort
     ( ExpandedPattern {term} : _ )
   =
-    give mockSortTools $ getSort term
+    give mockSymbolOrAliasSorts $ getSort term
 
 evaluate
     :: Next Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate next =
-    case give mockSortTools $ simplify next of
+    case give mockSymbolOrAliasSorts $ simplify next of
         (result, _proof) -> result
 
 makeNext

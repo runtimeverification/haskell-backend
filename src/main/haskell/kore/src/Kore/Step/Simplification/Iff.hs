@@ -24,7 +24,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeIffPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -49,7 +49,7 @@ and for children with top terms.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -72,7 +72,7 @@ See 'simplify' for detailed documentation.
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -107,7 +107,7 @@ See 'simplify' for detailed documentation.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -129,7 +129,7 @@ makeEvaluate first second
 makeEvaluateNonBoolIff
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
