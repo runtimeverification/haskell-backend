@@ -9,6 +9,8 @@ Stability   : experimental
 Portability : portable
 -}
 
+-- {-# OPTIONS_GHC -Wno-name-shadowing #-}
+
 module Kore.ASTUtils.SmartConstructors
     ( -- * Utility functions for dealing with sorts
       getSort
@@ -25,6 +27,7 @@ module Kore.ASTUtils.SmartConstructors
     , resultSort  -- | will have 0 or 1 inhabitants
     , variable    -- | will have 0 or 1 inhabitants
     , allChildren -- | will have 0+ inhabitants
+    , changeVar   -- | combinator for changing the `var` type in a pattern
     , inPath
     , localInPattern
     -- * Smart constructors
@@ -64,7 +67,6 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
-       ( CommonPurePattern, PureMLPattern )
 import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 
@@ -92,9 +94,9 @@ patternLens
     :: (Applicative f, MetaOrObject level)
     => (Sort level -> f (Sort level))
     -> (Sort level -> f (Sort level))
-    -> (var level -> f (var level))
-    -> (PureMLPattern level var -> f (PureMLPattern level var))
-    -> (PureMLPattern level var -> f (PureMLPattern level var))
+    -> (var level -> f (var1 level))
+    -> (PureMLPattern level var -> f (PureMLPattern level var1))
+    -> (PureMLPattern level var -> f (PureMLPattern level var1))
 patternLens
   i   -- input sort
   o   -- result sort
@@ -122,9 +124,10 @@ patternLens
   Top_       s2       -> Top_      <$>          o s2
   Var_          v     -> Var_      <$>                   var v
   App_ h ps -> App_ h <$> traverse c ps
-  -- StringLiteral_ s -> pure (StringLiteral_ s)
-  -- CharLiteral_   c -> pure (CharLiteral_   c)
-  p -> pure p
+  StringLiteral_ str  -> pure (StringLiteral_ str)
+  CharLiteral_   char -> pure (CharLiteral_   char)
+  _ -> error "The impossible happened."
+  -- p -> pure p
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc.
 inputSort
@@ -160,6 +163,12 @@ allChildren
     => Traversal' (PureMLPattern level var) (PureMLPattern level var)
 allChildren      f = patternLens pure pure pure f
 
+changeVar
+    :: (MetaOrObject level, Applicative f)
+    => (var level -> f (var1 level))
+    -> (PureMLPattern level var -> f (PureMLPattern level var1))
+    -> (PureMLPattern level var -> f (PureMLPattern level var1))
+changeVar v f = patternLens pure pure v f
 
 -- | Applies a function at an `[Int]` path.
 localInPattern
@@ -265,13 +274,12 @@ ensureSortAgreement p =
     Just []    -> p & resultSort .~ predicateSort
     Just ps@(c : _) ->
       p & (partsOf allChildren) .~ ps
-        & inputSort  .~ childSort
+        & inputSort  .~ getSort c
         & resultSort .~ (
           if hasFlexibleHead p
             then predicateSort
-            else childSort
+            else getSort c
           )
-      where childSort = getSort c
     Nothing -> error $ "Can't unify sorts of subpatterns: " ++ show p
 
 -- | In practice, all the predicate patterns we use are
@@ -460,6 +468,7 @@ mkVar = Var_
 
 mkStringLiteral :: String -> PureMLPattern Meta var
 mkStringLiteral = StringLiteral_
+
 mkCharLiteral :: Char -> PureMLPattern Meta var
 mkCharLiteral = CharLiteral_
 

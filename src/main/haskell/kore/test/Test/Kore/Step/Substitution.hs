@@ -6,29 +6,27 @@ import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
-
+import Control.Monad.Except
 import Control.Monad.Counter
        ( evalCounter )
-import Control.Monad.Except
-       ( runExceptT )
 import Data.Reflection
        ( give )
 
-import           Kore.AST.Common
-                 ( Variable )
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar )
-import           Kore.Predicate.Predicate
-                 ( makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import           Kore.Step.Substitution
-                 ( mergeAndNormalizeSubstitutions )
-import           Kore.Unification.Error
-import           Kore.Unification.Unifier
-                 ( UnificationSubstitution )
+import Kore.AST.Common
+       ( Variable )
+import Kore.AST.MetaOrObject
+       ( Object )
+import Kore.ASTUtils.SmartConstructors
+       ( mkVar )
+import Kore.Predicate.Predicate
+       ( makeFalsePredicate, makeTruePredicate )
+import Kore.Step.ExpandedPattern
+       ( PredicateSubstitution (..) )
+import Kore.Step.Substitution
+       ( mergeAndNormalizeSubstitutions )
+import Kore.Unification.Error
+import Kore.Unification.Unifier
+       ( UnificationSubstitution )
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSortTools )
