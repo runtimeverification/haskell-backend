@@ -208,6 +208,7 @@ The absolute value of the argument.
 ### INT.tdiv
 
 Quotient of the first argument divided by the second (truncated toward zero).
+The result is `bottom{}()` if the second argument is zero.
 
 ~~~
     hooked-symbol tdiv{}(Int{}, Int{}) : Int{}
@@ -217,10 +218,104 @@ Quotient of the first argument divided by the second (truncated toward zero).
 ### INT.tmod
 
 Remainder of the first argument divided by the second (truncated toward zero).
+The result is `bottom{}()` if the second argument is zero.
 
 ~~~
     hooked-symbol tmod{}(Int{}, Int{}) : Int{}
         [hook{}("INT.tmod")]
+~~~
+
+### INT.and
+
+Bitwise and of the arguments.
+
+~~~
+    hooked-symbol and{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.and")]
+~~~
+
+### INT.or
+
+Bitwise or of the arguments.
+
+~~~
+    hooked-symbol or{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.or")]
+~~~
+
+### INT.xor
+
+Bitwise exclusive or of the arguments.
+
+~~~
+    hooked-symbol xor{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.xor")]
+~~~
+
+### INT.not
+
+Bitwise complement of the argument.
+
+~~~
+    hooked-symbol not{}(Int{}) : Int{}
+        [hook{}("INT.not")]
+~~~
+
+### INT.shl
+
+Shift the bits of the first argument to the left. The second argument specifies
+how many bits to shift by, and will be truncated to the least-significant
+Haskell Int. The second argument can be negative, in which case the first
+argument will be shifted right.
+
+~~~
+    hooked-symbol shl{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.shl")]
+~~~
+
+### INT.shr
+
+Shift the bits of the first argument to the right. The second argument specifies
+how many bits to shift by, and will be truncated to the least-significant
+Haskell Int. The second argument can be negative, in which case the first
+argument will be shifted left.
+
+~~~
+    hooked-symbol shr{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.shr")]
+~~~
+
+### INT.pow
+
+The first argument raised to the power of the second argument. The result is
+`bottom{}()` if the second argument is negative.
+
+~~~
+    hooked-symbol pow{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.pow")]
+~~~
+
+### INT.powmod
+
+The first argument raised to the power of the second argument, but performed
+modulo the third argument. The result is `\bottom{}()` if either
+- The second argument is zero, or
+- The second argument is negative and the first and third arguments are not
+  coprime
+
+~~~
+    hooked-symbol powmod{}(Int{}, Int{}, Int{}) : Int{}
+        [hook{}("INT.powmod")]
+~~~
+
+### INT.log2
+
+The base 2 logarithm of the argument. The result is `bottom{}()` if the second
+argument is not positive.
+
+~~~
+    hooked-symbol log2{}(Int{}) : Int{}
+        [hook{}("INT.log2")]
 ~~~
 
 ## MAP
