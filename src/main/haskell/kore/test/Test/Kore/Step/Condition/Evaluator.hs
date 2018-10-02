@@ -38,7 +38,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Builtin as Builtin
 
 import           Test.Kore.Builtin.Bool 
-  (boolDefinition, boolModuleName, boolSort)
+                   (boolDefinition, boolModuleName, boolSort)
 
 indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
 Right indexedModules = verify' boolDefinition
