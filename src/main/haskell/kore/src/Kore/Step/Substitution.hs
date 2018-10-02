@@ -175,12 +175,12 @@ mergePredicatesAndSubstitutions
         , UnificationProof level variable
         )
 mergePredicatesAndSubstitutions tools predicates substitutions = do
-    (substitutionMergePredicate, mergedSubstitution) <-
+    (substitutionMergePredicate, mergedSubst) <-
         foldM
             (mergeSubstitutionWithPredicate tools)
             (predicates, [])
             substitutions
-    result <- runExceptT $ normalizeSubstitutionAfterMerge tools mergedSubstitution
+    result <- runExceptT $ normalizeSubstitutionAfterMerge tools mergedSubst
     case result of
         Left _ ->
             let

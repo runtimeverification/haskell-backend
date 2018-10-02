@@ -91,14 +91,20 @@ unificationProcedure tools p1 p2
       let
           unifiedTerm = termUnification tools p1 p2
       (pat, _) <- ExceptT . sequence $ note UnsupportedPatterns unifiedTerm
+      -- TODO(Vladimir): this is not covered by any test, and I think the only
+      -- tests that would cover this `if` are the ones that would hit
+      -- domainValue, stringLiteral and charLiteral ...AndEqualsAssumesDifferent
       if ExpandedPattern.isBottom pat
-         then return ( PredicateSubstitution.bottom, EmptyUnificationProof )
-         else return
-             ( PredicateSubstitution
-                 (predicateAndCeilPat pat)
-                 (ExpandedPattern.substitution pat)
-             , EmptyUnificationProof
-             )
+          then return
+              ( PredicateSubstitution.bottom
+              , EmptyUnificationProof
+              )
+          else return
+              ( PredicateSubstitution
+                  (predicateAndCeilPat pat)
+                  (ExpandedPattern.substitution pat)
+              , EmptyUnificationProof
+              )
   where
       sortTools = MetadataTools.sortTools tools
       resultSort = getPatternResultSort sortTools

@@ -141,8 +141,12 @@ simplifyAnds tools patterns = do
             $ note UnsupportedPatterns
             $ termUnification tools (ExpandedPattern.term intermediate) pat
         (predSubst, _) <- mergePredicatesAndSubstitutions tools
-          [ ExpandedPattern.predicate result, ExpandedPattern.predicate intermediate ]
-          [ ExpandedPattern.substitution result, ExpandedPattern.substitution intermediate ]
+          [ ExpandedPattern.predicate result
+          , ExpandedPattern.predicate intermediate
+          ]
+          [ ExpandedPattern.substitution result
+          , ExpandedPattern.substitution intermediate
+          ]
 
         return $ ExpandedPattern.ExpandedPattern
             ( ExpandedPattern.term result )
