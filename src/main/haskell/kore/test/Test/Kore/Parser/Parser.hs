@@ -17,7 +17,8 @@ import Kore.ASTUtils.SmartPatterns
 import Kore.Implicit.ImplicitSorts
 import Kore.Parser.ParserImpl
 
-import Test.Kore
+import Test.Kore hiding
+       ( sortVariable, sortVariableSort )
 import Test.Kore.Parser
 
 test_koreParser :: [TestTree]

@@ -37,6 +37,7 @@ import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
+import           Data.Reflection
 
 {-| Simplifies an 'ExpandedPattern', returning an 'OrOfExpandedPattern'.
 -}
@@ -69,7 +70,7 @@ simplify
         <- simplifier term
     (simplifiedPatt, _) <-
         OrOfExpandedPattern.traverseWithPairs
-            (ExpandedPattern.mergeWithPredicateSubstitution
+            (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
                 tools
                 wrappedSimplifier
                 PredicateSubstitution

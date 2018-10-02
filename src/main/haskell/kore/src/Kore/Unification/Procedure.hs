@@ -16,7 +16,7 @@ import Control.Error.Util
 import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
-       ( ExceptT(..)  )
+       ( ExceptT (..) )
 import Data.Functor.Foldable
 import Data.Reflection
        ( give )
@@ -29,22 +29,22 @@ import           Kore.AST.MLPatterns
                  ( getPatternResultSort )
 import           Kore.AST.PureML
                  ( PureMLPattern )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate )
-import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluateTerm )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..), isBottom )
-import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution(..) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( bottom )
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
+import qualified Kore.Step.Simplification.Ceil as Ceil
+                 ( makeEvaluateTerm )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
@@ -91,6 +91,8 @@ unificationProcedure tools p1 p2
       let
           unifiedTerm = termUnification tools p1 p2
       (pat, _) <- ExceptT . sequence $ note UnsupportedPatterns unifiedTerm
+      let
+          (pred', _) = Ceil.makeEvaluateTerm tools (ExpandedPattern.term pat)
       -- TODO(Vladimir): this is not covered by any test, and I think the only
       -- tests that would cover this `if` are the ones that would hit
       -- domainValue, stringLiteral and charLiteral ...AndEqualsAssumesDifferent
@@ -100,23 +102,15 @@ unificationProcedure tools p1 p2
               , EmptyUnificationProof
               )
           else return
-              ( PredicateSubstitution
-                  (predicateAndCeilPat pat)
-                  (ExpandedPattern.substitution pat)
-              , EmptyUnificationProof
-              )
+          ( PredicateSubstitution
+              (fst $ give symbolOrAliasSorts $
+                  makeAndPredicate (ExpandedPattern.predicate pat) pred')
+              (ExpandedPattern.substitution pat)
+          , EmptyUnificationProof
+          )
   where
-      sortTools = MetadataTools.sortTools tools
-      resultSort = getPatternResultSort sortTools
+      symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
+      resultSort = getPatternResultSort symbolOrAliasSorts
 
       p1Sort = resultSort (project p1)
       p2Sort = resultSort (project p2)
-
-      predicateAndCeilPat pat =
-          fst
-          $ give sortTools
-          ( makeAndPredicate (ExpandedPattern.predicate pat)
-          . fst
-          . Ceil.makeEvaluateTerm tools
-          . ExpandedPattern.term $ pat
-          )

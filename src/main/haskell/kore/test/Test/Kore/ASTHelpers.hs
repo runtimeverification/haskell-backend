@@ -100,21 +100,6 @@ test_symbolOrAliasSorts =
     complexSortActualParam = sortActual "sa" [sortVariableSort']
     complexSortActualSort = sortActual "sa" [simpleSortActual]
 
-sortVariable :: String -> SortVariable level
-sortVariable name =
-    SortVariable { getSortVariable = testId name }
-
-sortVariableSort :: String -> Sort level
-sortVariableSort name =
-    SortVariableSort (sortVariable name)
-
-sortActual :: String -> [Sort level] -> Sort level
-sortActual name sorts =
-    SortActualSort SortActual
-        { sortActualName = testId name
-        , sortActualSorts = sorts
-        }
-
 applicationSorts
     :: [Sort level] -> Sort level -> Either b (ApplicationSorts level)
 applicationSorts operandSorts resultSort =

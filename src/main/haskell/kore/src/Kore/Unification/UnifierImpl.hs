@@ -242,7 +242,8 @@ normalizeSubstitutionDuplication tools subst =
                      ++ PredicateSubstitution.substitution predSubst
                     )
             let
-                (pred', _proof'') = give sortTools $ Predicate.makeAndPredicate
+                (pred', _proof'') = give symbolOrAliasSorts
+                    $ Predicate.makeAndPredicate
                     (PredicateSubstitution.predicate predSubst)
                     (PredicateSubstitution.predicate finalSubst)
             return
@@ -255,7 +256,7 @@ normalizeSubstitutionDuplication tools subst =
                     ]
                 )
   where
-    sortTools = MetadataTools.sortTools tools
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     groupedSubstitution = groupSubstitutionByVariable subst
     isSingleton [_] = True
     isSingleton _   = False
@@ -283,12 +284,12 @@ mergePredicateSubstitutionList tools (p:ps) =
     foldl' mergePredicateSubstitutions p ps
 
   where
-    sortTools = MetadataTools.sortTools tools
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     mergePredicateSubstitutions
         (PredicateSubstitution {predicate = p1, substitution = s1}, proofs)
         (PredicateSubstitution {predicate = p2, substitution = s2}, proof) =
         ( PredicateSubstitution
-            (fst $ give sortTools $ Predicate.makeAndPredicate p1 p2)
+            (fst $ give symbolOrAliasSorts $ Predicate.makeAndPredicate p1 p2)
             (s1 ++ s2)
         , proofs <> proof
         )

@@ -624,10 +624,9 @@ test_patternVerifier =
     objectAliasSentence =
         objectAliasSentenceWithArguments
             objectAliasName objectSort [anotherObjectSort2]
-    objectSortVariableName = SortVariableName "ObjectSortVariable"
-    objectSortVariable = sortVariable Object objectSortVariableName
+    objectSortVariable = sortVariable @Object "ObjectSortVariable"
     objectSortVariableSort :: Sort Object
-    objectSortVariableSort = sortVariableSort objectSortVariableName
+    objectSortVariableSort = sortVariableSort "ObjectSortVariable"
     objectVariableSortVariable =
         variable objectVariableName objectSortVariableSort
     oneSortSymbolRawName = "ObjectSymbol"
@@ -1019,8 +1018,7 @@ patternsInAllContexts
     rawSymbolName = namePrefix ++ "_anotherSymbol"
     rawAliasName = namePrefix ++ "_anotherAlias"
     rawSortVariableName = namePrefix ++ "_sortVariable"
-    sortVariableName = SortVariableName rawSortVariableName
-    symbolAliasSort = sortVariableSort sortVariableName
+    symbolAliasSort = sortVariableSort rawSortVariableName
     symbolSentence =
         constructUnifiedSentence
             SentenceSymbolSentence

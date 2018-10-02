@@ -45,7 +45,8 @@ import Kore.Unification.Error
        substitutionToUnifyOrSubError, unificationToUnifyOrSubError )
 import Kore.Unification.SubstitutionNormalization
        ( normalizeSubstitution )
-import Kore.Unification.UnifierImpl ( normalizeSubstitutionDuplication )
+import Kore.Unification.UnifierImpl
+       ( normalizeSubstitutionDuplication )
 import Kore.Variables.Fresh
 
 {-|'mergeSubstitutions' merges a list of substitutions into
@@ -132,7 +133,7 @@ normalizeSubstitutionAfterMerge tools substit = do
         , proof
         )
   where
-    sortTools = MetadataTools.sortTools tools
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     normalizeSubstitutionDuplication' =
         withExceptT unificationToUnifyOrSubError
             . normalizeSubstitutionDuplication tools
@@ -140,7 +141,7 @@ normalizeSubstitutionAfterMerge tools substit = do
         withExceptT substitutionToUnifyOrSubError
             . normalizeSubstitution tools
     makeAndPredicate' ps1 ps2 =
-        fst $ give sortTools $ makeAndPredicate
+        fst $ give symbolOrAliasSorts $ makeAndPredicate
             (PredicateSubstitution.predicate ps1)
             (PredicateSubstitution.predicate ps2)
 
@@ -185,7 +186,7 @@ mergePredicatesAndSubstitutions tools predicates substitutions = do
         Left _ ->
             let
                 (mergedPredicate, _proof) =
-                    give (sortTools tools) $ makeMultipleAndPredicate
+                    give (symbolOrAliasSorts tools) $ makeMultipleAndPredicate
                         (  predicates
                         ++ map substitutionToPredicate substitutions
                         )
@@ -200,7 +201,7 @@ mergePredicatesAndSubstitutions tools predicates substitutions = do
         Right (PredicateSubstitution {predicate, substitution}, proof) -> do
             let
                 (mergedPredicate, _proof) =
-                    give (sortTools tools) $
+                    give (symbolOrAliasSorts tools) $
                         makeMultipleAndPredicate
                             (predicate : substitutionMergePredicate)
             return

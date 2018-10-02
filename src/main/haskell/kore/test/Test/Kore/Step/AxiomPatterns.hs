@@ -35,7 +35,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.AxiomPatterns
 
 import Test.Kore
-       ( testId )
+       ( sortVariableSort, testId )
 import Test.Kore.AST.MLPatterns
        ( extractPurePattern )
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -151,7 +151,7 @@ axiomPatternsUnitTests =
                         { sentenceAxiomPattern =
                             asKorePattern $ RewritesPattern Rewrites
                                 { rewritesSort =
-                                    sortVariableSort (SortVariableName "s")
+                                    sortVariableSort "s"
                                 , rewritesFirst =
                                     asKorePattern $
                                         StringLiteralPattern (StringLiteral "a")

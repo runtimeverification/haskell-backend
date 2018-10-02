@@ -44,7 +44,7 @@ test_runParser =
             (equiv attrs expect actual)
     , let
         expect = pure [[], []]
-        actual = map getOccurrence . Foldable.toList <$> parseAttribute "key"
+        actual = map arguments . Foldable.toList <$> someAttributesWithName "key"
         attrs = multipleAttrs
       in
         testCase "Accepts multiple occurrences of the same attribute"
