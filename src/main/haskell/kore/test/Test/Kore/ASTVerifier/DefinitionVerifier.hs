@@ -546,20 +546,14 @@ simpleSort :: SortName -> Sort level
 simpleSort sortName =
     SortActualSort (simpleSortActual sortName)
 
-objectVariableSort :: SortVariableName -> Sort Object
-objectVariableSort = sortVariableSort
-
-sortVariableSort :: SortVariableName -> Sort level
-sortVariableSort (SortVariableName sort) =
-    SortVariableSort (SortVariable (testId sort))
-
-sortVariable :: level -> SortVariableName -> SortVariable level
-sortVariable _ (SortVariableName name) = SortVariable (testId name)
+objectVariableSort :: String -> Sort Object
+objectVariableSort name = sortVariableSort name
 
 unifiedSortVariable
-    :: MetaOrObject level => level -> SortVariableName -> UnifiedSortVariable
-unifiedSortVariable x name =
-    asUnified (sortVariable x name)
+    :: forall level . MetaOrObject level
+    => level -> SortVariableName -> UnifiedSortVariable
+unifiedSortVariable _x (SortVariableName name) =
+    asUnified (sortVariable name :: SortVariable level)
 
 stringUnifiedPattern :: String -> CommonKorePattern
 stringUnifiedPattern s =

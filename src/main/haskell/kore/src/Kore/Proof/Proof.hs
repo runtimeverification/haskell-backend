@@ -320,7 +320,7 @@ assume formula = By formula (Assumption formula) (S.singleton formula)
 -- which instantiates the schema.
 
 useRule
-  :: Given (SortTools Object)
+  :: Given (SymbolOrAliasSorts Object)
   => LargeRule Proof
   -> Proof
 useRule (Assumption formula)
@@ -375,7 +375,7 @@ useRule rule =
 -- | Given a rule such as `AndIntro a b`, converts it to the proposition
 -- that it proves, such as "a /\ b".
 interpretRule
-  :: Given (SortTools Object)
+  :: Given (SymbolOrAliasSorts Object)
   => LargeRule Proof
   -> Term
 interpretRule = \case
@@ -445,7 +445,7 @@ interpretRule = \case
   _ -> impossible
 
 floorIfNotPredicate
-     :: Given (SortTools Object)
+     :: Given (SymbolOrAliasSorts Object)
      => Term
      -> Term
 floorIfNotPredicate p

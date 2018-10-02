@@ -136,7 +136,7 @@ termEqualsAndChild
     -> m (ExpandedPattern level variable, SimplificationProof level)
 termEqualsAndChild tools first second =
     fromMaybe
-        (give (MetadataTools.sortTools tools) $
+        (give (MetadataTools.symbolOrAliasSorts tools) $
             return
                 ( ExpandedPattern
                     { term = mkTop
@@ -248,7 +248,7 @@ termAnd
     -> m (ExpandedPattern level variable, SimplificationProof level)
 termAnd tools first second =
     fromMaybe
-        (give (MetadataTools.sortTools tools) $
+        (give (MetadataTools.symbolOrAliasSorts tools) $
             return
                 ( ExpandedPattern.fromPurePattern (mkAnd first second)
                 , SimplificationProof
@@ -495,7 +495,7 @@ bottomTermEquals
         Handled
             ( ExpandedPattern
                 { term = mkTop
-                , predicate = give (MetadataTools.sortTools tools) $
+                , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
                     case makeNotPredicate predicate of
                         (predicate', _proof) -> predicate'
                 , substitution = []
@@ -642,7 +642,7 @@ equalInjectiveHeadsAndEquals
                 (map (ExpandedPattern.substitution . fst) children)
         return
             ( ExpandedPattern
-                { term = give (MetadataTools.sortTools tools) $
+                { term = give (MetadataTools.symbolOrAliasSorts tools) $
                     mkApp firstHead (map (ExpandedPattern.term . fst) children)
                 , predicate = mergedPredicate
                 , substitution = mergedSubstitution
@@ -758,7 +758,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
         -> PureMLPattern level variable
         -> PureMLPattern level variable
     sortInjection originSort destinationSort term =
-        give (MetadataTools.sortTools tools)
+        give (MetadataTools.symbolOrAliasSorts tools)
             $ mkApp
                 SymbolOrAlias
                     { symbolOrAliasConstructor = firstConstructor
@@ -951,7 +951,7 @@ functionAnd
                         -- Ceil predicate not needed since first being
                         -- bottom will make the entire term bottom. However,
                         -- one must be careful to not just drop the term.
-                        , predicate = give (MetadataTools.sortTools tools) $
+                        , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
                             makeEqualsPredicate first second
                         , substitution = []
                         }

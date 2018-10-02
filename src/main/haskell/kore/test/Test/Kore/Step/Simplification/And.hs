@@ -18,7 +18,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SortTools )
+                 ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeFalsePredicate, makeTruePredicate )
@@ -39,12 +39,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSortTools )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_andSimplification :: [TestTree]
-test_andSimplification = give mockSortTools
+test_andSimplification = give mockSymbolOrAliasSorts
     [ testCase "And truth table"
         (do
             assertEqualWithExplanation "false and false = false"
@@ -366,29 +366,29 @@ test_andSimplification = give mockSortTools
     ]
   where
     yExpanded = ExpandedPattern
-        { term = give mockSortTools $ mkVar Mock.y
+        { term = give mockSymbolOrAliasSorts $ mkVar Mock.y
         , predicate = makeTruePredicate
         , substitution = []
         }
-    fOfX = give mockSortTools $ Mock.f (mkVar Mock.x)
+    fOfX = give mockSymbolOrAliasSorts $ Mock.f (mkVar Mock.x)
     fOfXExpanded = ExpandedPattern
         { term = fOfX
         , predicate = makeTruePredicate
         , substitution = []
         }
-    gOfX = give mockSortTools $ Mock.g (mkVar Mock.x)
+    gOfX = give mockSymbolOrAliasSorts $ Mock.g (mkVar Mock.x)
     gOfXExpanded = ExpandedPattern
         { term = gOfX
         , predicate = makeTruePredicate
         , substitution = []
         }
-    plain0OfX = give mockSortTools $ Mock.plain10 (mkVar Mock.x)
+    plain0OfX = give mockSymbolOrAliasSorts $ Mock.plain10 (mkVar Mock.x)
     plain0OfXExpanded = ExpandedPattern
         { term = plain0OfX
         , predicate = makeTruePredicate
         , substitution = []
         }
-    plain1OfX = give mockSortTools $ Mock.plain11 (mkVar Mock.x)
+    plain1OfX = give mockSymbolOrAliasSorts $ Mock.plain11 (mkVar Mock.x)
     plain1OfXExpanded = ExpandedPattern
         { term = plain1OfX
         , predicate = makeTruePredicate
@@ -421,7 +421,7 @@ findSort [] = testSort
 findSort
     ( ExpandedPattern {term} : _ )
   =
-    give mockSortTools $ getSort term
+    give mockSymbolOrAliasSorts $ getSort term
 
 evaluate
     :: And Object (CommonOrOfExpandedPattern Object)
@@ -436,11 +436,11 @@ evaluatePatterns
 evaluatePatterns first second =
     fst $ evalSimplifier $ makeEvaluate mockMetadataTools first second
 
-mockSortTools :: SortTools Object
-mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSortTools Mock.attributesMapping Mock.subsorts
+    Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
 
 testSort :: MetaOrObject level => Sort level
 testSort =

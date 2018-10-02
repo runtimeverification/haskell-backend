@@ -19,7 +19,7 @@ import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr, mkVar )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SortTools )
+                 ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
@@ -45,12 +45,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSortTools )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_functionIntegration :: [TestTree]
-test_functionIntegration = give mockSortTools
+test_functionIntegration = give mockSymbolOrAliasSorts
     [ testCase "Simple evaluation"
         (assertEqualWithExplanation ""
             ExpandedPattern
@@ -275,9 +275,9 @@ evaluate metadataTools functionIdToEvaluator patt =
         $ evalSimplifier
         $ Pattern.simplify metadataTools functionIdToEvaluator patt
 
-mockSortTools :: SortTools Object
-mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSortTools Mock.attributesMapping Mock.subsorts
+    Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts

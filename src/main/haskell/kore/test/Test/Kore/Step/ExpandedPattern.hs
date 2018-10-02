@@ -20,7 +20,7 @@ import Kore.ASTHelpers
 import Kore.ASTUtils.SmartConstructors
        ( mkAnd, mkBottom, mkEquals, mkTop, mkVar )
 import Kore.IndexedModule.MetadataTools
-       ( SortTools )
+       ( SymbolOrAliasSorts )
 
 import Kore.Predicate.Predicate
        ( Predicate, makeEqualsPredicate, makeFalsePredicate,
@@ -70,7 +70,7 @@ test_expandedPattern =
                 )
                 (makeEq (var 4) (var 5))
             )
-            (give mockSortTools $ ExpandedPattern.toMLPattern
+            (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
                 ExpandedPattern
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
@@ -84,7 +84,7 @@ test_expandedPattern =
                 (makeEq (var 2) (var 3))
                 (makeEq (var 4) (var 5))
             )
-            (give mockSortTools $ ExpandedPattern.toMLPattern
+            (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
                 ExpandedPattern
                     { term = mkTop
                     , predicate = makeEquals (var 2) (var 3)
@@ -95,7 +95,7 @@ test_expandedPattern =
     , testCase "Converting to a ML pattern - top predicate"
         (assertEqualWithExplanation ""
             (var 1)
-            (give mockSortTools $ ExpandedPattern.toMLPattern
+            (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
                 ExpandedPattern
                     { term = var 1
                     , predicate = makeTruePredicate
@@ -106,7 +106,7 @@ test_expandedPattern =
     , testCase "Converting to a ML pattern - bottom pattern"
         (assertEqualWithExplanation ""
             mkBottom
-            (give mockSortTools $ ExpandedPattern.toMLPattern
+            (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
                 ExpandedPattern
                     { term = mkBottom
                     , predicate = makeEquals (var 2) (var 3)
@@ -117,7 +117,7 @@ test_expandedPattern =
     , testCase "Converting to a ML pattern - bottom predicate"
         (assertEqualWithExplanation ""
             mkBottom
-            (give mockSortTools $ ExpandedPattern.toMLPattern
+            (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
                 ExpandedPattern
                     { term = var 1
                     , predicate = makeFalsePredicate
@@ -165,10 +165,10 @@ showVar :: V level -> W level
 showVar (V i) = W (show i)
 
 var :: Integer -> PureMLPattern Meta V
-var i = give mockSortTools (mkVar (V i))
+var i = give mockSymbolOrAliasSorts (mkVar (V i))
 
 war :: String -> PureMLPattern Meta W
-war s = give mockSortTools (mkVar (W s))
+war s = give mockSymbolOrAliasSorts (mkVar (W s))
 
 makeEq
     :: (SortedVariable var, Show (var Meta))
@@ -176,7 +176,7 @@ makeEq
     -> PureMLPattern Meta var
     -> PureMLPattern Meta var
 makeEq p1 p2 =
-    give mockSortTools (mkEquals p1 p2)
+    give mockSymbolOrAliasSorts (mkEquals p1 p2)
 
 makeAnd
     :: (SortedVariable var, Show (var Meta))
@@ -184,16 +184,16 @@ makeAnd
     -> PureMLPattern Meta var
     -> PureMLPattern Meta var
 makeAnd p1 p2 =
-    give mockSortTools (mkAnd p1 p2)
+    give mockSymbolOrAliasSorts (mkAnd p1 p2)
 
 makeEquals
     :: (SortedVariable var, Show (var Meta))
     => PureMLPattern Meta var -> PureMLPattern Meta var -> Predicate Meta var
 makeEquals p1 p2 =
-    give mockSortTools (makeEqualsPredicate p1 p2)
+    give mockSymbolOrAliasSorts (makeEqualsPredicate p1 p2)
 
-mockSortTools :: SortTools Meta
-mockSortTools = const ApplicationSorts
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
+mockSymbolOrAliasSorts = const ApplicationSorts
     { applicationSortsOperands = [sortVariable, sortVariable]
     , applicationSortsResult = sortVariable
     }

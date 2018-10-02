@@ -199,7 +199,7 @@ evaluatePredicate
             , substitution = evaluatedSubstitution
             }
         , _proof
-        ) <- give (sortTools tools) $
+        ) <- give (symbolOrAliasSorts tools) $
              give tools $
                  Predicate.evaluate simplifier predicate
     (   PredicateSubstitution

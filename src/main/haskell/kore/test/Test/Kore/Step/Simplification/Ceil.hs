@@ -37,12 +37,12 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSortTools )
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_ceilSimplification :: [TestTree]
-test_ceilSimplification = give mockSortTools
+test_ceilSimplification = give mockSymbolOrAliasSorts
     [ testCase "Ceil - or distribution"
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
         (assertEqualWithExplanation ""
@@ -305,11 +305,11 @@ test_ceilSimplification = give mockSortTools
         )
     ]
   where
-    fOfA = give mockSortTools $ Mock.f Mock.a
-    fOfB = give mockSortTools $ Mock.f Mock.b
-    gOfA = give mockSortTools $ Mock.g Mock.a
-    somethingOfA = give mockSortTools $ Mock.plain10 Mock.a
-    somethingOfB = give mockSortTools $ Mock.plain10 Mock.b
+    fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
+    fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
+    gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
+    somethingOfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
+    somethingOfB = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.b
     somethingOfAExpanded = ExpandedPattern
         { term = somethingOfA
         , predicate = makeTruePredicate
@@ -320,10 +320,10 @@ test_ceilSimplification = give mockSortTools
         , predicate = makeTruePredicate
         , substitution = []
         }
-    mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
+    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSortTools Mock.attributesMapping Mock.subsorts
+            mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
 
 makeCeil
     :: [ExpandedPattern Object variable]

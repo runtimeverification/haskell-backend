@@ -17,7 +17,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkCeil, mkEquals, mkForall, mkVar )
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -33,12 +33,12 @@ import qualified Kore.Step.Simplification.Forall as Forall
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeSortTools )
+                 ( makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_forallSimplification :: [TestTree]
-test_forallSimplification = give mockSortTools
+test_forallSimplification = give mockSymbolOrAliasSorts
     [ testCase "Forall - or distribution"
         -- forall(a or b) = forall(a) or forall(b)
         (assertEqualWithExplanation ""
@@ -227,12 +227,12 @@ test_forallSimplification = give mockSortTools
         -}
     ]
   where
-    fOfA = give mockSortTools $ Mock.f Mock.a
-    fOfX = give mockSortTools $ Mock.f (mkVar Mock.x)
-    gOfA = give mockSortTools $ Mock.g Mock.a
-    hOfA = give mockSortTools $ Mock.h Mock.a
-    something1OfX = give mockSortTools $ Mock.plain10 (mkVar Mock.x)
-    something2OfX = give mockSortTools $ Mock.plain11 (mkVar Mock.x)
+    fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
+    fOfX = give mockSymbolOrAliasSorts $ Mock.f (mkVar Mock.x)
+    gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
+    hOfA = give mockSymbolOrAliasSorts $ Mock.h Mock.a
+    something1OfX = give mockSymbolOrAliasSorts $ Mock.plain10 (mkVar Mock.x)
+    something2OfX = give mockSymbolOrAliasSorts $ Mock.plain11 (mkVar Mock.x)
     something1OfXExpanded = ExpandedPattern
         { term = something1OfX
         , predicate = makeTruePredicate
@@ -243,7 +243,7 @@ test_forallSimplification = give mockSortTools
         , predicate = makeTruePredicate
         , substitution = []
         }
-    mockSortTools = Mock.makeSortTools Mock.sortToolsMapping
+    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
 makeForall
     :: variable Object
@@ -265,7 +265,7 @@ testSort =
 
 evaluate
     ::  ( MetaOrObject level
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         )
     => Forall level Variable (CommonOrOfExpandedPattern level)
     -> CommonOrOfExpandedPattern level
@@ -274,7 +274,7 @@ evaluate forall =
 
 makeEvaluate
     ::  ( MetaOrObject level
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         )
     => Variable level
     -> CommonExpandedPattern level

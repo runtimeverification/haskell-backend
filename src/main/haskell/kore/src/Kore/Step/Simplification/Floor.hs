@@ -23,7 +23,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( SortTools )
+                 ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
 import           Kore.Step.ExpandedPattern
@@ -51,7 +51,7 @@ floor(a and b) = floor(a) and floor(b).
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -67,7 +67,7 @@ simplify
 simplifyEvaluatedFloor
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -87,7 +87,7 @@ See 'simplify' for details.
 makeEvaluateFloor
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -104,7 +104,7 @@ makeEvaluateFloor child
 makeEvaluateNonBoolFloor
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SortTools level)
+        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
         )
