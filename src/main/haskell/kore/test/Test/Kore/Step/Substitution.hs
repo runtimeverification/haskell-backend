@@ -6,11 +6,9 @@ import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
-
+import Control.Monad.Except
 import Control.Monad.Counter
        ( evalCounter )
-import Control.Monad.Except
-       ( runExceptT )
 import Data.Reflection
        ( give )
 
@@ -22,8 +20,8 @@ import Kore.ASTUtils.SmartConstructors
        ( mkVar )
 import Kore.Predicate.Predicate
        ( makeFalsePredicate, makeTruePredicate )
-import Kore.Step.PredicateSubstitution
-       ( PredicateSubstitution (PredicateSubstitution) )
+import Kore.Step.ExpandedPattern
+       ( PredicateSubstitution (..) )
 import Kore.Step.Substitution
        ( mergeAndNormalizeSubstitutions )
 import Kore.Unification.Error

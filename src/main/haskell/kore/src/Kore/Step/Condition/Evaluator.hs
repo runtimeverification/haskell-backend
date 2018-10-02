@@ -12,16 +12,17 @@ module Kore.Step.Condition.Evaluator
     ) where
 
 import Data.Reflection
-       ( Given )
 
 import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+                 ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, unwrapPredicate,
-                 wrapPredicate )
+                 ( Predicate, makeAndPredicate, makeFalsePredicate,
+                 unwrapPredicate, wrapPredicate )
+import           Kore.SMT.SMT
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
@@ -33,14 +34,37 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier (..),
                  SimplificationProof (SimplificationProof), Simplifier )
+import           Kore.Step.StepperAttributes
+
+import Debug.Trace
+
+convertStepperToSMT
+    :: MetadataTools level StepperAttributes
+    -> MetadataTools level SMTAttributes
+convertStepperToSMT tools =
+    tools
+    { symAttributes  = convert . symAttributes  tools
+    , sortAttributes = convert . sortAttributes tools
+    , isSubsortOf = const $ const False -- no subsort info needed by SMT
+    }
+    where convert (StepperAttributes _ _ _ _ _ hook) = SMTAttributes hook
+
+-- TODO: May add more checks later
+-- but the vast majority of predicates are just `top`.
+nonTrivial :: PureMLPattern level variable -> Bool
+nonTrivial (Top_ _) = False
+nonTrivial _ = True
 
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
-    ::  ( MetaOrObject level
+    ::  forall level variable .
+        ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
+        , Given (MetadataTools level StepperAttributes)
         )
     => PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
@@ -52,8 +76,15 @@ evaluate
         (PredicateSubstitution level variable, SimplificationProof level)
 evaluate
     (PureMLPatternSimplifier simplifier)
-    predicate'
-  = do
+    predicate''
+  = give (convertStepperToSMT (given :: MetadataTools level StepperAttributes))
+    $ do
+    let predicate' =
+            if nonTrivial (unwrapPredicate predicate'')
+               && (traceShowId $ unsafeTryRefutePredicate predicate'')
+                   == Just False
+            then makeFalsePredicate
+            else predicate''
     (patt, _proof) <- simplifier (unwrapPredicate predicate')
     let
         (subst, _proof) =
