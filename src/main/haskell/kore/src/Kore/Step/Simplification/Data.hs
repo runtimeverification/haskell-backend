@@ -39,7 +39,7 @@ data SimplificationProof level = SimplificationProof
 
 type Simplifier = Counter
 
-{- | Run a simplifier computation.
+{-| Run a simplifier computation.
 
   The result is returned along with the final 'Counter'.
 
@@ -70,7 +70,6 @@ Kore functions on PureMLPatterns.
 type PureMLPatternSimplifier level variable =
     MonadPureMLPatternSimplifier level variable Simplifier
 
--- TODO: Delete.
 {-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.
 -}
