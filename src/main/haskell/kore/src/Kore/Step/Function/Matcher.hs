@@ -179,23 +179,14 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         (zip firstChildren secondChildren)
                     else Nothing
                 _ -> Nothing
-        (Bottom_ _) ->
-            if first == second
-                then Just $ return PredicateSubstitution.top
-                else Nothing
+        (Bottom_ _) -> topWhenEqualOrNothing first second
         (Ceil_ _ _ firstChild) ->
             case second of
                 (Ceil_ _ _ secondChild) ->
                     match tools quantifiedVariables firstChild secondChild
                 _ -> Nothing
-        (CharLiteral_ _) ->
-            if first == second
-                then Just $ return PredicateSubstitution.top
-                else Nothing
-        (DV_ _ _) ->
-            if first == second
-                then Just $ return PredicateSubstitution.top
-                else Nothing
+        (CharLiteral_ _) -> topWhenEqualOrNothing first second
+        (DV_ _ _) -> topWhenEqualOrNothing first second
         (Equals_ _ _ firstFirst firstSecond) ->
             case second of
                 (Equals_ _ _ secondFirst secondSecond) ->
@@ -293,14 +284,8 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         , (firstSecond, secondSecond)
                         ]
                 _ -> Nothing
-        (StringLiteral_ _) ->
-            if first == second
-                then Just $ return PredicateSubstitution.top
-                else Nothing
-        (Top_ _) ->
-            if first == second
-                then Just $ return PredicateSubstitution.top
-                else Nothing
+        (StringLiteral_ _) -> topWhenEqualOrNothing first second
+        (Top_ _) -> topWhenEqualOrNothing first second
         (Var_ firstVariable) ->
             case second of
                 (Var_ secondVariable) ->
@@ -311,6 +296,11 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                             then Just $ return PredicateSubstitution.top
                             else Nothing
                 _ -> Nothing
+  where
+    topWhenEqualOrNothing first' second' =
+        if first' == second'
+            then Just $ return PredicateSubstitution.top
+            else Nothing
 
 matchJoin
     :: ( Hashable variable
