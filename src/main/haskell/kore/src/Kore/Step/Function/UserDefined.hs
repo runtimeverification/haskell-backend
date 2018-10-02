@@ -141,7 +141,7 @@ reevaluateFunctions
     -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
 reevaluateFunctions
     tools
-    wrappedSimplifier@(PureMLPatternSimplifier simplifier)
+    wrappedSimplifier@(MonadPureMLPatternSimplifier simplifier)
     ExpandedPattern
         { term   = rewrittenPattern
         , predicate = rewritingCondition

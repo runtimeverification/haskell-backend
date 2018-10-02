@@ -53,6 +53,8 @@ import           Kore.Step.Simplification.Data
                  ( CommonPureMLPatternSimplifier, Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
+import qualified Kore.Step.Simplification.Predicate as Predicate
+                 ( monadSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
@@ -113,7 +115,9 @@ transitionRule tools simplifier =
                 nonEmptyConfigs = ExpandedPattern.filterOr configs
             return (prove <$> toList nonEmptyConfigs)
     transitionAxiom a (config, proof) = do
-        result <- runExceptT $ stepWithAxiom tools config a
+        result <-
+            runExceptT $ stepWithAxiom
+                tools (Predicate.monadSimplifier simplifier) config a
         case result of
             Left _ -> pure []
             Right (config', proof') ->
