@@ -238,6 +238,7 @@ makeTermAnd
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
+    -> MonadPureMLPatternSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Counter (ExpandedPattern level variable, SimplificationProof level)

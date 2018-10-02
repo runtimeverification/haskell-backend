@@ -16,7 +16,7 @@ import Control.Error.Util
 import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
-       ( ExceptT(..)  )
+       ( ExceptT (..) )
 import Data.Functor.Foldable
 import Data.Reflection
        ( give )
@@ -29,22 +29,22 @@ import           Kore.AST.MLPatterns
                  ( getPatternResultSort )
 import           Kore.AST.PureML
                  ( PureMLPattern )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate )
-import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluateTerm )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..) )
-import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution(..) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( bottom )
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
+import qualified Kore.Step.Simplification.Ceil as Ceil
+                 ( makeEvaluateTerm )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
@@ -74,6 +74,7 @@ unificationProcedure
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
+    -> MonadPureMLPatternSimplifier level variable m
     -> PureMLPattern level variable
     -- ^left-hand-side of unification
     -> PureMLPattern level variable
@@ -84,12 +85,12 @@ unificationProcedure
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-unificationProcedure tools p1 p2
+unificationProcedure tools patternSimplifier p1 p2
     | p1Sort /= p2Sort =
       return (PredicateSubstitution.bottom, EmptyUnificationProof)
     | otherwise = do
       let
-          unifiedTerm = termUnification tools p1 p2
+          unifiedTerm = termUnification tools patternSimplifier p1 p2
       -- TODO(Vladimir): Since unification is a central piece, we should test if
       -- the predicate is false and, if so, return PredicateSubstitution.bottom.
       (pat, _) <- ExceptT . sequence $ note UnsupportedPatterns unifiedTerm
