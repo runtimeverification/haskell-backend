@@ -45,8 +45,6 @@ import Kore.Unification.Unifier
        ( UnificationProof (..), UnificationError (..)  )
 import Kore.Variables.Fresh
 
-import Test.Kore.AST.MLPatterns
-       ( extractPurePattern )
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
