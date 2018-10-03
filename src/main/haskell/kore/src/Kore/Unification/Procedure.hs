@@ -93,9 +93,6 @@ unificationProcedure tools p1 p2
       (pat, _) <- ExceptT . sequence $ note UnsupportedPatterns unifiedTerm
       let
           (pred', _) = Ceil.makeEvaluateTerm tools (ExpandedPattern.term pat)
-      -- TODO(Vladimir): this is not covered by any test, and I think the only
-      -- tests that would cover this `if` are the ones that would hit
-      -- domainValue, stringLiteral and charLiteral ...AndEqualsAssumesDifferent
       if ExpandedPattern.isBottom pat
           then return
               ( PredicateSubstitution.bottom
