@@ -16,8 +16,10 @@ import Data.Reflection
 
 import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..),
-       Pattern (ApplicationPattern), SymbolOrAlias (..), Variable )
+       Pattern (ApplicationPattern, StringLiteralPattern), SymbolOrAlias (..),
+       Variable, StringLiteral (..) )
 import Kore.AST.MetaOrObject
+import Kore.AST.PureML
 import Kore.AST.PureToKore
        ( patternKoreToPure )
 import Kore.ASTHelpers
@@ -43,6 +45,8 @@ import Kore.Unification.Unifier
        ( UnificationProof (..), UnificationError (..)  )
 import Kore.Variables.Fresh
 
+import Test.Kore.AST.MLPatterns
+       ( extractPurePattern )
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
@@ -671,6 +675,32 @@ test_baseStep =
                         }
                 )
             )
+    -- "sl1" => x
+    -- vs
+    -- "sl2"
+    -- Expected: bottom
+    , testCase "Matching different string literals is bottom"
+        (assertEqualWithExplanation ""
+            (Right ExpandedPattern.bottom)
+            (fst <$> runStep
+                mockMetadataTools
+                ExpandedPattern
+                    { term = asPurePattern (StringLiteralPattern (StringLiteral "sl2")
+                                           :: UnFixedPureMLPattern Meta Variable
+                                           )
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                AxiomPattern
+                    { axiomPatternLeft = asPurePattern (StringLiteralPattern (StringLiteral "sl1")
+                                           :: UnFixedPureMLPattern Meta Variable
+                                           )
+                    , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
+                    , axiomPatternAttributes = def
+                    }
+            )
+        )
     -- x => x
     -- vs
     -- a and g(a)=f(a)
