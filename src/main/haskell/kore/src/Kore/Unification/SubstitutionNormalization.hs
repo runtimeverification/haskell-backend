@@ -77,8 +77,7 @@ normalizeSubstitution
         m
         (PredicateSubstitution level variable)
 normalizeSubstitution tools substitution =
-    ExceptT . sequence $
-        maybe (return PredicateSubstitution.bottom) normalizeSortedSubstitution' <$> topologicalSortConverted
+    ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
   where
     interestingVariables :: Map.Map (Unified variable) (variable level)
@@ -114,6 +113,13 @@ normalizeSubstitution tools substitution =
         -> m (PredicateSubstitution level variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) [] []
+
+    maybeToBottom
+        :: Maybe [variable level]
+        -> m (PredicateSubstitution level variable)
+    maybeToBottom = maybe
+        (return PredicateSubstitution.bottom)
+        normalizeSortedSubstitution'
 
 checkCircularVariableDependency
     :: (MetaOrObject level, Eq (variable level))

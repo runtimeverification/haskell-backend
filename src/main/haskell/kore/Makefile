@@ -20,13 +20,19 @@ ghci:
 	$(stack) ghci $(package)
 
 test:
-	$(stack) test $(package) --test-arguments "--hide-successes" --pedantic
+	$(stack) test $(package) --test-arguments "--hide-successes"
 
 testp:
+	$(stack) test --test-arguments '-p "$(pattern)"'
+
+test-pedantic:
+	$(stack) test $(package) --test-arguments "--hide-successes" --pedantic
+
+testp-pedantic:
 	$(stack) test --test-arguments '-p "$(pattern)"' --pedantic
 
 test-ghci:
-	$(stack) ghci $(package):test:$(package)-test --pedantic
+	$(stack) ghci $(package):test:$(package)-test
 
 pedantic:
 	$(stack) build --haddock --no-haddock-deps --coverage --bench --no-run-benchmarks --test --no-run-tests --pedantic

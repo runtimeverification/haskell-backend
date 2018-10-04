@@ -26,11 +26,15 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..) )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
 import Kore.Predicate.Predicate
-       ( Predicate, makeFalsePredicate, makeMultipleAndPredicate,
-       makeTruePredicate )
+       ( Predicate, makeAndPredicate, makeFalsePredicate,
+       makeMultipleAndPredicate )
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution (..), substitutionToPredicate )
+import Kore.Step.ExpandedPattern as PredicateSubstitution
+       ( PredicateSubstitution (..) )
 import Kore.Step.StepperAttributes
 import Kore.Substitution.Class
        ( Hashable )
@@ -68,15 +72,11 @@ mergeSubstitutions
     -> ExceptT
           UnificationError
           m
-          ( Predicate level variable
-          , UnificationSubstitution level variable
+          ( PredicateSubstitution level variable
           , UnificationProof level variable
           )
-mergeSubstitutions tools first second = do
-    (substitution, proof) <-
-        normalizeSubstitutionDuplication tools (first ++ second)
-    -- TODO(virgil): Return the actual condition here.
-    return (makeTruePredicate, substitution, proof)
+mergeSubstitutions tools first second =
+    normalizeSubstitutionDuplication tools (first ++ second)
 
 -- | Merge and normalize two unification substitutions
 mergeAndNormalizeSubstitutions
@@ -120,18 +120,30 @@ normalizeSubstitutionAfterMerge
           , UnificationProof level variable
           )
 normalizeSubstitutionAfterMerge tools substit = do
-    (substitutionList, proof) <-
-          normalizeSubstitutionDuplication' substit
-    predSubstitution <- normalizeSubstitution' substitutionList
-    -- TODO(virgil): Return the actual condition here. and proofs
-    return (predSubstitution, proof)
+    (predSubst, proof) <-
+        normalizeSubstitutionDuplication' substit
+
+    predSubst' <-
+        normalizeSubstitution' (PredicateSubstitution.substitution predSubst)
+
+    return $
+        ( PredicateSubstitution
+            ( makeAndPredicate' predSubst predSubst' )
+            ( PredicateSubstitution.substitution predSubst' )
+        , proof
+        )
   where
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     normalizeSubstitutionDuplication' =
         withExceptT unificationToUnifyOrSubError
             . normalizeSubstitutionDuplication tools
     normalizeSubstitution' =
         withExceptT substitutionToUnifyOrSubError
             . normalizeSubstitution tools
+    makeAndPredicate' ps1 ps2 =
+        fst $ give symbolOrAliasSorts $ makeAndPredicate
+            (PredicateSubstitution.predicate ps1)
+            (PredicateSubstitution.predicate ps2)
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
@@ -164,12 +176,12 @@ mergePredicatesAndSubstitutions
         , UnificationProof level variable
         )
 mergePredicatesAndSubstitutions tools predicates substitutions = do
-    (substitutionMergePredicate, mergedSubstitution) <-
+    (substitutionMergePredicate, mergedSubst) <-
         foldM
             (mergeSubstitutionWithPredicate tools)
             (predicates, [])
             substitutions
-    result <- runExceptT $ normalizeSubstitutionAfterMerge tools mergedSubstitution
+    result <- runExceptT $ normalizeSubstitutionAfterMerge tools mergedSubst
     case result of
         Left _ ->
             let
@@ -222,5 +234,7 @@ mergeSubstitutionWithPredicate
   = do
     merge <- runExceptT $ mergeSubstitutions tools subst1 subst2
     case merge of
-        Left _ -> return (makeFalsePredicate : predicates, [])
-        Right (predicate, subst, _) -> return (predicate : predicates, subst)
+        Left _ ->
+            return (makeFalsePredicate : predicates, [])
+        Right (PredicateSubstitution {predicate, substitution}, _) ->
+            return (predicate : predicates, substitution)

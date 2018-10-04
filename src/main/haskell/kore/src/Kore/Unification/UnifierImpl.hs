@@ -10,6 +10,8 @@ Portability : portable
 -}
 module Kore.Unification.UnifierImpl where
 
+import Control.Arrow
+       ( (&&&) )
 import Control.Error.Util
        ( note )
 import Control.Monad
@@ -17,28 +19,32 @@ import Control.Monad
 import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
-       ( ExceptT(..)  )
+       ( ExceptT (..) )
 import Control.Monad.Trans.Except
        ( throwE )
 import Data.Function
        ( on )
 import Data.Functor.Foldable
 import Data.List
-       ( groupBy, partition, sortBy )
+       ( foldl', groupBy, partition, sortBy )
+import Data.Reflection
+       ( give )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
 import qualified Kore.Predicate.Predicate as Predicate
-                 ( isFalse )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), top, bottom )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+                 ( isFalse, makeAndPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
+                 ( ExpandedPattern, PredicateSubstitution (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..), bottom, top )
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSubstitution (..), top )
 import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
@@ -47,10 +53,10 @@ import           Kore.Unification.Error
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-import {-# SOURCE #-} Kore.Step.Substitution
-                      ( mergePredicatesAndSubstitutions )
 import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
-                      ( termUnification )
+       ( termUnification )
+import {-# SOURCE #-} Kore.Step.Substitution
+       ( mergePredicatesAndSubstitutions )
 
 {-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
@@ -135,8 +141,12 @@ simplifyAnds tools patterns = do
             $ note UnsupportedPatterns
             $ termUnification tools (ExpandedPattern.term intermediate) pat
         (predSubst, _) <- mergePredicatesAndSubstitutions tools
-          [ ExpandedPattern.predicate result, ExpandedPattern.predicate intermediate ]
-          [ ExpandedPattern.substitution result, ExpandedPattern.substitution intermediate ]
+          [ ExpandedPattern.predicate result
+          , ExpandedPattern.predicate intermediate
+          ]
+          [ ExpandedPattern.substitution result
+          , ExpandedPattern.substitution intermediate
+          ]
 
         return $ ExpandedPattern.ExpandedPattern
             ( ExpandedPattern.term result )
@@ -171,22 +181,26 @@ solveGroupedSubstitution
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
+    -> variable level
+    -> [PureMLPattern level variable]
     -> ExceptT
         UnificationError
         m
-        ( UnificationSubstitution level variable
+        ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-solveGroupedSubstitution _ [] = throwE UnsupportedPatterns
--- TODO(Vladimir): We are dropping the predicate here. Most likely, this should
--- return the ExpandedPattern instead.
-solveGroupedSubstitution tools ((x,p):subst) = do
-    (solution, proof) <- simplifyAnds tools (p : map snd subst)
+solveGroupedSubstitution _ _ [] = throwE UnsupportedPatterns
+solveGroupedSubstitution tools var patterns = do
+    (predSubst, proof) <- simplifyAnds tools patterns
     return
-        ( (x, ExpandedPattern.term solution)
-          : ExpandedPattern.substitution solution
-        , proof)
+        ( PredicateSubstitution
+            (ExpandedPattern.predicate predSubst)
+            (termAndSubstitution predSubst)
+        , proof
+        )
+  where
+    termAndSubstitution s =
+        (var, ExpandedPattern.term s) : ExpandedPattern.substitution s
 
 -- |Takes a potentially non-normalized substitution,
 -- and if it contains multiple assignments to the same variable,
@@ -211,30 +225,72 @@ normalizeSubstitutionDuplication
     -> ExceptT
         UnificationError
         m
-        ( UnificationSubstitution level variable
+        ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
 normalizeSubstitutionDuplication tools subst =
     if null nonSingletonSubstitutions
-        then return (subst, EmptyUnificationProof)
+        then return
+            ( PredicateSubstitution Predicate.makeTruePredicate subst
+            , EmptyUnificationProof
+            )
         else do
-            (subst', proof') <- mconcat <$>
-                mapM (solveGroupedSubstitution tools) nonSingletonSubstitutions
+            (predSubst, proof') <- mergePredicateSubstitutionList tools <$>
+                mapM (uncurry $ solveGroupedSubstitution tools) varAndSubstList
             (finalSubst, proof) <-
                 normalizeSubstitutionDuplication tools
                     (concat singletonSubstitutions
-                     ++ subst'
+                     ++ PredicateSubstitution.substitution predSubst
                     )
+            let
+                (pred', _proof'') = give symbolOrAliasSorts
+                    $ Predicate.makeAndPredicate
+                    (PredicateSubstitution.predicate predSubst)
+                    (PredicateSubstitution.predicate finalSubst)
             return
-                ( finalSubst
+                ( PredicateSubstitution
+                    pred'
+                    ( PredicateSubstitution.substitution finalSubst )
                 , CombinedUnificationProof
                     [ proof'
                     , proof
                     ]
                 )
   where
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     groupedSubstitution = groupSubstitutionByVariable subst
     isSingleton [_] = True
     isSingleton _   = False
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
+    varAndSubstList = fmap (fst . head &&& fmap snd) nonSingletonSubstitutions
+
+mergePredicateSubstitutionList
+    :: ( MetaOrObject level
+       , Eq level
+       , Ord (variable level)
+       , Ord (variable Meta)
+       , Ord (variable Object)
+       , SortedVariable variable
+       , Show (variable level)
+       )
+    => MetadataTools level StepperAttributes
+    -> [(PredicateSubstitution level variable, UnificationProof level variable)]
+    -> (PredicateSubstitution level variable, UnificationProof level variable)
+mergePredicateSubstitutionList _ [] =
+    ( PredicateSubstitution.top
+    , EmptyUnificationProof
+    )
+mergePredicateSubstitutionList tools (p:ps) =
+    foldl' mergePredicateSubstitutions p ps
+
+  where
+    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
+    mergePredicateSubstitutions
+        (PredicateSubstitution {predicate = p1, substitution = s1}, proofs)
+        (PredicateSubstitution {predicate = p2, substitution = s2}, proof) =
+        ( PredicateSubstitution
+            (fst $ give symbolOrAliasSorts $ Predicate.makeAndPredicate p1 p2)
+            (s1 ++ s2)
+        , proofs <> proof
+        )
