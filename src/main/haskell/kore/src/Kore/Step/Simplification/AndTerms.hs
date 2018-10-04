@@ -503,12 +503,12 @@ variableFunctionAndEquals
     second@(Var_ v2)
   = return
         ( ExpandedPattern
-            { term = if v1 < v2 then first else second
+            { term = if v2 > v1 then second else first
             , predicate = makeTruePredicate
             , substitution =
-                [ if v1 < v2
-                    then (v2, first)
-                    else (v1, second)
+                [ if v2 > v1
+                    then (v1, second)
+                    else (v2, first)
                 ]
             }
         , SimplificationProof

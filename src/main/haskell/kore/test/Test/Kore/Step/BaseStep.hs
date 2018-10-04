@@ -555,17 +555,17 @@ test_baseStep =
             (Right ExpandedPattern
                 { term = asPureMetaPattern
                     (metaSigma
-                        (metaSigma (b1 PatternSort) (b1 PatternSort))
-                        (metaSigma (b1 PatternSort) (b1 PatternSort))
+                        (metaSigma (c1 PatternSort) (c1 PatternSort))
+                        (metaSigma (c1 PatternSort) (c1 PatternSort))
                     )
                 , predicate = makeTruePredicate
                 , substitution =
                     [   ( asMetaVariable (a1 PatternSort)
                         , asPureMetaPattern
-                            (metaSigma (b1 PatternSort) (b1 PatternSort))
+                            (metaSigma (c1 PatternSort) (c1 PatternSort))
                         )
-                    ,   ( asMetaVariable (c1 PatternSort)
-                        , asPureMetaPattern (b1 PatternSort)
+                    ,   ( asMetaVariable (b1 PatternSort)
+                        , asPureMetaPattern (c1 PatternSort)
                         )
                     ]
                 }
