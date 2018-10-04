@@ -262,15 +262,8 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Mock.sortInjectionSubSubToTop Mock.plain00SubSubsort)
                 )
             assertEqualWithExplanation "different head constructors not subsort"
-                ( ExpandedPattern
-                    { term =
-                        mkAnd
-                            (Mock.sortInjection10 Mock.aSort0)
-                            (Mock.sortInjection11 Mock.aSort1)
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , Nothing
+                ( ExpandedPattern.bottom
+                , Just ExpandedPattern.bottom
                 )
                 (simplifyUnify
                     mockMetadataTools
