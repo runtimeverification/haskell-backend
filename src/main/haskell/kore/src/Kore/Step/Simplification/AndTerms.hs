@@ -498,7 +498,7 @@ variableFunctionAndEquals
     -> Result (ExpandedPattern level variable, SimplificationProof level)
 variableFunctionAndEquals
     SimplifyAnd
-    tools
+    _
     first@(Var_ v1)
     second@(Var_ v2)
   = return
