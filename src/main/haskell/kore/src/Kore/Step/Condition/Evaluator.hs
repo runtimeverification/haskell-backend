@@ -36,8 +36,6 @@ import           Kore.Step.Simplification.Data
                  SimplificationProof (SimplificationProof), Simplifier )
 import           Kore.Step.StepperAttributes
 
-import Debug.Trace
-
 convertStepperToSMT
     :: MetadataTools level StepperAttributes
     -> MetadataTools level SMTAttributes
@@ -81,7 +79,7 @@ evaluate
     $ do
     let predicate' =
             if nonTrivial (unwrapPredicate predicate'')
-               && (traceShowId $ unsafeTryRefutePredicate predicate'')
+               && (unsafeTryRefutePredicate predicate'')
                    == Just False
             then makeFalsePredicate
             else predicate''
