@@ -497,6 +497,23 @@ variableFunctionAndEquals
     -> PureMLPattern level variable
     -> Result (ExpandedPattern level variable, SimplificationProof level)
 variableFunctionAndEquals
+    SimplifyAnd
+    tools
+    first@(Var_ v1)
+    second@(Var_ v2)
+  = return
+        ( ExpandedPattern
+            { term = if v1 < v2 then first else second
+            , predicate = makeTruePredicate
+            , substitution =
+                [ if v1 < v2
+                    then (v2, first)
+                    else (v1, second)
+                ]
+            }
+        , SimplificationProof
+        )
+variableFunctionAndEquals
     simplificationType
     tools
     (Var_ v)
