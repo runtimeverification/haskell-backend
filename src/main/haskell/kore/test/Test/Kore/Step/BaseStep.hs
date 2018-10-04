@@ -547,6 +547,57 @@ test_baseStep =
                     }
             )
         )
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
+    , testCase "Unification is applied repeatedly"
+        (assertEqualWithExplanation ""
+            (Right ExpandedPattern
+                { term = asPureMetaPattern
+                    (metaSigma
+                        (metaSigma (b1 PatternSort) (b1 PatternSort))
+                        (metaSigma (b1 PatternSort) (b1 PatternSort))
+                    )
+                , predicate = makeTruePredicate
+                , substitution =
+                    [   ( asMetaVariable (a1 PatternSort)
+                        , asPureMetaPattern
+                            (metaSigma (b1 PatternSort) (b1 PatternSort))
+                        )
+                    ,   ( asMetaVariable (c1 PatternSort)
+                        , asPureMetaPattern (b1 PatternSort)
+                        )
+                    ]
+                }
+            )
+            (fst <$> runStep
+                mockMetadataTools
+                ExpandedPattern
+                    { term = asPureMetaPattern
+                        ( metaSigma
+                            ( metaSigma (a1 PatternSort) (a1 PatternSort))
+                            ( metaSigma
+                                (metaSigma (b1 PatternSort) (c1 PatternSort))
+                                (metaSigma (b1 PatternSort) (b1 PatternSort))
+                            )
+                        )
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                AxiomPattern
+                    { axiomPatternLeft =
+                        asPureMetaPattern
+                            (metaSigma
+                                (x1 PatternSort) (x1 PatternSort)
+                            )
+                    , axiomPatternRight =
+                        asPureMetaPattern
+                            (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
+                    , axiomPatternAttributes = def
+                    }
+            )
+        )
     -- sigma(sigma(x, x), y) => sigma(x, y)
     -- vs
     -- sigma(sigma(a, f(b)), a)
@@ -683,16 +734,18 @@ test_baseStep =
             (fst <$> runStep
                 mockMetadataTools
                 ExpandedPattern
-                    { term = asPurePattern (StringLiteralPattern (StringLiteral "sl2")
-                                           :: UnFixedPureMLPattern Meta Variable
-                                           )
+                    { term = asPurePattern
+                        ( StringLiteralPattern (StringLiteral "sl2")
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
                 AxiomPattern
-                    { axiomPatternLeft = asPurePattern (StringLiteralPattern (StringLiteral "sl1")
-                                           :: UnFixedPureMLPattern Meta Variable
-                                           )
+                    { axiomPatternLeft = asPurePattern
+                        ( StringLiteralPattern (StringLiteral "sl1")
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def

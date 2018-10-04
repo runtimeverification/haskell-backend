@@ -230,9 +230,10 @@ normalizeSubstitutionDuplication
         )
 normalizeSubstitutionDuplication tools subst =
     if null nonSingletonSubstitutions
-        then return ( PredicateSubstitution Predicate.makeTruePredicate subst
-                    , EmptyUnificationProof
-                    )
+        then return
+            ( PredicateSubstitution Predicate.makeTruePredicate subst
+            , EmptyUnificationProof
+            )
         else do
             (predSubst, proof') <- mergePredicateSubstitutionList tools <$>
                 mapM (uncurry $ solveGroupedSubstitution tools) varAndSubstList

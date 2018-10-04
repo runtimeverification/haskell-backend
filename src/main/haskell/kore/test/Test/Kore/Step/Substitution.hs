@@ -12,21 +12,21 @@ import Control.Monad.Counter
 import Data.Reflection
        ( give )
 
-import           Kore.AST.Common
-                 ( Variable )
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar )
-import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import           Kore.Step.Substitution
-                 ( mergeAndNormalizeSubstitutions )
-import           Kore.Unification.Error
-import           Kore.Unification.Unifier
-                 ( UnificationSubstitution )
+import Kore.AST.Common
+       ( Variable )
+import Kore.AST.MetaOrObject
+       ( Object )
+import Kore.ASTUtils.SmartConstructors
+       ( mkVar )
+import Kore.Predicate.Predicate
+       ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
+import Kore.Step.PredicateSubstitution
+       ( PredicateSubstitution (PredicateSubstitution) )
+import Kore.Step.Substitution
+       ( mergeAndNormalizeSubstitutions )
+import Kore.Unification.Error
+import Kore.Unification.Unifier
+       ( UnificationSubstitution )
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
