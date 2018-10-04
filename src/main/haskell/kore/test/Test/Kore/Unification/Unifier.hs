@@ -39,7 +39,8 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkSort, mkVar )
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeFalsePredicate, makeTruePredicate )
+                 ( Predicate, makeCeilPredicate, makeFalsePredicate,
+                 makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( makeEqualsPredicate )
 import           Kore.Step.ExpandedPattern
@@ -81,11 +82,13 @@ s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
 s4 = simpleSort (SortName "s4")
 
-a, a1, a2, a3, b, c, f, g, h :: PureSentenceSymbol Object
+a, a1, a2, a3, a4, a5, b, c, f, g, h :: PureSentenceSymbol Object
 a = symbol_ "a" AstLocationTest [] s1
 a1 = symbol_ "a1" AstLocationTest [] s1
 a2 = symbol_ "a2" AstLocationTest [] s1
 a3 = symbol_ "a3" AstLocationTest [] s1
+a4 = symbol_ "a4" AstLocationTest [] s1
+a5 = symbol_ "a5" AstLocationTest [] s1
 b = symbol_ "b" AstLocationTest [] s2
 c = symbol_ "c" AstLocationTest [] s3
 f = symbol_ "f" AstLocationTest [s1] s2
@@ -139,6 +142,12 @@ a2A = applyS a2 []
 a3A :: CommonPurePatternStub Object
 a3A = applyS a3 []
 
+a4A :: CommonPurePatternStub Object
+a4A = applyS a4 []
+
+a5A :: CommonPurePatternStub Object
+a5A = applyS a5 []
+
 bA :: CommonPurePatternStub Object
 bA = applyS b []
 
@@ -152,7 +161,7 @@ symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object)]
 symbols =
     map
         (\s -> (getSentenceSymbolOrAliasHead s [], s))
-        [ a, a1, a2, a3, b, c, f, g, h
+        [ a, a1, a2, a3, a4, a5, b, c, f, g, h
         , ef, eg, eh
         , nonLinF, nonLinG, nonLinAS
         , expBin
@@ -180,12 +189,18 @@ isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
 mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
 mockStepperAttributes patternHead = StepperAttributes
     { isConstructor =
-        patternHead /= getSentenceSymbolOrAliasHead a2 []
+           patternHead /= getSentenceSymbolOrAliasHead a2 []
+        && patternHead /= getSentenceSymbolOrAliasHead a4 []
+        && patternHead /= getSentenceSymbolOrAliasHead a5 []
         && not (isInjHead patternHead)
-    , isFunctional = patternHead /= getSentenceSymbolOrAliasHead a3 []
-    , isFunction = False
+    , isFunctional =
+           patternHead /= getSentenceSymbolOrAliasHead a3 []
+        && patternHead /= getSentenceSymbolOrAliasHead a5 []
+    , isFunction = patternHead == getSentenceSymbolOrAliasHead a5 []
     , isInjective =
-        patternHead /= getSentenceSymbolOrAliasHead a2 []
+        (  patternHead /= getSentenceSymbolOrAliasHead a2 []
+        && patternHead /= getSentenceSymbolOrAliasHead a5 []
+        )
         || isInjHead patternHead
     , isSortInjection = isInjHead patternHead
     , hook = def
@@ -472,6 +487,24 @@ test_unification =
         ]
         makeTruePredicate
         EmptyUnificationProof
+    , unificationProcedureSuccess
+        "Unifying two non-ctors results in equals predicate"
+         (UnificationTerm a2A)
+         (UnificationTerm a4A)
+         []
+         (makeEqualsPredicate a2A a4A)
+         EmptyUnificationProof
+    , unificationProcedureSuccess
+        "Unifying function and variable results in ceil predicate"
+         (UnificationTerm x)
+         (UnificationTerm a5A)
+         [ ("x", a5A)
+         ]
+         (give mockSymbolOrAliasSorts
+             $ makeCeilPredicate
+             $ extractPurePattern a5A
+         )
+         EmptyUnificationProof
     , testGroup "inj unification tests" injUnificationTests
     , andSimplifySuccess "Unmatching constants is bottom"
         (UnificationTerm aA)

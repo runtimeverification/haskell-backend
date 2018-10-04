@@ -16,8 +16,10 @@ import Data.Reflection
 
 import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..),
-       Pattern (ApplicationPattern), SymbolOrAlias (..), Variable )
+       Pattern (ApplicationPattern, StringLiteralPattern), SymbolOrAlias (..),
+       Variable, StringLiteral (..) )
 import Kore.AST.MetaOrObject
+import Kore.AST.PureML
 import Kore.AST.PureToKore
        ( patternKoreToPure )
 import Kore.ASTHelpers
@@ -40,7 +42,7 @@ import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
 import Kore.Step.StepperAttributes
 import Kore.Unification.Unifier
-       ( UnificationProof (..) )
+       ( UnificationProof (..), UnificationError (..)  )
 import Kore.Variables.Fresh
 
 import Test.Kore.Comparators ()
@@ -468,13 +470,13 @@ test_baseStep =
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, h(b)) with substitution b=a
-    -- TODO(Vladimir): This was broken by the normalization as substitution PR,
-    -- and should be fixed to be impossible (return Left or bottom).
-    , testCase "Impossible substitution (non-ctor)."
+    , testCase "Substitution (non-ctor)."
         (assertEqualWithExplanation ""
             (Right ExpandedPattern
                 { term = asPureMetaPattern (metaH (b1 PatternSort))
-                , predicate = makeTruePredicate
+                , predicate = give mockSymbolOrAliasSorts $ makeEqualsPredicate
+                    (asPureMetaPattern (b1 PatternSort))
+                    (asPureMetaPattern (metaH (b1 PatternSort)))
                 , substitution =
                     [   ( asMetaVariable (a1 PatternSort)
                         , asPureMetaPattern (metaH (b1 PatternSort))
@@ -498,6 +500,89 @@ test_baseStep =
                             , asPureMetaPattern (a1 PatternSort)
                             )
                         ]
+                    }
+                AxiomPattern
+                    { axiomPatternLeft =
+                        asPureMetaPattern
+                            (metaSigma
+                                (x1 PatternSort) (x1 PatternSort)
+                            )
+                    , axiomPatternRight =
+                        asPureMetaPattern
+                            (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
+                    , axiomPatternAttributes = def
+                    }
+            )
+        )
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(a, i(b)) with substitution b=a
+    , testCase "Substitution error (non-function)"
+        (assertEqualWithExplanation ""
+            (Left $ StepErrorUnification UnsupportedPatterns)
+            (fst <$> runStep
+                mockMetadataTools
+                ExpandedPattern
+                    { term =
+                        asPureMetaPattern
+                            (metaSigma
+                                (a1 PatternSort)
+                                (metaI (b1 PatternSort))
+                            )
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                AxiomPattern
+                    { axiomPatternLeft =
+                        asPureMetaPattern
+                            (metaSigma
+                                (x1 PatternSort) (x1 PatternSort)
+                            )
+                    , axiomPatternRight =
+                        asPureMetaPattern
+                            (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
+                    , axiomPatternAttributes = def
+                    }
+            )
+        )
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
+    , testCase "Unification is applied repeatedly"
+        (assertEqualWithExplanation ""
+            (Right ExpandedPattern
+                { term = asPureMetaPattern
+                    (metaSigma
+                        (metaSigma (c1 PatternSort) (c1 PatternSort))
+                        (metaSigma (c1 PatternSort) (c1 PatternSort))
+                    )
+                , predicate = makeTruePredicate
+                , substitution =
+                    [   ( asMetaVariable (a1 PatternSort)
+                        , asPureMetaPattern
+                            (metaSigma (c1 PatternSort) (c1 PatternSort))
+                        )
+                    ,   ( asMetaVariable (b1 PatternSort)
+                        , asPureMetaPattern (c1 PatternSort)
+                        )
+                    ]
+                }
+            )
+            (fst <$> runStep
+                mockMetadataTools
+                ExpandedPattern
+                    { term = asPureMetaPattern
+                        ( metaSigma
+                            ( metaSigma (a1 PatternSort) (a1 PatternSort))
+                            ( metaSigma
+                                (metaSigma (b1 PatternSort) (c1 PatternSort))
+                                (metaSigma (b1 PatternSort) (b1 PatternSort))
+                            )
+                        )
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -639,6 +724,34 @@ test_baseStep =
                         }
                 )
             )
+    -- "sl1" => x
+    -- vs
+    -- "sl2"
+    -- Expected: bottom
+    , testCase "Matching different string literals is bottom"
+        (assertEqualWithExplanation ""
+            (Right ExpandedPattern.bottom)
+            (fst <$> runStep
+                mockMetadataTools
+                ExpandedPattern
+                    { term = asPurePattern
+                        ( StringLiteralPattern (StringLiteral "sl2")
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                AxiomPattern
+                    { axiomPatternLeft = asPurePattern
+                        ( StringLiteralPattern (StringLiteral "sl1")
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
+                    , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
+                    , axiomPatternAttributes = def
+                    }
+            )
+        )
     -- x => x
     -- vs
     -- a and g(a)=f(a)
@@ -864,10 +977,10 @@ test_baseStep =
 mockStepperAttributes :: SymbolOrAlias Meta -> StepperAttributes
 mockStepperAttributes patternHead =
     StepperAttributes
-    { isConstructor   = patternHead /= hSymbol
-    , isFunctional    = True
-    , isFunction      = True
-    , isInjective     = patternHead /= hSymbol
+    { isConstructor   = patternHead /= hSymbol && patternHead /= iSymbol
+    , isFunctional    = patternHead /= iSymbol
+    , isFunction      = patternHead /= iSymbol
+    , isInjective     = patternHead /= hSymbol && patternHead /= iSymbol
     , isSortInjection = False
     , hook            = def
     }
@@ -984,6 +1097,26 @@ metaH
     :: (MetaPattern PatternSort p1)
     => p1 -> MetaH p1
 metaH = MetaH
+
+iSymbol :: SymbolOrAlias Meta
+iSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#i" AstLocationTest
+    , symbolOrAliasParams = []
+    }
+
+newtype MetaI p1 = MetaI p1
+instance (MetaPattern PatternSort p1)
+    => ProperPattern Meta PatternSort (MetaI p1)
+  where
+    asProperPattern (MetaI p1) =
+        ApplicationPattern Application
+            { applicationSymbolOrAlias = iSymbol
+            , applicationChildren = [asAst p1]
+            }
+metaI
+    :: (MetaPattern PatternSort p1)
+    => p1 -> MetaI p1
+metaI = MetaI
 
 runStep
     :: MetaOrObject level
