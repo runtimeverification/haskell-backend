@@ -24,6 +24,8 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern,
                  PredicateSubstitution (PredicateSubstitution),
                  Predicated (..) )
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Function.Data
@@ -205,8 +207,8 @@ makeExpandedApplication tools symbol children
         , _proof) <-
             mergePredicatesAndSubstitutions
                 tools
-                (map predicate children)
-                (map substitution children)
+                (map ExpandedPattern.predicate children)
+                (map ExpandedPattern.substitution children)
     return
         ( Predicated
             { term = Application

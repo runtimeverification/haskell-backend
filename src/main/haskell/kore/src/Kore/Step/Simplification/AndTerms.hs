@@ -345,7 +345,12 @@ addToolsArg
 addToolsArg = pure
 
 toExpanded
-    :: (MetaOrObject level, SortedVariable variable, Show (variable level), Eq (variable level))
+    :: 
+    ( MetaOrObject level
+    , SortedVariable variable
+    , Show (variable level)
+    , Eq (variable level)
+    )
     =>   (  MetadataTools level StepperAttributes
         -> PureMLPattern level variable
         -> PureMLPattern level variable

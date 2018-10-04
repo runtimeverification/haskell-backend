@@ -46,7 +46,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated(..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom )
+                 ( Predicated(..), bottom )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -306,7 +306,7 @@ andSimplifySuccess message term1 term2 resultTerm subst predicate proof =
 
     subst'' = subst'
         { substitution =
-            sortBy (compare `on` fst) (substitution subst')
+            sortBy (compare `on` fst) (ExpandedPattern.substitution subst')
         }
 
 
