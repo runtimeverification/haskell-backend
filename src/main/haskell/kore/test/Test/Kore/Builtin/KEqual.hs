@@ -108,7 +108,7 @@ evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
     let
         tools = extractMetadataTools indexedModule
-        (ExpandedPattern { term }, _) =
+        (Predicated { term }, _) =
             evalSimplifier (Pattern.simplify tools evaluators pat)
     in term
 

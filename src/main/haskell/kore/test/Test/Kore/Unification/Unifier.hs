@@ -44,9 +44,9 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
                  ( makeEqualsPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( ExpandedPattern, Predicated(..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom )
+                 ( bottom )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -269,7 +269,7 @@ unificationResult
     -> Predicate Object Variable
     -> ExpandedPattern Object Variable
 unificationResult (UnificationResultTerm pat) sub predicate =
-    ExpandedPattern.ExpandedPattern
+    Predicated
         { term = extractPurePattern pat
         , predicate = predicate
         , substitution = unificationSubstitution sub
@@ -306,7 +306,7 @@ andSimplifySuccess message term1 term2 resultTerm subst predicate proof =
 
     subst'' = subst'
         { substitution =
-            sortBy (compare `on` fst) (ExpandedPattern.substitution subst')
+            sortBy (compare `on` fst) (substitution subst')
         }
 
 
@@ -691,7 +691,7 @@ simplifyPattern :: UnificationTerm Object -> UnificationTerm Object
 simplifyPattern (UnificationTerm pStub) =
     let pat =
             project
-            $ ExpandedPattern.term
+            $ term
             $ evalSimplifier
             $ do
                 simplifiedPatterns <-
@@ -708,7 +708,7 @@ simplifyPattern (UnificationTerm pStub) =
     in UnificationTerm (SortedPatternStub (SortedPattern pat resultSort))
   where
     functionRegistry = Map.empty
-    expandedPattern = ExpandedPattern
+    expandedPattern = Predicated
         { term = extractPurePattern pStub
         , predicate = makeTruePredicate
         , substitution = []

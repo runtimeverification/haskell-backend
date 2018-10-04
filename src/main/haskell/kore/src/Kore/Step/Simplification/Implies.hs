@@ -26,9 +26,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeImpliesPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern), substitutionToPredicate )
+                 ( ExpandedPattern, Predicated (..), substitutionToPredicate )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), isBottom, isTop, toMLPattern, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -162,19 +161,19 @@ makeEvaluateImpliesNonBool
     -> ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateImpliesNonBool
-    ExpandedPattern
+    Predicated
         { term = t@(Top_ _)
         , predicate = firstPredicate
         , substitution = firstSubstitution
         }
-    ExpandedPattern
+    Predicated
         { term = Top_ _
         , predicate = secondPredicate
         , substitution = secondSubstitution
         }
   =
     ( OrOfExpandedPattern.make
-        [ ExpandedPattern
+        [ Predicated
             { term = t
             , predicate =
                 -- TODO: Remove fst
@@ -195,7 +194,7 @@ makeEvaluateImpliesNonBool
     )
 makeEvaluateImpliesNonBool patt1 patt2 =
     ( OrOfExpandedPattern.make
-        [ ExpandedPattern
+        [ Predicated
             { term = mkImplies
                 (ExpandedPattern.toMLPattern patt1)
                 (ExpandedPattern.toMLPattern patt2)

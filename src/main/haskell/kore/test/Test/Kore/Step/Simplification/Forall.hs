@@ -21,9 +21,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
+                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, top )
+                 ( bottom, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -43,12 +43,12 @@ test_forallSimplification = give mockSymbolOrAliasSorts
         -- forall(a or b) = forall(a) or forall(b)
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkForall Mock.x something1OfX
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
-                , ExpandedPattern
+                , Predicated
                     { term = mkForall Mock.x something2OfX
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -107,7 +107,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
     , testCase "forall applies substitution if possible"
         -- forall x . (t(x) and p(x) and [x = alpha, others])
         (assertEqualWithExplanation "forall with substitution"
-            ExpandedPattern
+            Predicated
                 { term =
                     mkForall Mock.x
                         (mkAnd
@@ -125,7 +125,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
                 }
             (makeEvaluate
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = mkApp Mock.fSymbol [mkVar Mock.x]
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution = [(Mock.x, gOfA), (Mock.y, fOfA)]
@@ -135,7 +135,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
     , testCase "forall disappears if variable not used"
         -- forall x . (t and p and s)
         (assertEqualWithExplanation "forall with substitution"
-            ExpandedPattern
+            Predicated
                 { term =
                     mkForall Mock.x (mkAnd fOfA (mkCeil gOfA))
                 , predicate = makeTruePredicate
@@ -143,7 +143,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
                 }
             (makeEvaluate
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
                     , substitution = []
@@ -153,14 +153,14 @@ test_forallSimplification = give mockSymbolOrAliasSorts
     , testCase "forall applied on term if not used elsewhere"
         -- forall x . (t(x) and p and s)
         (assertEqualWithExplanation "forall on term"
-            ExpandedPattern
+            Predicated
                 { term = mkForall Mock.x (mkAnd fOfX (mkCeil gOfA))
                 , predicate = makeTruePredicate
                 , substitution = []
                 }
             (makeEvaluate
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
                     , substitution = []
@@ -172,14 +172,14 @@ test_forallSimplification = give mockSymbolOrAliasSorts
         --    = t and (forall x . p(x)) and s
         --    if t, s do not depend on x.
         (assertEqualWithExplanation "forall on predicate"
-            ExpandedPattern
+            Predicated
                 { term = mkForall Mock.x (mkAnd fOfA (mkCeil fOfX))
                 , predicate = makeTruePredicate
                 , substitution = []
                 }
             (makeEvaluate
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution = []
@@ -189,7 +189,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
     , testCase "forall moves substitution above"
         -- forall x . (t(x) and p(x) and s)
         (assertEqualWithExplanation "forall moves substitution"
-            ExpandedPattern
+            Predicated
                 { term =
                     mkForall Mock.x
                         (mkAnd
@@ -201,7 +201,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
                 }
             (makeEvaluate
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution = [(Mock.y, hOfA)]
@@ -233,12 +233,12 @@ test_forallSimplification = give mockSymbolOrAliasSorts
     hOfA = give mockSymbolOrAliasSorts $ Mock.h Mock.a
     something1OfX = give mockSymbolOrAliasSorts $ Mock.plain10 (mkVar Mock.x)
     something2OfX = give mockSymbolOrAliasSorts $ Mock.plain11 (mkVar Mock.x)
-    something1OfXExpanded = ExpandedPattern
+    something1OfXExpanded = Predicated
         { term = something1OfX
         , predicate = makeTruePredicate
         , substitution = []
         }
-    something2OfXExpanded = ExpandedPattern
+    something2OfXExpanded = Predicated
         { term = something2OfX
         , predicate = makeTruePredicate
         , substitution = []

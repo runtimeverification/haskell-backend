@@ -31,7 +31,7 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (..) )
+                 ( CommonExpandedPattern, ExpandedPattern, Predicated(..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -78,7 +78,7 @@ rewriteImplies =
 expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta)]
 expectTwoAxioms =
     [
-        ( ExpandedPattern
+        ( Predicated
             { term = asPureMetaPattern (v1 PatternSort)
             , predicate = makeTruePredicate
             , substitution = []
@@ -90,7 +90,7 @@ expectTwoAxioms =
             ]
         )
     ,
-        ( ExpandedPattern
+        ( Predicated
             { term =
                 asPureMetaPattern
                     (metaImplies PatternSort
@@ -112,7 +112,7 @@ actualTwoAxioms :: [(CommonExpandedPattern Meta, StepProof Meta)]
 actualTwoAxioms =
     runStep
         mockMetadataTools
-        ExpandedPattern
+        Predicated
             { term = asPureMetaPattern (v1 PatternSort)
             , predicate = makeTruePredicate
             , substitution = []
@@ -123,7 +123,7 @@ actualTwoAxioms =
 
 initialFailSimple :: ExpandedPattern Meta Variable
 initialFailSimple =
-    ExpandedPattern
+    Predicated
         { term =
             asPureMetaPattern
                 ( metaSigma
@@ -155,7 +155,7 @@ actualFailSimple =
 
 initialFailCycle :: ExpandedPattern Meta Variable
 initialFailCycle =
-    ExpandedPattern
+    Predicated
         { term =
             asPureMetaPattern
                 ( metaSigma
@@ -190,7 +190,7 @@ actualFailCycle =
 
 initialIdentity :: ExpandedPattern Meta Variable
 initialIdentity =
-    ExpandedPattern
+    Predicated
         { term = asPureMetaPattern (v1 PatternSort)
         , predicate = makeTruePredicate
         , substitution = []
@@ -290,7 +290,7 @@ axiomsSimpleStrategy =
 
 expectOneStep :: (ExpandedPattern Meta Variable, StepProof Meta)
 expectOneStep =
-    ( ExpandedPattern
+    ( Predicated
         { term = asPureMetaPattern (metaG (v1 PatternSort))
         , predicate = makeTruePredicate
         , substitution = []
@@ -309,7 +309,7 @@ actualOneStep =
     runSteps
         mockMetadataTools
         Unlimited
-        ExpandedPattern
+        Predicated
             { term = asPureMetaPattern (metaF (v1 PatternSort))
             , predicate = makeTruePredicate
             , substitution = []
@@ -326,7 +326,7 @@ actualOneStep =
 
 expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Meta)
 expectTwoSteps =
-    ( ExpandedPattern
+    ( Predicated
         { term = asPureMetaPattern (metaH (v1 PatternSort))
         , predicate = makeTruePredicate
         , substitution = []
@@ -346,7 +346,7 @@ actualTwoSteps =
     runSteps
         mockMetadataTools
         Unlimited
-        ExpandedPattern
+        Predicated
             { term = asPureMetaPattern (metaF (v1 PatternSort))
             , predicate = makeTruePredicate
             , substitution = []
@@ -356,7 +356,7 @@ actualTwoSteps =
 
 expectZeroStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta)
 expectZeroStepLimit =
-        ( ExpandedPattern
+        ( Predicated
             { term = asPureMetaPattern (metaF (v1 PatternSort))
             , predicate = makeTruePredicate
             , substitution = []
@@ -369,7 +369,7 @@ actualZeroStepLimit =
     runSteps
         mockMetadataTools
         (Limit 0)
-        ExpandedPattern
+        Predicated
             { term = asPureMetaPattern (metaF (v1 PatternSort))
             , predicate = makeTruePredicate
             , substitution = []
@@ -378,7 +378,7 @@ actualZeroStepLimit =
 
 expectStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta)
 expectStepLimit =
-    ( ExpandedPattern
+    ( Predicated
         { term = asPureMetaPattern (metaG (v1 PatternSort))
         , predicate = makeTruePredicate
         , substitution = []
@@ -395,7 +395,7 @@ actualStepLimit =
     runSteps
         mockMetadataTools
         (Limit 1)
-        ExpandedPattern
+        Predicated
             { term = asPureMetaPattern (metaF (v1 PatternSort))
             , predicate = makeTruePredicate
             , substitution = []

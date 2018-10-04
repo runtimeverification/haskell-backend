@@ -23,9 +23,9 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
+                 ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, top )
+                 ( bottom, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -117,7 +117,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
     , testCase "And with normal patterns"
         (do
             assertEqualWithExplanation "And random terms"
-                ExpandedPattern
+                Predicated
                     { term = mkAnd plain0OfX plain1OfX
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -126,7 +126,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     plain0OfXExpanded plain1OfXExpanded
                 )
             assertEqualWithExplanation "And function terms"
-                ExpandedPattern
+                Predicated
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfX
                     , substitution = []
@@ -135,7 +135,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     fOfXExpanded gOfXExpanded
                 )
             assertEqualWithExplanation "And predicates"
-                ExpandedPattern
+                Predicated
                     { term = mkTop
                     , predicate =
                         fst $ makeAndPredicate
@@ -144,30 +144,30 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     , substitution = []
                     }
                 (evaluatePatterns
-                    ExpandedPattern
+                    Predicated
                         { term = mkTop
                         , predicate = makeCeilPredicate fOfX
                         , substitution = []
                         }
-                    ExpandedPattern
+                    Predicated
                         { term = mkTop
                         , predicate = makeCeilPredicate gOfX
                         , substitution = []
                         }
                 )
             assertEqualWithExplanation "And substitutions - simple"
-                ExpandedPattern
+                Predicated
                     { term = mkTop
                     , predicate = makeTruePredicate
                     , substitution = [(Mock.y, fOfX), (Mock.z, gOfX)]
                     }
                 (evaluatePatterns
-                    ExpandedPattern
+                    Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
                         , substitution = [(Mock.y, fOfX)]
                         }
-                    ExpandedPattern
+                    Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
                         , substitution = [(Mock.z, gOfX)]
@@ -200,13 +200,13 @@ test_andSimplification = give mockSymbolOrAliasSorts
                 )
             -}
             assertEqualWithExplanation "And substitutions - failure"
-                ExpandedPattern
+                Predicated
                     { term = mkTop
                     , predicate = makeFalsePredicate
                     , substitution = []
                     }
                 (evaluatePatterns
-                    ExpandedPattern
+                    Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
                         , substitution =
@@ -215,7 +215,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                                 )
                             ]
                         }
-                    ExpandedPattern
+                    Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
                         , substitution =
@@ -262,7 +262,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
     , testCase "Variable-function and"
         (do
             assertEqualWithExplanation "variable-term"
-                ExpandedPattern
+                Predicated
                     { term = fOfX
                     , predicate = makeTruePredicate
                     , substitution = [(Mock.y, fOfX)]
@@ -271,7 +271,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     yExpanded fOfXExpanded
                 )
             assertEqualWithExplanation "term-variable"
-                ExpandedPattern
+                Predicated
                     { term = fOfX
                     , predicate = makeTruePredicate
                     , substitution = [(Mock.y, fOfX)]
@@ -283,18 +283,18 @@ test_andSimplification = give mockSymbolOrAliasSorts
     , testCase "constructor and"
         (do
             assertEqualWithExplanation "same constructors"
-                ExpandedPattern
+                Predicated
                     { term = Mock.constr10 fOfX
                     , predicate = makeEqualsPredicate fOfX gOfX
                     , substitution = []
                     }
                 (evaluatePatterns
-                    ExpandedPattern
+                    Predicated
                         { term = Mock.constr10 fOfX
                         , predicate = makeTruePredicate
                         , substitution = []
                         }
-                    ExpandedPattern
+                    Predicated
                         { term = Mock.constr10 gOfX
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -303,12 +303,12 @@ test_andSimplification = give mockSymbolOrAliasSorts
             assertEqualWithExplanation "different constructors"
                 ExpandedPattern.bottom
                 (evaluatePatterns
-                    ExpandedPattern
+                    Predicated
                         { term = Mock.constr10 fOfX
                         , predicate = makeTruePredicate
                         , substitution = []
                         }
-                    ExpandedPattern
+                    Predicated
                         { term = Mock.constr11 gOfX
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -319,22 +319,22 @@ test_andSimplification = give mockSymbolOrAliasSorts
     , testCase "And-Or distribution"
         (assertEqualWithExplanation "Distributes or"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfX
                     , substitution = []
                     }
-                , ExpandedPattern
+                , Predicated
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfX
                     , substitution = []
                     }
-                , ExpandedPattern
+                , Predicated
                     { term = gOfX
                     , predicate = makeCeilPredicate fOfX
                     , substitution = []
                     }
-                , ExpandedPattern
+                , Predicated
                     { term = mkTop
                     , predicate =
                         fst $ makeAndPredicate
@@ -347,14 +347,14 @@ test_andSimplification = give mockSymbolOrAliasSorts
             (evaluate
                 (makeAnd
                     [ fOfXExpanded
-                    , ExpandedPattern
+                    , Predicated
                         { term = mkTop
                         , predicate = makeCeilPredicate fOfX
                         , substitution = []
                         }
                     ]
                     [ gOfXExpanded
-                    , ExpandedPattern
+                    , Predicated
                         { term = mkTop
                         , predicate = makeCeilPredicate gOfX
                         , substitution = []
@@ -365,41 +365,41 @@ test_andSimplification = give mockSymbolOrAliasSorts
         )
     ]
   where
-    yExpanded = ExpandedPattern
+    yExpanded = Predicated
         { term = give mockSymbolOrAliasSorts $ mkVar Mock.y
         , predicate = makeTruePredicate
         , substitution = []
         }
     fOfX = give mockSymbolOrAliasSorts $ Mock.f (mkVar Mock.x)
-    fOfXExpanded = ExpandedPattern
+    fOfXExpanded = Predicated
         { term = fOfX
         , predicate = makeTruePredicate
         , substitution = []
         }
     gOfX = give mockSymbolOrAliasSorts $ Mock.g (mkVar Mock.x)
-    gOfXExpanded = ExpandedPattern
+    gOfXExpanded = Predicated
         { term = gOfX
         , predicate = makeTruePredicate
         , substitution = []
         }
     plain0OfX = give mockSymbolOrAliasSorts $ Mock.plain10 (mkVar Mock.x)
-    plain0OfXExpanded = ExpandedPattern
+    plain0OfXExpanded = Predicated
         { term = plain0OfX
         , predicate = makeTruePredicate
         , substitution = []
         }
     plain1OfX = give mockSymbolOrAliasSorts $ Mock.plain11 (mkVar Mock.x)
-    plain1OfXExpanded = ExpandedPattern
+    plain1OfXExpanded = Predicated
         { term = plain1OfX
         , predicate = makeTruePredicate
         , substitution = []
         }
-    bottomTerm = ExpandedPattern
+    bottomTerm = Predicated
         { term = mkBottom
         , predicate = makeTruePredicate
         , substitution = []
         }
-    falsePredicate = ExpandedPattern
+    falsePredicate = Predicated
         { term = mkTop
         , predicate = makeFalsePredicate
         , substitution = []
@@ -419,7 +419,7 @@ makeAnd first second =
 findSort :: [CommonExpandedPattern Object] -> Sort Object
 findSort [] = testSort
 findSort
-    ( ExpandedPattern {term} : _ )
+    ( Predicated {term} : _ )
   =
     give mockSymbolOrAliasSorts $ getSort term
 

@@ -11,16 +11,16 @@ module Kore.Step.Simplification.ExpandedPattern
     ( simplify
     ) where
 
+import           Data.Reflection
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern),
-                 PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( ExpandedPattern,
+                 PredicateSubstitution (PredicateSubstitution),
+                 Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
@@ -37,7 +37,6 @@ import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
-import           Data.Reflection
 
 {-| Simplifies an 'ExpandedPattern', returning an 'OrOfExpandedPattern'.
 -}
@@ -64,7 +63,7 @@ simplify
 simplify
     tools
     wrappedSimplifier@(PureMLPatternSimplifier simplifier)
-    ExpandedPattern {term, predicate, substitution}
+    Predicated {term, predicate, substitution}
   = do
     (simplifiedTerm, _)
         <- simplifier term

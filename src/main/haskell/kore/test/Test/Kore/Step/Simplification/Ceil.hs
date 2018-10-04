@@ -23,9 +23,9 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
+                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, top )
+                 ( bottom, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -47,12 +47,12 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate = makeCeilPredicate somethingOfA
                     , substitution = []
                     }
-                , ExpandedPattern
+                , Predicated
                     { term = mkTop
                     , predicate = makeCeilPredicate somethingOfB
                     , substitution = []
@@ -113,7 +113,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         --     = top and (ceil(term) and predicate) and subst
         (assertEqualWithExplanation "ceil(something(a) and equals(f(a), g(a)))"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate =
                         fst $ makeAndPredicate
@@ -124,7 +124,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 ]
             )
             (makeEvaluate mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = somethingOfA
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = [(Mock.x, fOfB)]
@@ -141,7 +141,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             (assertEqualWithExplanation
                 "ceil(constr(something(a), something(b)) and eq(f(a), g(a)))"
                 (OrOfExpandedPattern.make
-                    [ ExpandedPattern
+                    [ Predicated
                         { term = mkTop
                         , predicate =
                             fst $ makeAndPredicate
@@ -155,7 +155,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                     ]
                 )
                 (makeEvaluate mockMetadataTools
-                    ExpandedPattern
+                    Predicated
                         { term = constructorTerm
                         , predicate = makeEqualsPredicate fOfA gOfA
                         , substitution = [(Mock.x, fOfB)]
@@ -166,7 +166,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make [ExpandedPattern.top])
             (makeEvaluate mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = Mock.constr10 Mock.a
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -180,7 +180,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation
             "ceil(functional(something(a), something(b)) and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate =
                         fst $ makeAndPredicate
@@ -194,7 +194,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 ]
             )
             (makeEvaluate mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = Mock.functional20 somethingOfA somethingOfB
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = [(Mock.x, fOfB)]
@@ -208,7 +208,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation
             "ceil(f(a)) and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate =
                         fst $ makeAndPredicate
@@ -219,7 +219,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 ]
             )
             (makeEvaluate mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = [(Mock.x, fOfB)]
@@ -233,7 +233,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation
             "ceil(f(a)) and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate =
                         fst $ makeAndPredicate
@@ -244,7 +244,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 ]
             )
             (makeEvaluate mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = [(Mock.x, fOfB)]
@@ -258,7 +258,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation
             "ceil(functional and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = [(Mock.x, fOfB)]
@@ -266,7 +266,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 ]
             )
             (makeEvaluate mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = Mock.a
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = [(Mock.x, fOfB)]
@@ -282,7 +282,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate =
                         fst $ makeAndPredicate
@@ -296,7 +296,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 ]
             )
             (makeEvaluate mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = Mock.functional20 fOfA fOfB
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = [(Mock.x, fOfB)]
@@ -310,12 +310,12 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
     gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
     somethingOfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
     somethingOfB = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.b
-    somethingOfAExpanded = ExpandedPattern
+    somethingOfAExpanded = Predicated
         { term = somethingOfA
         , predicate = makeTruePredicate
         , substitution = []
         }
-    somethingOfBExpanded = ExpandedPattern
+    somethingOfBExpanded = Predicated
         { term = somethingOfB
         , predicate = makeTruePredicate
         , substitution = []

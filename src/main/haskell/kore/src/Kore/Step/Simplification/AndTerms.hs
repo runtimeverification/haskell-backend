@@ -34,19 +34,17 @@ import           Kore.ASTUtils.SmartPatterns
                  pattern DV_, pattern StringLiteral_, pattern Top_,
                  pattern Var_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern),
-                 PredicateSubstitution (PredicateSubstitution) )
+                 ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, fromPurePattern, isBottom )
+                 ( Predicated (..), bottom, fromPurePattern, isBottom )
 import           Kore.Step.PatternAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -95,7 +93,7 @@ termEquals tools first second =
     termEquals0 = do  -- Result monad
         result <- termEqualsAnd tools first second
         return $ do  -- Counter monad
-            (ExpandedPattern {predicate, substitution}, _pred) <- result
+            (Predicated {predicate, substitution}, _pred) <- result
             return
                 ( PredicateSubstitution
                     {predicate = predicate, substitution = substitution}
@@ -142,7 +140,7 @@ termEqualsAndChild tools first second =
     fromResult
         (give (MetadataTools.symbolOrAliasSorts tools) $
             return
-                ( ExpandedPattern
+                ( Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate first second
                     , substitution = []
@@ -347,8 +345,8 @@ addToolsArg
 addToolsArg = pure
 
 toExpanded
-    :: MetaOrObject level
-    =>  (  MetadataTools level StepperAttributes
+    :: (MetaOrObject level, SortedVariable variable, Show (variable level), Eq (variable level))
+    =>   (  MetadataTools level StepperAttributes
         -> PureMLPattern level variable
         -> PureMLPattern level variable
         -> Result (PureMLPattern level variable, SimplificationProof level)
@@ -364,7 +362,7 @@ toExpanded transformer tools first second =
     toExpanded0 (Bottom_ _, _proof) =
         (ExpandedPattern.bottom, SimplificationProof)
     toExpanded0 (term, _proof) =
-        ( ExpandedPattern
+        ( Predicated
             { term = term
             , predicate = makeTruePredicate
             , substitution = []
@@ -454,7 +452,7 @@ bottomTermEquals
         return (ExpandedPattern.bottom, SimplificationProof)
     (predicate, _proof) ->
         return
-            ( ExpandedPattern
+            ( Predicated
                 { term = mkTop
                 , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
                     case makeNotPredicate predicate of
@@ -502,7 +500,7 @@ variableFunctionAndEquals
     first@(Var_ v1)
     second@(Var_ v2)
   = return
-        ( ExpandedPattern
+        ( Predicated
             { term = if v2 > v1 then second else first
             , predicate = makeTruePredicate
             , substitution =
@@ -523,7 +521,7 @@ variableFunctionAndEquals
     Right _proof ->
         -- assumes functional implies function.
         return
-            ( ExpandedPattern
+            ( Predicated
                 { term = second  -- different for Equals
                 , predicate =
                     case simplificationType of
@@ -609,9 +607,9 @@ equalInjectiveHeadsAndEquals
                 (map (ExpandedPattern.predicate . fst) children)
                 (map (ExpandedPattern.substitution . fst) children)
         return
-            ( ExpandedPattern
+            ( Predicated
                 { term = give (MetadataTools.symbolOrAliasSorts tools) $
-                    mkApp firstHead (map (ExpandedPattern.term . fst) children)
+                    mkApp firstHead (map (term . fst) children)
                 , predicate = mergedPredicate
                 , substitution = mergedSubstitution
                 }
@@ -630,7 +628,7 @@ to be different.
 Returns NotHandled if it could not handle the input.
 -}
 sortInjectionAndEqualsAssumesDifferentHeads
-    ::  forall level variable m.
+    ::  forall level variable m .
         ( Eq (variable Object)
         , MetaOrObject level
         , MonadCounter m
@@ -700,17 +698,11 @@ sortInjectionAndEqualsAssumesDifferentHeads
     termSortInjection
         originSort
         destinationSort
-        patt@ExpandedPattern
-            {term, predicate, substitution}
+        patt
       =
         if ExpandedPattern.isBottom patt
         then (ExpandedPattern.bottom, SimplificationProof)
-        else
-            ( ExpandedPattern
-                { term = sortInjection originSort destinationSort term
-                , predicate = predicate
-                , substitution = substitution
-                }
+        else ( sortInjection originSort destinationSort <$> patt
             , SimplificationProof
             )
     sortInjection
@@ -906,7 +898,7 @@ functionAnd
             Left _ -> empty
             Right _proof ->
                 return
-                    ( ExpandedPattern
+                    ( Predicated
                         { term = first  -- different for Equals
                         -- Ceil predicate not needed since first being
                         -- bottom will make the entire term bottom. However,

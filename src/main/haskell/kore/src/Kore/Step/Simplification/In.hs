@@ -26,9 +26,8 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeInPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), isBottom, isTop, toMLPattern )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -134,7 +133,7 @@ makeEvaluateNonBoolIn
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolIn tools patt1 patt2 =
     ( OrOfExpandedPattern.make
-        [ ExpandedPattern
+        [ Predicated
             { term = mkTop
             , predicate = give symbolOrAliasSorts $ makeInPredicate
                 -- TODO: Wrap in 'contained' and 'container'.

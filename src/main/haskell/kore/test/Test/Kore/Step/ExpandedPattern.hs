@@ -26,7 +26,7 @@ import Kore.Predicate.Predicate
        ( Predicate, makeEqualsPredicate, makeFalsePredicate,
        makeTruePredicate )
 import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( ExpandedPattern (..), allVariables, mapVariables, toMLPattern )
+       ( Predicated(..), allVariables, mapVariables, toMLPattern )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -35,13 +35,13 @@ test_expandedPattern :: [TestTree]
 test_expandedPattern =
     [ testCase "Mapping variables"
         (assertEqualWithExplanation ""
-            ExpandedPattern
+            Predicated
                 { term = war "1"
                 , predicate = makeEquals (war "2") (war "3")
                 , substitution = [(W "4", war "5")]
                 }
             (ExpandedPattern.mapVariables showVar
-                ExpandedPattern
+                Predicated
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = [(V 4, var 5)]
@@ -53,7 +53,7 @@ test_expandedPattern =
             [V 1, V 2, V 3, V 4, V 5]
             (Set.toList
                 (ExpandedPattern.allVariables
-                    ExpandedPattern
+                    Predicated
                         { term = var 1
                         , predicate = makeEquals (var 2) (var 3)
                         , substitution = [(V 4, var 5)]
@@ -71,7 +71,7 @@ test_expandedPattern =
                 (makeEq (var 4) (var 5))
             )
             (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
-                ExpandedPattern
+                Predicated
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = [(V 4, var 5)]
@@ -85,7 +85,7 @@ test_expandedPattern =
                 (makeEq (var 4) (var 5))
             )
             (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
-                ExpandedPattern
+                Predicated
                     { term = mkTop
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = [(V 4, var 5)]
@@ -96,7 +96,7 @@ test_expandedPattern =
         (assertEqualWithExplanation ""
             (var 1)
             (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
-                ExpandedPattern
+                Predicated
                     { term = var 1
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -107,7 +107,7 @@ test_expandedPattern =
         (assertEqualWithExplanation ""
             mkBottom
             (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
-                ExpandedPattern
+                Predicated
                     { term = mkBottom
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = [(V 4, var 5)]
@@ -118,7 +118,7 @@ test_expandedPattern =
         (assertEqualWithExplanation ""
             mkBottom
             (give mockSymbolOrAliasSorts $ ExpandedPattern.toMLPattern
-                ExpandedPattern
+                Predicated
                     { term = var 1
                     , predicate = makeFalsePredicate
                     , substitution = []

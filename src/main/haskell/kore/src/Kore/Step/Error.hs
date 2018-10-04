@@ -6,7 +6,8 @@ module Kore.Step.Error
     , unificationOrSubstitutionToStepError
     ) where
 
-import Data.Bifunctor ( first )
+import           Data.Bifunctor
+                 ( first )
 import qualified Data.Set as Set
 
 import Kore.Unification.Error

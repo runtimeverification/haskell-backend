@@ -19,9 +19,7 @@ import           Kore.AST.PureML
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( Predicated (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -39,7 +37,7 @@ simplify
        )
 simplify str =
     ( OrOfExpandedPattern.make
-        [ExpandedPattern
+        [Predicated
             { term = asPurePattern (CharLiteralPattern str)
             , predicate = makeTruePredicate
             , substitution = []

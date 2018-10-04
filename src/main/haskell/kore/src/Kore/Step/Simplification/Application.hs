@@ -20,13 +20,10 @@ import           Kore.AST.PureML
                  ( PureMLPattern )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Predicate.Predicate
-                 ( Predicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern,
-                 PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 PredicateSubstitution (PredicateSubstitution),
+                 Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Function.Data
@@ -46,16 +43,17 @@ import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
                  ( Hashable )
-import           Kore.Unification.Unifier
-                 ( UnificationSubstitution )
 import           Kore.Variables.Fresh
 
-data ExpandedApplication level variable = ExpandedApplication
-    { term         :: !(Application level (PureMLPattern level variable))
-    , predicate    :: !(Predicate level variable)
-    , substitution :: !(UnificationSubstitution level variable)
-    }
-    deriving (Eq, Show)
+-- data ExpandedApplication level variable = ExpandedApplication
+--     { term         :: !(Application level (PureMLPattern level variable))
+--     , predicate    :: !(Predicate level variable)
+--     , substitution :: !(UnificationSubstitution level variable)
+--     }
+--     deriving (Eq, Show)
+
+type ExpandedApplication level variable =
+    Predicated level variable (Application level (PureMLPattern level variable))
 
 {-|'simplify' simplifies an 'Application' of 'OrOfExpandedPattern'.
 
@@ -169,7 +167,7 @@ evaluateApplicationFunction
     tools
     simplifier
     symbolIdToEvaluator
-    ExpandedApplication
+    Predicated
         { term, predicate, substitution }
   =
     evaluateApplication
@@ -207,13 +205,13 @@ makeExpandedApplication tools symbol children
         , _proof) <-
             mergePredicatesAndSubstitutions
                 tools
-                (map ExpandedPattern.predicate children)
-                (map ExpandedPattern.substitution children)
+                (map predicate children)
+                (map substitution children)
     return
-        ( ExpandedApplication
+        ( Predicated
             { term = Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = map ExpandedPattern.term children
+                , applicationChildren = map term children
                 }
             , predicate = mergedPredicate
             , substitution = mergedSubstitution

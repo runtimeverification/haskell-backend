@@ -40,9 +40,9 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution (..) )
+                 ( ExpandedPattern, PredicateSubstitution(..))
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, top )
+                 ( Predicated (..), bottom, top, )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), top )
 import           Kore.Step.StepperAttributes
@@ -148,7 +148,7 @@ simplifyAnds tools patterns = do
           , ExpandedPattern.substitution intermediate
           ]
 
-        return $ ExpandedPattern.ExpandedPattern
+        return $ ExpandedPattern.Predicated
             ( ExpandedPattern.term result )
             ( PredicateSubstitution.predicate predSubst )
             ( PredicateSubstitution.substitution predSubst )
