@@ -213,7 +213,7 @@ makeExpandedApplication tools symbol children
         ( Predicated
             { term = Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = map term children
+                , applicationChildren = map ExpandedPattern.term children
                 }
             , predicate = mergedPredicate
             , substitution = mergedSubstitution

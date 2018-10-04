@@ -614,7 +614,7 @@ equalInjectiveHeadsAndEquals
         return
             ( Predicated
                 { term = give (MetadataTools.symbolOrAliasSorts tools) $
-                    mkApp firstHead (map (term . fst) children)
+                    mkApp firstHead (map (ExpandedPattern.term . fst) children)
                 , predicate = mergedPredicate
                 , substitution = mergedSubstitution
                 }

@@ -691,7 +691,7 @@ simplifyPattern :: UnificationTerm Object -> UnificationTerm Object
 simplifyPattern (UnificationTerm pStub) =
     let pat =
             project
-            $ term
+            $ ExpandedPattern.term
             $ evalSimplifier
             $ do
                 simplifiedPatterns <-
