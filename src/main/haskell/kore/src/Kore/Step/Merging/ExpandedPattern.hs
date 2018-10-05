@@ -59,7 +59,7 @@ mergeWithPredicateSubstitution
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level
+    -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
     -- ^ Condition and substitution to add.
@@ -108,7 +108,7 @@ mergeWithEvaluatedCondition
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level
+    -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> ExpandedPattern level variable
     -> PredicateSubstitution level variable

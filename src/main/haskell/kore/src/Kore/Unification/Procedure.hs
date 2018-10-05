@@ -76,7 +76,7 @@ unificationProcedure
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> MonadPredicateSimplifier level m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -- ^left-hand-side of unification
     -> PureMLPattern level variable

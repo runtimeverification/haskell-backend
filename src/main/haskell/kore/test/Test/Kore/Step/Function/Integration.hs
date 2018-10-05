@@ -257,7 +257,7 @@ appliedMockEvaluator result =
 mockEvaluator
     :: CommonAttemptedFunction level
     -> MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier level
+    -> CommonPureMLPatternSimplifier level variable
     -> Application level (CommonPurePattern level)
     -> Simplifier
         (CommonAttemptedFunction level, SimplificationProof level)

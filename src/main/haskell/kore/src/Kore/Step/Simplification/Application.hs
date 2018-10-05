@@ -38,8 +38,8 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 ( GenericPureMLPatternSimplifier, PureMLPatternSimplifier,
+                 SimplificationProof (..), SimplificationVariable, Simplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( monadSimplifier )
 import           Kore.Step.StepperAttributes
@@ -71,16 +71,10 @@ then merging everything into an ExpandedPattern.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , SimplificationVariable level variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level
+    -> GenericPureMLPatternSimplifier level
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
@@ -116,16 +110,10 @@ simplify
 
 makeAndEvaluateApplications
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , SimplificationVariable level variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level
+    -> GenericPureMLPatternSimplifier level
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
@@ -150,16 +138,10 @@ makeAndEvaluateApplications
 
 evaluateApplicationFunction
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , FreshVariable variable
-        , Hashable variable
+        , SimplificationVariable level variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level
+    -> GenericPureMLPatternSimplifier level
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
@@ -196,7 +178,7 @@ makeExpandedApplication
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level
+    -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]

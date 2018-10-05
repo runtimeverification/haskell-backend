@@ -35,7 +35,7 @@ termAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
@@ -52,7 +52,7 @@ termUnification
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level m
+    -> MonadPredicateSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe

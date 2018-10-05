@@ -43,7 +43,7 @@ evaluate
         , Eq (variable level)
         , Show (variable level)
         )
-    => PureMLPatternSimplifier level
+    => PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> Predicate level variable
     -- ^ The condition to be evaluated.

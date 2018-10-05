@@ -11,11 +11,14 @@ module Kore.Step.Simplification.Data
     ( Simplifier
     , runSimplifier
     , evalSimplifier
+    , GenericPureMLPatternSimplifier
     , MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier)
     , PureMLPatternSimplifier
     , SimplificationProof (..)
+    , GenericPredicateSimplifier
     , MonadPredicateSimplifier (..)
     , PredicateSimplifier
+    , SimplificationVariable
     ) where
 
 import Kore.AST.Common
@@ -66,52 +69,52 @@ evalSimplifier simplifier =
     in
       result
 
-{-| 'PureMLPatternSimplifier' wraps a function that evaluates
-Kore functions on PureMLPatterns.
--}
-type PureMLPatternSimplifier level =
-    MonadPureMLPatternSimplifier level Simplifier
+type SimplificationVariable level variable =
+    ( FreshVariable variable
+    , Hashable variable
+    , Ord (variable level)
+    , Ord (variable Meta)
+    , Ord (variable Object)
+    , Show (variable level)
+    , Show (variable Meta)
+    , Show (variable Object)
+    , SortedVariable variable
+    )
+
+type GenericPureMLPatternSimplifier level =
+    (forall variable . SimplificationVariable level variable
+    => PureMLPatternSimplifier level variable
+    )
 
 {-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.
 -}
-newtype MonadPureMLPatternSimplifier level m =
+type PureMLPatternSimplifier level variable =
+    MonadPureMLPatternSimplifier level variable Simplifier
+
+{-| 'PureMLPatternSimplifier' wraps a function that evaluates
+Kore functions on PureMLPatterns.
+-}
+newtype MonadPureMLPatternSimplifier level variable m =
     MonadPureMLPatternSimplifier
-        (forall variable
-        .   ( FreshVariable variable
-            , Hashable variable
-            , Ord (variable level)
-            , Ord (variable Meta)
-            , Ord (variable Object)
-            , Show (variable level)
-            , Show (variable Meta)
-            , Show (variable Object)
-            , SortedVariable variable
-            )
-        => PureMLPattern level variable
+        (  PureMLPattern level variable
         -> m
             ( OrOfExpandedPattern level variable
             , SimplificationProof level
             )
         )
 
-type PredicateSimplifier level =
-    MonadPredicateSimplifier level Simplifier
+type GenericPredicateSimplifier level =
+    (forall variable . SimplificationVariable level variable
+    => PredicateSimplifier level variable
+    )
 
-newtype MonadPredicateSimplifier level m =
+type PredicateSimplifier level variable =
+    MonadPredicateSimplifier level variable Simplifier
+
+newtype MonadPredicateSimplifier level variable m =
     MonadPredicateSimplifier
-        (forall variable
-        .   ( FreshVariable variable
-            , Hashable variable
-            , Ord (variable level)
-            , Ord (variable Meta)
-            , Ord (variable Object)
-            , Show (variable level)
-            , Show (variable Meta)
-            , Show (variable Object)
-            , SortedVariable variable
-            )
-        => Predicate level variable
+        (  Predicate level variable
         -> m
             ( PredicateSubstitution level variable
             , SimplificationProof level

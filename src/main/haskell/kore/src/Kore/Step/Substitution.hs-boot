@@ -34,7 +34,7 @@ mergePredicatesAndSubstitutions
        , Hashable variable
        )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level m
+    -> MonadPredicateSimplifier level variable m
     -> [Predicate level variable]
     -> [UnificationSubstitution level variable]
     -> m

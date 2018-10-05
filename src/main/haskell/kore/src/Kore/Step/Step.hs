@@ -50,7 +50,8 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, PureMLPatternSimplifier, Simplifier )
+                 ( GenericPredicateSimplifier, PureMLPatternSimplifier,
+                 Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -95,7 +96,7 @@ transitionRule
     => MetadataTools level StepperAttributes
     ->  ( forall variable
         .  (Show (variable level))
-        => PureMLPatternSimplifier level
+        => PureMLPatternSimplifier level variable
         )
     -- ^ Evaluates functions in patterns
     -> Prim (AxiomPattern level)
@@ -136,10 +137,7 @@ transitionRule tools simplifier =
                 if ExpandedPattern.isBottom config'
                     then return []
                     else return [(config', proof <> proof')]
-    predicateSimplifier
-        :: forall variable0
-        .  (Show (variable0 level))
-        => PredicateSimplifier level0
+    predicateSimplifier :: GenericPredicateSimplifier level
     predicateSimplifier = Predicate.monadSimplifier simplifier
 
 {- | A strategy which takes one step by attempting all the axioms.

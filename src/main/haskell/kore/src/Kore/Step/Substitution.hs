@@ -67,7 +67,7 @@ mergeSubstitutions
        )
     => MetadataTools level StepperAttributes
     -- TODO: Define a type for this.
-    -> MonadPredicateSimplifier level m
+    -> MonadPredicateSimplifier level variable m
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> ExceptT
@@ -96,7 +96,7 @@ mergeAndNormalizeSubstitutions
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level m
+    -> MonadPredicateSimplifier level variable m
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> ExceptT
@@ -126,7 +126,7 @@ normalizePredicateSubstitutionAfterMerge
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level m
+    -> MonadPredicateSimplifier level variable m
     -> PredicateSubstitution level variable
     -> ExceptT
         ( UnificationOrSubstitutionError level variable )
@@ -196,7 +196,7 @@ mergePredicatesAndSubstitutions
        , Hashable variable
        )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level m
+    -> MonadPredicateSimplifier level variable m
     -> [Predicate level variable]
     -> [UnificationSubstitution level variable]
     -> m
@@ -257,7 +257,7 @@ mergeSubstitutionWithPredicate
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level m
+    -> MonadPredicateSimplifier level variable m
     -> ([Predicate level variable], UnificationSubstitution level variable)
     -> UnificationSubstitution level variable
     -> m ([Predicate level variable], UnificationSubstitution level variable)

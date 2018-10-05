@@ -422,7 +422,7 @@ evaluateWithAxiom
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -> AxiomPattern level
-    -> CommonPureMLPatternSimplifier level
+    -> CommonPureMLPatternSimplifier level variable
     -> Application level (CommonPurePattern level)
     -> CommonAttemptedFunction level
 evaluateWithAxiom

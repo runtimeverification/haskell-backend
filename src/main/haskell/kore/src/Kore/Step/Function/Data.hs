@@ -9,7 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Function.Data
     (  ApplicationFunctionEvaluator (..)
-    , CommonApplicationFunctionEvaluator
+    , GenericApplicationFunctionEvaluator
     , AttemptedFunction (..)
     , CommonAttemptedFunction
     , notApplicableFunctionEvaluator
@@ -27,7 +27,8 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import Kore.Step.Simplification.Data
-       ( PureMLPatternSimplifier, SimplificationProof (..), Simplifier )
+       ( GenericPureMLPatternSimplifier, SimplificationProof (..),
+       SimplificationVariable, Simplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 
@@ -39,8 +40,8 @@ Arguments:
 * 'MetadataTools' are tools for finding additional information about
 patterns such as their sorts, whether they are constructors or hooked.
 
-* 'PureMLPatternSimplifier' is a Function for simplifying patterns, used for
-the post-processing of the function application results.
+* 'GenericPureMLPatternSimplifier' is a Function for simplifying patterns,
+used for the post-processing of the function application results.
 
 * 'Application' is the pattern to be evaluated.
 
@@ -51,9 +52,9 @@ that the function was applied correctly (which is only a placeholder right now).
 -}
 newtype ApplicationFunctionEvaluator level variable =
     ApplicationFunctionEvaluator
-        (forall . ( MetaOrObject level)
+        (( MetaOrObject level)
         => MetadataTools level StepperAttributes
-        -> PureMLPatternSimplifier level
+        -> GenericPureMLPatternSimplifier level
         -> Application level (PureMLPattern level variable)
         -> Simplifier
             ( AttemptedFunction level variable
@@ -61,12 +62,14 @@ newtype ApplicationFunctionEvaluator level variable =
             )
         )
 
-{-| 'CommonApplicationFunctionEvaluator' particularizes
-'ApplicationFunctionEvaluator' to 'Variable', following the same pattern as
-the other `Common*` types.
+{-| 'GenericApplicationFunctionEvaluator' is a
+'ApplicationFunctionEvaluator' for any 'Variable', following the same pattern as
+the other `Generic*` types.
 -}
-type CommonApplicationFunctionEvaluator level =
-    ApplicationFunctionEvaluator level Variable
+type GenericApplicationFunctionEvaluator level =
+    (forall variable . SimplificationVariable level variable
+    => ApplicationFunctionEvaluator level variable
+    )
 
 {-| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
 cases where the function can't be fully evaluated.

@@ -46,9 +46,9 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier,
+                 ( GenericPredicateSimplifier, GenericPureMLPatternSimplifier,
                  MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
+                 PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( monadSimplifier )
@@ -66,13 +66,13 @@ evaluating the function, it tries to re-evaluate all functions on the result.
 The function is assumed to be defined through an axiom.
 -}
 axiomFunctionEvaluator
-    ::  ( MetaOrObject level)
+    ::  forall level . ( MetaOrObject level)
     => AxiomPattern level
     -- ^ Axiom defining the current function.
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> CommonPureMLPatternSimplifier level
+    -> GenericPureMLPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> Application level (CommonPurePattern level)
     -- ^ The function on which to evaluate the current function.
@@ -109,7 +109,7 @@ axiomFunctionEvaluator
     stepResult =
         stepWithAxiom
             tools
-            simplifier
+            predicateSimplifier
             (stepperConfiguration app)
             axiom
     stepperConfiguration
@@ -122,6 +122,9 @@ axiomFunctionEvaluator
             , predicate = makeTruePredicate
             , substitution = []
             }
+    predicateSimplifier :: GenericPredicateSimplifier level
+    predicateSimplifier = Predicate.monadSimplifier simplifier
+
 
 {-| 'reevaluateFunctions' re-evaluates functions after a user-defined function
 was evaluated.
@@ -139,7 +142,7 @@ reevaluateFunctions
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level
+    -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
     -- ^ Function evaluation result.
@@ -190,7 +193,7 @@ evaluatePredicate
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PureMLPatternSimplifier level
+    -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> ExpandedPattern level variable
     -- ^ The condition to be evaluated.

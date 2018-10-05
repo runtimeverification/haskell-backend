@@ -55,7 +55,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.PatternAttributes
                  ( FunctionalProof (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..) )
+                 ( GenericPredicateSimplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -178,7 +178,7 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 stepWithAxiom
     ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level
+    -> GenericPredicateSimplifier level
     -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> AxiomPattern level
