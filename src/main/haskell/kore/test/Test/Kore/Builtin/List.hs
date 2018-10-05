@@ -143,11 +143,11 @@ prop_concatAssociates values1 values2 values3 =
             , ExpandedPattern.top === evaluate predicate
             ]
 
--- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
+-- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern :: List.Builtin -> CommonPurePattern Object
 Right asPattern = List.asPattern indexedModule listSort
 
--- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
+-- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asExpandedPattern :: List.Builtin -> CommonExpandedPattern Object
 Right asExpandedPattern = List.asExpandedPattern indexedModule listSort
 
