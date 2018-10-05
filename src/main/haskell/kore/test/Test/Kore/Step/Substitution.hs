@@ -2,15 +2,15 @@ module Test.Kore.Step.Substitution
     ( test_mergeAndNormalizeSubstitutions
     ) where
 
+import Control.Monad.Counter
+       ( evalCounter )
+import Control.Monad.Except
+import Data.Reflection
+       ( give )
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
-import Control.Monad.Except
-import Control.Monad.Counter
-       ( evalCounter )
-import Data.Reflection
-       ( give )
 
 import Kore.AST.Common
        ( Variable )

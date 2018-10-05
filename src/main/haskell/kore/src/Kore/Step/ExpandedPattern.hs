@@ -11,9 +11,9 @@ Portability : portable
 -}
 module Kore.Step.ExpandedPattern
     ( CommonExpandedPattern
-    , CommonPredicateSubstitution  -- TODO(virgil): Stop exporting this.
-    , ExpandedPattern (..)
-    , PredicateSubstitution (..)  -- TODO(virgil): Stop exporting this.
+    , PredicateSubstitution.CommonPredicateSubstitution  -- TODO(virgil): Stop exporting this.
+    , ExpandedPattern
+    , PredicateSubstitution.PredicateSubstitution (..)  -- TODO(virgil): Stop exporting this.
     , allVariables
     , bottom
     , isBottom
@@ -23,6 +23,7 @@ module Kore.Step.ExpandedPattern
     , toMLPattern
     , top
     , fromPurePattern
+    , Predicated(..)
     ) where
 
 import           Data.List
@@ -49,7 +50,7 @@ import           Kore.Predicate.Predicate
                  makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.PredicateSubstitution
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( CommonPredicateSubstitution, PredicateSubstitution (..) )
 import           Kore.Unification.Data
 import           Kore.Variables.Free
@@ -59,16 +60,43 @@ import           Kore.Variables.Free
 to use when executing Kore. It consists of an "and" between a term, a
 predicate and a substitution
 -}
-data ExpandedPattern level variable = ExpandedPattern
-    { term         :: !(PureMLPattern level variable)
-    -- ^ Free-form pattern.
-    , predicate    :: !(Predicate level variable)
-    -- ^ pattern that only evaluates to Top or Bottom.
+
+type ExpandedPattern level variable =
+    Predicated level variable (PureMLPattern level variable)
+
+data Predicated level variable child = Predicated
+    { term :: child
+    , predicate :: !(Predicate level variable)
     , substitution :: !(UnificationSubstitution level variable)
-    -- ^ special kind of predicate of the type
-    -- variable1 = term1 /\ variable2 = term2 /\ ...
     }
-    deriving (Eq, Show)
+    deriving(Eq, Ord, Show)
+
+instance Functor (Predicated level variable) where
+    fmap f (Predicated a p s) = Predicated (f a) p s
+
+-- `<*>` does not do normalization for now. 
+-- Don't use it until we figure that out.
+
+instance
+  ( MetaOrObject level
+  , SortedVariable variable
+  , Show (variable level)
+  , Eq (variable level)
+  , Given (SymbolOrAliasSorts level)
+  )
+  => Applicative (Predicated level variable) where
+    pure a = Predicated a makeTruePredicate []
+    a <*> b = Predicated
+        { term = f x
+        , predicate = fst (predicate1 `makeAndPredicate` predicate2)
+        , substitution = substitution1 ++ substitution2
+        }
+        where
+            Predicated f predicate1 substitution1 = a
+            Predicated x predicate2 substitution2 = b
+
+-- The monad instance for `Predicated` is intentionally omitted.
+-- It's not needed for anything, and has bad performance properties.
 
 {-|'CommonExpandedPattern' particularizes ExpandedPattern to Variable.
 -}
@@ -83,9 +111,9 @@ mapVariables
     -> ExpandedPattern level variableTo
 mapVariables
     variableMapper
-    ExpandedPattern { term, predicate, substitution }
+    Predicated { term, predicate, substitution }
   =
-    ExpandedPattern
+    Predicated
         { term = mapPatternVariables variableMapper term
         , predicate = Predicate.mapVariables variableMapper predicate
         , substitution = mapSubstitutionVariables variableMapper substitution
@@ -99,7 +127,7 @@ allVariables
     => ExpandedPattern level variable
     -> Set.Set (variable level)
 allVariables
-    ExpandedPattern { term, predicate, substitution }
+    Predicated { term, predicate, substitution }
   =
     pureAllVariables term
     <> Predicate.allVariables predicate
@@ -125,7 +153,7 @@ toMLPattern
         , Show (variable level))
     => ExpandedPattern level variable -> PureMLPattern level variable
 toMLPattern
-    ExpandedPattern { term, predicate, substitution }
+    Predicated { term, predicate, substitution }
   =
     simpleAnd
         (simpleAnd term predicate)
@@ -182,7 +210,7 @@ should become Bottom when transformed to a ML pattern.
 -}
 bottom :: MetaOrObject level => ExpandedPattern level variable
 bottom =
-    ExpandedPattern
+    Predicated
         { term      = mkBottom
         , predicate = makeFalsePredicate
         , substitution = []
@@ -193,7 +221,7 @@ should become Top when transformed to a ML pattern.
 -}
 top :: MetaOrObject level => ExpandedPattern level variable
 top =
-    ExpandedPattern
+    Predicated
         { term      = mkTop
         , predicate = makeTruePredicate
         , substitution = []
@@ -203,7 +231,7 @@ top =
 -}
 isTop :: ExpandedPattern level variable -> Bool
 isTop
-    ExpandedPattern
+    Predicated
         { term = Top_ _, predicate = PredicateTrue, substitution = [] }
   = True
 isTop _ = False
@@ -213,10 +241,10 @@ Pattern.
 -}
 isBottom :: ExpandedPattern level variable -> Bool
 isBottom
-    ExpandedPattern {term = Bottom_ _}
+    Predicated {term = Bottom_ _}
   = True
 isBottom
-    ExpandedPattern {predicate = PredicateFalse}
+    Predicated {predicate = PredicateFalse}
   = True
 isBottom _ = False
 
@@ -235,7 +263,7 @@ fromPurePattern term =
     case term of
         Bottom_ _ -> bottom
         _ ->
-            ExpandedPattern
+            Predicated
                 { term
                 , predicate = makeTruePredicate
                 , substitution = []

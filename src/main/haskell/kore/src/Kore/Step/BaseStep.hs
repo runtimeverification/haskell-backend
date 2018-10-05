@@ -49,8 +49,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern),
-                 PredicateSubstitution (..) )
+                 ( PredicateSubstitution (..), Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.PatternAttributes
                  ( FunctionalProof (..) )
@@ -202,7 +201,7 @@ stepWithAxiom
             ExpandedPattern.mapVariables ConfigurationVariable expandedPattern
         (startPattern, startCondition, startSubstitution) =
             case wrappedExpandedPattern of
-                ExpandedPattern { term, predicate, substitution } ->
+                Predicated { term, predicate, substitution } ->
                     (term, predicate, substitution)
         wrapAxiomVariables = mapPatternVariables AxiomVariable
         axiomLeft = wrapAxiomVariables axiomLeftRaw
@@ -308,7 +307,7 @@ stepWithAxiom
         orElse :: a -> a -> a
         p1 `orElse` p2 = if Predicate.isFalse condition then p2 else p1
     return
-        ( ExpandedPattern
+        ( Predicated
             { term = result `orElse` mkBottom
             , predicate = condition
             -- TODO(virgil): Can there be unused variables? Should we

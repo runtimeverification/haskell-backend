@@ -37,7 +37,7 @@ import Kore.Predicate.Predicate
 import Kore.Step.BaseStep
 import Kore.Step.Error
 import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( ExpandedPattern (..), bottom )
+       ( Predicated (..), bottom )
 import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
 import Kore.Step.StepperAttributes
@@ -53,7 +53,7 @@ test_baseStep =
     [ testCase "Substituting a variable."
         (assertEqualWithExplanation ""
             (Right
-                ( ExpandedPattern
+                ( Predicated
                     { term = asPureMetaPattern (v1 PatternSort)
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -68,7 +68,7 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = asPureMetaPattern (v1 PatternSort)
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -84,7 +84,7 @@ test_baseStep =
     , testCase "Substituting a variable with a larger one."
         (assertEqualWithExplanation ""
             (Right
-                ( ExpandedPattern
+                ( Predicated
                     { term = asPureMetaPattern (y1 PatternSort)
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -99,7 +99,7 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = asPureMetaPattern (y1 PatternSort)
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -115,7 +115,7 @@ test_baseStep =
     , testCase "Substituting a variable with itself."
         (assertEqualWithExplanation ""
             (Right
-                ( ExpandedPattern
+                ( Predicated
                     { term = asPureMetaPattern (v1 PatternSort)
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -130,7 +130,7 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             (metaSigma (v1 PatternSort) (v1 PatternSort))
@@ -152,7 +152,7 @@ test_baseStep =
     , testCase "Merging configuration patterns."
         (assertEqualWithExplanation ""
             (Right
-                ( ExpandedPattern
+                ( Predicated
                     { term =
                         asPureMetaPattern
                             (metaF (b1 PatternSort))
@@ -173,7 +173,7 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             (metaSigma
@@ -198,7 +198,7 @@ test_baseStep =
     , testCase "Substitution with symbol matching."
         (assertEqualWithExplanation ""
             (Right
-                ( ExpandedPattern
+                ( Predicated
                     { term = asPureMetaPattern (metaF (b1 PatternSort))
                     , predicate = makeTruePredicate
                     , substitution =
@@ -217,7 +217,7 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             (metaSigma
@@ -253,7 +253,7 @@ test_baseStep =
     , testCase "Merge multiple variables."
         (assertEqualWithExplanation ""
             (Right
-                ( ExpandedPattern
+                ( Predicated
                     { term =
                         asPureMetaPattern
                             (metaSigma (b1 PatternSort) (b1 PatternSort))
@@ -274,7 +274,7 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             (metaSigma
@@ -314,7 +314,7 @@ test_baseStep =
     , testCase "Rename quantified rhs variables."
         (assertEqualWithExplanation ""
             (Right
-                ( ExpandedPattern
+                ( Predicated
                     { term =
                         asPureMetaPattern
                             (metaExists
@@ -338,7 +338,7 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = asPureMetaPattern (a1 PatternSort)
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -365,7 +365,7 @@ test_baseStep =
             (Right ExpandedPattern.bottom)
             (fst <$> runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             ( metaSigma
@@ -394,7 +394,7 @@ test_baseStep =
             (Right ExpandedPattern.bottom)
             (fst <$> runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             ( metaSigma
@@ -438,7 +438,7 @@ test_baseStep =
             (Right ExpandedPattern.bottom)
             (fst <$> runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             (metaSigma
@@ -472,7 +472,7 @@ test_baseStep =
     -- sigma(a, h(b)) with substitution b=a
     , testCase "Substitution (non-ctor)."
         (assertEqualWithExplanation ""
-            (Right ExpandedPattern
+            (Right Predicated
                 { term = asPureMetaPattern (metaH (b1 PatternSort))
                 , predicate = give mockSymbolOrAliasSorts $ makeEqualsPredicate
                     (asPureMetaPattern (b1 PatternSort))
@@ -486,7 +486,7 @@ test_baseStep =
             )
             (fst <$> runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             (metaSigma
@@ -523,7 +523,7 @@ test_baseStep =
             (Left $ StepErrorUnification UnsupportedPatterns)
             (fst <$> runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             (metaSigma
@@ -552,7 +552,7 @@ test_baseStep =
     -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
     , testCase "Unification is applied repeatedly"
         (assertEqualWithExplanation ""
-            (Right ExpandedPattern
+            (Right Predicated
                 { term = asPureMetaPattern
                     (metaSigma
                         (metaSigma (c1 PatternSort) (c1 PatternSort))
@@ -572,7 +572,7 @@ test_baseStep =
             )
             (fst <$> runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = asPureMetaPattern
                         ( metaSigma
                             ( metaSigma (a1 PatternSort) (a1 PatternSort))
@@ -608,7 +608,7 @@ test_baseStep =
         testCase "Substitution normalization."
             (assertEqualWithExplanation ""
                 (Right
-                    ( ExpandedPattern
+                    ( Predicated
                         { term = asPureMetaPattern (metaSigma fOfB fOfB)
                         , predicate = makeTruePredicate
                         , substitution =
@@ -627,7 +627,7 @@ test_baseStep =
                 )
                 (runStep
                     mockMetadataTools
-                    ExpandedPattern
+                    Predicated
                         { term =
                             asPureMetaPattern
                                 (metaSigma
@@ -668,7 +668,7 @@ test_baseStep =
         testCase "Merging substitution with existing one."
             (assertEqualWithExplanation ""
                 (Right
-                    ( ExpandedPattern
+                    ( Predicated
                         { term = asPureMetaPattern (metaSigma fOfC fOfC)
                         , predicate = makeTruePredicate
                         , substitution =
@@ -690,7 +690,7 @@ test_baseStep =
                 )
                 (runStep
                     mockMetadataTools
-                    ExpandedPattern
+                    Predicated
                         { term =
                             asPureMetaPattern
                                 (metaSigma
@@ -733,7 +733,7 @@ test_baseStep =
             (Right ExpandedPattern.bottom)
             (fst <$> runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = asPurePattern
                         ( StringLiteralPattern (StringLiteral "sl2")
                         :: UnFixedPureMLPattern Meta Variable
@@ -759,7 +759,7 @@ test_baseStep =
     , testCase "Preserving initial condition."
         (assertEqualWithExplanation ""
             (Right
-                ( ExpandedPattern
+                ( Predicated
                     { term = asPureMetaPattern (a1 PatternSort)
                     , predicate =
                         makeEquals
@@ -777,7 +777,7 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = asPureMetaPattern (a1 PatternSort)
                     , predicate =
                         makeEquals
@@ -803,7 +803,7 @@ test_baseStep =
         testCase "Substitution normalization."
             (assertEqualWithExplanation ""
                 (Right
-                    ( ExpandedPattern
+                    ( Predicated
                         { term = asPureMetaPattern (metaSigma fOfB fOfB)
                         , predicate =
                             makeEquals
@@ -825,7 +825,7 @@ test_baseStep =
                 )
                 (runStep
                     mockMetadataTools
-                    ExpandedPattern
+                    Predicated
                         { term =
                             asPureMetaPattern
                                 (metaSigma
@@ -871,7 +871,7 @@ test_baseStep =
         testCase "Conjoins axiom pre-condition"
           (assertEqualWithExplanation ""
               (Right
-                  ( ExpandedPattern
+                  ( Predicated
                       { term = asPureMetaPattern (a1 PatternSort)
                       , predicate = preCondition a1
                       , substitution = []
@@ -886,7 +886,7 @@ test_baseStep =
               )
               (runStep
                   mockMetadataTools
-                  ExpandedPattern
+                  Predicated
                       { term = asPureMetaPattern (a1 PatternSort)
                       , predicate = makeTruePredicate
                       , substitution = []
@@ -938,7 +938,7 @@ test_baseStep =
     identicalVariablesAssertion var =
         assertEqualWithExplanation ""
             (Right
-                ( ExpandedPattern
+                ( Predicated
                     { term =
                         asPureMetaPattern (var PatternSort)
                     , predicate = makeTruePredicate
@@ -954,7 +954,7 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         asPureMetaPattern
                             (metaSigma

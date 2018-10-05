@@ -37,7 +37,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.BaseStep
                  ( AxiomPattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom )
+                 ( Predicated (..), bottom )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.Function.Data
@@ -81,7 +81,7 @@ test_userDefinedFunction =
     , testCase "Applies one step"
         (assertEqualWithExplanation "f(x) => g(x)"
             (AttemptedFunction.Applied $ OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = asPureMetaPattern (metaG (x PatternSort))
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -144,7 +144,7 @@ test_userDefinedFunction =
     , testCase "Reevaluates the step application"
         (assertEqualWithExplanation "f(x) => g(x) and g(x) => h(x)"
             (AttemptedFunction.Applied $ OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = asPureMetaPattern (metaH (x PatternSort))
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -163,7 +163,7 @@ test_userDefinedFunction =
                     }
                 (mockSimplifier
                     [   ( asPureMetaPattern (metaG (x PatternSort))
-                        ,   (   [ ExpandedPattern
+                        ,   (   [ Predicated
                                     { term =
                                         asPureMetaPattern (metaH (x PatternSort))
                                     , predicate = makeTruePredicate
@@ -195,7 +195,7 @@ test_userDefinedFunction =
                     }
                 (mockSimplifier
                     [   ( asPureMetaPattern (metaG (x PatternSort))
-                        ,   (   [ ExpandedPattern
+                        ,   (   [ Predicated
                                     { term =
                                         asPureMetaPattern (metaH (x PatternSort))
                                     , predicate = makeFalsePredicate
@@ -213,7 +213,7 @@ test_userDefinedFunction =
     , testCase "Preserves step substitution"
         (assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)"
             (AttemptedFunction.Applied $ OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = asPureMetaPattern (metaG (b PatternSort))
                     , predicate = makeTruePredicate
                     , substitution =
@@ -243,7 +243,7 @@ test_userDefinedFunction =
         (assertEqualWithExplanation
             "sigma(x,x) => g(x) vs sigma(a, b) and g(b) => h(c) + a=c,b=c"
             (AttemptedFunction.Applied $ OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = asPureMetaPattern (metaH (c PatternSort))
                     , predicate = makeTruePredicate
                     , substitution =
@@ -271,7 +271,7 @@ test_userDefinedFunction =
                     }
                 (mockSimplifier
                     [   ( asPureMetaPattern (metaG (b PatternSort))
-                        ,   (   [ ExpandedPattern
+                        ,   (   [ Predicated
                                     { term =
                                         asPureMetaPattern (metaH (c PatternSort))
                                     , predicate = makeTruePredicate
@@ -436,8 +436,8 @@ evaluateWithAxiom
             AttemptedFunction.Applied (fmap sortSubstitution orPattern)
         result -> result
   where
-    sortSubstitution ExpandedPattern {term, predicate, substitution} =
-        ExpandedPattern
+    sortSubstitution Predicated {term, predicate, substitution} =
+        Predicated
             { term = term
             , predicate = predicate
             , substitution = sort substitution

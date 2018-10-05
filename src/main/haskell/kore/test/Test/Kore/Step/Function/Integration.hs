@@ -26,7 +26,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.BaseStep
                  ( AxiomPattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (..) )
+                 ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..),
                  CommonApplicationFunctionEvaluator, CommonAttemptedFunction )
@@ -53,7 +53,7 @@ test_functionIntegration :: [TestTree]
 test_functionIntegration = give mockSymbolOrAliasSorts
     [ testCase "Simple evaluation"
         (assertEqualWithExplanation ""
-            ExpandedPattern
+            Predicated
                 { term = Mock.g Mock.c
                 , predicate = makeTruePredicate
                 , substitution = []
@@ -71,7 +71,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         )
     , testCase "Evaluates inside functions"
         (assertEqualWithExplanation ""
-            ExpandedPattern
+            Predicated
                 { term = Mock.functional10 (Mock.functional10 Mock.c)
                 , predicate = makeTruePredicate
                 , substitution = []
@@ -89,7 +89,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         )
     , testCase "Evaluates 'or'"
         (assertEqualWithExplanation ""
-            ExpandedPattern
+            Predicated
                 { term =
                     mkOr
                         (Mock.functional10 (Mock.functional10 Mock.c))
@@ -115,7 +115,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         )
     , testCase "Evaluates on multiple branches"
         (assertEqualWithExplanation ""
-            ExpandedPattern
+            Predicated
                 { term =
                     Mock.functional10
                         (Mock.functional20
@@ -143,7 +143,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         )
     , testCase "Returns conditions"
         (assertEqualWithExplanation ""
-            ExpandedPattern
+            Predicated
                 { term = Mock.f Mock.d
                 , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
                 , substitution = []
@@ -151,7 +151,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
             (evaluate
                 mockMetadataTools
                 (Map.singleton Mock.cId
-                    [ appliedMockEvaluator ExpandedPattern
+                    [ appliedMockEvaluator Predicated
                         { term   = Mock.d
                         , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
                         , substitution = []
@@ -163,7 +163,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         )
     , testCase "Merges conditions"
         (assertEqualWithExplanation ""
-            ExpandedPattern
+            Predicated
                 { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
                 , predicate =
                     fst $ makeAndPredicate
@@ -175,7 +175,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                 mockMetadataTools
                 (Map.fromList
                     [   ( Mock.cId
-                        ,   [ appliedMockEvaluator ExpandedPattern
+                        ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.e
                                 , predicate = makeCeilPredicate Mock.cg
                                 , substitution = []
@@ -183,7 +183,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                             ]
                         )
                     ,   ( Mock.dId
-                        ,   [ appliedMockEvaluator ExpandedPattern
+                        ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.e
                                 , predicate = makeCeilPredicate Mock.cf
                                 , substitution = []
@@ -203,7 +203,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         )
     , testCase "Reevaluates user-defined function results."
         (assertEqualWithExplanation ""
-            ExpandedPattern
+            Predicated
                 { term = Mock.f Mock.e
                 , predicate = makeEqualsPredicate (Mock.f Mock.e) Mock.e
                 , substitution = []
@@ -215,7 +215,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                         ,   [ axiomEvaluator Mock.c Mock.d ]
                         )
                     ,   ( Mock.dId
-                        ,   [ appliedMockEvaluator ExpandedPattern
+                        ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.e
                                 , predicate =
                                     makeEqualsPredicate (Mock.f Mock.e) Mock.e

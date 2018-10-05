@@ -32,9 +32,9 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeIffPredicate, makeNotPredicate,
                  makeOrPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
+                 ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, top )
+                 ( bottom, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -82,14 +82,14 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
                     , equalsFirst = OrOfExpandedPattern.make
-                        [ ExpandedPattern
+                        [ Predicated
                             { term = Mock.a
                             , predicate = makeTruePredicate
                             , substitution = []
                             }
                         ]
                     , equalsSecond = OrOfExpandedPattern.make
-                        [ ExpandedPattern
+                        [ Predicated
                             { term = Mock.a
                             , predicate = makeTruePredicate
                             , substitution = []
@@ -108,7 +108,7 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
                     , equalsResultSort = testSort
                     , equalsFirst = OrOfExpandedPattern.make []
                     , equalsSecond = OrOfExpandedPattern.make
-                        [ ExpandedPattern
+                        [ Predicated
                             { term = Mock.a
                             , predicate = makeTruePredicate
                             , substitution = []
@@ -120,7 +120,7 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
     , testCase "f(a) vs g(a)"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = []
@@ -133,14 +133,14 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
                     , equalsFirst = OrOfExpandedPattern.make
-                        [ ExpandedPattern
+                        [ Predicated
                             { term = fOfA
                             , predicate = makeTruePredicate
                             , substitution = []
                             }
                         ]
                     , equalsSecond = OrOfExpandedPattern.make
-                        [ ExpandedPattern
+                        [ Predicated
                             { term = gOfA
                             , predicate = makeTruePredicate
                             , substitution = []
@@ -156,7 +156,7 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
     [ testCase "predicate-substitution vs predicate-substitution"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate =
                         fst $ makeIffPredicate
@@ -168,12 +168,12 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
             )
             (evaluate
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate fOfA fOfB
                     , substitution = []
                     }
-                ExpandedPattern
+                Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = []
@@ -183,7 +183,7 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
     , testCase "constructor-patt vs constructor-patt"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate =
                         fst $ makeOrPredicate
@@ -220,12 +220,12 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
             )
             (evaluate
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term = Mock.functionalConstr10 hOfA
                     , predicate = makeEqualsPredicate fOfA fOfB
                     , substitution = []
                     }
-                ExpandedPattern
+                Predicated
                     { term = Mock.functionalConstr10 hOfB
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = []
@@ -524,7 +524,7 @@ assertTermEqualsGeneric tools expected first second =
     termToExpandedPattern (Bottom_ _) =
         ExpandedPattern.bottom
     termToExpandedPattern term =
-        ExpandedPattern
+        Predicated
             { term = term
             , predicate = makeTruePredicate
             , substitution = []
@@ -540,7 +540,7 @@ assertTermEqualsGeneric tools expected first second =
     predSubstToExpandedPattern
         PredicateSubstitution {predicate, substitution}
       =
-        ExpandedPattern
+        Predicated
             { term = mkTop
             , predicate = predicate
             , substitution = substitution

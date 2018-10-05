@@ -19,7 +19,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.BaseStep
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( ExpandedPattern, Predicated(..) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
@@ -758,8 +758,8 @@ instance
     => StructEqualWithExplanation (ExpandedPattern level variable)
   where
     structFieldsWithNames
-        expected@(ExpandedPattern _ _ _)
-        actual@(ExpandedPattern _ _ _)
+        expected@(Predicated _ _ _)
+        actual@(Predicated _ _ _)
       = [ EqWrap
             "term = "
             (ExpandedPattern.term expected)

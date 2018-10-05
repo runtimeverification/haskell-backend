@@ -25,9 +25,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -100,7 +98,7 @@ halfSimplifyEvaluated
         , SimplificationProof level
         )
 halfSimplifyEvaluated
-    first@ExpandedPattern
+    first@Predicated
         { term = Top_ _
         , predicate = firstPredicate
         , substitution = []
@@ -112,7 +110,7 @@ halfSimplifyEvaluated
             ( OrOfExpandedPattern.make [first]
             , SimplificationProof
             )
-        ( ExpandedPattern
+        ( Predicated
             { term, predicate, substitution}
          : patts
          ) ->
@@ -121,7 +119,7 @@ halfSimplifyEvaluated
                     makeOrPredicate firstPredicate predicate
             in
                 ( OrOfExpandedPattern.make
-                    ( ExpandedPattern
+                    ( Predicated
                         { term = term
                         , predicate = mergedPredicate
                         , substitution = substitution

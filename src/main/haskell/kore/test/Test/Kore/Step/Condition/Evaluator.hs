@@ -5,40 +5,41 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
+import           Data.Map
+                 ( Map )
 import qualified Data.Map as Map
-import           Data.Map ( Map )
 
-import           Data.Proxy
-import           Data.Reflection
+import Data.Proxy
+import Data.Reflection
 
-import           Kore.AST.Sentence
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+import Kore.AST.MetaOrObject
+import Kore.AST.PureML
+import Kore.AST.Sentence
 
-import           Kore.ASTUtils.SmartConstructors
-import           Kore.ASTUtils.SmartPatterns
+import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 
-import           Kore.ASTVerifier.DefinitionVerifier
-import           Kore.ASTVerifier.Error
+import Kore.ASTVerifier.DefinitionVerifier
+import Kore.ASTVerifier.Error
 
-import           Kore.IndexedModule.IndexedModule
-import           Kore.IndexedModule.MetadataTools
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.MetadataTools
 
-import           Kore.Step.StepperAttributes
-import           Test.Kore.Step.Simplifier
+import Kore.Step.StepperAttributes
+import Test.Kore.Step.Simplifier
 
-import           Kore.Error
+import Kore.Error
 
-import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.Condition.Evaluator as Eval
+import           Kore.Step.ExpandedPattern
 import           Kore.Step.Simplification.Data
 
-import           Kore.Predicate.Predicate
+import Kore.Predicate.Predicate
 
 import qualified Kore.Builtin as Builtin
 
-import           Test.Kore.Builtin.Bool 
-                   (boolDefinition, boolModuleName, boolSort)
+import Test.Kore.Builtin.Bool
+       ( boolDefinition, boolModuleName, boolSort )
 
 indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
 Right indexedModules = verify' boolDefinition
@@ -63,17 +64,17 @@ test_conditionEvaluator =
         "Condition Evaluator"
         [ testCase "a /\\ ~a"
             (assertEqual ""
-                ( fst $ fst $ 
+                ( fst $ fst $
                     give tools $
-                    give (symbolOrAliasSorts tools) $ 
-                    flip runSimplifier 0 $ 
+                    give (symbolOrAliasSorts tools) $
+                    flip runSimplifier 0 $
                     Eval.evaluate
                     (mockSimplifier [])
-                    ( wrapPredicate 
+                    ( wrapPredicate
                         (mkAnd a (mkNot a) :: CommonPurePattern Object)
                     )
                 )
-                ( PredicateSubstitution 
+                ( PredicateSubstitution
                     { predicate = makeFalsePredicate :: CommonPredicate Object
                     , substitution = []
                     }

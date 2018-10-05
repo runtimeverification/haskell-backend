@@ -38,7 +38,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), isBottom )
+                 ( Predicated (..), isBottom )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( bottom )
 import           Kore.Step.Simplification.AndTerms

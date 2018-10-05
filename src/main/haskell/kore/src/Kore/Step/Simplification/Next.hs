@@ -24,9 +24,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), toMLPattern )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -69,7 +68,7 @@ simplifyEvaluated
     -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
 simplifyEvaluated simplified =
     ( OrOfExpandedPattern.make
-        [ ExpandedPattern
+        [ Predicated
             { term =
                 mkNext
                     $ ExpandedPattern.toMLPattern

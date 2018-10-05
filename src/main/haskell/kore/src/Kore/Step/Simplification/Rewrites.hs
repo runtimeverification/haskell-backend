@@ -24,9 +24,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), toMLPattern )
+                 ( toMLPattern )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -87,7 +87,7 @@ makeEvaluateRewrites
     -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
     ( OrOfExpandedPattern.make
-        [ ExpandedPattern
+        [ Predicated
             { term = mkRewrites
                 (ExpandedPattern.toMLPattern first)
                 (ExpandedPattern.toMLPattern second)

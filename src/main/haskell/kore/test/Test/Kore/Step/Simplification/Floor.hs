@@ -26,9 +26,9 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
                  makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
+                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, top )
+                 ( bottom, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -49,7 +49,7 @@ test_floorSimplification =
         -- floor(a or b) = (top and floor(a)) or (top and floor(b))
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate = give mockSymbolOrAliasSorts $
                         makeFloorPredicate (mkOr a b)
@@ -110,7 +110,7 @@ test_floorSimplification =
         --     = top and (floor(term) and predicate) and subst
         (assertEqualWithExplanation "floor(top)"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate =
                         fst $ give mockSymbolOrAliasSorts $ makeAndPredicate
@@ -121,7 +121,7 @@ test_floorSimplification =
                 ]
             )
             (give mockSymbolOrAliasSorts $ makeEvaluate
-                ExpandedPattern
+                Predicated
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = [(x, fOfB)]
@@ -155,12 +155,12 @@ test_floorSimplification =
     fOfA = give mockSymbolOrAliasSorts $ mkApp fSymbol [a]
     fOfB = give mockSymbolOrAliasSorts $ mkApp fSymbol [b]
     gOfA = give mockSymbolOrAliasSorts $ mkApp gSymbol [a]
-    aExpanded = ExpandedPattern
+    aExpanded = Predicated
         { term = a
         , predicate = makeTruePredicate
         , substitution = []
         }
-    bExpanded = ExpandedPattern
+    bExpanded = Predicated
         { term = b
         , predicate = makeTruePredicate
         , substitution = []

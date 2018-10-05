@@ -184,7 +184,7 @@ boolModule =
 
 evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
-    let (ExpandedPattern { term }, _) =
+    let (Predicated { term }, _) =
             evalSimplifier (Pattern.simplify tools evaluators pat)
     in term
   where

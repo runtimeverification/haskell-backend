@@ -20,9 +20,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -41,7 +39,7 @@ test_nextSimplification = give mockSymbolOrAliasSorts
     [ testCase "Next evaluates to Next"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkNext Mock.a
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -50,7 +48,7 @@ test_nextSimplification = give mockSymbolOrAliasSorts
             )
             (evaluate
                 (makeNext
-                    [ ExpandedPattern
+                    [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -62,7 +60,7 @@ test_nextSimplification = give mockSymbolOrAliasSorts
     , testCase "Next collapses or"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term =
                         mkNext
                             (mkOr
@@ -76,12 +74,12 @@ test_nextSimplification = give mockSymbolOrAliasSorts
             )
             (evaluate
                 (makeNext
-                    [ ExpandedPattern
+                    [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
                         , substitution = []
                         }
-                    , ExpandedPattern
+                    , Predicated
                         { term = Mock.b
                         , predicate = makeEqualsPredicate Mock.a Mock.b
                         , substitution = []
@@ -98,7 +96,7 @@ mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapp
 findSort :: [CommonExpandedPattern Object] -> Sort Object
 findSort [] = Mock.testSort
 findSort
-    ( ExpandedPattern {term} : _ )
+    ( Predicated {term} : _ )
   =
     give mockSymbolOrAliasSorts $ getSort term
 

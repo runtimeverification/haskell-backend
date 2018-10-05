@@ -25,10 +25,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, isBottom, isTop, toMLPattern,
-                 top )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -113,7 +111,7 @@ makeEvaluate variable patt
     , SimplificationProof
     )
   | otherwise =
-    ( ExpandedPattern
+    ( Predicated
         { term = mkForall
             variable
             (ExpandedPattern.toMLPattern patt)

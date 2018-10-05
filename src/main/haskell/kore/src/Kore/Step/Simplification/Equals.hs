@@ -36,9 +36,9 @@ import           Kore.Predicate.Predicate
                  makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
                  makeOrPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), top )
+                 ( top )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -208,9 +208,9 @@ makeEvaluate
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
     tools
-    first@ExpandedPattern
+    first@Predicated
         { term = Top_ _ }
-    second@ExpandedPattern
+    second@Predicated
         { term = Top_ _ }
   =
     let
@@ -220,12 +220,12 @@ makeEvaluate
         return (result, SimplificationProof)
 makeEvaluate
     tools
-    ExpandedPattern
+    Predicated
         { term = firstTerm
         , predicate = PredicateTrue
         , substitution = []
         }
-    ExpandedPattern
+    Predicated
         { term = secondTerm
         , predicate = PredicateTrue
         , substitution = []
@@ -239,7 +239,7 @@ makeEvaluate
         PredicateSubstitution {predicate, substitution} ->
             return
                 (OrOfExpandedPattern.make
-                    [ ExpandedPattern
+                    [ Predicated
                         { term = mkTop
                         , predicate = predicate
                         , substitution = substitution
@@ -249,22 +249,22 @@ makeEvaluate
                 )
 makeEvaluate
     tools
-    first@ExpandedPattern
+    first@Predicated
         { term = firstTerm }
-    second@ExpandedPattern
+    second@Predicated
         { term = secondTerm }
   = do
     let
         (firstCeil, _proof1) =
             Ceil.makeEvaluate tools
                 first
-                    { ExpandedPattern.term =
+                    { term =
                         if termsAreEqual then mkTop else firstTerm
                     }
         (secondCeil, _proof2) =
             Ceil.makeEvaluate tools
                 second
-                    { ExpandedPattern.term =
+                    { term =
                         if termsAreEqual then mkTop else secondTerm
                     }
         (firstCeilNegation, _proof3) =
@@ -311,7 +311,7 @@ makeEvaluateTermsAssumesNoBottom
     fromMaybe
         (return
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkTop
                     , predicate = give (MetadataTools.symbolOrAliasSorts tools)
                         $ makeEqualsPredicate firstTerm secondTerm
@@ -349,7 +349,7 @@ makeEvaluateTermsAssumesNoBottomMaybe tools first second =
             (PredicateSubstitution {predicate, substitution}, _proof) <- result
             return
                 ( OrOfExpandedPattern.make
-                    [ ExpandedPattern
+                    [ Predicated
                         { term = mkTop
                         , predicate = predicate
                         , substitution = substitution

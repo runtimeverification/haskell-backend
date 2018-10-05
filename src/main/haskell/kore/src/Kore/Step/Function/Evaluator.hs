@@ -30,9 +30,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( PredicateSubstitution, Predicated(..) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Function.Data
@@ -134,7 +132,7 @@ evaluateApplication
     unchangedPatt =
         case childrenPredicateSubstitution of
             PredicateSubstitution {predicate, substitution} ->
-                ExpandedPattern
+                Predicated
                     { term         = asPurePattern $ ApplicationPattern app
                     , predicate    = predicate
                     , substitution = substitution
@@ -172,7 +170,7 @@ evaluateSortInjection tools unchanged ap = case apChild of
             assert (toSort' == fromSort) $
             return
                 ( OrOfExpandedPattern.make
-                    [ ExpandedPattern
+                    [ Predicated
                         { term = App_ apHeadNew grandChildren
                         , predicate = makeTruePredicate
                         , substitution = []
