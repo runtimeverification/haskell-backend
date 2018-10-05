@@ -1,5 +1,7 @@
 module Test.Kore.Step.Simplification.Integration
-    (test_simplificationIntegration
+    ( test_simplificationIntegration
+    , test_substituteMap
+    , test_substitute
     ) where
 
 import Test.Tasty
@@ -11,18 +13,16 @@ import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
 
+import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkBottom, mkCeil, mkExists, mkNot, mkOr, mkTop,
-                 mkVar )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -121,11 +121,115 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
             )
         )
     ]
+
+test_substitute :: [TestTree]
+test_substitute =
+    give mockSymbolOrAliasSorts
+    [ testCase "Substitution under unary functional constructor"
+        (assertEqualWithExplanation
+            "Expected substitution under unary functional constructor"
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern.Predicated
+                    { term =
+                        Mock.functionalConstr20
+                            Mock.a
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [ (Mock.x, Mock.a)
+                        , (Mock.y, Mock.functionalConstr10 Mock.a)
+                        ]
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                (ExpandedPattern.fromPurePattern
+                    (mkAnd
+                        (Mock.functionalConstr20
+                            (mkVar Mock.x)
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                        )
+                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                    )
+                )
+            )
+        )
+    , testCase "Substitution"
+        (assertEqualWithExplanation
+            "Expected substitution"
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern.Predicated
+                    { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [ (Mock.x, Mock.a)
+                        , (Mock.y, Mock.a)
+                        ]
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                (ExpandedPattern.fromPurePattern
+                    (mkAnd
+                        (Mock.functionalConstr20
+                            (mkVar Mock.x)
+                            (mkVar Mock.x)
+                        )
+                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                    )
+                )
+            )
+        )
+    ]
+
+test_substituteMap :: [TestTree]
+test_substituteMap =
+    give mockSymbolOrAliasSorts
+    [ testCase "Substitution applied to Map elements"
+        (assertEqualWithExplanation
+            "Expected substitution applied to Map elements"
+            (OrOfExpandedPattern.make
+                [ ExpandedPattern.Predicated
+                    { term =
+                        Mock.functionalConstr20
+                            Mock.a
+                            (mkBuiltinDomainMap [(Mock.a, mkVar Mock.x)])
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [ (Mock.x, Mock.a)
+                        , (Mock.y, mkBuiltinDomainMap [(Mock.a, Mock.a)])
+                        ]
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                (ExpandedPattern.fromPurePattern
+                    (mkAnd
+                        (Mock.functionalConstr20
+                            (mkVar Mock.x)
+                            (mkBuiltinDomainMap [(Mock.a, mkVar Mock.x)])
+                        )
+                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                    )
+                )
+            )
+        )
+    ]
   where
-    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
-    mockMetadataTools =
-        Mock.makeMetadataTools
-            mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
+    mkBuiltinDomainMap =
+        give mockSymbolOrAliasSorts
+            mkDomainValue Mock.testSort . BuiltinDomainMap . Map.fromList
+
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools
+        mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
 
 evaluate
     :: MetadataTools Object StepperAttributes
