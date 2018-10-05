@@ -178,7 +178,10 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 stepWithAxiom
     ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
-    -> (forall variable . PredicateSimplifier level variable)
+    ->  ( forall variable
+        .  (Show (variable level))
+        => PredicateSimplifier level variable
+        )
     -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> AxiomPattern level

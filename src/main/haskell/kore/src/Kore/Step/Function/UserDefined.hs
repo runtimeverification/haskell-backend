@@ -46,8 +46,12 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, PureMLPatternSimplifier (..),
-                 SimplificationProof (..), Simplifier )
+                 ( CommonPureMLPatternSimplifier,
+                 MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
+                 PureMLPatternSimplifier (..), SimplificationProof (..),
+                 Simplifier )
+import qualified Kore.Step.Simplification.Predicate as Predicate
+                 ( monadSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -105,6 +109,7 @@ axiomFunctionEvaluator
     stepResult =
         stepWithAxiom
             tools
+            simplifier
             (stepperConfiguration app)
             axiom
     stepperConfiguration
@@ -209,6 +214,7 @@ evaluatePredicate
         ) <-
             mergePredicatesAndSubstitutions
                 tools
+                (Predicate.monadSimplifier simplifier)
                 [evaluatedPredicate]
                 [substitution, evaluatedSubstitution]
     -- TODO(virgil): Do I need to re-evaluate the predicate?
