@@ -667,12 +667,9 @@ injUnificationTests =
     , andSimplifySuccess "unmatching nested injections"
         (simplifyPattern (UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA))))
         (simplifyPattern (UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA))))
-        (UnificationResultTerm (applyInj s1 s4 aA))
+        (UnificationResultTerm bottomPredicate)
         []
-        (makeEqualsPredicate
-            (applyInj s1 s4 aA)
-            (applyInj s2 s4 bA)
-        )
+        makeFalsePredicate
         EmptyUnificationProof
     , andSimplifySuccess "unmatching injections"
         -- TODO(traiansf): this should succeed if s1 < s2 < s3
