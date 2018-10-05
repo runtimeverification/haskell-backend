@@ -24,9 +24,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
+                 ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom )
+                 ( bottom )
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termUnification )
 import           Kore.Step.StepperAttributes
@@ -44,7 +44,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         (do
             assertEqualWithExplanation "pattern and top"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -57,7 +57,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 )
             assertEqualWithExplanation "top and pattern"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -88,7 +88,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
     , testCase "equal patterns and"
         (assertEqualWithExplanation ""
             (let
-                expected = ExpandedPattern
+                expected = Predicated
                     { term = fOfA
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -104,7 +104,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         (do
             assertEqualWithExplanation ""
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = [(Mock.x, fOfA)]
@@ -117,7 +117,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 )
             assertEqualWithExplanation ""
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = [(Mock.x, fOfA)]
@@ -133,7 +133,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         (do
             assertEqualWithExplanation "same head"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = Mock.injective10 fOfA
                         , predicate = makeEqualsPredicate fOfA gOfA
                         , substitution = []
@@ -146,7 +146,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 )
             assertEqualWithExplanation "same head same child"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = Mock.injective10 fOfA
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -158,7 +158,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Mock.injective10 fOfA) (Mock.injective10 fOfA)
                 )
             assertEqualWithExplanation "different head"
-                ( ExpandedPattern
+                ( Predicated
                     { term =
                         mkAnd
                             (Mock.injective10 fOfA)
@@ -177,7 +177,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         (do
             assertEqualWithExplanation "same head"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = Mock.sortInjection10 Mock.cfSort0
                         , predicate =
                             makeEqualsPredicate Mock.cfSort0 Mock.cgSort0
@@ -192,7 +192,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 )
             assertEqualWithExplanation "same head same child"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term =
                             Mock.sortInjection10 Mock.cfSort0
                         , predicate = makeTruePredicate
@@ -206,7 +206,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Mock.sortInjection10 Mock.cfSort0)
                 )
             assertEqualWithExplanation "different head not subsort"
-                ( ExpandedPattern
+                ( Predicated
                     { term =
                         mkAnd
                             (Mock.sortInjectionSubToTop Mock.plain00Subsort)
@@ -222,7 +222,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Mock.sortInjection0ToTop Mock.plain00Sort0)
                 )
             assertEqualWithExplanation "different head subsort first"
-                ( ExpandedPattern
+                ( Predicated
                     { term =
                         Mock.sortInjectionSubToTop
                             (mkAnd
@@ -242,7 +242,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Mock.sortInjectionSubToTop Mock.plain00Subsort)
                 )
             assertEqualWithExplanation "different head subsort second"
-                ( ExpandedPattern
+                ( Predicated
                     { term =
                         Mock.sortInjectionSubToTop
                             (mkAnd
@@ -284,7 +284,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         (do
             assertEqualWithExplanation "same head"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = Mock.constr10 Mock.cf
                         , predicate = makeEqualsPredicate Mock.cf Mock.cg
                         , substitution = []
@@ -298,7 +298,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 )
             assertEqualWithExplanation "same head same child"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = Mock.constr10 Mock.cf
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -335,7 +335,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         (do
             assertEqualWithExplanation "equal values"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = aDomainValue
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -359,7 +359,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         (do
             assertEqualWithExplanation "equal values"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = mkStringLiteral "a"
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -385,7 +385,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         (do
             assertEqualWithExplanation "equal values"
                 (let
-                    expected = ExpandedPattern
+                    expected = Predicated
                         { term = mkCharLiteral 'a'
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -411,7 +411,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         (do
             assertEqualWithExplanation "equal values"
                 (let
-                    expanded = ExpandedPattern
+                    expanded = Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = []
@@ -424,7 +424,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 )
             assertEqualWithExplanation "not equal values"
                 (let
-                    expanded = ExpandedPattern
+                    expanded = Predicated
                         { term = fOfA
                         , predicate = makeEqualsPredicate fOfA gOfA
                         , substitution = []
@@ -439,7 +439,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
     , testCase "unhandled cases"
         (do
             assertEqualWithExplanation "top level"
-                ( ExpandedPattern
+                ( Predicated
                     { term = mkAnd plain0OfA plain1OfA
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -451,7 +451,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     plain0OfA plain1OfA
                 )
             assertEqualWithExplanation "one level deep"
-                ( ExpandedPattern
+                ( Predicated
                     { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -463,7 +463,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Mock.constr10 plain0OfA) (Mock.constr10 plain1OfA)
                 )
             assertEqualWithExplanation "two levels deep"
-                ( ExpandedPattern
+                ( Predicated
                     { term =
                         Mock.constr10
                             (Mock.constr10 (mkAnd plain0OfA plain1OfA))
@@ -480,7 +480,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         )
     , testCase "binary constructor of non-specialcased values"
         (assertEqualWithExplanation ""
-            ( ExpandedPattern
+            ( Predicated
                 { term =
                     Mock.functionalConstr20
                         (mkAnd plain0OfA plain1OfA) (mkAnd plain0OfB plain1OfB)

@@ -11,9 +11,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate, wrapPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -32,7 +30,7 @@ mockSimplifier
 mockSimplifier values =
     PureMLPatternSimplifier
         ( mockSimplifierHelper
-            (\patt -> ExpandedPattern
+            (\patt -> Predicated
                 {term = patt, predicate = makeTruePredicate, substitution = []}
             )
             values
@@ -48,7 +46,7 @@ mockPredicateSimplifier
 mockPredicateSimplifier values =
     PureMLPatternSimplifier
         (mockSimplifierHelper
-            (\patt -> ExpandedPattern
+            (\patt -> Predicated
                 { term = mkTop
                 , predicate = wrapPredicate patt
                 , substitution = []

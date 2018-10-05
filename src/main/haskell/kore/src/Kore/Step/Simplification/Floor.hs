@@ -27,9 +27,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, isBottom, isTop, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -111,7 +110,7 @@ makeEvaluateNonBoolFloor
     => ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolFloor
-    patt@ExpandedPattern { term = Top_ _ }
+    patt@Predicated { term = Top_ _ }
   =
     ( OrOfExpandedPattern.make [patt]
     , SimplificationProof
@@ -119,10 +118,10 @@ makeEvaluateNonBoolFloor
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor
-    ExpandedPattern {term, predicate, substitution}
+    Predicated {term, predicate, substitution}
   =
     ( OrOfExpandedPattern.make
-        [ ExpandedPattern
+        [ Predicated
             { term = mkTop
             , predicate =
                 case makeAndPredicate (makeFloorPredicate term) predicate of

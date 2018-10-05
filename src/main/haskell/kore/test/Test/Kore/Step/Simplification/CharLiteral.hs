@@ -15,9 +15,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( Predicated (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -33,7 +31,7 @@ test_charLiteralSimplification =
     [ testCase "CharLiteral evaluates to CharLiteral"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkCharLiteral 'a'
                     , predicate = makeTruePredicate
                     , substitution = []

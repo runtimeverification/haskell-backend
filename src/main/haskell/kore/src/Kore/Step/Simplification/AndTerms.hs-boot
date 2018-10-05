@@ -1,25 +1,25 @@
 module Kore.Step.Simplification.AndTerms where
 
-import           Control.Monad.Counter
-                 ( MonadCounter )
-import           Kore.AST.Common
-                 ( SortedVariable )
-import           Kore.AST.MetaOrObject
-                 ( Meta, MetaOrObject, Object )
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
-import           Kore.AST.PureML
-                 ( PureMLPattern )
-import           Kore.Substitution.Class
-                 ( Hashable )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import Control.Monad.Counter
+       ( MonadCounter )
+import Kore.AST.Common
+       ( SortedVariable )
+import Kore.AST.MetaOrObject
+       ( Meta, MetaOrObject, Object )
+import Kore.AST.PureML
+       ( PureMLPattern )
+import Kore.IndexedModule.MetadataTools
+       ( MetadataTools )
+import Kore.Step.ExpandedPattern
+       ( ExpandedPattern )
+import Kore.Step.Simplification.Data
+       ( SimplificationProof )
+import Kore.Step.StepperAttributes
+       ( StepperAttributes )
+import Kore.Substitution.Class
+       ( Hashable )
+import Kore.Variables.Fresh
+       ( FreshVariable )
 
 termAnd
     ::  ( MetaOrObject level

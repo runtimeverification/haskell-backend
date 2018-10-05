@@ -24,9 +24,7 @@ import           Kore.Predicate.Predicate
                  unwrapPredicate, wrapPredicate )
 import           Kore.SMT.SMT
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -99,7 +97,7 @@ asPredicateSubstitution
     => ExpandedPattern level variable
     -> (PredicateSubstitution level variable, SimplificationProof level)
 asPredicateSubstitution
-    ExpandedPattern {term, predicate, substitution}
+    Predicated {term, predicate, substitution}
   =
     let
         (andPatt, _proof) = makeAndPredicate predicate (wrapPredicate term)

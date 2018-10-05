@@ -26,9 +26,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom )
+                 ( bottom )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
                  CommonApplicationFunctionEvaluator )
@@ -63,25 +63,25 @@ test_applicationSimplification =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [a, c]
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
-                , ExpandedPattern
+                , Predicated
                     { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [a, d]
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
-                , ExpandedPattern
+                , Predicated
                     { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [b, c]
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
-                ,  ExpandedPattern
+                ,  Predicated
                     { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [b, d]
                     , predicate = makeTruePredicate
@@ -151,7 +151,7 @@ test_applicationSimplification =
         --    = sigma(a, b) and (f(a)=f(b) and g(a)=g(b)) and [x=f(a), y=g(a)]
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = give mockSymbolOrAliasSorts $
                         mkApp sigmaSymbol [a, b]
                     , predicate = fst $ give mockSymbolOrAliasSorts $ makeAndPredicate
@@ -170,14 +170,14 @@ test_applicationSimplification =
                 Map.empty
                 (makeApplication
                     sigmaSymbol
-                    [   [ ExpandedPattern
+                    [   [ Predicated
                             { term = a
                             , predicate = give mockSymbolOrAliasSorts $
                                 makeEqualsPredicate fOfA fOfB
                             , substitution = [ (x, fOfA) ]
                             }
                         ]
-                    ,   [ ExpandedPattern
+                    ,   [ Predicated
                             { term = b
                             , predicate = give mockSymbolOrAliasSorts $
                                 makeEqualsPredicate gOfA gOfB
@@ -198,7 +198,7 @@ test_applicationSimplification =
         -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = give mockSymbolOrAliasSorts $
                         mkApp fSymbol [a]
                     , predicate =
@@ -225,7 +225,7 @@ test_applicationSimplification =
                         (const $ const $ const $ return
                             ( AttemptedFunction.Applied
                                 (OrOfExpandedPattern.make
-                                    [ ExpandedPattern
+                                    [ Predicated
                                         { term = give mockSymbolOrAliasSorts $
                                             mkApp fSymbol [a]
                                         , predicate =
@@ -243,14 +243,14 @@ test_applicationSimplification =
                 )
                 (makeApplication
                     sigmaSymbol
-                    [   [ ExpandedPattern
+                    [   [ Predicated
                             { term = a
                             , predicate = give mockSymbolOrAliasSorts $
                                 makeEqualsPredicate fOfA fOfB
                             , substitution = [ (x, fOfA) ]
                             }
                         ]
-                    ,   [ ExpandedPattern
+                    ,   [ Predicated
                             { term = b
                             , predicate = give mockSymbolOrAliasSorts $
                                 makeEqualsPredicate gOfA gOfB
@@ -306,27 +306,27 @@ test_applicationSimplification =
     fOfB = give mockSymbolOrAliasSorts $ mkApp fSymbol [b]
     gOfA = give mockSymbolOrAliasSorts $ mkApp gSymbol [a]
     gOfB = give mockSymbolOrAliasSorts $ mkApp gSymbol [b]
-    aExpanded = ExpandedPattern
+    aExpanded = Predicated
         { term = a
         , predicate = makeTruePredicate
         , substitution = []
         }
-    bExpanded = ExpandedPattern
+    bExpanded = Predicated
         { term = b
         , predicate = makeTruePredicate
         , substitution = []
         }
-    cExpanded = ExpandedPattern
+    cExpanded = Predicated
         { term = c
         , predicate = makeTruePredicate
         , substitution = []
         }
-    dExpanded = ExpandedPattern
+    dExpanded = Predicated
         { term = d
         , predicate = makeTruePredicate
         , substitution = []
         }
-    gOfAExpanded = ExpandedPattern
+    gOfAExpanded = Predicated
         { term = gOfA
         , predicate = makeTruePredicate
         , substitution = []

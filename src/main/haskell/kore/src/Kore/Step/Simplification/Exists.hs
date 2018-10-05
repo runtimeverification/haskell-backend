@@ -32,9 +32,9 @@ import           Kore.Predicate.Predicate
                  ( Predicate, makeExistsPredicate, makeTruePredicate,
                  unwrapPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), toMLPattern )
+                 ( toMLPattern )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -162,7 +162,7 @@ makeEvaluate
     tools
     simplifier
     variable
-    patt@ExpandedPattern { term, predicate, substitution }
+    patt@Predicated { term, predicate, substitution }
   =
     case localSubstitution of
         [] ->
@@ -200,7 +200,7 @@ makeEvaluateNoFreeVarInSubstitution
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNoFreeVarInSubstitution
     variable
-    patt@ExpandedPattern { term, predicate, substitution }
+    patt@Predicated { term, predicate, substitution }
   =
     (OrOfExpandedPattern.make [simplifiedPattern], SimplificationProof)
   where
@@ -221,23 +221,23 @@ makeEvaluateNoFreeVarInSubstitution
                 (predicate', _proof) =
                     makeExistsPredicate variable predicate
             in
-                ExpandedPattern
+                Predicated
                     { term = term
                     , predicate = predicate'
                     , substitution = substitution
                     }
         (True, False) ->
-            ExpandedPattern
+            Predicated
                 { term = mkExists variable term
                 , predicate = predicate
                 , substitution = substitution
                 }
         (True, True) ->
-            ExpandedPattern
+            Predicated
                 { term =
                     mkExists variable
                         (ExpandedPattern.toMLPattern
-                            ExpandedPattern
+                            Predicated
                                 { term = term
                                 , predicate = predicate
                                 , substitution = []
@@ -271,7 +271,7 @@ substituteTermPredicate term predicate substitution globalSubstitution = do
     substitutedPredicate <-
         traverse (`substitute` substitution) predicate
     return
-        ( ExpandedPattern
+        ( Predicated
             { term = substitutedTerm
             , predicate = substitutedPredicate
             , substitution = globalSubstitution

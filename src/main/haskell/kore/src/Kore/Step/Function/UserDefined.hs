@@ -31,7 +31,7 @@ import           Kore.Step.BaseStep
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..) )
+                 ( ExpandedPattern, Predicated(..))
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.ExpandedPattern
@@ -84,7 +84,7 @@ axiomFunctionEvaluator
             return (AttemptedFunction.NotApplicable, SimplificationProof)
         Right (stepPattern, _) ->
             do
-                (   rewrittenPattern@ExpandedPattern
+                (   rewrittenPattern@Predicated
                         { predicate = rewritingCondition }
                     , _
                     ) <- evaluatePredicate tools simplifier stepPattern
@@ -111,7 +111,7 @@ axiomFunctionEvaluator
         => Application level (PureMLPattern level variable)
         -> ExpandedPattern level variable
     stepperConfiguration app' =
-        ExpandedPattern
+        Predicated
             { term = asPurePattern $ ApplicationPattern app'
             , predicate = makeTruePredicate
             , substitution = []
@@ -141,7 +141,7 @@ reevaluateFunctions
 reevaluateFunctions
     tools
     wrappedSimplifier@(PureMLPatternSimplifier simplifier)
-    ExpandedPattern
+    Predicated
         { term   = rewrittenPattern
         , predicate = rewritingCondition
         , substitution = rewrittenSubstitution
@@ -192,7 +192,7 @@ evaluatePredicate
 evaluatePredicate
     tools
     simplifier
-    ExpandedPattern {term, predicate, substitution}
+    Predicated {term, predicate, substitution}
   = do
     (   PredicateSubstitution
             { predicate = evaluatedPredicate
@@ -214,7 +214,7 @@ evaluatePredicate
                 [substitution, evaluatedSubstitution]
     -- TODO(virgil): Do I need to re-evaluate the predicate?
     return
-        ( ExpandedPattern
+        ( Predicated
             { term = term
             , predicate = mergedPredicate
             , substitution = mergedSubstitution

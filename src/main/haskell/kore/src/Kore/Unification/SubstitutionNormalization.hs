@@ -32,7 +32,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Var_, pattern Bottom_ )
+                 ( pattern Bottom_, pattern Var_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -43,13 +43,13 @@ import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), bottom )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Unification.Data
-                 ( UnificationSubstitution )
-import           Kore.Variables.Free
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
+import           Kore.Unification.Data
+                 ( UnificationSubstitution )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
+import           Kore.Variables.Free
 import           Kore.Variables.Fresh
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one

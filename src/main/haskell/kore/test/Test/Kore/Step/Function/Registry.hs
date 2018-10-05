@@ -33,7 +33,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.AxiomPatterns
                  ( koreIndexedModuleToAxiomPatterns )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (..) )
+                 ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( CommonApplicationFunctionEvaluator )
@@ -262,7 +262,7 @@ test_functionRegistry =
         :: CommonPurePattern Object
         -> CommonExpandedPattern Object
     makeExpandedPattern pat =
-        ExpandedPattern
+        Predicated
         { term = pat
         , predicate = makeTruePredicate
         , substitution = []

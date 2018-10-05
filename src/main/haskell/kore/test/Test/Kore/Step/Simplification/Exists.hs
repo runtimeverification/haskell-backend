@@ -23,9 +23,9 @@ import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeExistsPredicate,
                  makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
+                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, top )
+                 ( bottom, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -51,12 +51,12 @@ test_existsSimplification = give mockSymbolOrAliasSorts
         -- exists(a or b) = exists(a) or exists(b)
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkExists Mock.x something1OfX
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
-                , ExpandedPattern
+                , Predicated
                     { term = mkExists Mock.x something2OfX
                     , predicate = makeTruePredicate
                     , substitution = []
@@ -121,7 +121,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
         --    = t(alpha) and p(alpha) and [others]
         (assertEqualWithExplanation "exists with substitution"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkApp Mock.fSymbol [gOfA]
                     , predicate = makeCeilPredicate (mkApp Mock.hSymbol [gOfA])
                     , substitution = [(Mock.y, fOfA)]
@@ -130,7 +130,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
             )
             (makeEvaluate mockMetadataTools
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = mkApp Mock.fSymbol [mkVar Mock.x]
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution = [(Mock.x, gOfA), (Mock.y, fOfA)]
@@ -143,7 +143,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
         --    if t, p, s do not depend on x.
         (assertEqualWithExplanation "exists with substitution"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
                     , substitution = []
@@ -152,7 +152,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
             )
             (makeEvaluate mockMetadataTools
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
                     , substitution = []
@@ -165,7 +165,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
         --    if p, s do not depend on x.
         (assertEqualWithExplanation "exists on term"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkExists Mock.x fOfX
                     , predicate = makeCeilPredicate gOfA
                     , substitution = []
@@ -174,7 +174,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
             )
             (makeEvaluate mockMetadataTools
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
                     , substitution = []
@@ -187,7 +187,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
         --    if t, s do not depend on x.
         (assertEqualWithExplanation "exists on predicate"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = fOfA
                     , predicate = fst $
                         makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
@@ -197,7 +197,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
             )
             (makeEvaluate mockMetadataTools
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution = []
@@ -210,7 +210,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
         --    if s do not depend on x.
         (assertEqualWithExplanation "exists moves substitution"
             (OrOfExpandedPattern.make
-                [ ExpandedPattern
+                [ Predicated
                     { term = mkExists Mock.x (mkAnd fOfX (mkEquals fOfX gOfA))
                     , predicate = makeTruePredicate
                     , substitution = [(Mock.y, hOfA)]
@@ -219,7 +219,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
             )
             (makeEvaluate mockMetadataTools
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution = [(Mock.y, hOfA)]
@@ -235,7 +235,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
             )
             (makeEvaluate mockMetadataTools
                 Mock.x
-                ExpandedPattern
+                Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
                     , substitution = [(Mock.x, gOfA)]
@@ -250,12 +250,12 @@ test_existsSimplification = give mockSymbolOrAliasSorts
     hOfA = give mockSymbolOrAliasSorts $ Mock.h Mock.a
     something1OfX = give mockSymbolOrAliasSorts $ Mock.plain10 (mkVar Mock.x)
     something2OfX = give mockSymbolOrAliasSorts $ Mock.plain11 (mkVar Mock.x)
-    something1OfXExpanded = ExpandedPattern
+    something1OfXExpanded = Predicated
         { term = something1OfX
         , predicate = makeTruePredicate
         , substitution = []
         }
-    something2OfXExpanded = ExpandedPattern
+    something2OfXExpanded = Predicated
         { term = something2OfX
         , predicate = makeTruePredicate
         , substitution = []

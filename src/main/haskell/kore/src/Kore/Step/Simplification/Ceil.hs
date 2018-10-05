@@ -37,9 +37,8 @@ import           Kore.Predicate.Predicate
                  makeFalsePredicate, makeMultipleAndPredicate,
                  makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), bottom, isBottom, isTop, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -127,14 +126,14 @@ makeEvaluateNonBoolCeil
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolCeil
     _
-    patt@ExpandedPattern { term = Top_ _ }
+    patt@Predicated { term = Top_ _ }
   =
     ( OrOfExpandedPattern.make [patt]
     , SimplificationProof
     )
 makeEvaluateNonBoolCeil
     tools
-    ExpandedPattern {term, predicate, substitution}
+    Predicated {term, predicate, substitution}
   =
     let
         (termCeil, _proof1) = makeEvaluateTerm tools term
@@ -142,7 +141,7 @@ makeEvaluateNonBoolCeil
             give symbolOrAliasSorts $ makeAndPredicate predicate termCeil
     in
         ( OrOfExpandedPattern.make
-            [ ExpandedPattern
+            [ Predicated
                 { term = mkTop
                 , predicate = ceilPredicate
                 , substitution = substitution

@@ -20,9 +20,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern) )
+                 ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern (..), top )
+                 ( top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -49,7 +49,7 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
             (OrOfExpandedPattern.make [])
             (evaluate
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         -- Use the exact form we expect from an owise condition
                         -- for f(constr10(x)) = something
@@ -87,7 +87,7 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
             (OrOfExpandedPattern.make [ExpandedPattern.top])
             (evaluate
                 mockMetadataTools
-                ExpandedPattern
+                Predicated
                     { term =
                         -- Use the exact form we expect from an owise condition
                         -- for f(constr10(x)) = something
