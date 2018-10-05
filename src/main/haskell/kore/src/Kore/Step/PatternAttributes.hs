@@ -25,8 +25,8 @@ import           Data.Functor.Foldable
                  ( cata )
 
 import           Kore.AST.Common
-                 ( Application (..), BuiltinDomain (..), DomainValue (..),
-                 Pattern (..), PureMLPattern )
+                 ( Application (..), DomainValue (..), Pattern (..),
+                 PureMLPattern )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -108,22 +108,13 @@ isPreconstructedPattern
     -> Pattern level variable pat
     -> Either err (PartialPatternProof (FunctionalProof level variable))
 isPreconstructedPattern
-    err
+    _
     (DomainValuePattern dv@DomainValue { domainValueChild })
   =
-    case domainValueChild of
-        BuiltinDomainPattern pat ->
-            (Right . DoNotDescend)
-                (FunctionalDomainValue dv
-                    { domainValueChild = BuiltinDomainPattern pat }
-                )
-        BuiltinDomainSet set ->
-            (Right . DoNotDescend)
-                (FunctionalDomainValue dv
-                    { domainValueChild = BuiltinDomainSet set }
-                )
-        _ ->
-            Left err
+    (Right . Descend)
+        (FunctionalDomainValue dv
+            { domainValueChild = () <$ domainValueChild }
+        )
 isPreconstructedPattern _ (StringLiteralPattern str) =
     Right (DoNotDescend (FunctionalStringLiteral str))
 isPreconstructedPattern _ (CharLiteralPattern str) =

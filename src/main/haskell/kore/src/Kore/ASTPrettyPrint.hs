@@ -148,6 +148,9 @@ printableList = intersperse (Doc.line <> comma <> space)
 instance PrettyPrint Void where
     prettyPrint _ = \case {}
 
+instance PrettyPrint () where
+    prettyPrint _ () = "()"
+
 instance MetaOrObject level => PrettyPrint (Id level) where
     prettyPrint flags id'@(Id _ _) =
         betweenParentheses
