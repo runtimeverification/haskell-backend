@@ -814,7 +814,7 @@ domainValueAndConstructorErrors
     (App_ secondHead _)
     | StepperAttributes.isConstructor
         (MetadataTools.symAttributes tools secondHead)
-  = error "Cannot handle DomainValue and Constructor"
+    = error "Cannot handle DomainValue and Constructor"
 domainValueAndConstructorErrors
     tools
     (App_ firstHead _)
