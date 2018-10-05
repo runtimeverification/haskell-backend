@@ -2,6 +2,7 @@ module Test.Kore.Builtin.List where
 
 import Test.QuickCheck
        ( Property, property, (.&&.), (===) )
+import Test.Tasty.HUnit
 
 import           Data.Map
                  ( Map )
@@ -17,7 +18,7 @@ import qualified Data.Sequence as Seq
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
-import           Kore.ASTUtils.SmartConstructors
+import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Parser
@@ -50,7 +51,7 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 prop_getUnit :: Integer -> Property
 prop_getUnit k =
     let patGet = App_ symbolGet [App_ symbolUnit [], Test.Int.asPattern k]
-        predicate = give testSymbolOrAliasSorts $ mkEquals mkBottom patGet
+        predicate = mkEquals mkBottom patGet
     in
         allProperties
             [ ExpandedPattern.bottom === evaluate patGet
@@ -71,7 +72,7 @@ prop_getFirstElement values =
                 Seq.Empty -> Nothing
                 v Seq.:<| _ -> Just v
         patFirst = maybe mkBottom Test.Int.asPattern value
-        predicate = give testSymbolOrAliasSorts $ mkEquals patGet patFirst
+        predicate = mkEquals patGet patFirst
     in
         allProperties
             [ Test.Int.asPartialExpandedPattern value === evaluate patGet
@@ -142,6 +143,26 @@ prop_concatAssociates values1 values2 values3 =
             [ evaluate patConcat12_3 === evaluate patConcat1_23
             , ExpandedPattern.top === evaluate predicate
             ]
+
+-- | Check that simplification is carried out on list elements.
+unit_simplify :: Assertion
+unit_simplify =
+    let
+        x =
+            mkVar Variable
+                { variableName = testId "x"
+                , variableSort = Test.Int.intSort
+                }
+        original =
+            mkDomainValue listSort
+            $ BuiltinDomainList (Seq.fromList [mkAnd x mkTop])
+        expected =
+            ExpandedPattern.fromPurePattern
+            $ mkDomainValue listSort
+            $ BuiltinDomainList (Seq.fromList [x])
+        actual = evaluate original
+    in
+        assertEqual "Expected simplified List" expected actual
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern :: List.Builtin -> CommonPurePattern Object
@@ -262,7 +283,37 @@ verify defn =
     attrVerify = defaultAttributesVerification Proxy
 
 testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } = extractMetadataTools indexedModule
+MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } =
+    extractMetadataTools indexedModule
 
 allProperties :: [Property] -> Property
 allProperties = foldr (.&&.) (property True)
+
+-- * Constructors
+
+mkBottom :: CommonPurePattern Object
+mkBottom = Kore.mkBottom
+
+mkEquals
+    :: CommonPurePattern Object
+    -> CommonPurePattern Object
+    -> CommonPurePattern Object
+mkEquals = give testSymbolOrAliasSorts Kore.mkEquals
+
+mkAnd
+    :: CommonPurePattern Object
+    -> CommonPurePattern Object
+    -> CommonPurePattern Object
+mkAnd = give testSymbolOrAliasSorts Kore.mkAnd
+
+mkTop :: CommonPurePattern Object
+mkTop = Kore.mkTop
+
+mkVar :: Variable Object -> CommonPurePattern Object
+mkVar = give testSymbolOrAliasSorts Kore.mkVar
+
+mkDomainValue
+    :: Sort Object
+    -> BuiltinDomain (CommonPurePattern Object)
+    -> CommonPurePattern Object
+mkDomainValue = give testSymbolOrAliasSorts Kore.mkDomainValue
