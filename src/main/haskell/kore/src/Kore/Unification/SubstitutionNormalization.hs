@@ -263,7 +263,7 @@ normalizePredicateSubstitution
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> PredicateSubstitution level variable
     -> ExceptT
         (SubstitutionError level variable)

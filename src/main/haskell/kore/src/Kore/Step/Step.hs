@@ -95,7 +95,7 @@ transitionRule
     => MetadataTools level StepperAttributes
     ->  ( forall variable
         .  (Show (variable level))
-        => PureMLPatternSimplifier level variable
+        => PureMLPatternSimplifier level
         )
     -- ^ Evaluates functions in patterns
     -> Prim (AxiomPattern level)
@@ -139,7 +139,7 @@ transitionRule tools simplifier =
     predicateSimplifier
         :: forall variable0
         .  (Show (variable0 level))
-        => PredicateSimplifier level variable0
+        => PredicateSimplifier level0
     predicateSimplifier = Predicate.monadSimplifier simplifier
 
 {- | A strategy which takes one step by attempting all the axioms.

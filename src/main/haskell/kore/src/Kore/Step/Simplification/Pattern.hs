@@ -169,7 +169,7 @@ simplifyInternal
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
     -> Pattern level variable (PureMLPattern level variable)
@@ -216,7 +216,4 @@ simplifyInternal
         VariablePattern p -> return $ Variable.simplify p
   where
     predicateSimplifier =
-        Predicate.monadSimplifier
-            (MonadPureMLPatternSimplifier
-                (simplifyToOr tools symbolIdToEvaluator)
-            )
+        Predicate.monadSimplifier simplifier

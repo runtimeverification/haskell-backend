@@ -141,7 +141,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> Equals level (OrOfExpandedPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -168,7 +168,7 @@ simplifyEvaluated
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
     -> Simplifier
@@ -206,7 +206,7 @@ makeEvaluate
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> Simplifier
@@ -311,7 +311,7 @@ makeEvaluateTermsAssumesNoBottom
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Simplifier
@@ -352,7 +352,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
@@ -396,7 +396,7 @@ makeEvaluateTermsToPredicateSubstitution
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Simplifier

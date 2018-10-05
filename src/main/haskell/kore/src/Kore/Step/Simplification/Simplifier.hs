@@ -50,7 +50,7 @@ create
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level
 create
     tools
     symbolIdToEvaluator
@@ -73,6 +73,6 @@ createPredicateSimplifier
         )
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
 createPredicateSimplifier tools symbolIdToEvaluator =
     Predicate.monadSimplifier (create tools symbolIdToEvaluator)

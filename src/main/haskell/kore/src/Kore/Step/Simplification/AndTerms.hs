@@ -84,7 +84,7 @@ termEquals
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
@@ -111,7 +111,7 @@ termEqualsAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
@@ -134,7 +134,7 @@ termEqualsAndChild
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
@@ -171,7 +171,7 @@ maybeTermEquals
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable
@@ -219,7 +219,7 @@ termUnification
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
@@ -248,7 +248,7 @@ termAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
@@ -293,7 +293,7 @@ maybeTermAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable
@@ -319,7 +319,7 @@ maybeTermAnd =
 
 type TermTransformation level variable m =
     (  MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> TermSimplifier level variable m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
@@ -346,7 +346,7 @@ maybeTransformTerm
         )
     => [TermTransformation level variable m]
     -> MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm pairs.
     -> PureMLPattern level variable
@@ -638,7 +638,7 @@ equalInjectiveHeadsAndEquals
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
     -> PureMLPattern level variable

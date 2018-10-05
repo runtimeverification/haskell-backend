@@ -102,7 +102,7 @@ import           Kore.Step.Function.Data
                  AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 ( PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -522,7 +522,7 @@ unaryOperator
 
 functionEvaluator
     :: (  MetadataTools Object StepperAttributes
-       -> CommonPureMLPatternSimplifier Object
+       -> PureMLPatternSimplifier Object
        -> Sort Object
        -> [CommonPurePattern Object]
        -> Simplifier (AttemptedFunction Object Variable)

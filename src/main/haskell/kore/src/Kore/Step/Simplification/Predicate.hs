@@ -39,7 +39,7 @@ simplify
         , MonadCounter m
         , Show (variable level)
         )
-    => MonadPureMLPatternSimplifier level variable m
+    => MonadPureMLPatternSimplifier level m
     -> Predicate level variable
     -> m
         ( PredicateSubstitution level variable
@@ -70,9 +70,8 @@ simplify (MonadPureMLPatternSimplifier simplifier) predicate = do
 monadSimplifier
     ::  ( MetaOrObject level
         , MonadCounter m
-        , Show (variable level)
         )
-    => MonadPureMLPatternSimplifier level variable m
-    -> MonadPredicateSimplifier level variable m
+    => MonadPureMLPatternSimplifier level m
+    -> MonadPredicateSimplifier level m
 monadSimplifier simplifier =
     MonadPredicateSimplifier (simplify simplifier)

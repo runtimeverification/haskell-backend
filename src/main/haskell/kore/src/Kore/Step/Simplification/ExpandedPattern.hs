@@ -54,7 +54,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPatternSimplifier level variable
+    -> PureMLPatternSimplifier level
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
     -> Simplifier

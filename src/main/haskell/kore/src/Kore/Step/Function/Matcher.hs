@@ -99,7 +99,7 @@ matchAsUnification
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Either
@@ -129,7 +129,7 @@ match
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> Map.Map (variable level) (variable level)
     -> PureMLPattern level variable
     -> PureMLPattern level variable
@@ -158,7 +158,7 @@ matchEqualHeadPatterns
        , Hashable variable
        )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> Map.Map (variable level) (variable level)
     -> PureMLPattern level variable
     -> PureMLPattern level variable
@@ -372,7 +372,7 @@ matchJoin
        , SortedVariable variable
        )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> Map.Map (variable level) (variable level)
     -> [(PureMLPattern level variable, PureMLPattern level variable)]
     -> Maybe
@@ -448,7 +448,7 @@ matchNonVarToPattern
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSimplifier level variable
+    -> PredicateSimplifier level
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe (Counter (PredicateSubstitution level variable))

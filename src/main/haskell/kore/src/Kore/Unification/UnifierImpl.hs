@@ -109,7 +109,7 @@ simplifyAnds
        )
     => MetadataTools level StepperAttributes
     -- TODO: Do I still need the predicate simplifier?
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> [PureMLPattern level variable]
     -> ExceptT
         UnificationError
@@ -188,7 +188,7 @@ solveGroupedSubstitution
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> UnificationSubstitution level variable
     -> ExceptT
         UnificationError
@@ -229,7 +229,7 @@ normalizeSubstitutionDuplication
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
-    -> MonadPredicateSimplifier level variable m
+    -> MonadPredicateSimplifier level m
     -> UnificationSubstitution level variable
     -> ExceptT
         UnificationError

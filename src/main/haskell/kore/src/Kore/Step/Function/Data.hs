@@ -53,7 +53,7 @@ newtype ApplicationFunctionEvaluator level variable =
     ApplicationFunctionEvaluator
         (forall . ( MetaOrObject level)
         => MetadataTools level StepperAttributes
-        -> PureMLPatternSimplifier level variable
+        -> PureMLPatternSimplifier level
         -> Application level (PureMLPattern level variable)
         -> Simplifier
             ( AttemptedFunction level variable
