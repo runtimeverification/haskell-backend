@@ -17,6 +17,8 @@ import Control.Applicative
        ( Alternative (..) )
 import Control.Exception
        ( assert )
+import Data.Functor.Foldable
+       ( project )
 import Data.Reflection
        ( give )
 
@@ -48,7 +50,7 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern (..), bottom, fromPurePattern, isBottom )
 import           Kore.Step.PatternAttributes
-                 ( isFunctionPattern )
+                 ( isConstructorLikeTop, isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
@@ -686,6 +688,9 @@ sortInjectionAndEqualsAssumesDifferentHeads
                         (result, _proof) =
                             termSortInjection firstOrigin firstDestination patt
                     return (result, SimplificationProof)
+        else if isConstructorLikeTop tools (project firstChild)
+             && isConstructorLikeTop tools (project secondChild)
+            then return (return (ExpandedPattern.bottom, SimplificationProof))
             else
                 empty
   where
