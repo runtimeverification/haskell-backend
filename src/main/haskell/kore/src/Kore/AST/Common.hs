@@ -910,7 +910,9 @@ data Pattern level variable child where
     CeilPattern
         :: !(Ceil level child) -> Pattern level variable child
     DomainValuePattern
-        :: !(DomainValue Object (BuiltinDomain (Fix (Pattern Meta Variable))))
+        :: !(DomainValue Object
+                (BuiltinDomain variable (Fix (Pattern Meta Variable)))
+            )
         -> Pattern Object variable child
     EqualsPattern
         :: !(Equals level child) -> Pattern level variable child
@@ -943,15 +945,18 @@ data Pattern level variable child where
     VariablePattern
         :: !(variable level) -> Pattern level variable child
 
-data BuiltinDomain child
+data BuiltinDomain variable child
     = BuiltinDomainPattern !child
     | BuiltinDomainMap
-        !(Map (Fix (Pattern Object Variable)) (Fix (Pattern Object Variable)))
-    | BuiltinDomainList !(Seq (Fix (Pattern Object Variable)))
-    | BuiltinDomainSet !(Set (Fix (Pattern Object Variable)))
+        !(Map (Fix (Pattern Object variable)) (Fix (Pattern Object variable)))
+    | BuiltinDomainList !(Seq (Fix (Pattern Object variable)))
+    | BuiltinDomainSet !(Set (Fix (Pattern Object variable)))
     deriving (Generic)
 
-instance Hashable child => Hashable (BuiltinDomain child) where
+instance
+    (Hashable child, (Hashable (variable Object)))
+    => Hashable (BuiltinDomain variable child)
+  where
     hashWithSalt salt =
         \case
             BuiltinDomainPattern pat ->
@@ -963,13 +968,17 @@ instance Hashable child => Hashable (BuiltinDomain child) where
             BuiltinDomainSet (Foldable.toList -> set) ->
                 salt `hashWithSalt` (3::Int) `hashWithSalt` set
 
-instance NFData child => NFData (BuiltinDomain child)
+instance
+    (NFData child, NFData (variable Object))
+    => NFData (BuiltinDomain variable child)
 
 $(return [])
 {- dummy top-level splice to make ''Pattern available for lifting -}
 
-instance (Ord level, Ord (variable level)) => Ord1 (Pattern level variable) where
-    liftCompare liftedCompare a b = $(makeLiftCompare ''Pattern) liftedCompare a b
+instance (Ord level, Ord (variable level)) => Ord1 (Pattern level variable)
+  where
+    liftCompare liftedCompare a b =
+        $(makeLiftCompare ''Pattern) liftedCompare a b
 
 instance (Eq level, Eq (variable level)) => Eq1 (Pattern level variable) where
     liftEq liftedEq a b = $(makeLiftEq ''Pattern) liftedEq a b
@@ -977,11 +986,17 @@ instance (Eq level, Eq (variable level)) => Eq1 (Pattern level variable) where
 instance (Show level, Show (variable level)) => Show1 (Pattern level variable) where
     liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
 
-deriving instance Eq child => Eq (BuiltinDomain child)
+deriving instance
+    (Eq child, Eq (variable Object))
+    => Eq (BuiltinDomain variable child)
 
-deriving instance Ord child => Ord (BuiltinDomain child)
+deriving instance
+    (Ord child, Ord (variable Object))
+    => Ord (BuiltinDomain variable child)
 
-deriving instance Show child => Show (BuiltinDomain child)
+deriving instance
+    (Show child, Show (variable Object))
+    => Show (BuiltinDomain variable child)
 
 -- instance Generic child => Generic (Pattern level variable child)
 

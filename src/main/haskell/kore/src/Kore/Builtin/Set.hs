@@ -46,18 +46,26 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern )
+                 ( CommonPurePattern, PureMLPattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( CommonExpandedPattern, ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
+import           Kore.Step.Simplification.Data
+                 ( GenericPureMLPatternSimplifier,
+                 GenericSimplifierWrapper (GenericSimplifierWrapper),
+                 SimplificationProof (..), Simplifier )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 
 {- | Builtin name of the @Set@ sort.
@@ -109,7 +117,7 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin = Set (CommonPurePattern Object)
+type Builtin variable = Set (PureMLPattern Object variable)
 
 {- | Abort function evaluation if the argument is not a @Set@ domain value.
 
@@ -121,8 +129,8 @@ type Builtin = Set (CommonPurePattern Object)
 expectBuiltinDomainSet
     :: Monad m
     => String  -- ^ Context for error message
-    -> CommonPurePattern Object  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
+    -> PureMLPattern Object variable -- ^ Operand pattern
+    -> ExceptT (AttemptedFunction Object variable) m (Builtin variable)
 expectBuiltinDomainSet ctx =
     \case
         Kore.DV_ _ domain ->
@@ -138,8 +146,8 @@ getAttemptedFunction = fmap (either id id) . runExceptT
 returnSet
     :: Monad m
     => Kore.Sort Object
-    -> Builtin
-    -> m (AttemptedFunction Object Kore.Variable)
+    -> Builtin variable
+    -> m (AttemptedFunction Object variable)
 returnSet resultSort set =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
@@ -150,7 +158,14 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ _ resultSort = \arguments ->
+    evalElement0
+        :: (Ord (variable0 Object))
+        => MetadataTools Object StepperAttributes
+        -> GenericPureMLPatternSimplifier Object
+        -> Kore.Sort Object
+        -> [PureMLPattern Object variable0]
+        -> Simplifier (AttemptedFunction Object variable0)
+    evalElement0 _ _ resultSort arguments =
         case arguments of
             [_elem] -> returnSet resultSort (Set.singleton _elem)
             _ -> Builtin.wrongArity "SET.element"
@@ -159,7 +174,14 @@ evalIn :: Builtin.Function
 evalIn =
     Builtin.functionEvaluator evalIn0
   where
-    evalIn0 _ _ resultSort = \arguments ->
+    evalIn0
+        :: (Ord (variable0 Object))
+        => MetadataTools Object StepperAttributes
+        -> GenericPureMLPatternSimplifier Object
+        -> Kore.Sort Object
+        -> [PureMLPattern Object variable0]
+        -> Simplifier (AttemptedFunction Object variable0)
+    evalIn0 _ _ resultSort arguments =
         getAttemptedFunction
         (do
             let (elem', _set) =
@@ -177,6 +199,12 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
+    evalUnit0
+        :: MetadataTools Object StepperAttributes
+        -> GenericPureMLPatternSimplifier Object
+        -> Kore.Sort Object
+        -> [PureMLPattern Object variable0]
+        -> Simplifier (AttemptedFunction Object variable0)
     evalUnit0 _ _ resultSort =
         \case
             [] -> returnSet resultSort Set.empty
@@ -186,7 +214,14 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 _ _ resultSort = \arguments ->
+    evalConcat0
+        :: (Ord (variable0 Object))
+        => MetadataTools Object StepperAttributes
+        -> GenericPureMLPatternSimplifier Object
+        -> Kore.Sort Object
+        -> [PureMLPattern Object variable0]
+        -> Simplifier (AttemptedFunction Object variable0)
+    evalConcat0 _ _ resultSort arguments =
         getAttemptedFunction
         (do
             let (_set1, _set2) =
@@ -203,7 +238,14 @@ evalDifference =
     Builtin.functionEvaluator evalConcat0
   where
     ctx = "SET.difference"
-    evalConcat0 _ _ resultSort = \arguments ->
+    evalConcat0
+        :: (Ord (variable0 Object))
+        => MetadataTools Object StepperAttributes
+        -> GenericPureMLPatternSimplifier Object
+        -> Kore.Sort Object
+        -> [PureMLPattern Object variable0]
+        -> Simplifier (AttemptedFunction Object variable0)
+    evalConcat0 _ _ resultSort arguments =
         getAttemptedFunction
         (do
             let (_set1, _set2) =
@@ -243,15 +285,28 @@ asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonPurePattern Object)
+    -> Either (Kore.Error e) (Builtin variable -> PureMLPattern Object variable)
 asPattern indexedModule _ = do
     symbolUnit <- lookupSymbolUnit indexedModule
-    let applyUnit = Kore.App_ symbolUnit []
+    let
+        applyUnit :: PureMLPattern Object variable
+        applyUnit = Kore.App_ symbolUnit []
     symbolElement <- lookupSymbolElement indexedModule
-    let applyElement elem' = Kore.App_ symbolElement [elem']
+    let
+        applyElement
+            :: PureMLPattern Object variable -> PureMLPattern Object variable
+        applyElement elem' = Kore.App_ symbolElement [elem']
     symbolConcat <- lookupSymbolConcat indexedModule
-    let applyConcat set1 set2 = Kore.App_ symbolConcat [set1, set2]
-    let asPattern0 set =
+    let
+        applyConcat
+            :: PureMLPattern Object variable
+            -> PureMLPattern Object variable
+            -> PureMLPattern Object variable
+        applyConcat set1 set2 = Kore.App_ symbolConcat [set1, set2]
+    let
+        asPattern0
+            :: Builtin variable -> PureMLPattern Object variable
+        asPattern0 set =
             foldr applyConcat applyUnit
                 (applyElement <$> Foldable.toList set)
     return asPattern0
@@ -265,7 +320,9 @@ asExpandedPattern
     :: KoreIndexedModule attrs
     -- ^ dictionary of Map constructor symbols
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonExpandedPattern Object)
+    -> Either
+        (Kore.Error e)
+        (Builtin variable -> ExpandedPattern Object variable)
 asExpandedPattern symbols resultSort =
     (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
 

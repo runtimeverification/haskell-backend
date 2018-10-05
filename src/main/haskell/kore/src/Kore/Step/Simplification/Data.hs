@@ -12,6 +12,7 @@ module Kore.Step.Simplification.Data
     , runSimplifier
     , evalSimplifier
     , GenericPureMLPatternSimplifier
+    , GenericSimplifierWrapper (..)
     , MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier)
     , PureMLPatternSimplifier
     , SimplificationProof (..)
@@ -80,6 +81,9 @@ type SimplificationVariable level variable =
     , Show (variable Object)
     , SortedVariable variable
     )
+
+newtype GenericSimplifierWrapper level
+    = GenericSimplifierWrapper (GenericPureMLPatternSimplifier level)
 
 type GenericPureMLPatternSimplifier level =
     (forall variable . SimplificationVariable level variable

@@ -22,7 +22,7 @@ module Kore.Builtin.Builtin
     , SortDeclVerifier, SortDeclVerifiers
     , SortVerifier
     , PatternVerifier (..)
-    , Function
+    , Function (..)
     , Parser
     , symbolVerifier
     , sortDeclVerifier
@@ -74,7 +74,7 @@ import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern )
+                 ( CommonPurePattern, PureMLPattern )
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
@@ -92,24 +92,25 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, SortDescription )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( ExpandedPattern )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
-                 AttemptedFunction (..) )
+                 AttemptedFunction (..), GenericApplicationFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( GenericPureMLPatternSimplifier, PureMLPatternSimplifier,
+                 ( GenericPureMLPatternSimplifier,
+                 GenericSimplifierWrapper (GenericSimplifierWrapper),
                  SimplificationProof (..), Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
 type Parser = Parsec Void String
 
-type Function = ApplicationFunctionEvaluator Object Variable
+newtype Function = Function (GenericApplicationFunctionEvaluator Object)
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
@@ -243,12 +244,12 @@ symbolVerifier Verifiers { symbolVerifiers } hook =
 
 notImplemented :: Function
 notImplemented =
-    ApplicationFunctionEvaluator notImplemented0
+    Function $ ApplicationFunctionEvaluator notImplemented0
   where
     notImplemented0
         :: MetadataTools level StepperAttributes
-        -> GenericPureMLPatternSimplifier level
-        -> Application level (CommonPurePattern level)
+        -> GenericSimplifierWrapper level
+        -> Application level (PureMLPattern level variable)
         -> Simplifier
             ( AttemptedFunction level variable
             , SimplificationProof level
@@ -448,8 +449,8 @@ parseString parser lit =
  -}
 appliedFunction
     :: Monad m
-    => CommonExpandedPattern Object
-    -> m (AttemptedFunction Object Variable)
+    => ExpandedPattern Object variable
+    -> m (AttemptedFunction Object variable)
 appliedFunction epat =
     (return . Applied . OrOfExpandedPattern.make) [epat]
 
@@ -466,7 +467,7 @@ appliedFunction epat =
 binaryOperator
     :: Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -482,6 +483,12 @@ binaryOperator
     functionEvaluator binaryOperator0
   where
     get = runParser ctx . parseDomainValue parser
+    binaryOperator0
+        :: MetadataTools Object StepperAttributes
+        -> GenericPureMLPatternSimplifier Object
+        -> Sort Object
+        -> [PureMLPattern Object variable0]
+        -> Simplifier (AttemptedFunction Object variable0)
     binaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a, DomainValuePattern b] -> do
@@ -503,7 +510,7 @@ binaryOperator
 unaryOperator
     :: Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -519,6 +526,12 @@ unaryOperator
     functionEvaluator unaryOperator0
   where
     get = runParser ctx . parseDomainValue parser
+    unaryOperator0
+        :: MetadataTools Object StepperAttributes
+        -> GenericPureMLPatternSimplifier Object
+        -> Sort Object
+        -> [PureMLPattern Object variable0]
+        -> Simplifier (AttemptedFunction Object variable0)
     unaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a] -> do
@@ -529,20 +542,30 @@ unaryOperator
             _ -> wrongArity ctx
 
 functionEvaluator
-    :: (  MetadataTools Object StepperAttributes
-       -> PureMLPatternSimplifier Object Variable
-       -> Sort Object
-       -> [CommonPurePattern Object]
-       -> Simplifier (AttemptedFunction Object Variable)
-       )
+    ::  (forall variable . (Ord (variable Object))
+        => MetadataTools Object StepperAttributes
+        -> GenericPureMLPatternSimplifier Object
+        -> Sort Object
+        -> [PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
+        )
     -- ^ Builtin function implementation
     -> Function
 functionEvaluator impl =
-    ApplicationFunctionEvaluator evaluator
+    Function $ ApplicationFunctionEvaluator evaluator
   where
     evaluator
+        :: (Ord (variable Object))
+        => MetadataTools Object StepperAttributes
+        -> GenericSimplifierWrapper Object
+        -> Application Object (PureMLPattern Object variable)
+        -> Simplifier
+            ( AttemptedFunction Object variable
+            , SimplificationProof Object
+            )
+    evaluator
         tools
-        simplifier
+        (GenericSimplifierWrapper simplifier)
         Application
             { applicationSymbolOrAlias =
                 (MetadataTools.getResultSort tools -> resultSort)

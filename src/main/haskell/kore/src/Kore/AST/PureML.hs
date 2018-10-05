@@ -13,9 +13,13 @@ Portability : portable
 -}
 module Kore.AST.PureML where
 
-import Data.Functor.Foldable
+import           Data.Functor.Foldable
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 import Kore.AST.Common
+import Kore.AST.MetaOrObject
+       ( Object )
 import Kore.AST.Sentence
 
 {-|'PureMLPattern' corresponds to "fixed point" representations
@@ -135,8 +139,8 @@ mapPatternVariable _ (BottomPattern (Bottom a)) =
     BottomPattern (Bottom a)
 mapPatternVariable _ (CeilPattern (Ceil a b c)) =
     CeilPattern (Ceil a b c)
-mapPatternVariable _ (DomainValuePattern (DomainValue a b)) =
-    DomainValuePattern (DomainValue a b)
+mapPatternVariable wrapper (DomainValuePattern (DomainValue a b)) =
+    DomainValuePattern (DomainValue a (mapDomainValueVariables wrapper b))
 mapPatternVariable _ (EqualsPattern (Equals a b c d)) =
     EqualsPattern (Equals a b c d)
 mapPatternVariable wrapper (ExistsPattern exists) =
@@ -170,3 +174,17 @@ mapPatternVariable _ (TopPattern (Top a)) =
     TopPattern (Top a)
 mapPatternVariable wrapper (VariablePattern variable) =
     VariablePattern (wrapper variable)
+
+mapDomainValueVariables
+    :: (variableFrom Object -> variableTo Object)
+    -> BuiltinDomain variableFrom child
+    -> BuiltinDomain variableTo child
+mapDomainValueVariables _ (BuiltinDomainPattern a) = BuiltinDomainPattern a
+mapDomainValueVariables mapper (BuiltinDomainMap m) =
+    BuiltinDomainMap
+        (Map.map (mapPatternVariables mapper) m)
+mapDomainValueVariables mapper (BuiltinDomainList l) =
+    BuiltinDomainList
+        (fmap (mapPatternVariables mapper) l)
+mapDomainValueVariables mapper (BuiltinDomainSet s) =
+    BuiltinDomainSet s

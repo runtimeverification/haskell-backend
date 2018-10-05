@@ -200,7 +200,7 @@ asExpandedPattern resultSort =
 asPartialExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
-    -> CommonExpandedPattern Object
+    -> ExpandedPattern Object variable
 asPartialExpandedPattern resultSort =
     maybe ExpandedPattern.bottom (asExpandedPattern resultSort)
 

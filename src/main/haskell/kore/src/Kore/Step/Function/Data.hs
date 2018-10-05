@@ -27,7 +27,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import Kore.Step.Simplification.Data
-       ( GenericPureMLPatternSimplifier, SimplificationProof (..),
+       ( GenericSimplifierWrapper, SimplificationProof (..),
        SimplificationVariable, Simplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
@@ -52,9 +52,8 @@ that the function was applied correctly (which is only a placeholder right now).
 -}
 newtype ApplicationFunctionEvaluator level variable =
     ApplicationFunctionEvaluator
-        (( MetaOrObject level)
-        => MetadataTools level StepperAttributes
-        -> GenericPureMLPatternSimplifier level
+        (  MetadataTools level StepperAttributes
+        -> GenericSimplifierWrapper level
         -> Application level (PureMLPattern level variable)
         -> Simplifier
             ( AttemptedFunction level variable

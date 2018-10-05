@@ -138,7 +138,7 @@ evaluateApplication
     applyEvaluator app' (ApplicationFunctionEvaluator evaluator) =
         evaluator
             tools
-            simplifier
+            (GenericSimplifierWrapper simplifier)
             app'
     notBottom =
         \case

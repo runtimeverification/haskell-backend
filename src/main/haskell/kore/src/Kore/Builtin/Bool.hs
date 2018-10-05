@@ -41,11 +41,11 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern )
+                 ( CommonPurePattern, PureMLPattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 
 {- | Builtin name of the @Bool@ sort.
@@ -114,7 +114,7 @@ parse = (Parsec.<|>) true false
 asPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> CommonPurePattern Object
+    -> PureMLPattern Object variable
 asPattern resultSort result =
     Kore.DV_ resultSort
         $ Kore.BuiltinDomainPattern
@@ -127,7 +127,7 @@ asMetaPattern False = Kore.StringLiteral_ "false"
 asExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> CommonExpandedPattern Object
+    -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asPattern resultSort
 

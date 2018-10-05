@@ -226,6 +226,12 @@ evalInKeys :: Builtin.Function
 evalInKeys =
     Builtin.functionEvaluator evalInKeys0
   where
+    evalInKeys0
+        :: MetadataTools Object StepperAttributes
+        -> GenericPureMLPatternSimplifier Object
+        -> Sort Object
+        -> [PureMLPattern Object variable0]
+        -> Simplifier (AttemptedFunction Object variable0)
     evalInKeys0 _ _ resultSort = \arguments ->
         getAttemptedFunction
         (do
