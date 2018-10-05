@@ -295,6 +295,28 @@ unit_simplify =
     in
         assertEqual "Expected simplified Map" expected actual
 
+-- | Maps with symbolic keys are not simplified.
+prop_symbolic :: Map String Integer -> Property
+prop_symbolic values =
+    let patMap =
+            asSymbolicPattern
+            $ Map.mapKeys (mkIntVar . testId)
+            $ Map.map Test.Int.asPattern values
+    in
+        not (Map.null values) ==>
+        (ExpandedPattern.fromPurePattern patMap === evaluate patMap)
+
+-- | Construct a pattern for a map which may have symbolic keys.
+asSymbolicPattern
+    :: Map (CommonPurePattern Object) (CommonPurePattern Object)
+    -> CommonPurePattern Object
+asSymbolicPattern result =
+    foldr applyConcat applyUnit (applyElement <$> Map.toAscList result)
+  where
+    applyUnit = mkDomainValue mapSort $ BuiltinDomainMap Map.empty
+    applyElement (key, value) = App_ symbolElement [key, value]
+    applyConcat map1 map2 = App_ symbolConcat [map1, map2]
+
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin -> CommonPurePattern Object
 Right asPattern = Map.asPattern indexedModule mapSort
@@ -477,3 +499,7 @@ mkImplies = give testSymbolOrAliasSorts Kore.mkImplies
 
 mkNot :: CommonPurePattern Object -> CommonPurePattern Object
 mkNot = give testSymbolOrAliasSorts Kore.mkNot
+
+mkIntVar :: Id Object -> CommonPurePattern Object
+mkIntVar variableName =
+    mkVar Variable { variableName, variableSort = Test.Int.intSort }
