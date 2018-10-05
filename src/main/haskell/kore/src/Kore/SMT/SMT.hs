@@ -18,6 +18,10 @@ module Kore.SMT.SMT
 )
 where
 
+import           Control.Error.Util
+                 ( hush )
+import           Control.Exception
+                 ( SomeException (..), try )
 import           Control.Lens
                  ( Lens', makeLenses, use, (%=) )
 import           Control.Monad.Except
@@ -133,17 +137,20 @@ unsafeTryRefutePattern
        )
     => PureMLPattern Object variable
     -> Maybe Bool
-unsafeTryRefutePattern p = unsafePerformIO $ do
-  let smtPredicate = setTimeOut 20 >> patternToSMT True p -- 20ms
-        >>= (\case {
-               Right p' -> return $ bnot p' ;
-               Left _ -> sBool "TranslationFailed"
-          })
-  res <- proveWith config smtPredicate
-  return $ case res of
-    ThmResult (Satisfiable   _ _) -> Nothing
-    ThmResult (Unsatisfiable _ _) -> Just False
-    _ -> Nothing
+unsafeTryRefutePattern p =
+    unsafePerformIO $ join . hush @SomeException <$> try unsafeRunSmt
+  where
+    unsafeRunSmt = do
+        let smtPredicate = setTimeOut 20 >> patternToSMT True p -- 20ms
+                >>= (\case {
+                    Right p' -> return $ bnot p' ;
+                    Left _ -> sBool "TranslationFailed"
+                })
+        res <- proveWith config smtPredicate
+        return $ case res of
+            ThmResult (Satisfiable   _ _) -> Nothing
+            ThmResult (Unsatisfiable _ _) -> Just False
+            _ -> Nothing
 
 unsafeTryRefutePredicate
     :: forall level variable .

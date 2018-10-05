@@ -523,7 +523,7 @@ test_unification =
     , andSimplifyException "Unmatching constructor constant + domain value"
         (UnificationTerm aA)
         (UnificationTerm dv2)
-        "Cannot handle DomainValue and Constructor"
+        "Cannot handle Constructor and DomainValue"
     , andSimplifyException "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm aA)
@@ -673,14 +673,11 @@ injUnificationTests =
         EmptyUnificationProof
     , andSimplifySuccess "unmatching injections"
         -- TODO(traiansf): this should succeed if s1 < s2 < s3
-        -- TODO(Vladimir): changed when unification was implemented as
-        -- simplification; it should fail once we implement subsorting checks.
-        -- The test should be updated then.
         (UnificationTerm (applyInj s1 s3 aA))
         (UnificationTerm (applyInj s2 s3 xs2))
-        (UnificationResultTerm (applyInj s1 s3 aA))
+        (UnificationResultTerm bottomPredicate)
         []
-        (makeEqualsPredicate (applyInj s1 s3 aA) (applyInj s2 s3 xs2))
+        makeFalsePredicate
         EmptyUnificationProof
     ]
 

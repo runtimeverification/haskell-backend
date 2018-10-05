@@ -292,6 +292,18 @@ stepWithAxiom
         returnExcept
         $ unificationProofStepVariablesToCommon
             existingVars variableMapping1 rawSubstitutionProof
+
+    let
+        variablesInLeftAxiom = pureAllVariables axiomLeftRaw
+        toVariable (AxiomVariable v) = v
+        toVariable (ConfigurationVariable v) = v
+        substitutions =
+            Set.fromList . fmap (toVariable . fst) $ normalizedSubstitution
+    if Predicate.isFalse condition
+       || variablesInLeftAxiom `Set.isSubsetOf` substitutions
+        then return ()
+        else error "Substitutions do not cover all variables in left axiom."
+
     let
         orElse :: a -> a -> a
         p1 `orElse` p2 = if Predicate.isFalse condition then p2 else p1
