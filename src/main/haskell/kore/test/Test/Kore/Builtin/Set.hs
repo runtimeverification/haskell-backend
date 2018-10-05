@@ -156,7 +156,7 @@ prop_difference set1 set2 =
 asPattern :: Set Integer -> CommonPurePattern Object
 Right asPattern = (. Set.map Test.Int.asConcretePattern) <$> Set.asPattern indexedModule setSort
 
--- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
+-- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object
 Right asExpandedPattern = Set.asExpandedPattern indexedModule setSort
 
