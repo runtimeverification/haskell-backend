@@ -50,7 +50,8 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, Simplifier )
+                 ( CommonPureMLPatternSimplifier, PureMLPatternSimplifier,
+                 Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -91,9 +92,9 @@ axiomStep a =
     'Strategy.runStrategy'.
  -}
 transitionRule
-    :: (MetaOrObject level)
+    :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier level
+    -> forall variable . PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
     -> Prim (AxiomPattern level)
     -> (CommonExpandedPattern level, StepProof level)
@@ -104,6 +105,10 @@ transitionRule tools simplifier =
         Simplify -> transitionSimplify
         Axiom a -> transitionAxiom a
   where
+    transitionSimplify
+        :: (CommonExpandedPattern level, StepProof level)
+        -- ^ Configuration being rewritten and its accompanying proof
+        -> Simplifier [(CommonExpandedPattern level, StepProof level)]
     transitionSimplify (config, proof) =
         do
             (configs, proof') <-
@@ -114,6 +119,11 @@ transitionRule tools simplifier =
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = ExpandedPattern.filterOr configs
             return (prove <$> toList nonEmptyConfigs)
+    transitionAxiom
+        :: AxiomPattern level
+        -> (CommonExpandedPattern level, StepProof level)
+        -- ^ Configuration being rewritten and its accompanying proof
+        -> Simplifier [(CommonExpandedPattern level, StepProof level)]
     transitionAxiom a (config, proof) = do
         result <-
             runExceptT $ stepWithAxiom
