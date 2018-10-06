@@ -19,9 +19,7 @@ module Kore.SMT.SMT
 where
 
 import           Control.Error.Util
-                 ( hush )
-import           Control.Exception
-                 ( SomeException (..), try )
+                 ( note )
 import           Control.Lens
                  ( Lens', makeLenses, use, (%=) )
 import           Control.Monad.Except
@@ -29,6 +27,8 @@ import           Control.Monad.State
 import           Data.Default
 import qualified Data.Map as Map
 import           Data.Proxy
+import           Text.Read
+                 ( readMaybe )
 
 
 import           Kore.AST.Common
@@ -53,6 +53,7 @@ data TranslatePredicateError
     | UnknownHookedSymbol (SymbolOrAlias Object)
     | UnknownPatternConstructor Pat
     | ExpectedDVPattern Pat
+    | MalformedDVLiteral Pat
     deriving(Eq, Ord, Show)
 
 type Pat = PureMLPattern Object Variable
@@ -137,20 +138,17 @@ unsafeTryRefutePattern
        )
     => PureMLPattern Object variable
     -> Maybe Bool
-unsafeTryRefutePattern p =
-    unsafePerformIO $ join . hush @SomeException <$> try unsafeRunSmt
-  where
-    unsafeRunSmt = do
-        let smtPredicate = setTimeOut 20 >> patternToSMT True p -- 20ms
-                >>= (\case {
-                    Right p' -> return $ bnot p' ;
-                    Left _ -> sBool "TranslationFailed"
-                })
-        res <- proveWith config smtPredicate
-        return $ case res of
-            ThmResult (Satisfiable   _ _) -> Nothing
-            ThmResult (Unsatisfiable _ _) -> Just False
-            _ -> Nothing
+unsafeTryRefutePattern p = unsafePerformIO $ do
+  let smtPredicate = setTimeOut 20 >> patternToSMT True p -- 20ms
+        >>= (\case {
+               Right p' -> return $ bnot p' ;
+               Left _ -> sBool "TranslationFailed"
+          })
+  res <- proveWith config smtPredicate
+  return $ case res of
+    ThmResult (Satisfiable   _ _) -> Nothing
+    ThmResult (Unsatisfiable _ _) -> Just False
+    _ -> Nothing
 
 unsafeTryRefutePredicate
     :: forall level variable .
@@ -232,9 +230,11 @@ patternToSMT sloppy p =
             => CommonPurePattern Object
             -> String
             -> Translating (SBV a)
-        goLiteral (DV_ s (BuiltinDomainPattern (StringLiteral_ i))) hookName
+        goLiteral p@(DV_ s (BuiltinDomainPattern (StringLiteral_ i))) hookName
          | (getHookString $ getSortHook s) == hookName
-             = return $ literal $ read i
+             = liftEither $ note
+                 (MalformedDVLiteral p)
+                 (literal <$> readMaybe i)
         goLiteral pat _ =
           throwError $ ExpectedDVPattern pat
 
