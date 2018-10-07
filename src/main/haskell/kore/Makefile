@@ -5,7 +5,7 @@ stack = $(stack_yaml) stack
 pattern = ""
 
 build:
-	$(stack) build $(package) --pedantic
+	$(stack) build $(package)
 
 build-dirty:
 	$(stack) build --ghc-options=-fforce-recomp --pedantic $(package)
@@ -24,12 +24,6 @@ test:
 
 testp:
 	$(stack) test --test-arguments '-p "$(pattern)"'
-
-test-pedantic:
-	$(stack) test $(package) --test-arguments "--hide-successes" --pedantic
-
-testp-pedantic:
-	$(stack) test --test-arguments '-p "$(pattern)"' --pedantic
 
 test-ghci:
 	$(stack) ghci $(package):test:$(package)-test
