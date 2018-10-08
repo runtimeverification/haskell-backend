@@ -301,7 +301,9 @@ stepWithAxiom
     if Predicate.isFalse condition
        || variablesInLeftAxiom `Set.isSubsetOf` substitutions
         then return ()
-        else error "Substitutions do not cover all variables in left axiom."
+        else error
+            "Unexpected false predicate or substitutions do not cover \
+            \all variables in left axiom."
 
     let
         orElse :: a -> a -> a
