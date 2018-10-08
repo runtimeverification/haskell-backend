@@ -29,6 +29,7 @@ module Kore.Builtin.Map
     , lookupSymbolElement
     , lookupSymbolConcat
     , lookupSymbolInKeys
+    , isSymbolConcat
     ) where
 
 import qualified Control.Monad as Monad
@@ -48,9 +49,13 @@ import qualified Kore.AST.PureML as Kore
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import           Kore.Builtin.Hook
+                 ( Hook )
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -353,3 +358,8 @@ lookupSymbolInKeys
     :: KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolInKeys = Builtin.lookupSymbol "MAP.in_keys"
+
+{- | Check if the given symbol is hooked to @MAP.concat@.
+ -}
+isSymbolConcat :: MetadataTools Object Hook -> Kore.SymbolOrAlias Object -> Bool
+isSymbolConcat = Builtin.isSymbol "MAP.concat"
