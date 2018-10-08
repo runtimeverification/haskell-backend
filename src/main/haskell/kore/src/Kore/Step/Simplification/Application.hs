@@ -30,7 +30,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..) )
+                 ( GenericFunctionEvaluatorWrapper (..) )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
 import           Kore.Step.OrOfExpandedPattern
@@ -76,7 +76,7 @@ simplify
     => MetadataTools level StepperAttributes
     -> GenericPureMLPatternSimplifier level
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
     -- ^ Map from symbol IDs to defined functions
     -> Application level (OrOfExpandedPattern level variable)
     -> Simplifier
@@ -115,7 +115,7 @@ makeAndEvaluateApplications
     => MetadataTools level StepperAttributes
     -> GenericPureMLPatternSimplifier level
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
     -- ^ Map from symbol IDs to defined functions
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
@@ -143,7 +143,7 @@ evaluateApplicationFunction
     => MetadataTools level StepperAttributes
     -> GenericPureMLPatternSimplifier level
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
     -- ^ Map from symbol IDs to defined functions
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated

@@ -72,7 +72,7 @@ pattern Ceil_
 pattern DV_
   :: () => (level ~ Object) =>
      Sort level
-  -> BuiltinDomain (PureMLPattern Meta Variable)
+  -> BuiltinDomain var (PureMLPattern Meta Variable)
   -> PureMLPattern level var
 
 pattern Equals_

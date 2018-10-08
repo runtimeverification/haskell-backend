@@ -47,6 +47,8 @@ import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Simplification.Data
+                 ( SimplificationVariable )
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -133,7 +135,9 @@ asExpandedPattern resultSort =
 
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions
+    :: SimplificationVariable Object variable
+    => Map String (Builtin.Function variable)
 builtinFunctions =
     Map.fromList
     [ ("BOOL.or", binaryOperator "BOOL.or" (||))

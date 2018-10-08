@@ -34,7 +34,7 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that value.
 -}
 simplify
-    :: DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+    :: DomainValue Object (BuiltinDomain variable (CommonPurePattern Meta))
     -> ( OrOfExpandedPattern Object variable
        , SimplificationProof Object
        )

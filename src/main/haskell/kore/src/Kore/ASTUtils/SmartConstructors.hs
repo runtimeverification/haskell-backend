@@ -336,7 +336,7 @@ mkCeil a = Ceil_ (getSort a) predicateSort a
 mkDomainValue
     :: (MetaOrObject Object, Given (SortTools Object))
     => Sort Object
-    -> BuiltinDomain (CommonPurePattern Meta)
+    -> BuiltinDomain var (CommonPurePattern Meta)
     -> PureMLPattern Object var
 mkDomainValue = DV_
 

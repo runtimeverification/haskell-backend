@@ -18,7 +18,6 @@ module Kore.Step.PatternAttributes
     , mapFunctionalProofVariables
     ) where
 
-import Control.Lens
 import Data.Either
        ( isRight )
 import Data.Functor.Foldable
@@ -28,9 +27,9 @@ import           Kore.AST.Common
                  ( Application (..), BuiltinDomain, CharLiteral, DomainValue,
                  Pattern (..), StringLiteral, SymbolOrAlias )
 import           Kore.AST.MetaOrObject
-                 ( Meta )
+                 ( Meta, Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern, PureMLPattern )
+                 ( CommonPurePattern, PureMLPattern, mapDomainValueVariables )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -46,22 +45,33 @@ import           Kore.Step.StepperAttributes
 -- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
-data FunctionalProof level variable
-    = FunctionalVariable (variable level)
+data FunctionalProof level variable where
+    FunctionalVariable :: variable level -> FunctionalProof level variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
-    | FunctionalDomainValue
-        (DomainValue level (BuiltinDomain (CommonPurePattern Meta)))
+    FunctionalDomainValue
+        :: !(DomainValue
+                Object
+                (BuiltinDomain variable (CommonPurePattern Meta))
+            )
+        -> FunctionalProof Object variable
     -- ^Domain values are functional as ther represent one value in the model.
-    | FunctionalHead (SymbolOrAlias level)
+    FunctionalHead :: SymbolOrAlias level -> FunctionalProof level variable
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-    | FunctionalStringLiteral StringLiteral
+    FunctionalStringLiteral :: StringLiteral -> FunctionalProof level variable
     -- ^A string literal is the repeated application of functional constructors.
-    | FunctionalCharLiteral CharLiteral
+    FunctionalCharLiteral :: CharLiteral -> FunctionalProof level variable
     -- ^A char literal is a functional constructor without arguments.
-  deriving (Eq, Show)
+
+deriving instance
+    (Eq (variable level), Eq (variable Object))
+    => Eq (FunctionalProof level variable)
+
+deriving instance
+    (Show (variable level), Show (variable Object))
+    => Show (FunctionalProof level variable)
 
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
@@ -75,7 +85,14 @@ data FunctionProof level variable
     -- ^ A functional component is also function-like.
     | FunctionHead (SymbolOrAlias level)
     -- ^Head of a partial function.
-  deriving (Eq, Show)
+
+deriving instance
+    (Eq (variable level), Eq (variable Object))
+    => Eq (FunctionProof level variable)
+
+deriving instance
+    (Show (variable level), Show (variable Object))
+    => Show (FunctionProof level variable)
 
 -- |'TotalProof' is used for providing arguments that a pattern is
 -- total/not bottom.  Currently we only support arguments stating that a
@@ -88,30 +105,30 @@ data TotalProof level variable
     -- ^A functional component is also total.
     | TotalHead (SymbolOrAlias level)
     -- ^Head of a total symbol.
-  deriving (Eq, Show)
 
-functionalProofVars
-    :: Prism
-         (FunctionalProof level variableFrom)
-         (FunctionalProof level variableTo)
-         (variableFrom level)
-         (variableTo level)
-functionalProofVars = prism FunctionalVariable isVar
-  where
-    isVar (FunctionalVariable v) = Right v
-    isVar (FunctionalDomainValue dv) = Left (FunctionalDomainValue dv)
-    isVar (FunctionalHead sym) = Left (FunctionalHead sym)
-    isVar (FunctionalStringLiteral str) = Left (FunctionalStringLiteral str)
-    isVar (FunctionalCharLiteral char) = Left (FunctionalCharLiteral char)
+deriving instance
+    (Eq (variable level), Eq (variable Object))
+    => Eq (TotalProof level variable)
 
-{-| 'mapFunctionalProofVariables' replaces all variables in a 'FunctionalProof'
-using the provided mapping.
--}
+deriving instance
+    (Show (variable level), Show (variable Object))
+    => Show (TotalProof level variable)
+
 mapFunctionalProofVariables
-    :: (variableFrom level -> variableTo level)
+    :: Ord (variableTo Object)
+    => (variableFrom level -> variableTo level)
     -> FunctionalProof level variableFrom
     -> FunctionalProof level variableTo
-mapFunctionalProofVariables mapper = functionalProofVars %~ mapper
+mapFunctionalProofVariables mapper (FunctionalVariable v) =
+    FunctionalVariable (mapper v)
+mapFunctionalProofVariables mapper (FunctionalDomainValue dv) =
+    FunctionalDomainValue (mapDomainValueVariables mapper dv)
+mapFunctionalProofVariables _ (FunctionalHead sym) =
+    FunctionalHead sym
+mapFunctionalProofVariables _ (FunctionalStringLiteral str) =
+    FunctionalStringLiteral str
+mapFunctionalProofVariables _ (FunctionalCharLiteral char) =
+    FunctionalCharLiteral char
 
 {-| checks whether a pattern is functional or not and, if it is, returns a proof
     certifying that.

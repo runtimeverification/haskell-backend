@@ -28,8 +28,7 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator,
-                 GenericApplicationFunctionEvaluator )
+                 ( GenericFunctionEvaluatorWrapper )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -46,9 +45,9 @@ import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
                  ( GenericPureMLPatternSimplifier,
+                 GenericSimplifierWrapper (GenericSimplifierWrapper),
                  MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
-                 PureMLPatternSimplifier, SimplificationProof (..),
-                 SimplificationVariable, Simplifier )
+                 SimplificationProof (..), SimplificationVariable, Simplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -106,7 +105,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [GenericApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPattern level variable
     -> Simplifier
@@ -130,7 +129,7 @@ simplifyToOr
         , SimplificationVariable level variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [GenericApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPattern level variable
     -> Simplifier
@@ -142,7 +141,7 @@ simplifyToOr tools symbolIdToEvaluator patt =
         (MetadataTools.sortTools tools)
         (simplifyInternal
             tools
-            simplifier
+            (GenericSimplifierWrapper simplifier)
             symbolIdToEvaluator
             (fromPurePattern patt)
         )
@@ -157,8 +156,8 @@ simplifyInternal
         , SimplificationVariable level variable
         )
     => MetadataTools level StepperAttributes
-    -> GenericPureMLPatternSimplifier level
-    -> Map.Map (Id level) [GenericApplicationFunctionEvaluator level]
+    -> GenericSimplifierWrapper level
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
     -- ^ Map from symbol IDs to defined functions
     -> Pattern level variable (PureMLPattern level variable)
     -> Simplifier
@@ -167,7 +166,9 @@ simplifyInternal
         )
 simplifyInternal
     tools
-    simplifier@(MonadPureMLPatternSimplifier unwrappedSimplifier)
+    (GenericSimplifierWrapper
+        simplifier@(MonadPureMLPatternSimplifier unwrappedSimplifier)
+    )
     symbolIdToEvaluator
     patt
   = do

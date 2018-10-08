@@ -49,9 +49,9 @@ import           Kore.Predicate.Predicate
                  makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Unification.Data
 import           Kore.Step.PredicateSubstitution
                  ( CommonPredicateSubstitution, PredicateSubstitution (..) )
+import           Kore.Unification.Data
 import           Kore.Variables.Free
                  ( pureAllVariables )
 
@@ -78,7 +78,8 @@ type CommonExpandedPattern level = ExpandedPattern level Variable
 in an ExpandedPattern.
 -}
 mapVariables
-    :: (variableFrom level -> variableTo level)
+    :: Ord (variableTo Object)
+    => (variableFrom level -> variableTo level)
     -> ExpandedPattern level variableFrom
     -> ExpandedPattern level variableTo
 mapVariables

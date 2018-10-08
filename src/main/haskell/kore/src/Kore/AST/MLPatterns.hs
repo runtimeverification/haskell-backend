@@ -202,7 +202,7 @@ data PatternLeveledFunction level variable child result = PatternLeveledFunction
     , stringLeveledFunction :: StringLiteral -> result Meta
     , charLeveledFunction :: CharLiteral -> result Meta
     , domainValueLeveledFunction
-        :: DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+        :: DomainValue Object (BuiltinDomain variable (CommonPurePattern Meta))
         -> result Object
     , applicationLeveledFunction :: !(Application level child -> result level)
     , variableLeveledFunction :: !(variable level -> result level)
@@ -273,7 +273,7 @@ data PatternFunction level variable child result = PatternFunction
     , applicationFunction :: !(Application level child -> result)
     , variableFunction :: !(variable level -> result)
     , domainValueFunction
-        :: DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+        :: DomainValue Object (BuiltinDomain variable (CommonPurePattern Meta))
         -> result
     }
 

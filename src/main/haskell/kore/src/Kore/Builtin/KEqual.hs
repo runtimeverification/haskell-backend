@@ -25,7 +25,7 @@ import           Data.Map
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Application (..), Variable (..) )
+                 ( Application (..) )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.PureML
@@ -39,8 +39,8 @@ import           Kore.Step.Function.Data
                  notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 ( GenericSimplifierWrapper (GenericSimplifierWrapper),
+                 SimplificationProof (..), SimplificationVariable, Simplifier )
 import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( monadSimplifier )
@@ -68,24 +68,31 @@ symbolVerifiers =
 which can take arbitrary terms (of the same sort) and check whether they are
 equal or not, producing a builtin boolean value.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions
+    :: SimplificationVariable Object variable
+    => Map String (Builtin.Function variable)
 builtinFunctions =
     Map.fromList
-    [ ("KEQUAL.eq", ApplicationFunctionEvaluator (evalKEq True False))
-    , ("KEQUAL.neq", ApplicationFunctionEvaluator (evalKEq False True))
+    [   ( "KEQUAL.eq"
+        , Builtin.Function $ ApplicationFunctionEvaluator (evalKEq True False)
+        )
+    ,   ( "KEQUAL.neq"
+        , Builtin.Function $ ApplicationFunctionEvaluator (evalKEq False True)
+        )
     ]
 
 evalKEq
-    :: Bool
+    :: SimplificationVariable Object variable
+    => Bool
     -> Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
-    -> GenericPureMLPatternSimplifier Object
-    -> Application Object (PureMLPattern Object Variable)
+    -> GenericSimplifierWrapper Object
+    -> Application Object (PureMLPattern Object variable)
     -> Simplifier
-        ( AttemptedFunction Object Variable
+        ( AttemptedFunction Object variable
         , SimplificationProof Object
         )
-evalKEq true false tools simplifier pat =
+evalKEq true false tools (GenericSimplifierWrapper simplifier) pat =
     case pat of
         Application
             { applicationSymbolOrAlias =

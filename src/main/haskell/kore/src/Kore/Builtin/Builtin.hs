@@ -99,18 +99,19 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
-                 AttemptedFunction (..), GenericApplicationFunctionEvaluator )
+                 AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( GenericPureMLPatternSimplifier,
-                 GenericSimplifierWrapper (GenericSimplifierWrapper),
-                 SimplificationProof (..), Simplifier )
+                 ( GenericSimplifierWrapper (GenericSimplifierWrapper),
+                 PureMLPatternSimplifier, SimplificationProof (..),
+                 SimplificationVariable, Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
 type Parser = Parsec Void String
 
-newtype Function = Function (GenericApplicationFunctionEvaluator Object)
+newtype Function variable =
+    Function (ApplicationFunctionEvaluator Object variable)
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
@@ -178,7 +179,7 @@ instance Monoid PatternVerifier where
     mappend = (<>)
 
 type DomainValueVerifier =
-    DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+    DomainValue Object (BuiltinDomain Variable (CommonPurePattern Meta))
     -> Either (Error VerifyError) ()
 
 {- | Verify builtin sorts, symbols, and patterns.
@@ -242,7 +243,7 @@ symbolVerifier Verifiers { symbolVerifiers } hook =
                 -- Invoke the verifier that is registered to this builtin symbol.
                 verifier
 
-notImplemented :: Function
+notImplemented :: Function variable
 notImplemented =
     Function $ ApplicationFunctionEvaluator notImplemented0
   where
@@ -414,7 +415,7 @@ verifyStringLiteral validate DomainValue { domainValueChild } =
  -}
 parseDomainValue
     :: Parser a
-    -> DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+    -> DomainValue Object (BuiltinDomain variable (CommonPurePattern Meta))
     -> Either (Error VerifyError) a
 parseDomainValue
     parser
@@ -465,15 +466,17 @@ appliedFunction epat =
 
  -}
 binaryOperator
-    :: Parser a
+    :: forall a b variable
+    .  SimplificationVariable Object variable
+    => Parser a
     -- ^ Parse operand
-    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
+    -> (Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
     -> (a -> a -> b)
     -- ^ Operation on builtin types
-    -> Function
+    -> Function variable
 binaryOperator
     parser
     asPattern
@@ -482,13 +485,16 @@ binaryOperator
   =
     functionEvaluator binaryOperator0
   where
+    get
+        :: DomainValue Object (BuiltinDomain variable1 (CommonPurePattern Meta))
+        -> a
     get = runParser ctx . parseDomainValue parser
     binaryOperator0
         :: MetadataTools Object StepperAttributes
-        -> GenericPureMLPatternSimplifier Object
+        -> PureMLPatternSimplifier Object variable
         -> Sort Object
-        -> [PureMLPattern Object variable0]
-        -> Simplifier (AttemptedFunction Object variable0)
+        -> [PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
     binaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a, DomainValuePattern b] -> do
@@ -508,15 +514,17 @@ binaryOperator
 
  -}
 unaryOperator
-    :: Parser a
+    :: forall a b variable
+    .  SimplificationVariable Object variable
+    => Parser a
     -- ^ Parse operand
-    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
+    -> (Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
     -> (a -> b)
     -- ^ Operation on builtin types
-    -> Function
+    -> Function variable
 unaryOperator
     parser
     asPattern
@@ -525,13 +533,16 @@ unaryOperator
   =
     functionEvaluator unaryOperator0
   where
+    get
+        :: DomainValue Object (BuiltinDomain variable1 (CommonPurePattern Meta))
+        -> a
     get = runParser ctx . parseDomainValue parser
     unaryOperator0
         :: MetadataTools Object StepperAttributes
-        -> GenericPureMLPatternSimplifier Object
+        -> PureMLPatternSimplifier Object variable
         -> Sort Object
-        -> [PureMLPattern Object variable0]
-        -> Simplifier (AttemptedFunction Object variable0)
+        -> [PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
     unaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a] -> do
@@ -542,20 +553,21 @@ unaryOperator
             _ -> wrongArity ctx
 
 functionEvaluator
-    ::  (forall variable . (Ord (variable Object))
-        => MetadataTools Object StepperAttributes
-        -> GenericPureMLPatternSimplifier Object
+    :: forall variable
+    .  SimplificationVariable Object variable
+    => (   MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
         -> Sort Object
         -> [PureMLPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
         )
     -- ^ Builtin function implementation
-    -> Function
+    -> Function variable
 functionEvaluator impl =
     Function $ ApplicationFunctionEvaluator evaluator
   where
     evaluator
-        :: (Ord (variable Object))
+        :: SimplificationVariable Object variable
         => MetadataTools Object StepperAttributes
         -> GenericSimplifierWrapper Object
         -> Application Object (PureMLPattern Object variable)

@@ -306,7 +306,10 @@ instance
             , writeFieldNewLine "ceilChild" ceilChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (BuiltinDomain child) where
+instance
+    (PrettyPrint child, PrettyPrint (variable Object))
+    => PrettyPrint (BuiltinDomain variable child)
+  where
     prettyPrint flags =
         \case
             BuiltinDomainPattern str ->

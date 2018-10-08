@@ -45,19 +45,26 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern )
+                 ( PureMLPattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Simplification.Data
+                 ( PureMLPatternSimplifier, SimplificationVariable,
+                 Simplifier )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 
 {- | Builtin name of the @Map@ sort.
@@ -112,7 +119,8 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin = Map (CommonPurePattern Object) (CommonPurePattern Object)
+type Builtin variable =
+    Map (PureMLPattern Object variable) (PureMLPattern Object variable)
 
 {- | Abort function evaluation if the argument is not a Map domain value.
 
@@ -124,8 +132,8 @@ type Builtin = Map (CommonPurePattern Object) (CommonPurePattern Object)
 expectBuiltinDomainMap
     :: Monad m
     => String  -- ^ Context for error message
-    -> CommonPurePattern Object  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
+    -> PureMLPattern Object variable  -- ^ Operand pattern
+    -> ExceptT (AttemptedFunction Object variable) m (Builtin variable)
 expectBuiltinDomainMap ctx =
     \case
         Kore.DV_ _ domain ->
@@ -141,15 +149,17 @@ getAttemptedFunction = fmap (either id id) . runExceptT
 returnMap
     :: Monad m
     => Kore.Sort Object
-    -> Builtin
-    -> m (AttemptedFunction Object Kore.Variable)
+    -> Builtin variable
+    -> m (AttemptedFunction Object variable)
 returnMap resultSort map' =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
         $ Kore.DV_ resultSort
         $ Kore.BuiltinDomainMap map'
 
-evalLookup :: Builtin.Function
+evalLookup
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
@@ -166,20 +176,24 @@ evalLookup =
                 $ Map.lookup key _map
         )
 
-evalElement :: Builtin.Function
+evalElement
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ _ resultSort = \arguments ->
+    evalElement0 _ _ resultSort arguments =
         case arguments of
             [_key, _value] -> returnMap resultSort (Map.singleton _key _value)
             _ -> Builtin.wrongArity "MAP.element"
 
-evalConcat :: Builtin.Function
+evalConcat
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 _ _ resultSort = \arguments ->
+    evalConcat0 _ _ resultSort arguments =
         getAttemptedFunction
         (do
             let (_map1, _map2) =
@@ -198,7 +212,9 @@ evalConcat =
             returnMap resultSort (Map.union _map1 _map2)
         )
 
-evalUnit :: Builtin.Function
+evalUnit
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
@@ -207,11 +223,13 @@ evalUnit =
             [] -> returnMap resultSort Map.empty
             _ -> Builtin.wrongArity "MAP.unit"
 
-evalUpdate :: Builtin.Function
+evalUpdate
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
-    evalUpdate0 _ _ resultSort = \arguments ->
+    evalUpdate0 _ _ resultSort arguments =
         getAttemptedFunction
         (do
             let (_map, key, value) =
@@ -222,17 +240,20 @@ evalUpdate =
             returnMap resultSort (Map.insert key value _map)
         )
 
-evalInKeys :: Builtin.Function
+evalInKeys
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalInKeys =
     Builtin.functionEvaluator evalInKeys0
   where
     evalInKeys0
-        :: MetadataTools Object StepperAttributes
-        -> GenericPureMLPatternSimplifier Object
-        -> Sort Object
+        :: Ord (variable0 Object)
+        => MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable0
+        -> Kore.Sort Object
         -> [PureMLPattern Object variable0]
         -> Simplifier (AttemptedFunction Object variable0)
-    evalInKeys0 _ _ resultSort = \arguments ->
+    evalInKeys0 _ _ resultSort arguments =
         getAttemptedFunction
         (do
             let (key, _map) =
@@ -247,7 +268,9 @@ evalInKeys =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions
+    :: SimplificationVariable Object variable
+    => Map String (Builtin.Function variable)
 builtinFunctions =
     Map.fromList
         [ ("MAP.concat", evalConcat)
@@ -274,7 +297,9 @@ asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonPurePattern Object)
+    -> Either
+        (Kore.Error e)
+        (Builtin variable -> PureMLPattern Object variable)
 asPattern indexedModule _
   = do
     symbolUnit <- lookupSymbolUnit indexedModule
@@ -292,7 +317,9 @@ asExpandedPattern
     :: KoreIndexedModule attrs
     -- ^ dictionary of Map constructor symbols
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonExpandedPattern Object)
+    -> Either
+        (Kore.Error e)
+        (Builtin variable -> ExpandedPattern Object variable)
 asExpandedPattern symbols resultSort =
     (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
 

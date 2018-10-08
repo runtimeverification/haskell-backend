@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Function.Data
     (  ApplicationFunctionEvaluator (..)
     , GenericApplicationFunctionEvaluator
+    , GenericFunctionEvaluatorWrapper (..)
     , AttemptedFunction (..)
     , CommonAttemptedFunction
     , notApplicableFunctionEvaluator
@@ -60,6 +61,9 @@ newtype ApplicationFunctionEvaluator level variable =
             , SimplificationProof level
             )
         )
+
+newtype GenericFunctionEvaluatorWrapper level =
+    GenericFunctionEvaluatorWrapper (GenericApplicationFunctionEvaluator level)
 
 {-| 'GenericApplicationFunctionEvaluator' is a
 'ApplicationFunctionEvaluator' for any 'Variable', following the same pattern as

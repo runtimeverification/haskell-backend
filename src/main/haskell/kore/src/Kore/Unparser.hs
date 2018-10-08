@@ -136,10 +136,10 @@ instance
         "\\dv"
         <> parameters [domainValueSort]
         <> arguments' [unparse domainValueChild]
-      where
 
 instance
-    Unparse child => Unparse (BuiltinDomain child)
+    (Unparse child, Unparse (variable Object))
+    => Unparse (BuiltinDomain variable child)
   where
     unparse =
         \case

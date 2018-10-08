@@ -46,7 +46,7 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern, PureMLPattern )
+                 ( PureMLPattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -56,14 +56,13 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern )
+                 ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
 import           Kore.Step.Simplification.Data
-                 ( GenericPureMLPatternSimplifier,
-                 GenericSimplifierWrapper (GenericSimplifierWrapper),
-                 SimplificationProof (..), Simplifier )
+                 ( PureMLPatternSimplifier, SimplificationVariable,
+                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -154,14 +153,16 @@ returnSet resultSort set =
         $ Kore.DV_ resultSort
         $ Kore.BuiltinDomainSet set
 
-evalElement :: Builtin.Function
+evalElement
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
     evalElement0
         :: (Ord (variable0 Object))
         => MetadataTools Object StepperAttributes
-        -> GenericPureMLPatternSimplifier Object
+        -> PureMLPatternSimplifier Object variable
         -> Kore.Sort Object
         -> [PureMLPattern Object variable0]
         -> Simplifier (AttemptedFunction Object variable0)
@@ -170,14 +171,16 @@ evalElement =
             [_elem] -> returnSet resultSort (Set.singleton _elem)
             _ -> Builtin.wrongArity "SET.element"
 
-evalIn :: Builtin.Function
+evalIn
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalIn =
     Builtin.functionEvaluator evalIn0
   where
     evalIn0
         :: (Ord (variable0 Object))
         => MetadataTools Object StepperAttributes
-        -> GenericPureMLPatternSimplifier Object
+        -> PureMLPatternSimplifier Object variable0
         -> Kore.Sort Object
         -> [PureMLPattern Object variable0]
         -> Simplifier (AttemptedFunction Object variable0)
@@ -195,13 +198,15 @@ evalIn =
       where
         asExpandedBoolPattern = Bool.asExpandedPattern resultSort
 
-evalUnit :: Builtin.Function
+evalUnit
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
     evalUnit0
         :: MetadataTools Object StepperAttributes
-        -> GenericPureMLPatternSimplifier Object
+        -> PureMLPatternSimplifier Object variable0
         -> Kore.Sort Object
         -> [PureMLPattern Object variable0]
         -> Simplifier (AttemptedFunction Object variable0)
@@ -210,14 +215,16 @@ evalUnit =
             [] -> returnSet resultSort Set.empty
             _ -> Builtin.wrongArity "SET.unit"
 
-evalConcat :: Builtin.Function
+evalConcat
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     evalConcat0
         :: (Ord (variable0 Object))
         => MetadataTools Object StepperAttributes
-        -> GenericPureMLPatternSimplifier Object
+        -> PureMLPatternSimplifier Object variable0
         -> Kore.Sort Object
         -> [PureMLPattern Object variable0]
         -> Simplifier (AttemptedFunction Object variable0)
@@ -233,7 +240,9 @@ evalConcat =
             returnSet resultSort (_set1 <> _set2)
         )
 
-evalDifference :: Builtin.Function
+evalDifference
+    :: SimplificationVariable Object variable
+    => Builtin.Function variable
 evalDifference =
     Builtin.functionEvaluator evalConcat0
   where
@@ -241,7 +250,7 @@ evalDifference =
     evalConcat0
         :: (Ord (variable0 Object))
         => MetadataTools Object StepperAttributes
-        -> GenericPureMLPatternSimplifier Object
+        -> PureMLPatternSimplifier Object variable0
         -> Kore.Sort Object
         -> [PureMLPattern Object variable0]
         -> Simplifier (AttemptedFunction Object variable0)
@@ -259,7 +268,9 @@ evalDifference =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions
+    :: SimplificationVariable Object variable
+    => Map String (Builtin.Function variable)
 builtinFunctions =
     Map.fromList
         [ ("SET.concat", evalConcat)

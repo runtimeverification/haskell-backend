@@ -43,15 +43,17 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern )
+                 ( CommonPurePattern, PureMLPattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
+import           Kore.Step.Simplification.Data
+                 ( SimplificationVariable )
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -155,8 +157,8 @@ parse = Parsec.signed noSpace Parsec.decimal
 expectBuiltinDomainInt
     :: Monad m
     => String  -- ^ Context for error message
-    -> CommonPurePattern Object  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object Kore.Variable) m Integer
+    -> PureMLPattern Object variable  -- ^ Operand pattern
+    -> ExceptT (AttemptedFunction Object variable) m Integer
 expectBuiltinDomainInt ctx =
     \case
         Kore.DV_ _ domain ->
@@ -181,7 +183,7 @@ expectBuiltinDomainInt ctx =
 asPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> CommonPurePattern Object
+    -> PureMLPattern Object variable
 asPattern resultSort result =
     Kore.DV_ resultSort
         $ Kore.BuiltinDomainPattern
@@ -193,7 +195,7 @@ asMetaPattern result = Kore.StringLiteral_ $ show result
 asExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> CommonExpandedPattern Object
+    -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asPattern resultSort
 
@@ -206,7 +208,9 @@ asPartialExpandedPattern resultSort =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions
+    :: SimplificationVariable Object variable
+    => Map String (Builtin.Function variable)
 builtinFunctions =
     Map.fromList
     [

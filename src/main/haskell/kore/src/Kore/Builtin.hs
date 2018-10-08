@@ -43,7 +43,7 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern )
+                 ( CommonPurePattern, PureMLPattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -57,13 +57,17 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Step.Simplification.Data
+                 ( SimplificationVariable )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 
 {- | The default type of builtin domain values.
  -}
-type Builtin =
-    Kore.DomainValue Object (Kore.BuiltinDomain (CommonPurePattern Meta))
+type Builtin variable =
+    Kore.DomainValue
+        Object
+        (Kore.BuiltinDomain variable (CommonPurePattern Meta))
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -100,12 +104,15 @@ koreVerifiers =
 
  -}
 koreEvaluators
-    :: KoreIndexedModule StepperAttributes
+    :: SimplificationVariable Object variable
+    => KoreIndexedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map (Kore.Id Object) [Builtin.Function]
+    -> Map (Kore.Id Object) [Builtin.Function variable]
 koreEvaluators = evaluators builtins
   where
-    builtins :: Map String Builtin.Function
+    builtins
+        :: SimplificationVariable Object variable
+        => Map String (Builtin.Function variable)
     builtins =
         Map.unions
             [ Bool.builtinFunctions
@@ -123,11 +130,12 @@ koreEvaluators = evaluators builtins
 
  -}
 evaluators
-    :: Map String Builtin.Function
+    :: forall variable
+    .  Map String (Builtin.Function variable)
     -- ^ Builtin functions indexed by name
     -> KoreIndexedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map (Kore.Id Object) [Builtin.Function]
+    -> Map (Kore.Id Object) [Builtin.Function variable]
 evaluators builtins indexedModule =
     Map.mapMaybe lookupBuiltins (hookedSymbolAttributes indexedModule)
   where
@@ -146,7 +154,7 @@ evaluators builtins indexedModule =
         -> Map (Kore.Id Object) StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
-    lookupBuiltins :: StepperAttributes -> Maybe [Builtin.Function]
+    lookupBuiltins :: StepperAttributes -> Maybe [Builtin.Function variable]
     lookupBuiltins StepperAttributes { hook } =
         do
             name <- Hook.getHook hook
@@ -163,9 +171,9 @@ evaluators builtins indexedModule =
 asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module defining hooks for builtin domains
-    -> Builtin
+    -> Builtin variable
     -- ^ domain value
-    -> Either (Error e) (CommonPurePattern Object)
+    -> Either (Error e) (PureMLPattern Object variable)
 asPattern
     indexedModule
     Kore.DomainValue { domainValueSort, domainValueChild }
@@ -214,7 +222,7 @@ externalizePattern indexedModule =
 
  -}
 asMetaPattern
-    :: Builtin
+    :: Builtin variable
     -> CommonPurePattern Meta
 asMetaPattern Kore.DomainValue { domainValueChild } =
     case domainValueChild of

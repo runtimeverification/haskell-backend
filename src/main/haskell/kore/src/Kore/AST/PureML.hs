@@ -19,7 +19,7 @@ import qualified Data.Set as Set
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-       ( Object )
+       ( Meta, Object )
 import Kore.AST.Sentence
 
 {-|'PureMLPattern' corresponds to "fixed point" representations
@@ -119,7 +119,8 @@ type CommonPurePatternStub level =
 using the provided mapping.
 -}
 mapPatternVariables
-    :: (variableFrom level -> variableTo level)
+    :: Ord (variableTo Object)
+    => (variableFrom level -> variableTo level)
     -> PureMLPattern level variableFrom
     -> PureMLPattern level variableTo
 mapPatternVariables mapper = cata (Fix . mapPatternVariable mapper)
@@ -128,7 +129,8 @@ mapPatternVariables mapper = cata (Fix . mapPatternVariable mapper)
 (i.e. without recursion) in a 'Pattern', using the provided mapping.
 -}
 mapPatternVariable
-    :: (variableFrom level -> variableTo level)
+    :: Ord (variableTo Object)
+    => (variableFrom level -> variableTo level)
     -> Pattern level variableFrom child
     -> Pattern level variableTo child
 mapPatternVariable _ (AndPattern (And a b c)) =
@@ -139,8 +141,8 @@ mapPatternVariable _ (BottomPattern (Bottom a)) =
     BottomPattern (Bottom a)
 mapPatternVariable _ (CeilPattern (Ceil a b c)) =
     CeilPattern (Ceil a b c)
-mapPatternVariable wrapper (DomainValuePattern (DomainValue a b)) =
-    DomainValuePattern (DomainValue a (mapDomainValueVariables wrapper b))
+mapPatternVariable wrapper (DomainValuePattern dv) =
+    DomainValuePattern (mapDomainValueVariables wrapper dv)
 mapPatternVariable _ (EqualsPattern (Equals a b c d)) =
     EqualsPattern (Equals a b c d)
 mapPatternVariable wrapper (ExistsPattern exists) =
@@ -176,15 +178,30 @@ mapPatternVariable wrapper (VariablePattern variable) =
     VariablePattern (wrapper variable)
 
 mapDomainValueVariables
-    :: (variableFrom Object -> variableTo Object)
+    :: Ord (variableTo Object)
+    => (variableFrom Object -> variableTo Object)
+    -> DomainValue
+        Object
+        (BuiltinDomain variableFrom (Fix (Pattern Meta Variable)))
+    -> DomainValue
+        Object
+        (BuiltinDomain variableTo (Fix (Pattern Meta Variable)))
+mapDomainValueVariables mapper (DomainValue a b) =
+    DomainValue a (mapBuiltinDomainVariables mapper b)
+
+mapBuiltinDomainVariables
+    :: Ord (variableTo Object)
+    => (variableFrom Object -> variableTo Object)
     -> BuiltinDomain variableFrom child
     -> BuiltinDomain variableTo child
-mapDomainValueVariables _ (BuiltinDomainPattern a) = BuiltinDomainPattern a
-mapDomainValueVariables mapper (BuiltinDomainMap m) =
+mapBuiltinDomainVariables _ (BuiltinDomainPattern a) = BuiltinDomainPattern a
+mapBuiltinDomainVariables mapper (BuiltinDomainMap m) =
     BuiltinDomainMap
-        (Map.map (mapPatternVariables mapper) m)
-mapDomainValueVariables mapper (BuiltinDomainList l) =
+        (Map.mapKeys (mapPatternVariables mapper)
+            (Map.map (mapPatternVariables mapper) m)
+        )
+mapBuiltinDomainVariables mapper (BuiltinDomainList l) =
     BuiltinDomainList
         (fmap (mapPatternVariables mapper) l)
-mapDomainValueVariables mapper (BuiltinDomainSet s) =
-    BuiltinDomainSet s
+mapBuiltinDomainVariables mapper (BuiltinDomainSet s) =
+    BuiltinDomainSet (Set.map (mapPatternVariables mapper) s)

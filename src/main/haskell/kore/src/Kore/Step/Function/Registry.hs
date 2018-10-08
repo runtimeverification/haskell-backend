@@ -35,7 +35,7 @@ import Kore.Step.AxiomPatterns
        koreSentenceToAxiomPattern )
 import Kore.Step.Function.Data
        ( ApplicationFunctionEvaluator (..),
-       CommonApplicationFunctionEvaluator )
+       GenericFunctionEvaluatorWrapper (GenericFunctionEvaluatorWrapper) )
 import Kore.Step.Function.UserDefined
        ( axiomFunctionEvaluator )
 import Kore.Step.StepperAttributes
@@ -43,13 +43,13 @@ import Kore.Step.StepperAttributes
 
 {-|Given a 'MetaOrObject' @level@ and a 'KoreIndexedModule', @extractEvaluators@
 creates a registry mapping function symbol identifiers to their
-corresponding 'CommonApplicationFunctionEvaluator's.
+corresponding 'GenericApplicationFunctionEvaluator's.
 -}
 extractEvaluators
     :: MetaOrObject level
     => level
     -> KoreIndexedModule StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
 extractEvaluators level indexedModule =
     Map.fromList (map extractPrefix groupedEvaluators)
   where
@@ -71,7 +71,7 @@ axiomToIdEvaluatorPair
     :: MetaOrObject level
     => level
     -> SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
-    -> Maybe (Id level, CommonApplicationFunctionEvaluator level)
+    -> Maybe (Id level, GenericFunctionEvaluatorWrapper level)
 axiomToIdEvaluatorPair
     level
     axiom
@@ -82,8 +82,10 @@ axiomToIdEvaluatorPair
                 ApplicationPattern Application {applicationSymbolOrAlias = s} ->
                     return
                         ( symbolOrAliasConstructor s
-                        , ApplicationFunctionEvaluator
-                            (axiomFunctionEvaluator axiomPat)
+                        , GenericFunctionEvaluatorWrapper
+                            (ApplicationFunctionEvaluator
+                                (axiomFunctionEvaluator axiomPat)
+                            )
                         )
                 _ -> Nothing
         Right (RewriteAxiomPattern _) -> Nothing

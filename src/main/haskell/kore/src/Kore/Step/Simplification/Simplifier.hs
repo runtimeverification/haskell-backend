@@ -21,7 +21,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator )
+                 ( GenericFunctionEvaluatorWrapper )
 import           Kore.Step.Simplification.Data
                  ( MonadPureMLPatternSimplifier (MonadPureMLPatternSimplifier),
                  PredicateSimplifier, PureMLPatternSimplifier )
@@ -48,7 +48,7 @@ create
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPatternSimplifier level variable
 create
@@ -72,7 +72,7 @@ createPredicateSimplifier
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
     -> PredicateSimplifier level variable
 createPredicateSimplifier tools symbolIdToEvaluator =
     Predicate.monadSimplifier (create tools symbolIdToEvaluator)

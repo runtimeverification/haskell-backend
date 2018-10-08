@@ -36,7 +36,8 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..) )
+                 ( ApplicationFunctionEvaluator (..),
+                 GenericFunctionEvaluatorWrapper (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
@@ -46,8 +47,10 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, make, merge )
 import           Kore.Step.Simplification.Data
-                 ( GenericPureMLPatternSimplifier, PureMLPatternSimplifier,
-                 SimplificationProof (..), SimplificationVariable, Simplifier )
+                 ( GenericPureMLPatternSimplifier,
+                 GenericSimplifierWrapper (GenericSimplifierWrapper),
+                 PureMLPatternSimplifier, SimplificationProof (..),
+                 SimplificationVariable, Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
@@ -65,7 +68,7 @@ evaluateApplication
     -- such as their sorts, whether they are constructors or hooked.
     -> GenericPureMLPatternSimplifier level
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [GenericFunctionEvaluatorWrapper level]
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
@@ -135,7 +138,12 @@ evaluateApplication
                     }
     unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
-    applyEvaluator app' (ApplicationFunctionEvaluator evaluator) =
+    applyEvaluator
+        app'
+        (GenericFunctionEvaluatorWrapper
+            (ApplicationFunctionEvaluator evaluator)
+        )
+      =
         evaluator
             tools
             (GenericSimplifierWrapper simplifier)

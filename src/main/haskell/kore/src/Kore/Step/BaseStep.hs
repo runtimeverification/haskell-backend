@@ -23,6 +23,7 @@ module Kore.Step.BaseStep
 import qualified Control.Arrow as Arrow
 import           Control.Monad.Except
                  ( ExceptT (..), mapExceptT, withExceptT )
+import qualified Data.Functor.Foldable as Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -35,10 +36,12 @@ import           Data.Sequence
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 
+
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( CommonPurePattern, PureMLPattern, mapPatternVariables )
+                 ( CommonPurePattern, PureMLPattern, mapDomainValueVariables,
+                 mapPatternVariables )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom )
 import           Kore.IndexedModule.MetadataTools
@@ -493,8 +496,43 @@ functionalProofStepVariablesToCommon _ mapping (FunctionalStringLiteral sl) =
     return (mapping, FunctionalStringLiteral sl)
 functionalProofStepVariablesToCommon _ mapping (FunctionalCharLiteral cl) =
     return (mapping, FunctionalCharLiteral cl)
-functionalProofStepVariablesToCommon _ mapping (FunctionalDomainValue dv) =
-    return (mapping, FunctionalDomainValue dv)
+functionalProofStepVariablesToCommon
+    existingVars mapping (FunctionalDomainValue dv)
+  = do
+    (newMapping, mappedValue) <-
+        domainValueStepVariablesToCommon existingVars mapping dv
+    return (newMapping, FunctionalDomainValue mappedValue)
+
+domainValueStepVariablesToCommon
+    :: Set.Set (Variable Object)
+    -> Map.Map (StepperVariable Object) (StepperVariable Object)
+    -> DomainValue
+        Object
+        (BuiltinDomain StepperVariable (CommonPurePattern Meta))
+    -> Counter
+        ( Map.Map (StepperVariable Object) (StepperVariable Object)
+        , DomainValue Object (BuiltinDomain Variable (CommonPurePattern Meta))
+        )
+domainValueStepVariablesToCommon
+    existingVars
+    mapped
+    dv
+  = do
+    let axiomVars = pureAllVariables (Foldable.embed (DomainValuePattern dv))
+    mapping <-
+        addAxiomVariablesAsConfig existingVars mapped (Set.toList axiomVars)
+    return
+        ( mapping
+        , configurationVariablesToCommon
+            (replaceDomainValueVariables mapping dv)
+        )
+  where
+    configurationVariablesToCommon =
+        mapDomainValueVariables configurationVariableToCommon
+    replaceDomainValueVariables mapping =
+        mapDomainValueVariables
+            (\var -> fromMaybe var (Map.lookup var mapping))
+
 
 variableStepVariablesToCommon
     :: MetaOrObject level

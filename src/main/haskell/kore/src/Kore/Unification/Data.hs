@@ -11,6 +11,8 @@ Portability : portable
 module Kore.Unification.Data where
 
 import Kore.AST.Common
+import Kore.AST.MetaOrObject
+       ( Object )
 import Kore.AST.PureML
 import Kore.Step.PatternAttributes
        ( FunctionalProof (..) )
@@ -21,14 +23,16 @@ type UnificationSubstitution level variable
 -- |'mapSubstitutionVariables' changes all the variables in the substitution
 -- with the given function.
 mapSubstitutionVariables
-    :: (variableFrom level -> variableTo level)
+    :: Ord (variableTo Object)
+    => (variableFrom level -> variableTo level)
     -> UnificationSubstitution level variableFrom
     -> UnificationSubstitution level variableTo
 mapSubstitutionVariables variableMapper =
     map (mapVariable variableMapper)
   where
     mapVariable
-        :: (variableFrom level -> variableTo level)
+        :: Ord (variableTo Object)
+        => (variableFrom level -> variableTo level)
         -> (variableFrom level, PureMLPattern level variableFrom)
         -> (variableTo level, PureMLPattern level variableTo)
     mapVariable
@@ -80,7 +84,14 @@ data UnificationProof level variable
     -- ((x = t1) /\ (t1 = t2)) = (x = (t1 /\ (t1 = t2)))
     -- then, applying Proposition 5.24(3), this further gets to
     -- (x = (t1 /\ t2))
-  deriving (Eq, Show)
+
+deriving instance
+    (Eq level, Eq (variable level), Eq (variable Object))
+    => Eq (UnificationProof level variable)
+
+deriving instance
+    (Show level, Show (variable level), Show (variable Object))
+    => Show (UnificationProof level variable)
 
 instance Semigroup (UnificationProof level variable) where
     (<>) proof1 proof2 = CombinedUnificationProof [proof1, proof2]
