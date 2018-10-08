@@ -12,8 +12,8 @@ Portability : portable
 module Test.Kore.Comparators where
 
 import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
 import           Kore.Predicate.Predicate
+import           Kore.Proof.Functional
 import           Kore.Step.BaseStep
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern as ExpandedPattern
@@ -23,7 +23,6 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.OrOfExpandedPattern
-import           Kore.Step.PatternAttributes
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
@@ -298,7 +297,9 @@ instance (EqualWithExplanation child, Show child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (DomainValue level (BuiltinDomain (CommonPurePattern Meta)))
+instance
+    (Eq child, Show child) =>
+    EqualWithExplanation (DomainValue level (BuiltinDomain child))
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

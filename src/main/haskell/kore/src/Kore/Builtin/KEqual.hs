@@ -39,7 +39,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
-import qualified Kore.Step.Simplification.Equals as Equals
+import           Kore.Step.Simplification.Equals
+                 ( makeEvaluate )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -91,7 +92,7 @@ evalKEq true false tools _ pat =
         _ -> notApplicableFunctionEvaluator
   where
     evalEq resultSort t1 t2 = do
-        (result, _proof) <- Equals.makeEvaluate tools ep1 ep2
+        (result, _proof) <- makeEvaluate tools ep1 ep2
         if OrOfExpandedPattern.isTrue result
             then purePatternFunctionEvaluator (Bool.asPattern resultSort true)
         else if OrOfExpandedPattern.isFalse result

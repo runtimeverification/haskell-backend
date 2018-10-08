@@ -21,7 +21,6 @@ import           GHC.Integer.Logarithms
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -298,7 +297,11 @@ intLiteral = asPattern
 asPattern :: Integer -> CommonPurePattern Object
 asPattern = Int.asPattern intSort
 
--- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
+-- | Specialize 'Int.asConcretePattern' to the builtin sort 'intSort'.
+asConcretePattern :: Integer -> ConcretePurePattern Object
+asConcretePattern = Int.asConcretePattern intSort
+
+-- | Specialize 'Int.asExpandedPattern' to the builtin sort 'intSort'.
 asExpandedPattern :: Integer -> CommonExpandedPattern Object
 asExpandedPattern = Int.asExpandedPattern intSort
 

@@ -13,7 +13,8 @@ Portability : portable
 -}
 module Kore.AST.PureML where
 
-import Data.Functor.Foldable
+import           Data.Functor.Foldable
+import qualified Data.Functor.Foldable as Functor.Foldable
 
 import Kore.AST.Common
 import Kore.AST.Sentence
@@ -25,6 +26,93 @@ asPurePattern = embed
 fromPurePattern
     :: PureMLPattern level var -> Pattern level var (PureMLPattern level var)
 fromPurePattern = project
+
+{- | Construct a 'ConcretePurePattern' from a 'PureMLPattern'.
+
+    A concrete pattern contains no variables, so @asConcretePurePattern@ is
+    fully polymorphic on the variable type in the pure pattern. If the argument
+    contains any variables, the result is @Nothing@.
+
+ -}
+asConcretePurePattern :: PureMLPattern level var -> Maybe (ConcretePurePattern level)
+asConcretePurePattern =
+    Functor.Foldable.fold asConcretePurePattern0
+  where
+    asConcretePurePattern0 pat =
+        fmap Functor.Foldable.embed
+            (case pat of
+                AndPattern andP -> AndPattern <$> sequence andP
+                ApplicationPattern appP -> ApplicationPattern <$> sequence appP
+                BottomPattern botP -> BottomPattern <$> sequence botP
+                CeilPattern ceilP -> CeilPattern <$> sequence ceilP
+                DomainValuePattern dvP ->
+                    DomainValuePattern <$> traverse sequence dvP
+                EqualsPattern eqP -> EqualsPattern <$> sequence eqP
+                ExistsPattern _ -> Nothing
+                FloorPattern flrP -> FloorPattern <$> sequence flrP
+                ForallPattern _ -> Nothing
+                IffPattern iffP -> IffPattern <$> sequence iffP
+                ImpliesPattern impP -> ImpliesPattern <$> sequence impP
+                InPattern inP -> InPattern <$> sequence inP
+                NextPattern nextP -> NextPattern <$> sequence nextP
+                NotPattern notP -> NotPattern <$> sequence notP
+                OrPattern orP -> OrPattern <$> sequence orP
+                RewritesPattern rewP -> RewritesPattern <$> sequence rewP
+                StringLiteralPattern strP -> return (StringLiteralPattern strP)
+                CharLiteralPattern charP -> return (CharLiteralPattern charP)
+                TopPattern topP -> TopPattern <$> sequence topP
+                VariablePattern _ -> Nothing
+            )
+
+{- | Construct a 'PureMLPattern' from a 'ConcretePurePattern'.
+
+    The concrete pattern contains no variables, so the result is fully
+    polymorphic in the variable type.
+
+ -}
+fromConcretePurePattern :: ConcretePurePattern level -> PureMLPattern level var
+fromConcretePurePattern =
+    Functor.Foldable.fold fromConcretePurePattern0
+  where
+    fromConcretePurePattern0
+        :: Pattern level Concrete (PureMLPattern level variable)
+        -> PureMLPattern level variable
+    fromConcretePurePattern0 pat =
+        Functor.Foldable.embed
+            (case pat of
+                AndPattern andP -> AndPattern andP
+                ApplicationPattern appP -> ApplicationPattern appP
+                BottomPattern botP -> BottomPattern botP
+                CeilPattern ceilP -> CeilPattern ceilP
+                DomainValuePattern dvP -> DomainValuePattern dvP
+                EqualsPattern eqP -> EqualsPattern eqP
+                ExistsPattern Exists { existsVariable } ->
+                    -- existsVariable has uninhabited type.
+                    -- The empty case below convinces GHC that this branch is
+                    -- unreachable.
+                    case existsVariable of {}
+                FloorPattern flrP -> FloorPattern flrP
+                ForallPattern Forall { forallVariable } ->
+                    -- forallVariable has uninhabited type.
+                    -- The empty case below convinces GHC that this branch is
+                    -- unreachable.
+                    case forallVariable of {}
+                IffPattern iffP -> IffPattern iffP
+                ImpliesPattern impP -> ImpliesPattern impP
+                InPattern inP -> InPattern inP
+                NextPattern nextP -> NextPattern nextP
+                NotPattern notP -> NotPattern notP
+                OrPattern orP -> OrPattern orP
+                RewritesPattern rewP -> RewritesPattern rewP
+                StringLiteralPattern strP -> StringLiteralPattern strP
+                CharLiteralPattern charP -> CharLiteralPattern charP
+                TopPattern topP -> TopPattern topP
+                VariablePattern varP ->
+                    -- varP has uninhabited type.
+                    -- The empty case below convinces GHC that this branch is
+                    -- unreachable.
+                    case varP of {}
+            )
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level =

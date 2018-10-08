@@ -61,7 +61,7 @@ import           Kore.Step.StepperAttributes
 {- | The default type of builtin domain values.
  -}
 type Builtin =
-    Kore.DomainValue Object (Kore.BuiltinDomain (Kore.CommonPurePattern Meta))
+    Kore.DomainValue Object (Kore.BuiltinDomain (Kore.CommonPurePattern Object))
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -202,7 +202,7 @@ externalizePattern indexedModule =
     externalizePattern0 =
         \case
             Kore.DomainValuePattern dv ->
-                asPattern indexedModule dv
+                asPattern indexedModule =<< traverse sequence dv
             pat -> Functor.Foldable.embed <$> sequence pat
 
 {- | Extract the meta-level pattern argument of a domain value.
@@ -212,10 +212,10 @@ externalizePattern indexedModule =
 
  -}
 asMetaPattern
-    :: Builtin
+    :: Kore.BuiltinDomain child
     -> Kore.CommonPurePattern Meta
-asMetaPattern Kore.DomainValue { domainValueChild } =
-    case domainValueChild of
+asMetaPattern =
+    \case
         Kore.BuiltinDomainPattern pat -> pat
         Kore.BuiltinDomainMap _ -> notImplementedInternal
         Kore.BuiltinDomainList _ -> notImplementedInternal

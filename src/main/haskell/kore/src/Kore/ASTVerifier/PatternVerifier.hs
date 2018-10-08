@@ -456,7 +456,7 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
 
 verifyDomainValue
     :: (MetaOrObject level)
-    => DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+    => DomainValue Object (BuiltinDomain CommonKorePattern)
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (Sort Object)

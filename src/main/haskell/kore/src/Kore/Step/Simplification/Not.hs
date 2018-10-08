@@ -17,7 +17,7 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( PureMLPattern, Not (..), SortedVariable )
+                 ( Not (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkNot, mkTop )

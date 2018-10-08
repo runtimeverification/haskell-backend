@@ -13,7 +13,6 @@ import           Data.Reflection
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
@@ -69,7 +68,7 @@ prop_lookupUpdate (key, value) map' =
                 ]
         patMap =
             asPattern
-            $ Map.mapKeys Test.Int.asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
             $ Map.map Test.Int.asPattern map'
         patKey = Test.Int.asPattern key
         patValue = Test.Int.asPattern value
@@ -92,7 +91,7 @@ prop_concatUnit map' =
         patUnit = App_ symbolUnit []
         patMap =
             asPattern
-            $ Map.mapKeys Test.Int.asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
             $ Map.map Test.Int.asPattern map'
         predicate1 = give testSymbolOrAliasSorts $ mkEquals patMap patConcat1
         predicate2 = give testSymbolOrAliasSorts $ mkEquals patMap patConcat2
@@ -190,11 +189,11 @@ prop_concatCommutes map1 map2 =
         patConcat2 = App_ symbolConcat [ patMap2, patMap1 ]
         patMap1 =
             asPattern
-            $ Map.mapKeys Test.Int.asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
             $ Map.map Test.Int.asPattern map1
         patMap2 =
             asPattern
-            $ Map.mapKeys Test.Int.asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
             $ Map.map Test.Int.asPattern map2
         predicate = give testSymbolOrAliasSorts (mkEquals patConcat1 patConcat2)
     in
@@ -218,15 +217,15 @@ prop_concatAssociates
 prop_concatAssociates map1 map2 map3 =
     let patMap1 =
             asPattern
-            $ Map.mapKeys Test.Int.asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
             $ Map.map Test.Int.asPattern map1
         patMap2 =
             asPattern
-            $ Map.mapKeys Test.Int.asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
             $ Map.map Test.Int.asPattern map2
         patMap3 =
             asPattern
-            $ Map.mapKeys Test.Int.asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
             $ Map.map Test.Int.asPattern map3
         patConcat12 = App_ symbolConcat [ patMap1, patMap2 ]
         patConcat23 = App_ symbolConcat [ patMap2, patMap3 ]

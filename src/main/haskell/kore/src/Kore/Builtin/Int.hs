@@ -27,6 +27,7 @@ module Kore.Builtin.Int
     , expectBuiltinDomainInt
     , asMetaPattern
     , asPattern
+    , asConcretePattern
     , asExpandedPattern
     , asPartialExpandedPattern
     ) where
@@ -38,6 +39,7 @@ import           Control.Monad.Except
 import qualified Control.Monad.Except as Except
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
+import qualified Data.Functor.Foldable as Functor.Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
@@ -53,6 +55,8 @@ import qualified Text.Megaparsec.Char.Lexer as Parsec
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
+import           Kore.AST.PureML
+                 ( fromConcretePurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -164,7 +168,7 @@ parse = Parsec.signed noSpace Parsec.decimal
 expectBuiltinDomainInt
     :: Monad m
     => String  -- ^ Context for error message
-    -> Kore.CommonPurePattern Object  -- ^ Operand pattern
+    -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
     -> ExceptT (AttemptedFunction Object Kore.Variable) m Integer
 expectBuiltinDomainInt ctx =
     \case
@@ -192,9 +196,27 @@ asPattern
     -> Integer  -- ^ builtin value to render
     -> Kore.CommonPurePattern Object
 asPattern resultSort result =
-    Kore.DV_ resultSort
-        $ Kore.BuiltinDomainPattern
-        $ asMetaPattern result
+    fromConcretePurePattern (asConcretePattern resultSort result)
+
+{- | Render an 'Integer' as a concrete domain value pattern of the given sort.
+
+  The result sort should be hooked to the builtin @Int@ sort, but this is not
+  checked.
+
+  See also: 'sort'
+
+ -}
+asConcretePattern
+    :: Kore.Sort Object  -- ^ resulting sort
+    -> Integer  -- ^ builtin value to render
+    -> Kore.ConcretePurePattern Object
+asConcretePattern domainValueSort result =
+    (Functor.Foldable.embed . Kore.DomainValuePattern)
+        Kore.DomainValue
+            { domainValueSort
+            , domainValueChild =
+                Kore.BuiltinDomainPattern $ asMetaPattern result
+            }
 
 asMetaPattern :: Integer -> Kore.CommonPurePattern Meta
 asMetaPattern result = Kore.StringLiteral_ $ show result

@@ -213,7 +213,7 @@ equalsGen childGen x = equalsInGen childGen x Equals
 domainValueGen
     :: MetaOrObject level
     => level
-    -> Gen (DomainValue level (BuiltinDomain (CommonPurePattern Meta)))
+    -> Gen (DomainValue level (BuiltinDomain CommonKorePattern))
 domainValueGen x =
     DomainValue
         <$> scale (`div` 2) (sortGen x)

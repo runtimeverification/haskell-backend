@@ -31,7 +31,7 @@ module Kore.Builtin.Set
     ) where
 
 import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
+                 ( ExceptT )
 import qualified Control.Monad.Except as Except
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -45,6 +45,7 @@ import qualified Data.Set as Set
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
+import qualified Kore.AST.PureML as Kore
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -107,7 +108,7 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin = Set (Kore.CommonPurePattern Object)
+type Builtin = Set (Kore.ConcretePurePattern Object)
 
 {- | Abort function evaluation if the argument is not a @Set@ domain value.
 
@@ -121,17 +122,18 @@ expectBuiltinDomainSet
     => String  -- ^ Context for error message
     -> Kore.CommonPurePattern Object  -- ^ Operand pattern
     -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
-expectBuiltinDomainSet ctx =
-    \case
-        Kore.DV_ _ domain ->
-            case domain of
-                Kore.BuiltinDomainSet set -> return set
-                _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a set")
-        _ ->
-            Except.throwError NotApplicable
-
-getAttemptedFunction :: Monad m => ExceptT r m r -> m r
-getAttemptedFunction = fmap (either id id) . runExceptT
+expectBuiltinDomainSet ctx _set =
+    do
+        _set <- Builtin.expectConcretePurePattern _set
+        case _set of
+            Kore.DV_ _ domain ->
+                case domain of
+                    Kore.BuiltinDomainSet set -> return set
+                    _ ->
+                        Builtin.verifierBug
+                            (ctx ++ ": Domain value is not a set")
+            _ ->
+                Except.throwError NotApplicable
 
 returnSet
     :: Monad m
@@ -149,24 +151,29 @@ evalElement =
     Builtin.functionEvaluator evalElement0
   where
     evalElement0 _ _ resultSort = \arguments ->
-        case arguments of
-            [_elem] -> returnSet resultSort (Set.singleton _elem)
+        Builtin.getAttemptedFunction
+        (case arguments of
+            [_elem] -> do
+                _elem <- Builtin.expectConcretePurePattern _elem
+                returnSet resultSort (Set.singleton _elem)
             _ -> Builtin.wrongArity "SET.element"
+        )
 
 evalIn :: Builtin.Function
 evalIn =
     Builtin.functionEvaluator evalIn0
   where
     evalIn0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+        Builtin.getAttemptedFunction
         (do
-            let (elem', _set) =
+            let (_elem, _set) =
                     case arguments of
-                        [elem'', _set] -> (elem'', _set)
+                        [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity "SET.in"
+            _elem <- Builtin.expectConcretePurePattern _elem
             _set <- expectBuiltinDomainSet "SET.in" _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
-                (Set.member elem' _set)
+                (Set.member _elem _set)
         )
       where
         asExpandedBoolPattern = Bool.asExpandedPattern resultSort
@@ -185,7 +192,7 @@ evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     evalConcat0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+        Builtin.getAttemptedFunction
         (do
             let (_set1, _set2) =
                     case arguments of
@@ -202,7 +209,7 @@ evalDifference =
   where
     ctx = "SET.difference"
     evalConcat0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+        Builtin.getAttemptedFunction
         (do
             let (_set1, _set2) =
                     case arguments of
@@ -246,7 +253,8 @@ asPattern indexedModule _ = do
     symbolUnit <- lookupSymbolUnit indexedModule
     let applyUnit = Kore.App_ symbolUnit []
     symbolElement <- lookupSymbolElement indexedModule
-    let applyElement elem' = Kore.App_ symbolElement [elem']
+    let applyElement elem' =
+            Kore.App_ symbolElement [Kore.fromConcretePurePattern elem']
     symbolConcat <- lookupSymbolConcat indexedModule
     let applyConcat set1 set2 = Kore.App_ symbolConcat [set1, set2]
     let asPattern0 set =
@@ -265,7 +273,10 @@ asExpandedPattern
     -> Kore.Sort Object
     -> Either (Kore.Error e) (Builtin -> CommonExpandedPattern Object)
 asExpandedPattern symbols resultSort =
-    (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
+    asExpandedPattern0 <$> asPattern symbols resultSort
+  where
+    asExpandedPattern0 = \asPattern0 builtin ->
+        ExpandedPattern.fromPurePattern $ asPattern0 builtin
 
 {- | Find the symbol hooked to @SET.unit@ in an indexed module.
  -}

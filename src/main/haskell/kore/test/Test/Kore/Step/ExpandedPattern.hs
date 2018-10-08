@@ -10,8 +10,8 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import Kore.AST.Common
-       ( AstLocation (..), Id (..), PureMLPattern, Sort (..), SortVariable (..),
-       SortedVariable (..) )
+       ( AstLocation (..), Id (..), PureMLPattern, Sort (..),
+       SortVariable (..), SortedVariable (..) )
 import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )

@@ -18,6 +18,7 @@ import Kore.ASTUtils.SmartConstructors
        ( mkCharLiteral, mkOr, mkStringLiteral, mkVar )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools, SymbolOrAliasSorts )
+import Kore.Proof.Functional
 import Kore.Step.PatternAttributes
 import Kore.Step.PatternAttributesError
        ( FunctionError (..), FunctionalError (..) )
