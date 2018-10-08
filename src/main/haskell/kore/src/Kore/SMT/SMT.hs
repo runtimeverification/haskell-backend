@@ -139,7 +139,7 @@ unsafeTryRefutePattern
     => PureMLPattern Object variable
     -> Maybe Bool
 unsafeTryRefutePattern p = unsafePerformIO $ do
-  let smtPredicate = setTimeOut 20 >> patternToSMT True p -- 20ms
+  let smtPredicate = setTimeOut 200 >> patternToSMT True p -- 20ms
         >>= (\case {
                Right p' -> return $ bnot p' ;
                Left _ -> sBool "TranslationFailed"
