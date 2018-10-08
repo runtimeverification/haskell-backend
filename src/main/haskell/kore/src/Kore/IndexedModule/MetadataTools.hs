@@ -39,6 +39,7 @@ data MetadataTools level attributes = MetadataTools
     {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
        including when @a@ equals @b@. -}
     }
+  deriving Functor
 
 type SymbolOrAliasSorts level = SymbolOrAlias level -> ApplicationSorts level
 
