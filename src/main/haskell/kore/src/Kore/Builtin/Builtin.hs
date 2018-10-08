@@ -46,6 +46,7 @@ module Kore.Builtin.Builtin
     , runParser
     , appliedFunction
     , lookupSymbol
+    , isSymbol
     , expectNormalConcreteTerm
     , getAttemptedFunction
     ) where
@@ -671,6 +672,18 @@ lookupSymbol builtinName indexedModule
         { symbolOrAliasConstructor
         , symbolOrAliasParams = []
         }
+
+{- | Is the given symbol hooked to the named builtin?
+ -}
+isSymbol
+    :: String  -- ^ Builtin symbol
+    -> MetadataTools Object Hook
+    -> SymbolOrAlias Object  -- ^ Kore symbol
+    -> Bool
+isSymbol builtinName MetadataTools { symAttributes } sym =
+    case getHook (symAttributes sym) of
+        Just hook -> hook == builtinName
+        Nothing -> False
 
 {- | Ensure that a 'PureMLPattern' is a concrete, normalized term.
 
