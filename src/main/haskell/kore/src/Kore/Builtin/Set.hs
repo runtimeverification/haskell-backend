@@ -52,11 +52,15 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 
 {- | Builtin name of the @Set@ sort.
@@ -120,11 +124,12 @@ type Builtin = Set (Kore.ConcretePurePattern Object)
 expectBuiltinDomainSet
     :: Monad m
     => String  -- ^ Context for error message
+    -> MetadataTools Object StepperAttributes
     -> Kore.CommonPurePattern Object  -- ^ Operand pattern
     -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
-expectBuiltinDomainSet ctx _set =
+expectBuiltinDomainSet ctx tools _set =
     do
-        _set <- Builtin.expectConcretePurePattern _set
+        _set <- Builtin.expectNormalConcreteTerm tools _set
         case _set of
             Kore.DV_ _ domain ->
                 case domain of
@@ -150,11 +155,11 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ _ resultSort = \arguments ->
+    evalElement0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
         (case arguments of
             [_elem] -> do
-                _elem <- Builtin.expectConcretePurePattern _elem
+                _elem <- Builtin.expectNormalConcreteTerm tools _elem
                 returnSet resultSort (Set.singleton _elem)
             _ -> Builtin.wrongArity "SET.element"
         )
@@ -163,15 +168,15 @@ evalIn :: Builtin.Function
 evalIn =
     Builtin.functionEvaluator evalIn0
   where
-    evalIn0 _ _ resultSort = \arguments ->
+    evalIn0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
         (do
             let (_elem, _set) =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity "SET.in"
-            _elem <- Builtin.expectConcretePurePattern _elem
-            _set <- expectBuiltinDomainSet "SET.in" _set
+            _elem <- Builtin.expectNormalConcreteTerm tools _elem
+            _set <- expectBuiltinDomainSet "SET.in" tools _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Set.member _elem _set)
         )
@@ -191,15 +196,16 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 _ _ resultSort = \arguments ->
+    ctx = "SET.concat"
+    evalConcat0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
         (do
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity "SET.concat"
-            _set1 <- expectBuiltinDomainSet "SET.concat" _set1
-            _set2 <- expectBuiltinDomainSet "SET.concat" _set2
+                        _ -> Builtin.wrongArity ctx
+            _set1 <- expectBuiltinDomainSet ctx tools _set1
+            _set2 <- expectBuiltinDomainSet ctx tools _set2
             returnSet resultSort (_set1 <> _set2)
         )
 
@@ -208,15 +214,15 @@ evalDifference =
     Builtin.functionEvaluator evalConcat0
   where
     ctx = "SET.difference"
-    evalConcat0 _ _ resultSort = \arguments ->
+    evalConcat0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
         (do
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity ctx
-            _set1 <- expectBuiltinDomainSet ctx _set1
-            _set2 <- expectBuiltinDomainSet ctx _set2
+            _set1 <- expectBuiltinDomainSet ctx tools _set1
+            _set2 <- expectBuiltinDomainSet ctx tools _set2
             returnSet resultSort (Set.difference _set1 _set2)
         )
 

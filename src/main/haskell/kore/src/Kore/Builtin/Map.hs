@@ -153,14 +153,14 @@ evalLookup :: Builtin.Function
 evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
-    evalLookup0 _ _ _ arguments =
+    evalLookup0 tools _ _ arguments =
         Builtin.getAttemptedFunction
         (do
             let (_map, _key) =
                     case arguments of
                         [_map, _key] -> (_map, _key)
                         _ -> Builtin.wrongArity "MAP.lookup"
-            _key <- Builtin.expectConcretePurePattern _key
+            _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinDomainMap "MAP.lookup" _map
             Builtin.appliedFunction
                 $ maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
@@ -171,14 +171,14 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ _ resultSort = \arguments ->
+    evalElement0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
         (do
             let (_key, _value) =
                     case arguments of
                         [_key, _value] -> (_key, _value)
                         _ -> Builtin.wrongArity "MAP.element"
-            _key <- Builtin.expectConcretePurePattern _key
+            _key <- Builtin.expectNormalConcreteTerm tools _key
             returnMap resultSort (Map.singleton _key _value)
         )
 
@@ -218,14 +218,14 @@ evalUpdate :: Builtin.Function
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
-    evalUpdate0 _ _ resultSort = \arguments ->
+    evalUpdate0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
         (do
             let (_map, _key, value) =
                     case arguments of
                         [_map, _key, value'] -> (_map, _key, value')
                         _ -> Builtin.wrongArity "MAP.update"
-            _key <- Builtin.expectConcretePurePattern _key
+            _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinDomainMap "MAP.update" _map
             returnMap resultSort (Map.insert _key value _map)
         )
@@ -234,14 +234,14 @@ evalInKeys :: Builtin.Function
 evalInKeys =
     Builtin.functionEvaluator evalInKeys0
   where
-    evalInKeys0 _ _ resultSort = \arguments ->
+    evalInKeys0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
         (do
             let (_key, _map) =
                     case arguments of
                         [_key, _map] -> (_key, _map)
                         _ -> Builtin.wrongArity "MAP.in_keys"
-            _key <- Builtin.expectConcretePurePattern _key
+            _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinDomainMap "MAP.in_keys" _map
             Builtin.appliedFunction
                 $ Bool.asExpandedPattern resultSort

@@ -46,7 +46,7 @@ module Kore.Builtin.Builtin
     , runParser
     , appliedFunction
     , lookupSymbol
-    , expectConcretePurePattern
+    , expectNormalConcreteTerm
     , getAttemptedFunction
     ) where
 
@@ -71,10 +71,9 @@ import qualified Text.Megaparsec as Parsec
 
 import           Kore.AST.Common
                  ( Application (..), BuiltinDomain (..), CommonPurePattern,
-                 ConcretePurePattern, DomainValue (..), Id (..),
-                 Pattern (DomainValuePattern), PureMLPattern, Sort (..),
-                 SortActual (..), SortVariable (..), SymbolOrAlias (..),
-                 Variable )
+                 ConcretePurePattern, DomainValue (..), Id (..), Pattern (..),
+                 PureMLPattern, Sort (..), SortActual (..), SortVariable (..),
+                 SymbolOrAlias (..), Variable )
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
@@ -101,6 +100,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
+import qualified Kore.Proof.Value as Value
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import           Kore.Step.Function.Data
@@ -637,14 +637,29 @@ lookupSymbol builtinName indexedModule
         , symbolOrAliasParams = []
         }
 
-expectConcretePurePattern
-    :: MonadError (AttemptedFunction Object Variable) m
-    => PureMLPattern level variable
-    -> m (ConcretePurePattern level)
-expectConcretePurePattern purePattern =
-    case asConcretePurePattern purePattern of
-        Nothing -> Except.throwError NotApplicable
-        Just concretePattern -> return concretePattern
+{- | Ensure that a 'PureMLPattern' is a concrete, normalized term.
 
+    If the pattern is not concrete and normalized, the function is
+    'NotApplicable'.
+
+ -}
+expectNormalConcreteTerm
+    :: MonadError (AttemptedFunction Object Variable) m
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> m (ConcretePurePattern level)
+expectNormalConcreteTerm tools purePattern =
+    maybe (Except.throwError NotApplicable) return $ do
+        p <- asConcretePurePattern purePattern
+        -- TODO (thomas.tuegel): Use the return value as the term. Will require
+        -- factoring BuiltinDomain out of Kore.AST.Common.
+        _ <- Value.fromConcretePurePattern tools p
+        return p
+
+{- | Run a computation which can return early.
+
+    See also: 'expectNormalConcreteTerm'
+
+ -}
 getAttemptedFunction :: Monad m => ExceptT r m r -> m r
 getAttemptedFunction = fmap (either id id) . runExceptT
