@@ -44,7 +44,7 @@ create
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPatternSimplifier level variable
 create

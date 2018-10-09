@@ -17,7 +17,7 @@ import           Kore.Proof.Functional
 import           Kore.Step.BaseStep
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern, Predicated(..) )
+                 ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
@@ -173,15 +173,21 @@ instance
     printWithExplanation = show
 
 instance
-    (Eq level, Show level) =>
-    SumEqualWithExplanation (StepProof level)
+    ( Eq level, Show level
+    , Eq (variable level), Show (variable level)
+    , EqualWithExplanation (variable level)
+    )
+    => SumEqualWithExplanation (StepProof variable level)
   where
     sumConstructorPair (StepProof a1) (StepProof a2) =
         SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
 
 instance
-    (Eq level, Show level) =>
-    SumEqualWithExplanation (StepProofAtom level)
+    ( Eq level, Show level
+    , Eq (variable level), Show (variable level)
+    , EqualWithExplanation (variable level)
+    )
+    => SumEqualWithExplanation (StepProofAtom variable level)
   where
     sumConstructorPair (StepProofUnification a1) (StepProofUnification a2) =
         SumConstructorSameWithArguments (EqWrap "StepProofUnification" a1 a2)
@@ -207,11 +213,23 @@ instance
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-instance (Eq level, Show level) => EqualWithExplanation (StepProofAtom level) where
+instance
+    ( Eq level, Show level
+    , Eq (variable level), Show (variable level)
+    , EqualWithExplanation (variable level)
+    )
+    => EqualWithExplanation (StepProofAtom variable level)
+  where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance (Eq level, Show level) => EqualWithExplanation (StepProof level) where
+instance
+    ( Eq level, Show level
+    , Eq (variable level), Show (variable level)
+    , EqualWithExplanation (variable level)
+    )
+    => EqualWithExplanation (StepProof variable level)
+  where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
@@ -710,7 +728,9 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance StructEqualWithExplanation (VariableRenaming level)
+instance
+    (EqualWithExplanation (variable level), Show (variable level))
+    => StructEqualWithExplanation (VariableRenaming level variable)
   where
     structFieldsWithNames
         expected@(VariableRenaming _ _)
@@ -726,12 +746,17 @@ instance StructEqualWithExplanation (VariableRenaming level)
         ]
     structConstructorName _ = "VariableRenaming"
 
-instance EqualWithExplanation (VariableRenaming level)
+instance
+    (EqualWithExplanation (variable level), Show (variable level))
+    => EqualWithExplanation (VariableRenaming level variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance SumEqualWithExplanation (StepperVariable level) where
+instance
+    (EqualWithExplanation (variable level), Show (variable level))
+    => SumEqualWithExplanation (StepperVariable variable level)
+  where
     sumConstructorPair (AxiomVariable a1) (AxiomVariable a2) =
         SumConstructorSameWithArguments (EqWrap "AxiomVariable" a1 a2)
     sumConstructorPair a1@(AxiomVariable _) a2 =
@@ -744,7 +769,9 @@ instance SumEqualWithExplanation (StepperVariable level) where
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-instance EqualWithExplanation (StepperVariable level)
+instance
+    (EqualWithExplanation (variable level), Show (variable level))
+    => EqualWithExplanation (StepperVariable variable level)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

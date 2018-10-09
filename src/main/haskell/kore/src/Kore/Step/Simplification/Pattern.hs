@@ -101,7 +101,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPattern level variable
     -> Simplifier
@@ -132,7 +132,7 @@ simplifyToOr
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPattern level variable
     -> Simplifier
@@ -167,7 +167,7 @@ simplifyInternal
         )
     => MetadataTools level StepperAttributes
     -> PureMLPatternSimplifier level variable
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
     -> Pattern level variable (PureMLPattern level variable)
     -> Simplifier

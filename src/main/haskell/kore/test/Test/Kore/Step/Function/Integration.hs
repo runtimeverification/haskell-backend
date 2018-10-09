@@ -12,7 +12,8 @@ import           Data.Reflection
                  ( give )
 
 import           Kore.AST.Common
-                 ( Application (..), CommonPurePattern, Id (..) )
+                 ( Application (..), CommonPurePattern, Id (..),
+                 PureMLPattern )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr, mkVar )
@@ -24,10 +25,12 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.BaseStep
                  ( AxiomPattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, ExpandedPattern,
+                 Predicated (Predicated) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( Predicated (..), mapVariables )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..),
-                 CommonApplicationFunctionEvaluator, CommonAttemptedFunction )
+                 ( ApplicationFunctionEvaluator (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.Function.UserDefined
@@ -35,11 +38,14 @@ import           Kore.Step.Function.UserDefined
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 ( PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
+import           Kore.Variables.Fresh
+                 ( FreshVariable, freshVariableFromVariable )
+
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -232,7 +238,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
 axiomEvaluator
     :: CommonPurePattern Object
     -> CommonPurePattern Object
-    -> CommonApplicationFunctionEvaluator Object
+    -> ApplicationFunctionEvaluator Object
 axiomEvaluator left right =
     ApplicationFunctionEvaluator
         (axiomFunctionEvaluator
@@ -245,27 +251,38 @@ axiomEvaluator left right =
         )
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level -> CommonApplicationFunctionEvaluator level
+    :: CommonExpandedPattern level -> ApplicationFunctionEvaluator level
 appliedMockEvaluator result =
     ApplicationFunctionEvaluator
         (mockEvaluator
-            (AttemptedFunction.Applied (OrOfExpandedPattern.make [result]))
+            (AttemptedFunction.Applied
+                (OrOfExpandedPattern.make [mapVariables result])
+            )
         )
 
+mapVariables
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        )
+    => CommonExpandedPattern level
+    -> ExpandedPattern level variable
+mapVariables =
+    ExpandedPattern.mapVariables (\v -> freshVariableFromVariable v 1)
+
 mockEvaluator
-    :: CommonAttemptedFunction level
+    :: AttemptedFunction level variable
     -> MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier level
-    -> Application level (CommonPurePattern level)
+    -> PureMLPatternSimplifier level variable
+    -> Application level (PureMLPattern level variable)
     -> Simplifier
-        (CommonAttemptedFunction level, SimplificationProof level)
+        (AttemptedFunction level variable, SimplificationProof level)
 mockEvaluator evaluation _ _ _ =
     return (evaluation, SimplificationProof)
 
 evaluate
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 evaluate metadataTools functionIdToEvaluator patt =

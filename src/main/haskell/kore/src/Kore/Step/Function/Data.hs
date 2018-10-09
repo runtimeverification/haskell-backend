@@ -8,8 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.Data
-    (  ApplicationFunctionEvaluator (..)
-    , CommonApplicationFunctionEvaluator
+    ( ApplicationFunctionEvaluator (..)
     , AttemptedFunction (..)
     , CommonAttemptedFunction
     , notApplicableFunctionEvaluator
@@ -17,9 +16,9 @@ module Kore.Step.Function.Data
     ) where
 
 import Kore.AST.Common
-       ( Application, PureMLPattern, Variable )
+       ( Application, PureMLPattern, SortedVariable, Variable )
 import Kore.AST.MetaOrObject
-       ( MetaOrObject )
+       ( Meta, MetaOrObject, Object )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.OrOfExpandedPattern
@@ -28,6 +27,10 @@ import Kore.Step.Simplification.Data
        ( PureMLPatternSimplifier, SimplificationProof (..), Simplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
+import Kore.Substitution.Class
+       ( Hashable )
+import Kore.Variables.Fresh
+       ( FreshVariable )
 
 {-| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
 pattern. This can be either a built-in evaluator or a user-defined one.
@@ -47,9 +50,18 @@ Return value:
 It returns the result of appling the function, together with a proof certifying
 that the function was applied correctly (which is only a placeholder right now).
 -}
-newtype ApplicationFunctionEvaluator level variable =
+newtype ApplicationFunctionEvaluator level=
     ApplicationFunctionEvaluator
-        (forall . ( MetaOrObject level)
+        (forall variable
+        .   ( FreshVariable variable
+            , Hashable variable
+            , MetaOrObject level
+            , Ord (variable level)
+            , Ord (variable Meta)
+            , Ord (variable Object)
+            , SortedVariable variable
+            , Show (variable level)
+            )
         => MetadataTools level StepperAttributes
         -> PureMLPatternSimplifier level variable
         -> Application level (PureMLPattern level variable)
@@ -58,13 +70,6 @@ newtype ApplicationFunctionEvaluator level variable =
             , SimplificationProof level
             )
         )
-
-{-| 'CommonApplicationFunctionEvaluator' particularizes
-'ApplicationFunctionEvaluator' to 'Variable', following the same pattern as
-the other `Common*` types.
--}
-type CommonApplicationFunctionEvaluator level =
-    ApplicationFunctionEvaluator level Variable
 
 {-| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
 cases where the function can't be fully evaluated.
