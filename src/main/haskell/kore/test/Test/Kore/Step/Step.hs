@@ -40,8 +40,9 @@ import           Kore.Step.StepperAttributes
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
 
-import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
+import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Tasty.HUnit.Extensions
 
 v1 :: MetaSort sort => sort -> MetaVariable sort
 v1 = metaVariable "#v1" AstLocationTest
@@ -518,7 +519,11 @@ runStep metadataTools configuration axioms =
     pickStuck
         $ evalSimplifier
         $ runStrategy
-            (transitionRule metadataTools simplifier)
+            (transitionRule
+                metadataTools
+                (Mock.substitutionSimplifier metadataTools)
+                simplifier
+            )
             (stepStrategy axioms)
             Unlimited
             (configuration, mempty)
@@ -538,7 +543,11 @@ runSteps metadataTools stepLimit configuration axioms =
     pickLongest
         $ evalSimplifier
         $ runStrategy
-            (transitionRule metadataTools simplifier)
+            (transitionRule
+                metadataTools
+                (Mock.substitutionSimplifier metadataTools)
+                simplifier
+            )
             (simpleStrategy axioms)
             stepLimit
             (configuration, mempty)

@@ -38,7 +38,8 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, make, traverseFlattenWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PredicateSubstitutionSimplifier,
+                 PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
@@ -87,6 +88,7 @@ simplify
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Simplifies patterns.
     -> Exists level variable (OrOfExpandedPattern level variable)
@@ -96,10 +98,11 @@ simplify
         )
 simplify
     tools
+    substitutionSimplifier
     simplifier
     Exists { existsVariable = variable, existsChild = child }
   =
-    simplifyEvaluated tools simplifier variable child
+    simplifyEvaluated tools substitutionSimplifier simplifier variable child
 
 simplifyEvaluated
     ::  ( MetaOrObject level
@@ -115,13 +118,14 @@ simplifyEvaluated
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Simplifies patterns.
     -> variable level
     -> OrOfExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluated tools simplifier variable simplified
+simplifyEvaluated tools substitutionSimplifier simplifier variable simplified
   | OrOfExpandedPattern.isTrue simplified =
     return (simplified, SimplificationProof)
   | OrOfExpandedPattern.isFalse simplified =
@@ -129,7 +133,8 @@ simplifyEvaluated tools simplifier variable simplified
   | otherwise = do
     (evaluated, _proofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairs
-            (makeEvaluate tools simplifier variable) simplified
+            (makeEvaluate tools substitutionSimplifier simplifier variable)
+            simplified
     return ( evaluated, SimplificationProof )
 
 {-| evaluates an 'Exists' given its two 'ExpandedPattern' children.
@@ -150,6 +155,7 @@ makeEvaluate
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Simplifies patterns.
     -> variable level
@@ -158,6 +164,7 @@ makeEvaluate
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
     tools
+    substitutionSimplifier
     simplifier
     variable
     patt@Predicated { term, predicate, substitution }
@@ -173,7 +180,8 @@ makeEvaluate
                     localSubstitutionList
                     globalSubstitution
             (result, _proof) <-
-                ExpandedPattern.simplify tools simplifier substitutedPat
+                ExpandedPattern.simplify
+                    tools substitutionSimplifier simplifier substitutedPat
             return (result , SimplificationProof)
   where
     (Local localSubstitution, Global globalSubstitution) =

@@ -14,39 +14,42 @@ import Data.Default
 import Data.Reflection
        ( give )
 
-import Kore.AST.Common
-       ( Application (..), AstLocation (..), Id (..),
-       Pattern (ApplicationPattern, StringLiteralPattern), StringLiteral (..),
-       SymbolOrAlias (..), Variable )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
-import Kore.ASTHelpers
-       ( ApplicationSorts (..) )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts
-import Kore.Error
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..), SymbolOrAliasSorts )
-import Kore.MetaML.AST
-       ( CommonMetaPattern )
-import Kore.Predicate.Predicate
-       ( CommonPredicate, makeEqualsPredicate, makeTruePredicate )
-import Kore.Step.BaseStep
-import Kore.Step.Error
-import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( Predicated (..), bottom )
-import Kore.Step.ExpandedPattern
-       ( CommonExpandedPattern )
-import Kore.Step.Simplification.Data
-import Kore.Step.StepperAttributes
-import Kore.Unification.Unifier
-       ( UnificationError (..), UnificationProof (..) )
+import           Kore.AST.Common
+                 ( Application (..), AstLocation (..), Id (..),
+                 Pattern (ApplicationPattern, StringLiteralPattern),
+                 StringLiteral (..), SymbolOrAlias (..), Variable )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.AST.PureToKore
+                 ( patternKoreToPure )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.Building.AsAst
+import           Kore.Building.Patterns
+import           Kore.Building.Sorts
+import           Kore.Error
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..), SymbolOrAliasSorts )
+import           Kore.MetaML.AST
+                 ( CommonMetaPattern )
+import           Kore.Predicate.Predicate
+                 ( CommonPredicate, makeEqualsPredicate, makeTruePredicate )
+import           Kore.Step.BaseStep
+import           Kore.Step.Error
+import           Kore.Step.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( bottom )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes (..) )
+import           Kore.Unification.Unifier
+                 ( UnificationError (..), UnificationProof (..) )
 
-import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
+import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Tasty.HUnit.Extensions
 
 test_baseStep :: [TestTree]
 test_baseStep =
@@ -1134,4 +1137,8 @@ runStep metadataTools configuration axiom =
     first evalSimplifier
     . evalSimplifier
     . runExceptT
-    $ stepWithAxiom metadataTools configuration axiom
+    $ stepWithAxiom
+        metadataTools
+        (Mock.substitutionSimplifier metadataTools)
+        configuration
+        axiom

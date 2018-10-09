@@ -37,6 +37,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 
 import           Test.Kore
@@ -108,7 +109,10 @@ evaluate pat =
     let
         tools = extractMetadataTools indexedModule
         (Predicated { term }, _) =
-            evalSimplifier (Pattern.simplify tools evaluators pat)
+            evalSimplifier
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators pat
+                )
     in term
 
 kEqualDefinition :: KoreDefinition
@@ -145,7 +149,10 @@ test_KEqual =
             , SimplificationProof
             )
             (evalSimplifier
-                (Pattern.simplify tools evaluators (pat keqSymbol))
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators
+                    (pat keqSymbol)
+                )
             )
         )
     , testCase "not equals with variable"
@@ -154,7 +161,10 @@ test_KEqual =
             , SimplificationProof
             )
             (evalSimplifier
-                (Pattern.simplify tools evaluators (pat kneqSymbol))
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators
+                    (pat kneqSymbol)
+                )
             )
         )
     , testCase "dotk equals dotk"
@@ -163,7 +173,8 @@ test_KEqual =
             , SimplificationProof
             )
             (evalSimplifier
-                (Pattern.simplify tools evaluators
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators
                     (App_ keqSymbol
                         [ App_ dotKHead []
                         , App_ dotKHead []
@@ -178,7 +189,8 @@ test_KEqual =
             , SimplificationProof
             )
             (evalSimplifier
-                (Pattern.simplify tools evaluators
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators
                     (App_ keqSymbol
                         [ DV_ idSort
                             (BuiltinDomainPattern (StringLiteral_ "t"))
@@ -195,7 +207,8 @@ test_KEqual =
             , SimplificationProof
             )
             (evalSimplifier
-                (Pattern.simplify tools evaluators
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators
                     (App_ keqSymbol
                         [ App_ (injHead idSort kItemSort)
                             [ DV_ idSort
@@ -216,7 +229,8 @@ test_KEqual =
             , SimplificationProof
             )
             (evalSimplifier
-                (Pattern.simplify tools evaluators
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators
                     (App_ keqSymbol
                         [ App_ kSeqHead
                             [ App_ (injHead idSort kItemSort)
@@ -309,7 +323,9 @@ idSort = groundObjectSort "SortId"
 -- the current tool by tricking the tool into believing that
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
-constructorFunctions :: MetadataTools Object StepperAttributes -> MetadataTools Object StepperAttributes
+constructorFunctions
+    :: MetadataTools Object StepperAttributes
+    -> MetadataTools Object StepperAttributes
 constructorFunctions tools =
     tools
     { symAttributes = \h -> let atts = symAttributes tools h in

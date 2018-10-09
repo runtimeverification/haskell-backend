@@ -27,7 +27,8 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PredicateSubstitutionSimplifier,
+                 PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -50,6 +51,7 @@ mergeWithPredicateSubstitution
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
@@ -59,6 +61,7 @@ mergeWithPredicateSubstitution
     -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
+    substitutionSimplifier
     simplifier
     toMerge
     patt
@@ -67,6 +70,7 @@ mergeWithPredicateSubstitution
         OrOfExpandedPattern.traverseWithPairs
             (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
                 tools
+                substitutionSimplifier
                 simplifier
                 toMerge
             )

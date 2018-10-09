@@ -36,7 +36,8 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PredicateSubstitutionSimplifier,
+                 PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -70,6 +71,8 @@ simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
+        , Show (variable Meta)
+        , Show (variable Object)
         , Ord (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -77,6 +80,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
@@ -88,6 +92,7 @@ simplify
         )
 simplify
     tools
+    substitutionSimplifier
     simplifier
     symbolIdToEvaluator
     Application
@@ -102,7 +107,7 @@ simplify
     (unflattenedOr, _proofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairsGeneric
             (makeAndEvaluateApplications
-                tools simplifier symbolIdToEvaluator
+                tools substitutionSimplifier simplifier symbolIdToEvaluator
                 symbol
             )
             orDistributedChildren
@@ -115,6 +120,8 @@ makeAndEvaluateApplications
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
+        , Show (variable Meta)
+        , Show (variable Object)
         , Ord (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -122,6 +129,7 @@ makeAndEvaluateApplications
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
@@ -132,6 +140,7 @@ makeAndEvaluateApplications
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeAndEvaluateApplications
     tools
+    substitutionSimplifier
     simplifier
     symbolIdToEvaluator
     symbol
@@ -141,7 +150,7 @@ makeAndEvaluateApplications
         makeExpandedApplication tools symbol children
     (functionApplication, _proof) <-
         evaluateApplicationFunction
-            tools simplifier symbolIdToEvaluator
+            tools substitutionSimplifier simplifier symbolIdToEvaluator
             expandedApplication
     return (functionApplication, SimplificationProof)
 
@@ -149,6 +158,8 @@ evaluateApplicationFunction
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
+        , Show (variable Meta)
+        , Show (variable Object)
         , Ord (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -156,6 +167,7 @@ evaluateApplicationFunction
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
@@ -166,6 +178,7 @@ evaluateApplicationFunction
         (OrOfExpandedPattern level variable, SimplificationProof level)
 evaluateApplicationFunction
     tools
+    substitutionSimplifier
     simplifier
     symbolIdToEvaluator
     Predicated
@@ -173,6 +186,7 @@ evaluateApplicationFunction
   =
     evaluateApplication
         tools
+        substitutionSimplifier
         simplifier
         symbolIdToEvaluator
         PredicateSubstitution

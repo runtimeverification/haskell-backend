@@ -53,6 +53,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( constructorFunctionalAttributes, functionAttributes,
                  makeMetadataTools, makeSymbolOrAliasSorts )
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.Simplifier
                  ( mockSimplifier )
 import           Test.Tasty.HUnit.Extensions
@@ -128,7 +129,7 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                 (Map.singleton
                     fId
                     [ ApplicationFunctionEvaluator
-                        (const $ const $ const $ return
+                        (const $ const $ const $ const $ return
                             ( AttemptedFunction.Applied
                                 (OrOfExpandedPattern.make [gOfAExpanded])
                             , SimplificationProof
@@ -215,7 +216,7 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                 (Map.singleton
                     sigmaId
                     [ ApplicationFunctionEvaluator
-                        (const $ const $ const $ do
+                        (const $ const $ const $ const $ do
                             let zvar = freshVariableFromVariable z 1
                             return
                                 ( AttemptedFunction.Applied
@@ -430,4 +431,9 @@ evaluate
   =
     fst
         $ evalSimplifier
-        $ simplify tools simplifier symbolIdToEvaluator application
+        $ simplify
+            tools
+            (Mock.substitutionSimplifier tools)
+            simplifier
+            symbolIdToEvaluator
+            application

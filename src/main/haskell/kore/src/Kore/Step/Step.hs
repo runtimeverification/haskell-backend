@@ -52,7 +52,8 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, Simplifier )
+                 ( CommonPureMLPatternSimplifier,
+                 PredicateSubstitutionSimplifier, Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
@@ -93,13 +94,14 @@ axiomStep a =
 transitionRule
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> CommonPureMLPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> Prim (AxiomPattern level)
     -> (CommonExpandedPattern level, StepProof Variable level)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier [(CommonExpandedPattern level, StepProof Variable level)]
-transitionRule tools simplifier =
+transitionRule tools substitutionSimplifier simplifier =
     \case
         Simplify -> transitionSimplify
         Axiom a -> transitionAxiom a
@@ -107,7 +109,8 @@ transitionRule tools simplifier =
     transitionSimplify (config, proof) =
         do
             (configs, proof') <-
-                ExpandedPattern.simplify tools simplifier config
+                ExpandedPattern.simplify
+                    tools substitutionSimplifier simplifier config
             let
                 proof'' = proof <> simplificationProof proof'
                 prove config' = (config', proof'')
@@ -115,7 +118,8 @@ transitionRule tools simplifier =
                 nonEmptyConfigs = ExpandedPattern.filterOr configs
             return (prove <$> toList nonEmptyConfigs)
     transitionAxiom a (config, proof) = do
-        result <- runExceptT $ stepWithAxiom tools config a
+        result <- runExceptT
+            $ stepWithAxiom tools substitutionSimplifier config a
         case result of
             Left _ -> pure []
             Right (config', proof') ->

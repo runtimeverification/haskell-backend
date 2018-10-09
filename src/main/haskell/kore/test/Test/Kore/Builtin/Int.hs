@@ -43,6 +43,7 @@ import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 -- | Test a unary operator hooked to the given symbol
 propUnary
@@ -424,7 +425,8 @@ intModule =
 
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
-    fst $ evalSimplifier $ Pattern.simplify tools evaluators pat
+    fst $ evalSimplifier
+    $ Pattern.simplify tools (Mock.substitutionSimplifier tools) evaluators pat
   where
     tools = extractMetadataTools indexedModule
 

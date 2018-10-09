@@ -30,7 +30,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..),
+                 ( PredicateSubstitutionSimplifier,
+                 PureMLPatternSimplifier (..),
                  SimplificationProof (SimplificationProof), Simplifier )
 import           Kore.Step.StepperAttributes
 
@@ -56,7 +57,8 @@ evaluate
         , Show (variable level)
         , Given (MetadataTools level StepperAttributes)
         )
-    => PureMLPatternSimplifier level variable
+    => PredicateSubstitutionSimplifier level
+    -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> Predicate level variable
     -- ^ The condition to be evaluated.
@@ -65,12 +67,14 @@ evaluate
     -> Simplifier
         (PredicateSubstitution level variable, SimplificationProof level)
 evaluate
+    substitutionSimplifier
     (PureMLPatternSimplifier simplifier)
     predicate''
   = give (convertStepperToSMT (given :: MetadataTools level StepperAttributes))
     $ do
     smtTimeOut <- ask
-    (patt, _proof) <- simplifier (unwrapPredicate predicate'')
+    (patt, _proof) <-
+        simplifier substitutionSimplifier (unwrapPredicate predicate'')
     let patt' =
             if not(OrOfExpandedPattern.isTrue patt)
                && not(OrOfExpandedPattern.isFalse patt)

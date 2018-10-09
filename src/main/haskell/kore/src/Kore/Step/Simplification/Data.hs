@@ -13,6 +13,7 @@ module Kore.Step.Simplification.Data
     , evalSimplifierWithTimeout
     , evalSimplifier
     , defaultSMTTimeOut
+    , PredicateSubstitutionSimplifier (..)
     , PureMLPatternSimplifier (..)
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
@@ -20,11 +21,17 @@ module Kore.Step.Simplification.Data
 
 import Control.Monad.Reader
 import Kore.AST.Common
-       ( PureMLPattern, Variable )
+       ( PureMLPattern, SortedVariable, Variable )
+import Kore.AST.MetaOrObject
+       ( Meta, MetaOrObject, Object )
+import Kore.SMT.Config
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
+import Kore.Step.PredicateSubstitution
+       ( PredicateSubstitution )
+import Kore.Substitution.Class
+       ( Hashable )
 import Kore.Variables.Fresh
-import Kore.SMT.Config
 {-| 'SimplificationProof' is a placeholder for proofs showing that the
 simplification of a MetaMLPattern was correct.
 -}
@@ -39,7 +46,7 @@ type Simplifier = ReaderT SMTTimeOut Counter
 
  -}
 runSimplifier
-    :: SMTTimeOut 
+    :: SMTTimeOut
     -- ^ Timeout (in ms) for SMT solver
     -> Simplifier a
     -- ^ simplifier computation
@@ -61,7 +68,8 @@ evalSimplifierWithTimeout smtTimeOut simplifier =
       result
 
 evalSimplifier :: Simplifier a -> a
-evalSimplifier simplifier = evalSimplifierWithTimeout defaultSMTTimeOut simplifier
+evalSimplifier simplifier =
+    evalSimplifierWithTimeout defaultSMTTimeOut simplifier
 
 defaultSMTTimeOut :: SMTTimeOut -- in ms
 defaultSMTTimeOut = SMTTimeOut 40
@@ -71,7 +79,8 @@ Kore functions on PureMLPatterns.
 -}
 newtype PureMLPatternSimplifier level variable =
     PureMLPatternSimplifier
-        ( PureMLPattern level variable
+        ( PredicateSubstitutionSimplifier level
+        -> PureMLPattern level variable
         -> Simplifier
             ( OrOfExpandedPattern level variable
             , SimplificationProof level
@@ -83,3 +92,29 @@ Kore functions on CommonPurePatterns.
 -}
 type CommonPureMLPatternSimplifier level =
     PureMLPatternSimplifier level Variable
+
+
+{-| 'PredicateSubstitutionSimplifier' wraps a function that simplifies
+'PredicateSubstitution's. The minimal requirement from this function is
+that it applies the substitution on the predicate.
+-}
+newtype PredicateSubstitutionSimplifier level =
+    PredicateSubstitutionSimplifier
+        (forall variable
+        .   ( FreshVariable variable
+            , Hashable variable
+            , MetaOrObject level
+            , Ord (variable level)
+            , Ord (variable Meta)
+            , Ord (variable Object)
+            , Show (variable level)
+            , Show (variable Meta)
+            , Show (variable Object)
+            , SortedVariable variable
+            )
+        => PredicateSubstitution level variable
+        -> Simplifier
+            ( PredicateSubstitution level variable
+            , SimplificationProof level
+            )
+        )

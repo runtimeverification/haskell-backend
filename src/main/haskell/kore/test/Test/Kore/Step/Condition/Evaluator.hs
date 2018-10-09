@@ -23,16 +23,16 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
+import           Kore.SMT.Config
 import qualified Kore.Step.Condition.Evaluator as Eval
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
-import           Kore.SMT.Config
 
+import           Test.Kore.Builtin.Bool
+                 ( boolDefinition, boolModuleName, boolSort )
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.Simplifier
-
-import Test.Kore.Builtin.Bool
-       ( boolDefinition, boolModuleName, boolSort )
 
 indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
 Right indexedModules = verify' boolDefinition
@@ -59,19 +59,19 @@ test_conditionEvaluator =
             (assertEqual ""
                 ( fst $ fst $
                     give tools $
-                    give (symbolOrAliasSorts tools) $ 
-                    flip (runSimplifier $ SMTTimeOut 1000) 0 $ 
+                    give (symbolOrAliasSorts tools) $
+                    flip (runSimplifier $ SMTTimeOut 1000) 0 $
                     Eval.evaluate
-                    (mockSimplifier [])
-                    ( wrapPredicate
-                        (mkAnd a (mkNot a) :: CommonPurePattern Object)
-                    )
+                        (Mock.substitutionSimplifier tools)
+                        (mockSimplifier [])
+                        ( wrapPredicate
+                            (mkAnd a (mkNot a) :: CommonPurePattern Object)
+                        )
                 )
-                ( PredicateSubstitution
+                PredicateSubstitution
                     { predicate = makeFalsePredicate :: CommonPredicate Object
                     , substitution = []
                     }
-                )
             )
         ]
     where a :: Given (SymbolOrAliasSorts Object) => CommonPurePattern Object

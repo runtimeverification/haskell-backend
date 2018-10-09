@@ -29,9 +29,10 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
-import Test.Kore
-       ( testId )
-import Test.Kore.Builtin.Builtin
+import           Test.Kore
+                 ( testId )
+import           Test.Kore.Builtin.Builtin
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 prop_or :: Bool -> Bool -> Property
 prop_or = propBinary (||) orSymbol
@@ -182,7 +183,10 @@ boolModule =
 evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
     let (Predicated { term }, _) =
-            evalSimplifier (Pattern.simplify tools evaluators pat)
+            evalSimplifier
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators pat
+                )
     in term
   where
     tools = extractMetadataTools indexedModule
@@ -195,7 +199,8 @@ boolDefinition =
         }
 
 indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
-indexedModules = either (error . Kore.Error.printError) id (verify boolDefinition)
+indexedModules =
+    either (error . Kore.Error.printError) id (verify boolDefinition)
 
 indexedModule :: KoreIndexedModule StepperAttributes
 Just indexedModule = Map.lookup boolModuleName indexedModules

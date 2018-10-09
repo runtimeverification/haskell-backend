@@ -29,7 +29,7 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier,
+                 ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -55,6 +55,7 @@ mergeWithPredicateSubstitution
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
@@ -64,6 +65,7 @@ mergeWithPredicateSubstitution
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
+    substitutionSimplifier
     simplifier
     PredicateSubstitution
         { predicate = conditionToMerge
@@ -85,7 +87,8 @@ mergeWithPredicateSubstitution
                 [pattSubstitution, substitutionToMerge]
     (evaluatedCondition, _) <-
         give (MetadataTools.symbolOrAliasSorts tools)
-            $ Predicate.evaluate simplifier mergedCondition
+            $ Predicate.evaluate
+                substitutionSimplifier simplifier mergedCondition
     mergeWithEvaluatedCondition
         tools
         patt {substitution = mergedSubstitution}

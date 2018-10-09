@@ -39,6 +39,7 @@ import           Kore.Step.StepperAttributes
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -239,5 +240,6 @@ evaluate tools patt =
     fst $ evalSimplifier $
         ExpandedPattern.simplify
             tools
+            (Mock.substitutionSimplifier tools)
             (Simplifier.create tools Map.empty)
             patt

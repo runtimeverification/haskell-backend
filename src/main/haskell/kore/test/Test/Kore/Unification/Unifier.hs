@@ -44,9 +44,9 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
                  ( makeEqualsPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated(..) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( Predicated(..), bottom )
+                 ( Predicated (..), bottom )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -60,12 +60,12 @@ import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import           Kore.Unification.UnifierImpl
 
-import Test.Kore
-import Test.Kore.AST.MLPatterns
-       ( extractPurePattern )
-import Test.Kore.ASTVerifier.DefinitionVerifier
-import Test.Kore.Comparators ()
-
+import           Test.Kore
+import           Test.Kore.AST.MLPatterns
+                 ( extractPurePattern )
+import           Test.Kore.ASTVerifier.DefinitionVerifier
+import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 bottomPredicate :: CommonPurePatternStub Object
 bottomPredicate = withSort (mkSort "PREDICATE") bottom_
@@ -691,6 +691,7 @@ simplifyPattern (UnificationTerm pStub) =
                 simplifiedPatterns <-
                     ExpandedPattern.simplify
                         tools
+                        (Mock.substitutionSimplifier tools)
                         (Simplifier.create tools functionRegistry)
                         expandedPattern
                 case
