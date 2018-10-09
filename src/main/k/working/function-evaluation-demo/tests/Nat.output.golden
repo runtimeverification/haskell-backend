@@ -1,3 +1,8 @@
-<k>
-  Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) )
-</k>
+<generatedTop>
+  <k>
+    Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) )
+  </k>
+  <generatedCounter>
+    0
+  </generatedCounter>
+</generatedTop>

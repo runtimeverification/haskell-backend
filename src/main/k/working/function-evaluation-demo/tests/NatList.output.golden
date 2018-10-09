@@ -1,3 +1,8 @@
-<k>
-  Cons ( Succ ( Succ ( Zero ) ) , Cons ( Succ ( Succ ( Succ ( Zero ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) , Nil ) ) ) ) ) ) ) ) )
-</k>
+<generatedTop>
+  <k>
+    Cons ( Succ ( Succ ( Zero ) ) , Cons ( Succ ( Succ ( Succ ( Zero ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) , Cons ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Succ ( Zero ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) , Nil ) ) ) ) ) ) ) ) )
+  </k>
+  <generatedCounter>
+    0
+  </generatedCounter>
+</generatedTop>

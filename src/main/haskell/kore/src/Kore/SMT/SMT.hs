@@ -18,6 +18,8 @@ module Kore.SMT.SMT
 )
 where
 
+import           Control.Error.Util
+                 ( note )
 import           Control.Lens
                  ( Lens', makeLenses, use, (%=) )
 import           Control.Monad.Except
@@ -25,6 +27,8 @@ import           Control.Monad.State
 import           Data.Default
 import qualified Data.Map as Map
 import           Data.Proxy
+import           Text.Read
+                 ( readMaybe )
 
 
 import           Kore.AST.Common
@@ -49,6 +53,7 @@ data TranslatePredicateError
     | UnknownHookedSymbol (SymbolOrAlias Object)
     | UnknownPatternConstructor Pat
     | ExpectedDVPattern Pat
+    | MalformedDVLiteral Pat
     deriving(Eq, Ord, Show)
 
 type Pat = PureMLPattern Object Variable
@@ -134,7 +139,7 @@ unsafeTryRefutePattern
     => PureMLPattern Object variable
     -> Maybe Bool
 unsafeTryRefutePattern p = unsafePerformIO $ do
-  let smtPredicate = setTimeOut 20 >> patternToSMT True p -- 20ms
+  let smtPredicate = setTimeOut 200 >> patternToSMT True p -- 20ms
         >>= (\case {
                Right p' -> return $ bnot p' ;
                Left _ -> sBool "TranslationFailed"
@@ -225,9 +230,11 @@ patternToSMT sloppy p =
             => CommonPurePattern Object
             -> String
             -> Translating (SBV a)
-        goLiteral (DV_ s (BuiltinDomainPattern (StringLiteral_ i))) hookName
+        goLiteral p@(DV_ s (BuiltinDomainPattern (StringLiteral_ i))) hookName
          | (getHookString $ getSortHook s) == hookName
-             = return $ literal $ read i
+             = liftEither $ note
+                 (MalformedDVLiteral p)
+                 (literal <$> readMaybe i)
         goLiteral pat _ =
           throwError $ ExpectedDVPattern pat
 

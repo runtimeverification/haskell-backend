@@ -692,7 +692,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
                             termSortInjection firstOrigin firstDestination patt
                     return (result, SimplificationProof)
         else if isConstructorLikeTop tools (project firstChild)
-             && isConstructorLikeTop tools (project secondChild)
+             || isConstructorLikeTop tools (project secondChild)
             then return (return (ExpandedPattern.bottom, SimplificationProof))
             else
                 empty
@@ -821,7 +821,7 @@ domainValueAndConstructorErrors
     (DV_ _ _)
     | StepperAttributes.isConstructor
         (MetadataTools.symAttributes tools firstHead)
-    = error "Cannot handle DomainValue and Constructor"
+    = error "Cannot handle Constructor and DomainValue"
 domainValueAndConstructorErrors _ _ _ = empty
 
 {-| And simplification for domain values.
