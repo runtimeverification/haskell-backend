@@ -17,9 +17,7 @@ module Kore.Step.Simplification.Data
     ) where
 
 import Kore.AST.Common
-       ( Variable )
-import Kore.AST.PureML
-       ( PureMLPattern )
+       ( PureMLPattern, Variable )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
 import Kore.Variables.Fresh

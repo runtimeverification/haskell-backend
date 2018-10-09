@@ -19,10 +19,8 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( Equals (..), SortedVariable )
+                 ( Equals (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
 import           Kore.ASTUtils.SmartPatterns
@@ -419,4 +417,3 @@ makeEvaluateTermsToPredicateSubstitution tools first second
                 )
   where
     symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
-

@@ -18,11 +18,11 @@ import           Data.List
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Application (..), Id (..), Pattern (..), Sort,
-                 SortedVariable, SymbolOrAlias (..) )
+                 ( Application (..), Id (..), Pattern (..), PureMLPattern,
+                 Sort, SortedVariable, SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( PureMLPattern, asPurePattern )
+                 ( asPurePattern )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern App_ )
 import           Kore.IndexedModule.MetadataTools

@@ -38,7 +38,7 @@ import qualified Data.Set as Set
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( CommonPurePattern, PureMLPattern, mapPatternVariables )
+                 ( mapPatternVariables )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom )
 import           Kore.IndexedModule.MetadataTools
@@ -46,13 +46,13 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, makeMultipleAndPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Proof.Functional
+                 ( FunctionalProof (..) )
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (..), Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.PatternAttributes
-                 ( FunctionalProof (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes

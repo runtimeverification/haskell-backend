@@ -13,11 +13,11 @@ import Data.List
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
 import           Kore.AST.Common
-                 ( Application (..), AstLocation (..), Id (..), Pattern (..),
-                 SymbolOrAlias (..) )
+                 ( Application (..), AstLocation (..), CommonPurePattern,
+                 Id (..), Pattern (..), SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( CommonPurePattern, fromPurePattern )
+                 ( fromPurePattern )
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.ASTHelpers

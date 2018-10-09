@@ -12,10 +12,8 @@ import           Data.Reflection
                  ( give )
 
 import           Kore.AST.Common
-                 ( Application (..), Id (..) )
+                 ( Application (..), CommonPurePattern, Id (..) )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr, mkVar )
 import           Kore.IndexedModule.MetadataTools

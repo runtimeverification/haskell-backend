@@ -33,7 +33,6 @@ import           Text.Read
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Parser
@@ -42,10 +41,10 @@ import           Kore.Builtin.Hook
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as KorePredicate
 
-import           Data.Reflection
-import           Data.SBV
+import Data.Reflection
+import Data.SBV
 
-import           GHC.IO.Unsafe
+import GHC.IO.Unsafe
 
 
 data TranslatePredicateError

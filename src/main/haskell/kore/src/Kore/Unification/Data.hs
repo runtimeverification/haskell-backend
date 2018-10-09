@@ -12,7 +12,7 @@ module Kore.Unification.Data where
 
 import Kore.AST.Common
 import Kore.AST.PureML
-import Kore.Step.PatternAttributes
+import Kore.Proof.Functional
        ( FunctionalProof (..) )
 
 type UnificationSubstitution level variable

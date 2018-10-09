@@ -28,7 +28,6 @@ import qualified Data.Set as S
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.AST.PureML
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 
@@ -85,5 +84,3 @@ localSubst
     -> CommonPurePattern level
     -> CommonPurePattern level
 localSubst a b path pat = localInPattern path (subst a b) pat
-
-

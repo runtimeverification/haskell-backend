@@ -31,7 +31,7 @@ module Kore.Builtin.Set
     ) where
 
 import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
+                 ( ExceptT )
 import qualified Control.Monad.Except as Except
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -45,19 +45,22 @@ import qualified Data.Set as Set
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
+import qualified Kore.AST.PureML as Kore
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 
 {- | Builtin name of the @Set@ sort.
@@ -109,7 +112,7 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin = Set (CommonPurePattern Object)
+type Builtin = Set (Kore.ConcretePurePattern Object)
 
 {- | Abort function evaluation if the argument is not a @Set@ domain value.
 
@@ -121,19 +124,21 @@ type Builtin = Set (CommonPurePattern Object)
 expectBuiltinDomainSet
     :: Monad m
     => String  -- ^ Context for error message
-    -> CommonPurePattern Object  -- ^ Operand pattern
+    -> MetadataTools Object StepperAttributes
+    -> Kore.CommonPurePattern Object  -- ^ Operand pattern
     -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
-expectBuiltinDomainSet ctx =
-    \case
-        Kore.DV_ _ domain ->
-            case domain of
-                Kore.BuiltinDomainSet set -> return set
-                _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a set")
-        _ ->
-            Except.throwError NotApplicable
-
-getAttemptedFunction :: Monad m => ExceptT r m r -> m r
-getAttemptedFunction = fmap (either id id) . runExceptT
+expectBuiltinDomainSet ctx tools _set =
+    do
+        _set <- Builtin.expectNormalConcreteTerm tools _set
+        case _set of
+            Kore.DV_ _ domain ->
+                case domain of
+                    Kore.BuiltinDomainSet set -> return set
+                    _ ->
+                        Builtin.verifierBug
+                            (ctx ++ ": Domain value is not a set")
+            _ ->
+                Except.throwError NotApplicable
 
 returnSet
     :: Monad m
@@ -150,25 +155,30 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ _ resultSort = \arguments ->
-        case arguments of
-            [_elem] -> returnSet resultSort (Set.singleton _elem)
+    evalElement0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedFunction
+        (case arguments of
+            [_elem] -> do
+                _elem <- Builtin.expectNormalConcreteTerm tools _elem
+                returnSet resultSort (Set.singleton _elem)
             _ -> Builtin.wrongArity "SET.element"
+        )
 
 evalIn :: Builtin.Function
 evalIn =
     Builtin.functionEvaluator evalIn0
   where
-    evalIn0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+    evalIn0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedFunction
         (do
-            let (elem', _set) =
+            let (_elem, _set) =
                     case arguments of
-                        [elem'', _set] -> (elem'', _set)
+                        [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity "SET.in"
-            _set <- expectBuiltinDomainSet "SET.in" _set
+            _elem <- Builtin.expectNormalConcreteTerm tools _elem
+            _set <- expectBuiltinDomainSet "SET.in" tools _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
-                (Set.member elem' _set)
+                (Set.member _elem _set)
         )
       where
         asExpandedBoolPattern = Bool.asExpandedPattern resultSort
@@ -186,15 +196,16 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+    ctx = "SET.concat"
+    evalConcat0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedFunction
         (do
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity "SET.concat"
-            _set1 <- expectBuiltinDomainSet "SET.concat" _set1
-            _set2 <- expectBuiltinDomainSet "SET.concat" _set2
+                        _ -> Builtin.wrongArity ctx
+            _set1 <- expectBuiltinDomainSet ctx tools _set1
+            _set2 <- expectBuiltinDomainSet ctx tools _set2
             returnSet resultSort (_set1 <> _set2)
         )
 
@@ -203,15 +214,15 @@ evalDifference =
     Builtin.functionEvaluator evalConcat0
   where
     ctx = "SET.difference"
-    evalConcat0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+    evalConcat0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedFunction
         (do
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity ctx
-            _set1 <- expectBuiltinDomainSet ctx _set1
-            _set2 <- expectBuiltinDomainSet ctx _set2
+            _set1 <- expectBuiltinDomainSet ctx tools _set1
+            _set2 <- expectBuiltinDomainSet ctx tools _set2
             returnSet resultSort (Set.difference _set1 _set2)
         )
 
@@ -243,12 +254,13 @@ asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonPurePattern Object)
+    -> Either (Kore.Error e) (Builtin -> Kore.CommonPurePattern Object)
 asPattern indexedModule _ = do
     symbolUnit <- lookupSymbolUnit indexedModule
     let applyUnit = Kore.App_ symbolUnit []
     symbolElement <- lookupSymbolElement indexedModule
-    let applyElement elem' = Kore.App_ symbolElement [elem']
+    let applyElement elem' =
+            Kore.App_ symbolElement [Kore.fromConcretePurePattern elem']
     symbolConcat <- lookupSymbolConcat indexedModule
     let applyConcat set1 set2 = Kore.App_ symbolConcat [set1, set2]
     let asPattern0 set =
@@ -267,7 +279,10 @@ asExpandedPattern
     -> Kore.Sort Object
     -> Either (Kore.Error e) (Builtin -> CommonExpandedPattern Object)
 asExpandedPattern symbols resultSort =
-    (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
+    asExpandedPattern0 <$> asPattern symbols resultSort
+  where
+    asExpandedPattern0 = \asPattern0 builtin ->
+        ExpandedPattern.fromPurePattern $ asPattern0 builtin
 
 {- | Find the symbol hooked to @SET.unit@ in an indexed module.
  -}

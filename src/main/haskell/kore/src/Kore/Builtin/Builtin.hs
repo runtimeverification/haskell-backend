@@ -46,10 +46,14 @@ module Kore.Builtin.Builtin
     , runParser
     , appliedFunction
     , lookupSymbol
+    , expectNormalConcreteTerm
+    , getAttemptedFunction
     ) where
 
 import           Control.Monad
                  ( zipWithM_ )
+import           Control.Monad.Except
+                 ( ExceptT, MonadError, runExceptT )
 import qualified Control.Monad.Except as Except
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.HashMap.Strict
@@ -66,16 +70,16 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 
 import           Kore.AST.Common
-                 ( Application (..), BuiltinDomain (..), DomainValue (..),
-                 Id (..), Pattern (DomainValuePattern), Sort (..),
-                 SortActual (..), SortVariable (..), SymbolOrAlias (..),
-                 Variable )
+                 ( Application (..), BuiltinDomain (..), CommonPurePattern,
+                 ConcretePurePattern, DomainValue (..), Id (..), Pattern (..),
+                 PureMLPattern, Sort (..), SortActual (..), SortVariable (..),
+                 SymbolOrAlias (..), Variable )
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
-                 ( Meta, Object )
+                 ( Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern )
+                 ( asConcretePurePattern )
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
@@ -96,6 +100,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
+import qualified Kore.Proof.Value as Value
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import           Kore.Step.Function.Data
@@ -178,7 +183,7 @@ instance Monoid PatternVerifier where
     mappend = (<>)
 
 type DomainValueVerifier =
-    DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+    DomainValue Object (BuiltinDomain CommonKorePattern)
     -> Either (Error VerifyError) ()
 
 {- | Verify builtin sorts, symbols, and patterns.
@@ -406,7 +411,7 @@ verifyStringLiteral validate DomainValue { domainValueChild } =
  -}
 parseDomainValue
     :: Parser a
-    -> DomainValue Object (BuiltinDomain (CommonPurePattern Meta))
+    -> DomainValue Object (BuiltinDomain child)
     -> Either (Error VerifyError) a
 parseDomainValue
     parser
@@ -631,3 +636,30 @@ lookupSymbol builtinName indexedModule
         { symbolOrAliasConstructor
         , symbolOrAliasParams = []
         }
+
+{- | Ensure that a 'PureMLPattern' is a concrete, normalized term.
+
+    If the pattern is not concrete and normalized, the function is
+    'NotApplicable'.
+
+ -}
+expectNormalConcreteTerm
+    :: MonadError (AttemptedFunction Object Variable) m
+    => MetadataTools level StepperAttributes
+    -> PureMLPattern level variable
+    -> m (ConcretePurePattern level)
+expectNormalConcreteTerm tools purePattern =
+    maybe (Except.throwError NotApplicable) return $ do
+        p <- asConcretePurePattern purePattern
+        -- TODO (thomas.tuegel): Use the return value as the term. Will require
+        -- factoring BuiltinDomain out of Kore.AST.Common.
+        _ <- Value.fromConcretePurePattern tools p
+        return p
+
+{- | Run a computation which can return early.
+
+    See also: 'expectNormalConcreteTerm'
+
+ -}
+getAttemptedFunction :: Monad m => ExceptT r m r -> m r
+getAttemptedFunction = fmap (either id id) . runExceptT

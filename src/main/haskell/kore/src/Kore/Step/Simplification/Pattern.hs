@@ -17,10 +17,10 @@ import           Data.Reflection
                  ( Given, give )
 
 import           Kore.AST.Common
-                 ( Id, Pattern (..), SortedVariable )
+                 ( Id, Pattern (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( PureMLPattern, fromPurePattern )
+                 ( fromPurePattern )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -194,7 +194,7 @@ simplifyInternal
                 p
         BottomPattern p -> return $ Bottom.simplify p
         CeilPattern p -> return $ Ceil.simplify tools p
-        DomainValuePattern p -> return $ DomainValue.simplify p
+        DomainValuePattern p -> return $ DomainValue.simplify tools p
         EqualsPattern p -> Equals.simplify tools p
         ExistsPattern p -> Exists.simplify tools simplifier p
         FloorPattern p -> return $ Floor.simplify p

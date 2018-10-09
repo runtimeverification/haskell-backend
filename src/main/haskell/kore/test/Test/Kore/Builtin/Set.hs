@@ -1,7 +1,7 @@
 module Test.Kore.Builtin.Set where
 
 import Test.QuickCheck
-       ( Property, property, (.&&.), (===) )
+       ( Property, property, (.&&.), (===), (==>) )
 
 import           Data.Map
                  ( Map )
@@ -16,11 +16,8 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import           Kore.AST.Sentence
-import           Kore.ASTUtils.SmartConstructors
+import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Parser
@@ -54,7 +51,7 @@ prop_getUnit :: Integer -> Property
 prop_getUnit k =
     let patIn = App_ symbolIn [ Test.Int.asPattern k, App_ symbolUnit [] ]
         patFalse = Test.Bool.asPattern False
-        predicate = give testSymbolOrAliasSorts $ mkEquals patFalse patIn
+        predicate = mkEquals patFalse patIn
     in
         allProperties
             [ Test.Bool.asExpandedPattern False === evaluate patIn
@@ -72,7 +69,7 @@ prop_inElement value =
         patElement = App_ symbolElement [ patValue ]
         patValue = Test.Int.asPattern value
         patTrue = Test.Bool.asPattern True
-        predicate = give testSymbolOrAliasSorts $ mkEquals patIn patTrue
+        predicate = mkEquals patIn patTrue
     in
         allProperties
             [ Test.Bool.asExpandedPattern True === evaluate patIn
@@ -90,7 +87,7 @@ prop_inConcat elem' values =
         patSet = asPattern (Set.insert elem' values)
         patElem = Test.Int.asPattern elem'
         patTrue = Test.Bool.asPattern True
-        predicate = give testSymbolOrAliasSorts $ mkEquals patTrue patIn
+        predicate = mkEquals patTrue patIn
     in
         allProperties
             [ Test.Bool.asExpandedPattern True === evaluate patIn
@@ -108,8 +105,8 @@ prop_concatUnit values =
         patValues = asPattern values
         patConcat1 = App_ symbolConcat [ patUnit, patValues ]
         patConcat2 = App_ symbolConcat [ patValues, patUnit ]
-        predicate1 = give testSymbolOrAliasSorts $ mkEquals patValues patConcat1
-        predicate2 = give testSymbolOrAliasSorts $ mkEquals patValues patConcat2
+        predicate1 = mkEquals patValues patConcat1
+        predicate2 = mkEquals patValues patConcat2
     in
         allProperties
             [ evaluate patValues === evaluate patConcat1
@@ -134,7 +131,7 @@ prop_concatAssociates values1 values2 values3 =
         patConcat23 = App_ symbolConcat [ patSet2, patSet3 ]
         patConcat12_3 = App_ symbolConcat [ patConcat12, patSet3 ]
         patConcat1_23 = App_ symbolConcat [ patSet1, patConcat23 ]
-        predicate = give testSymbolOrAliasSorts (mkEquals patConcat12_3 patConcat1_23)
+        predicate = mkEquals patConcat12_3 patConcat1_23
     in
         allProperties
             [ evaluate patConcat12_3 === evaluate patConcat1_23
@@ -148,18 +145,39 @@ prop_difference set1 set2 =
         set3 = Set.difference set1 set2
         patSet3 = asPattern set3
         patDifference = App_ symbolDifference [ patSet1, patSet2 ]
-        predicate = give testSymbolOrAliasSorts (mkEquals patSet3 patDifference)
+        predicate = mkEquals patSet3 patDifference
     in
         allProperties
             [ evaluate patSet3 === evaluate patDifference
             , ExpandedPattern.top === evaluate predicate
             ]
 
+-- | Sets with symbolic keys are not simplified.
+prop_symbolic :: Set String -> Property
+prop_symbolic values =
+    let patMap =
+            asSymbolicPattern
+            $ Set.map (mkIntVar . testId) values
+    in
+        not (Set.null values) ==>
+        (ExpandedPattern.fromPurePattern patMap === evaluate patMap)
+
+-- | Construct a pattern for a map which may have symbolic keys.
+asSymbolicPattern
+    :: Set (CommonPurePattern Object)
+    -> CommonPurePattern Object
+asSymbolicPattern result =
+    foldr applyConcat applyUnit (applyElement <$> Set.toAscList result)
+  where
+    applyUnit = mkDomainValue setSort $ BuiltinDomainSet Set.empty
+    applyElement key = App_ symbolElement [key]
+    applyConcat set1 set2 = App_ symbolConcat [set1, set2]
+
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set Integer -> CommonPurePattern Object
-Right asPattern = (. Set.map Test.Int.asPattern) <$> Set.asPattern indexedModule setSort
+Right asPattern = (. Set.map Test.Int.asConcretePattern) <$> Set.asPattern indexedModule setSort
 
--- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
+-- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object
 Right asExpandedPattern = Set.asExpandedPattern indexedModule setSort
 
@@ -294,3 +312,45 @@ MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } = extractMetadataT
 
 allProperties :: [Property] -> Property
 allProperties = foldr (.&&.) (property True)
+
+-- * Constructors
+
+mkBottom :: CommonPurePattern Object
+mkBottom = Kore.mkBottom
+
+mkEquals
+    :: CommonPurePattern Object
+    -> CommonPurePattern Object
+    -> CommonPurePattern Object
+mkEquals = give testSymbolOrAliasSorts Kore.mkEquals
+
+mkAnd
+    :: CommonPurePattern Object
+    -> CommonPurePattern Object
+    -> CommonPurePattern Object
+mkAnd = give testSymbolOrAliasSorts Kore.mkAnd
+
+mkTop :: CommonPurePattern Object
+mkTop = Kore.mkTop
+
+mkVar :: Variable Object -> CommonPurePattern Object
+mkVar = give testSymbolOrAliasSorts Kore.mkVar
+
+mkDomainValue
+    :: Sort Object
+    -> BuiltinDomain (CommonPurePattern Object)
+    -> CommonPurePattern Object
+mkDomainValue = give testSymbolOrAliasSorts Kore.mkDomainValue
+
+mkImplies
+    :: CommonPurePattern Object
+    -> CommonPurePattern Object
+    -> CommonPurePattern Object
+mkImplies = give testSymbolOrAliasSorts Kore.mkImplies
+
+mkNot :: CommonPurePattern Object -> CommonPurePattern Object
+mkNot = give testSymbolOrAliasSorts Kore.mkNot
+
+mkIntVar :: Id Object -> CommonPurePattern Object
+mkIntVar variableName =
+    mkVar Variable { variableName, variableSort = Test.Int.intSort }

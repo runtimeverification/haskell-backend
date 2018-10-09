@@ -45,10 +45,10 @@ import Data.Set
        ( Set )
 
 import Kore.AST.Common
-       ( SortedVariable, Variable )
+       ( PureMLPattern, SortedVariable, Variable )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
-       ( PureMLPattern, mapPatternVariables )
+       ( mapPatternVariables )
 import Kore.ASTUtils.SmartConstructors
        ( mkAnd, mkBottom, mkCeil, mkEquals, mkExists, mkFloor, mkIff,
        mkImplies, mkIn, mkNot, mkOr, mkTop )

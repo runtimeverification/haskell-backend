@@ -11,11 +11,11 @@ import Test.Tasty.HUnit
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
 import           Kore.AST.Common
-                 ( AstLocation (..), Sort (..), SortVariable (..), Variable,
-                 noLocationId )
+                 ( AstLocation (..), CommonPurePattern, Sort (..),
+                 SortVariable (..), Variable, noLocationId )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( CommonPurePattern, groundHead )
+                 ( groundHead )
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.ASTHelpers

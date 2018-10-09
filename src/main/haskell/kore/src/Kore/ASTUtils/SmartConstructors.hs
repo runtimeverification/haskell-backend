@@ -66,7 +66,6 @@ import Data.Reflection
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
-import Kore.AST.PureML
 import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 
@@ -106,8 +105,7 @@ patternLens
   And_       s2   a b -> And_      <$>          o s2           <*> c a <*> c b
   Bottom_    s2       -> Bottom_   <$>          o s2
   Ceil_   s1 s2   a   -> Ceil_     <$> i s1 <*> o s2           <*> c a
-  -- DV_        s2   a   -> DV_       <$>          o s2           <*> c a
-  Fix (DomainValuePattern (DomainValue s2 a )) -> DV_ <$> o s2 <*> pure a
+  DV_        s2   a   -> DV_       <$>          o s2           <*> traverse c a
   Equals_ s1 s2   a b -> Equals_   <$> i s1 <*> o s2           <*> c a <*> c b
   Exists_    s2 v a   -> Exists_   <$>          o s2 <*> var v <*> c a
   Floor_  s1 s2   a   -> Floor_    <$> i s1 <*> o s2           <*> c a
@@ -344,7 +342,7 @@ mkCeil a = Ceil_ (getSort a) predicateSort a
 mkDomainValue
     :: (MetaOrObject Object, Given (SymbolOrAliasSorts Object))
     => Sort Object
-    -> BuiltinDomain (CommonPurePattern Meta)
+    -> BuiltinDomain (PureMLPattern Object var)
     -> PureMLPattern Object var
 mkDomainValue = DV_
 

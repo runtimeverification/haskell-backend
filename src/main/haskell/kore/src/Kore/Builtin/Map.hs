@@ -33,7 +33,7 @@ module Kore.Builtin.Map
 
 import qualified Control.Monad as Monad
 import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
+                 ( ExceptT )
 import qualified Control.Monad.Except as Except
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -44,8 +44,7 @@ import qualified Data.Set as Set
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
+import qualified Kore.AST.PureML as Kore
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -112,7 +111,8 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin = Map (CommonPurePattern Object) (CommonPurePattern Object)
+type Builtin =
+    Map (Kore.ConcretePurePattern Object) (Kore.CommonPurePattern Object)
 
 {- | Abort function evaluation if the argument is not a Map domain value.
 
@@ -124,19 +124,19 @@ type Builtin = Map (CommonPurePattern Object) (CommonPurePattern Object)
 expectBuiltinDomainMap
     :: Monad m
     => String  -- ^ Context for error message
-    -> CommonPurePattern Object  -- ^ Operand pattern
+    -> Kore.CommonPurePattern Object  -- ^ Operand pattern
     -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
-expectBuiltinDomainMap ctx =
-    \case
-        Kore.DV_ _ domain ->
-            case domain of
-                Kore.BuiltinDomainMap map' -> return map'
-                _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a map")
-        _ ->
-            Except.throwError NotApplicable
-
-getAttemptedFunction :: Monad m => ExceptT r m r -> m r
-getAttemptedFunction = fmap (either id id) . runExceptT
+expectBuiltinDomainMap ctx _map =
+    do
+        case _map of
+            Kore.DV_ _ domain ->
+                case domain of
+                    Kore.BuiltinDomainMap map' -> return map'
+                    _ ->
+                        Builtin.verifierBug
+                            (ctx ++ ": Domain value is not a map")
+            _ ->
+                Except.throwError NotApplicable
 
 returnMap
     :: Monad m
@@ -153,34 +153,41 @@ evalLookup :: Builtin.Function
 evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
-    evalLookup0 _ _ _ arguments =
-        getAttemptedFunction
+    evalLookup0 tools _ _ arguments =
+        Builtin.getAttemptedFunction
         (do
-            let (_map, key) =
+            let (_map, _key) =
                     case arguments of
-                        [_map, key'] -> (_map, key')
+                        [_map, _key] -> (_map, _key)
                         _ -> Builtin.wrongArity "MAP.lookup"
+            _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinDomainMap "MAP.lookup" _map
             Builtin.appliedFunction
                 $ maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
-                $ Map.lookup key _map
+                $ Map.lookup _key _map
         )
 
 evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ _ resultSort = \arguments ->
-        case arguments of
-            [_key, _value] -> returnMap resultSort (Map.singleton _key _value)
-            _ -> Builtin.wrongArity "MAP.element"
+    evalElement0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedFunction
+        (do
+            let (_key, _value) =
+                    case arguments of
+                        [_key, _value] -> (_key, _value)
+                        _ -> Builtin.wrongArity "MAP.element"
+            _key <- Builtin.expectNormalConcreteTerm tools _key
+            returnMap resultSort (Map.singleton _key _value)
+        )
 
 evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     evalConcat0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+        Builtin.getAttemptedFunction
         (do
             let (_map1, _map2) =
                     case arguments of
@@ -211,32 +218,34 @@ evalUpdate :: Builtin.Function
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
-    evalUpdate0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+    evalUpdate0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedFunction
         (do
-            let (_map, key, value) =
+            let (_map, _key, value) =
                     case arguments of
-                        [_map, key', value'] -> (_map, key', value')
+                        [_map, _key, value'] -> (_map, _key, value')
                         _ -> Builtin.wrongArity "MAP.update"
+            _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinDomainMap "MAP.update" _map
-            returnMap resultSort (Map.insert key value _map)
+            returnMap resultSort (Map.insert _key value _map)
         )
 
 evalInKeys :: Builtin.Function
 evalInKeys =
     Builtin.functionEvaluator evalInKeys0
   where
-    evalInKeys0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+    evalInKeys0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedFunction
         (do
-            let (key, _map) =
+            let (_key, _map) =
                     case arguments of
-                        [key', _map] -> (key', _map)
+                        [_key, _map] -> (_key, _map)
                         _ -> Builtin.wrongArity "MAP.in_keys"
+            _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinDomainMap "MAP.in_keys" _map
             Builtin.appliedFunction
                 $ Bool.asExpandedPattern resultSort
-                $ Map.member key _map
+                $ Map.member _key _map
         )
 
 {- | Implement builtin function evaluation.
@@ -268,13 +277,14 @@ asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonPurePattern Object)
+    -> Either (Kore.Error e) (Builtin -> Kore.CommonPurePattern Object)
 asPattern indexedModule _
   = do
     symbolUnit <- lookupSymbolUnit indexedModule
     let applyUnit = Kore.App_ symbolUnit []
     symbolElement <- lookupSymbolElement indexedModule
-    let applyElement (k, v) = Kore.App_ symbolElement [k, v]
+    let applyElement (key, value) =
+            Kore.App_ symbolElement [Kore.fromConcretePurePattern key, value]
     symbolConcat <- lookupSymbolConcat indexedModule
     let applyConcat map1 map2 = Kore.App_ symbolConcat [map1, map2]
         asPattern0 result =
@@ -293,7 +303,10 @@ asExpandedPattern
     -> Kore.Sort Object
     -> Either (Kore.Error e) (Builtin -> CommonExpandedPattern Object)
 asExpandedPattern symbols resultSort =
-    (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
+    asExpandedPattern0 <$> asPattern symbols resultSort
+  where
+    asExpandedPattern0 = \asPattern0 builtin ->
+        ExpandedPattern.fromPurePattern $ asPattern0 builtin
 
 {- | Find the symbol hooked to @MAP.unit@ in an indexed module.
  -}

@@ -42,8 +42,6 @@ import           GHC.Stack
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -63,7 +61,7 @@ import           Kore.Step.StepperAttributes
 {- | The default type of builtin domain values.
  -}
 type Builtin =
-    Kore.DomainValue Object (Kore.BuiltinDomain (CommonPurePattern Meta))
+    Kore.DomainValue Object (Kore.BuiltinDomain (Kore.CommonPurePattern Object))
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -165,7 +163,7 @@ asPattern
     -- ^ indexed module defining hooks for builtin domains
     -> Builtin
     -- ^ domain value
-    -> Either (Error e) (CommonPurePattern Object)
+    -> Either (Error e) (Kore.CommonPurePattern Object)
 asPattern
     indexedModule
     Kore.DomainValue { domainValueSort, domainValueChild }
@@ -196,15 +194,15 @@ asPattern
 externalizePattern
     :: KoreIndexedModule attrs
     -- ^ indexed module defining hooks for builtin domains
-    -> CommonPurePattern Object
-    -> Either (Error e) (CommonPurePattern Object)
+    -> Kore.CommonPurePattern Object
+    -> Either (Error e) (Kore.CommonPurePattern Object)
 externalizePattern indexedModule =
     Functor.Foldable.fold externalizePattern0
   where
     externalizePattern0 =
         \case
             Kore.DomainValuePattern dv ->
-                asPattern indexedModule dv
+                asPattern indexedModule =<< traverse sequence dv
             pat -> Functor.Foldable.embed <$> sequence pat
 
 {- | Extract the meta-level pattern argument of a domain value.
@@ -214,10 +212,10 @@ externalizePattern indexedModule =
 
  -}
 asMetaPattern
-    :: Builtin
-    -> CommonPurePattern Meta
-asMetaPattern Kore.DomainValue { domainValueChild } =
-    case domainValueChild of
+    :: Kore.BuiltinDomain child
+    -> Kore.CommonPurePattern Meta
+asMetaPattern =
+    \case
         Kore.BuiltinDomainPattern pat -> pat
         Kore.BuiltinDomainMap _ -> notImplementedInternal
         Kore.BuiltinDomainList _ -> notImplementedInternal

@@ -8,35 +8,26 @@ import Test.Tasty.HUnit
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.Proxy
+import           Data.Reflection
 
-import Data.Proxy
-import Data.Reflection
-
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.Sentence
-
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
-
-import Kore.ASTVerifier.DefinitionVerifier
-import Kore.ASTVerifier.Error
-
-import Kore.IndexedModule.IndexedModule
-import Kore.IndexedModule.MetadataTools
-
-import Kore.Step.StepperAttributes
-import Test.Kore.Step.Simplifier
-
-import Kore.Error
-
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartConstructors
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.ASTVerifier.DefinitionVerifier
+import           Kore.ASTVerifier.Error
+import qualified Kore.Builtin as Builtin
+import           Kore.Error
+import           Kore.IndexedModule.IndexedModule
+import           Kore.IndexedModule.MetadataTools
+import           Kore.Predicate.Predicate
 import qualified Kore.Step.Condition.Evaluator as Eval
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Simplification.Data
-
-import Kore.Predicate.Predicate
-
-import qualified Kore.Builtin as Builtin
+import           Kore.Step.StepperAttributes
+import           Test.Kore.Step.Simplifier
 
 import Test.Kore.Builtin.Bool
        ( boolDefinition, boolModuleName, boolSort )
@@ -83,4 +74,3 @@ test_conditionEvaluator =
         ]
     where a :: Given (SymbolOrAliasSorts Object) => CommonPurePattern Object
           a = V $ "a" `varS` boolSort
-

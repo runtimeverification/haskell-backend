@@ -21,7 +21,6 @@ import Data.Functor
 import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence

@@ -9,10 +9,8 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( AstLocation (..) )
+                 ( AstLocation (..), CommonPurePattern )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.ASTHelpers

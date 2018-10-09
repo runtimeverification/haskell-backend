@@ -17,9 +17,8 @@ import           Kore.AST.Builders
                  ( parameterizedSymbol_, sortParameter, symbol_ )
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.PureML
-                 ( CommonPurePattern, PureSentenceSymbol, groundHead )
+                 ( PureSentenceSymbol, groundHead )
 import           Kore.AST.PureToKore
                  ( sentencePureToKore )
 import           Kore.AST.Sentence

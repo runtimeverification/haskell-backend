@@ -30,7 +30,6 @@ import qualified Data.Set as Set
 import           Data.Graph.TopologicalSort
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_, pattern Var_ )
 import           Kore.IndexedModule.MetadataTools

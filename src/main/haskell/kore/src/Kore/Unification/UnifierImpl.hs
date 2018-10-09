@@ -20,8 +20,8 @@ import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
        ( ExceptT (..) )
-import Control.Monad.Trans.Except
-       ( throwE )
+import Control.Monad.Except
+       ( throwError )
 import Data.Function
        ( on )
 import Data.Functor.Foldable
@@ -32,7 +32,6 @@ import Data.Reflection
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -117,7 +116,7 @@ simplifyAnds
         ( ExpandedPattern level variable
         , UnificationProof level variable
         )
-simplifyAnds _ [] = throwE UnsupportedPatterns
+simplifyAnds _ [] = throwError UnsupportedPatterns
 simplifyAnds tools patterns = do
      result <- foldM
         simplifyAnds'
@@ -189,7 +188,7 @@ solveGroupedSubstitution
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-solveGroupedSubstitution _ _ [] = throwE UnsupportedPatterns
+solveGroupedSubstitution _ _ [] = throwError UnsupportedPatterns
 solveGroupedSubstitution tools var patterns = do
     (predSubst, proof) <- simplifyAnds tools patterns
     return

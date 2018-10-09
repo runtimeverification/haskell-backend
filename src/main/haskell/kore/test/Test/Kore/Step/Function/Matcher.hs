@@ -16,10 +16,8 @@ import Data.Reflection
 import           Control.Monad.Counter
                  ( runCounter )
 import           Kore.AST.Common
-                 ( BuiltinDomain (..) )
+                 ( BuiltinDomain (..), CommonPurePattern )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( CommonPurePattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkBottom, mkCeil, mkCharLiteral, mkDomainValue,
                  mkEquals, mkExists, mkFloor, mkForall, mkIff, mkImplies, mkIn,

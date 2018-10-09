@@ -44,9 +44,6 @@ import Data.Functor.Foldable
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( PureMLPattern )
-
 
 pattern And_
     :: Sort level
@@ -72,7 +69,7 @@ pattern Ceil_
 pattern DV_
   :: () => (level ~ Object) =>
      Sort level
-  -> BuiltinDomain (PureMLPattern Meta Variable)
+  -> BuiltinDomain (PureMLPattern level var)
   -> PureMLPattern level var
 
 pattern Equals_

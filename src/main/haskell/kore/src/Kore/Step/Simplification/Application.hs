@@ -14,10 +14,9 @@ module Kore.Step.Simplification.Application
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Application (..), Id, SortedVariable, SymbolOrAlias )
+                 ( Application (..), Id, PureMLPattern, SortedVariable,
+                 SymbolOrAlias )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern

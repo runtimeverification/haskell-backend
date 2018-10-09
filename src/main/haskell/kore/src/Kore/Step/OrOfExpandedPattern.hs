@@ -38,10 +38,8 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( SortedVariable, Variable )
+                 ( PureMLPattern, SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr )
 import           Kore.ASTUtils.SmartPatterns
@@ -59,7 +57,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 TODO(virgil): Make this a list-like monad, many things would be nicer.
 -}
 newtype MultiOr child = MultiOr [child]
-    deriving (Eq, Foldable, Functor, Show, Traversable)
+    deriving (Applicative, Eq, Foldable, Functor, Monad, Show, Traversable)
 
 
 {-| 'OrOfExpandedPattern' is a 'MultiOr' of 'ExpandedPatterns', which is the

@@ -1,4 +1,6 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE EmptyDataDeriving #-}
+{-# LANGUAGE TemplateHaskell   #-}
+
 {-|
 Module      : Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -342,6 +344,21 @@ instance Hashable (Variable level)
 
 instance NFData (Variable level)
 
+{- | @Concrete level@ is a variable occuring in a concrete pattern.
+
+    Concrete patterns do not contain variables, so this is an uninhabited type
+    (it has no constructors).
+
+    See also: 'Data.Void.Void'
+
+ -}
+data Concrete level
+    deriving (Eq, Generic, Ord, Read, Show)
+
+instance Hashable (Concrete level)
+
+instance NFData (Concrete level)
+
 {-| 'SortedVariable' is a variable which has a sort.
 -}
 class SortedVariable variable where
@@ -530,7 +547,11 @@ data DomainValue level child = DomainValue
     { domainValueSort  :: !(Sort level)
     , domainValueChild :: !child
     }
-    deriving (Eq, Generic, Ord, Show)
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+
+deriveEq1 ''DomainValue
+deriveOrd1 ''DomainValue
+deriveShow1 ''DomainValue
 
 instance Hashable child => Hashable (DomainValue level child)
 
@@ -910,7 +931,7 @@ data Pattern level variable child where
     CeilPattern
         :: !(Ceil level child) -> Pattern level variable child
     DomainValuePattern
-        :: !(DomainValue Object (BuiltinDomain (Fix (Pattern Meta Variable))))
+        :: !(DomainValue Object (BuiltinDomain child))
         -> Pattern Object variable child
     EqualsPattern
         :: !(Equals level child) -> Pattern level variable child
@@ -943,13 +964,31 @@ data Pattern level variable child where
     VariablePattern
         :: !(variable level) -> Pattern level variable child
 
+{-|'PureMLPattern' corresponds to "fixed point" representations
+of the 'Pattern' class where the level is fixed to a given @level@.
+
+@var@ is the type of variables.
+-}
+type PureMLPattern level var = Fix (Pattern level var)
+
+-- |'CommonPurePattern' is the instantiation of 'PureMLPattern' with common
+-- 'Variable's.
+type CommonPurePattern level = PureMLPattern level Variable
+
+{- | @ConcretePurePattern level@ is a concrete pattern at level @level@.
+ -}
+type ConcretePurePattern level = PureMLPattern level Concrete
+
 data BuiltinDomain child
-    = BuiltinDomainPattern !child
-    | BuiltinDomainMap
-        !(Map (Fix (Pattern Object Variable)) (Fix (Pattern Object Variable)))
-    | BuiltinDomainList !(Seq (Fix (Pattern Object Variable)))
-    | BuiltinDomainSet !(Set (Fix (Pattern Object Variable)))
-    deriving (Generic)
+    = BuiltinDomainPattern !(CommonPurePattern Meta)
+    | BuiltinDomainMap !(Map (ConcretePurePattern Object) child)
+    | BuiltinDomainList !(Seq child)
+    | BuiltinDomainSet !(Set (ConcretePurePattern Object))
+    deriving (Foldable, Functor, Generic, Traversable)
+
+deriveEq1 ''BuiltinDomain
+deriveOrd1 ''BuiltinDomain
+deriveShow1 ''BuiltinDomain
 
 instance Hashable child => Hashable (BuiltinDomain child) where
     hashWithSalt salt =

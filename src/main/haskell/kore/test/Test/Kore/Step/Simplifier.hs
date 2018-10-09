@@ -3,9 +3,9 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+import           Kore.AST.Common
                  ( PureMLPattern )
+import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
 import           Kore.Predicate.Predicate

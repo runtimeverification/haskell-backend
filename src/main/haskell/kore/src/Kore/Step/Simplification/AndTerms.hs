@@ -24,11 +24,9 @@ import Data.Reflection
 
 import           Data.Result
 import           Kore.AST.Common
-                 ( BuiltinDomain (..), Sort, SortedVariable,
+                 ( BuiltinDomain (..), PureMLPattern, Sort, SortedVariable,
                  SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( PureMLPattern )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkBottom, mkTop )
 import           Kore.ASTUtils.SmartPatterns

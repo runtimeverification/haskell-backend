@@ -17,11 +17,9 @@ module Kore.Step.Function.Data
     ) where
 
 import Kore.AST.Common
-       ( Application, Variable )
+       ( Application, PureMLPattern, Variable )
 import Kore.AST.MetaOrObject
        ( MetaOrObject )
-import Kore.AST.PureML
-       ( PureMLPattern )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.OrOfExpandedPattern
@@ -97,4 +95,3 @@ purePatternFunctionEvaluator p =
         (Applied (makeFromSinglePurePattern p)
         , SimplificationProof
         )
-
