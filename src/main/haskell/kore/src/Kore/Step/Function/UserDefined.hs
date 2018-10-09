@@ -32,7 +32,7 @@ import           Kore.Step.BaseStep
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern, Predicated(..))
+                 ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.ExpandedPattern
