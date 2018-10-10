@@ -15,19 +15,19 @@ import Data.Reflection
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeFalsePredicate,
-                 unwrapPredicate, wrapPredicate )
+                 ( Predicate, makeAndPredicate, unwrapPredicate,
+                 wrapPredicate )
 import           Kore.SMT.SMT
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
+                 ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier (..),
                  SimplificationProof (SimplificationProof), Simplifier )
@@ -43,12 +43,6 @@ convertStepperToSMT tools =
     , isSubsortOf = const $ const False -- no subsort info needed by SMT
     }
     where convert (StepperAttributes _ _ _ _ _ hook) = SMTAttributes hook
-
--- TODO: May add more checks later
--- but the vast majority of predicates are just `top`.
-nonTrivial :: PureMLPattern level variable -> Bool
-nonTrivial (Top_ _) = False
-nonTrivial _ = True
 
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
@@ -74,16 +68,15 @@ evaluate
     predicate''
   = give (convertStepperToSMT (given :: MetadataTools level StepperAttributes))
     $ do
-    let predicate' =
-            if nonTrivial (unwrapPredicate predicate'')
-               && (unsafeTryRefutePredicate predicate'')
-                   == Just False
-            then makeFalsePredicate
-            else predicate''
-    (patt, _proof) <- simplifier (unwrapPredicate predicate')
+    (patt, _proof) <- simplifier (unwrapPredicate predicate'')
+    let patt' =
+            if not(OrOfExpandedPattern.isTrue patt)
+               && not(OrOfExpandedPattern.isFalse patt)
+               && unsafeTryRefutePredicate predicate'' == Just False
+            then ExpandedPattern.bottom
+            else OrOfExpandedPattern.toExpandedPattern patt
     let
-        (subst, _proof) =
-            asPredicateSubstitution (OrOfExpandedPattern.toExpandedPattern patt)
+        (subst, _proof) = asPredicateSubstitution patt'
     return ( subst, SimplificationProof)
 
 asPredicateSubstitution
