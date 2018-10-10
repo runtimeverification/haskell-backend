@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Substitution
     ( mergePredicatesAndSubstitutions
     , mergeAndNormalizeSubstitutions
+    , normalizePredicatedSubstitution
     ) where
 
 import Control.Monad
@@ -21,33 +22,35 @@ import Control.Monad.Except
 import Data.Reflection
        ( give )
 
-import Kore.AST.Common
-       ( SortedVariable )
-import Kore.AST.MetaOrObject
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+import           Kore.AST.Common
+                 ( SortedVariable )
+import           Kore.AST.MetaOrObject
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
-import Kore.Predicate.Predicate
-       ( Predicate, makeAndPredicate, makeFalsePredicate,
-       makeMultipleAndPredicate )
-import Kore.Step.ExpandedPattern
-       ( PredicateSubstitution (..), substitutionToPredicate )
-import Kore.Step.ExpandedPattern as PredicateSubstitution
-       ( PredicateSubstitution (..) )
-import Kore.Step.StepperAttributes
-import Kore.Substitution.Class
-       ( Hashable )
-import Kore.Unification.Data
-       ( UnificationProof (EmptyUnificationProof), UnificationSubstitution )
-import Kore.Unification.Error
-       ( UnificationError (..), UnificationOrSubstitutionError (..),
-       substitutionToUnifyOrSubError, unificationToUnifyOrSubError )
-import Kore.Unification.SubstitutionNormalization
-       ( normalizeSubstitution )
-import Kore.Unification.UnifierImpl
-       ( normalizeSubstitutionDuplication )
-import Kore.Variables.Fresh
+import           Kore.Predicate.Predicate
+                 ( Predicate, makeAndPredicate, makeFalsePredicate,
+                 makeMultipleAndPredicate )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution (..), Predicated (..),
+                 substitutionToPredicate )
+import           Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import           Kore.Step.StepperAttributes
+import           Kore.Substitution.Class
+                 ( Hashable )
+import           Kore.Unification.Data
+                 ( UnificationProof (EmptyUnificationProof),
+                 UnificationSubstitution )
+import           Kore.Unification.Error
+                 ( UnificationError (..), UnificationOrSubstitutionError (..),
+                 substitutionToUnifyOrSubError, unificationToUnifyOrSubError )
+import           Kore.Unification.SubstitutionNormalization
+                 ( normalizeSubstitution )
+import           Kore.Unification.UnifierImpl
+                 ( normalizeSubstitutionDuplication )
+import           Kore.Variables.Fresh
 
 {-|'mergeSubstitutions' merges a list of substitutions into
 a single one, then returns it together with the side condition of that merge.
@@ -238,3 +241,41 @@ mergeSubstitutionWithPredicate
             return (makeFalsePredicate : predicates, [])
         Right (PredicateSubstitution {predicate, substitution}, _) ->
             return (predicate : predicates, substitution)
+
+normalizePredicatedSubstitution
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , SortedVariable variable
+        , FreshVariable variable
+        , MonadCounter m
+        , Hashable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> Predicated level variable a
+    -> ExceptT
+          (UnificationOrSubstitutionError level variable)
+          m
+          ( Predicated level variable a
+          , UnificationProof level variable
+          )
+normalizePredicatedSubstitution
+    tools@MetadataTools { symbolOrAliasSorts }
+    Predicated { term, predicate, substitution }
+  = do
+    (PredicateSubstitution normalizePredicate substitution', proof)
+      <-
+        normalizeSubstitutionAfterMerge tools substitution
+    let (predicate', _) =
+            give symbolOrAliasSorts
+                (makeAndPredicate predicate normalizePredicate)
+    return
+        ( Predicated
+            { term
+            , predicate = predicate'
+            , substitution = substitution'
+            }
+        , proof
+        )
