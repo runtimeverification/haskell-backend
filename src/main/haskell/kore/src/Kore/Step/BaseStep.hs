@@ -297,7 +297,7 @@ stepWithAxiom'
         , rawSubstitutionProof
         ) <- normalizeUnificationError
                 existingVars
-                (unificationProcedure
+                (unificationProcedure'
                     tools
                     axiomLeft
                     startPattern
