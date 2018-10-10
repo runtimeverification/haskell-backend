@@ -22,7 +22,6 @@ module Kore.Step.BaseStep
 
 import qualified Control.Arrow as Arrow
 import           Control.Monad.Except
-                 ( ExceptT (..), mapExceptT, withExceptT )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -54,7 +53,6 @@ import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (..), Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -182,8 +180,8 @@ stepWithAxiom
     -> AxiomPattern level
     -- ^ Rewriting axiom
     -> ExceptT
-        (Counter (StepError level Variable))
-        Counter
+        (Simplifier (StepError level Variable))
+        Simplifier
         (ExpandedPattern.CommonExpandedPattern level, StepProof level)
 stepWithAxiom
     tools
@@ -220,8 +218,8 @@ stepWithAxiom
         normalizeUnificationError
             :: MetaOrObject level
             => Set.Set (Variable level)
-            -> ExceptT UnificationError Counter a
-            -> ExceptT (Counter (StepError level Variable)) Counter a
+            -> ExceptT UnificationError Simplifier a
+            -> ExceptT (Simplifier (StepError level Variable)) Simplifier a
         normalizeUnificationError existingVariables action =
             stepperVariableToVariableForError
                 existingVariables
@@ -280,15 +278,15 @@ stepWithAxiom
     -- Unwrap internal 'StepperVariable's and collect the variable mappings
     -- for the proof.
     (variableMapping, result) <-
-        returnExcept
+        lift
         $ patternStepVariablesToCommon
             existingVars Map.empty rawResult
     (variableMapping1, condition) <-
-        returnExcept
+        lift
         $ predicateStepVariablesToCommon
             existingVars variableMapping rawCondition
     (variableMapping2, substitutionProof) <-
-        returnExcept
+        lift
         $ unificationProofStepVariablesToCommon
             existingVars variableMapping1 rawSubstitutionProof
 
@@ -327,16 +325,13 @@ stepWithAxiom
             ((stepProof . StepProofUnification) substitutionProof)
         )
   where
-    returnExcept :: Counter a -> ExceptT e Counter a
-    returnExcept = ExceptT . fmap return
-
     -- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
     -- internally-defined variables.
     stepperVariableToVariableForError
         :: MetaOrObject level
         => Set.Set (Variable level)
-        -> ExceptT (StepError level StepperVariable) Counter a
-        -> ExceptT (Counter (StepError level Variable)) Counter a
+        -> ExceptT (StepError level StepperVariable) Simplifier a
+        -> ExceptT (Simplifier (StepError level Variable)) Simplifier a
     stepperVariableToVariableForError existingVars = withExceptT
         (\err -> do
                 let axiomVars = stepErrorVariables err
@@ -364,7 +359,7 @@ unificationProofStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> UnificationProof level StepperVariable
-    -> Counter
+    -> Simplifier
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , UnificationProof level Variable
         )
@@ -456,7 +451,7 @@ listStepVariablesToCommon
     =>  (Set.Set (Variable level)
             -> Map.Map (StepperVariable level) (StepperVariable level)
             -> listElement StepperVariable
-            -> Counter
+            -> Simplifier
                 ( Map.Map (StepperVariable level) (StepperVariable level)
                 , listElement Variable
                 )
@@ -464,7 +459,7 @@ listStepVariablesToCommon
     -> Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> [listElement StepperVariable]
-    -> Counter
+    -> Simplifier
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , [listElement Variable]
         )
@@ -482,7 +477,7 @@ functionalProofStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> FunctionalProof level StepperVariable
-    -> Counter
+    -> Simplifier
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , FunctionalProof level Variable
         )
@@ -506,7 +501,7 @@ variableStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> StepperVariable level
-    -> Counter
+    -> Simplifier
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , Variable level
         )
@@ -536,7 +531,7 @@ predicateStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> Predicate level StepperVariable
-    -> Counter
+    -> Simplifier
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , Predicate level Variable
         )
@@ -559,7 +554,7 @@ patternStepVariablesToCommon
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> PureMLPattern level StepperVariable
-    -> Counter
+    -> Simplifier
         ( Map.Map (StepperVariable level) (StepperVariable level)
         , PureMLPattern level Variable
         )
@@ -594,7 +589,7 @@ addAxiomVariablesAsConfig
     => Set.Set (Variable level)
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> [StepperVariable level]
-    -> Counter (Map.Map (StepperVariable level) (StepperVariable level))
+    -> Simplifier (Map.Map (StepperVariable level) (StepperVariable level))
 addAxiomVariablesAsConfig _ mapping [] = return mapping
 addAxiomVariablesAsConfig
     existingVars mapping (ConfigurationVariable _ : vars)

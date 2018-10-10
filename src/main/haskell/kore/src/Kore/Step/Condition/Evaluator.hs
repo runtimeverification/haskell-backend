@@ -12,6 +12,7 @@ module Kore.Step.Condition.Evaluator
     ) where
 
 import Data.Reflection
+import           Control.Monad.Reader
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -68,11 +69,12 @@ evaluate
     predicate''
   = give (convertStepperToSMT (given :: MetadataTools level StepperAttributes))
     $ do
+    smtTimeOut <- ask
     (patt, _proof) <- simplifier (unwrapPredicate predicate'')
     let patt' =
             if not(OrOfExpandedPattern.isTrue patt)
                && not(OrOfExpandedPattern.isFalse patt)
-               && unsafeTryRefutePredicate predicate'' == Just False
+               && unsafeTryRefutePredicate smtTimeOut predicate'' == Just False
             then ExpandedPattern.bottom
             else OrOfExpandedPattern.toExpandedPattern patt
     let

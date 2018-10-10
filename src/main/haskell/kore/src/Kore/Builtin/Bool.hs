@@ -24,6 +24,7 @@ module Kore.Builtin.Bool
     , asMetaPattern
     , asPattern
     , asExpandedPattern
+    , parse
     ) where
 
 import           Control.Monad

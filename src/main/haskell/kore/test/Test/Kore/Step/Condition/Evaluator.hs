@@ -27,6 +27,8 @@ import qualified Kore.Step.Condition.Evaluator as Eval
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
+import           Kore.SMT.Config
+
 import           Test.Kore.Step.Simplifier
 
 import Test.Kore.Builtin.Bool
@@ -57,8 +59,8 @@ test_conditionEvaluator =
             (assertEqual ""
                 ( fst $ fst $
                     give tools $
-                    give (symbolOrAliasSorts tools) $
-                    flip runSimplifier 0 $
+                    give (symbolOrAliasSorts tools) $ 
+                    flip (runSimplifier $ SMTTimeOut 1000) 0 $ 
                     Eval.evaluate
                     (mockSimplifier [])
                     ( wrapPredicate

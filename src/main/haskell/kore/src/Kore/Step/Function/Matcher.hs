@@ -22,8 +22,6 @@ import           Data.Proxy
 import           Data.Reflection
                  ( give )
 
-import           Control.Monad.Counter
-                 ( Counter )
 import           Kore.AST.Common
                  ( PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
@@ -40,6 +38,7 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate )
+import           Kore.Step.Simplification.Data
 import           Kore.Step.ExpandedPattern
                  ( substitutionToPredicate )
 import           Kore.Step.PatternAttributes
@@ -99,7 +98,7 @@ matchAsUnification
     -> PureMLPattern level variable
     -> Either
         UnificationError
-        (Counter
+        (Simplifier
             ( PredicateSubstitution level variable
             , UnificationProof level variable
             )
@@ -127,7 +126,7 @@ match
     -> Map.Map (variable level) (variable level)
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe (Counter (PredicateSubstitution level variable))
+    -> Maybe (Simplifier (PredicateSubstitution level variable))
 match tools quantifiedVariables first second =
     firstJust
         [ matchEqualHeadPatterns tools quantifiedVariables first second
@@ -154,7 +153,7 @@ matchEqualHeadPatterns
     -> Map.Map (variable level) (variable level)
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe (Counter (PredicateSubstitution level variable))
+    -> Maybe (Simplifier (PredicateSubstitution level variable))
 matchEqualHeadPatterns tools quantifiedVariables first second =
     case first of
         (And_ _ firstFirst firstSecond) ->
@@ -316,7 +315,7 @@ matchJoin
     -> Map.Map (variable level) (variable level)
     -> [(PureMLPattern level variable, PureMLPattern level variable)]
     -> Maybe
-        (Counter (PredicateSubstitution level variable))
+        (Simplifier (PredicateSubstitution level variable))
 matchJoin tools quantifiedVariables patterns = do -- Maybe monad
     matchedCounters <-
         traverse (uncurry $ match tools quantifiedVariables) patterns
@@ -352,7 +351,7 @@ matchVariableFunction
     -> Map.Map (variable level) (variable level)
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe (Counter (PredicateSubstitution level variable))
+    -> Maybe (Simplifier (PredicateSubstitution level variable))
 matchVariableFunction
     tools
     quantifiedVariables
@@ -386,7 +385,7 @@ matchNonVarToPattern
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe (Counter (PredicateSubstitution level variable))
+    -> Maybe (Simplifier (PredicateSubstitution level variable))
 matchNonVarToPattern tools first second
   | null (pureFreeVariables (Proxy :: Proxy level) first)
   = give (MetadataTools.symbolOrAliasSorts tools) $

@@ -30,6 +30,7 @@ module Kore.Builtin.Int
     , asConcretePattern
     , asExpandedPattern
     , asPartialExpandedPattern
+    , parse
     ) where
 
 import           Control.Monad
