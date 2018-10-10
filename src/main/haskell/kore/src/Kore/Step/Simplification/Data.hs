@@ -10,25 +10,28 @@ Portability : portable
 module Kore.Step.Simplification.Data
     ( Simplifier
     , runSimplifier
+    , evalSimplifierWithTimeout
     , evalSimplifier
+    , defaultSMTTimeOut
     , PureMLPatternSimplifier (..)
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
     ) where
 
+import Control.Monad.Reader
 import Kore.AST.Common
        ( PureMLPattern, Variable )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
 import Kore.Variables.Fresh
-
+import Kore.SMT.Config
 {-| 'SimplificationProof' is a placeholder for proofs showing that the
 simplification of a MetaMLPattern was correct.
 -}
 data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
-type Simplifier = Counter
+type Simplifier = ReaderT SMTTimeOut Counter
 
 {- | Run a simplifier computation.
 
@@ -36,24 +39,32 @@ type Simplifier = Counter
 
  -}
 runSimplifier
-    :: Simplifier a
+    :: SMTTimeOut 
+    -- ^ Timeout (in ms) for SMT solver
+    -> Simplifier a
     -- ^ simplifier computation
     -> Natural
     -- ^ initial counter for fresh variables
     -> (a, Natural)
-runSimplifier = runCounter
+runSimplifier smtTimeOut = runCounter . flip runReaderT smtTimeOut
 
 {- | Evaluate a simplifier computation.
 
   Only the result is returned. The 'IntCounter' is discarded.
 
   -}
-evalSimplifier :: Simplifier a -> a
-evalSimplifier simplifier =
+evalSimplifierWithTimeout :: SMTTimeOut -> Simplifier a -> a
+evalSimplifierWithTimeout smtTimeOut simplifier =
     let
-        (result, _) = runSimplifier simplifier 0
+        (result, _) = runSimplifier smtTimeOut simplifier 0
     in
       result
+
+evalSimplifier :: Simplifier a -> a
+evalSimplifier simplifier = evalSimplifierWithTimeout defaultSMTTimeOut simplifier
+
+defaultSMTTimeOut :: SMTTimeOut -- in ms
+defaultSMTTimeOut = SMTTimeOut 40
 
 {-| 'PureMLPatternSimplifier' wraps a function that evaluates
 Kore functions on PureMLPatterns.

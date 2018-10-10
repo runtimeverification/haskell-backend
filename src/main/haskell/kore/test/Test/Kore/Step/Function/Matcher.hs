@@ -13,8 +13,6 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
-import           Control.Monad.Counter
-                 ( runCounter )
 import           Kore.AST.Common
                  ( BuiltinDomain (..), CommonPurePattern )
 import           Kore.AST.MetaOrObject
@@ -28,6 +26,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
+import           Kore.Step.Simplification.Data
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import           Kore.Step.PredicateSubstitution
@@ -43,6 +42,7 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
+import           Kore.SMT.Config
 
 test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads = give mockSymbolOrAliasSorts
@@ -578,4 +578,4 @@ match
 match tools first second =
     case matchAsUnification tools first second of
         Left _err -> Nothing
-        Right result -> Just $ fst $ fst $ runCounter result 0
+        Right result -> Just $ fst $ fst $ runSimplifier (SMTTimeOut 40) result 0

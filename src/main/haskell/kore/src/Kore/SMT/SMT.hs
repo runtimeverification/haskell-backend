@@ -18,8 +18,6 @@ module Kore.SMT.SMT
 )
 where
 
-import           Control.Error.Util
-                 ( note )
 import           Control.Lens
                  ( Lens', makeLenses, use, (%=) )
 import           Control.Monad.Except
@@ -27,9 +25,7 @@ import           Control.Monad.State
 import           Data.Default
 import qualified Data.Map as Map
 import           Data.Proxy
-import           Text.Read
-                 ( readMaybe )
-
+import           Text.Megaparsec 
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -38,14 +34,16 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import           Kore.Builtin.Hook
+import qualified Kore.Builtin.Bool as Bool 
+import qualified Kore.Builtin.Int as Int 
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as KorePredicate
+import           Kore.SMT.Config
 
 import Data.Reflection
 import Data.SBV
 
 import GHC.IO.Unsafe
-
 
 data TranslatePredicateError
     = UnknownHookedSort (Sort Object)
@@ -135,10 +133,11 @@ unsafeTryRefutePattern
        , Ord (variable Object)
        , SortedVariable variable
        )
-    => PureMLPattern Object variable
+    => SMTTimeOut --timeout in ms
+    -> PureMLPattern Object variable
     -> Maybe Bool
-unsafeTryRefutePattern p = unsafePerformIO $ do
-  let smtPredicate = setTimeOut 200 >> patternToSMT True p -- 20ms
+unsafeTryRefutePattern (SMTTimeOut timeout) p = unsafePerformIO $ do
+  let smtPredicate = setTimeOut timeout >> patternToSMT True p -- 20ms
         >>= (\case {
                Right p' -> return $ bnot p' ;
                Left _ -> sBool "TranslationFailed"
@@ -157,12 +156,13 @@ unsafeTryRefutePredicate
        , Show (variable level)
        , SortedVariable variable
        )
-    => KorePredicate.Predicate level variable
+    => SMTTimeOut --timeout in ms
+    -> KorePredicate.Predicate level variable
     -> Maybe Bool
-unsafeTryRefutePredicate p =
+unsafeTryRefutePredicate timeout p =
   case isMetaOrObject (Proxy :: Proxy level) of
     IsMeta   -> Nothing
-    IsObject -> unsafeTryRefutePattern $ KorePredicate.unwrapPredicate p
+    IsObject -> unsafeTryRefutePattern timeout $ KorePredicate.unwrapPredicate p
 
 patternToSMT
     :: ( Ord (variable Object)
@@ -202,7 +202,7 @@ patternToSMT sloppy p =
                     then getBoolVar (Right pat)
                     else throwError $ UnknownHookedSymbol h
         goBoolean (V v) = getBoolVar (Left $ variableName v)
-        goBoolean pat@(DV_ _ _) = goLiteral pat "BOOL.Bool"
+        goBoolean pat@(DV_ _ _) = goBoolLiteral pat "BOOL.Bool"
         goBoolean (Top_ _)    = return true
         goBoolean (Bottom_ _) = return false
         goBoolean pat = throwError $ UnknownPatternConstructor pat
@@ -222,20 +222,34 @@ patternToSMT sloppy p =
                     then getIntVar (Right pat)
                     else throwError $ UnknownHookedSymbol h
         goInteger (V v) = getIntVar (Left $ variableName v)
-        goInteger pat@(DV_ _ _) = goLiteral pat "INT.Int"
+        goInteger pat@(DV_ _ _) = goIntLiteral pat "INT.Int"
         goInteger pat = throwError $ UnknownPatternConstructor pat
-        goLiteral
-            :: (Given (MetadataTools Object SMTAttributes), Read a, SymWord a)
+        goIntLiteral
+            :: Given (MetadataTools Object SMTAttributes)
             => CommonPurePattern Object
             -> String
-            -> Translating (SBV a)
-        goLiteral p@(DV_ s (BuiltinDomainPattern (StringLiteral_ i))) hookName
-         | (getHookString $ getSortHook s) == hookName
-             = liftEither $ note
-                 (MalformedDVLiteral p)
-                 (literal <$> readMaybe i)
-        goLiteral pat _ =
-          throwError $ ExpectedDVPattern pat
+            -> Translating (SInteger)
+        goIntLiteral pat@(DV_ sort (BuiltinDomainPattern (StringLiteral_ str))) hookName
+         | (getHookString $ getSortHook sort) == hookName
+            = let parsed = runParser Int.parse "" str
+              in 
+              case parsed of
+                Right i -> return $ literal i
+                Left _ -> throwError $ ExpectedDVPattern pat
+        goIntLiteral pat _ = throwError $ ExpectedDVPattern pat
+        goBoolLiteral
+            :: Given (MetadataTools Object SMTAttributes)
+            => CommonPurePattern Object
+            -> String
+            -> Translating (SBool)
+        goBoolLiteral pat@(DV_ sort (BuiltinDomainPattern (StringLiteral_ str))) hookName
+         | (getHookString $ getSortHook sort) == hookName
+            = let parsed = runParser Bool.parse "" str
+              in 
+              case parsed of
+                Right i -> return $ literal i
+                Left _ -> throwError $ ExpectedDVPattern pat
+        goBoolLiteral pat _ = throwError $ ExpectedDVPattern pat
 
 
 getHookString :: Hook -> String

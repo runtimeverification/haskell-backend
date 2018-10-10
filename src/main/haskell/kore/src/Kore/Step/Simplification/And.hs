@@ -237,5 +237,5 @@ makeTermAnd
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Counter (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 makeTermAnd = AndTerms.termAnd

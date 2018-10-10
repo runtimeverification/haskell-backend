@@ -60,11 +60,12 @@ import           Kore.Step.Function.Registry
                  ( extractEvaluators )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( evalSimplifierWithTimeout )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step
+import           Kore.Step.Simplification.Data ( defaultSMTTimeOut )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Unparser
@@ -73,6 +74,7 @@ import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
                  ( freshVariablePrefix )
+import           Kore.SMT.Config
 
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,
@@ -96,6 +98,7 @@ data KoreExecOptions = KoreExecOptions
     , isKProgram          :: !Bool
     -- ^ Whether the pattern file represents a program to be put in the
     -- initial configuration before execution
+    , smtTimeOut          :: !SMTTimeOut
     , stepLimit           :: !(Limit Natural)
     , strategy
         :: !([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
@@ -126,6 +129,17 @@ commandLineParser =
     <*> enableDisableFlag "is-program"
         True False False
         "Whether the pattern represents a program."
+    <*> option 
+        ( do i <- auto 
+             if i <= 0 
+             then readerError "smt-timeout must be a positive integer." 
+             else return $ SMTTimeOut i
+        )
+        ( metavar "SMT_TIMEOUT"
+        <> long "smt-timeout"
+        <> help "Timeout for calls to the SMT solver, in milliseconds"
+        <> value defaultSMTTimeOut
+        )
     <*> parseStepLimit
     <*> parseStrategy
   where
@@ -214,6 +228,7 @@ main = do
         , patternFileName
         , outputFileName
         , mainModuleName
+        , smtTimeOut
         , isKProgram
         , stepLimit
         , strategy
@@ -246,7 +261,7 @@ main = do
                 expandedPattern = makeExpandedPattern runningPattern
             (finalExpandedPattern, _) <-
                 clockSomething "Executing"
-                    $ evalSimplifier
+                    $ evalSimplifierWithTimeout smtTimeOut
                     $ do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify

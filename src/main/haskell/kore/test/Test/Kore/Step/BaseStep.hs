@@ -35,6 +35,7 @@ import Kore.MetaML.AST
 import Kore.Predicate.Predicate
        ( CommonPredicate, makeEqualsPredicate, makeTruePredicate )
 import Kore.Step.BaseStep
+import Kore.Step.Simplification.Data
 import Kore.Step.Error
 import Kore.Step.ExpandedPattern as ExpandedPattern
        ( Predicated (..), bottom )
@@ -43,7 +44,6 @@ import Kore.Step.ExpandedPattern
 import Kore.Step.StepperAttributes
 import Kore.Unification.Unifier
        ( UnificationProof (..), UnificationError (..)  )
-import Kore.Variables.Fresh
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -1129,7 +1129,7 @@ runStep
         (StepError level Variable)
         (CommonExpandedPattern level, StepProof level)
 runStep metadataTools configuration axiom =
-    first evalCounter
-    . evalCounter
+    first evalSimplifier
+    . evalSimplifier
     . runExceptT
     $ stepWithAxiom metadataTools configuration axiom

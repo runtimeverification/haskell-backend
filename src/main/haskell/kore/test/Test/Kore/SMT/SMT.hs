@@ -16,6 +16,8 @@ import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
 import Kore.Proof.Dummy
 import Kore.SMT.SMT
+import Kore.SMT.Config
+
 
 import Test.Kore.Builtin.Bool
        ( boolSort )
@@ -56,7 +58,10 @@ mul a b = App_ mulSymbol  [a, b]
 div   a b = App_ tdivSymbol [a, b]
 
 run :: CommonPurePattern Object -> Property
-run prop = (give tools $ unsafeTryRefutePattern prop) === Just False
+run prop = 
+  (give tools $ unsafeTryRefutePattern (SMTTimeOut 1000) prop) 
+  === 
+  Just False
 
 
 prop_1 :: Property
