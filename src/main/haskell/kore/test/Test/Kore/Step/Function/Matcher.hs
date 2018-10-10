@@ -10,9 +10,15 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import Control.Error.Util
+       ( hush )
+import Control.Monad.Except
+       ( runExceptT )
 import Data.Reflection
        ( give )
 
+import           Control.Monad.Counter
+                 ( evalCounter )
 import           Kore.AST.Common
                  ( BuiltinDomain (..), CommonPurePattern )
 import           Kore.AST.MetaOrObject
@@ -576,6 +582,5 @@ match
     -> CommonPurePattern level
     -> Maybe (CommonPredicateSubstitution level)
 match tools first second =
-    case matchAsUnification tools first second of
-        Left _err -> Nothing
-        Right result -> Just $ fst $ fst $ runSimplifier (SMTTimeOut 40) result 0
+    fmap fst . hush . fst . (\result -> runSimplifier (SMTTimeOut 40) result 0) . runExceptT
+    $ matchAsUnification tools first second

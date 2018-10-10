@@ -61,9 +61,7 @@ test_userDefinedFunction :: [TestTree]
 test_userDefinedFunction =
     [ testCase "Cannot apply function if step fails"
         (assertEqualWithExplanation ""
-            (AttemptedFunction.Applied $ OrOfExpandedPattern.make
-                [ ExpandedPattern.bottom ]
-            )
+            AttemptedFunction.NotApplicable
             (evaluateWithAxiom
                 mockMetadataTools
                 AxiomPattern
