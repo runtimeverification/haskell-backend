@@ -17,8 +17,8 @@ import Control.Monad.Except
 import Data.Reflection
 
 import           Kore.AST.Common
-                 ( Application (..), CommonPurePattern, Pattern (..),
-                 PureMLPattern, SortedVariable )
+                 ( Application (..), Pattern (..), PureMLPattern,
+                 SortedVariable )
 import           Kore.AST.MetaOrObject
                  ( Meta, MetaOrObject, Object )
 import           Kore.AST.PureML
@@ -39,15 +39,13 @@ import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (PredicateSubstitution) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
-import           Kore.Step.Function.Data
-                 ( CommonAttemptedFunction )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, PureMLPatternSimplifier (..),
-                 SimplificationProof (..), Simplifier )
+                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -62,17 +60,25 @@ evaluating the function, it tries to re-evaluate all functions on the result.
 The function is assumed to be defined through an axiom.
 -}
 axiomFunctionEvaluator
-    ::  ( MetaOrObject level)
+    ::  ( FreshVariable variable
+        , Hashable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , SortedVariable variable
+        , Show (variable level)
+        )
     => AxiomPattern level
     -- ^ Axiom defining the current function.
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> CommonPureMLPatternSimplifier level
+    -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
-    -> Application level (CommonPurePattern level)
+    -> Application level (PureMLPattern level variable)
     -- ^ The function on which to evaluate the current function.
-    -> Simplifier (CommonAttemptedFunction level, SimplificationProof level)
+    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
 axiomFunctionEvaluator
     axiom
     tools

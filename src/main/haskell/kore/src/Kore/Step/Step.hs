@@ -36,6 +36,8 @@ import Data.Semigroup
 import Numeric.Natural
        ( Natural )
 
+import Kore.AST.Common
+       ( Variable )
 import Kore.AST.MetaOrObject
        ( MetaOrObject )
 import Kore.IndexedModule.MetadataTools
@@ -94,9 +96,9 @@ transitionRule
     -> CommonPureMLPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> Prim (AxiomPattern level)
-    -> (CommonExpandedPattern level, StepProof level)
+    -> (CommonExpandedPattern level, StepProof Variable level)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> Simplifier [(CommonExpandedPattern level, StepProof level)]
+    -> Simplifier [(CommonExpandedPattern level, StepProof Variable level)]
 transitionRule tools simplifier =
     \case
         Simplify -> transitionSimplify

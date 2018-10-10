@@ -69,7 +69,7 @@ evaluateApplication
     -- such as their sorts, whether they are constructors or hooked.
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.

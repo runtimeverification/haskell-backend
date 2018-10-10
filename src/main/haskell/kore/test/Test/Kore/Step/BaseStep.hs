@@ -16,8 +16,8 @@ import Data.Reflection
 
 import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..),
-       Pattern (ApplicationPattern, StringLiteralPattern), SymbolOrAlias (..),
-       Variable, StringLiteral (..) )
+       Pattern (ApplicationPattern, StringLiteralPattern), StringLiteral (..),
+       SymbolOrAlias (..), Variable )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.AST.PureToKore
@@ -35,15 +35,15 @@ import Kore.MetaML.AST
 import Kore.Predicate.Predicate
        ( CommonPredicate, makeEqualsPredicate, makeTruePredicate )
 import Kore.Step.BaseStep
-import Kore.Step.Simplification.Data
 import Kore.Step.Error
 import Kore.Step.ExpandedPattern as ExpandedPattern
        ( Predicated (..), bottom )
 import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
+import Kore.Step.Simplification.Data
 import Kore.Step.StepperAttributes
 import Kore.Unification.Unifier
-       ( UnificationProof (..), UnificationError (..)  )
+       ( UnificationError (..), UnificationProof (..) )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -928,7 +928,9 @@ test_baseStep =
     var_0 = metaVariable "#var_0" AstLocationTest
     variableRenaming
         :: MetaSort sort
-        => MetaVariable sort -> MetaVariable sort -> VariableRenaming Meta
+        => MetaVariable sort
+        -> MetaVariable sort
+        -> VariableRenaming Meta Variable
     variableRenaming from to =
         VariableRenaming
             { variableRenamingOriginal = AxiomVariable (asMetaVariable from)
@@ -1127,7 +1129,7 @@ runStep
     -> AxiomPattern level
     -> Either
         (StepError level Variable)
-        (CommonExpandedPattern level, StepProof level)
+        (CommonExpandedPattern level, StepProof Variable level)
 runStep metadataTools configuration axiom =
     first evalSimplifier
     . evalSimplifier

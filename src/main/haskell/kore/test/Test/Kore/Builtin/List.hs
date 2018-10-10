@@ -165,11 +165,11 @@ unit_simplify =
         assertEqual "Expected simplified List" expected actual
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
-asPattern :: List.Builtin -> CommonPurePattern Object
+asPattern :: List.Builtin Variable -> CommonPurePattern Object
 Right asPattern = List.asPattern indexedModule listSort
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
-asExpandedPattern :: List.Builtin -> CommonExpandedPattern Object
+asExpandedPattern :: List.Builtin Variable -> CommonExpandedPattern Object
 Right asExpandedPattern = List.asExpandedPattern indexedModule listSort
 
 -- | A sort to hook to the builtin @LIST.List@.

@@ -31,7 +31,7 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated(..) )
+                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -75,7 +75,7 @@ rewriteImplies =
         , axiomPatternAttributes = def
         }
 
-expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta)]
+expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Variable Meta)]
 expectTwoAxioms =
     [
         ( Predicated
@@ -108,7 +108,7 @@ expectTwoAxioms =
         )
     ]
 
-actualTwoAxioms :: [(CommonExpandedPattern Meta, StepProof Meta)]
+actualTwoAxioms :: [(CommonExpandedPattern Meta, StepProof Variable Meta)]
 actualTwoAxioms =
     runStep
         mockMetadataTools
@@ -134,10 +134,10 @@ initialFailSimple =
         , substitution = []
         }
 
-expectFailSimple :: [(CommonExpandedPattern Meta, StepProof Meta)]
+expectFailSimple :: [(CommonExpandedPattern Meta, StepProof Variable Meta)]
 expectFailSimple = [ (initialFailSimple, mempty) ]
 
-actualFailSimple :: [(CommonExpandedPattern Meta, StepProof Meta)]
+actualFailSimple :: [(CommonExpandedPattern Meta, StepProof Variable Meta)]
 actualFailSimple =
     runStep
         mockMetadataTools
@@ -166,10 +166,10 @@ initialFailCycle =
         , substitution = []
         }
 
-expectFailCycle :: [(CommonExpandedPattern Meta, StepProof Meta)]
+expectFailCycle :: [(CommonExpandedPattern Meta, StepProof Variable Meta)]
 expectFailCycle = [ (initialFailCycle, mempty) ]
 
-actualFailCycle :: [(CommonExpandedPattern Meta, StepProof Meta)]
+actualFailCycle :: [(CommonExpandedPattern Meta, StepProof Variable Meta)]
 actualFailCycle =
     runStep
         mockMetadataTools
@@ -196,7 +196,7 @@ initialIdentity =
         , substitution = []
         }
 
-expectIdentity :: [(CommonExpandedPattern Meta, StepProof Meta)]
+expectIdentity :: [(CommonExpandedPattern Meta, StepProof Variable Meta)]
 expectIdentity =
     [
         ( initialIdentity
@@ -208,7 +208,7 @@ expectIdentity =
         )
     ]
 
-actualIdentity :: [(CommonExpandedPattern Meta, StepProof Meta)]
+actualIdentity :: [(CommonExpandedPattern Meta, StepProof Variable Meta)]
 actualIdentity =
     runStep
         mockMetadataTools
@@ -288,7 +288,7 @@ axiomsSimpleStrategy =
         }
     ]
 
-expectOneStep :: (ExpandedPattern Meta Variable, StepProof Meta)
+expectOneStep :: (ExpandedPattern Meta Variable, StepProof Variable Meta)
 expectOneStep =
     ( Predicated
         { term = asPureMetaPattern (metaG (v1 PatternSort))
@@ -304,7 +304,7 @@ expectOneStep =
         )
     )
 
-actualOneStep :: (CommonExpandedPattern Meta, StepProof Meta)
+actualOneStep :: (CommonExpandedPattern Meta, StepProof Variable Meta)
 actualOneStep =
     runSteps
         mockMetadataTools
@@ -324,7 +324,7 @@ actualOneStep =
             }
         ]
 
-expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Meta)
+expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Variable Meta)
 expectTwoSteps =
     ( Predicated
         { term = asPureMetaPattern (metaH (v1 PatternSort))
@@ -341,7 +341,7 @@ expectTwoSteps =
         ]
     )
 
-actualTwoSteps :: (CommonExpandedPattern Meta, StepProof Meta)
+actualTwoSteps :: (CommonExpandedPattern Meta, StepProof Variable Meta)
 actualTwoSteps =
     runSteps
         mockMetadataTools
@@ -354,7 +354,7 @@ actualTwoSteps =
         axiomsSimpleStrategy
 
 
-expectZeroStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta)
+expectZeroStepLimit :: (ExpandedPattern Meta Variable, StepProof Variable Meta)
 expectZeroStepLimit =
         ( Predicated
             { term = asPureMetaPattern (metaF (v1 PatternSort))
@@ -364,7 +364,7 @@ expectZeroStepLimit =
         , mempty
         )
 
-actualZeroStepLimit :: (CommonExpandedPattern Meta, StepProof Meta)
+actualZeroStepLimit :: (CommonExpandedPattern Meta, StepProof Variable Meta)
 actualZeroStepLimit =
     runSteps
         mockMetadataTools
@@ -376,7 +376,7 @@ actualZeroStepLimit =
             }
         axiomsSimpleStrategy
 
-expectStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta)
+expectStepLimit :: (ExpandedPattern Meta Variable, StepProof Variable Meta)
 expectStepLimit =
     ( Predicated
         { term = asPureMetaPattern (metaG (v1 PatternSort))
@@ -390,7 +390,7 @@ expectStepLimit =
         ]
     )
 
-actualStepLimit :: (CommonExpandedPattern Meta, StepProof Meta)
+actualStepLimit :: (CommonExpandedPattern Meta, StepProof Variable Meta)
 actualStepLimit =
     runSteps
         mockMetadataTools
@@ -513,7 +513,7 @@ runStep
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [AxiomPattern level]
-    -> [(CommonExpandedPattern level, StepProof level)]
+    -> [(CommonExpandedPattern level, StepProof Variable level)]
 runStep metadataTools configuration axioms =
     pickStuck
         $ evalSimplifier
@@ -533,7 +533,7 @@ runSteps
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [AxiomPattern level]
-    -> (CommonExpandedPattern level, StepProof level)
+    -> (CommonExpandedPattern level, StepProof Variable level)
 runSteps metadataTools stepLimit configuration axioms =
     pickLongest
         $ evalSimplifier

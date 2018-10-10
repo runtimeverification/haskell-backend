@@ -50,14 +50,20 @@ import qualified Kore.Builtin.Int as Int
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
+import           Kore.Step.Simplification.Data
+                 ( PureMLPatternSimplifier, Simplifier )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 
-{- | Builtin name of the @List@ sort.
+{- | Builtin variable name of the @List@ sort.
  -}
 sort :: String
 sort = "LIST.List"
@@ -103,7 +109,7 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin = Seq (Kore.CommonPurePattern Object)
+type Builtin variable = Seq (Kore.PureMLPattern Object variable)
 
 {- | Abort function evaluation if the argument is not a List domain value.
 
@@ -115,8 +121,8 @@ type Builtin = Seq (Kore.CommonPurePattern Object)
 expectBuiltinDomainList
     :: Monad m
     => String  -- ^ Context for error message
-    -> Kore.CommonPurePattern Object  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
+    -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
+    -> ExceptT (AttemptedFunction Object variable) m (Builtin variable)
 expectBuiltinDomainList ctx =
     \case
         Kore.DV_ _ domain ->
@@ -132,8 +138,8 @@ getAttemptedFunction = fmap (either id id) . runExceptT
 returnList
     :: Monad m
     => Kore.Sort Object
-    -> Builtin
-    -> m (AttemptedFunction Object Kore.Variable)
+    -> (Builtin variable)
+    -> m (AttemptedFunction Object variable)
 returnList resultSort list =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
@@ -153,6 +159,12 @@ evalGet :: Builtin.Function
 evalGet =
     Builtin.functionEvaluator evalGet0
   where
+    evalGet0
+        :: MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Kore.Sort Object
+        -> [Kore.PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
     evalGet0 _ _ _ = \arguments ->
         getAttemptedFunction
         (do
@@ -223,7 +235,7 @@ asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> Kore.CommonPurePattern Object)
+    -> Either (Kore.Error e) (Builtin variable -> Kore.PureMLPattern Object variable)
 asPattern indexedModule _ = do
     symbolUnit <- lookupSymbolUnit indexedModule
     let applyUnit = Kore.App_ symbolUnit []
@@ -245,7 +257,7 @@ asExpandedPattern
     :: KoreIndexedModule attrs
     -- ^ dictionary of Map constructor symbols
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonExpandedPattern Object)
+    -> Either (Kore.Error e) (Builtin variable -> ExpandedPattern Object variable)
 asExpandedPattern symbols resultSort =
     (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
 

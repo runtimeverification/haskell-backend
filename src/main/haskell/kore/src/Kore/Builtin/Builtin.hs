@@ -70,9 +70,9 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 
 import           Kore.AST.Common
-                 ( Application (..), BuiltinDomain (..), CommonPurePattern,
-                 ConcretePurePattern, DomainValue (..), Id (..), Pattern (..),
-                 PureMLPattern, Sort (..), SortActual (..), SortVariable (..),
+                 ( Application (..), BuiltinDomain (..), ConcretePurePattern,
+                 DomainValue (..), Id (..), Pattern (..), PureMLPattern,
+                 Sort (..), SortActual (..), SortVariable (..),
                  SymbolOrAlias (..), Variable )
 import           Kore.AST.Kore
                  ( CommonKorePattern )
@@ -102,20 +102,20 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( ExpandedPattern )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
                  AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 ( PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
 type Parser = Parsec Void String
 
-type Function = ApplicationFunctionEvaluator Object Variable
+type Function = ApplicationFunctionEvaluator Object
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
@@ -446,8 +446,8 @@ parseString parser lit =
  -}
 appliedFunction
     :: Monad m
-    => CommonExpandedPattern Object
-    -> m (AttemptedFunction Object Variable)
+    => ExpandedPattern Object variable
+    -> m (AttemptedFunction Object variable)
 appliedFunction epat =
     (return . Applied . OrOfExpandedPattern.make) [epat]
 
@@ -461,9 +461,10 @@ appliedFunction epat =
 
  -}
 unaryOperator
-    :: Parser a
+    :: forall a b
+    .  Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -478,7 +479,14 @@ unaryOperator
   =
     functionEvaluator unaryOperator0
   where
+    get :: DomainValue Object (BuiltinDomain child) -> a
     get = runParser ctx . parseDomainValue parser
+    unaryOperator0
+        :: MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Sort Object
+        -> [PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
     unaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a] -> do
@@ -499,9 +507,10 @@ unaryOperator
 
  -}
 binaryOperator
-    :: Parser a
+    :: forall a b
+    .  Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -516,7 +525,14 @@ binaryOperator
   =
     functionEvaluator binaryOperator0
   where
+    get :: DomainValue Object (BuiltinDomain child) -> a
     get = runParser ctx . parseDomainValue parser
+    binaryOperator0
+        :: MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Sort Object
+        -> [PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
     binaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a, DomainValuePattern b] -> do
@@ -537,9 +553,10 @@ binaryOperator
 
  -}
 ternaryOperator
-    :: Parser a
+    :: forall a b
+    .  Parser a
     -- ^ Parse operand
-    -> (Sort Object -> b -> CommonExpandedPattern Object)
+    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
     -> String
     -- ^ Builtin function name (for error messages)
@@ -554,7 +571,14 @@ ternaryOperator
   =
     functionEvaluator ternaryOperator0
   where
+    get :: DomainValue Object (BuiltinDomain child) -> a
     get = runParser ctx . parseDomainValue parser
+    ternaryOperator0
+        :: MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Sort Object
+        -> [PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
     ternaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a, DomainValuePattern b, DomainValuePattern c] -> do
@@ -565,17 +589,28 @@ ternaryOperator
             _ -> wrongArity ctx
 
 functionEvaluator
-    :: (  MetadataTools Object StepperAttributes
-       -> CommonPureMLPatternSimplifier Object
-       -> Sort Object
-       -> [CommonPurePattern Object]
-       -> Simplifier (AttemptedFunction Object Variable)
-       )
+    ::  (forall variable
+        .  Ord (variable Object)
+        => MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Sort Object
+        -> [PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
+        )
     -- ^ Builtin function implementation
     -> Function
 functionEvaluator impl =
     ApplicationFunctionEvaluator evaluator
   where
+    evaluator
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Application Object (PureMLPattern Object variable)
+        -> Simplifier
+            ( AttemptedFunction Object variable
+            , SimplificationProof Object
+            )
     evaluator
         tools
         simplifier
@@ -644,7 +679,7 @@ lookupSymbol builtinName indexedModule
 
  -}
 expectNormalConcreteTerm
-    :: MonadError (AttemptedFunction Object Variable) m
+    :: MonadError (AttemptedFunction Object variable) m
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> m (ConcretePurePattern level)

@@ -25,9 +25,9 @@ import           Data.Map
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Application (..), PureMLPattern, Variable (..) )
+                 ( Application (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( Object )
+                 ( Meta, Object )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -43,6 +43,10 @@ import           Kore.Step.Simplification.Equals
                  ( makeEvaluate )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Substitution.Class
+                 ( Hashable )
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -73,13 +77,20 @@ builtinFunctions =
     ]
 
 evalKEq
-    :: Bool
+    ::  ( FreshVariable variable
+        , Hashable variable
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , SortedVariable variable
+        , Show (variable Object)
+        )
+    => Bool
     -> Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
-    -> PureMLPatternSimplifier Object Variable
-    -> Application Object (PureMLPattern Object Variable)
+    -> PureMLPatternSimplifier Object variable
+    -> Application Object (PureMLPattern Object variable)
     -> Simplifier
-        ( AttemptedFunction Object Variable
+        ( AttemptedFunction Object variable
         , SimplificationProof Object
         )
 evalKEq true false tools _ pat =

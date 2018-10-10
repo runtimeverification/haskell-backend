@@ -318,11 +318,11 @@ asSymbolicPattern result =
     applyConcat map1 map2 = App_ symbolConcat [map1, map2]
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map.Builtin -> CommonPurePattern Object
+asPattern :: Map.Builtin Variable -> CommonPurePattern Object
 Right asPattern = Map.asPattern indexedModule mapSort
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asExpandedPattern :: Map.Builtin -> CommonExpandedPattern Object
+asExpandedPattern :: Map.Builtin Variable -> CommonExpandedPattern Object
 Right asExpandedPattern = Map.asExpandedPattern indexedModule mapSort
 
 -- | A sort to hook to the builtin @MAP.Map@.

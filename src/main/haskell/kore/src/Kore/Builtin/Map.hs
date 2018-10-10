@@ -52,7 +52,7 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
@@ -111,8 +111,8 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin =
-    Map (Kore.ConcretePurePattern Object) (Kore.CommonPurePattern Object)
+type Builtin variable =
+    Map (Kore.ConcretePurePattern Object) (Kore.PureMLPattern Object variable)
 
 {- | Abort function evaluation if the argument is not a Map domain value.
 
@@ -124,8 +124,8 @@ type Builtin =
 expectBuiltinDomainMap
     :: Monad m
     => String  -- ^ Context for error message
-    -> Kore.CommonPurePattern Object  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object Kore.Variable) m Builtin
+    -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
+    -> ExceptT (AttemptedFunction Object variable) m (Builtin variable)
 expectBuiltinDomainMap ctx _map =
     do
         case _map of
@@ -141,8 +141,8 @@ expectBuiltinDomainMap ctx _map =
 returnMap
     :: Monad m
     => Kore.Sort Object
-    -> Builtin
-    -> m (AttemptedFunction Object Kore.Variable)
+    -> Builtin variable
+    -> m (AttemptedFunction Object variable)
 returnMap resultSort map' =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
@@ -277,7 +277,9 @@ asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> Kore.CommonPurePattern Object)
+    -> Either
+        (Kore.Error e)
+        (Builtin variable -> Kore.PureMLPattern Object variable)
 asPattern indexedModule _
   = do
     symbolUnit <- lookupSymbolUnit indexedModule
@@ -301,7 +303,9 @@ asExpandedPattern
     :: KoreIndexedModule attrs
     -- ^ dictionary of Map constructor symbols
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin -> CommonExpandedPattern Object)
+    -> Either
+        (Kore.Error e)
+        (Builtin variable -> ExpandedPattern Object variable)
 asExpandedPattern symbols resultSort =
     asExpandedPattern0 <$> asPattern symbols resultSort
   where

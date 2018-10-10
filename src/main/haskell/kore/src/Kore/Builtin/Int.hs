@@ -62,7 +62,7 @@ import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
@@ -170,7 +170,7 @@ expectBuiltinDomainInt
     :: Monad m
     => String  -- ^ Context for error message
     -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object Kore.Variable) m Integer
+    -> ExceptT (AttemptedFunction Object variable) m Integer
 expectBuiltinDomainInt ctx =
     \case
         Kore.DV_ _ domain ->
@@ -195,7 +195,7 @@ expectBuiltinDomainInt ctx =
 asPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> Kore.CommonPurePattern Object
+    -> Kore.PureMLPattern Object variable
 asPattern resultSort result =
     fromConcretePurePattern (asConcretePattern resultSort result)
 
@@ -225,14 +225,14 @@ asMetaPattern result = Kore.StringLiteral_ $ show result
 asExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> CommonExpandedPattern Object
+    -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asPattern resultSort
 
 asPartialExpandedPattern
     :: Kore.Sort Object  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
-    -> CommonExpandedPattern Object
+    -> ExpandedPattern Object variable
 asPartialExpandedPattern resultSort =
     maybe ExpandedPattern.bottom (asExpandedPattern resultSort)
 

@@ -36,7 +36,7 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( CommonApplicationFunctionEvaluator )
+                 ( ApplicationFunctionEvaluator )
 import           Kore.Step.Function.Registry
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
@@ -218,7 +218,7 @@ testId name =
         }
 
 testEvaluators
-    :: Map.Map (Id Object) [CommonApplicationFunctionEvaluator Object]
+    :: Map.Map (Id Object) [ApplicationFunctionEvaluator Object]
 testEvaluators = extractEvaluators Object testIndexedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
