@@ -18,7 +18,6 @@ module Kore.Step.Function.Data
 import Kore.AST.Common
        ( Application, PureMLPattern, SortedVariable, Variable )
 import Kore.AST.MetaOrObject
-       ( Meta, MetaOrObject, Object )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.OrOfExpandedPattern
@@ -57,10 +56,10 @@ newtype ApplicationFunctionEvaluator level=
             , Hashable variable
             , MetaOrObject level
             , Ord (variable level)
-            , Ord (variable Meta)
-            , Ord (variable Object)
+            , OrdMetaOrObject variable
             , SortedVariable variable
             , Show (variable level)
+            , ShowMetaOrObject variable
             )
         => MetadataTools level StepperAttributes
         -> PureMLPatternSimplifier level variable

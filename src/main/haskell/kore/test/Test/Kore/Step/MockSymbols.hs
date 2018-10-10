@@ -21,21 +21,28 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
-import Data.Reflection
-       ( Given )
+import qualified Data.Map.Strict as Map
+import           Data.Reflection
+                 ( Given )
 
 import           Kore.AST.Common
-                 ( Id (..), PureMLPattern, Sort (..), SortActual (..),
-                 SymbolOrAlias (..), Variable (..) )
+                 ( BuiltinDomain (..), ConcretePurePattern, Id (..),
+                 PureMLPattern, Sort (..), SortActual (..), SymbolOrAlias (..),
+                 Variable (..) )
 import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( asConcretePurePattern )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkApp )
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.Builtin.Hook
+                 ( Hook (..) )
 import           Kore.IndexedModule.MetadataTools
                  ( SymbolOrAliasSorts )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
+                 ( StepperAttributes (..) )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( constructorAttributes, constructorFunctionalAttributes,
                  defaultAttributes, functionAttributes, functionalAttributes,
@@ -123,6 +130,12 @@ injective11Id :: Id Object
 injective11Id = testId "injective11"
 sortInjectionId :: Id Object
 sortInjectionId = testId "sortInjection"
+unitMapId :: Id level
+unitMapId = testId "unitMap"
+elementMapId :: Id level
+elementMapId = testId "elementMap"
+concatMapId :: Id level
+concatMapId = testId "concatMap"
 
 aSymbol :: SymbolOrAlias Object
 aSymbol = SymbolOrAlias
@@ -344,6 +357,21 @@ sortInjectionSubSubToSubSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [subSubSort, subSort]
     }
+unitMapSymbol :: SymbolOrAlias level
+unitMapSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = unitMapId
+    , symbolOrAliasParams      = []
+    }
+elementMapSymbol :: SymbolOrAlias level
+elementMapSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = elementMapId
+    , symbolOrAliasParams      = []
+    }
+concatMapSymbol :: SymbolOrAlias level
+concatMapSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = concatMapId
+    , symbolOrAliasParams      = []
+    }
 
 x :: Variable Object
 x = Variable (testId "x") testSort
@@ -351,10 +379,15 @@ y :: Variable Object
 y = Variable (testId "y") testSort
 z :: Variable Object
 z = Variable (testId "z") testSort
+m :: Variable Object
+m = Variable (testId "m") mapSort
 
 a   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 a = mkApp aSymbol []
+
+aConcrete :: Given (SymbolOrAliasSorts Object) => ConcretePurePattern Object
+aConcrete = let Just r = asConcretePurePattern a in r
 
 aSort0
     :: Given (SymbolOrAliasSorts Object)
@@ -379,6 +412,9 @@ aSubSubsort = mkApp aSubSubsortSymbol []
 b   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 b = mkApp bSymbol []
+
+bConcrete :: Given (SymbolOrAliasSorts Object) => ConcretePurePattern Object
+bConcrete = let Just r = asConcretePurePattern b in r
 
 bSort0
     :: Given (SymbolOrAliasSorts Object)
@@ -582,6 +618,13 @@ sortInjectionSubSubToSub
     => PureMLPattern Object variable
     -> PureMLPattern Object variable
 sortInjectionSubSubToSub arg = mkApp sortInjectionSubSubToSubSymbol [arg]
+
+concatMap
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+    -> PureMLPattern Object variable
+concatMap m1 m2 = mkApp concatMapSymbol [m1, m2]
 
 symbolOrAliasSortsMapping :: [(SymbolOrAlias Object, ApplicationSorts Object)]
 symbolOrAliasSortsMapping =
@@ -849,6 +892,24 @@ symbolOrAliasSortsMapping =
             , applicationSortsResult = subSort
             }
         )
+    ,   ( unitMapSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult = mapSort
+            }
+        )
+    ,   ( elementMapSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult = mapSort
+            }
+        )
+    ,   ( concatMapSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [mapSort, mapSort]
+            , applicationSortsResult = mapSort
+            }
+        )
     ]
 
 attributesMapping :: [(SymbolOrAlias Object, StepperAttributes)]
@@ -985,6 +1046,15 @@ attributesMapping =
     ,   ( sortInjectionSubSubToSubSymbol
         , Mock.sortInjectionAttributes
         )
+    ,   ( unitMapSymbol
+        , Mock.defaultAttributes { hook = Hook (Just "MAP.unit") }
+        )
+    ,   ( elementMapSymbol
+        , Mock.defaultAttributes { hook = Hook (Just "MAP.element") }
+        )
+    ,   ( concatMapSymbol
+        , Mock.defaultAttributes { hook = Hook (Just "MAP.concat") }
+        )
     ]
 
 testSort :: Sort Object
@@ -1029,5 +1099,17 @@ subSubSort =
         , sortActualSorts = []
         }
 
+mapSort :: Sort Object
+mapSort =
+    SortActualSort SortActual
+        { sortActualName  = testId "mapSort"
+        , sortActualSorts = []
+        }
+
 subsorts :: [(Sort Object, Sort Object)]
 subsorts = [(subSubSort, subSort), (subSubSort, topSort), (subSort, topSort)]
+
+builtinMap
+    :: [(ConcretePurePattern Object, PureMLPattern Object variable)]
+    -> PureMLPattern Object variable
+builtinMap = DV_ mapSort . BuiltinDomainMap . Map.fromList

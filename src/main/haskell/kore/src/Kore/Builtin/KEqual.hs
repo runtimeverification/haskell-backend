@@ -27,7 +27,6 @@ import qualified Data.Map as Map
 import           Kore.AST.Common
                  ( Application (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( Meta, Object )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -79,10 +78,9 @@ builtinFunctions =
 evalKEq
     ::  ( FreshVariable variable
         , Hashable variable
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , SortedVariable variable
-        , Show (variable Object)
+        , ShowMetaOrObject variable
         )
     => Bool
     -> Bool

@@ -5,7 +5,7 @@ import Control.Monad.Counter
 import Kore.AST.Common
        ( PureMLPattern, SortedVariable )
 import Kore.AST.MetaOrObject
-       ( Meta, MetaOrObject, Object )
+       ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.ExpandedPattern
@@ -24,9 +24,9 @@ termAnd
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
         )
@@ -40,9 +40,9 @@ termUnification
         , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
         )

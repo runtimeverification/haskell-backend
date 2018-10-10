@@ -493,10 +493,77 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 (Mock.functionalConstr20 plain1OfA plain1OfB)
             )
         )
+    , testCase "builtin Map domain"
+        (do
+            assertEqualWithExplanation "concrete Map, same keys"
+                (Just Predicated
+                    { term = Mock.builtinMap [(Mock.aConcrete, Mock.b)]
+                    , predicate = makeTruePredicate
+                    , substitution = [(Mock.x, Mock.b)]
+                    }
+                )
+                (unify
+                    mockMetadataTools
+                    (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
+                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                )
+            assertEqualWithExplanation "concrete Map, different keys"
+                (Just ExpandedPattern.bottom)
+                (unify
+                    mockMetadataTools
+                    (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
+                    (Mock.builtinMap [(Mock.bConcrete, mkVar Mock.x)])
+                )
+            assertEqualWithExplanation "concrete Map with framed Map"
+                (Just Predicated
+                    { term =
+                        Mock.concatMap
+                            (Mock.builtinMap [(Mock.aConcrete, fOfA)])
+                            (Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (Mock.x, fOfA)
+                        ]
+                    }
+                )
+                (unify
+                    mockMetadataTools
+                    (Mock.builtinMap [(Mock.aConcrete, fOfA), (Mock.bConcrete, fOfB)])
+                    (Mock.concatMap
+                        (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                        (mkVar Mock.m)
+                    )
+                )
+            assertEqualWithExplanation "framed Map with concrete Map"
+                (Just Predicated
+                    { term =
+                        Mock.concatMap
+                            (Mock.builtinMap [(Mock.aConcrete, fOfA)])
+                            (Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (Mock.x, fOfA)
+                        ]
+                    }
+                )
+                (unify
+                    mockMetadataTools
+                    (Mock.concatMap
+                        (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                        (mkVar Mock.m)
+                    )
+                    (Mock.builtinMap [(Mock.aConcrete, fOfA), (Mock.bConcrete, fOfB)])
+                )
+        )
     ]
 
 fOfA :: CommonPurePattern Object
 fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
+
+fOfB :: CommonPurePattern Object
+fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
 
 gOfA :: CommonPurePattern Object
 gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a

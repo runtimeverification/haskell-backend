@@ -20,7 +20,6 @@ import           Kore.AST.Common
                  ( Application (..), Pattern (..), PureMLPattern,
                  SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( Meta, MetaOrObject, Object )
 import           Kore.AST.PureML
                  ( asPurePattern )
 import           Kore.IndexedModule.MetadataTools
@@ -64,10 +63,10 @@ axiomFunctionEvaluator
         , Hashable variable
         , MetaOrObject level
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , SortedVariable variable
         , Show (variable level)
+        , ShowMetaOrObject variable
         )
     => AxiomPattern level
     -- ^ Axiom defining the current function.
@@ -132,8 +131,8 @@ reevaluateFunctions
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -183,8 +182,8 @@ evaluatePredicate
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )

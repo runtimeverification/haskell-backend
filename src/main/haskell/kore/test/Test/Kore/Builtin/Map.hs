@@ -1,9 +1,10 @@
 module Test.Kore.Builtin.Map where
 
 import Test.QuickCheck
-       ( Property, property, (.&&.), (===), (==>) )
+       ( Gen, Property, property, (.&&.), (===), (==>) )
 import Test.Tasty.HUnit
 
+import qualified Data.Bifunctor as Bifunctor
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -11,9 +12,13 @@ import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
                  ( give )
+import           Data.Set
+                 ( Set )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( asPurePattern )
 import           Kore.AST.Sentence
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
@@ -35,7 +40,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
 import           Test.Kore
-                 ( testId )
+                 ( idGen, testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
@@ -317,6 +322,28 @@ asSymbolicPattern result =
     applyElement (key, value) = App_ symbolElement [key, value]
     applyConcat map1 map2 = App_ symbolConcat [map1, map2]
 
+{- | Unify two maps with concrete keys and variable values.
+ -}
+prop_unifyConcrete
+    :: Set Integer
+    -> Gen Property
+prop_unifyConcrete keys = do
+    map0 <- traverse (const variablesGen) (Map.fromSet (const ()) keys)
+    let map12 =
+            Map.mapKeys Test.Int.asConcretePattern
+            $ Map.map (Bifunctor.bimap asVariablePattern asVariablePattern) map0
+        map1 = fst <$> map12
+        map2 = snd <$> map12
+        patExpect = asPattern $ uncurry mkAnd <$> map12
+        patActual = mkAnd (asPattern map1) (asPattern map2)
+    (return . allProperties)
+        [ evaluate patExpect === evaluate patActual
+        , ExpandedPattern.top === evaluate (mkEquals patExpect patActual)
+        ]
+  where
+    asVariablePattern = asPurePattern . VariablePattern
+    variablesGen = (,) <$> variableGen <*> variableGen
+
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonPurePattern Object
 Right asPattern = Map.asPattern indexedModule mapSort
@@ -459,8 +486,13 @@ verify defn =
 testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
 MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } = extractMetadataTools indexedModule
 
+-- * Generators and properties
+
 allProperties :: [Property] -> Property
 allProperties = foldr (.&&.) (property True)
+
+variableGen :: Gen (Variable Object)
+variableGen = Variable <$> idGen Object <*> pure Test.Int.intSort
 
 -- * Constructors
 

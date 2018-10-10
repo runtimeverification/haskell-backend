@@ -133,8 +133,8 @@ simplify
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -158,8 +158,8 @@ simplifyEvaluated
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -194,8 +194,8 @@ makeEvaluate
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -291,8 +291,8 @@ makeEvaluateTermsAssumesNoBottom
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -328,8 +328,8 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
@@ -371,8 +371,8 @@ makeEvaluateTermsToPredicateSubstitution
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
         )
