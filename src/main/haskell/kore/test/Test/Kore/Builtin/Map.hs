@@ -318,8 +318,11 @@ prop_symbolic values =
 asSymbolicPattern
     :: Map (CommonPurePattern Object) (CommonPurePattern Object)
     -> CommonPurePattern Object
-asSymbolicPattern result =
-    foldr applyConcat applyUnit (applyElement <$> Map.toAscList result)
+asSymbolicPattern result
+    | Map.null result =
+        applyUnit
+    | otherwise =
+        foldr1 applyConcat (applyElement <$> Map.toAscList result)
   where
     applyUnit = mkDomainValue mapSort $ BuiltinDomainMap Map.empty
     applyElement (key, value) = App_ symbolElement [key, value]
