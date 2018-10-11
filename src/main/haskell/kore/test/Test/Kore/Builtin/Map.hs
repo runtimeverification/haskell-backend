@@ -39,7 +39,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
+                 ( StepperAttributes, constructorAttribute )
 
 import           Test.Kore
                  ( idGen, testId )
@@ -350,6 +350,34 @@ prop_unifyConcrete keys = do
     asVariablePattern = asPurePattern . VariablePattern
     variablesGen = (,) <$> variableGen <*> variableGen
 
+unit_concretizeKeys :: Assertion
+unit_concretizeKeys =
+    let
+        x =
+            mkVar Variable
+                { variableName = testId "x"
+                , variableSort = Test.Int.intSort
+                }
+        v =
+            mkVar Variable
+                { variableName = testId "v"
+                , variableSort = Test.Int.intSort
+                }
+        key = Test.Int.asConcretePattern 1
+        val = Test.Int.asPattern 2
+        concrete = asPattern $ Map.fromList [(key, val)]
+        symbolic = asSymbolicPattern $ Map.fromList [(x, v)]
+        original =
+            mkAnd
+                (mkPair Test.Int.intSort mapSort (Test.Int.asPattern 1) concrete)
+                (mkPair Test.Int.intSort mapSort x symbolic)
+        expected =
+            ExpandedPattern.fromPurePattern
+            $ mkPair Test.Int.intSort mapSort (Test.Int.asPattern 1) concrete
+        actual = evaluate original
+    in
+        assertEqual "Expected simplified Map" expected actual
+
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonPurePattern Object
 Right asPattern = Map.asPattern indexedModule mapSort
@@ -377,26 +405,6 @@ mapSortDecl =
         , sentenceSortAttributes = Attributes [ hookAttribute "MAP.Map" ]
         }
         :: KoreSentenceSort Object)
-
-importBool :: KoreSentence
-importBool =
-    asSentence
-        (SentenceImport
-            { sentenceImportModuleName = Test.Bool.boolModuleName
-            , sentenceImportAttributes = Attributes []
-            }
-            :: KoreSentenceImport
-        )
-
-importInt :: KoreSentence
-importInt =
-    asSentence
-        (SentenceImport
-            { sentenceImportModuleName = Test.Int.intModuleName
-            , sentenceImportAttributes = Attributes []
-            }
-            :: KoreSentenceImport
-        )
 
 mapModuleName :: ModuleName
 mapModuleName = ModuleName "MAP"
@@ -435,8 +443,8 @@ mapModule =
         { moduleName = mapModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importBool
-            , importInt
+            [ importKoreModule Test.Bool.boolModuleName
+            , importKoreModule Test.Int.intModuleName
             , mapSortDecl
             , hookedSymbolDecl "MAP.unit" (builtinSymbol "unitMap")
                 mapSort []
@@ -450,6 +458,106 @@ mapModule =
                 mapSort [mapSort, Test.Int.intSort, Test.Int.intSort]
             , hookedSymbolDecl "MAP.in_keys" (builtinSymbol "inKeysMap")
                 Test.Bool.boolSort [Test.Int.intSort, mapSort]
+            ]
+        }
+
+importKoreModule :: ModuleName -> KoreSentence
+importKoreModule moduleName =
+    asSentence
+        (SentenceImport
+            { sentenceImportModuleName = moduleName
+            , sentenceImportAttributes = Attributes []
+            }
+            :: KoreSentenceImport
+        )
+
+pairModuleName :: ModuleName
+pairModuleName = ModuleName "PAIR"
+
+{- | Declare the @Pair@ sort and constructors.
+ -}
+pairModule :: KoreModule
+pairModule =
+    Module
+        { moduleName = pairModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ pairSortDecl
+            , pairSymbolDecl
+            ]
+        }
+
+pairSort :: Sort Object -> Sort Object -> Sort Object
+pairSort lSort rSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Pair"
+        , sortActualSorts = [lSort, rSort]
+        }
+
+-- | Declare 'Pair' in a Kore module.
+pairSortDecl :: KoreSentence
+pairSortDecl =
+    asSentence decl
+  where
+    lSortVariable = SortVariable (testId "l")
+    rSortVariable = SortVariable (testId "r")
+    lSort = SortVariableSort lSortVariable
+    rSort = SortVariableSort rSortVariable
+    decl :: KoreSentenceSort Object
+    decl =
+        SentenceSort
+            { sentenceSortName =
+                let SortActualSort SortActual { sortActualName } =
+                        pairSort lSort rSort
+                in sortActualName
+            , sentenceSortParameters = [lSortVariable, rSortVariable]
+            , sentenceSortAttributes = Attributes []
+            }
+
+pairId :: Id level
+pairId = testId "pair"
+
+symbolPair :: Sort Object -> Sort Object -> SymbolOrAlias Object
+symbolPair lSort rSort =
+    SymbolOrAlias
+        { symbolOrAliasConstructor = pairId
+        , symbolOrAliasParams = [lSort, rSort]
+        }
+
+pairSymbolDecl :: KoreSentence
+pairSymbolDecl =
+    asSentence decl
+  where
+    decl :: KoreSentenceSymbol Object
+    decl =
+        SentenceSymbol
+            { sentenceSymbolSymbol =
+                Symbol
+                    { symbolConstructor = pairId
+                    , symbolParams = [lSortVariable, rSortVariable]
+                    }
+            , sentenceSymbolSorts = [lSort, rSort]
+            , sentenceSymbolResultSort = pairSort lSort rSort
+            , sentenceSymbolAttributes = Attributes [constructorAttribute]
+            }
+    lSortVariable = SortVariable (testId "l")
+    rSortVariable = SortVariable (testId "r")
+    lSort = SortVariableSort lSortVariable
+    rSort = SortVariableSort rSortVariable
+
+testModuleName :: ModuleName
+testModuleName = ModuleName "TEST"
+
+testModule :: KoreModule
+testModule =
+    Module
+        { moduleName = testModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ importKoreModule Test.Bool.boolModuleName
+            , importKoreModule Test.Int.intModuleName
+            , importKoreModule mapModuleName
+            , importKoreModule pairModuleName
             ]
         }
 
@@ -469,6 +577,8 @@ mapDefinition =
             [ Test.Bool.boolModule
             , Test.Int.intModule
             , mapModule
+            , pairModule
+            , testModule
             ]
         }
 
@@ -476,7 +586,7 @@ indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
 indexedModules = verify mapDefinition
 
 indexedModule :: KoreIndexedModule StepperAttributes
-Just indexedModule = Map.lookup mapModuleName indexedModules
+Just indexedModule = Map.lookup testModuleName indexedModules
 
 evaluators :: Map (Id Object) [Builtin.Function]
 evaluators = Builtin.evaluators Map.builtinFunctions indexedModule
@@ -543,3 +653,16 @@ mkNot = give testSymbolOrAliasSorts Kore.mkNot
 mkIntVar :: Id Object -> CommonPurePattern Object
 mkIntVar variableName =
     mkVar Variable { variableName, variableSort = Test.Int.intSort }
+
+mkPair
+    :: Sort Object
+    -> Sort Object
+    -> CommonPurePattern Object
+    -> CommonPurePattern Object
+    -> CommonPurePattern Object
+mkPair lSort rSort l r = App_ (symbolPair lSort rSort) [l, r]
+
+mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
+mockSubstitutionSimplifier =
+    PredicateSubstitutionSimplifier
+        (\x -> return (x, SimplificationProof))
