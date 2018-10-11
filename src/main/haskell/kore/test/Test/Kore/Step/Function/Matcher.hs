@@ -78,7 +78,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application different constructors"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution.bottom)
             (match mockMetadataTools
                 (Mock.constr10 (mkVar Mock.x))
                 (Mock.constr11 Mock.a)
@@ -86,7 +86,15 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application different functions"
         (assertEqualWithExplanation ""
-            Nothing
+            ( Just PredicateSubstitution
+                { predicate =
+                    makeEqualsPredicate
+                        (Mock.f (mkVar Mock.x))
+                        (Mock.g Mock.a)
+                , substitution = []
+                }
+
+            )
             (match mockMetadataTools
                 (Mock.f (mkVar Mock.x))
                 (Mock.g Mock.a)
@@ -384,7 +392,13 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
         )
     , testCase "var - no-var"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (Mock.plain10 (mkVar Mock.x))
+                    (Mock.plain11 Mock.b)
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                (Mock.plain10 (mkVar Mock.x))
                (Mock.plain11 Mock.b)
@@ -405,7 +419,13 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
         )
     , testCase "var - var"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (Mock.plain10 (mkVar Mock.x))
+                    (Mock.plain11 (mkVar Mock.y))
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                (Mock.plain10 (mkVar Mock.x))
                (Mock.plain11 (mkVar Mock.y))

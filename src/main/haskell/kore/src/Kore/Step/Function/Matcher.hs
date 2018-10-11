@@ -24,13 +24,15 @@ import           Data.Maybe
 import           Control.Monad.Counter
                  ( MonadCounter )
 import           Control.Monad.Trans.Except
-                 ( ExceptT, throwE )
+                 ( ExceptT (..) )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
-import           Data.Proxy
-                 ( Proxy (..) )
+import           Data.Either
+                 ( isRight )
+import qualified Data.Map as Map
 import           Data.Reflection
-                 ( give )
+                 ( Given, give )
+import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( PureMLPattern, SortedVariable )
@@ -43,7 +45,7 @@ import           Kore.ASTUtils.SmartPatterns
                  pattern Not_, pattern Or_, pattern Rewrites_,
                  pattern StringLiteral_, pattern Top_, pattern Var_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -55,7 +57,7 @@ import           Kore.Step.PatternAttributes
 import           Kore.Step.PredicateSubstitution
                  ( PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), top )
+                 ( PredicateSubstitution (..), freeVariables, top )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
@@ -71,13 +73,9 @@ import           Kore.Unification.Error
                  ( UnificationError (..) )
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
-import           Kore.Variables.Free
-                 ( pureFreeVariables )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-import Debug.Trace
-import Data.Foldable (traverse_)
 {- Matches two patterns based on their form.
 
 Assumes that the two patterns have no common variables (quantified or not).
@@ -165,7 +163,6 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
         (And_ _ firstFirst firstSecond) ->
             case second of
                 (And_ _ secondFirst secondSecond) ->
-                    trace "~~~~~~~~~~ and "
                     matchJoin
                         tools
                         quantifiedVariables
@@ -177,32 +174,27 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
             case second of
                 (App_ secondHead secondChildren) ->
                     if firstHead == secondHead
-                    then trace "~~~~~~~~~~ app"
-                        $ traceShow firstHead
-                        $ matchJoin
+                    then
+                        matchJoin
                             tools
                             quantifiedVariables
                             (zip firstChildren secondChildren)
                     else nothing
                 _ -> nothing
-        (Bottom_ _) -> trace "~~~~~~~~~~ bot" $ topWhenEqualOrNothing first second
+        (Bottom_ _) -> topWhenEqualOrNothing first second
         (Ceil_ _ _ firstChild) ->
             case second of
                 (Ceil_ _ _ secondChild) ->
-                    trace "~~~~~~~~~~ ceil"
-                    $ match tools quantifiedVariables firstChild secondChild
+                    match tools quantifiedVariables firstChild secondChild
                 _ -> nothing
         (CharLiteral_ _) ->
-            trace "~~~~~~~~~~ charLit"
-            $ topWhenEqualOrNothing first second
+            topWhenEqualOrNothing first second
         (DV_ _ _) ->
-            trace "~~~~~~~~~~ dv"
-            $ topWhenEqualOrNothing first second
+            topWhenEqualOrNothing first second
         (Equals_ _ _ firstFirst firstSecond) ->
             case second of
                 (Equals_ _ _ secondFirst secondSecond) ->
-                    trace "~~~~~~~~~~ eq"
-                    $ matchJoin
+                    matchJoin
                         tools
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
@@ -212,7 +204,9 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
         (Exists_ _ firstVariable firstChild) ->
             case second of
                 (Exists_ _ secondVariable secondChild) ->
-                    match
+                    give (MetadataTools.symbolOrAliasSorts tools)
+                    $ checkVariableEscape [firstVariable, secondVariable]
+                    <$> match
                         tools
                         (Map.insert
                             firstVariable secondVariable quantifiedVariables
@@ -228,7 +222,9 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
         (Forall_ _ firstVariable firstChild) ->
             case second of
                 (Forall_ _ secondVariable secondChild) ->
-                    match
+                    give (MetadataTools.symbolOrAliasSorts tools)
+                    $ checkVariableEscape [firstVariable, secondVariable]
+                    <$> match
                         tools
                         (Map.insert
                             firstVariable secondVariable quantifiedVariables
@@ -308,6 +304,7 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                             then just PredicateSubstitution.top
                             else nothing
                 _ -> nothing
+        _ -> nothing
   where
     topWhenEqualOrNothing first' second' =
         if first' == second'
@@ -332,16 +329,6 @@ matchJoin
     -> [(PureMLPattern level variable, PureMLPattern level variable)]
     -> MaybeT m (PredicateSubstitution level variable)
 matchJoin tools quantifiedVariables patterns = do -- MaybeT monad
-    -- [PredicateSubstitution level variable]
-    -- traceM "*********** bingo ***************"
-    -- traceShowM quantifiedVariables
-    -- traverse_ (\(l, r) -> do
-    --                          traceM "+++++++++++++ left"
-    --                          traceShowM l
-    --                          traceM "+++++++++++++ right"
-    --                          traceShowM r
-    --           ) patterns
-    -- traceShowM (length patterns)
     matchedCounters <-
         traverse (uncurry $ match tools quantifiedVariables) patterns
     MaybeT $ Just . fst <$> mergePredicatesAndSubstitutions
@@ -392,8 +379,7 @@ matchVariableFunction
 matchVariableFunction _ _ _ _ = nothing
 
 matchNonVarToPattern
-    :: forall variable level m.
-        ( Hashable variable
+    :: ( Hashable variable
         , FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
@@ -410,7 +396,7 @@ matchNonVarToPattern
     -> PureMLPattern level variable
     -> MaybeT m (PredicateSubstitution level variable)
 matchNonVarToPattern tools first second
-  | null (pureFreeVariables (Proxy :: Proxy level) first)
+  -- TODO(virgil): For simplification axioms this would need to return bottom!
   = give (MetadataTools.symbolOrAliasSorts tools) $
     MaybeT $ do -- Counter monad
         (PredicateSubstitution {predicate, substitution}, _proof) <-
@@ -430,4 +416,25 @@ matchNonVarToPattern tools first second
                 { predicate = finalPredicate
                 , substitution = []
                 }
-matchNonVarToPattern _ _ _ = nothing
+
+checkVariableEscape
+    :: ( MetaOrObject level
+        , Show (variable Object)
+        , Show (variable Meta)
+        , Ord (variable Object)
+        , Ord (variable Meta)
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Eq (variable level)
+        , Ord (variable level)
+        , Show (variable level))
+    => [variable level]
+    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level variable
+checkVariableEscape vars predSubst
+  | any (`Set.member` freeVars) vars = error
+        "quantified variables in substitution or predicate escaping context"
+  | otherwise = predSubst
+  where
+    freeVars = PredicateSubstitution.freeVariables predSubst
+
