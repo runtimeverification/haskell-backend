@@ -169,8 +169,11 @@ prop_symbolic values =
 asSymbolicPattern
     :: Set (CommonPurePattern Object)
     -> CommonPurePattern Object
-asSymbolicPattern result =
-    foldr applyConcat applyUnit (applyElement <$> Set.toAscList result)
+asSymbolicPattern result
+    | Set.null result =
+        applyUnit
+    | otherwise =
+        foldr1 applyConcat (applyElement <$> Set.toAscList result)
   where
     applyUnit = mkDomainValue setSort $ BuiltinDomainSet Set.empty
     applyElement key = App_ symbolElement [key]

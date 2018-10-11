@@ -220,9 +220,25 @@ evalConcat =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity ctx
-            _set1 <- expectBuiltinDomainSet ctx tools _set1
-            _set2 <- expectBuiltinDomainSet ctx tools _set2
-            returnSet resultSort (_set1 <> _set2)
+                leftIdentity = do
+                    _set1 <- expectBuiltinDomainSet ctx tools _set1
+                    if Set.null _set1
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _set2
+                        else empty
+                rightIdentity = do
+                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    if Set.null _set2
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _set1
+                        else empty
+                bothConcrete = do
+                    _set1 <- expectBuiltinDomainSet ctx tools _set1
+                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    returnSet resultSort (_set1 <> _set2)
+            leftIdentity <|> rightIdentity <|> bothConcrete
         )
 
 evalDifference :: Builtin.Function
@@ -243,9 +259,18 @@ evalDifference =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity ctx
-            _set1 <- expectBuiltinDomainSet ctx tools _set1
-            _set2 <- expectBuiltinDomainSet ctx tools _set2
-            returnSet resultSort (Set.difference _set1 _set2)
+                rightIdentity = do
+                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    if Set.null _set2
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _set1
+                        else empty
+                bothConcrete = do
+                    _set1 <- expectBuiltinDomainSet ctx tools _set1
+                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    returnSet resultSort (Set.difference _set1 _set2)
+            rightIdentity <|> bothConcrete
         )
 
 {- | Implement builtin function evaluation.
