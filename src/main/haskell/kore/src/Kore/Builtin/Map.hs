@@ -36,10 +36,8 @@ module Kore.Builtin.Map
 
 import           Control.Applicative
                  ( Alternative (..) )
-import qualified Control.Monad as Monad
-import           Control.Monad.Except
-                 ( ExceptT )
-import qualified Control.Monad.Except as Except
+import           Control.Error
+                 ( MaybeT )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
@@ -72,7 +70,6 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
@@ -150,7 +147,7 @@ expectBuiltinDomainMap
     :: Monad m
     => String  -- ^ Context for error message
     -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object variable) m (Builtin variable)
+    -> MaybeT m (Builtin variable)
 expectBuiltinDomainMap ctx _map =
     do
         case _map of
@@ -161,7 +158,7 @@ expectBuiltinDomainMap ctx _map =
                         Builtin.verifierBug
                             (ctx ++ ": Domain value is not a map")
             _ ->
-                Except.throwError NotApplicable
+                empty
 
 returnMap
     :: Monad m
@@ -222,11 +219,13 @@ evalConcat =
             let overlapping =
                     (not . Set.null)
                     (Set.intersection (Map.keysSet _map1) (Map.keysSet _map2))
-            -- Result is ‘\bottom{}()’ when there is overlap between the keys
-            -- of the operands.
-            (Monad.when overlapping . Except.throwError)
-                (Applied $ OrOfExpandedPattern.make [ExpandedPattern.bottom])
-            returnMap resultSort (Map.union _map1 _map2)
+            if overlapping
+                then
+                    -- Result is ‘\bottom{}()’ when there is overlap between the
+                    -- keys of the operands.
+                    Builtin.appliedFunction ExpandedPattern.bottom
+                else
+                    returnMap resultSort (Map.union _map1 _map2)
         )
 
 evalUnit :: Builtin.Function

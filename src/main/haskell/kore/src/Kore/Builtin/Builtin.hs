@@ -51,10 +51,10 @@ module Kore.Builtin.Builtin
     , getAttemptedFunction
     ) where
 
+import           Control.Error
+                 ( MaybeT (..), fromMaybe )
 import           Control.Monad
                  ( zipWithM_ )
-import           Control.Monad.Except
-                 ( ExceptT, MonadError, runExceptT )
 import qualified Control.Monad.Except as Except
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.HashMap.Strict
@@ -694,22 +694,23 @@ isSymbol builtinName MetadataTools { symAttributes } sym =
 
  -}
 expectNormalConcreteTerm
-    :: MonadError (AttemptedFunction Object variable) m
+    :: Monad m
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
-    -> m (ConcretePurePattern level)
+    -> MaybeT m (ConcretePurePattern level)
 expectNormalConcreteTerm tools purePattern =
-    maybe (Except.throwError NotApplicable) return $ do
+    MaybeT $ return $ do
         p <- asConcretePurePattern purePattern
         -- TODO (thomas.tuegel): Use the return value as the term. Will require
         -- factoring BuiltinDomain out of Kore.AST.Common.
         _ <- Value.fromConcretePurePattern tools p
         return p
 
-{- | Run a computation which can return early.
-
-    See also: 'expectNormalConcreteTerm'
-
+{- | Run a function evaluator that can terminate early.
  -}
-getAttemptedFunction :: Monad m => ExceptT r m r -> m r
-getAttemptedFunction = fmap (either id id) . runExceptT
+getAttemptedFunction
+    :: Monad m
+    => MaybeT m (AttemptedFunction level variable)
+    -> m (AttemptedFunction level variable)
+getAttemptedFunction attempt =
+    fromMaybe NotApplicable <$> runMaybeT attempt

@@ -33,11 +33,12 @@ module Kore.Builtin.Int
     , parse
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Error
+                 ( MaybeT )
 import           Control.Monad
                  ( void )
-import           Control.Monad.Except
-                 ( ExceptT )
-import qualified Control.Monad.Except as Except
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
 import qualified Data.Functor.Foldable as Functor.Foldable
@@ -66,8 +67,6 @@ import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-                 ( AttemptedFunction (..) )
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -172,7 +171,7 @@ expectBuiltinDomainInt
     :: Monad m
     => String  -- ^ Context for error message
     -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object variable) m Integer
+    -> MaybeT m Integer
 expectBuiltinDomainInt ctx =
     \case
         Kore.DV_ _ domain ->
@@ -184,7 +183,7 @@ expectBuiltinDomainInt ctx =
                     Builtin.verifierBug
                         (ctx ++ ": Domain value argument is not a string")
         _ ->
-            Except.throwError NotApplicable
+            empty
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 

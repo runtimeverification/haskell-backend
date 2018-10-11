@@ -32,9 +32,10 @@ module Kore.Builtin.List
     , unify
     ) where
 
-import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
-import qualified Control.Monad.Except as Except
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Error
+                 ( MaybeT, fromMaybe, runMaybeT )
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -136,7 +137,7 @@ expectBuiltinDomainList
     :: Monad m
     => String  -- ^ Context for error message
     -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object variable) m (Builtin variable)
+    -> MaybeT m (Builtin variable)
 expectBuiltinDomainList ctx =
     \case
         Kore.DV_ _ domain ->
@@ -144,10 +145,14 @@ expectBuiltinDomainList ctx =
                 Kore.BuiltinDomainList list -> return list
                 _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a list")
         _ ->
-            Except.throwError NotApplicable
+            empty
 
-getAttemptedFunction :: Monad m => ExceptT r m r -> m r
-getAttemptedFunction = fmap (either id id) . runExceptT
+getAttemptedFunction
+    :: Monad m
+    => MaybeT m (AttemptedFunction level variable)
+    -> m (AttemptedFunction level variable)
+getAttemptedFunction attempt =
+    fromMaybe NotApplicable <$> runMaybeT attempt
 
 returnList
     :: Monad m
@@ -192,9 +197,9 @@ evalGet =
                      -- negative indices count from end of list
                      _ix + Seq.length _list
                    | otherwise = _ix
-            (Builtin.appliedFunction . fromMaybe) (Seq.lookup ix _list)
+            (Builtin.appliedFunction . maybeBottom) (Seq.lookup ix _list)
         )
-    fromMaybe =
+    maybeBottom =
         maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
 
 evalUnit :: Builtin.Function

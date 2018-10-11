@@ -30,9 +30,10 @@ module Kore.Builtin.Set
     , lookupSymbolDifference
     ) where
 
-import           Control.Monad.Except
-                 ( ExceptT )
-import qualified Control.Monad.Except as Except
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Error
+                 ( MaybeT )
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -129,7 +130,7 @@ expectBuiltinDomainSet
     => String  -- ^ Context for error message
     -> MetadataTools Object StepperAttributes
     -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object variable) m Builtin
+    -> MaybeT m Builtin
 expectBuiltinDomainSet ctx tools _set =
     do
         _set <- Builtin.expectNormalConcreteTerm tools _set
@@ -141,7 +142,7 @@ expectBuiltinDomainSet ctx tools _set =
                         Builtin.verifierBug
                             (ctx ++ ": Domain value is not a set")
             _ ->
-                Except.throwError NotApplicable
+                empty
 
 returnSet
     :: Monad m
