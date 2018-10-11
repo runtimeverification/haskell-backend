@@ -492,21 +492,27 @@ unify
         :: PureMLPattern level variable
         -> PureMLPattern level variable
         -> Result (m (expanded, proof))
+
     unify0
-        (DV_ sort' (BuiltinDomainMap map1))
-        (DV_ _     (BuiltinDomainMap map2))
+        (DV_ resultSort (BuiltinDomainMap map1))
+        (DV_ _          (BuiltinDomainMap map2))
       =
-        unifyConcrete sort' map1 map2
+        unifyConcrete resultSort map1 map2
+
     unify0
-        (DV_ sort' (BuiltinDomainMap map1))
-        (App_ concat'
-            [ DV_ _ (BuiltinDomainMap map2)
-            , x@(Var_ _)
-            ]
-        )
-        | isSymbolConcat hookTools concat' =
-            unifyFramed1 sort' map1 concat' map2 x
+        (DV_ resultSort (BuiltinDomainMap map1))
+        (App_ concat2 args2)
+      | isSymbolConcat hookTools concat2 =
+        -- Accept the arguments of concat in either order.
+        case args2 of
+            [ DV_ _ (BuiltinDomainMap map2), x@(Var_ _) ] ->
+                unifyFramed1 resultSort map1 concat2 map2 x
+            [ x@(Var_ _), DV_ _ (BuiltinDomainMap map2) ] ->
+                unifyFramed1 resultSort map1 concat2 map2 x
+            _ -> empty
+
     unify0 app_@(App_ _ _) dv_@(DV_ _ _) = unify0 dv_ app_
+
     unify0 _ _ = empty
 
     -- | Unify two concrete maps.
