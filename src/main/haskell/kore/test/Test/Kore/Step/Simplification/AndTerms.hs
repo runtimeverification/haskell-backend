@@ -535,6 +535,27 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         (mkVar Mock.m)
                     )
                 )
+            assertEqualWithExplanation "concrete Map with framed Map"
+                (Just Predicated
+                    { term =
+                        Mock.concatMap
+                            (Mock.builtinMap [(Mock.aConcrete, fOfA)])
+                            (Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (Mock.x, fOfA)
+                        ]
+                    }
+                )
+                (unify
+                    mockMetadataTools
+                    (Mock.builtinMap [(Mock.aConcrete, fOfA), (Mock.bConcrete, fOfB)])
+                    (Mock.concatMap
+                        (mkVar Mock.m)
+                        (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                    )
+                )
             assertEqualWithExplanation "framed Map with concrete Map"
                 (Just Predicated
                     { term =
@@ -553,6 +574,27 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Mock.concatMap
                         (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
                         (mkVar Mock.m)
+                    )
+                    (Mock.builtinMap [(Mock.aConcrete, fOfA), (Mock.bConcrete, fOfB)])
+                )
+            assertEqualWithExplanation "framed Map with concrete Map"
+                (Just Predicated
+                    { term =
+                        Mock.concatMap
+                            (Mock.builtinMap [(Mock.aConcrete, fOfA)])
+                            (Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (Mock.x, fOfA)
+                        ]
+                    }
+                )
+                (unify
+                    mockMetadataTools
+                    (Mock.concatMap
+                        (mkVar Mock.m)
+                        (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
                     )
                     (Mock.builtinMap [(Mock.aConcrete, fOfA), (Mock.bConcrete, fOfB)])
                 )
