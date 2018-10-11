@@ -76,6 +76,8 @@ import           Kore.Variables.Free
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
+import Debug.Trace
+import Data.Foldable (traverse_)
 {- Matches two patterns based on their form.
 
 Assumes that the two patterns have no common variables (quantified or not).
@@ -163,6 +165,7 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
         (And_ _ firstFirst firstSecond) ->
             case second of
                 (And_ _ secondFirst secondSecond) ->
+                    trace "~~~~~~~~~~ and "
                     matchJoin
                         tools
                         quantifiedVariables
@@ -174,24 +177,32 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
             case second of
                 (App_ secondHead secondChildren) ->
                     if firstHead == secondHead
-                    then matchJoin
-                        tools
-                        quantifiedVariables
-                        (zip firstChildren secondChildren)
+                    then trace "~~~~~~~~~~ app"
+                        $ traceShow firstHead
+                        $ matchJoin
+                            tools
+                            quantifiedVariables
+                            (zip firstChildren secondChildren)
                     else nothing
                 _ -> nothing
-        (Bottom_ _) -> topWhenEqualOrNothing first second
+        (Bottom_ _) -> trace "~~~~~~~~~~ bot" $ topWhenEqualOrNothing first second
         (Ceil_ _ _ firstChild) ->
             case second of
                 (Ceil_ _ _ secondChild) ->
-                    match tools quantifiedVariables firstChild secondChild
+                    trace "~~~~~~~~~~ ceil"
+                    $ match tools quantifiedVariables firstChild secondChild
                 _ -> nothing
-        (CharLiteral_ _) -> topWhenEqualOrNothing first second
-        (DV_ _ _) -> topWhenEqualOrNothing first second
+        (CharLiteral_ _) ->
+            trace "~~~~~~~~~~ charLit"
+            $ topWhenEqualOrNothing first second
+        (DV_ _ _) ->
+            trace "~~~~~~~~~~ dv"
+            $ topWhenEqualOrNothing first second
         (Equals_ _ _ firstFirst firstSecond) ->
             case second of
                 (Equals_ _ _ secondFirst secondSecond) ->
-                    matchJoin
+                    trace "~~~~~~~~~~ eq"
+                    $ matchJoin
                         tools
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
@@ -322,6 +333,15 @@ matchJoin
     -> MaybeT m (PredicateSubstitution level variable)
 matchJoin tools quantifiedVariables patterns = do -- MaybeT monad
     -- [PredicateSubstitution level variable]
+    -- traceM "*********** bingo ***************"
+    -- traceShowM quantifiedVariables
+    -- traverse_ (\(l, r) -> do
+    --                          traceM "+++++++++++++ left"
+    --                          traceShowM l
+    --                          traceM "+++++++++++++ right"
+    --                          traceShowM r
+    --           ) patterns
+    -- traceShowM (length patterns)
     matchedCounters <-
         traverse (uncurry $ match tools quantifiedVariables) patterns
     MaybeT $ Just . fst <$> mergePredicatesAndSubstitutions
@@ -362,8 +382,7 @@ matchVariableFunction
     second
   | not (var `Map.member` quantifiedVariables)
     && isRight (isFunctionPattern tools second)
-  =
-    case Ceil.makeEvaluateTerm tools second of
+  = case Ceil.makeEvaluateTerm tools second of
         (predicate, _proof) ->
             just $
                 PredicateSubstitution

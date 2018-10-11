@@ -489,10 +489,10 @@ constructorFunctions tools =
     tools
     { symAttributes = \h -> let atts = symAttributes tools h in
         atts
-        { isConstructor = isConstructor atts || isFunction atts || isCons h
+        { isConstructor = isConstructor atts || isCons h
         , isFunctional = isFunctional atts || isCons h || isInj h
         , isInjective =
-            isInjective atts || isFunction atts || isCons h || isInj h
+            isInjective atts || isCons h || isInj h
         , isSortInjection = isSortInjection atts || isInj h
         }
     }

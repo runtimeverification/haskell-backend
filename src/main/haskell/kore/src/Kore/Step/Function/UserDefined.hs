@@ -58,6 +58,7 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
 
+import Debug.Trace
 {-| 'axiomFunctionEvaluator' evaluates a user-defined function. After
 evaluating the function, it tries to re-evaluate all functions on the result.
 
@@ -118,6 +119,10 @@ axiomFunctionEvaluator
                             rewrittenPattern
   where
     stepResult =
+        -- trace "------------- ep"
+        -- $ traceShow (stepperConfiguration app)
+        -- $ trace "---------------- axiom"
+        -- $ traceShow axiom
         stepWithAxiom'
             tools
             (UnificationProcedure matchAsUnification)
