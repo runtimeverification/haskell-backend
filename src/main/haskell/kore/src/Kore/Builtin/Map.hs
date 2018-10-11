@@ -55,6 +55,7 @@ import           Kore.AST.Common
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
 import qualified Kore.AST.PureML as Kore
+import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -65,8 +66,10 @@ import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Predicate.Predicate
+                 ( makeCeilPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
@@ -508,27 +511,39 @@ unify
         -> PureMLPattern level variable
         -> MaybeT m (expanded, proof)
 
-    unify0
-        (DV_ resultSort (BuiltinDomainMap map1))
-        (DV_ _          (BuiltinDomainMap map2))
-      =
-        Monad.Trans.lift $ unifyConcrete resultSort map1 map2
+    unify0 dv1@(DV_ resultSort (BuiltinDomainMap map1)) =
+        \case
+            dv2@(DV_ _ builtin2) ->
+                case builtin2 of
+                    BuiltinDomainMap map2 ->
+                        Monad.Trans.lift $ unifyConcrete resultSort map1 map2
+                    _ ->
+                        (error . unlines)
+                            [ "Cannot unify a builtin Map domain value:"
+                            , show dv1
+                            , "with:"
+                            , show dv2
+                            , "This should have been a sort error."
+                            ]
+            app@(App_ symbol2 args2)
+                | isSymbolConcat hookTools symbol2 ->
+                    -- Accept the arguments of MAP.concat in either order.
+                    Monad.Trans.lift $ case args2 of
+                        [ DV_ _ (BuiltinDomainMap map2), x@(Var_ _) ] ->
+                            unifyFramed1 resultSort map1 symbol2 map2 x
+                        [ x@(Var_ _), DV_ _ (BuiltinDomainMap map2) ] ->
+                            unifyFramed1 resultSort map1 symbol2 map2 x
+                        _ ->
+                            unsolved dv1 app
+                | otherwise ->
+                    empty
+            _ ->
+                empty
 
-    unify0
-        (DV_ resultSort (BuiltinDomainMap map1))
-        (App_ concat2 args2)
-      | isSymbolConcat hookTools concat2 =
-        -- Accept the arguments of concat in either order.
-        case args2 of
-            [ DV_ _ (BuiltinDomainMap map2), x@(Var_ _) ] ->
-                Monad.Trans.lift $ unifyFramed1 resultSort map1 concat2 map2 x
-            [ x@(Var_ _), DV_ _ (BuiltinDomainMap map2) ] ->
-                Monad.Trans.lift $ unifyFramed1 resultSort map1 concat2 map2 x
+    unify0 pat1 =
+        \case
+            dv@(DV_ _ (BuiltinDomainMap _)) -> unify0 dv pat1
             _ -> empty
-
-    unify0 app_@(App_ _ _) dv_@(DV_ _ _) = unify0 dv_ app_
-
-    unify0 _ _ = empty
 
     -- | Unify two concrete maps.
     unifyConcrete
@@ -597,3 +612,17 @@ unify
         return (normalized, SimplificationProof)
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
+
+    -- | Return an unsolved predicate
+    unsolved
+        :: (level ~ Object, k ~ ConcretePurePattern Object)
+        => PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> m (expanded, proof)
+    unsolved a b =
+        let
+            unified = give symbolOrAliasSorts Kore.mkAnd a b
+            predicate = give symbolOrAliasSorts makeCeilPredicate unified
+            expanded = (give symbolOrAliasSorts pure unified) { predicate }
+        in
+            return (expanded, SimplificationProof)
