@@ -38,4 +38,5 @@ distclean: clean
 
 clean: clean-submodules
 	stack clean
+	find -name '*.tix' -exec rm -f '{}' \;
 	$(MAKE) -C src/main/k/working clean
