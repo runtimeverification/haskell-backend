@@ -32,7 +32,7 @@ FORCE:
 
 $(K_SUBMODULE): FORCE
 	if [ ! -d $(K_SUBMODULE) ]; then git submodule update --init -- $(K_SUBMODULE); fi
-	cd $(K_SUBMODULE) && touch -d `git log --format=format:%cI -n 1` .
+	cd $(K_SUBMODULE) && touch -d $$(git log --format=format:%cd -n 1) .
 
 $(KORE_EXEC): FORCE
 	stack build $(STACK_BUILD_OPTS) kore:exe:kore-exec
