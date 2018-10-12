@@ -19,9 +19,10 @@ endif
 
 STACK_LOCAL_INSTALL_ROOT != stack path --local-install-root
 KORE_EXEC ?= $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-exec
+KORE_EXEC_OPTS ?=
 
 KOMPILE_OPTS ?= --backend haskell
-KRUN_OPTS ?= --haskell-backend-command $(KORE_EXEC)
+KRUN_OPTS ?= --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
 
 KOMPILE_TARGETS := $(KOMPILE)
 KRUN_TARGETS := $(KRUN) $(KORE_EXEC)
