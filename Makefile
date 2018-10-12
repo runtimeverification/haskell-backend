@@ -43,9 +43,8 @@ clean: clean-submodules
 
 check:
 	./scripts/git-assert-clean.sh
-	export PATH=$(STACK_LOCAL_INSTALL_ROOT)/bin:$$PATH
 	if ! command -v stylish-haskell; then \
-		stack build stylish-haskell; \
+		stack install stylish-haskell; \
 	fi
 	./scripts/check-stylish-haskell.sh \
 		src/main/haskell/kore/app \
