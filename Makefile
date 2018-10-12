@@ -43,7 +43,6 @@ clean: clean-submodules
 
 check:
 	./scripts/git-assert-clean.sh
-	./scripts/git-rebased-on.sh origin/master --linear
 	if ! command -v stylish-haskell; then \
 		stack build stylish-haskell; \
 	fi
