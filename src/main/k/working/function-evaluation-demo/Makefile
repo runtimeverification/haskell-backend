@@ -1,32 +1,34 @@
-KORE_EXEC?="stack exec kore-exec --"
-KOMPILE?=$(K_BIN)kompile
-KRUN?=$(K_BIN)krun --haskell-backend-command $(KORE_EXEC)
+TOP != git rev-parse --show-toplevel
+include $(TOP)/include.mk
 
-demo-kompiled/definition.kore: demo.k
-	$(KOMPILE) demo.k --backend haskell --syntax-module DEMO
+KOMPILED := demo-kompiled
+DEFINITION := $(KOMPILED)/definition.kore
 
-%.demo.kore: %.demo demo-kompiled/definition.kore
-	$(KRUN) $< --dry-run
+$(DEFINITION): demo.k $(KOMPILE_TARGETS)
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module DEMO
 
-%.output: %.demo demo-kompiled/definition.kore
-	$(KRUN) $< --output-file $@
+%.imp.kore: %.demo $(DEFINITION) $(KRUN_TARGETS)
+	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.krun: %.demo demo-kompiled/definition.kore
-	$(KRUN) $<
+%.output: %.demo $(DEFINITION) $(KRUN_TARGETS)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@
+
+%.krun: %.demo $(DEFINITION) $(KRUN_TARGETS)
+	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
-	diff $< $<.golden
+	diff -u $<.golden $<
 
 %.output.golden: %.output
 	mv $< $<.golden
 
 test: tests/Nat.test tests/NatList.test tests/Truth.test
 
-k-test: test
+test-k: test
 
 golden: tests/Nat.output.golden tests/NatList.output.golden tests/Truth.output.golden
 
 clean:
-	rm -rf demo-kompiled tests/*.demo.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.imp.kore tests/*.output
 
-.PHONY: k-test test golden clean %.test %.krun
+.PHONY: test-k test golden clean %.test %.krun

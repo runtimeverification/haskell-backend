@@ -11,7 +11,8 @@ import Data.String
        ( fromString )
 import Data.Text.Prettyprint.Doc as Doc
 import Data.Text.Prettyprint.Doc.Render.String
-import Data.Void ( Void )
+import Data.Void
+       ( Void )
 
 import           Data.Functor.Impredicative
 import           Kore.AST.Common

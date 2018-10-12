@@ -1,7 +1,7 @@
 module Kore.SMT.Config
 ( SMTTimeOut(..)
 )
-where 
+where
 
 
 newtype SMTTimeOut = SMTTimeOut Integer

@@ -25,7 +25,7 @@ import           Control.Monad.State
 import           Data.Default
 import qualified Data.Map as Map
 import           Data.Proxy
-import           Text.Megaparsec 
+import           Text.Megaparsec
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -33,9 +33,9 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
+import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Hook
-import qualified Kore.Builtin.Bool as Bool 
-import qualified Kore.Builtin.Int as Int 
+import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as KorePredicate
 import           Kore.SMT.Config
@@ -232,7 +232,7 @@ patternToSMT sloppy p =
         goIntLiteral pat@(DV_ sort (BuiltinDomainPattern (StringLiteral_ str))) hookName
          | (getHookString $ getSortHook sort) == hookName
             = let parsed = runParser Int.parse "" str
-              in 
+              in
               case parsed of
                 Right i -> return $ literal i
                 Left _ -> throwError $ ExpectedDVPattern pat
@@ -245,7 +245,7 @@ patternToSMT sloppy p =
         goBoolLiteral pat@(DV_ sort (BuiltinDomainPattern (StringLiteral_ str))) hookName
          | (getHookString $ getSortHook sort) == hookName
             = let parsed = runParser Bool.parse "" str
-              in 
+              in
               case parsed of
                 Right i -> return $ literal i
                 Left _ -> throwError $ ExpectedDVPattern pat

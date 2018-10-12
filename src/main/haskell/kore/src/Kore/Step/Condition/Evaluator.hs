@@ -11,8 +11,8 @@ module Kore.Step.Condition.Evaluator
     ( evaluate
     ) where
 
+import Control.Monad.Reader
 import Data.Reflection
-import           Control.Monad.Reader
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject

@@ -1,24 +1,24 @@
 module Kore.Step.Substitution where
 
-import Kore.AST.MetaOrObject
-import Kore.Variables.Fresh
-       ( FreshVariable )
-import Kore.AST.Common
-       ( SortedVariable )
 import Control.Monad.Counter
        ( MonadCounter )
-import Kore.Substitution.Class
-       ( Hashable )
+import Kore.AST.Common
+       ( SortedVariable )
+import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
-import Kore.Step.StepperAttributes
-       ( StepperAttributes )
 import Kore.Predicate.Predicate
        ( Predicate )
-import Kore.Unification.Data
-       ( UnificationSubstitution, UnificationProof )
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution )
+import Kore.Step.StepperAttributes
+       ( StepperAttributes )
+import Kore.Substitution.Class
+       ( Hashable )
+import Kore.Unification.Data
+       ( UnificationProof, UnificationSubstitution )
+import Kore.Variables.Fresh
+       ( FreshVariable )
 
 mergePredicatesAndSubstitutions
     :: ( Show (variable level)

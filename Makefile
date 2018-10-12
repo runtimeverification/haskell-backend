@@ -1,26 +1,35 @@
-# Settings
-# --------
+include include.mk
 
-BUILD_DIR:=$(CURDIR)/.build
-K_SUBMODULE:=$(BUILD_DIR)/k
-export K_BIN=$(K_SUBMODULE)/k-distribution/target/release/k/bin/
+jenkins: STACK_OPTS += --test --bench --coverage
+export STACK_OPTS
 
-.PHONY: all clean deps k-deps distclean clean-submodules kore-exec
+.PHONY: all docs haddock jenkins kore test test-kore test-k distclean clean clean-submodules
 
-all: kore-exec
+kore:
+	stack build $(STACK_BUILD_OPTS)
 
-test: kore-test k-test
+docs: haddock
 
-kore-test:
-	stack test --pedantic
+haddock:
+	stack haddock --no-haddock-deps $(STACK_HADDOCK_OPTS)
+	if [ -n "$$BUILD_NUMBER" ]; then \
+		cp -r $$(stack path --local-doc-root) haskell_documentation; \
+	fi
 
-k-test: kore-exec k-deps
-	$(MAKE) -C src/main/k/working k-test
+all: kore
 
-kore-exec:
-	stack build kore:exe:kore-exec
+test: test-kore test-k
 
-deps: k-deps
+test-kore:
+	stack test $(STACK_TEST_OPTS)
+	if [ -n "$$BUILD_NUMBER" ]; then \
+		cp -r $$(stack path --local-hpc-root) coverage_report; \
+	fi
+
+test-k:
+	$(MAKE) -C src/main/k/working test-k
+
+jenkins: check all test docs
 
 distclean: clean
 	cd $(K_SUBMODULE) \
@@ -29,19 +38,15 @@ distclean: clean
 
 clean: clean-submodules
 	stack clean
+	find -name '*.tix' -exec rm -f '{}' \;
 	$(MAKE) -C src/main/k/working clean
-	rm -rf $(BUILD_DIR)/bin
 
-clean-submodules:
-	rm -rf $(K_SUBMODULE)/make.timestamp
-
-
-k-deps: $(K_SUBMODULE)/make.timestamp
-
-$(K_SUBMODULE)/make.timestamp:
-	@echo "== submodule: $@"
-	git submodule update --init -- $(K_SUBMODULE)
-	cd $(K_SUBMODULE) \
-		&& mvn package -q -DskipTests -U
-	touch $(K_SUBMODULE)/make.timestamp
-
+check:
+	./scripts/git-assert-clean.sh
+	if ! command -v stylish-haskell; then \
+		stack install stylish-haskell; \
+	fi
+	./scripts/check-stylish-haskell.sh \
+		src/main/haskell/kore/app \
+		src/main/haskell/kore/src \
+		src/main/haskell/kore/test
