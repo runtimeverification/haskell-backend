@@ -42,6 +42,7 @@ import           Kore.Step.StepperAttributes
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -260,7 +261,8 @@ test_existsSimplification = give mockSymbolOrAliasSorts
         , predicate = makeTruePredicate
         , substitution = []
         }
-    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+    mockSymbolOrAliasSorts =
+        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
         Mock.makeMetadataTools
             mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
@@ -292,7 +294,11 @@ evaluate
     -> CommonOrOfExpandedPattern level
 evaluate tools exists =
     fst $ evalSimplifier
-        $ Exists.simplify tools (Simplifier.create tools Map.empty) exists
+        $ Exists.simplify
+            tools
+            (Mock.substitutionSimplifier tools)
+            (Simplifier.create tools Map.empty)
+            exists
 
 makeEvaluate
     ::  ( MetaOrObject level
@@ -306,7 +312,7 @@ makeEvaluate tools variable child =
     fst $ evalSimplifier
         $ Exists.makeEvaluate
             tools
+            (Mock.substitutionSimplifier tools)
             (Simplifier.create tools Map.empty)
             variable
             child
-

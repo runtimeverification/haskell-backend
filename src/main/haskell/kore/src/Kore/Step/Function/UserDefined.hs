@@ -43,7 +43,8 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PredicateSubstitutionSimplifier,
+                 PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -73,6 +74,7 @@ axiomFunctionEvaluator
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
     -> Application level (PureMLPattern level variable)
@@ -81,6 +83,7 @@ axiomFunctionEvaluator
 axiomFunctionEvaluator
     axiom
     tools
+    substitutionSimplifier
     simplifier
     app
   = do
@@ -93,7 +96,9 @@ axiomFunctionEvaluator
                 (   rewrittenPattern@Predicated
                         { predicate = rewritingCondition }
                     , _
-                    ) <- evaluatePredicate tools simplifier stepPattern
+                    ) <-
+                        evaluatePredicate
+                            tools substitutionSimplifier simplifier stepPattern
                 case rewritingCondition of
                     PredicateFalse ->
                         return
@@ -104,12 +109,14 @@ axiomFunctionEvaluator
                     _ ->
                         reevaluateFunctions
                             tools
+                            substitutionSimplifier
                             simplifier
                             rewrittenPattern
   where
     stepResult =
         stepWithAxiom
             tools
+            substitutionSimplifier
             (stepperConfiguration app)
             axiom
     stepperConfiguration
@@ -139,6 +146,7 @@ reevaluateFunctions
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
@@ -146,6 +154,7 @@ reevaluateFunctions
     -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
 reevaluateFunctions
     tools
+    substitutionSimplifier
     wrappedSimplifier@(PureMLPatternSimplifier simplifier)
     Predicated
         { term   = rewrittenPattern
@@ -158,10 +167,11 @@ reevaluateFunctions
         -- for optimization purposes, it's done here. Make sure that
         -- this still makes sense after the evaluation code is fully
         -- optimized.
-        simplifier rewrittenPattern
+        simplifier substitutionSimplifier rewrittenPattern
     (mergedPatt, _proof) <-
         OrOfExpandedPattern.mergeWithPredicateSubstitution
             tools
+            substitutionSimplifier
             wrappedSimplifier
             PredicateSubstitution
                 { predicate = rewritingCondition
@@ -170,7 +180,7 @@ reevaluateFunctions
             pattOr
     (evaluatedPatt, _) <-
         OrOfExpandedPattern.traverseWithPairs
-            (evaluatePredicate tools wrappedSimplifier)
+            (evaluatePredicate tools substitutionSimplifier wrappedSimplifier)
             mergedPatt
     return
         ( AttemptedFunction.Applied evaluatedPatt
@@ -190,6 +200,7 @@ evaluatePredicate
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> ExpandedPattern level variable
@@ -197,6 +208,7 @@ evaluatePredicate
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 evaluatePredicate
     tools
+    substitutionSimplifier
     simplifier
     Predicated {term, predicate, substitution}
   = do
@@ -207,7 +219,7 @@ evaluatePredicate
         , _proof
         ) <- give (symbolOrAliasSorts tools) $
              give tools $
-                 Predicate.evaluate simplifier predicate
+                 Predicate.evaluate substitutionSimplifier simplifier predicate
     (   PredicateSubstitution
             { predicate = mergedPredicate
             , substitution = mergedSubstitution

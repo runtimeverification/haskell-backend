@@ -109,8 +109,8 @@ import           Kore.Step.Function.Data
                  AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
+                 SimplificationProof (..), Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -252,7 +252,7 @@ notImplemented :: Function
 notImplemented =
     ApplicationFunctionEvaluator notImplemented0
   where
-    notImplemented0 _ _ _ = pure (NotApplicable, SimplificationProof)
+    notImplemented0 _ _ _ _ = pure (NotApplicable, SimplificationProof)
 
 {- | Verify a builtin sort declaration.
 
@@ -606,6 +606,7 @@ functionEvaluator impl =
     evaluator
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
+        -> PredicateSubstitutionSimplifier level
         -> PureMLPatternSimplifier Object variable
         -> Application Object (PureMLPattern Object variable)
         -> Simplifier
@@ -614,6 +615,7 @@ functionEvaluator impl =
             )
     evaluator
         tools
+        _
         simplifier
         Application
             { applicationSymbolOrAlias =

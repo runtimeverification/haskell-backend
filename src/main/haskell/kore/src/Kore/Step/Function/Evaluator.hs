@@ -44,7 +44,8 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, make, merge )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PredicateSubstitutionSimplifier,
+                 PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -63,10 +64,13 @@ evaluateApplication
         , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
+        , Show (variable Meta)
+        , Show (variable Object)
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
@@ -78,6 +82,7 @@ evaluateApplication
     -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
 evaluateApplication
     tools
+    substitutionSimplifier
     simplifier
     symbolIdToEvaluator
     childrenPredicateSubstitution
@@ -96,6 +101,7 @@ evaluateApplication
                 mapM
                     (mergeWithConditionAndSubstitution
                         tools
+                        substitutionSimplifier
                         simplifier
                         childrenPredicateSubstitution
                     )
@@ -142,6 +148,7 @@ evaluateApplication
     applyEvaluator app' (ApplicationFunctionEvaluator evaluator) =
         evaluator
             tools
+            substitutionSimplifier
             simplifier
             app'
     notBottom =
@@ -204,6 +211,7 @@ mergeWithConditionAndSubstitution
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
@@ -212,17 +220,19 @@ mergeWithConditionAndSubstitution
     -- ^ AttemptedFunction to which the condition should be added.
     -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
 mergeWithConditionAndSubstitution
-    _ _ _ (AttemptedFunction.NotApplicable, _proof)
+    _ _ _ _ (AttemptedFunction.NotApplicable, _proof)
   =
     return (AttemptedFunction.NotApplicable, SimplificationProof)
 mergeWithConditionAndSubstitution
     tools
+    substitutionSimplifier
     simplifier
     toMerge
     (AttemptedFunction.Applied functionResult, _proof)
   = do
     (evaluated, _proof) <- OrOfExpandedPattern.mergeWithPredicateSubstitution
         tools
+        substitutionSimplifier
         simplifier
         toMerge
         functionResult

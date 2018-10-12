@@ -41,6 +41,7 @@ import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 {- |
     @
@@ -273,7 +274,9 @@ setModule =
 
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
-    fst $ evalSimplifier $ Pattern.simplify tools evaluators pat
+    fst $ evalSimplifier
+        $ Pattern.simplify
+            tools (Mock.substitutionSimplifier tools) evaluators pat
   where
     tools = extractMetadataTools indexedModule
 

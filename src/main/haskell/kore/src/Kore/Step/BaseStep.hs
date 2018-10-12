@@ -53,6 +53,8 @@ import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (..), Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
+                 ( PredicateSubstitutionSimplifier (..),
+                 SimplificationProof (..), Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -194,6 +196,7 @@ stepWithAxiom
         , ShowMetaOrObject variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> ExpandedPattern.ExpandedPattern level variable
     -- ^ Configuration being rewritten.
     -> AxiomPattern level
@@ -206,6 +209,7 @@ stepWithAxiom
             )
 stepWithAxiom
     tools
+    (PredicateSubstitutionSimplifier substitutionSimplifier)
     expandedPattern
     AxiomPattern
         { axiomPatternLeft = axiomLeftRaw
@@ -281,10 +285,7 @@ stepWithAxiom
             $ mapExceptT (fmap unificationOrSubstitutionToStepError)
             $ mergeAndNormalizeSubstitutions tools rawSubstitution startSubstitution
     let
-        unifiedSubstitution =
-            ListSubstitution.fromList
-                (makeUnifiedSubstitution normalizedSubstitution)
-    -- Merge all conditions collected so far
+        -- Merge all conditions collected so far
         (mergedConditionWithCounter, _) = -- TODO: Use this proof
             give (symbolOrAliasSorts tools)
             $ makeMultipleAndPredicate
@@ -294,13 +295,27 @@ stepWithAxiom
                 , normalizedCondition -- from normalizing the substitution
                 ]
 
+    -- Apply the substitution on the predicate, simplify,
+    -- get a new substitution, repeat.
+    (   PredicateSubstitution
+            { predicate = simplifiedCondition
+            , substitution = simplifiedSubstitution
+            }
+        , _proof
+        -- TODO(virgil): This should be done when merging substitutions, not
+        -- now.
+        ) <- lift $ substitutionSimplifier
+            PredicateSubstitution
+                { predicate = mergedConditionWithCounter
+                , substitution = normalizedSubstitution
+                }
+
+    let
+        unifiedSubstitution =
+            ListSubstitution.fromList
+                (makeUnifiedSubstitution simplifiedSubstitution)
     -- Apply substitution to resulting configuration and conditions.
     rawResult <- substitute axiomRight unifiedSubstitution
-
-    rawCondition <-
-        traverse
-            (`substitute` unifiedSubstitution)
-            mergedConditionWithCounter
 
     -- Unwrap internal 'StepperVariable's and collect the variable mappings
     -- for the proof.
@@ -311,7 +326,7 @@ stepWithAxiom
     (variableMapping1, condition) <-
         lift
         $ predicateStepVariablesToCommon
-            existingVars variableMapping rawCondition
+            existingVars variableMapping simplifiedCondition
     (variableMapping2, substitutionProof) <-
         lift
         $ unificationProofStepVariablesToCommon

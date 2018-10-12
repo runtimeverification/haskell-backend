@@ -17,7 +17,8 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PredicateSubstitutionSimplifier,
+                 PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 
 mockSimplifier
@@ -62,10 +63,11 @@ mockSimplifierHelper
             , ([ExpandedPattern level variable], SimplificationProof level)
             )
         ]
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-mockSimplifierHelper unevaluatedConverter [] patt =
+mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
         ( OrOfExpandedPattern.make [ unevaluatedConverter patt ]
         , SimplificationProof
@@ -73,8 +75,14 @@ mockSimplifierHelper unevaluatedConverter [] patt =
 mockSimplifierHelper
     unevaluatedConverter
     ((patt, (patts, proof)) : reminder)
+    substitutionSimplifier
     unevaluatedPatt
   =
     if patt == unevaluatedPatt
         then return (OrOfExpandedPattern.make patts, proof)
-        else mockSimplifierHelper unevaluatedConverter reminder unevaluatedPatt
+        else
+            mockSimplifierHelper
+                unevaluatedConverter
+                reminder
+                substitutionSimplifier
+                unevaluatedPatt

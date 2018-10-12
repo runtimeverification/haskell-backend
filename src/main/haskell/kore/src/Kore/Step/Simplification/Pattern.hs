@@ -44,7 +44,8 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PredicateSubstitutionSimplifier,
+                 PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
@@ -101,6 +102,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPattern level variable
@@ -108,8 +110,9 @@ simplify
         ( ExpandedPattern level variable
         , SimplificationProof level
         )
-simplify tools symbolIdToEvaluator patt = do
-    (orPatt, proof) <- simplifyToOr tools symbolIdToEvaluator patt
+simplify tools substitutionSimplifier symbolIdToEvaluator patt = do
+    (orPatt, proof) <-
+        simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt
     return
         ( give (MetadataTools.symbolOrAliasSorts tools)
             $ OrOfExpandedPattern.toExpandedPattern orPatt
@@ -134,16 +137,18 @@ simplifyToOr
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPattern level variable
     -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )
-simplifyToOr tools symbolIdToEvaluator patt =
+simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt =
     give
         (MetadataTools.symbolOrAliasSorts tools)
         (simplifyInternal
             tools
+            substitutionSimplifier
             simplifier
             symbolIdToEvaluator
             (fromPurePattern patt)
@@ -166,6 +171,7 @@ simplifyInternal
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
@@ -176,11 +182,12 @@ simplifyInternal
         )
 simplifyInternal
     tools
+    substitutionSimplifier
     simplifier@(PureMLPatternSimplifier unwrappedSimplifier)
     symbolIdToEvaluator
     patt
   = do
-    halfSimplified <- traverse unwrappedSimplifier patt
+    halfSimplified <- traverse (unwrappedSimplifier substitutionSimplifier) patt
     -- TODO: Remove fst
     case fmap fst halfSimplified of
         AndPattern p -> And.simplify tools p
@@ -189,6 +196,7 @@ simplifyInternal
             -- the simplifier.
             Application.simplify
                 tools
+                substitutionSimplifier
                 simplifier
                 symbolIdToEvaluator
                 p
@@ -196,7 +204,8 @@ simplifyInternal
         CeilPattern p -> return $ Ceil.simplify tools p
         DomainValuePattern p -> return $ DomainValue.simplify tools p
         EqualsPattern p -> Equals.simplify tools p
-        ExistsPattern p -> Exists.simplify tools simplifier p
+        ExistsPattern p ->
+            Exists.simplify tools substitutionSimplifier simplifier p
         FloorPattern p -> return $ Floor.simplify p
         ForallPattern p -> return $ Forall.simplify p
         IffPattern p -> return $ Iff.simplify p

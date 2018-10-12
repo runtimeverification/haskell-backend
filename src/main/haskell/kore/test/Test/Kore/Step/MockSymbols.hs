@@ -112,6 +112,8 @@ constr20Id :: Id Object
 constr20Id = testId "constr20"
 functional00Id :: Id Object
 functional00Id = testId "functional00"
+functional01Id :: Id Object
+functional01Id = testId "functional01"
 functional10Id :: Id Object
 functional10Id = testId "functional10"
 functional11Id :: Id Object
@@ -285,6 +287,11 @@ constr20Symbol = SymbolOrAlias
 functional00Symbol :: SymbolOrAlias Object
 functional00Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functional00Id
+    , symbolOrAliasParams      = []
+    }
+functional01Symbol :: SymbolOrAlias Object
+functional01Symbol = SymbolOrAlias
+    { symbolOrAliasConstructor = functional01Id
     , symbolOrAliasParams      = []
     }
 functional10Symbol :: SymbolOrAlias Object
@@ -532,6 +539,11 @@ functional00
     :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 functional00 = mkApp functional00Symbol []
+
+functional01
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+functional01 = mkApp functional01Symbol []
 
 functional10
     :: Given (SymbolOrAliasSorts Object)
@@ -808,6 +820,12 @@ symbolOrAliasSortsMapping =
             , applicationSortsResult = testSort
             }
         )
+    ,   ( functional01Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult = testSort
+            }
+        )
     ,   ( functional10Symbol
         , ApplicationSorts
             { applicationSortsOperands = [testSort]
@@ -1002,6 +1020,9 @@ attributesMapping =
         , Mock.constructorAttributes
         )
     ,   ( functional00Symbol
+        , Mock.functionalAttributes
+        )
+    ,   ( functional01Symbol
         , Mock.functionalAttributes
         )
     ,   ( functional10Symbol

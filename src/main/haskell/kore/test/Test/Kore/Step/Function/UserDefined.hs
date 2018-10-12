@@ -51,11 +51,11 @@ import           Kore.Step.Simplification.Data
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
 
-import Test.Kore.Comparators ()
-import Test.Kore.Step.Simplifier
-       ( mockSimplifier )
-
-import Test.Tasty.HUnit.Extensions
+import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Kore.Step.Simplifier
+                 ( mockSimplifier )
+import           Test.Tasty.HUnit.Extensions
 
 test_userDefinedFunction :: [TestTree]
 test_userDefinedFunction =
@@ -448,5 +448,6 @@ evaluateWithAxiom
             $ axiomFunctionEvaluator
                 axiom
                 metadataTools
+                (Mock.substitutionSimplifier metadataTools)
                 simplifier
                 app

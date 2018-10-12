@@ -38,8 +38,9 @@ import           Kore.Step.Function.UserDefined
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier, evalSimplifier )
+                 ( PredicateSubstitutionSimplifier (..),
+                 PureMLPatternSimplifier, SimplificationProof (..), Simplifier,
+                 evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
@@ -272,11 +273,12 @@ mapVariables =
 mockEvaluator
     :: AttemptedFunction level variable
     -> MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -> Application level (PureMLPattern level variable)
     -> Simplifier
         (AttemptedFunction level variable, SimplificationProof level)
-mockEvaluator evaluation _ _ _ =
+mockEvaluator evaluation _ _ _ _ =
     return (evaluation, SimplificationProof)
 
 evaluate
@@ -288,7 +290,8 @@ evaluate
 evaluate metadataTools functionIdToEvaluator patt =
     fst
         $ evalSimplifier
-        $ Pattern.simplify metadataTools functionIdToEvaluator patt
+        $ Pattern.simplify
+            metadataTools mockSubstitutionSimplifier functionIdToEvaluator patt
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
 mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
@@ -296,3 +299,8 @@ mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapp
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
+
+mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level
+mockSubstitutionSimplifier =
+    PredicateSubstitutionSimplifier
+        (\ps -> return (ps, SimplificationProof))

@@ -367,7 +367,8 @@ makeFalsePredicate =
 
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
-mapVariables :: (from level -> to level) -> Predicate level from -> Predicate level to
+mapVariables
+    :: (from level -> to level) -> Predicate level from -> Predicate level to
 mapVariables f = fmap (mapPatternVariables f)
 
 {- | Extract the set of all (free and bound) variables from a @Predicate@.

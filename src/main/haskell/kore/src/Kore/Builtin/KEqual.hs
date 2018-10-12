@@ -36,8 +36,8 @@ import           Kore.Step.Function.Data
                  notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
+                 SimplificationProof (..), Simplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate )
 import           Kore.Step.StepperAttributes
@@ -85,13 +85,14 @@ evalKEq
     => Bool
     -> Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier Object variable
     -> Application Object (PureMLPattern Object variable)
     -> Simplifier
         ( AttemptedFunction Object variable
         , SimplificationProof Object
         )
-evalKEq true false tools _ pat =
+evalKEq true false tools _ _ pat =
     case pat of
         Application
             { applicationSymbolOrAlias =

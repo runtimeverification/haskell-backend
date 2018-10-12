@@ -46,8 +46,9 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
 
-import Test.Kore.ASTVerifier.DefinitionVerifier
-import Test.Kore.Comparators ()
+import           Test.Kore.ASTVerifier.DefinitionVerifier
+import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 updateAttributes :: Attributes -> KoreSentence -> KoreSentence
 updateAttributes attrs = applyUnifiedSentence updateAttrs updateAttrs
@@ -252,6 +253,7 @@ test_functionRegistry =
             $ evalSimplifier
             $ ExpandedPattern.simplify
                 testMetadataTools
+                (Mock.substitutionSimplifier testMetadataTools)
                 (Simplifier.create testMetadataTools testEvaluators)
                 (makeExpandedPattern (App_ gHead []))
             )

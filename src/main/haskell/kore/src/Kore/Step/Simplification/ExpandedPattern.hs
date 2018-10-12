@@ -30,7 +30,8 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..), SimplificationProof (..),
+                 ( PredicateSubstitutionSimplifier,
+                 PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -53,6 +54,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
@@ -62,15 +64,17 @@ simplify
         )
 simplify
     tools
+    substitutionSimplifier
     wrappedSimplifier@(PureMLPatternSimplifier simplifier)
     Predicated {term, predicate, substitution}
   = do
     (simplifiedTerm, _)
-        <- simplifier term
+        <- simplifier substitutionSimplifier term
     (simplifiedPatt, _) <-
         OrOfExpandedPattern.traverseWithPairs
             (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
                 tools
+                substitutionSimplifier
                 wrappedSimplifier
                 PredicateSubstitution
                     { predicate = predicate

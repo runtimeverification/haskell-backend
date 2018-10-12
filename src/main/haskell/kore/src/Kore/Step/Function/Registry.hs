@@ -60,9 +60,7 @@ extractEvaluators level indexedModule =
             (sortBy
                 (compare `on` fst)
                 (mapMaybe
-                    (axiomToIdEvaluatorPair
-                        level
-                    )
+                    (axiomToIdEvaluatorPair level)
                     (snd <$> indexedModuleAxioms indexedModule))
             )
 

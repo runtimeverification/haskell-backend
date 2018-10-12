@@ -25,7 +25,7 @@ import           Kore.AST.Common
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
-                 ( Object (..) )
+                 ( Meta, Object (..) )
 import           Kore.AST.PureML
                  ( UnfixedCommonPurePattern, groundHead )
 import           Kore.AST.PureToKore
@@ -46,11 +46,13 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts, extractMetadataTools )
+                 ( MetadataTools (..), SymbolOrAliasSorts,
+                 extractMetadataTools )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.SMT.Config
 import           Kore.Step.AxiomPatterns
                  ( koreIndexedModuleToAxiomPatterns )
 import           Kore.Step.ExpandedPattern
@@ -60,21 +62,24 @@ import           Kore.Step.Function.Registry
                  ( extractEvaluators )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifierWithTimeout )
+                 ( PredicateSubstitutionSimplifier (..),
+                 PureMLPatternSimplifier, defaultSMTTimeOut,
+                 evalSimplifierWithTimeout )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step
-import           Kore.Step.Simplification.Data ( defaultSMTTimeOut )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
+import           Kore.Substitution.Class
+                 ( Hashable )
 import           Kore.Unparser
                  ( unparseToString )
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
-                 ( freshVariablePrefix )
-import           Kore.SMT.Config
+                 ( FreshVariable, freshVariablePrefix )
 
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,
@@ -129,10 +134,10 @@ commandLineParser =
     <*> enableDisableFlag "is-program"
         True False False
         "Whether the pattern represents a program."
-    <*> option 
-        ( do i <- auto 
-             if i <= 0 
-             then readerError "smt-timeout must be a positive integer." 
+    <*> option
+        ( do i <- auto
+             if i <= 0
+             then readerError "smt-timeout must be a positive integer."
              else return $ SMTTimeOut i
         )
         ( metavar "SMT_TIMEOUT"
@@ -250,8 +255,25 @@ main = do
                         (Builtin.koreEvaluators indexedModule)
                 axiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
-                metadataTools = constructorFunctions (extractMetadataTools indexedModule)
-                simplifier = Simplifier.create metadataTools functionRegistry
+                metadataTools =
+                    constructorFunctions (extractMetadataTools indexedModule)
+                simplifier
+                    ::  ( SortedVariable variable
+                        , Ord (variable Meta)
+                        , Ord (variable Object)
+                        , Show (variable Meta)
+                        , Show (variable Object)
+                        , FreshVariable variable
+                        , Hashable variable
+                        )
+                    => PureMLPatternSimplifier Object variable
+                simplifier =
+                    Simplifier.create
+                        metadataTools functionRegistry
+                substitutionSimplifier
+                    :: PredicateSubstitutionSimplifier Object
+                substitutionSimplifier =
+                    PredicateSubstitution.create metadataTools simplifier
                 purePattern = makePurePattern parsedPattern
                 runningPattern =
                     if isKProgram
@@ -266,9 +288,8 @@ main = do
                         simplifiedPatterns <-
                             ExpandedPattern.simplify
                                 metadataTools
-                                (Simplifier.create
-                                    metadataTools functionRegistry
-                                )
+                                substitutionSimplifier
+                                simplifier
                                 expandedPattern
                         let
                             initialPattern =
@@ -278,7 +299,11 @@ main = do
                                     [] -> ExpandedPattern.bottom
                                     (config : _) -> config
                         pickLongest <$> runStrategy
-                            (transitionRule metadataTools simplifier)
+                            (transitionRule
+                                metadataTools
+                                substitutionSimplifier
+                                simplifier
+                            )
                             (strategy axiomPatterns)
                             stepLimit
                             (initialPattern, mempty)
