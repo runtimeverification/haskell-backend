@@ -1,7 +1,5 @@
-/.build/*
-
-!/.build/k
-
+/.build/
+!/.build/k/
 
 *.cache
 *.class

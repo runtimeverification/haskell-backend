@@ -1,26 +1,16 @@
-# Settings
-# --------
+include include.mk
 
-BUILD_DIR:=$(CURDIR)/.build
-K_SUBMODULE:=$(BUILD_DIR)/k
-export K_BIN=$(K_SUBMODULE)/k-distribution/target/release/k/bin/
-
-.PHONY: all clean deps k-deps distclean clean-submodules kore-exec
+.PHONY: all test test-kore test-k distclean clean clean-submodules
 
 all: kore-exec
 
-test: kore-test k-test
+test: test-kore test-k
 
-kore-test:
-	stack test --pedantic
+test-kore:
+	$(STACK) test $(STACK_TEST_OPTS)
 
-k-test: kore-exec k-deps
-	$(MAKE) -C src/main/k/working k-test
-
-kore-exec:
-	stack build kore:exe:kore-exec
-
-deps: k-deps
+test-k:
+	$(MAKE) -C src/main/k/working test-k
 
 distclean: clean
 	cd $(K_SUBMODULE) \
@@ -30,18 +20,6 @@ distclean: clean
 clean: clean-submodules
 	stack clean
 	$(MAKE) -C src/main/k/working clean
-	rm -rf $(BUILD_DIR)/bin
 
 clean-submodules:
-	rm -rf $(K_SUBMODULE)/make.timestamp
-
-
-k-deps: $(K_SUBMODULE)/make.timestamp
-
-$(K_SUBMODULE)/make.timestamp:
-	@echo "== submodule: $@"
-	git submodule update --init -- $(K_SUBMODULE)
-	cd $(K_SUBMODULE) \
-		&& mvn package -q -DskipTests -U
-	touch $(K_SUBMODULE)/make.timestamp
-
+	rm -rf $(K_TIMESTAMP)
