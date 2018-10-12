@@ -4,7 +4,10 @@ import Test.QuickCheck
        ( Gen, Property, property, (.&&.), (===), (==>) )
 import Test.Tasty.HUnit
 
+import           Control.Error
+                 ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Default as Default
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -34,10 +37,16 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
+import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.AxiomPatterns
+import           Kore.Step.BaseStep
+import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, constructorAttribute )
 
@@ -378,6 +387,37 @@ unit_concretizeKeys =
     in
         assertEqual "Expected simplified Map" expected actual
 
+unit_concretizeKeysAxiom :: Assertion
+unit_concretizeKeysAxiom =
+    let
+        x = mkIntVar (testId "x")
+        v = mkIntVar (testId "v")
+        key = Test.Int.asConcretePattern 1
+        val = Test.Int.asPattern 2
+        axiom =
+            AxiomPattern
+                { axiomPatternLeft =
+                    mkPair Test.Int.intSort mapSort
+                        x
+                        (asSymbolicPattern $ Map.fromList [(x, v)])
+                , axiomPatternRight = v
+                , axiomPatternRequires = Predicate.makeTruePredicate
+                , axiomPatternAttributes = Default.def
+                }
+        config =
+            ExpandedPattern.fromPurePattern
+            $ mkPair Test.Int.intSort mapSort
+                (Test.Int.asPattern 1)
+                (asPattern $ Map.fromList [(key, val)])
+        expected =
+            Right
+                ( ExpandedPattern.fromPurePattern val
+                , mempty
+                )
+        actual = runStep config axiom
+    in
+        assertEqual "Expected MAP.lookup" expected actual
+
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonPurePattern Object
 Right asPattern = Map.asPattern indexedModule mapSort
@@ -601,8 +641,27 @@ verify defn =
   where
     attrVerify = defaultAttributesVerification Proxy
 
+metadataTools :: MetadataTools Object StepperAttributes
 testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } = extractMetadataTools indexedModule
+metadataTools@MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } =
+    extractMetadataTools indexedModule
+
+runStep
+    :: CommonExpandedPattern Object
+    -- ^ configuration
+    -> AxiomPattern Object
+    -- ^ axiom
+    -> Either
+        (StepError Object Variable)
+        (CommonExpandedPattern Object, StepProof Object Variable)
+runStep configuration axiom =
+    (evalSimplifier . runExceptT)
+        (stepWithAxiom
+            metadataTools
+            (substitutionSimplifier metadataTools)
+            configuration
+            axiom
+        )
 
 -- * Generators and properties
 
@@ -666,3 +725,24 @@ mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
 mockSubstitutionSimplifier =
     PredicateSubstitutionSimplifier
         (\x -> return (x, SimplificationProof))
+
+substitutionSimplifier
+    :: MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+substitutionSimplifier tools =
+    PredicateSubstitution.create
+        tools
+        (PureMLPatternSimplifier
+            (\_ p ->
+                return
+                    ( OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = Kore.mkTop
+                            , predicate = Predicate.wrapPredicate p
+                            , substitution = []
+                            }
+                        ]
+                    , SimplificationProof
+                    )
+            )
+        )
