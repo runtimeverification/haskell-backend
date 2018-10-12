@@ -243,6 +243,7 @@ language_extensions:
   - DeriveGeneric
   - DeriveTraversable
   - DuplicateRecordFields
+  - EmptyCase
   - ExistentialQuantification
   - FlexibleContexts
   - FlexibleInstances
@@ -265,4 +266,3 @@ language_extensions:
   - TypeSynonymInstances
   - UndecidableInstances
   - ViewPatterns
-
