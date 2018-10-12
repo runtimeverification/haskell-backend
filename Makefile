@@ -42,4 +42,12 @@ clean: clean-submodules
 	$(MAKE) -C src/main/k/working clean
 
 check:
+	./scripts/git-assert-clean.sh
 	./scripts/git-rebased-on.sh master --linear
+	if ! command -v stylish-haskell; then \
+		stack build stylish-haskell; \
+	fi
+	./scripts/check-stylish-haskell.sh \
+		src/main/haskell/kore/app \
+		src/main/haskell/kore/src \
+		src/main/haskell/kore/test

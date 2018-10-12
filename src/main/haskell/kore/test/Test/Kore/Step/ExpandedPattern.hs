@@ -24,7 +24,7 @@ import Kore.Predicate.Predicate
        ( Predicate, makeEqualsPredicate, makeFalsePredicate,
        makeTruePredicate )
 import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( Predicated(..), allVariables, mapVariables, toMLPattern )
+       ( Predicated (..), allVariables, mapVariables, toMLPattern )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions

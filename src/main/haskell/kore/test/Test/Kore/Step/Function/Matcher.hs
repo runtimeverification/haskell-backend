@@ -26,7 +26,6 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
-import           Kore.Step.Simplification.Data
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import           Kore.Step.PredicateSubstitution
@@ -34,15 +33,16 @@ import           Kore.Step.PredicateSubstitution
                  PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), bottom, top )
+import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
+import           Kore.SMT.Config
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
-import           Kore.SMT.Config
 
 test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads = give mockSymbolOrAliasSorts

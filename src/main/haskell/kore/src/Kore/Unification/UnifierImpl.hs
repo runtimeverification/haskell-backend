@@ -39,9 +39,9 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution(..))
+                 ( ExpandedPattern, PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), bottom, top, )
+                 ( Predicated (..), bottom, top )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), top )
 import           Kore.Step.StepperAttributes

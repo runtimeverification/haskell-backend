@@ -15,8 +15,8 @@ import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
 import Kore.Proof.Dummy
-import Kore.SMT.SMT
 import Kore.SMT.Config
+import Kore.SMT.SMT
 
 
 import Test.Kore.Builtin.Bool
@@ -58,9 +58,9 @@ mul a b = App_ mulSymbol  [a, b]
 div   a b = App_ tdivSymbol [a, b]
 
 run :: CommonPurePattern Object -> Property
-run prop = 
-  (give tools $ unsafeTryRefutePattern (SMTTimeOut 1000) prop) 
-  === 
+run prop =
+  (give tools $ unsafeTryRefutePattern (SMTTimeOut 1000) prop)
+  ===
   Just False
 
 

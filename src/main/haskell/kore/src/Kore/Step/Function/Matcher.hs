@@ -38,7 +38,6 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate )
-import           Kore.Step.Simplification.Data
 import           Kore.Step.ExpandedPattern
                  ( substitutionToPredicate )
 import           Kore.Step.PatternAttributes
@@ -49,6 +48,7 @@ import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), top )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
+import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Equals as Equals
                  ( makeEvaluateTermsToPredicateSubstitution )
 import           Kore.Step.StepperAttributes
