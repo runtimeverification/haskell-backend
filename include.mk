@@ -32,7 +32,9 @@ KRUN_TARGETS := $(KRUN) $(KORE_EXEC)
 FORCE:
 
 $(K_SUBMODULE): FORCE
-	if [ ! -a $(K_SUBMODULE)/pom.xml ]; then git submodule update --init -- $(K_SUBMODULE); fi
+	if test ! -f $(K_SUBMODULE)/pom.xml; then \
+		git submodule update --init -- $(K_SUBMODULE); \
+	fi
 	cd $(K_SUBMODULE) && touch -d "$$(git log --format=format:%cD -n 1)" .
 
 $(KORE_EXEC): FORCE
