@@ -93,7 +93,6 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                         (Mock.g Mock.a)
                 , substitution = []
                 }
-
             )
             (match mockMetadataTools
                 (Mock.f (mkVar Mock.x))
@@ -102,7 +101,14 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application different symbols"
         (assertEqualWithExplanation ""
-            Nothing
+            ( Just PredicateSubstitution
+                { predicate =
+                    makeEqualsPredicate
+                        (Mock.plain10 (mkVar Mock.x))
+                        (Mock.plain11 Mock.a)
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                 (Mock.plain10 (mkVar Mock.x))
                 (Mock.plain11 Mock.a)
@@ -306,7 +312,13 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Iff vs Or"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
+                    (mkOr (Mock.plain10 Mock.a) Mock.b)
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                 (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkOr (Mock.plain10 Mock.a) Mock.b)
@@ -342,7 +354,13 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         )
     , testCase "Non-functional"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.constr10 Mock.cf)
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                 (mkVar Mock.x)
                 (Mock.constr10 Mock.cf)
@@ -350,7 +368,13 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         )
     , testCase "Unidirectional"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.functional10 (mkVar Mock.y))
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                 (Mock.functional10 (mkVar Mock.y))
                 (mkVar Mock.x)
