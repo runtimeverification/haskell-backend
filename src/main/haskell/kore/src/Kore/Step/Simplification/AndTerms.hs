@@ -33,6 +33,7 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkBottom, mkTop )
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Map as Builtin.Map
+import qualified Kore.Builtin.Set as Builtin.Set
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
@@ -300,7 +301,7 @@ maybeTermAnd =
         , liftET stringLiteralAndEqualsAssumesDifferent
         , liftET charLiteralAndEqualsAssumesDifferent
         , Builtin.Map.unify
-        , setUnify
+        , Builtin.Set.unify
         , lift functionAnd
         ]
   where
@@ -922,106 +923,4 @@ functionAnd
                         }
                     , SimplificationProof
                     )
-
-{- | Simplify the conjunction of two concrete Set domain values.
-
-    The sets are assumed to have the same sort, but this is not checked. If
-    multiple sorts are hooked to the same builtin domain, the verifier should
-    reject the definition.
-
- -}
-
-setUnify
-    :: forall level variable m p expanded proof.
-        ( OrdMetaOrObject variable, ShowMetaOrObject variable
-        , SortedVariable variable
-        , MonadCounter m
-        , MetaOrObject level
-        , Hashable variable
-        , FreshVariable variable
-        , p ~ PureMLPattern level variable
-        , expanded ~ ExpandedPattern level variable
-        , proof ~ SimplificationProof level
-        )
-    => MetadataTools level StepperAttributes
-    -> (p -> p -> Result (m (expanded, proof)))
-    -> (p -> p -> Result (m (expanded, proof)))
-setUnify
-    tools@(MetadataTools.MetadataTools { symbolOrAliasSorts })
-    simplifyChild
-  = 
-    unify0
-  where
-    -- | Normalize the substitution of 'expanded', or return 'bottom' if
-    -- normalization fails.
-    -- NB: this is exactly the same for maps. Move and share?
-    normalize :: (level ~ Object) => expanded -> m expanded
-    normalize r =
-        runExceptT (normalizePredicatedSubstitution tools r)
-            >>= \case
-                Left _ -> return ExpandedPattern.bottom
-                Right (normalized, _) -> return normalized
-
-    -- | Unify the two argument patterns.
-    unify0
-        :: PureMLPattern level variable
-        -> PureMLPattern level variable
-        -> Result (m (expanded, proof))
-    unify0 
-        (DV_ sort (BuiltinDomainSet set1))
-        (DV_ _    (BuiltinDomainSet set2))
-      = 
-        unifyConcrete sort set1 set2
-
-    unify0 
-        (App_ _ [DV_ _ (BuiltinDomainSet set1), x@(Var_ _)])
-        second@(DV_ sort    (BuiltinDomainSet set2))
-      = 
-        unifyFramed sort set1 set2 x
- 
-    unify0 app_@(App_ _ _) dv_@(DV_ _ _) = unify0 dv_ app_
-    
-    unify0 _ _ = empty
-    
-    -- | Unify two concrete sets
-    unifyConcrete
-        :: (level ~ Object, k ~ ConcretePurePattern Object)
-        => Sort level -- ^ Sort of result
-        -> Set.Set k
-        -> Set.Set k
-        -> Result (m (expanded, proof))
-    unifyConcrete resultSort set1 set2 = do -- Result monad
-        let 
-            term = DV_ resultSort (BuiltinDomainSet set1)
-            unified = give symbolOrAliasSorts $ do -- MonadCounter 
-                let 
-                    result 
-                        | set1 == set2 = pure term
-                        | otherwise    = ExpandedPattern.bottom
-                (,) <$> normalize result <*> pure SimplificationProof
-        return unified
-
-    -- | Unify one concrete set with one framed concrete set.
-    unifyFramed
-        :: (level ~ Object, k ~ ConcretePurePattern Object)
-        => Sort level  -- ^ Sort of result
-        -> Set.Set k  -- ^ concrete set
-        -> Set.Set k -- ^ framed concrete set
-        -> PureMLPattern level variable  -- ^ framing variable
-        -> Result (m (expanded, proof))
-    unifyFramed resultSort set1 set2 (Var_ x) = do -- Result monad
-        let 
-            term' = DV_ resultSort (BuiltinDomainSet set2)
-            diff = Set.difference set2 set1
-            unified = do -- MonadCounter
-                let
-                    result 
-                        | Set.isSubsetOf set1 set2 = 
-                            Predicated
-                            { term = term'
-                            , predicate = makeTruePredicate
-                            , substitution = [(x, DV_ resultSort (BuiltinDomainSet diff))]
-                            }
-                        | otherwise = ExpandedPattern.bottom
-                (,) <$> normalize result <*> pure SimplificationProof
-        return unified
+                    
