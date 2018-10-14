@@ -42,6 +42,8 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
 
 {- |
     @
@@ -173,6 +175,87 @@ asSymbolicPattern result =
     applyUnit = mkDomainValue setSort $ BuiltinDomainSet Set.empty
     applyElement key = App_ symbolElement [key]
     applyConcat set1 set2 = App_ symbolConcat [set1, set2]
+
+-- TODO: add comments
+prop_unifyConcreteSetWithItself
+    :: Set Integer
+    -> Property
+prop_unifyConcreteSetWithItself set =
+    let 
+        patSet    = asPattern set
+        patActual = give testSymbolOrAliasSorts (mkAnd patSet patSet)
+        patExpect = patSet
+        predicate = give testSymbolOrAliasSorts (mkEquals patExpect patActual)
+    in 
+        allProperties
+            [ evaluate patExpect === evaluate patActual
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
+
+{- | Unify two sets with concrete elements.
+     Note: this pick random sets set1 and set2. Likely those will be different sets
+     and will not unify.  
+ -}
+prop_unifyConcrete
+    :: Set Integer
+    -> Set Integer
+    -> Property
+prop_unifyConcrete set1 set2 =
+    let 
+        patSet1 = asPattern set1
+        patSet2 = asPattern set2
+        patExpect =   
+            if set1 == set2
+                then patSet1 
+                else give testSymbolOrAliasSorts (mkBottom) 
+        patActual = give testSymbolOrAliasSorts (mkAnd patSet1 patSet2)
+        predicate = give testSymbolOrAliasSorts (mkEquals patExpect patActual)
+    in 
+        allProperties
+            [ evaluate patExpect === evaluate patActual
+            --, ExpandedPattern.top === evaluate predicate
+            ]
+
+-- one thing you can do is to pick a random set and a 
+-- random element not in the set and try to unify the set 
+-- resulting by adding the element to the set with a framing 
+-- variable and the element
+
+-- {5, 2, 1, 9} 12
+-- {5, 2, 1, 9 12 }
+-- X 12
+
+prop_unifyFramingVariable 
+    :: Set Integer
+    -> Integer
+    -> Property
+prop_unifyFramingVariable set elem = 
+    not (Set.member elem set) ==> 
+    let 
+        var        = var_ "dummy" "var"
+        patVar     = Var_ var
+        patElem    = asPattern $ Set.singleton elem
+        pat1       = App_ symbolConcat [patElem, patVar]
+        pat2       = Set.insert elem set
+        pat2'      = asPattern $ pat2
+        patActual  = give testSymbolOrAliasSorts (mkAnd pat1 pat2')
+        patExpect  = 
+            Predicated
+                { term         = mkBuiltinDomainSet pat2
+                , predicate    = makeTruePredicate
+                , substitution = [(var, mkBuiltinDomainSet set)]
+                }
+    in
+        allProperties
+            [patExpect === evaluate patActual
+            ] 
+  where
+    mkBuiltinDomainSet set = DV_ setSort (BuiltinDomainSet (Set.map Test.Int.asConcretePattern set))
+    -- borrowed from Dummy.hs
+    var_ :: MetaOrObject level => String -> String -> Variable level
+    var_ x s =
+        Variable (noLocationId x) (Kore.mkSort s)
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set Integer -> CommonPurePattern Object
