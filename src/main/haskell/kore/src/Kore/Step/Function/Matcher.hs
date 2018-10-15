@@ -41,14 +41,11 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate )
-import           Kore.Step.ExpandedPattern
-                 ( substitutionToPredicate )
 import           Kore.Step.PredicateSubstitution
                  ( PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), freeVariables, top )
+                 ( PredicateSubstitution (..), freeVariables, toPredicate,
+                 top )
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -65,6 +62,8 @@ import           Kore.Unification.Error
                  ( UnificationError (..) )
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
+import           Kore.Variables.Free
+                 ( freePureVariables )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -395,18 +394,18 @@ matchNonVarToPattern tools first second
             Equals.makeEvaluateTermsToPredicateSubstitution tools first second
         let
             -- We're only interested in substitutions involving first's
-            -- variables
-            -- here, and there are no free variables in the RHS, so we're
-            -- coverting everything else to predicates.
+            -- variables here, and we're converting everything else to
+            -- predicates.
             -- TODO: Make a function for this.
-            (finalPredicate, _proof) =
-                makeAndPredicate
-                    predicate
-                    (substitutionToPredicate substitution)
+            leftVars = freePureVariables first
+            (leftSubst, rightSubst) =
+                span ((`elem` leftVars).fst) substitution
+            finalPredicate = PredicateSubstitution.toPredicate
+                PredicateSubstitution { predicate, substitution = rightSubst }
         return . return $ -- MonadCounter m => m (Maybe a)
             PredicateSubstitution
                 { predicate = finalPredicate
-                , substitution = []
+                , substitution = leftSubst
                 }
 
 checkVariableEscape

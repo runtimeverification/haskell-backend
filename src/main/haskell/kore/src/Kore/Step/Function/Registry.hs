@@ -84,3 +84,4 @@ axiomToIdEvaluatorPair
                         )
                 _ -> Nothing
         Right (RewriteAxiomPattern _) -> Nothing
+
