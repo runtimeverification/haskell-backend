@@ -30,7 +30,7 @@ test-kore:
 test-k:
 	$(MAKE) -C src/main/k/working test-k
 
-jenkins: check all test docs
+jenkins: distclean check all test docs
 
 distclean: clean
 	cd $(K_SUBMODULE) \
