@@ -19,17 +19,12 @@ import           Control.Error.Util
 import           Data.Either
                  ( isRight )
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( catMaybes, listToMaybe )
 import           Control.Monad.Counter
                  ( MonadCounter )
 import           Control.Monad.Trans.Except
                  ( ExceptT (..) )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
-import           Data.Either
-                 ( isRight )
-import qualified Data.Map as Map
 import           Data.Reflection
                  ( Given, give )
 import qualified Data.Set as Set
@@ -60,7 +55,6 @@ import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), freeVariables, top )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Equals as Equals
                  ( makeEvaluateTermsToPredicateSubstitution )
 import           Kore.Step.StepperAttributes

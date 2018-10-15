@@ -38,8 +38,6 @@ import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (PredicateSubstitution) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
-import           Kore.Step.Function.Data
-                 ( CommonAttemptedFunction )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern

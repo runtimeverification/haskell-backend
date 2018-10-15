@@ -19,8 +19,6 @@ import Control.Monad.Except
 import Data.Reflection
        ( give )
 
-import           Control.Monad.Counter
-                 ( evalCounter )
 import           Kore.AST.Common
                  ( BuiltinDomain (..), CommonPurePattern )
 import           Kore.AST.MetaOrObject
