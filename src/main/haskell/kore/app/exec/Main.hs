@@ -44,7 +44,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( IndexedModule (..), KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts,
                  extractMetadataTools )
@@ -244,7 +244,7 @@ main = do
         when (patternFileName /= "") $ do
             parsedPattern <- mainPatternParse patternFileName
             indexedModule <-
-                mainModule (ModuleName mainModuleName) indexedModules
+                constructorFunctions <$> mainModule (ModuleName mainModuleName) indexedModules
             mainPatternVerify indexedModule parsedPattern
             let
                 functionRegistry =
@@ -255,8 +255,7 @@ main = do
                         (Builtin.koreEvaluators indexedModule)
                 axiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
-                metadataTools =
-                    constructorFunctions (extractMetadataTools indexedModule)
+                metadataTools = extractMetadataTools indexedModule
                 simplifier
                     ::  ( SortedVariable variable
                         , Ord (variable Meta)
@@ -485,22 +484,36 @@ kItemSort = groundObjectSort "SortKItem"
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: MetadataTools Object StepperAttributes
-    -> MetadataTools Object StepperAttributes
-constructorFunctions tools =
-    tools
-    { symAttributes = \h -> let atts = symAttributes tools h in
-        atts
-        { isConstructor = isConstructor atts || isCons h
-        , isFunctional = isFunctional atts || isCons h || isInj h
-        , isInjective =
-            isInjective atts || isCons h || isInj h
-        , isSortInjection = isSortInjection atts || isInj h
+    :: KoreIndexedModule StepperAttributes
+    -> KoreIndexedModule StepperAttributes
+constructorFunctions ixm =
+    ixm
+        { indexedModuleObjectSymbolSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectSymbolSentences ixm)
+        , indexedModuleObjectAliasSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectAliasSentences ixm)
+        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
         }
-    }
   where
-    isInj :: SymbolOrAlias Object -> Bool
-    isInj h =
-        getId (symbolOrAliasConstructor h) == "inj"
-    isCons :: SymbolOrAlias Object -> Bool
-    isCons h = getId (symbolOrAliasConstructor h) `elem` ["kseq", "dotk"]
+    constructorFunctions1 h (atts, defn) =
+        ( atts
+            { isConstructor = isConstructor atts || isCons h
+            , isFunctional = isFunctional atts || isCons h || isInj h
+            , isInjective = isInjective atts || isCons h || isInj h
+            , isSortInjection = isSortInjection atts || isInj h
+            }
+        , defn
+        )
+
+    isInj :: Id Object -> Bool
+    isInj ident = getId ident == "inj"
+
+    isCons :: Id Object -> Bool
+    isCons ident = elem (getId ident) ["kseq", "dotk"]
+
+    recurseIntoImports (attrs, attributes, importedModule) =
+        (attrs, attributes, constructorFunctions importedModule)
