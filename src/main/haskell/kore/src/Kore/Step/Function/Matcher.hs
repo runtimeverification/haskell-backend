@@ -16,15 +16,15 @@ import           Control.Applicative
                  ( (<|>) )
 import           Control.Error.Util
                  ( just, noteT, nothing )
-import           Data.Either
-                 ( isRight )
-import qualified Data.Map as Map
 import           Control.Monad.Counter
                  ( MonadCounter )
 import           Control.Monad.Trans.Except
                  ( ExceptT (..) )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
+import           Data.Either
+                 ( isRight )
+import qualified Data.Map as Map
 import           Data.Reflection
                  ( Given, give )
 import qualified Data.Set as Set
