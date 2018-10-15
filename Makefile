@@ -33,8 +33,9 @@ test-k:
 jenkins: distclean check all test docs
 
 distclean: clean
-	cd $(K_SUBMODULE) \
-		&& mvn clean -q
+	if test -f $(K_SUBMODULE)/pom.xml; then \
+		cd $(K_SUBMODULE) && mvn clean -q; \
+	fi
 	git submodule deinit --force -- ./
 
 clean: clean-submodules
