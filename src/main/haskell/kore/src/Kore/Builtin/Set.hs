@@ -399,8 +399,7 @@ unify
     -> (p -> p -> Result (m (expanded, proof)))
 unify
     tools@(MetadataTools.MetadataTools { symbolOrAliasSorts })
-    _
-    -- ^ not used now. Should remove? Or may be useful later?
+    _ -- not used now. Should remove? Or may be useful later?
   =
     unify0
   where
