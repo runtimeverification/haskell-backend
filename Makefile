@@ -3,7 +3,8 @@ include include.mk
 jenkins: STACK_OPTS += --test --bench --coverage
 export STACK_OPTS
 
-.PHONY: all docs haddock jenkins kore test test-kore test-k distclean clean clean-submodules
+.PHONY: all clean clean-submodules distclean docs haddock jenkins kore stylish \
+        test test-kore test-k
 
 kore:
 	stack build $(STACK_BUILD_OPTS)
@@ -42,11 +43,20 @@ clean: clean-submodules
 	$(MAKE) -C src/main/k/working clean
 
 check:
-	./scripts/git-assert-clean.sh
-	if ! command -v stylish-haskell; then \
+	if ! ./scripts/git-assert-clean.sh; then \
+		echo >&2 "Please commit your changes!"; \
+		exit 1; \
+	fi
+	$(MAKE) stylish
+	if ! ./scripts/git-assert-clean.sh; then \
+		echo >&2 "Please run ‘make stylish’ to fix style errors!"; \
+		exit 1; \
+	fi
+
+stylish:
+	if ! command -v stylish-haskell; then\
 		stack install stylish-haskell; \
 	fi
-	./scripts/check-stylish-haskell.sh \
-		src/main/haskell/kore/app \
-		src/main/haskell/kore/src \
-		src/main/haskell/kore/test
+	find $(HS_SOURCE_DIRS) \
+		\( -name '*.hs' -o -name '*.hs-boot' \) \
+		-exec stylish-haskell -i '{}' \;
