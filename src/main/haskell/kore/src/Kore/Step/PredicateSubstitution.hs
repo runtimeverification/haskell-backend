@@ -74,6 +74,9 @@ top =
         }
 
 {-|'toPredicate' transforms a predicate & substitution into a predicate.
+
+    See also: 'substitutionToPredicate'.
+
 -}
 toPredicate
     :: ( MetaOrObject level
@@ -90,7 +93,10 @@ toPredicate PredicateSubstitution { predicate, substitution } =
         (substitutionToPredicate substitution)
 
 {- | Extract the set of free variables from a predicate and substitution.
+
+    See also: 'Predicate.freeVariables'.
 -}
+
 freeVariables
     :: ( MetaOrObject level
        , Show (variable Object)

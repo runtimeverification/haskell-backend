@@ -8,10 +8,12 @@ module Test.Kore.Step.Function.Matcher
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
+       ( assertEqual, assertFailure, testCase )
 
 import Control.Error.Util
        ( hush )
+import Control.Exception
+       ( ErrorCall (..), catch )
 import Control.Monad.Except
        ( runExceptT )
 import Data.Reflection
@@ -391,11 +393,25 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
                 (mkExists Mock.y (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y)))
                 (mkExists Mock.z (Mock.constr20 Mock.a (mkVar Mock.z)))
             )
-        assertEqualWithExplanation ""
-            Nothing
-            (match mockMetadataTools
-                (mkExists Mock.y (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y)))
-                (mkExists Mock.z (Mock.constr20 Mock.a Mock.a))
+        catch
+            (
+                return
+                ( match mockMetadataTools
+                    ( mkExists
+                        Mock.y
+                        (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y))
+                    )
+                    ( mkExists Mock.z (Mock.constr20 Mock.a Mock.a) )
+                )
+                    -- TODO(Vladimir): find a better way to force evaluation
+                    >>= print
+                    >>= (const $ assertFailure "expected error")
+            )
+            (\(ErrorCallWithLocation err _) -> do
+                assertEqual ""
+                    err
+                    "quantified variables in substitution or predicate escaping\
+                    \ context"
             )
     ]
 
