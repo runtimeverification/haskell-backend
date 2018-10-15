@@ -601,9 +601,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
         )
     , testCase "builtin List domain"
         (do
-            let term1 = Mock.builtinList $
-                            [Mock.constr10 Mock.cf, Mock.constr11 Mock.cf]
-            let term2 = Mock.builtinList $
+            let term1 = Mock.builtinList
                             [Mock.constr10 Mock.cf, Mock.constr11 Mock.cf]
             assertEqualWithExplanation "[same head, same head]"
                 ( Just $ Predicated
@@ -615,7 +613,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 ( unify
                     mockMetadataTools
                         term1
-                        term2
+                        term1
                 )
             let term3 = Mock.builtinList $
                             [Mock.a, Mock.a]
@@ -649,7 +647,16 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     term5
                     term6
                 )
-            return ()
+            let term7 = Mock.builtinList [Mock.a, Mock.a]
+            let term8 = Mock.builtinList [Mock.a]
+            assertEqualWithExplanation "different lengths"
+                ( Nothing
+                )
+                ( unify
+                    mockMetadataTools
+                    term7
+                    term8
+                )
 
         )
     ]
