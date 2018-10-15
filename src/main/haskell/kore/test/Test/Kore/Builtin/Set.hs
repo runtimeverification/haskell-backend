@@ -176,15 +176,16 @@ asSymbolicPattern result =
     applyElement key = App_ symbolElement [key]
     applyConcat set1 set2 = App_ symbolConcat [set1, set2]
 
--- TODO: add comments
+{- | Check that unifying a concrete set with itself results in the same set
+ -}
 prop_unifyConcreteSetWithItself
     :: Set Integer
     -> Property
 prop_unifyConcreteSetWithItself set =
     let 
         patSet    = asPattern set
-        patActual = give testSymbolOrAliasSorts (mkAnd patSet patSet)
         patExpect = patSet
+        patActual = give testSymbolOrAliasSorts (mkAnd patSet patSet)
         predicate = give testSymbolOrAliasSorts (mkEquals patExpect patActual)
     in 
         allProperties
@@ -192,14 +193,17 @@ prop_unifyConcreteSetWithItself set =
             , ExpandedPattern.top === evaluate predicate
             ]
 
-
-{- | Unify two sets with concrete elements.
-     Note: this pick random sets set1 and set2. Likely those will be different sets
-     and will not unify.  
+{- | Unify two sets with random concrete elements.
+     Note: given that the two sets are generated randomly, 
+     it is likely they will be different most of the time, 
+     hence they do not unify. For a test of succesfull 
+     unification, see `prop_unifyConcreteSetWithItself
  -}
 prop_unifyConcrete
     :: Set Integer
+    -- ^ randomly generated set
     -> Set Integer
+    -- ^ another randomly generated set
     -> Property
 prop_unifyConcrete set1 set2 =
     let 
@@ -214,35 +218,36 @@ prop_unifyConcrete set1 set2 =
     in 
         allProperties
             [ evaluate patExpect === evaluate patActual
-            --, ExpandedPattern.top === evaluate predicate
+            , ExpandedPattern.top === evaluate predicate
             ]
 
--- one thing you can do is to pick a random set and a 
--- random element not in the set and try to unify the set 
--- resulting by adding the element to the set with a framing 
--- variable and the element
-
--- {5, 2, 1, 9} 12
--- {5, 2, 1, 9 12 }
--- X 12
+{- | Test unification of a concrete set with a set
+     consisting of concrete elements and a framing 
+     variable.
+ -}
 
 prop_unifyFramingVariable 
     :: Set Integer
+    -- ^ randomly generated set of integers
     -> Integer
+    -- ^ a random integer
     -> Property
-prop_unifyFramingVariable set elem = 
-    not (Set.member elem set) ==> 
+prop_unifyFramingVariable set n = 
+    not (Set.member n set) ==> 
+    -- ^ make sure the random integer is not in the set
     let 
-        var        = var_ "dummy" "var"
-        patVar     = Var_ var
-        patElem    = asPattern $ Set.singleton elem
-        pat1       = App_ symbolConcat [patElem, patVar]
-        pat2       = Set.insert elem set
-        pat2'      = asPattern $ pat2
-        patActual  = give testSymbolOrAliasSorts (mkAnd pat1 pat2')
-        patExpect  = 
+        var       = mkDummyVar "dummy"
+        patVar    = Var_ var
+        patElem   = asPattern $ Set.singleton n
+        patSet1   = App_ symbolConcat [patElem, patVar]
+        -- ^ set with single concrete elem and framing var
+        set2      = Set.insert n set
+        patSet2   = asPattern $ set2
+        -- ^ set obtained by inserting the random element into the original set
+        patActual = give testSymbolOrAliasSorts (mkAnd patSet1 patSet2)
+        patExpect = 
             Predicated
-                { term         = mkBuiltinDomainSet pat2
+                { term         = mkBuiltinDomainSet set2
                 , predicate    = makeTruePredicate
                 , substitution = [(var, mkBuiltinDomainSet set)]
                 }
@@ -251,11 +256,8 @@ prop_unifyFramingVariable set elem =
             [patExpect === evaluate patActual
             ] 
   where
-    mkBuiltinDomainSet set = DV_ setSort (BuiltinDomainSet (Set.map Test.Int.asConcretePattern set))
-    -- borrowed from Dummy.hs
-    var_ :: MetaOrObject level => String -> String -> Variable level
-    var_ x s =
-        Variable (noLocationId x) (Kore.mkSort s)
+    mkBuiltinDomainSet set' = DV_ setSort (BuiltinDomainSet (Set.map Test.Int.asConcretePattern set'))
+    mkDummyVar x = Variable (noLocationId x) setSort
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set Integer -> CommonPurePattern Object

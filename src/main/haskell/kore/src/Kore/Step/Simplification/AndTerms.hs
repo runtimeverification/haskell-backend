@@ -27,7 +27,7 @@ import Prelude hiding
 import           Data.Result
 import           Kore.AST.Common
                  ( BuiltinDomain (..), PureMLPattern, Sort, SortedVariable,
-                 SymbolOrAlias (..), ConcretePurePattern )
+                 SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkBottom, mkTop )
@@ -57,13 +57,10 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions, normalizePredicatedSubstitution )
+                 ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
-import qualified Data.Set as Set
-import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
 
 data SimplificationType = SimplifyAnd | SimplifyEquals
 

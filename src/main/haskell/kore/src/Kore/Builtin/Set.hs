@@ -74,11 +74,10 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.ASTUtils.SmartPatterns
 import           Control.Monad.Counter
 import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions, normalizePredicatedSubstitution )
+                 ( normalizePredicatedSubstitution )
 import           Data.Reflection ( give )
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue, makeEqualsPredicate,
-                 makeNotPredicate, makeTruePredicate )
+                 ( makeTruePredicate )
 import           Control.Applicative
                  ( Alternative (..) )
 
@@ -398,7 +397,8 @@ unify
     -> (p -> p -> Result (m (expanded, proof)))
 unify
     tools@(MetadataTools.MetadataTools { symbolOrAliasSorts })
-    simplifyChild
+    _
+    -- ^ not used now. Should remove? Or may be useful later?
   = 
     unify0
   where
@@ -418,16 +418,16 @@ unify
         -> Kore.PureMLPattern level variable
         -> Result (m (expanded, proof))
     unify0 
-        (DV_ sort (Kore.BuiltinDomainSet set1))
+        (DV_ resultSort (Kore.BuiltinDomainSet set1))
         (DV_ _    (Kore.BuiltinDomainSet set2))
       = 
-        unifyConcrete sort set1 set2
+        unifyConcrete resultSort set1 set2
 
     unify0 
         (App_ _ [DV_ _ (Kore.BuiltinDomainSet set1), x@(Var_ _)])
-        second@(DV_ sort (Kore.BuiltinDomainSet set2))
+        (DV_ resultSort (Kore.BuiltinDomainSet set2))
       = 
-        unifyFramed sort set1 set2 x
+        unifyFramed resultSort set1 set2 x
  
     unify0 app_@(App_ _ _) dv_@(DV_ _ _) = unify0 dv_ app_
     
@@ -475,3 +475,5 @@ unify
                         | otherwise = ExpandedPattern.bottom
                 (,) <$> normalize result <*> pure SimplificationProof
         return unified
+
+    unifyFramed _ _ _ _ = empty
