@@ -33,12 +33,12 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeFalsePredicate,
                  makeMultipleAndPredicate )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution (..), Predicated (..),
-                 substitutionToPredicate )
+                 ( ExpandedPattern, PredicateSubstitution (..),
+                 Predicated (..), substitutionToPredicate )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
@@ -57,8 +57,8 @@ import           Kore.Variables.Fresh
 
 -- | Normalize the substitution of 'expanded', or return 'bottom' if
 -- normalization fails.
-normalize 
-  :: forall level variable m . 
+normalize
+  :: forall level variable m .
      ( level ~ Object
      , Monad m
      , MonadCounter m
@@ -68,9 +68,9 @@ normalize
      , SortedVariable variable
      , OrdMetaOrObject variable
      , ShowMetaOrObject variable
-     ) 
-  => MetadataTools level StepperAttributes 
-  -> ExpandedPattern level variable 
+     )
+  => MetadataTools level StepperAttributes
+  -> ExpandedPattern level variable
   -> m (ExpandedPattern level variable)
 normalize tools r =
     runExceptT (normalizePredicatedSubstitution tools r)

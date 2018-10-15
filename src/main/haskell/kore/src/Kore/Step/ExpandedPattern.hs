@@ -74,7 +74,7 @@ data Predicated level variable child = Predicated
 instance Functor (Predicated level variable) where
     fmap f (Predicated a p s) = Predicated (f a) p s
 
--- `<*>` does not do normalization for now. 
+-- `<*>` does not do normalization for now.
 -- Use Kore.Step.Substitution.normalize until then.
 
 instance
