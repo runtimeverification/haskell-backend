@@ -920,4 +920,4 @@ functionAnd
                         }
                     , SimplificationProof
                     )
-                    
+

@@ -36,14 +36,14 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
 import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Step.MockSimplifiers as Mock
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 
 {- |
     @
@@ -182,21 +182,21 @@ prop_unifyConcreteSetWithItself
     :: Set Integer
     -> Property
 prop_unifyConcreteSetWithItself set =
-    let 
+    let
         patSet    = asPattern set
         patExpect = patSet
         patActual = give testSymbolOrAliasSorts (mkAnd patSet patSet)
         predicate = give testSymbolOrAliasSorts (mkEquals patExpect patActual)
-    in 
+    in
         allProperties
             [ evaluate patExpect === evaluate patActual
             , ExpandedPattern.top === evaluate predicate
             ]
 
 {- | Unify two sets with random concrete elements.
-     Note: given that the two sets are generated randomly, 
-     it is likely they will be different most of the time, 
-     hence they do not unify. For a test of succesfull 
+     Note: given that the two sets are generated randomly,
+     it is likely they will be different most of the time,
+     hence they do not unify. For a test of succesfull
      unification, see `prop_unifyConcreteSetWithItself
  -}
 prop_unifyConcrete
@@ -206,36 +206,36 @@ prop_unifyConcrete
     -- ^ another randomly generated set
     -> Property
 prop_unifyConcrete set1 set2 =
-    let 
+    let
         patSet1 = asPattern set1
         patSet2 = asPattern set2
-        patExpect =   
+        patExpect =
             if set1 == set2
-                then patSet1 
-                else give testSymbolOrAliasSorts (mkBottom) 
+                then patSet1
+                else give testSymbolOrAliasSorts (mkBottom)
         patActual = give testSymbolOrAliasSorts (mkAnd patSet1 patSet2)
         predicate = give testSymbolOrAliasSorts (mkEquals patExpect patActual)
-    in 
+    in
         allProperties
             [ evaluate patExpect === evaluate patActual
             , ExpandedPattern.top === evaluate predicate
             ]
 
 {- | Test unification of a concrete set with a set
-     consisting of concrete elements and a framing 
+     consisting of concrete elements and a framing
      variable.
  -}
 
-prop_unifyFramingVariable 
+prop_unifyFramingVariable
     :: Set Integer
     -- ^ randomly generated set of integers
     -> Integer
     -- ^ a random integer
     -> Property
-prop_unifyFramingVariable set n = 
-    not (Set.member n set) ==> 
+prop_unifyFramingVariable set n =
+    not (Set.member n set) ==>
     -- ^ make sure the random integer is not in the set
-    let 
+    let
         var       = mkDummyVar "dummy"
         patVar    = Var_ var
         patElem   = asPattern $ Set.singleton n
@@ -245,7 +245,7 @@ prop_unifyFramingVariable set n =
         patSet2   = asPattern $ set2
         -- ^ set obtained by inserting the random element into the original set
         patActual = give testSymbolOrAliasSorts (mkAnd patSet1 patSet2)
-        patExpect = 
+        patExpect =
             Predicated
                 { term         = mkBuiltinDomainSet set2
                 , predicate    = makeTruePredicate
@@ -254,7 +254,7 @@ prop_unifyFramingVariable set n =
     in
         allProperties
             [patExpect === evaluate patActual
-            ] 
+            ]
   where
     mkBuiltinDomainSet set' = DV_ setSort (BuiltinDomainSet (Set.map Test.Int.asConcretePattern set'))
     mkDummyVar x = Variable (noLocationId x) setSort

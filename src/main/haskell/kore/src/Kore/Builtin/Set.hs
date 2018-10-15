@@ -44,9 +44,16 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Monad.Counter
+import           Data.Reflection
+                 ( give )
+import           Data.Result
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
 import qualified Kore.AST.PureML as Kore
+import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -55,31 +62,26 @@ import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, Simplifier, SimplificationProof (..) )
+                 ( PureMLPatternSimplifier, SimplificationProof (..),
+                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Step.Substitution
+                 ( normalizePredicatedSubstitution )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
-import           Data.Result
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
-import           Kore.ASTUtils.SmartPatterns
-import           Control.Monad.Counter
-import           Kore.Step.Substitution
-                 ( normalizePredicatedSubstitution )
-import           Data.Reflection ( give )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
-import           Control.Applicative
-                 ( Alternative (..) )
 
 {- | Builtin name of the @Set@ sort.
  -}
@@ -399,7 +401,7 @@ unify
     tools@(MetadataTools.MetadataTools { symbolOrAliasSorts })
     _
     -- ^ not used now. Should remove? Or may be useful later?
-  = 
+  =
     unify0
   where
     -- | Normalize the substitution of 'expanded', or return 'bottom' if
@@ -417,22 +419,22 @@ unify
         :: Kore.PureMLPattern level variable
         -> Kore.PureMLPattern level variable
         -> Result (m (expanded, proof))
-    unify0 
+    unify0
         (DV_ resultSort (Kore.BuiltinDomainSet set1))
         (DV_ _    (Kore.BuiltinDomainSet set2))
-      = 
+      =
         unifyConcrete resultSort set1 set2
 
-    unify0 
+    unify0
         (App_ _ [DV_ _ (Kore.BuiltinDomainSet set1), x@(Var_ _)])
         (DV_ resultSort (Kore.BuiltinDomainSet set2))
-      = 
+      =
         unifyFramed resultSort set1 set2 x
- 
+
     unify0 app_@(App_ _ _) dv_@(DV_ _ _) = unify0 dv_ app_
-    
+
     unify0 _ _ = empty
-    
+
     -- | Unify two concrete sets
     unifyConcrete
         :: (level ~ Object, k ~ Kore.ConcretePurePattern Object)
@@ -441,11 +443,11 @@ unify
         -> Set.Set k
         -> Result (m (expanded, proof))
     unifyConcrete resultSort set1 set2 = do -- Result monad
-        let 
+        let
             term = DV_ resultSort (Kore.BuiltinDomainSet set1)
-            unified = give symbolOrAliasSorts $ do -- MonadCounter 
-                let 
-                    result 
+            unified = give symbolOrAliasSorts $ do -- MonadCounter
+                let
+                    result
                         | set1 == set2 = pure term
                         | otherwise    = ExpandedPattern.bottom
                 (,) <$> normalize result <*> pure SimplificationProof
@@ -460,13 +462,13 @@ unify
         -> Kore.PureMLPattern level variable  -- ^ framing variable
         -> Result (m (expanded, proof))
     unifyFramed resultSort set1 set2 (Var_ x) = do -- Result monad
-        let 
+        let
             term' = DV_ resultSort (Kore.BuiltinDomainSet set2)
             diff = Set.difference set2 set1
             unified = do -- MonadCounter
                 let
-                    result 
-                        | Set.isSubsetOf set1 set2 = 
+                    result
+                        | Set.isSubsetOf set1 set2 =
                             Predicated
                             { term = term'
                             , predicate = makeTruePredicate
