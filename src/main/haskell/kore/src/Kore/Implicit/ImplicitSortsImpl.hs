@@ -9,8 +9,9 @@ Portability : POSIX
 -}
 module Kore.Implicit.ImplicitSortsImpl where
 
-import Data.Proxy
-       ( Proxy (..) )
+import           Data.Proxy
+                 ( Proxy (..) )
+import qualified Data.Text as Text
 
 import Kore.AST.Builders
 import Kore.AST.Common
@@ -96,28 +97,28 @@ defineMetaSort sortType =
   where
     objectSortType = MetaBasicSortType sortType
     listSortType =  MetaListSortType sortType
-    listSortName =  metaSortTypeString listSortType
+    listSortName =  Text.pack (metaSortTypeString listSortType)
     objectSort = sort_ objectSortType
     listSort = sort_ listSortType
-    emptyList = symbol_ ("#nil" ++ listSortName) AstLocationImplicit [] listSort
+    emptyList = symbol_ ("#nil" <> listSortName) AstLocationImplicit [] listSort
     emptyListA = applyS emptyList []
     listConstructor =
         symbol_
-            ("#cons" ++ listSortName)
+            ("#cons" <> listSortName)
             AstLocationImplicit
             [objectSort, listSort]
             listSort
     listConstructorA = applyS listConstructor
     append =
         symbol_
-            ("#append" ++ listSortName)
+            ("#append" <> listSortName)
             AstLocationImplicit
             [listSort, listSort]
             listSort
     appendA = applyS append
     inList =
         parameterizedSymbol_
-            ("#in" ++ listSortName)
+            ("#in" <> listSortName)
             AstLocationImplicit
             [pS]
             [objectSort, listSort]
@@ -125,7 +126,7 @@ defineMetaSort sortType =
     inListA = applyPS inList
     delete =
         symbol_
-            ("#delete" ++ listSortName)
+            ("#delete" <> listSortName)
             AstLocationImplicit
             [objectSort, listSort]
             listSort

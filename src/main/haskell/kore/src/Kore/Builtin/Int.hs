@@ -45,6 +45,8 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.Text
+                 ( Text )
 import           GHC.Integer
                  ( smallInteger )
 import           GHC.Integer.GMP.Internals
@@ -69,7 +71,7 @@ import           Kore.Step.Function.Data
 
 {- | Builtin name of the @Int@ sort.
  -}
-sort :: String
+sort :: Text
 sort = "INT.Int"
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
@@ -238,7 +240,7 @@ asPartialExpandedPattern resultSort =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
     [

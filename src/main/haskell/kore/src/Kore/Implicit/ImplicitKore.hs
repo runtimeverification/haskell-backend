@@ -29,6 +29,8 @@ module Kore.Implicit.ImplicitKore
 
 import Data.Proxy
        ( Proxy (..) )
+import Data.Text
+       ( Text )
 
 import Kore.AST.Builders
 import Kore.AST.Common
@@ -73,14 +75,14 @@ equalsAxiom
 equalsAxiom = parameterizedEqualsAxiom []
 
 implicitSymbol
-    :: String
+    :: Text
     -> [Sort level]
     -> Sort level
     -> PureSentenceSymbol level
 implicitSymbol name = symbol_ name AstLocationImplicit
 
 implicitParameterizedSymbol
-    :: String
+    :: Text
     -> [SortVariable level]
     -> [Sort level]
     -> Sort level
@@ -572,7 +574,7 @@ sortList_ = foldr (\p ps -> consSortListA [p, ps]) nilSortListA
 patternList_ :: [MetaPatternStub] -> MetaPatternStub
 patternList_ = foldr (\p ps -> consPatternListA [p, ps]) nilPatternListA
 
-stringVariable_ :: String -> Variable Meta
+stringVariable_ :: Text -> Variable Meta
 stringVariable_ name =
     Variable
         { variableName = Id

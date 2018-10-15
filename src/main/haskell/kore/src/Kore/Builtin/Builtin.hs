@@ -62,6 +62,9 @@ import           Data.HashMap.Strict
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Semigroup
                  ( Semigroup (..) )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 import           Data.Void
                  ( Void )
 import           GHC.Stack
@@ -71,10 +74,6 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 
 import           Kore.AST.Common
-                 ( Application (..), BuiltinDomain (..), ConcretePurePattern,
-                 DomainValue (..), Id (..), Pattern (..), PureMLPattern,
-                 Sort (..), SortActual (..), SortVariable (..),
-                 SymbolOrAlias (..), Variable )
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
@@ -132,7 +131,7 @@ type SortVerifier =
     -> Either (Error VerifyError) ()
 
 -- | @SortDeclVerifiers@ associates a @SortDeclVerifier@ with its builtin sort name.
-type SortDeclVerifiers = HashMap String SortDeclVerifier
+type SortDeclVerifiers = HashMap Text SortDeclVerifier
 
 type SymbolVerifier =
        (Id Object -> Either (Error VerifyError) (SortDescription Object))
@@ -144,7 +143,7 @@ type SymbolVerifier =
 {- | @SymbolVerifiers@ associates a @SymbolVerifier@ with each builtin
   symbol name.
  -}
-type SymbolVerifiers = HashMap String SymbolVerifier
+type SymbolVerifiers = HashMap Text SymbolVerifier
 
 newtype PatternVerifier =
     PatternVerifier
@@ -276,7 +275,7 @@ verifySortDecl SentenceSort { sentenceSortParameters } =
  -}
 verifySort
     :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
-    -> String
+    -> Text
     -> Sort Object
     -> Either (Error VerifyError) ()
 verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
@@ -285,12 +284,12 @@ verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
         let expectHook = Hook (Just builtinName)
         declHook <- Kore.Error.castError (parseAttributes sentenceSortAttributes)
         Kore.Error.koreFailWhen (expectHook /= declHook)
-            ("Sort '" ++ getId sortActualName
+            ("Sort '" ++ getIdForError sortActualName
                 ++ "' is not hooked to builtin sort '"
-                ++ builtinName ++ "'")
+                ++ Text.unpack builtinName ++ "'")
 verifySort _ _ (SortVariableSort SortVariable { getSortVariable }) =
     Kore.Error.koreFail
-        ("unexpected sort variable '" ++ getId getSortVariable ++ "'")
+        ("unexpected sort variable '" ++ getIdForError getSortVariable ++ "'")
 
 {- | Verify a builtin symbol declaration.
 
@@ -350,7 +349,7 @@ verifySymbolArguments
 
  -}
 verifyDomainValue
-    :: String  -- ^ Builtin sort name
+    :: Text  -- ^ Builtin sort name
     -> DomainValueVerifier
     -- ^ validation function
     -> PatternVerifier
@@ -367,7 +366,8 @@ verifyDomainValue builtinSort validate =
         \case
             DomainValuePattern dv@DomainValue { domainValueSort } ->
                 Kore.Error.withContext
-                    ("Verifying builtin sort '" ++ builtinSort ++ "'")
+                    ("Verifying builtin sort '"
+                        ++ Text.unpack builtinSort ++ "'")
                     (skipOtherSorts domainValueSort (validate dv))
             _ -> return ()  -- no domain value to verify
       where
@@ -467,7 +467,7 @@ unaryOperator
     -- ^ Parse operand
     -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
-    -> String
+    -> Text
     -- ^ Builtin function name (for error messages)
     -> (a -> b)
     -- ^ Operation on builtin types
@@ -481,7 +481,7 @@ unaryOperator
     functionEvaluator unaryOperator0
   where
     get :: DomainValue Object (BuiltinDomain child) -> a
-    get = runParser ctx . parseDomainValue parser
+    get = runParser (Text.unpack ctx) . parseDomainValue parser
     unaryOperator0
         :: MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
@@ -495,7 +495,7 @@ unaryOperator
                 let r = op (get a)
                 (appliedFunction . asPattern resultSort) r
             [_] -> return NotApplicable
-            _ -> wrongArity ctx
+            _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin binary operator.
 
@@ -513,7 +513,7 @@ binaryOperator
     -- ^ Parse operand
     -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
-    -> String
+    -> Text
     -- ^ Builtin function name (for error messages)
     -> (a -> a -> b)
     -- ^ Operation on builtin types
@@ -527,7 +527,7 @@ binaryOperator
     functionEvaluator binaryOperator0
   where
     get :: DomainValue Object (BuiltinDomain child) -> a
-    get = runParser ctx . parseDomainValue parser
+    get = runParser (Text.unpack ctx) . parseDomainValue parser
     binaryOperator0
         :: MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
@@ -541,7 +541,7 @@ binaryOperator
                 let r = op (get a) (get b)
                 (appliedFunction . asPattern resultSort) r
             [_, _] -> return NotApplicable
-            _ -> wrongArity ctx
+            _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin ternary operator.
 
@@ -559,7 +559,7 @@ ternaryOperator
     -- ^ Parse operand
     -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
     -- ^ Render result as pattern with given sort
-    -> String
+    -> Text
     -- ^ Builtin function name (for error messages)
     -> (a -> a -> a -> b)
     -- ^ Operation on builtin types
@@ -573,7 +573,7 @@ ternaryOperator
     functionEvaluator ternaryOperator0
   where
     get :: DomainValue Object (BuiltinDomain child) -> a
-    get = runParser ctx . parseDomainValue parser
+    get = runParser (Text.unpack ctx) . parseDomainValue parser
     ternaryOperator0
         :: MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
@@ -587,7 +587,7 @@ ternaryOperator
                 let r = op (get a) (get b) (get c)
                 (appliedFunction . asPattern resultSort) r
             [_, _, _] -> return NotApplicable
-            _ -> wrongArity ctx
+            _ -> wrongArity (Text.unpack ctx)
 
 functionEvaluator
     ::  (forall variable
@@ -661,7 +661,7 @@ runParser ctx result =
 {- | Look up the symbol hooked to the named builtin in the provided module.
  -}
 lookupSymbol
-    :: String
+    :: Text
     -- ^ builtin name
     -> KoreIndexedModule attrs
     -> Either (Error e) (SymbolOrAlias Object)
@@ -678,7 +678,7 @@ lookupSymbol builtinName indexedModule
 {- | Is the given symbol hooked to the named builtin?
  -}
 isSymbol
-    :: String  -- ^ Builtin symbol
+    :: Text  -- ^ Builtin symbol
     -> MetadataTools Object Hook
     -> SymbolOrAlias Object  -- ^ Kore symbol
     -> Bool

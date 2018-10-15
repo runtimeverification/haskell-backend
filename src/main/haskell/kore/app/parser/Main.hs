@@ -7,6 +7,8 @@ import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Semigroup
                  ( (<>) )
+import           Data.Text
+                 ( Text )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, fullDesc, header, help, long,
                  metavar, progDesc, str, strOption, value )
@@ -14,7 +16,6 @@ import           Options.Applicative
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.Sentence
-                 ( KoreDefinition, ModuleName (..) )
 import           Kore.ASTPrettyPrint
                  ( prettyPrintToString )
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -44,11 +45,11 @@ TODO: add command line argument tab-completion
 
 -- | Main options record
 data KoreParserOptions = KoreParserOptions
-    { fileName            :: !String
+    { fileName            :: !FilePath
     -- ^ Name for a file containing a definition to parse and verify
-    , patternFileName     :: !String
+    , patternFileName     :: !FilePath
     -- ^ Name for file containing a pattern to parse and verify
-    , mainModuleName      :: !String
+    , mainModuleName      :: !Text
     -- ^ the name of the main module in the definition
     , willPrintDefinition :: !Bool   -- ^ Option to print definition
     , willPrintPattern    :: !Bool   -- ^ Option to print pattern
@@ -138,7 +139,7 @@ mainModule name modules =
         Nothing ->
             error
                 (  "The main module, '"
-                ++ getModuleName name
+                ++ getModuleNameForError name
                 ++ "', was not found. Check the --module flag."
                 )
         Just m -> return m

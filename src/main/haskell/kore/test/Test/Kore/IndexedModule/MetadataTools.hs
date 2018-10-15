@@ -5,12 +5,12 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertBool, assertEqual, testCase )
 
+import           Data.Functor.Foldable
+                 ( Fix (..) )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
-
-import Data.Functor.Foldable
-       ( Fix (..) )
+import qualified Data.Text as Text
 
 import           Kore.AST.Builders
 import           Kore.AST.Common
@@ -178,7 +178,7 @@ test_metadataTools =
 
 sortA, sortB, sortC, sortD,sortE, sortF, sortG :: Sort Object
 [sortA, sortB, sortC, sortD, sortE, sortF, sortG] =
-    [sortActual [c] [] | c <- "ABCDEFG"]
+    [(sortActual . Text.pack) [c] [] | c <- "ABCDEFG"]
 
 sortVarR :: Sort Object
 sortVarR = sortVariableSort "R"

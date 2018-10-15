@@ -62,6 +62,8 @@ import Control.Monad.State
 import Data.Foldable
 import Data.Functor.Foldable
 import Data.Reflection
+import Data.Text
+       ( Text )
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -472,14 +474,14 @@ mkCharLiteral = CharLiteral_
 
 mkSort
   :: MetaOrObject level
-  => String
+  => Text
   -> Sort level
 mkSort name =
     SortActualSort $ SortActual (noLocationId name) []
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s
-varS :: MetaOrObject level => String -> Sort level -> Variable level
+varS :: MetaOrObject level => Text -> Sort level -> Variable level
 varS x s =
     Variable (noLocationId x) s
 
@@ -487,7 +489,7 @@ varS x s =
 -- "mult" `symS` [s, s]
 -- Since the return sort is only found in MetadataTools, this is
 -- mostly useful for testing.
-symS :: MetaOrObject level => String -> [Sort level] -> SymbolOrAlias level
+symS :: MetaOrObject level => Text -> [Sort level] -> SymbolOrAlias level
 symS x s =
     SymbolOrAlias (noLocationId x) s
 

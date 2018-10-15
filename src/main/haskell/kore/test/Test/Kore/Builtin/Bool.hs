@@ -8,6 +8,8 @@ import           Data.Map
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -112,7 +114,7 @@ boolSortDecl =
         :: KoreSentenceSort Object)
 
 -- | Make an unparameterized builtin symbol with the given name.
-builtinSymbol :: String -> SymbolOrAlias Object
+builtinSymbol :: Text -> SymbolOrAlias Object
 builtinSymbol name =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId name

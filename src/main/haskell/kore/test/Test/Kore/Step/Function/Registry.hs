@@ -10,6 +10,8 @@ import           Data.Maybe
                  ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -211,7 +213,7 @@ testIndexedModule =
                     (error "Module not found. Should not be possible.")
                     (Map.lookup (ModuleName "test") indexedModules)
 
-testId :: String -> Id level
+testId :: Text -> Id level
 testId name =
     Id
         { getId = name

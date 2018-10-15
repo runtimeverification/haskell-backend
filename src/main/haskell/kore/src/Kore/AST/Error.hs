@@ -83,7 +83,7 @@ withSentenceSymbolContext
     SentenceSymbol { sentenceSymbolSymbol = Symbol { symbolConstructor } }
   =
     withLocationAndContext symbolConstructor
-        ("symbol '" ++ getId symbolConstructor ++ "' declaration")
+        ("symbol '" ++ getIdForError symbolConstructor ++ "' declaration")
 
 {- | Identify and locate the given alias declaration in the error context.
  -}
@@ -95,7 +95,7 @@ withSentenceAliasContext
     SentenceAlias { sentenceAliasAlias = Alias { aliasConstructor } }
   =
     withLocationAndContext aliasConstructor
-        ("alias '" ++ getId aliasConstructor ++ "' declaration")
+        ("alias '" ++ getIdForError aliasConstructor ++ "' declaration")
 
 {- | Identify and locate the given axiom declaration in the error context.
  -}
@@ -115,7 +115,7 @@ withSentenceSortContext
     SentenceSort { sentenceSortName }
   =
     withLocationAndContext sentenceSortName
-        ("sort '" ++ getId sentenceSortName ++ "' declaration")
+        ("sort '" ++ getIdForError sentenceSortName ++ "' declaration")
 
 {- | Identify and locate the given hooked declaration in the error context.
  -}
@@ -127,12 +127,12 @@ withSentenceHookContext =
     \case
         SentenceHookedSort SentenceSort { sentenceSortName } ->
             withLocationAndContext sentenceSortName
-                ("hooked-sort '" ++ getId sentenceSortName ++ "' declaration")
+                ("hooked-sort '" ++ getIdForError sentenceSortName ++ "' declaration")
 
         SentenceHookedSymbol SentenceSymbol
             { sentenceSymbolSymbol = Symbol { symbolConstructor } } ->
             withLocationAndContext symbolConstructor
-                ("hooked-symbol '" ++ getId symbolConstructor ++ "' declaration")
+                ("hooked-symbol '" ++ getIdForError symbolConstructor ++ "' declaration")
 
 {- | Locate the given import declaration in the error context.
  -}

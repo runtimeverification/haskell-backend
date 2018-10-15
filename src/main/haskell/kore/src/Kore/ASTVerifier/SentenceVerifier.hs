@@ -16,6 +16,9 @@ import           Control.Monad
                  ( foldM )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Common
 import           Kore.AST.Error
@@ -37,9 +40,9 @@ unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames
     :: [KoreSentence]
-    -> Map.Map String AstLocation
+    -> Map.Map Text AstLocation
     -- ^ Names that are already defined.
-    -> Either (Error VerifyError) (Map.Map String AstLocation)
+    -> Either (Error VerifyError) (Map.Map Text AstLocation)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
 verifyUniqueNames sentences existingNames =
@@ -53,20 +56,22 @@ data UnparameterizedId = UnparameterizedId
 toUnparameterizedId :: Id level -> UnparameterizedId
 toUnparameterizedId Id {getId = name, idLocation = location} =
     UnparameterizedId
-        { unparameterizedIdName = name
+        { unparameterizedIdName = Text.unpack name
         , unparameterizedIdLocation = location
         }
 
 verifyUniqueId
-    :: Map.Map String AstLocation
+    :: Map.Map Text AstLocation
     -> UnparameterizedId
-    -> Either (Error VerifyError) (Map.Map String AstLocation)
+    -> Either (Error VerifyError) (Map.Map Text AstLocation)
 verifyUniqueId existing (UnparameterizedId name location) =
-    case Map.lookup name existing of
+    case Map.lookup name' existing of
         Just location' ->
             koreFailWithLocations [location, location']
                 ("Duplicated name: '" ++ name ++ "'.")
-        _ -> Right (Map.insert name location existing)
+        _ -> Right (Map.insert name' location existing)
+  where
+    name' = Text.pack name
 
 definedNamesForSentence :: KoreSentence -> [UnparameterizedId]
 definedNamesForSentence =
@@ -177,7 +182,7 @@ verifyMetaSentence
             SentenceSortSentence sortSentence -> do
                 koreFailWhen
                     (sortParams /= [])
-                    ("Malformed meta sort '" ++ getId sortId
+                    ("Malformed meta sort '" ++ getIdForError sortId
                         ++ "' with non-empty Parameter sorts.")
                 verifySuccess
               where
@@ -395,6 +400,6 @@ buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
     return (Set.insert unifiedVariable variables)
   where
     extractVariableName (UnifiedObject variable) =
-        getId (getSortVariable variable)
+        getIdForError (getSortVariable variable)
     extractVariableName (UnifiedMeta variable) =
-        getId (getSortVariable variable)
+        getIdForError (getSortVariable variable)

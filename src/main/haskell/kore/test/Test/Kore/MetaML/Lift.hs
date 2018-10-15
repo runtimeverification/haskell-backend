@@ -12,6 +12,8 @@ import Data.CallStack
 import Data.Functor.Foldable
 import Data.Proxy
        ( Proxy (..) )
+import Data.Text
+       ( Text )
 
 import Kore.AST.Builders
 import Kore.AST.BuildersImpl
@@ -29,7 +31,7 @@ import Kore.MetaML.Unlift
 import Test.Kore
 import Test.Tasty.HUnit.Extensions
 
-variablePattern :: String -> Sort Meta -> CommonMetaPattern
+variablePattern :: Text -> Sort Meta -> CommonMetaPattern
 variablePattern name sort =
     fillCheckSort sort (unparameterizedVariable_ name AstLocationTest)
 

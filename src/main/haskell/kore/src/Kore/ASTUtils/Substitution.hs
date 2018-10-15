@@ -25,6 +25,7 @@ where
 import           Control.Lens
 import           Data.Functor.Foldable
 import qualified Data.Set as S
+import qualified Data.Text as Text
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -60,7 +61,7 @@ handleBinder old new binder s1 v p
         head $ filter (not . flip S.member freeVarsP) $ alternatives v
     freeVarsP = freeVars p
     alternatives (Variable (Id name loc) sort) =
-        [Variable (Id (name ++ show n) loc) sort | n <- [(0::Integer)..] ]
+        [Variable (Id (name <> (Text.pack . show) n) loc) sort | n <- [(0::Integer)..] ]
 
 freeVars
     :: MetaOrObject level

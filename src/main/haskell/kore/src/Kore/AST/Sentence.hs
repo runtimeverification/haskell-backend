@@ -22,12 +22,15 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Kore.AST.Sentence where
 
-import Control.DeepSeq
-       ( NFData (..) )
-import Data.Functor.Classes
-import Data.Functor.Foldable
-import GHC.Generics
-       ( Generic )
+import           Control.DeepSeq
+                 ( NFData (..) )
+import           Data.Functor.Classes
+import           Data.Functor.Foldable
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
+import           GHC.Generics
+                 ( Generic )
 
 import Data.Functor.Foldable.Orphans ()
 import Data.Functor.Impredicative
@@ -90,10 +93,13 @@ instance NFData (SentenceSymbol level pat variable)
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-newtype ModuleName = ModuleName { getModuleName :: String }
+newtype ModuleName = ModuleName { getModuleName :: Text }
     deriving (Eq, Generic, Ord, Show)
 
 instance NFData ModuleName
+
+getModuleNameForError :: ModuleName -> String
+getModuleNameForError = Text.unpack . getModuleName
 
 {-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).

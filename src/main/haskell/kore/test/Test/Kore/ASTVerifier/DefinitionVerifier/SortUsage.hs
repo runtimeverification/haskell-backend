@@ -10,6 +10,7 @@ import Test.Tasty.HUnit
 import qualified Data.List as List
 import           Data.Maybe
                  ( mapMaybe )
+import qualified Data.Text as Text
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -312,7 +313,7 @@ testsForObjectSort
             sort
             (SortActualThatIsDeclared additionalSortActual)
             namePrefix
-    additionalSortActualName = SortName (rawNamePrefix ++ "_declaredSort")
+    additionalSortActualName = SortName (rawNamePrefix <> "_declaredSort")
     additionalSortActual = simpleSortActual additionalSortActualName
     additionalSortSentence = simpleSortSentence additionalSortActualName
     addAdditionalSortSentence =
@@ -533,7 +534,9 @@ unfilteredTestExamplesForSort
             , testDataError =
                 Error
                     [ "module 'MODULE'"
-                    , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
+                    , "alias '"
+                        ++ Text.unpack rawAliasName
+                        ++ "' declaration (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -557,7 +560,9 @@ unfilteredTestExamplesForSort
             , testDataError =
                 Error
                     [ "module 'MODULE'"
-                    , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
+                    , "alias '"
+                        ++ Text.unpack rawAliasName
+                        ++ "' declaration (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -584,7 +589,9 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "\\exists '" ++ rawVariableName ++ "' (<test data>)"
+                    , "\\exists '"
+                        ++ Text.unpack rawVariableName
+                        ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -606,7 +613,9 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "\\exists '" ++ rawVariableName ++ "' (<test data>)"
+                    , "\\exists '"
+                        ++ Text.unpack rawVariableName
+                        ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -632,7 +641,9 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "\\exists '" ++ rawVariableName ++ "' (<test data>)"
+                    , "\\exists '"
+                        ++ Text.unpack rawVariableName
+                        ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -657,7 +668,9 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "symbol or alias '" ++ rawAliasName ++ "' (<test data>)"
+                    , "symbol or alias '"
+                        ++ Text.unpack rawAliasName
+                        ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -681,11 +694,11 @@ unfilteredTestExamplesForSort
         }
     ]
   where
-    rawAliasName = identifierPrefix ++ "_alias"
+    rawAliasName = identifierPrefix <> "_alias"
     aliasName = AliasName rawAliasName
-    rawVariableName = identifierPrefix ++ "_variable"
+    rawVariableName = identifierPrefix <> "_variable"
     variableName1 = VariableName rawVariableName
-    sortVariableName1 = identifierPrefix ++ "_sortVariable"
+    sortVariableName1 = identifierPrefix <> "_sortVariable"
     additionalSortRawName = getId (sortActualName additionalSortActual)
     additionalSortName = SortName additionalSortRawName
     additionalSort = SortActualSort additionalSortActual
@@ -713,7 +726,7 @@ unfilteredTestExamplesForObjectSort
                     , "axiom declaration"
                     , "symbol or alias 'a' (<test data>)"
                     , "sort '"
-                        ++ differentAdditionalSortRawName
+                        ++ Text.unpack differentAdditionalSortRawName
                         ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
@@ -749,9 +762,9 @@ unfilteredTestExamplesForObjectSort
         }
     ]
   where
-    sortVariableName1 = namePrefix ++ "_sortVariable1"
-    sortVariableName2 = namePrefix ++ "_sortVariable2"
+    sortVariableName1 = namePrefix <> "_sortVariable1"
+    sortVariableName2 = namePrefix <> "_sortVariable2"
     additionalSortRawName = getId (sortActualName additionalSortActual)
-    differentAdditionalSortRawName = additionalSortRawName ++ "1"
+    differentAdditionalSortRawName = additionalSortRawName <> "1"
     differentAdditionalSortName = SortName differentAdditionalSortRawName
     defaultErrorMessage = "Replace this with a real error message."

@@ -18,8 +18,9 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Kore.MetaML.AST where
 
-import Data.Set
-       ( Set )
+import           Data.Set
+                 ( Set )
+import qualified Data.Text as Text
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -95,7 +96,7 @@ variableAsPatternHead :: SymbolOrAlias Meta
 variableAsPatternHead = groundHead "#variableAsPattern" AstLocationImplicit
 
 metaMLPatternHead :: MLPatternType -> AstLocation -> SymbolOrAlias Meta
-metaMLPatternHead pt = groundHead ('#' : '\\' : patternString pt)
+metaMLPatternHead pt = groundHead (Text.pack $ '#' : '\\' : patternString pt)
 
 sortDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
 sortDeclaredHead param = SymbolOrAlias

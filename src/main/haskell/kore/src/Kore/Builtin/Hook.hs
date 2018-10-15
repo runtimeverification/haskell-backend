@@ -20,6 +20,8 @@ import Data.Functor
        ( ($>) )
 import Data.Hashable
        ( Hashable )
+import Data.Text
+       ( Text )
 import GHC.Generics
        ( Generic )
 
@@ -39,7 +41,7 @@ import           Kore.Error
 import           Kore.Implicit.Attributes
                  ( attributeHead )
 
-newtype Hook = Hook { getHook :: Maybe String }
+newtype Hook = Hook { getHook :: Maybe Text }
   deriving (Eq, Generic, Ord, Read, Show)
 
 {- | The missing @hook@ attribute.
@@ -98,7 +100,7 @@ instance ParseAttributes Hook where
 getHookAttribute
     :: MonadError (Error e) m
     => Attributes
-    -> m String
+    -> m Text
 getHookAttribute attributes = do
     hook <- Attribute.parseAttributesM attributes
     maybe (koreFail "missing hook attribute") return (getHook hook)

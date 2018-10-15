@@ -25,6 +25,9 @@ import           Control.Monad.State
 import           Data.Default
 import qualified Data.Map as Map
 import           Data.Proxy
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 import           Text.Megaparsec
 
 import           Kore.AST.Common
@@ -91,7 +94,7 @@ getVar lens makeNewVar i = do
   v' <- Map.lookup i <$> use lens
   case v' of
     Nothing -> do
-      v <- lift $ lift $ makeNewVar (either getId show i)
+      v <- lift $ lift $ makeNewVar (either getIdForError show i)
       lens %= Map.insert i v
       return v
     Just v -> return v
@@ -227,7 +230,7 @@ patternToSMT sloppy p =
         goIntLiteral
             :: Given (MetadataTools Object SMTAttributes)
             => CommonPurePattern Object
-            -> String
+            -> Text
             -> Translating (SInteger)
         goIntLiteral pat@(DV_ sort (BuiltinDomainPattern (StringLiteral_ str))) hookName
          | (getHookString $ getSortHook sort) == hookName
@@ -240,7 +243,7 @@ patternToSMT sloppy p =
         goBoolLiteral
             :: Given (MetadataTools Object SMTAttributes)
             => CommonPurePattern Object
-            -> String
+            -> Text
             -> Translating (SBool)
         goBoolLiteral pat@(DV_ sort (BuiltinDomainPattern (StringLiteral_ str))) hookName
          | (getHookString $ getSortHook sort) == hookName
@@ -252,7 +255,7 @@ patternToSMT sloppy p =
         goBoolLiteral pat _ = throwError $ ExpectedDVPattern pat
 
 
-getHookString :: Hook -> String
+getHookString :: Hook -> Text
 getHookString (Hook (Just s)) = s
 getHookString _ = ""
 
@@ -279,7 +282,10 @@ convertPatternVariables p = flip evalState Map.empty (go p)
             vars <- get
             case Map.lookup v vars of
               Nothing -> do
-                let v1 = (show $ Map.size vars) `varS` sortedVariableSort v
+                let v1 =
+                        varS
+                            (Text.pack $ show $ Map.size vars)
+                            (sortedVariableSort v)
                 modify (Map.insert v v1)
                 return v1
               Just v1 -> return v1

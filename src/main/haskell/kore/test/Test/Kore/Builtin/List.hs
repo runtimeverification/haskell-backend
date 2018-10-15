@@ -14,6 +14,8 @@ import           Data.Reflection
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -207,7 +209,7 @@ listModuleName :: ModuleName
 listModuleName = ModuleName "LIST"
 
 -- | Make an unparameterized builtin symbol with the given name.
-builtinSymbol :: String -> SymbolOrAlias Object
+builtinSymbol :: Text -> SymbolOrAlias Object
 builtinSymbol name =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId name

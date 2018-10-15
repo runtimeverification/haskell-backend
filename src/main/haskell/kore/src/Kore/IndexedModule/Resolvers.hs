@@ -26,6 +26,9 @@ import           Data.Maybe
 import           Data.Proxy
                  ( Proxy (..) )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import Kore.AST.Common
 import Kore.AST.Error
@@ -206,7 +209,7 @@ resolveSymbol m headId =
         Nothing ->
             koreFailWithLocations
                 [headId]
-                ("Symbol '" ++ getId headId ++  "' not defined.")
+                ("Symbol '" ++ getIdForError headId ++  "' not defined.")
         Just result -> Right result
 
 {-|'resolveAlias' looks up a symbol id in an 'IndexedModule',
@@ -222,7 +225,7 @@ resolveAlias m headId =
         Nothing ->
             koreFailWithLocations
                 [headId]
-                ("Alias '" ++ getId headId ++  "' not defined.")
+                ("Alias '" ++ getIdForError headId ++  "' not defined.")
         Just result -> Right result
 
 
@@ -239,30 +242,31 @@ resolveSort m sortId =
         Nothing ->
             koreFailWithLocations
                 [sortId]
-                ("Sort '" ++ getId sortId ++  "' not declared.")
+                ("Sort '" ++ getIdForError sortId ++  "' not declared.")
         Just sortDescription -> Right sortDescription
 
 resolveHook
     :: KoreIndexedModule atts
-    -> String
+    -> Text
     -> Either (Error a) (Id Object)
 resolveHook indexedModule builtinName =
     case resolveHooks indexedModule builtinName of
         [hookId] -> return hookId
         [] ->
-            koreFail ("Builtin '" ++ builtinName ++ "' is not hooked.")
+            koreFail
+                ("Builtin '" ++ Text.unpack builtinName ++ "' is not hooked.")
         hookIds ->
             koreFail
-                ("Builtin '" ++ builtinName
+                ("Builtin '" ++ Text.unpack builtinName
                     ++ "' is hooked to multiple identifiers: "
-                    ++ List.intercalate ", " (squotes . getId <$> hookIds)
+                    ++ List.intercalate ", " (squotes . getIdForError <$> hookIds)
                 )
           where
             squotes str = "'" ++ str ++ "'"
 
 resolveHooks
     :: KoreIndexedModule atts
-    -> String
+    -> Text
     -> [Id Object]
 resolveHooks indexedModule builtinName =
     foldMap resolveHooks1 allHooks

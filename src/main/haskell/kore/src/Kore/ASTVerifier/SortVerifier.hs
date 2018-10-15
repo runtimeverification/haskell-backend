@@ -35,7 +35,7 @@ verifySort _ declaredSortVariables (SortVariableSort variable)
     koreFailWithLocationsWhen
         (not (unifiedVariable `Set.member` declaredSortVariables))
         [variableId]
-        ("Sort variable '" ++ getId variableId ++ "' not declared.")
+        ("Sort variable '" ++ getIdForError variableId ++ "' not declared.")
     verifySuccess
   where
     variableId = getSortVariable variable
@@ -44,7 +44,7 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
   = do
     withLocationAndContext
         sortName
-        ("sort '" ++ getId (sortActualName sort) ++ "'")
+        ("sort '" ++ getIdForError (sortActualName sort) ++ "'")
         ( do
             sortDescription <- findSortDescription sortName
             verifySortMatchesDeclaration
@@ -60,7 +60,7 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
   where
     sortIsMeta = case asUnified sort of UnifiedObject _ -> False ; UnifiedMeta _ -> True
     sortName   = sortActualName sort
-    sortId     = getId sortName
+    sortId     = getIdForError sortName
 
 verifySortMatchesDeclaration
     :: MetaOrObject level

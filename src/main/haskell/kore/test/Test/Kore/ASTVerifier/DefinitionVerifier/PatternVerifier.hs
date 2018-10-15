@@ -674,10 +674,10 @@ dummyVariableAndSentences :: NamePrefix -> (Variable Object, [KoreSentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =
     (dummyVariable, [simpleSortSentence dummySortName])
   where
-    dummySortName = SortName (namePrefix ++ "_OtherSort")
+    dummySortName = SortName (namePrefix <> "_OtherSort")
     dummySort' = simpleSort dummySortName
     dummyVariable =
-        variable (VariableName (namePrefix ++ "_OtherVariable")) dummySort'
+        variable (VariableName (namePrefix <> "_OtherVariable")) dummySort'
 
 
 successTestsForObjectPattern
@@ -795,10 +795,10 @@ failureTestsForObjectPattern
         errorStackSuffix
         testData
   where
-    dummySortName = SortName (rawNamePrefix ++ "_OtherSort")
+    dummySortName = SortName (rawNamePrefix <> "_OtherSort")
     dummySort' = simpleSort dummySortName
     dummyVariable =
-        variable (VariableName (rawNamePrefix ++ "_OtherVariable")) dummySort'
+        variable (VariableName (rawNamePrefix <> "_OtherVariable")) dummySort'
     dummySortSentence = simpleSortSentence dummySortName
     testData =
         genericPatternInAllContexts
@@ -922,11 +922,11 @@ genericPatternInAllContexts
             }
     anotherVariable =
         Variable
-            { variableName = testId (namePrefix ++ "_anotherVar")
+            { variableName = testId (namePrefix <> "_anotherVar")
             , variableSort = testedSort
             }
-    rawSymbolName = namePrefix ++ "_anotherSymbol"
-    rawAliasName = namePrefix ++ "_anotherAlias"
+    rawSymbolName = namePrefix <> "_anotherSymbol"
+    rawAliasName = namePrefix <> "_anotherAlias"
     symbolFromSort sort =
         SymbolOrAlias
             { symbolOrAliasConstructor = testId rawSymbolName
@@ -975,7 +975,7 @@ objectPatternInAllContexts
             }
     anotherVariable =
         Variable
-            { variableName = testId (namePrefix ++ "_anotherVar")
+            { variableName = testId (namePrefix <> "_anotherVar")
             , variableSort = testedSort
             }
 
@@ -1006,7 +1006,7 @@ patternsInAllContexts
     contextExpansion =
         testsForUnifiedPatternInTopLevelContext
             x
-            (NamePrefix (namePrefix ++ "_piac"))
+            (NamePrefix (namePrefix <> "_piac"))
             (DeclaredSort anotherSort)
             sortVariables
             objectSortVariables
@@ -1015,9 +1015,9 @@ patternsInAllContexts
             : sentences
             )
             patternRestrict
-    rawSymbolName = namePrefix ++ "_anotherSymbol"
-    rawAliasName = namePrefix ++ "_anotherAlias"
-    rawSortVariableName = namePrefix ++ "_sortVariable"
+    rawSymbolName = namePrefix <> "_anotherSymbol"
+    rawAliasName = namePrefix <> "_anotherAlias"
+    rawSortVariableName = namePrefix <> "_sortVariable"
     symbolAliasSort = sortVariableSort rawSortVariableName
     symbolSentence =
         constructUnifiedSentence
@@ -1091,7 +1091,7 @@ genericPatternInPatterns
             , testPatternErrorStack =
                 ErrorStack
                     [ "symbol or alias '"
-                        ++ getId (symbolOrAliasConstructor symbol)
+                        ++ getIdForError (symbolOrAliasConstructor symbol)
                         ++ "' (<test data>)"
                     ]
             }
@@ -1104,7 +1104,7 @@ genericPatternInPatterns
             , testPatternErrorStack =
                 ErrorStack
                     [ "symbol or alias '"
-                        ++ getId (symbolOrAliasConstructor alias)
+                        ++ getIdForError (symbolOrAliasConstructor alias)
                         ++ "' (<test data>)"
                     ]
             }
@@ -1134,7 +1134,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         , testPatternErrorStack =
             ErrorStack
                 [ "\\exists '"
-                    ++ getId (variableName quantifiedVariable)
+                    ++ getIdForError (variableName quantifiedVariable)
                     ++ "' (<test data>)"
                 ]
         }
@@ -1148,7 +1148,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         , testPatternErrorStack =
             ErrorStack
                 [ "\\forall '"
-                    ++ getId (variableName quantifiedVariable)
+                    ++ getIdForError (variableName quantifiedVariable)
                     ++ "' (<test data>)"
                 ]
         }
