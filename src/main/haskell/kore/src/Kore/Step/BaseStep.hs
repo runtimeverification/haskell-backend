@@ -193,9 +193,7 @@ newtype UnificationProcedure level =
           , MonadCounter m
           )
         => MetadataTools level StepperAttributes
-        -- ^functions yielding metadata for pattern heads
         -> PureMLPattern level variable
-        -- ^left-hand-side of unification
         -> PureMLPattern level variable
         -> ExceptT
             UnificationError
