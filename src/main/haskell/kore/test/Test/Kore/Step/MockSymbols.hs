@@ -24,6 +24,7 @@ module Test.Kore.Step.MockSymbols where
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given )
+import qualified Data.Sequence as Seq
 
 import           Kore.AST.Common
                  ( BuiltinDomain (..), ConcretePurePattern, Id (..),
@@ -138,6 +139,11 @@ elementMapId :: Id level
 elementMapId = testId "elementMap"
 concatMapId :: Id level
 concatMapId = testId "concatMap"
+
+elemListId :: Id level
+elemListId = testId "elemList"
+concatListId :: Id level
+concatListId = testId "concatList"
 
 aSymbol :: SymbolOrAlias Object
 aSymbol = SymbolOrAlias
@@ -378,6 +384,18 @@ concatMapSymbol :: SymbolOrAlias level
 concatMapSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = concatMapId
     , symbolOrAliasParams      = []
+    }
+
+elemListSymbol :: SymbolOrAlias level
+elemListSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = elemListId
+    , symbolOrAliasParams = []
+    }
+
+concatListSymbol :: SymbolOrAlias level
+concatListSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = concatListId
+    , symbolOrAliasParams = []
     }
 
 x :: Variable Object
@@ -637,6 +655,13 @@ concatMap
     -> PureMLPattern Object variable
     -> PureMLPattern Object variable
 concatMap m1 m2 = mkApp concatMapSymbol [m1, m2]
+
+concatList
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+    -> PureMLPattern Object variable
+concatList l1 l2 = mkApp concatListSymbol [l1, l2]
 
 symbolOrAliasSortsMapping :: [(SymbolOrAlias Object, ApplicationSorts Object)]
 symbolOrAliasSortsMapping =
@@ -928,6 +953,12 @@ symbolOrAliasSortsMapping =
             , applicationSortsResult = mapSort
             }
         )
+    ,   ( concatListSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [listSort, listSort]
+            , applicationSortsResult = listSort
+            }
+        )
     ]
 
 attributesMapping :: [(SymbolOrAlias Object, StepperAttributes)]
@@ -1076,6 +1107,12 @@ attributesMapping =
     ,   ( concatMapSymbol
         , Mock.defaultAttributes { hook = Hook (Just "MAP.concat") }
         )
+    ,   ( elemListSymbol
+        , Mock.defaultAttributes { hook = Hook (Just "LIST.elem") }
+        )
+    ,   ( concatListSymbol
+        , Mock.defaultAttributes { hook = Hook (Just "LIST.concat") }
+        )
     ]
 
 testSort :: Sort Object
@@ -1127,6 +1164,13 @@ mapSort =
         , sortActualSorts = []
         }
 
+listSort :: Sort Object
+listSort =
+    SortActualSort SortActual
+        { sortActualName  = testId "listSort"
+        , sortActualSorts = []
+        }
+
 subsorts :: [(Sort Object, Sort Object)]
 subsorts = [(subSubSort, subSort), (subSubSort, topSort), (subSort, topSort)]
 
@@ -1134,3 +1178,8 @@ builtinMap
     :: [(ConcretePurePattern Object, PureMLPattern Object variable)]
     -> PureMLPattern Object variable
 builtinMap = DV_ mapSort . BuiltinDomainMap . Map.fromList
+
+builtinList
+    :: [PureMLPattern Object variable]
+    -> PureMLPattern Object variable
+builtinList = DV_ listSort . BuiltinDomainList . Seq.fromList

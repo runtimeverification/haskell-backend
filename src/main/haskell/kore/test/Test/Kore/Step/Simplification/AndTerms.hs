@@ -20,7 +20,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeTruePredicate )
+                 ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -598,6 +598,59 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     )
                     (Mock.builtinMap [(Mock.aConcrete, fOfA), (Mock.bConcrete, fOfB)])
                 )
+        )
+    , testCase "builtin List domain"
+        (do
+            let term1 = Mock.builtinList $
+                            [Mock.constr10 Mock.cf, Mock.constr11 Mock.cf]
+            let term2 = Mock.builtinList $
+                            [Mock.constr10 Mock.cf, Mock.constr11 Mock.cf]
+            assertEqualWithExplanation "[same head, same head]"
+                ( Just $ Predicated
+                        { term = term1
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                )
+                ( unify
+                    mockMetadataTools
+                        term1
+                        term2
+                )
+            let term3 = Mock.builtinList $
+                            [Mock.a, Mock.a]
+            let term4 = Mock.builtinList $
+                            [Mock.a, Mock.b]
+            assertEqualWithExplanation "[same head, different head]"
+                ( Just $ Predicated
+                         { term = Mock.builtinList [Mock.a, mkBottom]
+                         , predicate = makeFalsePredicate
+                         , substitution = []
+                         }
+                )
+                ( unify
+                    mockMetadataTools
+                    term3
+                    term4
+                )
+            let term5 = Mock.concatList
+                        (Mock.builtinList [Mock.constr10 Mock.cf])
+                        (mkVar Mock.x)
+            let term6 = Mock.builtinList $ [Mock.constr10 Mock.cf, Mock.constr11 Mock.cf]
+            assertEqualWithExplanation "[a] `concat` x /\\ [a, b] "
+                ( Just $ Predicated
+                        { term = Mock.builtinList[Mock.constr10 Mock.cf, Mock.constr11 Mock.cf]
+                        , predicate = makeTruePredicate
+                        , substitution = [(Mock.x, Mock.builtinList [Mock.constr11 Mock.cf])]
+                        }
+                )
+                ( unify
+                    mockMetadataTools
+                    term5
+                    term6
+                )
+            return ()
+
         )
     ]
 

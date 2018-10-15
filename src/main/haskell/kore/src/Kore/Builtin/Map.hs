@@ -38,7 +38,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import qualified Control.Monad as Monad
 import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
+                 ( ExceptT )
 import qualified Control.Monad.Except as Except
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -77,7 +77,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
-                 ( normalizePredicatedSubstitution )
+                 ( normalize )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
@@ -459,15 +459,6 @@ unify
         , Map.difference bs as
         )
 
-    -- | Normalize the substitution of 'expanded', or return 'bottom' if
-    -- normalization fails.
-    normalize :: (level ~ Object) => expanded -> m expanded
-    normalize r =
-        runExceptT (normalizePredicatedSubstitution tools r)
-            >>= \case
-                Left _ -> return ExpandedPattern.bottom
-                Right (normalized, _) -> return normalized
-
     -- | Sequence the actions in a map to return a collection of proven expanded
     -- patterns.
     collectProvenExpandedPatterns
@@ -539,7 +530,7 @@ unify
                             -- remainder of map2.
                             ExpandedPattern.bottom
                         | otherwise = asBuiltinMap <$> propagatePredicates _intersect
-                (,) <$> normalize result <*> pure SimplificationProof
+                (,) <$> normalize tools result <*> pure SimplificationProof
         return unified
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
@@ -572,7 +563,7 @@ unify
                             ExpandedPattern.bottom
                         | otherwise =
                             App_ concat' <$> propagatePredicates [q, _diff1]
-                (,) <$> normalize result <*> pure SimplificationProof
+                (,) <$> normalize tools result <*> pure SimplificationProof
         return unified
       where
         asBuiltinMap = asBuiltinDomainValue resultSort

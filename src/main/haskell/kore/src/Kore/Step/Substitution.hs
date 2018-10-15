@@ -11,6 +11,7 @@ module Kore.Step.Substitution
     ( mergePredicatesAndSubstitutions
     , mergeAndNormalizeSubstitutions
     , normalizePredicatedSubstitution
+    , normalize
     ) where
 
 import Control.Monad
@@ -32,8 +33,9 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeFalsePredicate,
                  makeMultipleAndPredicate )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution (..), Predicated (..),
+                 ( ExpandedPattern, PredicateSubstitution (..), Predicated (..),
                  substitutionToPredicate )
 import           Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
@@ -51,6 +53,31 @@ import           Kore.Unification.SubstitutionNormalization
 import           Kore.Unification.UnifierImpl
                  ( normalizeSubstitutionDuplication )
 import           Kore.Variables.Fresh
+
+
+-- | Normalize the substitution of 'expanded', or return 'bottom' if
+-- normalization fails.
+normalize 
+  :: forall level variable m . 
+     ( level ~ Object
+     , Monad m
+     , MonadCounter m
+     , MetaOrObject level
+     , Hashable variable
+     , FreshVariable variable
+     , SortedVariable variable
+     , OrdMetaOrObject variable
+     , ShowMetaOrObject variable
+     ) 
+  => MetadataTools level StepperAttributes 
+  -> ExpandedPattern level variable 
+  -> m (ExpandedPattern level variable)
+normalize tools r =
+    runExceptT (normalizePredicatedSubstitution tools r)
+        >>= \case
+            Left _ -> return ExpandedPattern.bottom
+            Right (normalized, _) -> return normalized
+
 
 {-|'mergeSubstitutions' merges a list of substitutions into
 a single one, then returns it together with the side condition of that merge.
