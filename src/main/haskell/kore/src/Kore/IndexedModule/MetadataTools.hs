@@ -16,7 +16,7 @@ module Kore.IndexedModule.MetadataTools
     ) where
 
 import           Data.Graph
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject

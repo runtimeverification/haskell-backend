@@ -41,7 +41,7 @@ import           Data.Default
 import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
