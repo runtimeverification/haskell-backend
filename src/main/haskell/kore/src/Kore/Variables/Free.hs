@@ -11,19 +11,59 @@ Portability : portable
 -}
 module Kore.Variables.Free
     ( freeVariables
-    , pureFreeVariables
+    , freePureVariables
     , allVariables
     , pureAllVariables
     ) where
 
+import qualified Control.Monad.RWS.Strict as Monad.RWS
 import           Data.Foldable
                  ( fold )
 import           Data.Functor.Foldable
                  ( Fix, cata )
+import qualified Data.Functor.Foldable as Functor.Foldable
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
+
+{- | The free variables of a pure pattern.
+ -}
+freePureVariables
+    :: (Ord (variable level))
+    => PureMLPattern level variable
+    -> Set (variable level)
+freePureVariables root =
+    let (free, ()) =
+            Monad.RWS.execRWS
+                (freePureVariables1 root)
+                Set.empty  -- initial set of bound variables
+                Set.empty  -- initial set of free variables
+    in
+        free
+  where
+    unlessM m go = m >>= \b -> if b then return () else go
+    isBound v = Monad.RWS.asks (Set.member v)
+    recordFree v = Monad.RWS.modify' (Set.insert v)
+
+    freePureVariables1 recursive =
+        case Functor.Foldable.project recursive of
+            VariablePattern v -> unlessM (isBound v) (recordFree v)
+            ExistsPattern Exists { existsVariable, existsChild } ->
+                Monad.RWS.local
+                    -- record the bound variable
+                    (Set.insert existsVariable)
+                    -- descend into the bound pattern
+                    (freePureVariables1 existsChild)
+            ForallPattern Forall { forallVariable, forallChild } ->
+                Monad.RWS.local
+                    -- record the bound variable
+                    (Set.insert forallVariable)
+                    -- descend into the bound pattern
+                    (freePureVariables1 forallChild)
+            p -> mapM_ freePureVariables1 p
 
 {-| 'freeVariables' extracts the set of free variables of a pattern. -}
 freeVariables
@@ -69,27 +109,6 @@ pureMergeVariables (ForallPattern f) =
     Set.insert (forallVariable f) (forallChild f)
 pureMergeVariables p = fold p  -- default rule
 
-pureFreeVariables
-    :: ( UnifiedPatternInterface pat
-       , Functor (pat var)
-       , Show (var Object)
-       , Show (var Meta)
-       , Ord (var Object)
-       , Ord (var Meta)
-       , MetaOrObject level)
-    => proxy level -> Fix (pat var) -> Set.Set (var level)
-pureFreeVariables proxy p =
-    case isMetaOrObject proxy of
-        IsMeta   -> metaVars `ifSetEmpty` unifiedObjectVars
-        IsObject -> objectVars `ifSetEmpty` unifiedMetaVars
-  where
-    freeVars = freeVariables p
-    isUnifiedMeta (UnifiedMeta _) = True
-    isUnifiedMeta _               = False
-    (unifiedMetaVars, unifiedObjectVars) = Set.partition isUnifiedMeta freeVars
-    metaVars = Set.map (\ (UnifiedMeta v) -> v) unifiedMetaVars
-    objectVars = Set.map (\ (UnifiedObject v) -> v) unifiedObjectVars
-
 {-| 'pureAllVariables' extracts all variables of a given level in a pattern as a
 set, regardless of whether they are quantified or not.
 -}
@@ -97,9 +116,3 @@ pureAllVariables
     :: Ord (var level)
     => PureMLPattern level var -> Set.Set (var level)
 pureAllVariables = cata pureMergeVariables
-
-ifSetEmpty :: Show b => a -> Set.Set b -> a
-ifSetEmpty a bs =
-    if Set.null bs
-        then a
-        else error ("Expecting empty set " ++ show bs)

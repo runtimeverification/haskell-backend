@@ -41,8 +41,6 @@ module Kore.Predicate.Predicate
 
 import Data.List
        ( foldl', nub )
-import Data.Proxy
-       ( Proxy (..) )
 import Data.Reflection
        ( Given )
 import Data.Set
@@ -61,7 +59,7 @@ import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
        ( SymbolOrAliasSorts )
 import Kore.Variables.Free
-       ( pureAllVariables, pureFreeVariables )
+       ( freePureVariables, pureAllVariables )
 
 {-| 'PredicateProof' is a placeholder for a proof showing that a Predicate
 evaluation was correct.
@@ -386,14 +384,10 @@ allVariables = pureAllVariables . unwrapPredicate
 {- | Extract the set of free variables from a @Predicate@.
 -}
 freeVariables
-    :: ( MetaOrObject level
-       , Show (variable Object)
-       , Show (variable Meta)
-       , Ord (variable Object)
-       , Ord (variable Meta))
+    :: (MetaOrObject level , Ord (variable level))
     => Predicate level variable
     -> Set (variable level)
-freeVariables = pureFreeVariables Proxy . unwrapPredicate
+freeVariables = freePureVariables . unwrapPredicate
 
 {- | 'substitutionToPredicate' transforms a substitution in a predicate.
 
@@ -427,4 +421,3 @@ singleSubstitutionToPredicate
     -> Predicate level variable
 singleSubstitutionToPredicate (var, patt) =
     makeEqualsPredicate (mkVar var) patt
-

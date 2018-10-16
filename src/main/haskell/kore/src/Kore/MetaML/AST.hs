@@ -27,7 +27,6 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.Variables.Free
-       ( pureFreeVariables )
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to 'Meta'.
@@ -69,7 +68,7 @@ type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
 
 -- |'metaFreeVariables' collects the free variables of a 'CommonMetaPattern'.
 metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)
-metaFreeVariables = pureFreeVariables (toProxy Meta)
+metaFreeVariables = freePureVariables
 
 nilSortListHead :: SymbolOrAlias Meta
 nilSortListHead = groundHead "#nilSortList" AstLocationImplicit

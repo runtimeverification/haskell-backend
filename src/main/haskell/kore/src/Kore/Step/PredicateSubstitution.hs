@@ -99,14 +99,11 @@ toPredicate PredicateSubstitution { predicate, substitution } =
 
 freeVariables
     :: ( MetaOrObject level
-       , Show (variable Object)
-       , Show (variable Meta)
-       , Ord (variable Object)
-       , Ord (variable Meta)
+       , Ord (variable level)
+       , Show (variable level)
        , Given (SymbolOrAliasSorts level)
        , SortedVariable variable
-       , Eq (variable level)
-       , Show (variable level))
+       )
     => PredicateSubstitution level variable
     -> Set.Set (variable level)
 freeVariables = Predicate.freeVariables . toPredicate
