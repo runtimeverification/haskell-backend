@@ -32,9 +32,10 @@ module Kore.Builtin.List
     , unify
     ) where
 
-import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
-import qualified Control.Monad.Except as Except
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Error
+                 ( MaybeT )
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -136,7 +137,7 @@ expectBuiltinDomainList
     :: Monad m
     => String  -- ^ Context for error message
     -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object variable) m (Builtin variable)
+    -> MaybeT m (Builtin variable)
 expectBuiltinDomainList ctx =
     \case
         Kore.DV_ _ domain ->
@@ -144,10 +145,7 @@ expectBuiltinDomainList ctx =
                 Kore.BuiltinDomainList list -> return list
                 _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a list")
         _ ->
-            Except.throwError NotApplicable
-
-getAttemptedFunction :: Monad m => ExceptT r m r -> m r
-getAttemptedFunction = fmap (either id id) . runExceptT
+            empty
 
 returnList
     :: Monad m
@@ -173,6 +171,7 @@ evalGet :: Builtin.Function
 evalGet =
     Builtin.functionEvaluator evalGet0
   where
+    ctx = "LIST.get"
     evalGet0
         :: MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
@@ -180,21 +179,29 @@ evalGet =
         -> [Kore.PureMLPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalGet0 _ _ _ = \arguments ->
-        getAttemptedFunction
+        Builtin.getAttemptedFunction
         (do
             let (_list, _ix) =
                     case arguments of
                         [_list, _ix] -> (_list, _ix)
-                        _ -> Builtin.wrongArity "LIST.get"
-            _list <- expectBuiltinDomainList "LIST.get" _list
-            _ix <- fromInteger <$> Int.expectBuiltinDomainInt "LIST.get" _ix
-            let ix | _ix < 0 =
-                     -- negative indices count from end of list
-                     _ix + Seq.length _list
-                   | otherwise = _ix
-            (Builtin.appliedFunction . fromMaybe) (Seq.lookup ix _list)
+                        _ -> Builtin.wrongArity ctx
+                emptyList = do
+                    _list <- expectBuiltinDomainList ctx _list
+                    if Seq.null _list
+                        then Builtin.appliedFunction ExpandedPattern.bottom
+                        else empty
+                bothConcrete = do
+                    _list <- expectBuiltinDomainList ctx _list
+                    _ix <- fromInteger <$> Int.expectBuiltinDomainInt ctx _ix
+                    let ix
+                            | _ix < 0 =
+                                -- negative indices count from end of list
+                                _ix + Seq.length _list
+                            | otherwise = _ix
+                    (Builtin.appliedFunction . maybeBottom) (Seq.lookup ix _list)
+            emptyList <|> bothConcrete
         )
-    fromMaybe =
+    maybeBottom =
         maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
 
 evalUnit :: Builtin.Function
@@ -210,16 +217,41 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
+    ctx = "LIST.concat"
+    evalConcat0
+        :: MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Kore.Sort Object
+        -> [Kore.PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
     evalConcat0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+        Builtin.getAttemptedFunction
         (do
             let (_list1, _list2) =
                     case arguments of
                         [_list1, _list2] -> (_list1, _list2)
-                        _ -> Builtin.wrongArity "LIST.concat"
-            _list1 <- expectBuiltinDomainList "LIST.concat" _list1
-            _list2 <- expectBuiltinDomainList "LIST.concat" _list2
-            returnList resultSort (_list1 <> _list2)
+                        _ -> Builtin.wrongArity ctx
+                leftIdentity = do
+                    _list1 <- expectBuiltinDomainList ctx _list1
+                    if Seq.null _list1
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _list2
+                        else
+                            empty
+                rightIdentity = do
+                    _list2 <- expectBuiltinDomainList ctx _list2
+                    if Seq.null _list2
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _list1
+                        else
+                            empty
+                bothConcrete = do
+                    _list1 <- expectBuiltinDomainList ctx _list1
+                    _list2 <- expectBuiltinDomainList ctx _list2
+                    returnList resultSort (_list1 <> _list2)
+            leftIdentity <|> rightIdentity <|> bothConcrete
         )
 
 {- | Implement builtin function evaluation.
@@ -375,5 +407,3 @@ unify
     p2@(App_ _ _)
   = unify tools simplifyChild p2 p1
 unify _ _ _ _ = Unknown
-
-

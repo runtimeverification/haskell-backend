@@ -30,9 +30,10 @@ module Kore.Builtin.Set
     , lookupSymbolDifference
     ) where
 
-import           Control.Monad.Except
-                 ( ExceptT )
-import qualified Control.Monad.Except as Except
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Error
+                 ( MaybeT )
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -129,7 +130,7 @@ expectBuiltinDomainSet
     => String  -- ^ Context for error message
     -> MetadataTools Object StepperAttributes
     -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object variable) m Builtin
+    -> MaybeT m Builtin
 expectBuiltinDomainSet ctx tools _set =
     do
         _set <- Builtin.expectNormalConcreteTerm tools _set
@@ -141,7 +142,7 @@ expectBuiltinDomainSet ctx tools _set =
                         Builtin.verifierBug
                             (ctx ++ ": Domain value is not a set")
             _ ->
-                Except.throwError NotApplicable
+                empty
 
 returnSet
     :: Monad m
@@ -219,9 +220,25 @@ evalConcat =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity ctx
-            _set1 <- expectBuiltinDomainSet ctx tools _set1
-            _set2 <- expectBuiltinDomainSet ctx tools _set2
-            returnSet resultSort (_set1 <> _set2)
+                leftIdentity = do
+                    _set1 <- expectBuiltinDomainSet ctx tools _set1
+                    if Set.null _set1
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _set2
+                        else empty
+                rightIdentity = do
+                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    if Set.null _set2
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _set1
+                        else empty
+                bothConcrete = do
+                    _set1 <- expectBuiltinDomainSet ctx tools _set1
+                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    returnSet resultSort (_set1 <> _set2)
+            leftIdentity <|> rightIdentity <|> bothConcrete
         )
 
 evalDifference :: Builtin.Function
@@ -242,9 +259,18 @@ evalDifference =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity ctx
-            _set1 <- expectBuiltinDomainSet ctx tools _set1
-            _set2 <- expectBuiltinDomainSet ctx tools _set2
-            returnSet resultSort (Set.difference _set1 _set2)
+                rightIdentity = do
+                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    if Set.null _set2
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _set1
+                        else empty
+                bothConcrete = do
+                    _set1 <- expectBuiltinDomainSet ctx tools _set1
+                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    returnSet resultSort (Set.difference _set1 _set2)
+            rightIdentity <|> bothConcrete
         )
 
 {- | Implement builtin function evaluation.
