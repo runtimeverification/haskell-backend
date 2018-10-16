@@ -12,6 +12,8 @@ import           Data.Map
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
+import           Data.Text
+                 ( Text )
 import           GHC.Integer
                  ( smallInteger )
 import           GHC.Integer.GMP.Internals
@@ -331,7 +333,7 @@ intSortDecl =
         :: KoreSentenceSort Object)
 
 -- | Make an unparameterized builtin symbol with the given name.
-builtinSymbol :: String -> SymbolOrAlias Object
+builtinSymbol :: Text -> SymbolOrAlias Object
 builtinSymbol name =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId name

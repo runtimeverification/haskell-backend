@@ -520,7 +520,7 @@ findVariableDeclaration variableId verifyHelpers =
         Nothing ->
             koreFailWithLocations
                 [variableId]
-                ("Unquantified variable: '" ++ getId variableId ++ "'.")
+                ("Unquantified variable: '" ++ getIdForError variableId ++ "'.")
         Just variable -> Right variable
   where
     findVariables = verifyHelpersFindDeclaredVariables verifyHelpers
@@ -676,7 +676,8 @@ patternNameForContext :: Pattern level Variable p -> String
 patternNameForContext (AndPattern _) = "\\and"
 patternNameForContext (ApplicationPattern application) =
     "symbol or alias '"
-    ++ getId (symbolOrAliasConstructor (applicationSymbolOrAlias application))
+    ++ getIdForError
+        (symbolOrAliasConstructor (applicationSymbolOrAlias application))
     ++ "'"
 patternNameForContext (BottomPattern _) = "\\bottom"
 patternNameForContext (CeilPattern _) = "\\ceil"
@@ -705,4 +706,4 @@ patternNameForContext (VariablePattern variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
 
 variableNameForContext :: Variable level -> String
-variableNameForContext variable = getId (variableName variable)
+variableNameForContext variable = getIdForError (variableName variable)

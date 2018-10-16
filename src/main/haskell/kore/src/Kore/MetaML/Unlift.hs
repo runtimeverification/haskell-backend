@@ -16,6 +16,7 @@ module Kore.MetaML.Unlift ( UnliftableFromMetaML (..) ) where
 import Control.Applicative
 import Data.Functor.Foldable
 import Data.Maybe
+import qualified Data.Text as Text
 
 import Kore.AST.Common
 import Kore.AST.Kore
@@ -52,7 +53,7 @@ parseObjectId input location =
 unliftObjectId :: Id Meta -> Maybe (Id Object)
 unliftObjectId
     Id
-        { getId = ('#' : oid)
+        { getId = Text.unpack -> '#' : oid
         , idLocation = location
         }
   =
@@ -74,7 +75,7 @@ unliftSortConstructor :: SymbolOrAlias Meta -> Maybe (Id Object)
 unliftSortConstructor
     SymbolOrAlias
         { symbolOrAliasConstructor = Id
-            { getId = ('#' : '`' : name)
+            { getId = (Text.unpack -> '#' : '`' : name)
             , idLocation = location
             }
         , symbolOrAliasParams = []

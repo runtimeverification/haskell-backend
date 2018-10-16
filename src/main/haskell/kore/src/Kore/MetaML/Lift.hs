@@ -17,7 +17,10 @@ module Kore.MetaML.Lift
     , LiftableToMetaML(liftToMeta)
     ) where
 
-import Data.Functor.Foldable
+import           Data.Functor.Foldable
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import           Data.Functor.Impredicative
                  ( Rotate31 (..) )
@@ -45,24 +48,24 @@ class VerboseLiftableToMetaML mixed where
 
 -- Section 9.2.1 Lift Object Identifiers to String Literals
 instance LiftableToMetaML (Id Object) where
-    liftToMeta = Fix . StringLiteralPattern . StringLiteral . getId
+    liftToMeta = Fix . StringLiteralPattern . StringLiteral . getIdForError
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortVariable Object) where
     liftToMeta sv = Fix $ VariablePattern Variable
         { variableName = Id
-            { getId = ('#' :) $ getId $ getSortVariable sv
+            { getId = Text.cons '#' $ getId $ getSortVariable sv
             , idLocation = AstLocationLifted $ idLocation $ getSortVariable sv
             }
         , variableSort = sortMetaSort
         }
 
 -- Section 9.2.2 Lift Object Sort Constructors to Meta Symbols
-liftSortConstructor :: String -> String
-liftSortConstructor name = '#' : '`' : name
+liftSortConstructor :: Text -> Text
+liftSortConstructor name = "#`" <> name
 
 -- Section 9.2.5 Lift Object Head Constructors to Meta Symbols
-liftHeadConstructor :: String -> String
+liftHeadConstructor :: Text -> Text
 liftHeadConstructor = liftSortConstructor
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
@@ -287,7 +290,7 @@ liftSymbolDeclaration sd =
         , liftToMeta (sentenceSymbolResultSort sd)
         ]
     freshVariable n s = Fix $ VariablePattern Variable
-        { variableName = Id ("#P" ++ show (n::Int)) liftedSymbolLocation
+        { variableName = Id ("#P" <> (Text.pack . show) (n::Int)) liftedSymbolLocation
         , variableSort = s
         }
     phis = zipWith freshVariable [1..] patternSorts

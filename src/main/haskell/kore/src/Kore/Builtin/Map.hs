@@ -47,6 +47,8 @@ import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given, give )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import           Data.Result
 import           Kore.AST.Common
@@ -84,7 +86,7 @@ import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Map@ sort.
  -}
-sort :: String
+sort :: Text
 sort = "MAP.Map"
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
@@ -272,7 +274,7 @@ evalInKeys =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
         [ ("MAP.concat", evalConcat)

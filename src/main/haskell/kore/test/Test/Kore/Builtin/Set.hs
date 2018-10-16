@@ -13,6 +13,8 @@ import           Data.Reflection
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -154,7 +156,7 @@ prop_difference set1 set2 =
             ]
 
 -- | Sets with symbolic keys are not simplified.
-prop_symbolic :: Set String -> Property
+prop_symbolic :: Set Text -> Property
 prop_symbolic values =
     let patMap =
             asSymbolicPattern
@@ -226,7 +228,7 @@ setModuleName :: ModuleName
 setModuleName = ModuleName "SET"
 
 -- | Make an unparameterized builtin symbol with the given name.
-builtinSymbol :: String -> SymbolOrAlias Object
+builtinSymbol :: Text -> SymbolOrAlias Object
 builtinSymbol name =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId name

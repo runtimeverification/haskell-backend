@@ -4,21 +4,24 @@
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 
 module Test.Kore.ASTUtils
-( test_substitutions
-, test_sortAgreement
-, var
-, var_
-, mkSort
-, dummyEnvironment
-) where
+    ( test_substitutions
+    , test_sortAgreement
+    , var
+    , var_
+    , mkSort
+    , dummyEnvironment
+    ) where
 
 import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Control.Lens
-import Data.Reflection
+import           Control.Lens
+import           Data.Reflection
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -211,7 +214,7 @@ genUnaryPatterns 0 = []
 genUnaryPatterns 1 = [Var_ $ var_ "x" "X"]
 genUnaryPatterns size = do
   a <- generatePatterns (size - 1)
-  [mkNot a, mkNext a, mkForall (var $ show size) a]
+  [mkNot a, mkNext a, mkForall (var $ Text.pack $ show size) a]
 
 --FIXME: Make a proper Tasty generator instead
 testGetSetIdentity
@@ -223,11 +226,11 @@ testGetSetIdentity size = dummyEnvironment $ testGroup "getSetIdent" $ do
   pat <- generatePatterns size
   return $ testCase "" $ substitutionGetSetIdentity a b pat
 
-var :: MetaOrObject level => String -> Variable level
+var :: MetaOrObject level => Text -> Variable level
 var x =
   Variable (noLocationId x) (mkSort "S")
 
-var_ :: MetaOrObject level => String -> String -> Variable level
+var_ :: MetaOrObject level => Text -> Text -> Variable level
 var_ x s =
   Variable (noLocationId x) (mkSort s)
 

@@ -41,6 +41,8 @@ import qualified Data.Map.Strict as Map
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
@@ -66,7 +68,7 @@ import           Kore.Step.StepperAttributes
 
 {- | Builtin name of the @Set@ sort.
  -}
-sort :: String
+sort :: Text
 sort = "SET.Set"
 
 {- | Verify that the sort is hooked to the builtin @Set@ sort.
@@ -247,7 +249,7 @@ evalDifference =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
         [ ("SET.concat", evalConcat)

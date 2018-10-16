@@ -5,6 +5,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueNames
 import Test.Tasty
        ( TestTree )
 
+import qualified Data.Text as Text
+
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
@@ -244,5 +246,4 @@ test_uniqueNames =
         )
     ]
   where
-    stringSortName = SortName (show (MetaListSortType CharSort))
-
+    stringSortName = SortName ((Text.pack . show) (MetaListSortType CharSort))

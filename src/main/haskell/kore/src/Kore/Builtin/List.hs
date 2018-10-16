@@ -46,6 +46,8 @@ import           Data.Result
 import           Data.Sequence
                  ( Seq, (><) )
 import qualified Data.Sequence as Seq
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Common
 import qualified Kore.AST.Common as Kore
@@ -77,7 +79,7 @@ import           Kore.Variables.Fresh
 
 {- | Builtin variable name of the @List@ sort.
  -}
-sort :: String
+sort :: Text
 sort = "LIST.List"
 
 {- | Verify that the sort is hooked to the builtin @List@ sort.
@@ -222,7 +224,7 @@ evalConcat =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
         [ ("LIST.concat", evalConcat)

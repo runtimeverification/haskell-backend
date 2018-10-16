@@ -15,6 +15,8 @@ module Kore.AST.PureML where
 
 import           Data.Functor.Foldable
 import qualified Data.Functor.Foldable as Functor.Foldable
+import           Data.Text
+                 ( Text )
 
 import Kore.AST.Common
 import Kore.AST.Sentence
@@ -148,7 +150,7 @@ type PureDefinition level =
 
 -- |Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.
-groundHead :: String -> AstLocation -> SymbolOrAlias level
+groundHead :: Text -> AstLocation -> SymbolOrAlias level
 groundHead ctor location = SymbolOrAlias
     { symbolOrAliasConstructor = Id
         { getId = ctor

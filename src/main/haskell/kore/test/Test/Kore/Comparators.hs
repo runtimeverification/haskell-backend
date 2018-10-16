@@ -554,8 +554,8 @@ instance StructEqualWithExplanation (Id level)
           actual@(Id _ _)
         = [ EqWrap
               "getId = "
-              (EWEString $ getId expected)
-              (EWEString $ getId actual)
+              (EWEString $ getIdForError expected)
+              (EWEString $ getIdForError actual)
           , EqWrap
               "idLocation = "
               (EWEString "")

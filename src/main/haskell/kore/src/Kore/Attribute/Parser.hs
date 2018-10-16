@@ -60,6 +60,9 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.List.NonEmpty
                  ( NonEmpty )
 import qualified Data.List.NonEmpty as NonEmpty
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Common
                  ( Application (..), Id (..),
@@ -105,7 +108,7 @@ data Occurrence = Occurrence
     }
 
 -- | A map from attribute names to a non-empty list of its 'Occurence's.
-type AttributeMap = HashMap String (NonEmpty Occurrence)
+type AttributeMap = HashMap Text (NonEmpty Occurrence)
 
 data ParseError
 
@@ -206,17 +209,19 @@ runParser Parser { getParser } (Attributes attrs) = do
 
  -}
 withContext
-    :: String  -- ^ attribute name
+    :: Text  -- ^ attribute name
     -> Parser a  -- ^ attribute parser
     -> Parser a
-withContext attr = Kore.Error.withContext ("attribute '" ++ attr ++ "'")
+withContext attr =
+    Kore.Error.withContext
+        ("attribute '" ++ Text.unpack attr ++ "'")
 
 {- | Collect the occurrences of the named attribute.
 
   @attributesWithName@ returns an empty list if the attribute is not present
  -}
 attributesWithName
-    :: String  -- ^ attribute name
+    :: Text  -- ^ attribute name
     -> Parser [Occurrence]
 attributesWithName key =
     maybe [] NonEmpty.toList . HashMap.lookup key <$> Reader.ask
@@ -228,13 +233,14 @@ attributesWithName key =
   attribute.
  -}
 someAttributesWithName
-    :: String  -- ^ attribute name
+    :: Text  -- ^ attribute name
     -> Parser (NonEmpty Occurrence)
 someAttributesWithName key = do
     attrMap <- Reader.ask
     case HashMap.lookup key attrMap of
         Nothing ->
-            Kore.Error.koreFail ("No attribute found matching: " ++ key)
+            Kore.Error.koreFail
+                ("No attribute found matching: " ++ Text.unpack key)
         Just occurs -> pure occurs
 
 {- | Parse a key-only attribute.
@@ -247,7 +253,7 @@ someAttributesWithName key = do
 
  -}
 assertKeyOnlyAttribute
-    :: String  -- ^ attribute name
+    :: Text  -- ^ attribute name
     -> Parser ()
 assertKeyOnlyAttribute key = do
     occurrences <- someAttributesWithName key
@@ -266,7 +272,7 @@ assertKeyOnlyAttribute key = do
   See also: 'parseKeyAttribute'
 
  -}
-hasKeyOnlyAttribute :: String -> Parser Bool
+hasKeyOnlyAttribute :: Text -> Parser Bool
 hasKeyOnlyAttribute key =
     choose (present $> True) (missing $> False)
   where
@@ -287,12 +293,12 @@ hasKeyOnlyAttribute key =
   attribute.
 
  -}
-parseStringAttribute :: String -> Parser String
+parseStringAttribute :: Text -> Parser Text
 parseStringAttribute key = do
     occurrences <- someAttributesWithName key
     withContext key (expectStringArgument occurrences)
   where
-    expectStringArgument :: NonEmpty Occurrence -> Parser String
+    expectStringArgument :: NonEmpty Occurrence -> Parser Text
     expectStringArgument occurrences =
         do
             arguments <- oneOccurrence occurrences
@@ -306,10 +312,10 @@ parseStringAttribute key = do
             _ -> Kore.Error.koreFail "Expected meta pattern"
 
     expectLiteralString
-        :: Pattern Meta Variable CommonKorePattern -> Parser String
+        :: Pattern Meta Variable CommonKorePattern -> Parser Text
     expectLiteralString =
         \case
-            StringLiteralPattern (StringLiteral arg) -> pure arg
+            StringLiteralPattern (StringLiteral arg) -> pure (Text.pack arg)
             _ -> Kore.Error.koreFail "Expected literal string argument"
 
 {- | Signal parse failure if the attribute is present.
@@ -321,11 +327,12 @@ parseStringAttribute key = do
   See also: 'hasKeyAttribute'
 
  -}
-assertNoAttribute :: String -> Parser ()
+assertNoAttribute :: Text -> Parser ()
 assertNoAttribute key =
     do
         exists <- choose (someAttributesWithName key $> True) (pure False)
-        Kore.Error.koreFailWhen exists ("Expected no attribute '" ++ key ++ "'")
+        Kore.Error.koreFailWhen exists
+            ("Expected no attribute '" ++ Text.unpack key ++ "'")
 
 {- | Fail if the attribute does not occur exactly once.
 
@@ -356,4 +363,3 @@ oneArgument (Occurrence _ args) =
     case args of
         [a] -> pure a
         _ -> Kore.Error.koreFail "Expected 1 argument"
-

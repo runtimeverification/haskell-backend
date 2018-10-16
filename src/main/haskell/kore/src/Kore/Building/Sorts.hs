@@ -24,6 +24,8 @@ module Kore.Building.Sorts
     , ObjectSortVariable1 (ObjectSortVariable1)
     ) where
 
+import qualified Data.Text as Text
+
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Building.AsAst
@@ -81,7 +83,7 @@ asMetaSortVariable
         }
   =
     SortVariable Id
-        { getId = name'
+        { getId = Text.pack name'
         , idLocation = location
         }
 
@@ -98,7 +100,7 @@ instance AsAst (Sort Object) ObjectSortVariable1 where
       =
         SortVariableSort
             (SortVariable Id
-                { getId = name'
+                { getId = Text.pack name'
                 , idLocation = location
                 }
             )

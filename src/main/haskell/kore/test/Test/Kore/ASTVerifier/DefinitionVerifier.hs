@@ -8,6 +8,8 @@ import Test.Tasty.HUnit
 import Data.Functor.Foldable
 import Data.Proxy
        ( Proxy (..) )
+import Data.Text
+       ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -124,12 +126,12 @@ printDefinition definition =
 
 -------------------------------------------------------------
 
-newtype AliasName = AliasName String
-newtype SymbolName = SymbolName String
-newtype SortName = SortName String
-newtype SortVariableName = SortVariableName String
-newtype VariableName = VariableName String
-newtype NamePrefix = NamePrefix String
+newtype AliasName = AliasName Text
+newtype SymbolName = SymbolName Text
+newtype SortName = SortName Text
+newtype SortVariableName = SortVariableName Text
+newtype VariableName = VariableName Text
+newtype NamePrefix = NamePrefix Text
 newtype OperandSort level = OperandSort (Sort level)
 newtype ResultSort level = ResultSort (Sort level)
 newtype DeclaredSort level = DeclaredSort (Sort level)
@@ -546,7 +548,7 @@ simpleSort :: SortName -> Sort level
 simpleSort sortName =
     SortActualSort (simpleSortActual sortName)
 
-objectVariableSort :: String -> Sort Object
+objectVariableSort :: Text -> Sort Object
 objectVariableSort name = sortVariableSort name
 
 unifiedSortVariable

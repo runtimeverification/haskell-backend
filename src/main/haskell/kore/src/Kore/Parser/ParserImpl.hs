@@ -44,6 +44,7 @@ import           Control.Monad
 import           Data.Functor.Foldable
 import           Data.Maybe
                  ( isJust )
+import qualified Data.Text as Text
 import           Text.Megaparsec
                  ( some )
 import qualified Text.Megaparsec.Char as Parser
@@ -122,9 +123,9 @@ sortParser x = do
             }
     stringNameNormalizer :: Id level -> Id level
     stringNameNormalizer identifier@Id {getId = i} =
-        if isMeta x && (i == show StringSort)
+        if isMeta x && (Text.unpack i == show StringSort)
             then identifier
-                { getId = show (MetaListSortType CharSort) }
+                { getId = (Text.pack . show) (MetaListSortType CharSort) }
             else identifier
 
 {-|'validateMetaSort' checks that a @meta-sort@ is well-formed.
@@ -149,7 +150,7 @@ validateMetaSort identifier [] =
     unless (isJust (metaSortConverter metaId))
         (fail ("metaSortConverter: Invalid constructor: '" ++ metaId ++ "'."))
   where
-    metaId = getId identifier
+    metaId = getIdForError identifier
 validateMetaSort _ _ = fail "metaSortConverter: Non empty parameter sorts."
 
 {-|'symbolOrAliasDeclarationRawParser' parses a head and constructs it using the provided

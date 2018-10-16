@@ -43,10 +43,13 @@ module Kore.AST.Builders
     , unparameterizedVariable_
     ) where
 
-import Data.Functor.Foldable
-       ( Fix (..) )
-import Data.Proxy
-       ( Proxy (..) )
+import           Data.Functor.Foldable
+                 ( Fix (..) )
+import           Data.Proxy
+                 ( Proxy (..) )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import Kore.AST.BuildersImpl
 import Kore.AST.Common
@@ -59,7 +62,7 @@ import Kore.Error
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}
-sortParameter :: Proxy level -> String -> AstLocation -> SortVariable level
+sortParameter :: Proxy level -> Text -> AstLocation -> SortVariable level
 sortParameter _ name location =
     SortVariable Id
         { getId = name
@@ -114,7 +117,7 @@ sort_ :: MetaSortType -> Sort level
 sort_ sortType =
     SortActualSort SortActual
         { sortActualName = Id
-            { getId = show sortType
+            { getId = Text.pack (show sortType)
             , idLocation = AstLocationImplicit
             }
         , sortActualSorts = []
@@ -122,7 +125,7 @@ sort_ sortType =
 
 -- |Given a string @name@, yields the 'UnsortedPatternStub' defining
 -- name as a variable.
-unparameterizedVariable_ :: String -> AstLocation -> CommonPurePatternStub level
+unparameterizedVariable_ :: Text -> AstLocation -> CommonPurePatternStub level
 unparameterizedVariable_ name location =
     UnsortedPatternStub
         (\sortS ->
@@ -138,14 +141,14 @@ unparameterizedVariable_ name location =
 -- |Given a 'Sort' @sort@ and a string @name@, yields 'PatternStub' defining
 -- name as a variable of sort @sort@.
 parameterizedVariable_
-    :: Sort level -> String -> AstLocation -> CommonPurePatternStub level
+    :: Sort level -> Text -> AstLocation -> CommonPurePatternStub level
 parameterizedVariable_ sort name location =
     withSort sort (unparameterizedVariable_ name location)
 
 -- |constructs an unparameterized Symbol declaration given the symbol name,
 -- operand sorts and result sort.
 symbol_
-    :: String
+    :: Text
     -> AstLocation
     -> [Sort level]
     -> Sort level
@@ -155,7 +158,7 @@ symbol_ name location = parameterizedSymbol_ name location []
 -- |constructs a Symbol declaration given symbol name, parameters,
 -- operand sorts and result sort.
 parameterizedSymbol_
-    :: String
+    :: Text
     -> AstLocation
     -> [SortVariable level]
     -> [Sort level]
@@ -178,7 +181,7 @@ parameterizedSymbol_ name location parameters operandSorts resultSort =
 -- |constructs an unparameterized Alias declaration given the alias name,
 -- operand sorts and result sort.
 alias_
-    :: String
+    :: Text
     -> AstLocation
     -> [Sort level]
     -> Sort level
@@ -190,7 +193,7 @@ alias_ name location = parameterizedAlias_ name location []
 -- |constructs a Alias declaration given alias name, parameters,
 -- operand sorts and result sort.
 parameterizedAlias_
-    :: String
+    :: Text
     -> AstLocation
     -> [SortVariable level]
     -> [Sort level]
