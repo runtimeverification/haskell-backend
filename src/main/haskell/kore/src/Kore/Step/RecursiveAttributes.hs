@@ -39,7 +39,6 @@ recursivelyCheckHeadProperty prop tools = go
     go (StringLiteral_ _) = True
     go (CharLiteral_ _)   = True
     go _ = False
-    -- go pat = all go $ pat ^. partsOf allChildren
 
 isFunctionalPattern, isFunctionPattern, isTotalPattern
     :: forall level variable .
