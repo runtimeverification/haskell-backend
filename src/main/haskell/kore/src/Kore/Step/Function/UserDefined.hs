@@ -27,7 +27,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeTruePredicate )
 import           Kore.Step.BaseStep
-                 ( AxiomPattern, stepWithAxiom )
+                 ( AxiomPattern, UnificationProcedure (..), stepWithAxiom' )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
@@ -38,6 +38,8 @@ import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution (PredicateSubstitution) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
+import           Kore.Step.Function.Matcher
+                 ( matchAsUnification )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -114,8 +116,9 @@ axiomFunctionEvaluator
                             rewrittenPattern
   where
     stepResult =
-        stepWithAxiom
+        stepWithAxiom'
             tools
+            (UnificationProcedure matchAsUnification)
             substitutionSimplifier
             (stepperConfiguration app)
             axiom

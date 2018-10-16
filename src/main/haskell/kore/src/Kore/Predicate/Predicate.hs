@@ -31,14 +31,18 @@ module Kore.Predicate.Predicate
     , makeMultipleOrPredicate
     , makeTruePredicate
     , allVariables
+    , freeVariables
     , mapVariables
     , stringFromPredicate
+    , substitutionToPredicate
     , unwrapPredicate
     , wrapPredicate
     ) where
 
 import Data.List
        ( foldl', nub )
+import Data.Proxy
+       ( Proxy (..) )
 import Data.Reflection
        ( Given )
 import Data.Set
@@ -51,13 +55,13 @@ import Kore.AST.PureML
        ( mapPatternVariables )
 import Kore.ASTUtils.SmartConstructors
        ( mkAnd, mkBottom, mkCeil, mkEquals, mkExists, mkFloor, mkIff,
-       mkImplies, mkIn, mkNot, mkOr, mkTop )
+       mkImplies, mkIn, mkNot, mkOr, mkTop, mkVar )
 import Kore.ASTUtils.SmartPatterns
        ( pattern Bottom_, pattern Top_ )
 import Kore.IndexedModule.MetadataTools
        ( SymbolOrAliasSorts )
 import Kore.Variables.Free
-       ( pureAllVariables )
+       ( pureAllVariables, pureFreeVariables )
 
 {-| 'PredicateProof' is a placeholder for a proof showing that a Predicate
 evaluation was correct.
@@ -378,3 +382,49 @@ allVariables
     => Predicate level variable
     -> Set (variable level)
 allVariables = pureAllVariables . unwrapPredicate
+
+{- | Extract the set of free variables from a @Predicate@.
+-}
+freeVariables
+    :: ( MetaOrObject level
+       , Show (variable Object)
+       , Show (variable Meta)
+       , Ord (variable Object)
+       , Ord (variable Meta))
+    => Predicate level variable
+    -> Set (variable level)
+freeVariables = pureFreeVariables Proxy . unwrapPredicate
+
+{- | 'substitutionToPredicate' transforms a substitution in a predicate.
+
+    An empty substitution list returns a true predicate. A non-empty
+    substitution returns a conjunction of variable/substitution equalities.
+
+-}
+substitutionToPredicate
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Eq (variable level)
+        , Show (variable level))
+    => [(variable level, PureMLPattern level variable)]
+    -> Predicate level variable
+substitutionToPredicate =
+    foldl'
+        (\predicate subst ->
+            fst $
+                makeAndPredicate
+                    predicate (singleSubstitutionToPredicate subst)
+        )
+        makeTruePredicate
+
+singleSubstitutionToPredicate
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Show (variable level))
+    => (variable level, PureMLPattern level variable)
+    -> Predicate level variable
+singleSubstitutionToPredicate (var, patt) =
+    makeEqualsPredicate (mkVar var) patt
+

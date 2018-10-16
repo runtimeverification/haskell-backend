@@ -26,8 +26,6 @@ module Kore.Step.ExpandedPattern
     , Predicated(..)
     ) where
 
-import           Data.List
-                 ( foldl' )
 import           Data.Monoid
                  ( (<>) )
 import           Data.Reflection
@@ -40,15 +38,15 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( mapPatternVariables )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkBottom, mkTop, mkVar )
+                 ( mkAnd, mkBottom, mkTop )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_, pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
                  ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
-                 makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeTruePredicate, unwrapPredicate )
+                 makeAndPredicate, makeFalsePredicate, makeTruePredicate,
+                 substitutionToPredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( CommonPredicateSubstitution, PredicateSubstitution (..) )
@@ -174,36 +172,6 @@ toMLPattern
     simpleAnd _             PredicateFalse = mkBottom
     simpleAnd pattern1      predicate'     =
         mkAnd pattern1 (unwrapPredicate predicate')
-
-{-|'substitutionToPredicate' transforms a substitution in a predicate.
--}
-substitutionToPredicate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
-        , SortedVariable variable
-        , Eq (variable level)
-        , Show (variable level))
-    => [(variable level, PureMLPattern level variable)]
-    -> Predicate level variable
-substitutionToPredicate =
-    foldl'
-        (\predicate subst ->
-            fst $
-                makeAndPredicate
-                    predicate (singleSubstitutionToPredicate subst)
-        )
-        makeTruePredicate
-
-singleSubstitutionToPredicate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
-        , SortedVariable variable
-        , Show (variable level))
-    => (variable level, PureMLPattern level variable)
-    -> Predicate level variable
-singleSubstitutionToPredicate (var, patt) =
-    makeEqualsPredicate (mkVar var) patt
-
 
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
