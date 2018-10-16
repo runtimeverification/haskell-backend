@@ -18,9 +18,13 @@ module Kore.Step.PredicateSubstitution
     , freeVariables
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import           Data.Reflection
                  ( Given )
 import qualified Data.Set as Set
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
                  ( SortedVariable, Variable )
@@ -46,7 +50,9 @@ data PredicateSubstitution level variable = PredicateSubstitution
     -- ^ special kind of predicate of the type
     -- variable1 = term1 /\ variable2 = term2 /\ ...
     }
-    deriving (Eq, Show)
+    deriving (Eq, Generic, Show)
+
+instance (NFData (variable level)) => NFData (PredicateSubstitution level variable)
 
 {-| 'CommonPredicateSubstitution' particularizes PredicateSubstitution to
 Variable.
