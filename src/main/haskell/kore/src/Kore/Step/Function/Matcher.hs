@@ -322,7 +322,7 @@ matchJoin
     -> Map.Map (variable level) (variable level)
     -> [(PureMLPattern level variable, PureMLPattern level variable)]
     -> MaybeT m (PredicateSubstitution level variable)
-matchJoin tools quantifiedVariables patterns = do -- MaybeT monad
+matchJoin tools quantifiedVariables patterns = do
     matchedCounters <-
         traverse (uncurry $ match tools quantifiedVariables) patterns
     MaybeT $ Just . fst <$> mergePredicatesAndSubstitutions
@@ -392,7 +392,7 @@ matchNonVarToPattern
 matchNonVarToPattern tools first second
   -- TODO(virgil): For simplification axioms this would need to return bottom!
   = give (MetadataTools.symbolOrAliasSorts tools) $
-    MaybeT $ do -- Counter monad
+    MaybeT $ do -- MonadCounter
         (PredicateSubstitution {predicate, substitution}, _proof) <-
             Equals.makeEvaluateTermsToPredicateSubstitution tools first second
         let
@@ -405,7 +405,7 @@ matchNonVarToPattern tools first second
                 makeAndPredicate
                     predicate
                     (substitutionToPredicate substitution)
-        return . return $ -- Counter (Maybe a)
+        return . return $ -- MonadCounter m => m (Maybe a)
             PredicateSubstitution
                 { predicate = finalPredicate
                 , substitution = []
@@ -431,4 +431,3 @@ checkVariableEscape vars predSubst
   | otherwise = predSubst
   where
     freeVars = PredicateSubstitution.freeVariables predSubst
-

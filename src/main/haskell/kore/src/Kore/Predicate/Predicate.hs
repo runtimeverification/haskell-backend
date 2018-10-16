@@ -395,7 +395,11 @@ freeVariables
     -> Set (variable level)
 freeVariables = pureFreeVariables Proxy . unwrapPredicate
 
-{-|'substitutionToPredicate' transforms a substitution in a predicate.
+{- | 'substitutionToPredicate' transforms a substitution in a predicate.
+
+    An empty substitution list returns a true predicate. A non-empty
+    substitution returns a conjunction of variable/substitution equalities.
+
 -}
 substitutionToPredicate
     ::  ( MetaOrObject level

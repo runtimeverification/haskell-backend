@@ -484,7 +484,9 @@ kItemSort = groundObjectSort "SortKItem"
 -- the current tool by tricking the tool into believing that
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
-constructorFunctions :: MetadataTools Object StepperAttributes -> MetadataTools Object StepperAttributes
+constructorFunctions
+    :: MetadataTools Object StepperAttributes
+    -> MetadataTools Object StepperAttributes
 constructorFunctions tools =
     tools
     { symAttributes = \h -> let atts = symAttributes tools h in

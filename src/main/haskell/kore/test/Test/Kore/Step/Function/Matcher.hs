@@ -381,7 +381,7 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
             )
         )
     , testCase "Quantified" $ do
-        assertEqualWithExplanation ""
+        assertEqualWithExplanation "positive case"
             (Just PredicateSubstitution
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.a)]
@@ -402,11 +402,12 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
                     ( mkExists Mock.z (Mock.constr20 Mock.a Mock.a) )
                 )
                     -- TODO(Vladimir): find a better way to force evaluation
+                    -- perhaps by adding NFData to `match`.
                     >>= print
                     >>= (const $ assertFailure "expected error")
             )
             (\(ErrorCallWithLocation err _) -> do
-                assertEqual ""
+                assertEqual "error case"
                     err
                     "quantified variables in substitution or predicate escaping\
                     \ context"
@@ -623,10 +624,14 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
 
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+mockSymbolOrAliasSorts =
+    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
+    Mock.makeMetadataTools
+        mockSymbolOrAliasSorts
+        Mock.attributesMapping
+        Mock.subsorts
 
 mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
 mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
@@ -640,5 +645,8 @@ match
     -> CommonPurePattern level
     -> Maybe (CommonPredicateSubstitution level)
 match tools first second =
-    fmap fst . hush . fst . (\result -> runSimplifier (SMTTimeOut 40) result 0) . runExceptT
+    fmap fst
+    . hush
+    . evalSimplifier
+    . runExceptT
     $ matchAsUnification tools first second

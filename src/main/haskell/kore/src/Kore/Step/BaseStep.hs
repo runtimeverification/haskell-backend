@@ -178,7 +178,9 @@ stepProofSumName (StepProofUnification _)       = "StepProofUnification"
 stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
 stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
-{-| 'UnificationProcedure' wraps functions like 'unificationProcedure'. -}
+-- | Wraps functions such as 'unificationProcedure' and
+-- 'Kore.Step.Function.Matcher.matchAsUnification' to be used in
+-- 'stepWithAxion\''.
 newtype UnificationProcedure level =
     UnificationProcedure
         ( forall variable m

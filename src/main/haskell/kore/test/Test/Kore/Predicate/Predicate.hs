@@ -361,7 +361,7 @@ test_predicate = give mockSymbolOrAliasSorts
                     )
                 )
         )
-    , testCase "substitutionToPredicate asdf"
+    , testCase "substitutionToPredicate"
         ( do
             assertEqual "null substitutions is top"
                 makeTruePredicate
