@@ -22,8 +22,6 @@ import           Data.Foldable
 import           Data.Functor.Foldable
                  ( Fix (..) )
 import qualified Data.Map as Map
-import           Data.Proxy
-                 ( Proxy (..) )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -116,7 +114,7 @@ quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)
         p
-        (checkUnique (pureFreeVariables (Proxy :: Proxy level) p))
+        (checkUnique (freePureVariables p))
 
 wrapAndQuantify
     :: Sort level

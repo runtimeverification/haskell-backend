@@ -13,8 +13,6 @@ module Kore.Step.Simplification.Exists
     ) where
 
 import qualified Control.Arrow as Arrow
-import           Data.Proxy
-                 ( Proxy (..) )
 import           Data.Reflection
                  ( Given )
 import qualified Data.Set as Set
@@ -51,7 +49,7 @@ import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
 import           Kore.Variables.Free
-                 ( pureFreeVariables )
+                 ( freePureVariables )
 import           Kore.Variables.Fresh
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
@@ -211,15 +209,9 @@ makeEvaluateNoFreeVarInSubstitution
     (OrOfExpandedPattern.make [simplifiedPattern], SimplificationProof)
   where
     termHasVariable =
-        variable
-            `Set.member`
-            pureFreeVariables (Proxy :: Proxy level) term
+        Set.member variable (freePureVariables term)
     predicateHasVariable =
-        variable
-            `Set.member`
-            pureFreeVariables
-                (Proxy :: Proxy level)
-                (unwrapPredicate predicate)
+        Set.member variable (freePureVariables $ unwrapPredicate predicate)
     simplifiedPattern = case (termHasVariable, predicateHasVariable) of
         (False, False) -> patt
         (False, True) ->
