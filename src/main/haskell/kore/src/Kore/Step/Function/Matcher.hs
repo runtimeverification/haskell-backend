@@ -22,8 +22,6 @@ import           Control.Monad.Trans.Except
                  ( ExceptT (..) )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
-import           Data.Either
-                 ( isRight )
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( Given, give )
@@ -47,12 +45,12 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate )
 import           Kore.Step.ExpandedPattern
                  ( substitutionToPredicate )
-import           Kore.Step.PatternAttributes
-                 ( isFunctionPattern )
 import           Kore.Step.PredicateSubstitution
                  ( PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), freeVariables, top )
+import           Kore.Step.RecursiveAttributes
+                 ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -362,7 +360,7 @@ matchVariableFunction
     (Var_ var)
     second
   | not (var `Map.member` quantifiedVariables)
-    && isRight (isFunctionPattern tools second)
+    && isFunctionPattern tools second
   = case Ceil.makeEvaluateTerm tools second of
         (predicate, _proof) ->
             just $

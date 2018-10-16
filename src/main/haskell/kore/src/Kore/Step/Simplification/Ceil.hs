@@ -14,8 +14,6 @@ module Kore.Step.Simplification.Ceil
     , simplifyEvaluated
     ) where
 
-import Data.Either
-       ( isRight )
 import Data.Reflection
        ( give )
 
@@ -41,7 +39,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fmapFlattenWithPairs, make )
-import           Kore.Step.PatternAttributes
+import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
@@ -176,7 +174,7 @@ makeEvaluateTerm
 makeEvaluateTerm
     tools
     term
-  | isTotal tools term
+  | isTotalPattern tools term
   =
     (makeTruePredicate, SimplificationProof)
 makeEvaluateTerm
@@ -199,11 +197,3 @@ makeEvaluateTerm
     , SimplificationProof
     )
 
--- TODO: Move these somewhere reasonable and remove all of their other
--- definitions.
-isTotal
-    :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> Bool
-isTotal tools term =
-    isRight (isTotalPattern tools term)
