@@ -6,8 +6,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Test.Kore
-import Test.Kore.Substitution
+import qualified Data.Text as Text
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -15,6 +14,9 @@ import           Kore.AST.MetaOrObject
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as S
 import           Kore.Variables.Fresh
+
+import Test.Kore
+import Test.Kore.Substitution
 
 type UnifiedPatternSubstitution =
     S.Substitution (Unified Variable) CommonKorePattern
@@ -121,7 +123,7 @@ metaVariableSubstitute :: Int -> Variable Meta
 metaVariableSubstitute n =
     metaVariable
         { variableName = Id
-            { getId = "#" ++ freshVariablePrefix ++ show n
+            { getId = "#" <> freshVariablePrefix <> Text.pack (show n)
             , idLocation = AstLocationGeneratedVariable
             }
         }
@@ -134,7 +136,7 @@ objectVariableSubstitute :: Int -> Variable Object
 objectVariableSubstitute n =
     objectVariable
         { variableName = Id
-            { getId = freshVariablePrefix ++ show n
+            { getId = freshVariablePrefix <> Text.pack (show n)
             , idLocation = AstLocationGeneratedVariable
             }
         }

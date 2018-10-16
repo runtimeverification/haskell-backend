@@ -41,8 +41,11 @@ import           Data.Default
 import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import Kore.AST.Common
 import Kore.AST.Error
@@ -106,7 +109,7 @@ data IndexedModule sortParam pat variable atts =
     -- builtin is not actually valid, but the index must admit invalid data
     -- because verification only happens after.
     , indexedModuleHooks
-        :: !(Map.Map String [Id Object])
+        :: !(Map.Map Text [Id Object])
         -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
         -- identifiers
     }
@@ -217,13 +220,13 @@ indexedModuleWithMetaSorts
     :: Default atts
     => ModuleName
     ->  ( ImplicitIndexedModule sortParam pat variable atts
-        , Map.Map String AstLocation
+        , Map.Map Text AstLocation
         )
 indexedModuleWithMetaSorts name =
     ( ImplicitIndexedModule (emptyIndexedModule name)
         { indexedModuleMetaSortDescriptions = msd }
     , Map.insert
-        (show StringSort)
+        (Text.pack $ show StringSort)
         AstLocationImplicit
         (Map.fromList
             (map
@@ -254,7 +257,7 @@ metaSortDescription sortType =
     )
   where
     sortId = Id
-        { getId = show sortType
+        { getId = Text.pack (show sortType)
         , idLocation = AstLocationImplicit
         }
 
@@ -288,7 +291,7 @@ indexImplicitModule (indexedModules, lastIndexedModule) rawModule = do
         Nothing ->
             koreFail
                 (  "InternalError: indexed module not found: '"
-                ++ getModuleName (moduleName rawModule)
+                ++ getModuleNameForError (moduleName rawModule)
                 ++ "'"
                 )
 
@@ -334,7 +337,7 @@ internalIndexModuleIfNeeded
     implicitModule importingModules nameToModule indexedModules koreModule
   =
     withContext
-        ("module '" ++ getModuleName koreModuleName ++ "'")
+        ("module '" ++ getModuleNameForError koreModuleName ++ "'")
         (do
             koreFailWhen
                 (koreModuleName `Set.member` importingModules)
@@ -591,7 +594,9 @@ indexModuleObjectSentence
                     SentenceSymbol
                         { sentenceSymbolSymbol = Symbol
                             { symbolConstructor = Id
-                                { getId = metaNameForObjectSort (getId sentenceSortName)
+                                { getId =
+                                    (Text.pack . metaNameForObjectSort . Text.unpack)
+                                        (getId sentenceSortName)
                                 , idLocation =
                                     AstLocationLifted
                                         (idLocation sentenceSortName)
@@ -689,7 +694,7 @@ indexImportedModule
             Nothing ->
                 koreFail
                     (  "Module '"
-                    ++ getModuleName importedModuleName
+                    ++ getModuleNameForError importedModuleName
                     ++ "' imported but not found."
                     )
             Just m -> return m

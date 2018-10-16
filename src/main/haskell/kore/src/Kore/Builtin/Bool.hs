@@ -35,6 +35,8 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.Text
+                 ( Text )
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
@@ -49,7 +51,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 
 {- | Builtin name of the @Bool@ sort.
  -}
-sort :: String
+sort :: Text
 sort = "BOOL.Bool"
 
 {- | Verify that the sort is hooked to the builtin @Bool@ sort.
@@ -132,7 +134,7 @@ asExpandedPattern resultSort =
 
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
     [ ("BOOL.or", binaryOperator "BOOL.or" (||))

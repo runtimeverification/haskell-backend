@@ -26,6 +26,9 @@ Portability : portable
 module Kore.Proof.Dummy where
 
 import Data.Reflection
+import Data.Text
+       ( Text )
+
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
@@ -35,13 +38,13 @@ import Kore.IndexedModule.MetadataTools
 
 import Kore.ASTUtils.SmartConstructors
 
-var :: MetaOrObject level => String -> Variable level
+var :: MetaOrObject level => Text -> Variable level
 var x = x `varS` defaultSort
 
-sym :: MetaOrObject level => String -> SymbolOrAlias level
+sym :: MetaOrObject level => Text -> SymbolOrAlias level
 sym x = x `symS` []
 
-var_ :: MetaOrObject level => String -> String -> Variable level
+var_ :: MetaOrObject level => Text -> Text -> Variable level
 var_ x s =
   Variable (noLocationId x) (mkSort s)
 

@@ -4,6 +4,8 @@ import Test.Tasty
        ( TestTree, testGroup )
 
 import qualified Data.Functor.Foldable as Functor.Foldable
+import           Data.Text
+                 ( Text )
 
 import Kore.AST.Builders
        ( sort_ )
@@ -1453,10 +1455,10 @@ definitionParserTests =
 -- Generic test utilities
 ------------------------------------
 
-sortVariableSort :: String -> Sort a
+sortVariableSort :: Text -> Sort a
 sortVariableSort name =
     SortVariableSort (sortVariable name)
 
-sortVariable :: String -> SortVariable a
+sortVariable :: Text -> SortVariable a
 sortVariable name =
     SortVariable (testId name)

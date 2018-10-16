@@ -25,6 +25,8 @@ import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -80,7 +82,7 @@ substituteSortVariables variableToSort (SortVariableSort variable) =
         Nothing   ->
             koreFail
                 (  "Sort variable not found: '"
-                ++ getId (getSortVariable variable)
+                ++ getIdForError (getSortVariable variable)
                 ++ "'."
                 )
 substituteSortVariables
@@ -139,7 +141,7 @@ checkUnique variables =
 
 checkUniqueEither
     :: [Variable level]
-    -> Map.Map String (Variable level)
+    -> Map.Map Text (Variable level)
     -> Either String ()
 checkUniqueEither [] _ = Right ()
 checkUniqueEither (var:vars) indexed =

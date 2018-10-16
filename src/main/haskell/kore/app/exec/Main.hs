@@ -6,8 +6,6 @@ import           Control.Monad
                  ( when )
 import           Data.Functor.Foldable
                  ( Fix (..), cata )
-import           Data.List
-                 ( isPrefixOf )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -16,6 +14,9 @@ import           Data.Reflection
 import           Data.Semigroup
                  ( (<>) )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
                  long, metavar, option, progDesc, readerError, str, strOption,
@@ -31,7 +32,6 @@ import           Kore.AST.PureML
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
-                 ( KoreDefinition, ModuleName (..) )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkApp, mkDomainValue )
 import           Kore.ASTUtils.SmartPatterns
@@ -44,7 +44,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( IndexedModule (..), KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts,
                  extractMetadataTools )
@@ -92,13 +92,13 @@ TODO: add command line argument tab-completion
 
 -- | Main options record
 data KoreExecOptions = KoreExecOptions
-    { definitionFileName  :: !String
+    { definitionFileName  :: !FilePath
     -- ^ Name for a file containing a definition to verify and use for execution
-    , patternFileName     :: !String
+    , patternFileName     :: !FilePath
     -- ^ Name for file containing a pattern to verify and use for execution
-    , outputFileName     :: !String
+    , outputFileName     :: !FilePath
     -- ^ Name for file to contain the output pattern
-    , mainModuleName      :: !String
+    , mainModuleName      :: !Text
     -- ^ The name of the main module in the definition
     , isKProgram          :: !Bool
     -- ^ Whether the pattern file represents a program to be put in the
@@ -189,35 +189,35 @@ parserInfoModifiers =
 externalizeFreshVars :: CommonPurePattern level -> CommonPurePattern level
 externalizeFreshVars pat = cata renameFreshLocal pat
   where
-    allVarsIds :: Set.Set String
+    allVarsIds :: Set.Set Text
     allVarsIds = Set.map (getId . variableName) (pureAllVariables pat)
-    freshVarsIds :: Set.Set String
-    freshVarsIds = Set.filter (isPrefixOf freshVariablePrefix) allVarsIds
-    computeFreshPrefix :: String -> (Set.Set String) -> String
+    freshVarsIds :: Set.Set Text
+    freshVarsIds = Set.filter (Text.isPrefixOf freshVariablePrefix) allVarsIds
+    computeFreshPrefix :: Text -> (Set.Set Text) -> Text
     computeFreshPrefix pref strings
       | Set.null matchingStrings = pref
       -- TODO(traiansf): if executing multiple times (like in stepping),
       -- names for generated fresh variables will grow longer and longer.
       -- Consider a mechanism to avoid this.
-      | otherwise = computeFreshPrefix (pref ++ "-") matchingStrings
+      | otherwise = computeFreshPrefix (pref <> "-") matchingStrings
       where
-        matchingStrings :: Set.Set String
-        matchingStrings = Set.filter (isPrefixOf pref) strings
-    freshPrefix :: String
+        matchingStrings :: Set.Set Text
+        matchingStrings = Set.filter (Text.isPrefixOf pref) strings
+    freshPrefix :: Text
     freshPrefix =
         computeFreshPrefix "var"
-            (Set.filter (not . (isPrefixOf freshVariablePrefix)) allVarsIds)
+            (Set.filter (not . (Text.isPrefixOf freshVariablePrefix)) allVarsIds)
     renameFreshLocal :: UnfixedCommonPurePattern level -> CommonPurePattern level
     renameFreshLocal (VariablePattern v@(Variable {variableName}))
       | name `Set.member` freshVarsIds =
         Var_ v {
             variableName = variableName
                 { getId =
-                    freshPrefix ++ (drop (length freshVariablePrefix) name)
+                    freshPrefix <> (Text.drop (Text.length freshVariablePrefix) name)
                 }
         }
       where
-        name :: String
+        name :: Text
         name = getId variableName
     renameFreshLocal pat' = Fix pat'
 
@@ -244,7 +244,7 @@ main = do
         when (patternFileName /= "") $ do
             parsedPattern <- mainPatternParse patternFileName
             indexedModule <-
-                mainModule (ModuleName mainModuleName) indexedModules
+                constructorFunctions <$> mainModule (ModuleName mainModuleName) indexedModules
             mainPatternVerify indexedModule parsedPattern
             let
                 functionRegistry =
@@ -255,8 +255,7 @@ main = do
                         (Builtin.koreEvaluators indexedModule)
                 axiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
-                metadataTools =
-                    constructorFunctions (extractMetadataTools indexedModule)
+                metadataTools = extractMetadataTools indexedModule
                 simplifier
                     ::  ( SortedVariable variable
                         , Ord (variable Meta)
@@ -329,7 +328,7 @@ mainModule name modules =
         Nothing ->
             error
                 (  "The main module, '"
-                ++ getModuleName name
+                ++ getModuleNameForError name
                 ++ "', was not found. Check the --module flag."
                 )
         Just m -> return m
@@ -461,7 +460,7 @@ injHead fromSort toSort =
     }
 
 
-groundObjectSort :: String -> Sort Object
+groundObjectSort :: Text -> Sort Object
 groundObjectSort name =
     SortActualSort
         SortActual
@@ -485,22 +484,36 @@ kItemSort = groundObjectSort "SortKItem"
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: MetadataTools Object StepperAttributes
-    -> MetadataTools Object StepperAttributes
-constructorFunctions tools =
-    tools
-    { symAttributes = \h -> let atts = symAttributes tools h in
-        atts
-        { isConstructor = isConstructor atts || isCons h
-        , isFunctional = isFunctional atts || isCons h || isInj h
-        , isInjective =
-            isInjective atts || isCons h || isInj h
-        , isSortInjection = isSortInjection atts || isInj h
+    :: KoreIndexedModule StepperAttributes
+    -> KoreIndexedModule StepperAttributes
+constructorFunctions ixm =
+    ixm
+        { indexedModuleObjectSymbolSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectSymbolSentences ixm)
+        , indexedModuleObjectAliasSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectAliasSentences ixm)
+        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
         }
-    }
   where
-    isInj :: SymbolOrAlias Object -> Bool
-    isInj h =
-        getId (symbolOrAliasConstructor h) == "inj"
-    isCons :: SymbolOrAlias Object -> Bool
-    isCons h = getId (symbolOrAliasConstructor h) `elem` ["kseq", "dotk"]
+    constructorFunctions1 h (atts, defn) =
+        ( atts
+            { isConstructor = isConstructor atts || isCons h
+            , isFunctional = isFunctional atts || isCons h || isInj h
+            , isInjective = isInjective atts || isCons h || isInj h
+            , isSortInjection = isSortInjection atts || isInj h
+            }
+        , defn
+        )
+
+    isInj :: Id Object -> Bool
+    isInj ident = getId ident == "inj"
+
+    isCons :: Id Object -> Bool
+    isCons ident = elem (getId ident) ["kseq", "dotk"]
+
+    recurseIntoImports (attrs, attributes, importedModule) =
+        (attrs, attributes, constructorFunctions importedModule)

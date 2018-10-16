@@ -56,7 +56,7 @@ instance Unparse (f (Fix f)) => Unparse (Fix f) where
     unparse (Fix fx) = unparse fx
 
 instance Unparse (Id level) where
-    unparse = fromString . getId
+    unparse = pretty . getId
 
 instance Unparse StringLiteral where
     unparse = dquotes . fromString . escapeCString . getStringLiteral
@@ -331,7 +331,7 @@ instance Unparse (SentenceSymbol level pat variable) where
             ]
 
 instance Unparse ModuleName where
-    unparse = fromString . getModuleName
+    unparse = pretty . getModuleName
 
 instance Unparse (SentenceImport pat variable) where
     unparse

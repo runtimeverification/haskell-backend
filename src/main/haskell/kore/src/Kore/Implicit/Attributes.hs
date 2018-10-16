@@ -18,6 +18,7 @@ module Kore.Implicit.Attributes
     ) where
 
 import Data.Default
+import Data.Text
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -41,9 +42,9 @@ instance Default ImplicitAttributes where
 instance ParseAttributes ImplicitAttributes where
     attributesParser = pure def :: Attribute.Parser ImplicitAttributes
 
-attributeHead :: String -> SymbolOrAlias Object
+attributeHead :: Text -> SymbolOrAlias Object
 attributeHead = (`groundHead` AstLocationImplicit)
 
-keyOnlyAttribute :: String -> CommonKorePattern
+keyOnlyAttribute :: Text -> CommonKorePattern
 keyOnlyAttribute k = patternPureToKore
     (App_ (attributeHead k) [])
