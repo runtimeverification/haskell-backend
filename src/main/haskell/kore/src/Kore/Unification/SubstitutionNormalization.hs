@@ -22,9 +22,11 @@ import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor.Foldable
                  ( Fix, cata )
-import qualified Data.Map as Map
-import           Data.Maybe
-                 ( mapMaybe )
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
@@ -79,14 +81,17 @@ normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
   where
-    interestingVariables :: Map.Map (Unified variable) (variable level)
+    interestingVariables :: Set (variable level)
     interestingVariables = extractVariables substitution
 
-    variableToPattern :: Map.Map (variable level) (PureMLPattern level variable)
+    variableToPattern :: Map (variable level) (PureMLPattern level variable)
     variableToPattern = Map.fromList substitution
 
-    dependencies :: Map.Map (variable level) [variable level]
-    dependencies = buildDependencies substitution interestingVariables
+    dependencies :: Map (variable level) (Set (variable level))
+    dependencies =
+        Map.mapWithKey
+            (getDependencies interestingVariables)
+            variableToPattern
 
     -- | Do a `topologicalSort` of variables using the `dependencies` Map.
     -- Topological cycles with non-ctors are returned as Left errors.
@@ -96,7 +101,7 @@ normalizeSubstitution tools substitution =
             (SubstitutionError level variable)
             (Maybe [variable level])
     topologicalSortConverted =
-        case topologicalSort dependencies of
+        case topologicalSort (Set.toList <$> dependencies) of
             Left (ToplogicalSortCycles vars) -> do
                 checkCircularVariableDependency tools substitution vars
                 Right Nothing
@@ -161,7 +166,7 @@ checkApplicationConstructor _ _ _ = return ()
 
 variableToSubstitution
     :: (Ord (variable level), Show (variable level))
-    => Map.Map (variable level) (PureMLPattern level variable)
+    => Map (variable level) (PureMLPattern level variable)
     -> variable level
     -> (variable level, PureMLPattern level variable)
 variableToSubstitution varToPattern var =
@@ -208,42 +213,29 @@ normalizeSortedSubstitution
 
 extractVariables
     ::  ( MetaOrObject level
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , Ord (variable level)
         )
     => UnificationSubstitution level variable
-    -> Map.Map (Unified variable) (variable level)
+    -> Set (variable level)
 extractVariables unification =
-    Map.fromList
-        (map
-            (\(var, _) -> (asUnified var, var))
-            unification
-        )
+    let (vars, _) = unzip unification
+    in Set.fromList vars
 
-buildDependencies
+{- | Calculate the dependencies of a substitution.
+
+    Calculate the interesting dependencies of a substitution. The interesting
+    dependencies are interesting variables that are free in the substitution
+    pattern.
+ -}
+getDependencies
     ::  ( MetaOrObject level
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         )
-    => UnificationSubstitution level variable
-    -> Map.Map (Unified variable) (variable level)
-    -> Map.Map (variable level) [variable level]
-buildDependencies [] _ = Map.empty
-buildDependencies
-    ((var, patt) : reminder)
-    interestingVariables
-  =
-    Map.insert
-        var
-        deps'
-        (buildDependencies reminder interestingVariables)
-  where
-    deps =
-        mapMaybe
-            (`Map.lookup` interestingVariables)
-            (Set.toList (freeVariables patt))
-    isSameVar = case patt of
-        (Var_ v) -> v == var
-        _        -> False
-    deps' = if isSameVar then [] else deps
+    => Set (variable level)  -- ^ interesting variables
+    -> variable level  -- ^ substitution variable
+    -> PureMLPattern level variable  -- ^ substitution pattern
+    -> Set (variable level)
+getDependencies interesting var =
+    \case
+        Var_ v | v == var -> Set.empty
+        patt -> Set.intersection interesting (freePureVariables patt)
