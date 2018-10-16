@@ -35,7 +35,7 @@ module Kore.Builtin.List
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT, fromMaybe, runMaybeT )
+                 ( MaybeT )
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -147,13 +147,6 @@ expectBuiltinDomainList ctx =
         _ ->
             empty
 
-getAttemptedFunction
-    :: Monad m
-    => MaybeT m (AttemptedFunction level variable)
-    -> m (AttemptedFunction level variable)
-getAttemptedFunction attempt =
-    fromMaybe NotApplicable <$> runMaybeT attempt
-
 returnList
     :: Monad m
     => Kore.Sort Object
@@ -186,7 +179,7 @@ evalGet =
         -> [Kore.PureMLPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalGet0 _ _ _ = \arguments ->
-        getAttemptedFunction
+        Builtin.getAttemptedFunction
         (do
             let (_list, _ix) =
                     case arguments of
@@ -232,7 +225,7 @@ evalConcat =
         -> [Kore.PureMLPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalConcat0 _ _ resultSort = \arguments ->
-        getAttemptedFunction
+        Builtin.getAttemptedFunction
         (do
             let (_list1, _list2) =
                     case arguments of
@@ -414,5 +407,3 @@ unify
     p2@(App_ _ _)
   = unify tools simplifyChild p2 p1
 unify _ _ _ _ = Unknown
-
-
