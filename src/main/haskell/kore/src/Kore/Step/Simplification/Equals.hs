@@ -375,11 +375,12 @@ makeEvaluateTermsToPredicateSubstitution
         , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
+        , MonadCounter m
         )
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Simplifier
+    -> m
         (PredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateTermsToPredicateSubstitution tools first second
   | first == second =

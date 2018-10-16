@@ -5,8 +5,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Data.Reflection
-       ( give )
+import           Data.Reflection
+                 ( give )
+import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( AstLocation (..), CommonPurePattern )
@@ -24,12 +25,12 @@ import           Kore.Error
 import           Kore.IndexedModule.MetadataTools
                  ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, compactPredicatePredicate,
-                 makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeIffPredicate, makeImpliesPredicate,
+                 ( CommonPredicate, compactPredicatePredicate, freeVariables,
+                 makeAndPredicate, makeEqualsPredicate, makeExistsPredicate,
+                 makeFalsePredicate, makeIffPredicate, makeImpliesPredicate,
                  makeMultipleAndPredicate, makeMultipleOrPredicate,
                  makeNotPredicate, makeOrPredicate, makeTruePredicate,
-                 stringFromPredicate, wrapPredicate )
+                 stringFromPredicate, substitutionToPredicate, wrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
 
@@ -337,6 +338,41 @@ test_predicate = give mockSymbolOrAliasSorts
                 )
                 (fst $
                     makeMultipleOrPredicate [pr1, makeFalsePredicate, pr2, pr1]
+                )
+        )
+    , testCase "freeVariables"
+        ( do
+            assertEqual "top has no free variables"
+                Set.empty
+                (freeVariables (makeTruePredicate :: CommonPredicate Meta))
+            assertEqual "equals predicate has two variables"
+                (Set.fromList
+                    [ asVariable $ a PatternSort
+                    , asVariable $ b PatternSort
+                    ]
+                )
+                (freeVariables pr1)
+            assertEqual "quantified variables are not included"
+                Set.empty
+                (freeVariables
+                    (fst $ makeExistsPredicate
+                        (asVariable $ a PatternSort)
+                        makeTruePredicate
+                    )
+                )
+        )
+    , testCase "substitutionToPredicate"
+        ( do
+            assertEqual "null substitutions is top"
+                makeTruePredicate
+                (substitutionToPredicate [] :: CommonPredicate Meta)
+            assertEqual "a = b"
+                (fst $ makeAndPredicate pr1 makeTruePredicate)
+                (substitutionToPredicate
+                    [    ( asVariable (a PatternSort)
+                         , asPureMetaPattern (b PatternSort)
+                         )
+                    ]
                 )
         )
     ]

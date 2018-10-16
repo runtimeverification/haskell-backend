@@ -8,8 +8,14 @@ module Test.Kore.Step.Function.Matcher
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
+       ( assertEqual, assertFailure, testCase )
 
+import Control.Error.Util
+       ( hush )
+import Control.Exception
+       ( ErrorCall (..), catch )
+import Control.Monad.Except
+       ( runExceptT )
 import Data.Reflection
        ( give )
 
@@ -37,7 +43,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
-import           Kore.SMT.Config
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
@@ -72,7 +77,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application different constructors"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution.bottom)
             (match mockMetadataTools
                 (Mock.constr10 (mkVar Mock.x))
                 (Mock.constr11 Mock.a)
@@ -80,7 +85,14 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application different functions"
         (assertEqualWithExplanation ""
-            Nothing
+            ( Just PredicateSubstitution
+                { predicate =
+                    makeEqualsPredicate
+                        (Mock.f (mkVar Mock.x))
+                        (Mock.g Mock.a)
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                 (Mock.f (mkVar Mock.x))
                 (Mock.g Mock.a)
@@ -88,7 +100,14 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application different symbols"
         (assertEqualWithExplanation ""
-            Nothing
+            ( Just PredicateSubstitution
+                { predicate =
+                    makeEqualsPredicate
+                        (Mock.plain10 (mkVar Mock.x))
+                        (Mock.plain11 Mock.a)
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                 (Mock.plain10 (mkVar Mock.x))
                 (Mock.plain11 Mock.a)
@@ -292,7 +311,13 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Iff vs Or"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
+                    (mkOr (Mock.plain10 Mock.a) Mock.b)
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                 (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkOr (Mock.plain10 Mock.a) Mock.b)
@@ -328,7 +353,13 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         )
     , testCase "Non-functional"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.constr10 Mock.cf)
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                 (mkVar Mock.x)
                 (Mock.constr10 Mock.cf)
@@ -336,14 +367,20 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         )
     , testCase "Unidirectional"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.functional10 (mkVar Mock.y))
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                 (Mock.functional10 (mkVar Mock.y))
                 (mkVar Mock.x)
             )
         )
     , testCase "Quantified" $ do
-        assertEqualWithExplanation ""
+        assertEqualWithExplanation "positive case"
             (Just PredicateSubstitution
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.a)]
@@ -353,11 +390,26 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
                 (mkExists Mock.y (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y)))
                 (mkExists Mock.z (Mock.constr20 Mock.a (mkVar Mock.z)))
             )
-        assertEqualWithExplanation ""
-            Nothing
-            (match mockMetadataTools
-                (mkExists Mock.y (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y)))
-                (mkExists Mock.z (Mock.constr20 Mock.a Mock.a))
+        catch
+            (
+                return
+                ( match mockMetadataTools
+                    ( mkExists
+                        Mock.y
+                        (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y))
+                    )
+                    ( mkExists Mock.z (Mock.constr20 Mock.a Mock.a) )
+                )
+                    -- TODO(Vladimir): find a better way to force evaluation
+                    -- perhaps by adding NFData to `match`.
+                    >>= print
+                    >>= (const $ assertFailure "expected error")
+            )
+            (\(ErrorCallWithLocation err _) -> do
+                assertEqual "error case"
+                    err
+                    "quantified variables in substitution or predicate escaping\
+                    \ context"
             )
     ]
 
@@ -378,7 +430,13 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
         )
     , testCase "var - no-var"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (Mock.plain10 (mkVar Mock.x))
+                    (Mock.plain11 Mock.b)
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                (Mock.plain10 (mkVar Mock.x))
                (Mock.plain11 Mock.b)
@@ -399,7 +457,13 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
         )
     , testCase "var - var"
         (assertEqualWithExplanation ""
-            Nothing
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (Mock.plain10 (mkVar Mock.x))
+                    (Mock.plain11 (mkVar Mock.y))
+                , substitution = []
+                }
+            )
             (match mockMetadataTools
                (Mock.plain10 (mkVar Mock.x))
                (Mock.plain11 (mkVar Mock.y))
@@ -559,10 +623,14 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
 
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+mockSymbolOrAliasSorts =
+    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
+    Mock.makeMetadataTools
+        mockSymbolOrAliasSorts
+        Mock.attributesMapping
+        Mock.subsorts
 
 mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
 mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
@@ -576,6 +644,8 @@ match
     -> CommonPurePattern level
     -> Maybe (CommonPredicateSubstitution level)
 match tools first second =
-    case matchAsUnification tools first second of
-        Left _err -> Nothing
-        Right result -> Just $ fst $ fst $ runSimplifier (SMTTimeOut 40) result 0
+    fmap fst
+    . hush
+    . evalSimplifier
+    . runExceptT
+    $ matchAsUnification tools first second

@@ -59,26 +59,7 @@ import           Test.Tasty.HUnit.Extensions
 
 test_userDefinedFunction :: [TestTree]
 test_userDefinedFunction =
-    [ testCase "Cannot apply function if step fails"
-        (assertEqualWithExplanation ""
-            (AttemptedFunction.Applied $ OrOfExpandedPattern.make
-                [ ExpandedPattern.bottom ]
-            )
-            (evaluateWithAxiom
-                mockMetadataTools
-                AxiomPattern
-                    { axiomPatternLeft  =
-                        asPureMetaPattern (metaF (x PatternSort))
-                    , axiomPatternRight =
-                        asPureMetaPattern (metaG (x PatternSort))
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
-                    }
-                (mockSimplifier [])
-                (asApplication (metaH (x PatternSort)))
-            )
-        )
-    , testCase "Applies one step"
+    [ testCase "Applies one step"
         (assertEqualWithExplanation "f(x) => g(x)"
             (AttemptedFunction.Applied $ OrOfExpandedPattern.make
                 [ Predicated
