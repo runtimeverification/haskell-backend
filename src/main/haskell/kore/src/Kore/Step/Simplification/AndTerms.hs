@@ -32,6 +32,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkBottom, mkTop )
 import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -297,6 +298,7 @@ maybeTermAnd =
         , liftET stringLiteralAndEqualsAssumesDifferent
         , liftET charLiteralAndEqualsAssumesDifferent
         , Builtin.Map.unify
+        , Builtin.List.unify
         , lift functionAnd
         ]
   where

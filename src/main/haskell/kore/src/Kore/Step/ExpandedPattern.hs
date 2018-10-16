@@ -73,7 +73,7 @@ instance Functor (Predicated level variable) where
     fmap f (Predicated a p s) = Predicated (f a) p s
 
 -- `<*>` does not do normalization for now.
--- Don't use it until we figure that out.
+-- Use Kore.Step.Substitution.normalize until then.
 
 instance
   ( MetaOrObject level
