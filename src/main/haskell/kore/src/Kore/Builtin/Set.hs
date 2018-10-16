@@ -449,7 +449,7 @@ unify
                     result
                         | set1 == set2 = pure term
                         | otherwise    = ExpandedPattern.bottom
-                (,) <$> normalize result <*> pure SimplificationProof
+                pure $ (result, SimplificationProof)
         return unified
 
     -- | Unify one concrete set with one framed concrete set.
