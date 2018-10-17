@@ -44,12 +44,19 @@ clean: clean-submodules
 	$(MAKE) -C src/main/k/working clean
 
 check:
-	if ! ./scripts/git-assert-clean.sh; then \
+	if ! ./scripts/git-assert-clean.sh; \
+	then \
 		echo >&2 "Please commit your changes!"; \
 		exit 1; \
 	fi
+	if ! ./scripts/git-rebased-on.sh "$$(git rev-parse origin/master)" --linear; \
+	then \
+		echo >&2 "Please rebase your branch onto ‘master’!"; \
+		exit 1; \
+	fi
 	$(MAKE) stylish
-	if ! ./scripts/git-assert-clean.sh; then \
+	if ! ./scripts/git-assert-clean.sh; \
+	then \
 		echo >&2 "Please run ‘make stylish’ to fix style errors!"; \
 		exit 1; \
 	fi
