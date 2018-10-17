@@ -36,26 +36,22 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import           Control.Monad.Counter
 import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
-import qualified Control.Monad.Except as Except
+                 ( runExceptT )
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Reflection
+                 ( give )
+import           Data.Result
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
-
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Monad.Counter
-import           Data.Reflection
-                 ( give )
-import           Data.Result
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
 import qualified Kore.AST.PureML as Kore
@@ -430,13 +426,13 @@ unify
     -> (p -> p -> Result (m (expanded, proof)))
 unify
     tools@(MetadataTools.MetadataTools { symbolOrAliasSorts })
-    _ -- not used now. Should remove? Or may be useful later?
+    _ -- not used for now.
   =
     unify0
   where
     -- | Normalize the substitution of 'expanded', or return 'bottom' if
     -- normalization fails.
-    -- NB: this is exactly the same for maps. Move and share?
+    -- NB: this is exactly the same for maps.
     normalize :: (level ~ Object) => expanded -> m expanded
     normalize r =
         runExceptT (normalizePredicatedSubstitution tools r)
