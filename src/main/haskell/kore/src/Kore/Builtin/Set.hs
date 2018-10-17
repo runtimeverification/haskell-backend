@@ -32,13 +32,13 @@ module Kore.Builtin.Set
     , unify
     ) where
 
-import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
-import qualified Control.Monad.Except as Except
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import           Control.Monad.Except
+                 ( ExceptT, runExceptT )
+import qualified Control.Monad.Except as Except
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
