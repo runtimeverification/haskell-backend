@@ -39,12 +39,16 @@ module Kore.Predicate.Predicate
     , wrapPredicate
     ) where
 
+import Control.DeepSeq
+       ( NFData )
 import Data.List
        ( foldl', nub )
 import Data.Reflection
        ( Given )
 import Data.Set
        ( Set )
+import GHC.Generics
+       ( Generic )
 
 import Kore.AST.Common
        ( PureMLPattern, SortedVariable, Variable )
@@ -72,7 +76,7 @@ Should not be exported, and should be treated as an opaque entity which
 can be manipulated only by functions in this module.
 -}
 newtype GenericPredicate pat = GenericPredicate pat
-    deriving (Eq, Foldable, Functor, Ord, Show, Traversable)
+    deriving (Eq, Foldable, Functor, Generic, NFData, Ord, Show, Traversable)
 
 {-| 'Predicate' is a user-visible representation for predicates.
 -}

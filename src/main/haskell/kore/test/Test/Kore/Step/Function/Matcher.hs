@@ -10,6 +10,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, assertFailure, testCase )
 
+import Control.DeepSeq
+       ( NFData, deepseq )
 import Control.Error.Util
        ( hush )
 import Control.Exception
@@ -392,18 +394,15 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
             )
         catch
             (
-                return
-                ( match mockMetadataTools
-                    ( mkExists
-                        Mock.y
-                        (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y))
+                deepseq
+                    (  match mockMetadataTools
+                        ( mkExists
+                            Mock.y
+                            (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y))
+                        )
+                        ( mkExists Mock.z (Mock.constr20 Mock.a Mock.a) )
                     )
-                    ( mkExists Mock.z (Mock.constr20 Mock.a Mock.a) )
-                )
-                    -- TODO(Vladimir): find a better way to force evaluation
-                    -- perhaps by adding NFData to `match`.
-                    >>= print
-                    >>= (const $ assertFailure "expected error")
+                    $ assertFailure "expected error:"
             )
             (\(ErrorCallWithLocation err _) -> do
                 assertEqual "error case"
@@ -638,7 +637,9 @@ mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] []
 
 match
-    :: MetaOrObject level
+    :: ( MetaOrObject level
+       , NFData (CommonPredicateSubstitution level)
+       )
     => MetadataTools level StepperAttributes
     -> CommonPurePattern level
     -> CommonPurePattern level
