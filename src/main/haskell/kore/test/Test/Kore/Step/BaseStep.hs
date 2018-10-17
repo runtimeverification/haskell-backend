@@ -1132,7 +1132,7 @@ runStep
     -> AxiomPattern level
     -> Either
         (StepError level Variable)
-        (CommonExpandedPattern level, StepProof Variable level)
+        (CommonExpandedPattern level, StepProof level Variable)
 runStep metadataTools configuration axiom =
     first evalSimplifier
     . evalSimplifier
