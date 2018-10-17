@@ -1,24 +1,34 @@
-imp-kompiled/definition.kore: imp.k
-	kompile imp.k --backend haskell --syntax-module IMP
+TOP != git rev-parse --show-toplevel
+include $(TOP)/include.mk
 
-%.imp.kore: %.imp imp-kompiled/definition.kore
-	krun $< --dry-run
+KOMPILED := imp-kompiled
+DEFINITION := $(KOMPILED)/definition.kore
 
-%.output: %.imp imp-kompiled/definition.kore
-	krun $< --output-file $@
+$(DEFINITION): imp.k $(KOMPILE_TARGETS)
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module IMP
 
-%.krun: %.imp imp-kompiled/definition.kore
-	krun $<
+%.imp.kore: %.imp $(DEFINITION) $(KRUN_TARGETS)
+	$(KRUN) $(KRUN_OPTS) $< --dry-run
+
+%.output: %.imp $(DEFINITION) $(KRUN_TARGETS)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@
+
+%.krun: %.imp $(DEFINITION) $(KRUN_TARGETS)
+	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
-	diff $< $<.golden
+	diff -u $<.golden $<
 
 %.output.golden: %.output
 	mv $< $<.golden
 
 test: tests/sum.test tests/primes.test tests/collatz.test
 
+test-k: tests/sum.test
+
 golden: tests/sum.output.golden tests/primes.output.golden tests/collatz.output.golden
 
 clean:
-	rm -rf imp-kompiled tests/*.imp.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.imp.kore tests/*.output
+
+.PHONY: test-k test golden clean %.test %.krun

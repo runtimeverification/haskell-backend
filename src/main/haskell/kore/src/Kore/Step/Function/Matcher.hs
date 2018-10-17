@@ -22,6 +22,7 @@ import           Control.Monad.Trans.Except
                  ( ExceptT (..) )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
+import qualified Data.List as List
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( Given, give )
@@ -399,7 +400,7 @@ matchNonVarToPattern tools first second
             -- TODO: Make a function for this.
             leftVars = freePureVariables first
             (leftSubst, rightSubst) =
-                span ((`elem` leftVars).fst) substitution
+                List.partition ((`elem` leftVars) . fst) substitution
             finalPredicate = PredicateSubstitution.toPredicate
                 PredicateSubstitution { predicate, substitution = rightSubst }
         return . return $ -- MonadCounter m => m (Maybe a)
