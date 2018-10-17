@@ -156,10 +156,10 @@ instance MetaOrObject level => PrettyPrint (Id level) where
     prettyPrint flags id'@(Id _ _) =
         betweenParentheses
             flags
-            ("(Id \""
-            <> fromString (getId id')
+            ("(Id "
+            <> (dquotes . pretty) (getId id')
                 -- TODO(virgil): use flags to qualify id only if necessary
-            <> "\" AstLocationNone) :: Id "
+            <> " AstLocationNone) :: Id "
             <> viaShow (isMetaOrObject id')
             )
 
@@ -260,7 +260,7 @@ instance PrettyPrint ModuleName where
         betweenParentheses
             flags
             ( "ModuleName "
-            <> inDoubleQuotes (fromString (getModuleName s))
+            <> inDoubleQuotes (pretty (getModuleName s))
             )
 
 instance MetaOrObject level => PrettyPrint (Variable level) where

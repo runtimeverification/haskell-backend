@@ -25,6 +25,8 @@ import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
                  ( give )
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Builders
 import           Kore.AST.Common
@@ -167,13 +169,13 @@ symbols =
         , expBin
         ]
 
-sortParam :: String -> SortVariable level
+sortParam :: Text -> SortVariable level
 sortParam name = sortParameter Proxy name AstLocationTest
 
-sortParamSort :: String -> Sort level
+sortParamSort :: Text -> Sort level
 sortParamSort = SortVariableSort . sortParam
 
-injName :: String
+injName :: Text
 injName = "inj"
 
 symbolInj :: PureSentenceSymbol level
@@ -246,7 +248,7 @@ unificationProblem
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     extractPurePattern (and_ term1 term2)
 
-type Substitution level =  [(String, CommonPurePatternStub level)]
+type Substitution level =  [(Text, CommonPurePatternStub level)]
 
 unificationSubstitution
     :: Substitution Object

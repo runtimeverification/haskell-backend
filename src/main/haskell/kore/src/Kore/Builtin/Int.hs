@@ -33,11 +33,12 @@ module Kore.Builtin.Int
     , parse
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Error
+                 ( MaybeT )
 import           Control.Monad
                  ( void )
-import           Control.Monad.Except
-                 ( ExceptT )
-import qualified Control.Monad.Except as Except
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
 import qualified Data.Functor.Foldable as Functor.Foldable
@@ -45,6 +46,8 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.Text
+                 ( Text )
 import           GHC.Integer
                  ( smallInteger )
 import           GHC.Integer.GMP.Internals
@@ -64,12 +67,10 @@ import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-                 ( AttemptedFunction (..) )
 
 {- | Builtin name of the @Int@ sort.
  -}
-sort :: String
+sort :: Text
 sort = "INT.Int"
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
@@ -170,7 +171,7 @@ expectBuiltinDomainInt
     :: Monad m
     => String  -- ^ Context for error message
     -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object variable) m Integer
+    -> MaybeT m Integer
 expectBuiltinDomainInt ctx =
     \case
         Kore.DV_ _ domain ->
@@ -182,7 +183,7 @@ expectBuiltinDomainInt ctx =
                     Builtin.verifierBug
                         (ctx ++ ": Domain value argument is not a string")
         _ ->
-            Except.throwError NotApplicable
+            empty
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
@@ -238,7 +239,7 @@ asPartialExpandedPattern resultSort =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
     [

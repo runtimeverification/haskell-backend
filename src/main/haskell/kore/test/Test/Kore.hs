@@ -3,8 +3,12 @@ module Test.Kore where
 import Test.QuickCheck.Gen
        ( Gen, choose, chooseAny, elements, frequency, getSize, listOf, oneof,
        scale, sized, suchThat, vectorOf )
+import Test.QuickCheck.Instances ()
 
-import Data.Functor.Foldable
+import           Data.Functor.Foldable
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import Kore.AST.Common
 import Kore.AST.Kore
@@ -28,16 +32,16 @@ couple1 gen = do
     return (x:xs)
 
 {-# ANN genericIdGen ("HLint: ignore Use String" :: String) #-}
-genericIdGen :: [Char] -> [Char] -> Gen String
+genericIdGen :: [Char] -> [Char] -> Gen Text
 genericIdGen firstChars nextChars = do
     firstChar <- elements firstChars
     body <- listOf (elements nextChars)
-    return (firstChar : body)
+    (return . Text.pack) (firstChar : body)
 
 idGen :: MetaOrObject level => level -> Gen (Id level)
 idGen x
     | isObject x = testId <$> objectId
-    | otherwise  = testId . ('#' :) <$> objectId
+    | otherwise  = testId . (Text.cons '#') <$> objectId
   where
     objectId = genericIdGen idFirstChars (idFirstChars ++ idOtherChars)
 
@@ -95,8 +99,9 @@ sortActualGen x
     | isObject x = pure SortActual
         <*> scale (`div` 2) (idGen x)
         <*> couple (scale (`div` 2) (sortGen x))
-    | otherwise = SortActual <$>
-        (testId <$> elements (map show metaSortsList)) <*> pure []
+    | otherwise = SortActual <$> elements metaSortIds <*> pure []
+  where
+    metaSortIds = testId . Text.pack . show <$> metaSortsList
 
 sortGen :: MetaOrObject level => level -> Gen (Sort level)
 sortGen x = oneof
@@ -428,22 +433,22 @@ metaSentenceGen = oneof
 metaModuleGen :: Gen MetaModule
 metaModuleGen = moduleGen metaSentenceGen
 
-testId :: String -> Id level
+testId :: Text -> Id level
 testId name =
     Id
         { getId = name
         , idLocation = AstLocationTest
         }
 
-sortVariable :: String -> SortVariable level
+sortVariable :: Text -> SortVariable level
 sortVariable name =
     SortVariable { getSortVariable = testId name }
 
-sortVariableSort :: String -> Sort level
+sortVariableSort :: Text -> Sort level
 sortVariableSort name =
     SortVariableSort (sortVariable name)
 
-sortActual :: String -> [Sort level] -> Sort level
+sortActual :: Text -> [Sort level] -> Sort level
 sortActual name sorts =
     SortActualSort SortActual
         { sortActualName = testId name

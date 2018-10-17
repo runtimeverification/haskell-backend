@@ -36,6 +36,8 @@ import           Data.Map
 import qualified Data.Map as Map
 import           Data.Semigroup
                  ( (<>) )
+import           Data.Text
+                 ( Text )
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -103,13 +105,15 @@ koreEvaluators
     -> Map (Kore.Id Object) [Builtin.Function]
 koreEvaluators = evaluators builtins
   where
-    builtins :: Map String Builtin.Function
+    builtins :: Map Text Builtin.Function
     builtins =
         Map.unions
             [ Bool.builtinFunctions
             , Int.builtinFunctions
             , KEqual.builtinFunctions
+            , List.builtinFunctions
             , Map.builtinFunctions
+            , Set.builtinFunctions
             ]
 
 {- | Construct an evaluation context for the given builtin functions.
@@ -121,7 +125,7 @@ koreEvaluators = evaluators builtins
 
  -}
 evaluators
-    :: Map String Builtin.Function
+    :: Map Text Builtin.Function
     -- ^ Builtin functions indexed by name
     -> KoreIndexedModule StepperAttributes
     -- ^ Module under which evaluation takes place

@@ -36,10 +36,8 @@ module Kore.Builtin.Map
 
 import           Control.Applicative
                  ( Alternative (..) )
-import qualified Control.Monad as Monad
-import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
-import qualified Control.Monad.Except as Except
+import           Control.Error
+                 ( MaybeT )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
@@ -47,6 +45,8 @@ import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given, give )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import           Data.Result
 import           Kore.AST.Common
@@ -70,21 +70,21 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( PureMLPatternSimplifier, SimplificationProof (..),
+                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
-                 ( normalizePredicatedSubstitution )
+                 ( normalize )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Map@ sort.
  -}
-sort :: String
+sort :: Text
 sort = "MAP.Map"
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
@@ -148,7 +148,7 @@ expectBuiltinDomainMap
     :: Monad m
     => String  -- ^ Context for error message
     -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
-    -> ExceptT (AttemptedFunction Object variable) m (Builtin variable)
+    -> MaybeT m (Builtin variable)
 expectBuiltinDomainMap ctx _map =
     do
         case _map of
@@ -159,7 +159,7 @@ expectBuiltinDomainMap ctx _map =
                         Builtin.verifierBug
                             (ctx ++ ": Domain value is not a map")
             _ ->
-                Except.throwError NotApplicable
+                empty
 
 returnMap
     :: Monad m
@@ -175,19 +175,32 @@ evalLookup :: Builtin.Function
 evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
+    ctx = "MAP.lookup"
+    evalLookup0
+        :: MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Sort Object
+        -> [PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
     evalLookup0 tools _ _ arguments =
         Builtin.getAttemptedFunction
         (do
             let (_map, _key) =
                     case arguments of
                         [_map, _key] -> (_map, _key)
-                        _ -> Builtin.wrongArity "MAP.lookup"
-            _key <- Builtin.expectNormalConcreteTerm tools _key
-            _map <- expectBuiltinDomainMap "MAP.lookup" _map
-            Builtin.appliedFunction
-                $ maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
-                $ Map.lookup _key _map
+                        _ -> Builtin.wrongArity ctx
+                emptyMap = do
+                    _map <- expectBuiltinDomainMap ctx _map
+                    if Map.null _map
+                        then Builtin.appliedFunction ExpandedPattern.bottom
+                        else empty
+                bothConcrete = do
+                    _key <- Builtin.expectNormalConcreteTerm tools _key
+                    _map <- expectBuiltinDomainMap ctx _map
+                    Builtin.appliedFunction $ maybeBottom $ Map.lookup _key _map
+            emptyMap <|> bothConcrete
         )
+    maybeBottom = maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
 
 evalElement :: Builtin.Function
 evalElement =
@@ -208,23 +221,50 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
+    ctx = "MAP.concat"
+    evalConcat0
+        :: MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Sort Object
+        -> [PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
     evalConcat0 _ _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
         (do
             let (_map1, _map2) =
                     case arguments of
                         [_map1, _map2] -> (_map1, _map2)
-                        _ -> Builtin.wrongArity "MAP.concat"
-            _map1 <- expectBuiltinDomainMap "MAP.concat" _map1
-            _map2 <- expectBuiltinDomainMap "MAP.concat" _map2
-            let overlapping =
-                    (not . Set.null)
-                    (Set.intersection (Map.keysSet _map1) (Map.keysSet _map2))
-            -- Result is ‘\bottom{}()’ when there is overlap between the keys
-            -- of the operands.
-            (Monad.when overlapping . Except.throwError)
-                (Applied $ OrOfExpandedPattern.make [ExpandedPattern.bottom])
-            returnMap resultSort (Map.union _map1 _map2)
+                        _ -> Builtin.wrongArity ctx
+                leftIdentity = do
+                    _map1 <- expectBuiltinDomainMap ctx _map1
+                    if Map.null _map1
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _map2
+                        else
+                            empty
+                rightIdentity = do
+                    _map2 <- expectBuiltinDomainMap ctx _map2
+                    if Map.null _map2
+                        then
+                            Builtin.appliedFunction
+                            $ ExpandedPattern.fromPurePattern _map1
+                        else
+                            empty
+                bothConcrete = do
+                    _map1 <- expectBuiltinDomainMap ctx _map1
+                    _map2 <- expectBuiltinDomainMap ctx _map2
+                    let overlapping =
+                            (not . Set.null)
+                            (Set.intersection (Map.keysSet _map1) (Map.keysSet _map2))
+                    if overlapping
+                        then
+                            -- Result is ‘\bottom{}()’ when there is overlap
+                            -- between the keys of the operands.
+                            Builtin.appliedFunction ExpandedPattern.bottom
+                        else
+                            returnMap resultSort (Map.union _map1 _map2)
+            leftIdentity <|> rightIdentity <|> bothConcrete
         )
 
 evalUnit :: Builtin.Function
@@ -272,7 +312,7 @@ evalInKeys =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
         [ ("MAP.concat", evalConcat)
@@ -459,15 +499,6 @@ unify
         , Map.difference bs as
         )
 
-    -- | Normalize the substitution of 'expanded', or return 'bottom' if
-    -- normalization fails.
-    normalize :: (level ~ Object) => expanded -> m expanded
-    normalize r =
-        runExceptT (normalizePredicatedSubstitution tools r)
-            >>= \case
-                Left _ -> return ExpandedPattern.bottom
-                Right (normalized, _) -> return normalized
-
     -- | Sequence the actions in a map to return a collection of proven expanded
     -- patterns.
     collectProvenExpandedPatterns
@@ -539,7 +570,7 @@ unify
                             -- remainder of map2.
                             ExpandedPattern.bottom
                         | otherwise = asBuiltinMap <$> propagatePredicates _intersect
-                (,) <$> normalize result <*> pure SimplificationProof
+                (,) <$> normalize tools result <*> pure SimplificationProof
         return unified
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
@@ -572,7 +603,7 @@ unify
                             ExpandedPattern.bottom
                         | otherwise =
                             App_ concat' <$> propagatePredicates [q, _diff1]
-                (,) <$> normalize result <*> pure SimplificationProof
+                (,) <$> normalize tools result <*> pure SimplificationProof
         return unified
       where
         asBuiltinMap = asBuiltinDomainValue resultSort

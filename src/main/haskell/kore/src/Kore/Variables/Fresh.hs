@@ -16,6 +16,10 @@ module Kore.Variables.Fresh
     , module Control.Monad.Counter
     ) where
 
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
+
 import Control.Monad.Counter
 import Kore.AST.Common
        ( AstLocation (..), Id (..), Variable (..) )
@@ -52,7 +56,7 @@ class FreshVariable var where
 {-| The prefix used to generate fresh variables.  It intentionally contains
 a non-id symbol @_@ to avoid clashing with user-defined ids.
 -}
-freshVariablePrefix :: String
+freshVariablePrefix :: Text
 freshVariablePrefix = "var_"
 
 instance FreshVariable Variable where
@@ -60,7 +64,10 @@ instance FreshVariable Variable where
     freshVariableWith var n =
         var
             { variableName = Id
-                { getId = metaObjectPrefix ++ freshVariablePrefix ++ show n
+                { getId =
+                    metaObjectPrefix
+                    <> freshVariablePrefix
+                    <> Text.pack (show n)
                 , idLocation = AstLocationGeneratedVariable
                 }
             }

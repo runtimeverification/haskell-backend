@@ -43,6 +43,9 @@ import           Data.Sequence
                  ( Seq )
 import           Data.Set
                  ( Set )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
@@ -116,7 +119,7 @@ an opaque entity as much as possible.
 Note that Id comparison ignores the AstLocation.
 -}
 data Id level = Id
-    { getId      :: !String
+    { getId      :: !Text
     , idLocation :: !AstLocation
     }
     deriving (Show, Generic)
@@ -137,11 +140,14 @@ instance NFData (Id level)
 narrow cases where this makes sense, you should really consider other options
 (including adding a new entry to the `AstLocation` data definition).
 -}
-noLocationId :: String -> Id level
+noLocationId :: Text -> Id level
 noLocationId value = Id
     { getId = value
     , idLocation = AstLocationNone
     }
+
+getIdForError :: Id level -> String
+getIdForError = Text.unpack . getId
 
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).

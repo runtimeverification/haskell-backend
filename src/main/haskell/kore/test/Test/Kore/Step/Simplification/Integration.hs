@@ -1,6 +1,7 @@
 module Test.Kore.Step.Simplification.Integration
     ( test_simplificationIntegration
     , test_substituteMap
+    , test_substituteList
     , test_substitute
     ) where
 
@@ -12,6 +13,7 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
+import qualified Data.Sequence as Seq
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -223,6 +225,42 @@ test_substituteMap =
     mkBuiltinDomainMap =
         give mockSymbolOrAliasSorts
             mkDomainValue Mock.testSort . BuiltinDomainMap . Map.fromList
+
+test_substituteList :: [TestTree]
+test_substituteList =
+    give mockSymbolOrAliasSorts
+    [ testCase "Substitution applied to List elements"
+        (assertEqualWithExplanation
+            "Expected substitution applied to List elements"
+            ( OrOfExpandedPattern.make
+                [ ExpandedPattern.Predicated
+                    { term =
+                        Mock.functionalConstr20
+                            Mock.a
+                            (mkBuiltinDomainList [Mock.a, mkVar Mock.x])
+                    , predicate = makeTruePredicate
+                    , substitution = [(Mock.x, Mock.a), (Mock.y, mkBuiltinDomainList [Mock.a, Mock.a])]
+                    }
+                ]
+            )
+            (evaluate
+                mockMetadataTools
+                ( ExpandedPattern.fromPurePattern
+                    (mkAnd
+                        (Mock.functionalConstr20
+                            (mkVar Mock.x)
+                            (mkBuiltinDomainList [Mock.a, mkVar Mock.x])
+                        )
+                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                    )
+                )
+            )
+        )
+    ]
+  where
+    mkBuiltinDomainList =
+        give mockSymbolOrAliasSorts
+            mkDomainValue Mock.testSort . BuiltinDomainList . Seq.fromList
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
 mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping

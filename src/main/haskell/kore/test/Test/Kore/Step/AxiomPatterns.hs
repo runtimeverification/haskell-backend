@@ -11,6 +11,9 @@ import           Data.Maybe
                  ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Builders
 import           Kore.AST.Common
@@ -280,10 +283,10 @@ sortAInt = simpleSort (SortName "AInt")
 sortAExp = simpleSort (SortName "AExp")
 sortBExp = simpleSort (SortName "BExp")
 
-sortParam :: String -> SortVariable Object
+sortParam :: Text -> SortVariable Object
 sortParam name = sortParameter Proxy name AstLocationTest
 
-sortParamSort :: String -> Sort Object
+sortParamSort :: Text -> Sort Object
 sortParamSort = SortVariableSort . sortParam
 
 symbolTCell, symbolKCell :: PureSentenceSymbol Object
@@ -327,14 +330,14 @@ parseAxiom str =
         Right sen -> return sen
 
 extractIndexedModule
-    :: String
+    :: Text
     -> Either (Error a) (Map.Map ModuleName (KoreIndexedModule ImplicitAttributes))
     -> KoreIndexedModule ImplicitAttributes
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)
         Right modules -> fromMaybe
-            (error ("Module " ++ name ++ " not found."))
+            (error ("Module " ++ Text.unpack name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
 
 topAInt :: CommonPurePattern Object

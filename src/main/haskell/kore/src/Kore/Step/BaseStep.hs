@@ -13,11 +13,13 @@ module Kore.Step.BaseStep
     , StepperVariable (..)
     , StepProof (..)
     , StepProofAtom (..)
+    , UnificationProcedure (..)
     , VariableRenaming (..)
     , simplificationProof
     , stepProof
     , stepProofSumName
     , stepWithAxiom
+    , stepWithAxiom'
     ) where
 
 import qualified Control.Arrow as Arrow
@@ -176,6 +178,33 @@ stepProofSumName (StepProofUnification _)       = "StepProofUnification"
 stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
 stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
+-- | Wraps functions such as 'unificationProcedure' and
+-- 'Kore.Step.Function.Matcher.matchAsUnification' to be used in
+-- 'stepWithAxion\''.
+newtype UnificationProcedure level =
+    UnificationProcedure
+        ( forall variable m
+        . ( SortedVariable variable
+          , Ord (variable level)
+          , Show (variable level)
+          , OrdMetaOrObject variable
+          , ShowMetaOrObject variable
+          , MetaOrObject level
+          , Hashable variable
+          , FreshVariable variable
+          , MonadCounter m
+          )
+        => MetadataTools level StepperAttributes
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> ExceptT
+            UnificationError
+            m
+            ( PredicateSubstitution level variable
+            , UnificationProof level variable
+            )
+        )
+
 {- |
     Use the given axiom to execute a single rewriting step.
 
@@ -185,17 +214,18 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
     Returns 'Left' only if there is an error. It is not an error if the axiom
     does not apply to the given configuration.
 -}
-stepWithAxiom
-    ::  ( FreshVariable variable
-        , Hashable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , SortedVariable variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
-        )
+stepWithAxiom'
+    :: ( FreshVariable variable
+       , Hashable variable
+       , MetaOrObject level
+       , Ord (variable level)
+       , OrdMetaOrObject variable
+       , SortedVariable variable
+       , Show (variable level)
+       , ShowMetaOrObject variable
+       )
     => MetadataTools level StepperAttributes
+    -> UnificationProcedure level
     -> PredicateSubstitutionSimplifier level
     -> ExpandedPattern.ExpandedPattern level variable
     -- ^ Configuration being rewritten.
@@ -204,11 +234,12 @@ stepWithAxiom
     -> ExceptT
         (Simplifier (StepError level variable))
         Simplifier
-        (ExpandedPattern.ExpandedPattern level variable
+            ( ExpandedPattern.ExpandedPattern level variable
             , StepProof variable level
             )
-stepWithAxiom
+stepWithAxiom'
     tools
+    (UnificationProcedure unificationProcedure')
     (PredicateSubstitutionSimplifier substitutionSimplifier)
     expandedPattern
     AxiomPattern
@@ -266,7 +297,7 @@ stepWithAxiom
         , rawSubstitutionProof
         ) <- normalizeUnificationError
                 existingVars
-                (unificationProcedure
+                (unificationProcedure'
                     tools
                     axiomLeft
                     startPattern
@@ -399,6 +430,33 @@ stepWithAxiom
         { variableRenamingOriginal = original
         , variableRenamingRenamed  = renamed
         }
+
+stepWithAxiom
+    :: ( FreshVariable variable
+       , Hashable variable
+       , MetaOrObject level
+       , Ord (variable level)
+       , OrdMetaOrObject variable
+       , SortedVariable variable
+       , Show (variable level)
+       , ShowMetaOrObject variable
+       )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
+    -> ExpandedPattern.ExpandedPattern level variable
+    -- ^ Configuration being rewritten.
+    -> AxiomPattern level
+    -- ^ Rewriting axiom
+    -> ExceptT
+        (Simplifier (StepError level variable))
+        Simplifier
+            ( ExpandedPattern.ExpandedPattern level variable
+            , StepProof variable level
+            )
+stepWithAxiom tools =
+    stepWithAxiom'
+        tools
+        (UnificationProcedure unificationProcedure)
 
 unificationProofStepVariablesToCommon
     ::  ( FreshVariable variable

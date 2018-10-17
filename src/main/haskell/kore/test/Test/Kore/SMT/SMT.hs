@@ -6,6 +6,8 @@ import Test.QuickCheck
 
 import Data.Map
 import Data.Reflection
+import Data.Text
+       ( Text )
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -33,7 +35,7 @@ Just intModule = Data.Map.lookup intModuleName indexedModules
 tools :: MetadataTools Object SMTAttributes
 tools = extractMetadataTools intModule
 
-vInt :: String -> CommonPurePattern Object
+vInt :: Text -> CommonPurePattern Object
 vInt s = V $ s `varS` intSort
 
 a, b, c :: CommonPurePattern Object
@@ -41,7 +43,7 @@ a = vInt "a"
 b = vInt "b"
 c = vInt "c"
 
-vBool :: String -> CommonPurePattern Object
+vBool :: Text -> CommonPurePattern Object
 vBool s = V $ s `varS` boolSort
 
 p, q :: CommonPurePattern Object

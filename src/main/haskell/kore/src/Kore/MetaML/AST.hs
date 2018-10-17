@@ -18,15 +18,15 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Kore.MetaML.AST where
 
-import Data.Set
-       ( Set )
+import           Data.Set
+                 ( Set )
+import qualified Data.Text as Text
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.Variables.Free
-       ( pureFreeVariables )
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to 'Meta'.
@@ -68,7 +68,7 @@ type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
 
 -- |'metaFreeVariables' collects the free variables of a 'CommonMetaPattern'.
 metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)
-metaFreeVariables = pureFreeVariables (toProxy Meta)
+metaFreeVariables = freePureVariables
 
 nilSortListHead :: SymbolOrAlias Meta
 nilSortListHead = groundHead "#nilSortList" AstLocationImplicit
@@ -95,7 +95,7 @@ variableAsPatternHead :: SymbolOrAlias Meta
 variableAsPatternHead = groundHead "#variableAsPattern" AstLocationImplicit
 
 metaMLPatternHead :: MLPatternType -> AstLocation -> SymbolOrAlias Meta
-metaMLPatternHead pt = groundHead ('#' : '\\' : patternString pt)
+metaMLPatternHead pt = groundHead (Text.pack $ '#' : '\\' : patternString pt)
 
 sortDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
 sortDeclaredHead param = SymbolOrAlias

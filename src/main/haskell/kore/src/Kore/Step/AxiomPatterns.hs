@@ -17,6 +17,8 @@ import Data.Either
        ( rights )
 import Data.Functor
        ( ($>) )
+import Data.Text
+       ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -48,7 +50,7 @@ data AxiomPatternAttributes =
     AxiomPatternAttributes
     { axiomPatternHeatCool :: !(Maybe HeatCool)
     -- ^ An axiom may be denoted as a heating or cooling rule.
-    , axiomPatternProductionID :: !(Maybe String)
+    , axiomPatternProductionID :: !(Maybe Text)
     -- ^ The identifier from the front-end identifying a rule or group of rules.
     }
   deriving (Eq, Ord, Show)

@@ -38,6 +38,7 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.HashSet
                  ( HashSet )
 import qualified Data.HashSet as HashSet
+import qualified Data.Text as Text
 import           Text.Megaparsec
                  ( SourcePos (..), eof, getPosition, unPos )
 import qualified Text.Megaparsec.Char as Parser
@@ -79,14 +80,14 @@ idParser x =
         pos <- sourcePosToFileLocation <$> getPosition
         name <- lexeme (objectIdRawParser KeywordsForbidden)
         return Id
-            { getId = name
+            { getId = Text.pack name
             , idLocation = AstLocationFile pos
             }
     IsMeta -> do
         pos <- sourcePosToFileLocation <$> getPosition
         name <- lexeme metaIdRawParser
         return Id
-            { getId = name
+            { getId = Text.pack name
             , idLocation = AstLocationFile pos
             }
 
@@ -167,7 +168,7 @@ moduleNameCharSet = idCharSet
 {-|'moduleNameRawParser' parses a @module-name@. Does not consume whitespace.-}
 moduleNameRawParser :: Parser ModuleName
 moduleNameRawParser =
-  ModuleName <$>
+  ModuleName . Text.pack <$>
     genericIdRawParser
         moduleNameFirstCharSet moduleNameCharSet KeywordsForbidden
 

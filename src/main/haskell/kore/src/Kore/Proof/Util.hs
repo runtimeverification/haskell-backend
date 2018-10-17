@@ -25,38 +25,41 @@ i.e. poor man's HOL
 {-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
 
 module Kore.Proof.Util
-(
--- * General deduction tools
-  modusPonensN
-, mkImpliesN
-, tryDischarge
-, tryDischargeN
--- * Forall
-, mkForallN
-, forallIntroN
-, forallElimN
--- * Exists
-, mkExistsN
-, existsIntroN
--- * Connectives
-, mkAndN
-, mkOrN
-, andIntroN
-, andElimN
--- * Equality
-, provablySubstitute
-, eqSymmetry
-, eqTransitivity
-, generateVarList
-) where
+    (
+    -- * General deduction tools
+    modusPonensN
+    , mkImpliesN
+    , tryDischarge
+    , tryDischargeN
+    -- * Forall
+    , mkForallN
+    , forallIntroN
+    , forallElimN
+    -- * Exists
+    , mkExistsN
+    , existsIntroN
+    -- * Connectives
+    , mkAndN
+    , mkOrN
+    , andIntroN
+    , andElimN
+    -- * Equality
+    , provablySubstitute
+    , eqSymmetry
+    , eqTransitivity
+    , generateVarList
+    ) where
 
-import Data.Reflection
+import           Data.Reflection
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
+
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
-
 import Kore.Proof.Proof
 
 modusPonensN
@@ -215,12 +218,12 @@ eqTransitivity = undefined
 generateVarList
     :: Given (SymbolOrAliasSorts Object)
     => [Sort Object]
-    -> String
+    -> Text
     -> ([Variable Object], [Term])
 generateVarList sorts name =
     let vars =
           zipWith
-            (\n sort -> varS (name ++ show n) sort)
+            (\n sort -> varS (name <> (Text.pack . show) n) sort)
             [(1::Int)..]
             sorts
         vars' = map Var_ vars

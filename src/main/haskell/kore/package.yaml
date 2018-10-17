@@ -151,6 +151,7 @@ tests:
       - directory >= 1.2.2
       - filepath
       - QuickCheck
+      - quickcheck-instances
       - tasty
       - tasty-ant-xml
       - tasty-hunit

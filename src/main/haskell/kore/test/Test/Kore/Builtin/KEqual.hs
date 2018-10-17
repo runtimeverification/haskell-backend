@@ -12,6 +12,8 @@ import           Data.Map
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Builders
                  ( parameterizedSymbol_, sortParameter, symbol_ )
@@ -297,7 +299,7 @@ injHead fromSort toSort =
     }
 
 
-groundObjectSort :: String -> Sort Object
+groundObjectSort :: Text -> Sort Object
 groundObjectSort name =
     SortActualSort
         SortActual

@@ -32,6 +32,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkBottom, mkTop )
 import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import           Kore.IndexedModule.MetadataTools
@@ -47,7 +48,9 @@ import           Kore.Step.ExpandedPattern as PredicateSubstitution
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom, fromPurePattern, isBottom )
 import           Kore.Step.PatternAttributes
-                 ( isConstructorLikeTop, isFunctionPattern )
+                 ( isConstructorLikeTop )
+import           Kore.Step.RecursiveAttributes
+                 ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
@@ -299,6 +302,7 @@ maybeTermAnd =
         , liftET charLiteralAndEqualsAssumesDifferent
         , Builtin.Map.unify
         , Builtin.Set.unify
+        , Builtin.List.unify
         , lift functionAnd
         ]
   where
@@ -524,11 +528,8 @@ variableFunctionAndEquals
     tools
     (Var_ v)
     second
-  = case isFunctionPattern tools second of
-    Left _ -> empty
-    Right _proof ->
-        -- assumes functional implies function.
-        return
+  = if isFunctionPattern tools second
+    then return
             ( Predicated
                 { term = second  -- different for Equals
                 , predicate =
@@ -545,6 +546,7 @@ variableFunctionAndEquals
                 }
             , SimplificationProof
             )
+    else empty
 variableFunctionAndEquals _ _ _ _ = empty
 
 {-| And simplification for `function and variable`.
@@ -902,22 +904,17 @@ functionAnd
     tools
     first
     second
-  = case isFunctionPattern tools first of
-    Left _ -> empty
-    Right _proof ->
-        case isFunctionPattern tools second of
-            Left _ -> empty
-            Right _proof ->
-                return
-                    ( Predicated
-                        { term = first  -- different for Equals
-                        -- Ceil predicate not needed since first being
-                        -- bottom will make the entire term bottom. However,
-                        -- one must be careful to not just drop the term.
-                        , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
-                            makeEqualsPredicate first second
-                        , substitution = []
-                        }
-                    , SimplificationProof
-                    )
-
+  = if isFunctionPattern tools first && isFunctionPattern tools second
+    then return
+            ( Predicated
+                { term = first  -- different for Equals
+                -- Ceil predicate not needed since first being
+                -- bottom will make the entire term bottom. However,
+                -- one must be careful to not just drop the term.
+                , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
+                    makeEqualsPredicate first second
+                , substitution = []
+                }
+            , SimplificationProof
+            )
+    else empty

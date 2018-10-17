@@ -23,6 +23,8 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Common
                  ( Application (..), PureMLPattern, SortedVariable )
@@ -68,7 +70,7 @@ symbolVerifiers =
 which can take arbitrary terms (of the same sort) and check whether they are
 equal or not, producing a builtin boolean value.
  -}
-builtinFunctions :: Map String Builtin.Function
+builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
     [ ("KEQUAL.eq", ApplicationFunctionEvaluator (evalKEq True False))

@@ -12,15 +12,20 @@ module Kore.Step.Function.Matcher
     ( matchAsUnification
     ) where
 
-import           Data.Either
-                 ( isRight )
+import           Control.Applicative
+                 ( (<|>) )
+import           Control.Error.Util
+                 ( just, noteT, nothing )
+import           Control.Monad.Counter
+                 ( MonadCounter )
+import           Control.Monad.Trans.Except
+                 ( ExceptT (..) )
+import           Control.Monad.Trans.Maybe
+                 ( MaybeT (..) )
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( catMaybes, listToMaybe )
-import           Data.Proxy
-                 ( Proxy (..) )
 import           Data.Reflection
-                 ( give )
+                 ( Given, give )
+import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( PureMLPattern, SortedVariable )
@@ -33,22 +38,21 @@ import           Kore.ASTUtils.SmartPatterns
                  pattern Not_, pattern Or_, pattern Rewrites_,
                  pattern StringLiteral_, pattern Top_, pattern Var_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate )
 import           Kore.Step.ExpandedPattern
                  ( substitutionToPredicate )
-import           Kore.Step.PatternAttributes
-                 ( isFunctionPattern )
 import           Kore.Step.PredicateSubstitution
                  ( PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), top )
+                 ( PredicateSubstitution (..), freeVariables, top )
+import           Kore.Step.RecursiveAttributes
+                 ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Equals as Equals
                  ( makeEvaluateTermsToPredicateSubstitution )
 import           Kore.Step.StepperAttributes
@@ -61,8 +65,6 @@ import           Kore.Unification.Error
                  ( UnificationError (..) )
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
-import           Kore.Variables.Free
-                 ( pureFreeVariables )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -92,23 +94,20 @@ matchAsUnification
         , Show (variable Object)
         , Show (variable Meta)
         , SortedVariable variable
+        , MonadCounter m
         )
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Either
+    -> ExceptT
         UnificationError
-        (Simplifier
-            ( PredicateSubstitution level variable
-            , UnificationProof level variable
-            )
+        m
+        ( PredicateSubstitution level variable
+        , UnificationProof level variable
         )
 matchAsUnification tools first second =
-    case match tools Map.empty first second of
-        Nothing -> Left UnsupportedPatterns
-        Just result -> return $ do  -- Counter monad
-            predicateSubstitution <- result
-            return (predicateSubstitution, EmptyUnificationProof)
+    noteT UnsupportedPatterns
+    $ (,) <$> match tools Map.empty first second <*> return EmptyUnificationProof
 
 match
     ::  ( Hashable variable
@@ -121,21 +120,17 @@ match
         , Show (variable Object)
         , Show (variable Meta)
         , SortedVariable variable
+        , MonadCounter m
         )
     => MetadataTools level StepperAttributes
     -> Map.Map (variable level) (variable level)
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe (Simplifier (PredicateSubstitution level variable))
+    -> MaybeT m (PredicateSubstitution level variable)
 match tools quantifiedVariables first second =
-    firstJust
-        [ matchEqualHeadPatterns tools quantifiedVariables first second
-        , matchVariableFunction tools quantifiedVariables first second
-        , matchNonVarToPattern tools first second
-        ]
-  where
-    firstJust :: [Maybe a] -> Maybe a
-    firstJust = listToMaybe . catMaybes
+    matchEqualHeadPatterns tools quantifiedVariables first second
+    <|> matchVariableFunction tools quantifiedVariables first second
+    <|> matchNonVarToPattern tools first second
 
 matchEqualHeadPatterns
     :: ( Show (variable level)
@@ -148,12 +143,13 @@ matchEqualHeadPatterns
        , Show (variable Object)
        , FreshVariable variable
        , Hashable variable
+       , MonadCounter m
        )
     => MetadataTools level StepperAttributes
     -> Map.Map (variable level) (variable level)
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe (Simplifier (PredicateSubstitution level variable))
+    -> MaybeT m (PredicateSubstitution level variable)
 matchEqualHeadPatterns tools quantifiedVariables first second =
     case first of
         (And_ _ firstFirst firstSecond) ->
@@ -165,25 +161,28 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
                         ]
-                _ -> Nothing
+                _ -> nothing
         (App_ firstHead firstChildren) ->
             case second of
                 (App_ secondHead secondChildren) ->
                     if firstHead == secondHead
-                    then matchJoin
-                        tools
-                        quantifiedVariables
-                        (zip firstChildren secondChildren)
-                    else Nothing
-                _ -> Nothing
+                    then
+                        matchJoin
+                            tools
+                            quantifiedVariables
+                            (zip firstChildren secondChildren)
+                    else nothing
+                _ -> nothing
         (Bottom_ _) -> topWhenEqualOrNothing first second
         (Ceil_ _ _ firstChild) ->
             case second of
                 (Ceil_ _ _ secondChild) ->
                     match tools quantifiedVariables firstChild secondChild
-                _ -> Nothing
-        (CharLiteral_ _) -> topWhenEqualOrNothing first second
-        (DV_ _ _) -> topWhenEqualOrNothing first second
+                _ -> nothing
+        (CharLiteral_ _) ->
+            topWhenEqualOrNothing first second
+        (DV_ _ _) ->
+            topWhenEqualOrNothing first second
         (Equals_ _ _ firstFirst firstSecond) ->
             case second of
                 (Equals_ _ _ secondFirst secondSecond) ->
@@ -193,34 +192,38 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
                         ]
-                _ -> Nothing
+                _ -> nothing
         (Exists_ _ firstVariable firstChild) ->
             case second of
                 (Exists_ _ secondVariable secondChild) ->
-                    match
+                    give (MetadataTools.symbolOrAliasSorts tools)
+                    $ checkVariableEscape [firstVariable, secondVariable]
+                    <$> match
                         tools
                         (Map.insert
                             firstVariable secondVariable quantifiedVariables
                         )
                         firstChild
                         secondChild
-                _ -> Nothing
+                _ -> nothing
         (Floor_ _ _ firstChild) ->
             case second of
                 (Floor_ _ _ secondChild) ->
                     match tools quantifiedVariables firstChild secondChild
-                _ -> Nothing
+                _ -> nothing
         (Forall_ _ firstVariable firstChild) ->
             case second of
                 (Forall_ _ secondVariable secondChild) ->
-                    match
+                    give (MetadataTools.symbolOrAliasSorts tools)
+                    $ checkVariableEscape [firstVariable, secondVariable]
+                    <$> match
                         tools
                         (Map.insert
                             firstVariable secondVariable quantifiedVariables
                         )
                         firstChild
                         secondChild
-                _ -> Nothing
+                _ -> nothing
         (Iff_ _ firstFirst firstSecond) ->
             case second of
                 (Iff_ _ secondFirst secondSecond) ->
@@ -230,7 +233,7 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
                         ]
-                _ -> Nothing
+                _ -> nothing
         (Implies_ _ firstFirst firstSecond) ->
             case second of
                 (Implies_ _ secondFirst secondSecond) ->
@@ -240,7 +243,7 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
                         ]
-                _ -> Nothing
+                _ -> nothing
         (In_ _ _ firstFirst firstSecond) ->
             case second of
                 (In_ _ _ secondFirst secondSecond) ->
@@ -250,17 +253,17 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
                         ]
-                _ -> Nothing
+                _ -> nothing
         (Next_ _ firstChild) ->
             case second of
                 (Next_ _ secondChild) ->
                     match tools quantifiedVariables firstChild secondChild
-                _ -> Nothing
+                _ -> nothing
         (Not_ _ firstChild) ->
             case second of
                 (Not_ _ secondChild) ->
                     match tools quantifiedVariables firstChild secondChild
-                _ -> Nothing
+                _ -> nothing
         (Or_ _ firstFirst firstSecond) ->
             case second of
                 (Or_ _ secondFirst secondSecond) ->
@@ -270,7 +273,7 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
                         ]
-                _ -> Nothing
+                _ -> nothing
         (Rewrites_ _ firstFirst firstSecond) ->
             case second of
                 (Rewrites_ _ secondFirst secondSecond) ->
@@ -280,24 +283,25 @@ matchEqualHeadPatterns tools quantifiedVariables first second =
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
                         ]
-                _ -> Nothing
+                _ -> nothing
         (StringLiteral_ _) -> topWhenEqualOrNothing first second
         (Top_ _) -> topWhenEqualOrNothing first second
         (Var_ firstVariable) ->
             case second of
                 (Var_ secondVariable) ->
                     case Map.lookup firstVariable quantifiedVariables of
-                        Nothing -> Nothing
+                        Nothing -> nothing
                         Just variable ->
                             if variable == secondVariable
-                            then Just $ return PredicateSubstitution.top
-                            else Nothing
-                _ -> Nothing
+                            then just PredicateSubstitution.top
+                            else nothing
+                _ -> nothing
+        _ -> nothing
   where
     topWhenEqualOrNothing first' second' =
         if first' == second'
-            then Just $ return PredicateSubstitution.top
-            else Nothing
+            then just PredicateSubstitution.top
+            else nothing
 
 matchJoin
     :: ( Hashable variable
@@ -310,22 +314,19 @@ matchJoin
        , Show (variable Object)
        , Show (variable Meta)
        , SortedVariable variable
+       , MonadCounter m
        )
     => MetadataTools level StepperAttributes
     -> Map.Map (variable level) (variable level)
     -> [(PureMLPattern level variable, PureMLPattern level variable)]
-    -> Maybe
-        (Simplifier (PredicateSubstitution level variable))
-matchJoin tools quantifiedVariables patterns = do -- Maybe monad
+    -> MaybeT m (PredicateSubstitution level variable)
+matchJoin tools quantifiedVariables patterns = do
     matchedCounters <-
         traverse (uncurry $ match tools quantifiedVariables) patterns
-    return $ do -- Counter monad
-        matched <- sequenceA matchedCounters
-        (merged, _proof) <- mergePredicatesAndSubstitutions
-            tools
-            (map PredicateSubstitution.predicate matched)
-            (map PredicateSubstitution.substitution matched)
-        return merged
+    MaybeT $ Just . fst <$> mergePredicatesAndSubstitutions
+        tools
+        (map PredicateSubstitution.predicate matchedCounters)
+        (map PredicateSubstitution.substitution matchedCounters)
 
 -- Note that we can't match variables to stuff which can have more than one
 -- value, because if we take the axiom
@@ -346,32 +347,31 @@ matchVariableFunction
        , SortedVariable variable
        , MetaOrObject level
        , Ord (variable level)
+       , MonadCounter m
        )
     => MetadataTools level StepperAttributes
     -> Map.Map (variable level) (variable level)
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe (Simplifier (PredicateSubstitution level variable))
+    -> MaybeT m (PredicateSubstitution level variable)
 matchVariableFunction
     tools
     quantifiedVariables
     (Var_ var)
     second
   | not (var `Map.member` quantifiedVariables)
-    && isRight (isFunctionPattern tools second)
-  =
-    case Ceil.makeEvaluateTerm tools second of
+    && isFunctionPattern tools second
+  = case Ceil.makeEvaluateTerm tools second of
         (predicate, _proof) ->
-            Just $ return
+            just $
                 PredicateSubstitution
                     { predicate = predicate
                     , substitution = [(var, second)]
                     }
-matchVariableFunction _ _ _ _ = Nothing
+matchVariableFunction _ _ _ _ = nothing
 
 matchNonVarToPattern
-    :: forall variable level .
-        ( Hashable variable
+    :: ( Hashable variable
         , FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
@@ -381,15 +381,16 @@ matchNonVarToPattern
         , Show (variable Object)
         , Show (variable Meta)
         , SortedVariable variable
+        , MonadCounter m
         )
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe (Simplifier (PredicateSubstitution level variable))
+    -> MaybeT m (PredicateSubstitution level variable)
 matchNonVarToPattern tools first second
-  | null (pureFreeVariables (Proxy :: Proxy level) first)
+  -- TODO(virgil): For simplification axioms this would need to return bottom!
   = give (MetadataTools.symbolOrAliasSorts tools) $
-    return $ do -- Counter monad
+    MaybeT $ do -- MonadCounter
         (PredicateSubstitution {predicate, substitution}, _proof) <-
             Equals.makeEvaluateTermsToPredicateSubstitution tools first second
         let
@@ -402,9 +403,29 @@ matchNonVarToPattern tools first second
                 makeAndPredicate
                     predicate
                     (substitutionToPredicate substitution)
-        return
+        return . return $ -- MonadCounter m => m (Maybe a)
             PredicateSubstitution
                 { predicate = finalPredicate
                 , substitution = []
                 }
-matchNonVarToPattern _ _ _ = Nothing
+
+checkVariableEscape
+    :: ( MetaOrObject level
+        , Show (variable Object)
+        , Show (variable Meta)
+        , Ord (variable Object)
+        , Ord (variable Meta)
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Eq (variable level)
+        , Ord (variable level)
+        , Show (variable level))
+    => [variable level]
+    -> PredicateSubstitution level variable
+    -> PredicateSubstitution level variable
+checkVariableEscape vars predSubst
+  | any (`Set.member` freeVars) vars = error
+        "quantified variables in substitution or predicate escaping context"
+  | otherwise = predSubst
+  where
+    freeVars = PredicateSubstitution.freeVariables predSubst

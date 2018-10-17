@@ -115,10 +115,14 @@ evaluateApplication
                         -- that.
                         (nub (filter notBottom mergedResults))
                 -- All NotApplied results are equivalent, so we just check if
-                -- we have at leas one.
+                -- we have at least one.
                 notAppliedTerm = case notApplied of
                     [] -> OrOfExpandedPattern.make []
                     _ -> OrOfExpandedPattern.make [unchangedPatt]
+                    -- TODO(virgil): attach a predicate identifying the
+                    -- rule which didn't apply; returning the pattern unchanged
+                    -- is not really correct as we doesn't explain how we got
+                    -- here.
                 appliedTerms = map unwrapApplied applied
             return
                 ( foldr OrOfExpandedPattern.merge notAppliedTerm appliedTerms

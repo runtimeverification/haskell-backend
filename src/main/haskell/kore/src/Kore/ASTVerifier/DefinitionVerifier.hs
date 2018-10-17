@@ -21,6 +21,8 @@ import           Control.Monad
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy )
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.Sentence
@@ -109,7 +111,7 @@ indexImplicitModules
         (Error VerifyError)
         ( Map.Map ModuleName (KoreIndexedModule atts)
         , KoreImplicitIndexedModule atts
-        , Map.Map String AstLocation
+        , Map.Map Text AstLocation
         )
 indexImplicitModules = do
     defaultNames <- foldM verifyUniqueNames sortNames uncheckedKoreModules

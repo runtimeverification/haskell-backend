@@ -14,6 +14,8 @@ import           Data.Reflection
                  ( give )
 import           Data.Set
                  ( Set )
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -302,7 +304,7 @@ unit_simplify =
         assertEqual "Expected simplified Map" expected actual
 
 -- | Maps with symbolic keys are not simplified.
-prop_symbolic :: Map String Integer -> Property
+prop_symbolic :: Map Text Integer -> Property
 prop_symbolic values =
     let patMap =
             asSymbolicPattern
@@ -316,8 +318,11 @@ prop_symbolic values =
 asSymbolicPattern
     :: Map (CommonPurePattern Object) (CommonPurePattern Object)
     -> CommonPurePattern Object
-asSymbolicPattern result =
-    foldr applyConcat applyUnit (applyElement <$> Map.toAscList result)
+asSymbolicPattern result
+    | Map.null result =
+        applyUnit
+    | otherwise =
+        foldr1 applyConcat (applyElement <$> Map.toAscList result)
   where
     applyUnit = mkDomainValue mapSort $ BuiltinDomainMap Map.empty
     applyElement (key, value) = App_ symbolElement [key, value]
@@ -397,7 +402,7 @@ mapModuleName :: ModuleName
 mapModuleName = ModuleName "MAP"
 
 -- | Make an unparameterized builtin symbol with the given name.
-builtinSymbol :: String -> SymbolOrAlias Object
+builtinSymbol :: Text -> SymbolOrAlias Object
 builtinSymbol name =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId name

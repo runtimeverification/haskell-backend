@@ -13,6 +13,7 @@ module Kore.Building.Patterns where
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Proxy
                  ( Proxy (Proxy) )
+import qualified Data.Text as Text
 
 import Kore.AST.Common
        ( And (..), AstLocation, Bottom (..), BuiltinDomain (..), Ceil (..),
@@ -661,7 +662,7 @@ instance ( MetaOrObject level
 asVariable :: (MetaOrObject level, AsSort level sort)
            => PatternVariable sort level -> Variable level
 asVariable (PatternVariable name location sort) =
-    Variable (Id name location) (asAst sort)
+    Variable (Id (Text.pack name) location) (asAst sort)
 
 type MetaVariable sort = PatternVariable sort Meta
 metaVariable
@@ -670,7 +671,7 @@ metaVariable
 metaVariable = PatternVariable
 asMetaVariable :: MetaSort sort => MetaVariable sort -> Variable Meta
 asMetaVariable (PatternVariable name location sort) =
-    Variable (Id name location) (asAst sort)
+    Variable (Id (Text.pack name) location) (asAst sort)
 
 type ObjectVariable sort = PatternVariable sort Object
 objectVariable
@@ -679,4 +680,4 @@ objectVariable
 objectVariable = PatternVariable
 asObjectVariable :: ObjectSort sort => ObjectVariable sort -> Variable Object
 asObjectVariable (PatternVariable name location sort) =
-    Variable (Id name location) (asAst sort)
+    Variable (Id (Text.pack name) location) (asAst sort)
