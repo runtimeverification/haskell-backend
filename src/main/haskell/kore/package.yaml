@@ -177,3 +177,23 @@ benchmarks:
       - directory >= 1.2.2
       - filepath
       - template-haskell
+
+  kore-exec-benchmark:
+    main: Main.hs
+    other-modules:
+      - Paths
+    source-dirs:
+      - bench/exec
+      - test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - kore
+      - criterion
+      - directory >= 1.2.2
+      - filepath
+      - process
+      - template-haskell
+      - temporary
