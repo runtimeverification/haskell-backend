@@ -21,6 +21,8 @@ import Data.Maybe
        ( catMaybes )
 import Data.Reflection
        ( give )
+import Numeric.Natural
+       ( Natural )
 
 import           Data.Limit
                  ( Limit (..) )
@@ -47,12 +49,10 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
                  Simplifier )
-import           Kore.Step.Step
-                 ( Natural )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
-                 ( Strategy, Tree (..) )
+                 ( Tree (..) )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Substitution.Class
                  ( Hashable )
@@ -81,8 +81,6 @@ data SearchConfiguration level variable =
     SearchConfiguration
     { start :: !(ExpandedPattern level variable)
     -- ^ pattern to start the execution with
-    , depth :: !(Limit Natural)
-    -- ^ maximum depth of the search
     , bound :: !(Limit Natural)
     -- ^ maximum number of solutions
     , goal :: !(ExpandedPattern level variable)
@@ -107,22 +105,17 @@ search
         , Show (variable level)
         , Show (variable Meta)
         , Show (variable Object)
+        , expanded ~ ExpandedPattern level variable
+        , proof ~ StepProof level variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
-    -> (Limit Natural -> ExpandedPattern level variable
-        -> Simplifier
-            ( Tree
-                ( Strategy prim
-                , (ExpandedPattern level variable, StepProof level variable)
-                )
-             )
-       )
+    -> (expanded -> Simplifier (Tree (expanded, proof)))
     -> SearchConfiguration level variable
     -> Simplifier [UnificationSubstitution level variable]
 search tools substitutionSimplifier simplifier strategy config = do
-    executionTree <- strategy stepLimit initialPattern
+    executionTree <- strategy initialPattern
     let selectedConfigs = fst <$> pickStrategy executionTree
     matches <- catMaybes <$> traverse match selectedConfigs
     return (Limit.takeWithin boundLimit matches)
@@ -137,13 +130,12 @@ search tools substitutionSimplifier simplifier strategy config = do
                 patt
             )
     initialPattern = start config
-    stepLimit = depth config
     boundLimit = bound config
     finalPattern = goal config
     pickStrategy = case searchType config of
-        ONE -> Strategy.pickOne
-        PLUS -> Strategy.pickPlus
-        STAR -> Strategy.pickStar
+        ONE -> error "Not implemented!"
+        PLUS -> error "Not implemented!"
+        STAR -> error "Not implemented!"
         FINAL -> Strategy.pickFinal
 
 matchWith
