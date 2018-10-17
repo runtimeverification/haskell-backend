@@ -25,6 +25,9 @@ import           Options.Applicative
                  long, metavar, option, progDesc, readerError, str, strOption,
                  value )
 
+import           Data.Limit
+                 ( Limit (..) )
+import qualified Data.Limit as Limit
 import           Kore.AST.Common
 import           Kore.AST.Kore
                  ( CommonKorePattern )
@@ -177,15 +180,15 @@ commandLineParser =
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
             -- works correctly.
-            <> value simpleStrategy
+            <> value allAxioms
             <> help "Select rewrites using STRATEGY."
             )
       where
         readStrategy = do
             strat <- str
             case strat of
-                "simple" -> pure simpleStrategy
-                "default" -> pure defaultStrategy
+                "simple" -> pure allAxioms
+                "default" -> pure (heatingCooling allAxioms)
                 _ ->
                     let
                         unknown = "Unknown strategy '" ++ strat ++ "'. "
@@ -319,11 +322,18 @@ main = do
                         let
                             (rewriteAxioms, simplifier, substitutionSimplifier) =
                                 axiomsAndSimplifiers
-                            computeStrategy limit pat = runStrategy
-                                (transitionRule metadataTools substitutionSimplifier simplifier)
-                                (strategy rewriteAxioms)
-                                limit
-                                (pat, mempty)
+                            computeStrategy pat =
+                                runStrategy
+                                    (transitionRule
+                                        metadataTools
+                                        substitutionSimplifier
+                                        simplifier
+                                    )
+                                    (Limit.replicate
+                                        stepLimit
+                                        (strategy rewriteAxioms)
+                                    )
+                                    (pat, mempty)
                             runningPattern =
                                 if isKProgram
                                     then give (symbolOrAliasSorts metadataTools)
@@ -345,7 +355,7 @@ main = do
                                     (config : _) -> config
                         give (symbolOrAliasSorts metadataTools)
                             ExpandedPattern.toMLPattern . fst . pickLongest
-                            <$> computeStrategy stepLimit initialPattern
+                            <$> computeStrategy initialPattern
                 Just sType -> do
                     searchPattern <-
                         mainParseSearchPattern indexedModule metadataTools
@@ -358,11 +368,18 @@ main = do
                             let
                                 (rewriteAxioms, simplifier, substitutionSimplifier) =
                                     axiomsAndSimplifiers
-                                computeStrategy limit pat = runStrategy
-                                    (transitionRule metadataTools substitutionSimplifier simplifier)
-                                    (strategy rewriteAxioms)
-                                    limit
-                                    (pat, mempty)
+                                computeStrategy pat =
+                                    runStrategy
+                                        (transitionRule
+                                            metadataTools
+                                            substitutionSimplifier
+                                            simplifier
+                                        )
+                                        (Limit.replicate
+                                            stepLimit
+                                            (strategy rewriteAxioms)
+                                        )
+                                        (pat, mempty)
                                 runningPattern =
                                     if isKProgram
                                         then give (symbolOrAliasSorts metadataTools)
@@ -390,7 +407,6 @@ main = do
                                     computeStrategy
                                     SearchConfiguration
                                         { start = initialPattern
-                                        , depth = stepLimit
                                         , bound = boundLimit
                                         , goal = searchPattern
                                         , searchType = sType

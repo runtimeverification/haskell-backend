@@ -11,6 +11,9 @@ import qualified Data.Map as Map
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
+import           Data.Limit
+                 ( Limit (..) )
+import qualified Data.Limit as Limit
 import           Kore.AST.Common
                  ( Application (..), AstLocation (..), Id (..),
                  Pattern (ApplicationPattern), SymbolOrAlias (..), Variable )
@@ -524,8 +527,7 @@ runStep metadataTools configuration axioms =
                 (Mock.substitutionSimplifier metadataTools)
                 simplifier
             )
-            (stepStrategy axioms)
-            Unlimited
+            [allAxioms axioms]
             (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty
@@ -548,8 +550,7 @@ runSteps metadataTools stepLimit configuration axioms =
                 (Mock.substitutionSimplifier metadataTools)
                 simplifier
             )
-            (simpleStrategy axioms)
-            stepLimit
+            (Limit.replicate stepLimit $ allAxioms axioms)
             (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty

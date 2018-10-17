@@ -14,12 +14,11 @@ module Kore.Step.Step
     , simplify
     , axiomStep
     , transitionRule
-    , stepStrategy
-    , simpleStrategy
-    , defaultStrategy
+    , allAxioms
+    , anyAxiom
+    , heatingCooling
       -- * Re-exports
     , AxiomPattern
-    , Limit (..)
     , Natural
     , Strategy
     , pickLongest
@@ -36,17 +35,17 @@ import Data.Semigroup
 import Numeric.Natural
        ( Natural )
 
-import Kore.AST.Common
-       ( Variable )
-import Kore.AST.MetaOrObject
-       ( MetaOrObject )
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
-import Kore.Step.BaseStep
-       ( AxiomPattern, StepProof (..), simplificationProof, stepWithAxiom )
-
+import           Kore.AST.Common
+                 ( Variable )
+import           Kore.AST.MetaOrObject
+                 ( MetaOrObject )
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Step.AxiomPatterns
                  ( isCoolingRule, isHeatingRule, isNormalRule )
+import           Kore.Step.BaseStep
+                 ( AxiomPattern, StepProof (..), simplificationProof,
+                 stepWithAxiom )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -59,7 +58,6 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
-                 ( Limit (..), Strategy, pickFinal, pickLongest, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
 
 {- | A strategy primitive: a rewrite axiom or builtin simplification step.
@@ -76,20 +74,18 @@ simplify = Simplify
 
 {- | A single-step strategy which applies the given axiom.
 
-    If the axiom is successful, the built-in simplification rules and function
-    evaluator are applied (see 'ExpandedPattern.simplify' for details). The
-    combination is considered one step for the purposes of the step limit.
+If the axiom is successful, the built-in simplification rules and function
+evaluator are applied (see 'ExpandedPattern.simplify' for details).
 
  -}
-axiomStep :: axiom -> Strategy (Prim axiom) -> Strategy (Prim axiom)
+axiomStep :: axiom -> Strategy (Prim axiom)
 axiomStep a =
-    Strategy.step . Strategy.apply (axiom a) . Strategy.apply simplify
+    Strategy.sequence [Strategy.apply (axiom a), Strategy.apply simplify]
 
-{- |
-    Transition rule for primitive strategies in 'Prim'.
+{- | Transition rule for primitive strategies in 'Prim'.
 
-    @transitionRule@ is intended to be partially applied and passed to
-    'Strategy.runStrategy'.
+@transitionRule@ is intended to be partially applied and passed to
+'Strategy.runStrategy'.
  -}
 transitionRule
     :: (MetaOrObject level)
@@ -127,54 +123,51 @@ transitionRule tools substitutionSimplifier simplifier =
                     then return []
                     else return [(config', proof <> proof')]
 
-{- | A strategy which takes one step by attempting all the axioms.
+{- | A strategy that applies all the axioms in parallel.
 
-    If the axiom is successful, the built-in simplification rules and function
-    evaluator are applied (see 'ExpandedPattern.simplify' for details). The
-    combination is considered one step for the purposes of the step limit.
+After each successful axiom, the built-in simplification rules and function
+evaluator are applied (see 'ExpandedPattern.simplify' for details).
 
- -}
-stepStrategy
-    :: MetaOrObject level
-    => [AxiomPattern level]
-    -> Strategy (Prim (AxiomPattern level))
-stepStrategy axioms =
-    Strategy.all (applyAxiom <$> axioms)
-  where
-    applyAxiom a = axiomStep a Strategy.stuck
-
-{- | A strategy which applies all the given axioms as many times as possible.
-
-    If the axiom is successful, the built-in simplification rules and function
-    evaluator are applied (see 'ExpandedPattern.simplify' for details). The
-    combination is considered one step for the purposes of the step limit.
+See also: 'Strategy.all'
 
  -}
-simpleStrategy
-    :: MetaOrObject level
-    => [AxiomPattern level]
-    -> Strategy (Prim (AxiomPattern level))
-simpleStrategy axioms =
-    Strategy.many applyAxioms Strategy.stuck
-  where
-    applyAxioms next = Strategy.all (axiomStep <$> axioms <*> pure next)
+allAxioms
+    :: [axiom]
+    -> Strategy (Prim axiom)
+allAxioms axioms =
+    Strategy.all (axiomStep <$> axioms)
+
+{- | A strategy that applies the axioms until one succeeds.
+
+The axioms are attempted in order until one succeeds. After a successful axiom,
+the built-in simplification rules and function evaluator are applied (see
+'ExpandedPattern.simplify' for details).
+
+See also: 'Strategy.any'
+
+ -}
+anyAxiom
+    :: [axiom]
+    -> Strategy (Prim axiom)
+anyAxiom axioms =
+    Strategy.any (axiomStep <$> axioms)
 
 {- | Heat the configuration, apply a normal rule, and cool the result.
  -}
 -- TODO (thomas.tuegel): This strategy is not right because heating/cooling
 -- rules must have side conditions if encoded as \rewrites, or they must be
 -- \equals rules, which are not handled by this strategy.
-defaultStrategy
-    :: MetaOrObject level
-    => [AxiomPattern level]
+heatingCooling
+    :: (forall axiom. [axiom] -> Strategy (Prim axiom))
+    -- ^ 'allAxioms' or 'anyAxiom'
+    -> [AxiomPattern level]
     -> Strategy (Prim (AxiomPattern level))
-defaultStrategy axioms =
-    Strategy.many heatingCoolingCycle Strategy.stuck
+heatingCooling axiomStrategy axioms =
+    Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
   where
-    heatingCoolingCycle = Strategy.many heat . normal . Strategy.try cool
     heatingRules = filter isHeatingRule axioms
-    heat next = Strategy.all (axiomStep <$> heatingRules <*> pure next)
+    heat = axiomStrategy heatingRules
     normalRules = filter isNormalRule axioms
-    normal next = Strategy.all (axiomStep <$> normalRules <*> pure next)
+    normal = axiomStrategy normalRules
     coolingRules = filter isCoolingRule axioms
-    cool next = Strategy.all (axiomStep <$> coolingRules <*> pure next)
+    cool = axiomStrategy coolingRules
