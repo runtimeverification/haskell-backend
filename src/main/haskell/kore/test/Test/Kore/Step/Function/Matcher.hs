@@ -22,7 +22,7 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain (..), CommonPurePattern )
+                 ( BuiltinDomain (..), CommonPurePattern, Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkBottom, mkCeil, mkCharLiteral, mkDomainValue,
@@ -45,6 +45,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
+import           Test.Kore
+                 ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
@@ -379,6 +381,67 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
             (match mockMetadataTools
                 (Mock.functional10 (mkVar Mock.y))
                 (mkVar Mock.x)
+            )
+        )
+    , let
+          a = Mock.functional00SubSubSort
+          x = Variable (testId "x") Mock.subSort
+      in testCase "Injection"
+        (assertEqualWithExplanation ""
+            (Just PredicateSubstitution
+                { predicate = makeTruePredicate
+                , substitution = [(x, Mock.sortInjectionSubSubToSub a)]
+                }
+            )
+            (match mockMetadataTools
+                (Mock.sortInjectionSubToTop (mkVar x))
+                (Mock.sortInjectionSubSubToTop a)
+            )
+        )
+    , let
+          aSubSub = Mock.functional00SubSubSort
+          xSub = Variable (testId "x") Mock.subSort
+      in testCase "Injection + rhs var predicate"
+        (assertEqualWithExplanation ""
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.functional10 (mkVar Mock.y))
+                , substitution = [(xSub, Mock.sortInjectionSubSubToSub aSubSub)]
+                }
+            )
+            (match mockMetadataTools
+                (Mock.functionalTopConstr20
+                    (Mock.sortInjectionSubToTop (mkVar xSub))
+                    (Mock.functional10 (mkVar Mock.y))
+                )
+                (Mock.functionalTopConstr20
+                    (Mock.sortInjectionSubSubToTop aSubSub)
+                    (mkVar Mock.x)
+                )
+            )
+        )
+    , let
+          aSubSub = Mock.functional00SubSubSort
+          xSub = Variable (testId "x") Mock.subSort
+      in testCase "rhs var predicate + Injection"
+        (assertEqualWithExplanation ""
+            (Just PredicateSubstitution
+                { predicate = makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.functional10 (mkVar Mock.y))
+                , substitution = [(xSub, Mock.sortInjectionSubSubToSub aSubSub)]
+                }
+            )
+            (match mockMetadataTools
+                (Mock.functionalTopConstr21
+                    (Mock.functional10 (mkVar Mock.y))
+                    (Mock.sortInjectionSubToTop (mkVar xSub))
+                )
+                (Mock.functionalTopConstr21
+                    (mkVar Mock.x)
+                    (Mock.sortInjectionSubSubToTop aSubSub)
+                )
             )
         )
     , testCase "Quantified" $ do

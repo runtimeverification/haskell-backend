@@ -46,7 +46,12 @@ isFunctionalPattern, isFunctionPattern, isTotalPattern
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Bool
-isFunctionalPattern = recursivelyCheckHeadProperty isFunctional
-isFunctionPattern = recursivelyCheckHeadProperty (\atts -> isFunctional atts || isFunction atts)
-isTotalPattern = recursivelyCheckHeadProperty (\atts -> isFunctional atts || isTotal atts)
+--TODO(traiansf): we assume below that the pattern does not contain
+--sort injection symbols where the parameter sorts are not in subsort relation.
+isFunctionalPattern = recursivelyCheckHeadProperty
+    (\atts -> isFunctional atts || isSortInjection atts)
+isFunctionPattern = recursivelyCheckHeadProperty
+    (\atts -> isFunctional atts || isFunction atts || isSortInjection atts)
+isTotalPattern = recursivelyCheckHeadProperty
+    (\atts -> isFunctional atts || isTotal atts || isSortInjection atts)
 

@@ -121,12 +121,18 @@ functional11Id :: Id Object
 functional11Id = testId "functional11"
 functional20Id :: Id Object
 functional20Id = testId "functional20"
+functional00SubSubSortId :: Id Object
+functional00SubSubSortId = testId "functional00SubSubSort"
 functionalConstr10Id :: Id Object
 functionalConstr10Id = testId "functionalConstr10"
 functionalConstr11Id :: Id Object
 functionalConstr11Id = testId "functionalConstr11"
 functionalConstr20Id :: Id Object
 functionalConstr20Id = testId "functionalConstr20"
+functionalTopConstr20Id :: Id Object
+functionalTopConstr20Id = testId "functionalTopConstr20"
+functionalTopConstr21Id :: Id Object
+functionalTopConstr21Id = testId "functionalTopConstr21"
 injective10Id :: Id Object
 injective10Id = testId "injective10"
 injective11Id :: Id Object
@@ -315,6 +321,11 @@ functional20Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functional20Id
     , symbolOrAliasParams      = []
     }
+functional00SubSubSortSymbol :: SymbolOrAlias Object
+functional00SubSubSortSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = functional00SubSubSortId
+    , symbolOrAliasParams      = []
+    }
 functionalConstr10Symbol :: SymbolOrAlias Object
 functionalConstr10Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalConstr10Id
@@ -328,6 +339,16 @@ functionalConstr11Symbol = SymbolOrAlias
 functionalConstr20Symbol :: SymbolOrAlias Object
 functionalConstr20Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalConstr20Id
+    , symbolOrAliasParams      = []
+    }
+functionalTopConstr20Symbol :: SymbolOrAlias Object
+functionalTopConstr20Symbol = SymbolOrAlias
+    { symbolOrAliasConstructor = functionalTopConstr20Id
+    , symbolOrAliasParams      = []
+    }
+functionalTopConstr21Symbol :: SymbolOrAlias Object
+functionalTopConstr21Symbol = SymbolOrAlias
+    { symbolOrAliasConstructor = functionalTopConstr21Id
     , symbolOrAliasParams      = []
     }
 injective10Symbol :: SymbolOrAlias Object
@@ -582,6 +603,11 @@ functional20
     -> PureMLPattern Object variable
 functional20 arg1 arg2 = mkApp functional20Symbol [arg1, arg2]
 
+functional00SubSubSort
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+functional00SubSubSort = mkApp functional00SubSubSortSymbol []
+
 functionalConstr10
     :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
@@ -600,6 +626,20 @@ functionalConstr20
     -> PureMLPattern Object variable
     -> PureMLPattern Object variable
 functionalConstr20 arg1 arg2 = mkApp functionalConstr20Symbol [arg1, arg2]
+
+functionalTopConstr20
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+    -> PureMLPattern Object variable
+functionalTopConstr20 arg1 arg2 = mkApp functionalTopConstr20Symbol [arg1, arg2]
+
+functionalTopConstr21
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+    -> PureMLPattern Object variable
+functionalTopConstr21 arg1 arg2 = mkApp functionalTopConstr21Symbol [arg1, arg2]
 
 injective10
     :: Given (SymbolOrAliasSorts Object)
@@ -797,6 +837,12 @@ symbolOrAliasSortsMapping =
             , applicationSortsResult = subSort
             }
         )
+    ,   ( functional00SubSubSortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult = subSubSort
+            }
+        )
     ,   ( plain00SubSubsortSymbol
         , ApplicationSorts
             { applicationSortsOperands = []
@@ -884,6 +930,18 @@ symbolOrAliasSortsMapping =
     ,   ( functionalConstr20Symbol
         , ApplicationSorts
             { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult = testSort
+            }
+        )
+    ,   ( functionalTopConstr20Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = [topSort, testSort]
+            , applicationSortsResult = testSort
+            }
+        )
+    ,   ( functionalTopConstr21Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort, topSort]
             , applicationSortsResult = testSort
             }
         )
@@ -1065,6 +1123,9 @@ attributesMapping =
     ,   ( functional20Symbol
         , Mock.functionalAttributes
         )
+    ,   ( functional00SubSubSortSymbol
+        , Mock.functionalAttributes
+        )
     ,   ( functionalConstr10Symbol
         , Mock.constructorFunctionalAttributes
         )
@@ -1072,6 +1133,12 @@ attributesMapping =
         , Mock.constructorFunctionalAttributes
         )
     ,   ( functionalConstr20Symbol
+        , Mock.constructorFunctionalAttributes
+        )
+    ,   ( functionalTopConstr20Symbol
+        , Mock.constructorFunctionalAttributes
+        )
+    ,   ( functionalTopConstr21Symbol
         , Mock.constructorFunctionalAttributes
         )
     ,   ( injective10Symbol

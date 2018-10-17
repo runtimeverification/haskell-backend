@@ -16,6 +16,8 @@ module Kore.Step.PatternAttributes
     , mapFunctionalProofVariables
     ) where
 
+import           Control.Exception
+                 ( assert )
 import           Control.Lens
                  ( Prism )
 import qualified Control.Lens as Lens
@@ -26,7 +28,7 @@ import           Data.Functor.Foldable
 
 import           Kore.AST.Common
                  ( Application (..), DomainValue (..), Pattern (..),
-                 PureMLPattern )
+                 PureMLPattern, SymbolOrAlias (..) )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -129,12 +131,16 @@ checkFunctionalHead
         (PartialPatternProof (FunctionalProof level variable))
 checkFunctionalHead _ (VariablePattern v) =
     Right (DoNotDescend (FunctionalVariable v))
-checkFunctionalHead tools (ApplicationPattern ap) =
-    if isFunctional (MetadataTools.symAttributes tools patternHead)
-        then return (Descend (FunctionalHead patternHead))
-        else Left (NonFunctionalHead patternHead)
+checkFunctionalHead tools (ApplicationPattern ap)
+    | isFunctional (MetadataTools.symAttributes tools patternHead) =
+        return (Descend (FunctionalHead patternHead))
+    | isSortInjection (MetadataTools.symAttributes tools patternHead) =
+        assert (MetadataTools.isSubsortOf tools sortFrom sortTo)
+        $ return (Descend (FunctionalHead patternHead))
+    | otherwise = Left (NonFunctionalHead patternHead)
   where
     patternHead = applicationSymbolOrAlias ap
+    [sortFrom, sortTo] = symbolOrAliasParams patternHead
 checkFunctionalHead _ p = isPreconstructedPattern NonFunctionalPattern p
 
 {-|@isConstructorLikeTop@ checks whether the given 'Pattern' is topped in a
