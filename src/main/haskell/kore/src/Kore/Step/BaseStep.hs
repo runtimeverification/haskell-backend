@@ -93,7 +93,7 @@ data StepperConfiguration level = StepperConfiguration
 
 {- | 'StepProof' is the proof for an execution step or steps.
  -}
-newtype StepProof level variable =
+newtype StepProof (level :: *) (variable :: * -> *) =
     StepProof { getStepProof :: Seq (StepProofAtom level variable) }
   deriving (Eq, Show)
 
@@ -107,7 +107,7 @@ instance Monoid (StepProof level variable) where
 stepProof :: StepProofAtom level variable -> StepProof level variable
 stepProof atom = StepProof (Seq.singleton atom)
 
-simplificationProof :: SimplificationProof level -> StepProof variable level
+simplificationProof :: SimplificationProof level -> StepProof level variable
 simplificationProof = stepProof . StepProofSimplification
 
 {- | The smallest unit of a 'StepProof'.
@@ -116,7 +116,7 @@ simplificationProof = stepProof . StepProofSimplification
   variable renaming, and simplification.
 
  -}
-data StepProofAtom variable level
+data StepProofAtom (level :: *) (variable :: * -> *)
     = StepProofUnification !(UnificationProof level variable)
     -- ^ Proof for a unification that happened during the step.
     | StepProofVariableRenamings [VariableRenaming level variable]
@@ -235,7 +235,7 @@ stepWithAxiom'
         (Simplifier (StepError level variable))
         Simplifier
             ( ExpandedPattern.ExpandedPattern level variable
-            , StepProof variable level
+            , StepProof level variable
             )
 stepWithAxiom'
     tools
@@ -454,7 +454,7 @@ stepWithAxiom
         (Simplifier (StepError level variable))
         Simplifier
             ( ExpandedPattern.ExpandedPattern level variable
-            , StepProof variable level
+            , StepProof level variable
             )
 stepWithAxiom tools =
     stepWithAxiom'

@@ -177,7 +177,7 @@ instance
     , Eq (variable level), Show (variable level)
     , EqualWithExplanation (variable level)
     )
-    => SumEqualWithExplanation (StepProof variable level)
+    => SumEqualWithExplanation (StepProof level variable)
   where
     sumConstructorPair (StepProof a1) (StepProof a2) =
         SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
@@ -187,7 +187,7 @@ instance
     , Eq (variable level), Show (variable level)
     , EqualWithExplanation (variable level)
     )
-    => SumEqualWithExplanation (StepProofAtom variable level)
+    => SumEqualWithExplanation (StepProofAtom level variable)
   where
     sumConstructorPair (StepProofUnification a1) (StepProofUnification a2) =
         SumConstructorSameWithArguments (EqWrap "StepProofUnification" a1 a2)
@@ -218,7 +218,7 @@ instance
     , Eq (variable level), Show (variable level)
     , EqualWithExplanation (variable level)
     )
-    => EqualWithExplanation (StepProofAtom variable level)
+    => EqualWithExplanation (StepProofAtom level variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -228,7 +228,7 @@ instance
     , Eq (variable level), Show (variable level)
     , EqualWithExplanation (variable level)
     )
-    => EqualWithExplanation (StepProof variable level)
+    => EqualWithExplanation (StepProof level variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

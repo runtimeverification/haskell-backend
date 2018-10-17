@@ -98,9 +98,9 @@ transitionRule
     -> CommonPureMLPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> Prim (AxiomPattern level)
-    -> (CommonExpandedPattern level, StepProof Variable level)
+    -> (CommonExpandedPattern level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> Simplifier [(CommonExpandedPattern level, StepProof Variable level)]
+    -> Simplifier [(CommonExpandedPattern level, StepProof level Variable)]
 transitionRule tools substitutionSimplifier simplifier =
     \case
         Simplify -> transitionSimplify
