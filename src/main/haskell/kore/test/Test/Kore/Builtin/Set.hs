@@ -38,6 +38,8 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
 import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -178,6 +180,89 @@ asSymbolicPattern result
     applyUnit = mkDomainValue setSort $ BuiltinDomainSet Set.empty
     applyElement key = App_ symbolElement [key]
     applyConcat set1 set2 = App_ symbolConcat [set1, set2]
+
+{- | Check that unifying a concrete set with itself results in the same set
+ -}
+prop_unifyConcreteSetWithItself
+    :: Set Integer
+    -> Property
+prop_unifyConcreteSetWithItself set =
+    let
+        patSet    = asPattern set
+        patExpect = patSet
+        patActual = give testSymbolOrAliasSorts (mkAnd patSet patSet)
+        predicate = give testSymbolOrAliasSorts (mkEquals patExpect patActual)
+    in
+        allProperties
+            [ evaluate patExpect === evaluate patActual
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
+{- | Unify two sets with random concrete elements.
+     Note: given that the two sets are generated randomly,
+     it is likely they will be different most of the time,
+     hence they do not unify. For a test of succesfull
+     unification, see `prop_unifyConcreteSetWithItself
+ -}
+prop_unifyConcrete
+    :: Set Integer
+    -- ^ randomly generated set
+    -> Set Integer
+    -- ^ another randomly generated set
+    -> Property
+prop_unifyConcrete set1 set2 =
+    let
+        patSet1 = asPattern set1
+        patSet2 = asPattern set2
+        patExpect =
+            if set1 == set2
+                then patSet1
+                else give testSymbolOrAliasSorts (mkBottom)
+        patActual = give testSymbolOrAliasSorts (mkAnd patSet1 patSet2)
+        predicate = give testSymbolOrAliasSorts (mkEquals patExpect patActual)
+    in
+        allProperties
+            [ evaluate patExpect === evaluate patActual
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
+{- | Test unification of a concrete set with a set
+     consisting of concrete elements and a framing
+     variable.
+ -}
+
+prop_unifyFramingVariable
+    :: Set Integer
+    -- ^ randomly generated set of integers
+    -> Integer
+    -- ^ a random integer
+    -> Property
+prop_unifyFramingVariable set n =
+    not (Set.member n set) ==>
+    -- ^ make sure the random integer is not in the set
+    let
+        var       = mkDummyVar "dummy"
+        patVar    = Var_ var
+        patElem   = asPattern $ Set.singleton n
+        patSet1   = App_ symbolConcat [patElem, patVar]
+        -- ^ set with single concrete elem and framing var
+        set2      = Set.insert n set
+        patSet2   = asPattern $ set2
+        -- ^ set obtained by inserting the random element into the original set
+        patActual = give testSymbolOrAliasSorts (mkAnd patSet1 patSet2)
+        patExpect =
+            Predicated
+                { term         = mkBuiltinDomainSet set2
+                , predicate    = makeTruePredicate
+                , substitution = [(var, mkBuiltinDomainSet set)]
+                }
+    in
+        allProperties
+            [patExpect === evaluate patActual
+            ]
+  where
+    mkBuiltinDomainSet set' = DV_ setSort (BuiltinDomainSet (Set.map Test.Int.asConcretePattern set'))
+    mkDummyVar x = Variable (noLocationId x) setSort
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set Integer -> CommonPurePattern Object
