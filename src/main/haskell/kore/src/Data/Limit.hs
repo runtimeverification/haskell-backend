@@ -7,6 +7,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Data.Limit
     ( Limit (..)
+    , enumFromLimit
     , withinLimit
     ) where
 
@@ -45,3 +46,8 @@ withinLimit =
     \case
         Unlimited -> \_ -> True
         Limit u -> \a -> a <= u
+
+{- | Enumerate values beginning at @a@ and within the limit.
+ -}
+enumFromLimit :: (Enum a, Ord a) => Limit a -> a -> [a]
+enumFromLimit limit a = takeWhile (withinLimit limit) (enumFrom a)
