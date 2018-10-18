@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.Registry
-    ( extractAxiomPatterns
+    ( extractFunctionAxioms
     , axiomPatternsToEvaluators
     ) where
 
@@ -45,12 +45,12 @@ import Kore.Step.StepperAttributes
 creates a registry mapping function symbol identifiers to their
 corresponding 'AxiomPattern's.
 -}
-extractAxiomPatterns
+extractFunctionAxioms
     :: MetaOrObject level
     => level
     -> KoreIndexedModule StepperAttributes
     -> Map.Map (Id level) [AxiomPattern level]
-extractAxiomPatterns level indexedModule =
+extractFunctionAxioms level indexedModule =
     Map.fromList (map extractPrefix groupedAxiomPatterns)
   where
     extractPrefix []                  = error "unexpected case"
