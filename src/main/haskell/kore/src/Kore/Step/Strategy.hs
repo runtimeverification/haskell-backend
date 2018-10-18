@@ -308,10 +308,10 @@ pickLongestAt config children =
 {- | Return all 'stuck' configurations, i.e. all leaves of the 'Tree'.
  -}
 pickFinal :: Tree config -> [config]
-pickFinal = Tree.foldTree pickStuckAt
+pickFinal = Tree.foldTree pickFinalAt
 
-pickStuckAt :: config -> [[config]] -> [config]
-pickStuckAt config children =
+pickFinalAt :: config -> [[config]] -> [config]
+pickFinalAt config children =
     case children of
         [] -> [config]
         _ -> mconcat children
