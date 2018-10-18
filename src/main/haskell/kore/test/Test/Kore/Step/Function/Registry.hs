@@ -33,7 +33,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( koreIndexedModuleToAxiomPatterns )
+                 ( extractRewriteAxioms )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -223,7 +223,7 @@ testId name =
 testEvaluators
     :: Map.Map (Id Object) [ApplicationFunctionEvaluator Object]
 testEvaluators =
-    axiomPatternsToEvaluators $ extractAxiomPatterns Object testIndexedModule
+    axiomPatternsToEvaluators $ extractFunctionAxioms Object testIndexedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools testIndexedModule
@@ -246,7 +246,7 @@ test_functionRegistry =
     , testCase "Checking that the indexed module contains a rewrite axiom"
         (assertEqual ""
             (1::Int)
-            (length (koreIndexedModuleToAxiomPatterns Object testIndexedModule))
+            (length (extractRewriteAxioms Object testIndexedModule))
         )
     , testCase "Checking that evaluator simplifies correctly"
         (assertEqual ""

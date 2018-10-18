@@ -8,7 +8,7 @@ module Kore.Step.AxiomPatterns
     , QualifiedAxiomPattern(..)
     , AxiomPatternError(..)
     , koreSentenceToAxiomPattern
-    , koreIndexedModuleToAxiomPatterns
+    , extractRewriteAxioms
     ) where
 
 import Data.Default
@@ -146,12 +146,12 @@ isNormalRule _ = False
 
 -- | Extracts all 'AxiomPattern' structures matching a given @level@ from
 -- a verified definition.
-koreIndexedModuleToAxiomPatterns
+extractRewriteAxioms
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
     -> KoreIndexedModule atts -- ^'IndexedModule' containing the definition
     -> [AxiomPattern level]
-koreIndexedModuleToAxiomPatterns level idxMod =
+extractRewriteAxioms level idxMod =
     [ axiomPat | RewriteAxiomPattern axiomPat <-
         rights $ map
             (koreSentenceToAxiomPattern level)

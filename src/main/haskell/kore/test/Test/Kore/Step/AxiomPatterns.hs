@@ -82,7 +82,7 @@ axiomPatternsUnitTests =
                     , axiomPatternAttributes = def
                     }
                 ]
-                ( koreIndexedModuleToAxiomPatterns Object
+                ( extractRewriteAxioms Object
                 $ extractIndexedModule "TEST"
                     (verifyAndIndexDefinition
                         DoNotVerifyAttributes
