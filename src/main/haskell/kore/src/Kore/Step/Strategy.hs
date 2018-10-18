@@ -19,6 +19,7 @@ module Kore.Step.Strategy
     , seq
     , sequence
     , stuck
+    , continue
       -- * Running strategies
     , runStrategy
     , pickLongest
