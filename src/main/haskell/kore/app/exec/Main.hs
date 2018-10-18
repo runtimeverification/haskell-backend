@@ -313,6 +313,10 @@ main = do
                 mainPatternParseAndVerify indexedModule patternFileName
             let
                 metadataTools = extractMetadataTools indexedModule
+                searchTypeStepLimit =
+                    case searchType of
+                        Just ONE -> Limit 1
+                        _ -> Unlimited
             finalPattern <- case searchType of
                 Nothing -> clockSomething "Executing"
                     $ evalSimplifierWithTimeout smtTimeOut
@@ -330,7 +334,7 @@ main = do
                                         simplifier
                                     )
                                     (Limit.replicate
-                                        stepLimit
+                                        (min stepLimit searchTypeStepLimit)
                                         (strategy rewriteAxioms)
                                     )
                                     (pat, mempty)
@@ -376,7 +380,7 @@ main = do
                                             simplifier
                                         )
                                         (Limit.replicate
-                                            stepLimit
+                                            (min stepLimit searchTypeStepLimit)
                                             (strategy rewriteAxioms)
                                         )
                                         (pat, mempty)
