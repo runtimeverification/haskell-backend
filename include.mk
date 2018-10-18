@@ -4,6 +4,7 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 BUILD_DIR := $(TOP)/.build
 K_SUBMODULE := $(BUILD_DIR)/k
+K_TIMESTAMP := $(TOP)/.git/modules/deps/k/logs/HEAD
 K_BIN := $(K_SUBMODULE)/k-distribution/target/release/k/bin
 KOMPILE := $(K_BIN)/kompile
 KRUN := $(K_BIN)/krun
@@ -37,13 +38,14 @@ $(K_SUBMODULE): FORCE
 	if test ! -f $(K_SUBMODULE)/pom.xml; then \
 		git submodule update --init -- $(K_SUBMODULE); \
 	fi
-	cd $(K_SUBMODULE) && touch -d "$$(git log --format=format:%cD -n 1)" .
+
+$(K_TIMESTAMP): $(K_SUBMODULE)
 
 $(KORE_EXEC): FORCE
 	stack build $(STACK_BUILD_OPTS) kore:exe:kore-exec
 
-$(KOMPILE): $(K_SUBMODULE)
+$(KOMPILE): $(K_TIMESTAMP)
 	cd $(K_SUBMODULE) && mvn package -q -DskipTests -U
 
-$(KRUN): $(K_SUBMODULE)
+$(KRUN): $(K_TIMESTAMP)
 	cd $(K_SUBMODULE) && mvn package -q -DskipTests -U
