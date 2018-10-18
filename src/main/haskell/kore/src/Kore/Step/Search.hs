@@ -133,9 +133,9 @@ search tools substitutionSimplifier simplifier strategy config = do
     boundLimit = bound config
     finalPattern = goal config
     pickStrategy = case searchType config of
-        ONE -> error "Not implemented!"
-        PLUS -> error "Not implemented!"
-        STAR -> error "Not implemented!"
+        ONE -> Strategy.pickOne
+        PLUS -> Strategy.pickPlus
+        STAR -> Strategy.pickStar
         FINAL -> Strategy.pickFinal
 
 matchWith

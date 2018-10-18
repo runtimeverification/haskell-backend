@@ -133,3 +133,27 @@ prop_pickFinal i =
     n = fromInteger i
     expect = [n]
     actual = Strategy.pickFinal (enumerate n)
+
+prop_pickOne :: Integer -> Property
+prop_pickOne i =
+    (i >= 1) ==> (expect == actual)
+  where
+    n = fromInteger i
+    expect = [1]
+    actual = Strategy.pickOne (enumerate n)
+
+prop_pickStar :: Integer -> Property
+prop_pickStar i =
+    (i >= 0) ==> (expect == actual)
+  where
+    n = fromInteger i
+    expect = [0..n]
+    actual = Strategy.pickStar (enumerate n)
+
+prop_pickPlus :: Integer -> Property
+prop_pickPlus i =
+    (i >= 1) ==> (expect == actual)
+  where
+    n = fromInteger i
+    expect = [1..n]
+    actual = Strategy.pickPlus (enumerate n)
