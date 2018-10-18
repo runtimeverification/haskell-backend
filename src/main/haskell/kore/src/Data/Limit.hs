@@ -9,6 +9,7 @@ module Data.Limit
     ( Limit (..)
     , enumFromLimit
     , withinLimit
+    , takeWithin
     ) where
 
 {- | An optionally-limited quantity.
@@ -51,3 +52,10 @@ withinLimit =
  -}
 enumFromLimit :: (Enum a, Ord a) => Limit a -> a -> [a]
 enumFromLimit limit a = takeWhile (withinLimit limit) (enumFrom a)
+
+{- | Take a limited prefix of the given list.
+ -}
+takeWithin :: (Enum a, Ord a) => Limit a -> [b] -> [b]
+takeWithin limit bs = zipWith const bs limiting
+  where
+    limiting = enumFromLimit limit (toEnum 1)
