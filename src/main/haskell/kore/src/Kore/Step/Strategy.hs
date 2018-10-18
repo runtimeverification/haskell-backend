@@ -7,7 +7,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Kore.Step.Strategy
     ( -- * Strategies
-      Strategy
+      Strategy (..)
     , and
     , all
     , or
