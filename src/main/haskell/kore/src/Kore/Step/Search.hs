@@ -6,9 +6,10 @@ License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 -}
 module Kore.Step.Search
-    ( SearchConfiguration (..)
+    ( Config (..)
     , SearchType (..)
     , search
+    , matchWith
     ) where
 
 import Control.Error
@@ -36,8 +37,6 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeMultipleAndPredicate )
-import           Kore.Step.BaseStep
-                 ( StepProof )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
@@ -63,80 +62,64 @@ import           Kore.Unification.Unifier
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-| Says which configurations are to be considered for matching the pattern
--}
+{-| Which configurations are considered for matching?
+
+See also: 'search'
+
+ -}
 data SearchType
     = ONE
-    -- ^reachable in one execution step
+    -- ^ Reachable in exactly one execution step
     | FINAL
-    -- ^reachable configurations which cannot be rewritten anymore
+    -- ^ Reachable configurations which cannot be rewritten anymore
     | STAR
-    -- ^all reachable configurations
+    -- ^ All reachable configurations
     | PLUS
-    -- ^all configurations reachable in at least one step
+    -- ^ All configurations reachable in at least one step
  deriving (Eq, Show)
 
--- | Search setup configuration
-data SearchConfiguration level variable =
-    SearchConfiguration
-    { start :: !(ExpandedPattern level variable)
-    -- ^ pattern to start the execution with
-    , bound :: !(Limit Natural)
+-- | Search options
+data Config =
+    Config
+    { bound :: !(Limit Natural)
     -- ^ maximum number of solutions
-    , goal :: !(ExpandedPattern level variable)
-    -- ^ pattern to match against the execution configurations.
     , searchType :: !SearchType
     }
 
-{-| Implements search functionality to match the krun API.
-Computes a list of solutions to the search problem.
-A solution is a substitution unifying @pattern@ with an executing
-configuration and satisfying the predicate of @pattern@.
+{- | Construct a list of solutions to the execution search problem.
+
+The execution strategy generates a tree of reachable states (see
+'Kore.Step.Strategy.runStrategy'). The matching criterion returns a substitution
+which takes its argument to the search goal (see 'matchWith'). The 'searchType'
+is used to restrict which states may be considered for matching.
+
+@search@ returns a list of substitutions which take the initial configuration to
+the goal defined by the matching criterion. The number of solutions returned is
+limited by 'bound'.
+
+See also: 'Kore.Step.Strategy.runStrategy', 'matchWith'
+
 -}
 search
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Eq (variable level)
-        , FreshVariable variable
-        , Hashable variable
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , expanded ~ ExpandedPattern level variable
-        , proof ~ StepProof level variable
-        )
-    => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> PureMLPatternSimplifier level variable
-    -> (expanded -> Simplifier (Tree (expanded, proof)))
-    -> SearchConfiguration level variable
-    -> Simplifier [UnificationSubstitution level variable]
-search tools substitutionSimplifier simplifier strategy config = do
+    :: Config  -- ^ Search options
+    -> (config -> Simplifier (Tree (config, proof)))
+        -- ^ Execution strategy
+    -> (config -> MaybeT Simplifier substitution)
+        -- ^ Matching criterion
+    -> config  -- ^ Initial configuration
+    -> Simplifier [substitution]
+search Config { searchType, bound } strategy match initialPattern = do
     executionTree <- strategy initialPattern
-    let selectedConfigs = fst <$> pickStrategy executionTree
-    matches <- catMaybes <$> traverse match selectedConfigs
-    return (Limit.takeWithin boundLimit matches)
+    let selectedConfigs = fst <$> pick executionTree
+    matches <- catMaybes <$> traverse (runMaybeT . match) selectedConfigs
+    return (Limit.takeWithin bound matches)
   where
-    match patt =
-        runMaybeT
-            (matchWith
-                tools
-                substitutionSimplifier
-                simplifier
-                finalPattern
-                patt
-            )
-    initialPattern = start config
-    boundLimit = bound config
-    finalPattern = goal config
-    pickStrategy = case searchType config of
-        ONE -> Strategy.pickOne
-        PLUS -> Strategy.pickPlus
-        STAR -> Strategy.pickStar
-        FINAL -> Strategy.pickFinal
+    pick =
+        case searchType of
+            ONE -> Strategy.pickOne
+            PLUS -> Strategy.pickPlus
+            STAR -> Strategy.pickStar
+            FINAL -> Strategy.pickFinal
 
 matchWith
     ::  ( MetaOrObject level

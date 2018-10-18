@@ -71,7 +71,8 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Search
-                 ( SearchConfiguration (..), SearchType (..), search )
+                 ( SearchType (..), search )
+import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  PureMLPatternSimplifier, SimplificationProof (..), Simplifier,
@@ -372,7 +373,7 @@ main = do
                             let
                                 (rewriteAxioms, simplifier, substitutionSimplifier) =
                                     axiomsAndSimplifiers
-                                computeStrategy pat =
+                                runStrategy' pat =
                                     runStrategy
                                         (transitionRule
                                             metadataTools
@@ -384,6 +385,11 @@ main = do
                                             (strategy rewriteAxioms)
                                         )
                                         (pat, mempty)
+                                match =
+                                    Search.matchWith
+                                        metadataTools
+                                        substitutionSimplifier
+                                        simplifier
                                 runningPattern =
                                     if isKProgram
                                         then give (symbolOrAliasSorts metadataTools)
@@ -405,16 +411,13 @@ main = do
                                         (config : _) -> config
                             solutions <-
                                 search
-                                    metadataTools
-                                    substitutionSimplifier
-                                    simplifier
-                                    computeStrategy
-                                    SearchConfiguration
-                                        { start = initialPattern
-                                        , bound = boundLimit
-                                        , goal = searchPattern
+                                    Search.Config
+                                        { bound = boundLimit
                                         , searchType = sType
                                         }
+                                    runStrategy'
+                                    (match searchPattern)
+                                    initialPattern
                             let
                                 (orPredicate, _proof) =
                                     give (symbolOrAliasSorts metadataTools)
