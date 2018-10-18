@@ -8,7 +8,8 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.Registry
-    ( extractEvaluators
+    ( extractAxiomPatterns
+    , axiomPatternsToEvaluators
     ) where
 
 import           Data.Function
@@ -40,36 +41,36 @@ import Kore.Step.Function.UserDefined
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 
-{-|Given a 'MetaOrObject' @level@ and a 'KoreIndexedModule', @extractEvaluators@
+{-|Given a 'MetaOrObject' @level@ and a 'KoreIndexedModule',
 creates a registry mapping function symbol identifiers to their
-corresponding 'ApplicationFunctionEvaluator's.
+corresponding 'AxiomPattern's.
 -}
-extractEvaluators
+extractAxiomPatterns
     :: MetaOrObject level
     => level
     -> KoreIndexedModule StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
-extractEvaluators level indexedModule =
-    Map.fromList (map extractPrefix groupedEvaluators)
+    -> Map.Map (Id level) [AxiomPattern level]
+extractAxiomPatterns level indexedModule =
+    Map.fromList (map extractPrefix groupedAxiomPatterns)
   where
     extractPrefix []                  = error "unexpected case"
     extractPrefix ((a, b) : reminder) = (a, b : map snd reminder)
-    groupedEvaluators =
+    groupedAxiomPatterns =
         groupBy
             ((==) `on` fst)
             (sortBy
                 (compare `on` fst)
                 (mapMaybe
-                    (axiomToIdEvaluatorPair level)
+                    (axiomToIdAxiomPatternPair level)
                     (snd <$> indexedModuleAxioms indexedModule))
             )
 
-axiomToIdEvaluatorPair
+axiomToIdAxiomPatternPair
     ::  ( MetaOrObject level )
     => level
     -> SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
-    -> Maybe (Id level, ApplicationFunctionEvaluator level)
-axiomToIdEvaluatorPair
+    -> Maybe (Id level, AxiomPattern level)
+axiomToIdAxiomPatternPair
     level
     axiom
   = case koreSentenceToAxiomPattern level (asSentence axiom) of
@@ -77,10 +78,18 @@ axiomToIdEvaluatorPair
         Right (FunctionAxiomPattern axiomPat) ->
             case fromPurePattern (axiomPatternLeft axiomPat) of
                 ApplicationPattern Application {applicationSymbolOrAlias = s} ->
-                    return
-                        ( symbolOrAliasConstructor s
-                        , ApplicationFunctionEvaluator
-                            (axiomFunctionEvaluator axiomPat)
-                        )
+                    return (symbolOrAliasConstructor s, axiomPat)
                 _ -> Nothing
         Right (RewriteAxiomPattern _) -> Nothing
+
+-- |Converts a registry of 'AxiomPattern's to one of
+-- 'ApplicationFunctionEvaluator's
+axiomPatternsToEvaluators
+    :: Map.Map (Id level) [AxiomPattern level]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+axiomPatternsToEvaluators = fmap (map axiomPatternToEvaluator)
+
+axiomPatternToEvaluator
+    :: AxiomPattern level -> ApplicationFunctionEvaluator level
+axiomPatternToEvaluator axiomPat =
+    ApplicationFunctionEvaluator (axiomFunctionEvaluator axiomPat)

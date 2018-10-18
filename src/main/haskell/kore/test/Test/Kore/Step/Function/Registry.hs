@@ -222,7 +222,8 @@ testId name =
 
 testEvaluators
     :: Map.Map (Id Object) [ApplicationFunctionEvaluator Object]
-testEvaluators = extractEvaluators Object testIndexedModule
+testEvaluators =
+    axiomPatternsToEvaluators $ extractAxiomPatterns Object testIndexedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools testIndexedModule
