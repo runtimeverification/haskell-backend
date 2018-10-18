@@ -23,6 +23,9 @@ module Kore.Step.Strategy
     , runStrategy
     , pickLongest
     , pickFinal
+    , pickOne
+    , pickStar
+    , pickPlus
       -- * Re-exports
     , Tree (..)
     ) where
@@ -315,3 +318,18 @@ pickFinalAt config children =
     case children of
         [] -> [config]
         _ -> mconcat children
+
+{- | Return all configurations reachable in one step.
+ -}
+pickOne :: Tree config -> [config]
+pickOne tree = Tree.rootLabel <$> Tree.subForest tree
+
+{- | Return all reachable configurations.
+ -}
+pickStar :: Tree config -> [config]
+pickStar = foldr (:) []
+
+{- | Return all configurations reachable after at least one step.
+ -}
+pickPlus :: Tree config -> [config]
+pickPlus = foldr (flip (foldr (:))) [] . Tree.subForest
