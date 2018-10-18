@@ -1,5 +1,8 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Test.Kore.Step.Strategy where
 
+import Test.QuickCheck.Instances ()
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -7,7 +10,7 @@ import Test.Tasty.QuickCheck
 import Data.Functor.Identity
 import Numeric.Natural
 import Prelude hiding
-       ( and, const, or )
+       ( and, const, or, seq )
 
 import           Data.Limit
                  ( Limit (..) )
@@ -22,6 +25,42 @@ data Prim
     | Throw
     deriving (Eq, Show)
 
+instance Arbitrary Prim where
+    arbitrary = do
+        c <- Const <$> arbitrary
+        elements [c, Succ, Throw]
+
+    shrink = \case
+        Const n -> Const <$> shrink n
+        Succ -> []
+        Throw -> []
+
+instance Arbitrary prim => Arbitrary (Strategy prim) where
+    arbitrary = do
+        s <- Strategy.seq <$> arbitrary <*> arbitrary
+        a <- Strategy.and <$> arbitrary <*> arbitrary
+        o <- Strategy.or <$> arbitrary <*> arbitrary
+        p <- Strategy.apply <$> arbitrary
+        elements [s, a, o, p, Strategy.stuck, Strategy.continue]
+
+    shrink =
+        \case
+            Strategy.Seq a b ->
+                [a, b]
+                ++ (Strategy.Seq <$> shrink a <*> pure b)
+                ++ (Strategy.Seq <$> pure a <*> shrink b)
+            Strategy.And a b ->
+                [a, b]
+                ++ (Strategy.And <$> shrink a <*> pure b)
+                ++ (Strategy.And <$> pure a <*> shrink b)
+            Strategy.Or a b ->
+                [a, b]
+                ++ (Strategy.Or <$> shrink a <*> pure b)
+                ++ (Strategy.Or <$> pure a <*> shrink b)
+            Strategy.Apply _ -> []
+            Strategy.Stuck -> []
+            Strategy.Continue -> []
+
 transitionPrim :: Prim -> Natural -> Identity [Natural]
 transitionPrim =
     \case
@@ -31,6 +70,9 @@ transitionPrim =
 
 apply :: Prim -> Strategy Prim
 apply = Strategy.apply
+
+seq :: Strategy Prim -> Strategy Prim -> Strategy Prim
+seq = Strategy.seq
 
 and :: Strategy Prim -> Strategy Prim -> Strategy Prim
 and = Strategy.and
@@ -43,6 +85,9 @@ many = Strategy.many
 
 stuck :: Strategy Prim
 stuck = Strategy.stuck
+
+continue :: Strategy Prim
+continue = Strategy.continue
 
 throw :: Strategy Prim
 throw = apply Throw
@@ -65,6 +110,58 @@ runStrategy strategy z =
         Identity rs = Strategy.runStrategy transitionPrim strategy z
     in
         rs
+
+prop_SeqContinueIdentity :: Strategy Prim -> Natural -> Property
+prop_SeqContinueIdentity a n =
+    let
+        expect = runStrategy [a] n
+        left = runStrategy [seq continue a] n
+        right = runStrategy [seq a continue] n
+    in
+        (expect === left) .&&. (expect === right)
+
+prop_SeqStuckDominate :: Strategy Prim -> Natural -> Property
+prop_SeqStuckDominate a n =
+    let
+        expect = runStrategy [stuck] n
+        left = runStrategy [seq stuck a] n
+        right = runStrategy [seq a stuck] n
+    in
+        (expect === left) .&&. (expect === right)
+
+prop_AndStuckIdentity :: Strategy Prim -> Natural -> Property
+prop_AndStuckIdentity a n =
+    let
+        expect = runStrategy [a] n
+        left = runStrategy [and stuck a] n
+        right = runStrategy [and a stuck] n
+    in
+        (expect === left) .&&. (expect === right)
+
+prop_OrStuckIdentity :: Strategy Prim -> Natural -> Property
+prop_OrStuckIdentity a n =
+    let
+        expect = runStrategy [a] n
+        left = runStrategy [or stuck a] n
+        right = runStrategy [or a stuck] n
+    in
+        (expect === left) .&&. (expect === right)
+
+prop_Stuck :: Natural -> Property
+prop_Stuck n =
+    let
+        expect = Node n []
+        actual = runStrategy [stuck] n
+    in
+        expect === actual
+
+prop_Continue :: Natural -> Property
+prop_Continue n =
+    let
+        expect = Node n [ Node n [] ]
+        actual = runStrategy [continue] n
+    in
+        expect === actual
 
 test_And :: [TestTree]
 test_And =
