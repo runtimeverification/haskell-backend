@@ -47,14 +47,12 @@ import           Kore.Step.Function.UserDefined
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
-                 evalSimplifier )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.Simplifier
-                 ( mockSimplifier )
 import           Test.Tasty.HUnit.Extensions
 
 test_userDefinedFunction :: [TestTree]
@@ -425,7 +423,7 @@ evaluateWithAxiom
             }
     evaluated =
         fst
-            $ evalSimplifier
+            $ evalSimplifierTest
             $ axiomFunctionEvaluator
                 axiom
                 metadataTools

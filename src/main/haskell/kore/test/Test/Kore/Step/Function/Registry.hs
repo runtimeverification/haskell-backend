@@ -41,8 +41,6 @@ import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator )
 import           Kore.Step.Function.Registry
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
@@ -51,6 +49,7 @@ import           Kore.Step.StepperAttributes
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Kore.Step.Simplifier
 
 updateAttributes :: Attributes -> KoreSentence -> KoreSentence
 updateAttributes attrs = applyUnifiedSentence updateAttrs updateAttrs
@@ -253,7 +252,7 @@ test_functionRegistry =
             (App_ sHead [])
             ( ExpandedPattern.term
             $ head $ OrOfExpandedPattern.extractPatterns $ fst
-            $ evalSimplifier
+            $ evalSimplifierTest
             $ ExpandedPattern.simplify
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)

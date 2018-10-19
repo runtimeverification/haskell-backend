@@ -1,7 +1,13 @@
 module Test.Kore.Step.Simplifier
     ( mockSimplifier
     , mockPredicateSimplifier
+    , evalSimplifierTest
+    , runSimplifierTest
     ) where
+
+import Control.Exception
+       ( throw )
+import Numeric.Natural
 
 import           Kore.AST.Common
                  ( PureMLPattern )
@@ -10,6 +16,7 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate, wrapPredicate )
+import           Kore.SMT.Config
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.OrOfExpandedPattern
@@ -17,9 +24,6 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
 
 mockSimplifier
     :: (MetaOrObject level, Eq level, Eq (variable level))
@@ -86,3 +90,24 @@ mockSimplifierHelper
                 reminder
                 substitutionSimplifier
                 unevaluatedPatt
+
+{- | Run 'evalSimplifier' and re-throw exceptions.
+ -}
+evalSimplifierTest :: Simplifier a -> a
+evalSimplifierTest simplifier =
+    case evalSimplifier simplifier of
+        Left exn -> throw exn
+        Right a -> a
+
+runSimplifierTest
+    :: SMTTimeOut
+    -- ^ Timeout (in ms) for SMT solver
+    -> Simplifier a
+    -- ^ simplifier computation
+    -> Natural
+    -- ^ initial counter for fresh variables
+    -> (a, Natural)
+runSimplifierTest smtTimeOut simplifier counter =
+    case runSimplifier smtTimeOut simplifier counter of
+        Left exn -> throw exn
+        Right r -> r

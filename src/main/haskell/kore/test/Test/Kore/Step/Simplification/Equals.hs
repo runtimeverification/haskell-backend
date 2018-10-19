@@ -42,8 +42,6 @@ import           Kore.Step.PredicateSubstitution
                  PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), bottom, top )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicateSubstitution,
                  simplify )
@@ -54,6 +52,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.Step.Simplifier
 import           Test.Tasty.HUnit.Extensions
 
 test_equalsSimplification_OrOfExpandedPatterns :: [TestTree]
@@ -613,7 +612,7 @@ evaluateOr
     -> Equals Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluateOr tools equals =
-    fst $ evalSimplifier $ simplify tools equals
+    fst $ evalSimplifierTest $ simplify tools equals
 
 evaluate
     :: MetadataTools Object StepperAttributes
@@ -629,7 +628,7 @@ evaluateGeneric
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 evaluateGeneric tools first second =
-    fst $ evalSimplifier $ makeEvaluate tools first second
+    fst $ evalSimplifierTest $ makeEvaluate tools first second
 
 evaluateTermsGeneric
     :: MetaOrObject level
@@ -638,5 +637,5 @@ evaluateTermsGeneric
     -> CommonPurePattern level
     -> CommonPredicateSubstitution level
 evaluateTermsGeneric tools first second =
-    fst $ evalSimplifier $
+    fst $ evalSimplifierTest $
         makeEvaluateTermsToPredicateSubstitution tools first second

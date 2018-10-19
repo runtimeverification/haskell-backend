@@ -23,6 +23,7 @@ import           Options.Applicative
                  long, metavar, option, progDesc, readerError, str, strOption,
                  value )
 
+import           Control.Exception.Pretty
 import           Kore.AST.Common
 import           Kore.AST.Kore
                  ( CommonKorePattern )
@@ -277,7 +278,7 @@ main = do
                     extractAxiomPatterns Object indexedModule
                 preAxiomPatterns =
                     koreIndexedModuleToAxiomPatterns Object indexedModule
-            (finalExpandedPattern, _) <-
+            execResult <-
                 clockSomething "Executing"
                     $ evalSimplifierWithTimeout smtTimeOut
                     $ do
@@ -343,18 +344,24 @@ main = do
                             (strategy axiomPatterns)
                             stepLimit
                             (initialPattern, mempty)
-            let
-                finalPattern = ExpandedPattern.term finalExpandedPattern
-                finalExternalPattern =
-                    either (error . printError) id
-                    (Builtin.externalizePattern indexedModule finalPattern)
-                outputString =
-                    unparseToString (externalizeFreshVars finalExternalPattern)
-            if outputFileName /= ""
-                then
-                    writeFile outputFileName outputString
-                else
-                    putStrLn $ outputString
+            case execResult of
+                Left exn -> displayPrettyException exn
+                Right (finalExpandedPattern, _) -> do
+                    let
+                        finalPattern = ExpandedPattern.term finalExpandedPattern
+                        finalExternalPattern =
+                            either (error . printError) id
+                            (Builtin.externalizePattern
+                                indexedModule
+                                finalPattern
+                            )
+                        outputString =
+                            unparseToString (externalizeFreshVars finalExternalPattern)
+                    if outputFileName /= ""
+                        then
+                            writeFile outputFileName outputString
+                        else
+                            putStrLn $ outputString
 
 mainModule
     :: ModuleName

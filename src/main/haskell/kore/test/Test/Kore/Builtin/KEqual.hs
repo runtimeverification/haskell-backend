@@ -45,6 +45,7 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
+import           Test.Kore.Step.Simplifier
 
 prop_kneq :: Bool -> Bool -> Property
 prop_kneq = propBinary (/=) kneqSymbol
@@ -111,7 +112,7 @@ evaluate pat =
     let
         tools = extractMetadataTools indexedModule
         (Predicated { term }, _) =
-            evalSimplifier
+            evalSimplifierTest
                 (Pattern.simplify
                     tools (Mock.substitutionSimplifier tools) evaluators pat
                 )
@@ -150,7 +151,7 @@ test_KEqual =
             ( ExpandedPattern.fromPurePattern (pat keqSymbol)
             , SimplificationProof
             )
-            (evalSimplifier
+            (evalSimplifierTest
                 (Pattern.simplify
                     tools (Mock.substitutionSimplifier tools) evaluators
                     (pat keqSymbol)
@@ -162,7 +163,7 @@ test_KEqual =
             ( ExpandedPattern.fromPurePattern (pat kneqSymbol)
             , SimplificationProof
             )
-            (evalSimplifier
+            (evalSimplifierTest
                 (Pattern.simplify
                     tools (Mock.substitutionSimplifier tools) evaluators
                     (pat kneqSymbol)
@@ -174,7 +175,7 @@ test_KEqual =
             ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern True)
             , SimplificationProof
             )
-            (evalSimplifier
+            (evalSimplifierTest
                 (Pattern.simplify
                     tools (Mock.substitutionSimplifier tools) evaluators
                     (App_ keqSymbol
@@ -190,7 +191,7 @@ test_KEqual =
             ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
             , SimplificationProof
             )
-            (evalSimplifier
+            (evalSimplifierTest
                 (Pattern.simplify
                     tools (Mock.substitutionSimplifier tools) evaluators
                     (App_ keqSymbol
@@ -208,7 +209,7 @@ test_KEqual =
             ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
             , SimplificationProof
             )
-            (evalSimplifier
+            (evalSimplifierTest
                 (Pattern.simplify
                     tools (Mock.substitutionSimplifier tools) evaluators
                     (App_ keqSymbol
@@ -230,7 +231,7 @@ test_KEqual =
             ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
             , SimplificationProof
             )
-            (evalSimplifier
+            (evalSimplifierTest
                 (Pattern.simplify
                     tools (Mock.substitutionSimplifier tools) evaluators
                     (App_ keqSymbol

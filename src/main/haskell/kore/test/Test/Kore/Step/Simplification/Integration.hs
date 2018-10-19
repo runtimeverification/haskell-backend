@@ -29,8 +29,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -43,6 +41,7 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.Step.Simplifier
 import           Test.Tasty.HUnit.Extensions
 
 test_simplificationIntegration :: [TestTree]
@@ -275,7 +274,7 @@ evaluate
     -> CommonExpandedPattern Object
     -> CommonOrOfExpandedPattern Object
 evaluate tools patt =
-    fst $ evalSimplifier $
+    fst $ evalSimplifierTest $
         ExpandedPattern.simplify
             tools
             (Mock.substitutionSimplifier tools)

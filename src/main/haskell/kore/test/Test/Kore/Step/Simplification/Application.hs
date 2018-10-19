@@ -40,8 +40,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Application
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
-                 evalSimplifier )
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Variables.Fresh
@@ -55,7 +54,6 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.Simplifier
-                 ( mockSimplifier )
 import           Test.Tasty.HUnit.Extensions
 
 test_applicationSimplification :: [TestTree]
@@ -430,7 +428,7 @@ evaluate
     application
   =
     fst
-        $ evalSimplifier
+        $ evalSimplifierTest
         $ simplify
             tools
             (Mock.substitutionSimplifier tools)

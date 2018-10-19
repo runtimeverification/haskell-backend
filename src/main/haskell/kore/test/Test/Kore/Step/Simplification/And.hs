@@ -32,8 +32,6 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.And
                  ( makeEvaluate, simplify )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -41,6 +39,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.Step.Simplifier
 import           Test.Tasty.HUnit.Extensions
 
 test_andSimplification :: [TestTree]
@@ -427,14 +426,14 @@ evaluate
     :: And Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate patt =
-    fst $ evalSimplifier $ simplify mockMetadataTools patt
+    fst $ evalSimplifierTest $ simplify mockMetadataTools patt
 
 evaluatePatterns
     :: CommonExpandedPattern Object
     -> CommonExpandedPattern Object
     -> CommonExpandedPattern Object
 evaluatePatterns first second =
-    fst $ evalSimplifier $ makeEvaluate mockMetadataTools first second
+    fst $ evalSimplifierTest $ makeEvaluate mockMetadataTools first second
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
 mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping

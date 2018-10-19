@@ -52,8 +52,6 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
@@ -68,6 +66,7 @@ import           Test.Kore.AST.MLPatterns
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Kore.Step.Simplifier
 
 bottomPredicate :: CommonPurePatternStub Object
 bottomPredicate = withSort (mkSort "PREDICATE") bottom_
@@ -688,7 +687,7 @@ simplifyPattern (UnificationTerm pStub) =
     let pat =
             project
             $ ExpandedPattern.term
-            $ evalSimplifier
+            $ evalSimplifierTest
             $ do
                 simplifiedPatterns <-
                     ExpandedPattern.simplify

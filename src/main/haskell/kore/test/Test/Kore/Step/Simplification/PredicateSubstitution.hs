@@ -36,8 +36,7 @@ import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), bottom, top )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (SimplificationProof), Simplifier,
-                 evalSimplifier )
+                 SimplificationProof (SimplificationProof), Simplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PSSimplifier
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -54,6 +53,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.Step.Simplifier
 import           Test.Tasty.HUnit.Extensions
 
 test_predicateSubstitutionSimplification :: [TestTree]
@@ -274,7 +274,7 @@ runSimplifier
 runSimplifier patternSimplifierMap predicateSubstitution =
     case simplifier of
         (PredicateSubstitutionSimplifier unwrapped) ->
-            fst $ evalSimplifier
+            fst $ evalSimplifierTest
             $ unwrapped predicateSubstitution
   where
     simplifier =

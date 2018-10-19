@@ -30,8 +30,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
                  ( makeEvaluate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -44,6 +42,7 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.Step.Simplifier
 import           Test.Tasty.HUnit.Extensions
 
 test_existsSimplification :: [TestTree]
@@ -293,7 +292,7 @@ evaluate
     -> Exists level Variable (CommonOrOfExpandedPattern level)
     -> CommonOrOfExpandedPattern level
 evaluate tools exists =
-    fst $ evalSimplifier
+    fst $ evalSimplifierTest
         $ Exists.simplify
             tools
             (Mock.substitutionSimplifier tools)
@@ -309,7 +308,7 @@ makeEvaluate
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 makeEvaluate tools variable child =
-    fst $ evalSimplifier
+    fst $ evalSimplifierTest
         $ Exists.makeEvaluate
             tools
             (Mock.substitutionSimplifier tools)

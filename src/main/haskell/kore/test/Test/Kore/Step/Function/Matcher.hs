@@ -41,7 +41,6 @@ import           Kore.Step.PredicateSubstitution
                  PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), bottom, top )
-import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -51,6 +50,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.Step.Simplifier
 import           Test.Tasty.HUnit.Extensions
 
 test_matcherEqualHeads :: [TestTree]
@@ -710,6 +710,6 @@ match
 match tools first second =
     fmap fst
     . hush
-    . evalSimplifier
+    . evalSimplifierTest
     . runExceptT
     $ matchAsUnification tools first second

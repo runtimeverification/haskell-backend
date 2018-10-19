@@ -36,7 +36,6 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -46,6 +45,7 @@ import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Kore.Step.Simplifier
 
 -- | Test a unary operator hooked to the given symbol
 propUnary
@@ -427,8 +427,13 @@ intModule =
 
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
-    fst $ evalSimplifier
-    $ Pattern.simplify tools (Mock.substitutionSimplifier tools) evaluators pat
+    fst
+    $ evalSimplifierTest
+    $ Pattern.simplify
+        tools
+        (Mock.substitutionSimplifier tools)
+        evaluators
+        pat
   where
     tools = extractMetadataTools indexedModule
 

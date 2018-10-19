@@ -26,7 +26,6 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -35,6 +34,7 @@ import           Test.Kore
                  ( testId )
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Kore.Step.Simplifier
 
 prop_or :: Bool -> Bool -> Property
 prop_or = propBinary (||) orSymbol
@@ -185,10 +185,12 @@ boolModule =
 evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
     let (Predicated { term }, _) =
-            evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators pat
-                )
+            evalSimplifierTest
+            $ Pattern.simplify
+                tools
+                (Mock.substitutionSimplifier tools)
+                evaluators
+                pat
     in term
   where
     tools = extractMetadataTools indexedModule

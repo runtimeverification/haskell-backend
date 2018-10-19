@@ -40,8 +40,6 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Unification.Unifier
@@ -49,6 +47,7 @@ import           Kore.Unification.Unifier
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Kore.Step.Simplifier
 import           Test.Tasty.HUnit.Extensions
 
 test_baseStep :: [TestTree]
@@ -1134,8 +1133,8 @@ runStep
         (StepError level Variable)
         (CommonExpandedPattern level, StepProof level Variable)
 runStep metadataTools configuration axiom =
-    first evalSimplifier
-    . evalSimplifier
+    first evalSimplifierTest
+    . evalSimplifierTest
     . runExceptT
     $ stepWithAxiom
         metadataTools

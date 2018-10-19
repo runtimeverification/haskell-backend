@@ -26,7 +26,6 @@ import           Kore.Predicate.Predicate
 import           Kore.SMT.Config
 import qualified Kore.Step.Condition.Evaluator as Eval
 import           Kore.Step.ExpandedPattern
-import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Builtin.Bool
@@ -60,7 +59,7 @@ test_conditionEvaluator =
                 ( fst $ fst $
                     give tools $
                     give (symbolOrAliasSorts tools) $
-                    flip (runSimplifier $ SMTTimeOut 1000) 0 $
+                    flip (runSimplifierTest $ SMTTimeOut 1000) 0 $
                     Eval.evaluate
                         (Mock.substitutionSimplifier tools)
                         (mockSimplifier [])

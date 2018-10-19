@@ -33,7 +33,6 @@ import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
@@ -42,6 +41,7 @@ import           Kore.Unification.Unifier
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Kore.Step.Simplifier
 import           Test.Tasty.HUnit.Extensions
 
 v1 :: MetaSort sort => sort -> MetaVariable sort
@@ -517,7 +517,7 @@ runStep
     -> [(CommonExpandedPattern level, StepProof level Variable)]
 runStep metadataTools configuration axioms =
     pickStuck
-        $ evalSimplifier
+        $ evalSimplifierTest
         $ runStrategy
             (transitionRule
                 metadataTools
@@ -541,7 +541,7 @@ runSteps
     -> (CommonExpandedPattern level, StepProof level Variable)
 runSteps metadataTools stepLimit configuration axioms =
     pickLongest
-        $ evalSimplifier
+        $ evalSimplifierTest
         $ runStrategy
             (transitionRule
                 metadataTools

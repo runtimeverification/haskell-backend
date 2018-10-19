@@ -19,7 +19,11 @@ module Kore.Step.Simplification.Data
     , SimplificationProof (..)
     ) where
 
-import Control.Monad.Reader
+import           Control.Monad.Catch.Pure
+                 ( Catch, SomeException )
+import qualified Control.Monad.Catch.Pure as Monad.Catch
+import           Control.Monad.Reader
+
 import Kore.AST.Common
        ( PureMLPattern, SortedVariable, Variable )
 import Kore.AST.MetaOrObject
@@ -32,13 +36,14 @@ import Kore.Step.PredicateSubstitution
 import Kore.Substitution.Class
        ( Hashable )
 import Kore.Variables.Fresh
+
 {-| 'SimplificationProof' is a placeholder for proofs showing that the
 simplification of a MetaMLPattern was correct.
 -}
 data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
-type Simplifier = ReaderT SMTTimeOut Counter
+type Simplifier = ReaderT SMTTimeOut (CounterT Catch)
 
 {- | Run a simplifier computation.
 
@@ -52,22 +57,21 @@ runSimplifier
     -- ^ simplifier computation
     -> Natural
     -- ^ initial counter for fresh variables
-    -> (a, Natural)
-runSimplifier smtTimeOut = runCounter . flip runReaderT smtTimeOut
+    -> Either SomeException (a, Natural)
+runSimplifier smtTimeOut simplifier counter =
+    Monad.Catch.runCatch
+    $ runCounterT (runReaderT simplifier smtTimeOut) counter
 
 {- | Evaluate a simplifier computation.
 
   Only the result is returned. The 'IntCounter' is discarded.
 
   -}
-evalSimplifierWithTimeout :: SMTTimeOut -> Simplifier a -> a
+evalSimplifierWithTimeout :: SMTTimeOut -> Simplifier a -> Either SomeException a
 evalSimplifierWithTimeout smtTimeOut simplifier =
-    let
-        (result, _) = runSimplifier smtTimeOut simplifier 0
-    in
-      result
+    fst <$> runSimplifier smtTimeOut simplifier 0
 
-evalSimplifier :: Simplifier a -> a
+evalSimplifier :: Simplifier a -> Either SomeException a
 evalSimplifier simplifier =
     evalSimplifierWithTimeout defaultSMTTimeOut simplifier
 
