@@ -28,7 +28,6 @@ import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
-import qualified Kore.Builtin as Builtin
 import           Kore.Parser.CString
                  ( escapeCString )
 import           Kore.Predicate.Predicate
@@ -145,9 +144,12 @@ instance
     unparse =
         \case
             BuiltinDomainPattern child -> unparse child
-            BuiltinDomainMap _ -> Builtin.notImplementedInternal
-            BuiltinDomainList _ -> Builtin.notImplementedInternal
-            BuiltinDomainSet _ -> Builtin.notImplementedInternal
+            BuiltinDomainMap _ ->
+                "/* not implemented: builtin MAP.Map */ \"\""
+            BuiltinDomainList _ ->
+                "/* not implemented: builtin LIST.List */ \"\""
+            BuiltinDomainSet _ ->
+                "/* not implemented: builtin SET.Set */ \"\""
 
 instance Unparse child => Unparse (Equals level child) where
     unparse
