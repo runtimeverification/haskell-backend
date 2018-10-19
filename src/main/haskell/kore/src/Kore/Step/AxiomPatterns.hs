@@ -1,5 +1,7 @@
 module Kore.Step.AxiomPatterns
     ( AxiomPattern(..)
+    , prettyRewriteAxiomPattern
+    , prettyFunctionAxiomPattern
     , AxiomPatternAttributes(..)
     , HeatCool(..)
     , isHeatingRule
@@ -19,6 +21,7 @@ import Data.Functor
        ( ($>) )
 import Data.Text
        ( Text )
+import Data.Text.Prettyprint.Doc
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -33,7 +36,8 @@ import qualified Kore.Attribute.Parser as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, wrapPredicate )
+                 ( CommonPredicate, unwrapPredicate, wrapPredicate )
+import           Kore.Unparser
 
 {- | Denote the heating or cooling phase of execution.
 
@@ -94,15 +98,81 @@ data AxiomPattern level = AxiomPattern
     , axiomPatternRequires :: !(CommonPredicate level)
     , axiomPatternAttributes :: !AxiomPatternAttributes
     }
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
+
+prettyRewriteAxiomPattern :: AxiomPattern level -> Doc ann
+prettyRewriteAxiomPattern
+    AxiomPattern
+    { axiomPatternLeft
+    , axiomPatternRight
+    , axiomPatternRequires
+    }
+  =
+    unparseAnd "_"
+        requires
+        (unparseAnd
+            "_"
+            ensures
+            (unparseRewrites
+                "_"
+                (unparse axiomPatternLeft)
+                (unparse axiomPatternRight)
+            )
+        )
+  where
+    requires =
+        (group . align . vsep)
+            [ "/* requires */"
+            , unparse $ unwrapPredicate axiomPatternRequires
+            ]
+    ensures = (group . align . vsep) [ "/* ensures */", unparseTop "_" ]
+
+prettyFunctionAxiomPattern :: AxiomPattern level -> Doc ann
+prettyFunctionAxiomPattern
+    AxiomPattern
+    { axiomPatternLeft
+    , axiomPatternRight
+    , axiomPatternRequires
+    }
+  =
+    unparseImplies "_"
+        requires
+        (unparseAnd
+            "_"
+            (unparseEquals
+                "_"
+                "_"
+                (unparse axiomPatternLeft)
+                (unparse axiomPatternRight)
+            )
+            ensures
+        )
+  where
+    requires =
+        (group . align . vsep)
+            [ "/* requires */"
+            , unparse $ unwrapPredicate axiomPatternRequires
+            ]
+    ensures = (group . align . vsep) [ "/* ensures */", unparseTop "_" ]
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
-data QualifiedAxiomPattern level
-    = RewriteAxiomPattern (AxiomPattern level)
-    | FunctionAxiomPattern (AxiomPattern level)
-    deriving (Eq, Show)
+data QualifiedAxiomPattern level where
+    RewriteAxiomPattern :: AxiomPattern Object -> QualifiedAxiomPattern Object
+    FunctionAxiomPattern :: AxiomPattern level -> QualifiedAxiomPattern level
+
+deriving instance Eq level => Eq (QualifiedAxiomPattern level)
+deriving instance Ord level => Ord (QualifiedAxiomPattern level)
+deriving instance Show level => Show (QualifiedAxiomPattern level)
+
+instance Pretty (QualifiedAxiomPattern level) where
+    pretty =
+        \case
+            RewriteAxiomPattern axiomPattern ->
+                prettyRewriteAxiomPattern axiomPattern
+            FunctionAxiomPattern axiomPattern ->
+                prettyFunctionAxiomPattern axiomPattern
 
 {- | Does the axiom pattern represent a heating rule?
  -}
