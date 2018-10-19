@@ -23,6 +23,7 @@ module Kore.Step.BaseStep
     ) where
 
 import qualified Control.Arrow as Arrow
+import qualified Control.Monad.Catch as Monad.Catch
 import           Control.Monad.Except
 import qualified Data.Map as Map
 import           Data.Maybe
@@ -369,15 +370,8 @@ stepWithAxiom'
         toVariable (ConfigurationVariable _) = Nothing
         substitutions =
             Set.fromList . mapMaybe (toVariable . fst) $ normalizedSubstitution
-    if Predicate.isFalse condition
-       || variablesInLeftAxiom `Set.isSubsetOf` substitutions
-        then return ()
-        else error
-            (  "Unexpected non-false predicate " ++ show condition
-            ++ "\nwhen substitutions " ++ show substitutions
-            ++ "\ndo not cover all variables in left axiom:"
-            ++ show variablesInLeftAxiom ++ "."
-            )
+
+    assertAxiomVariablesCovered condition variablesInLeftAxiom substitutions
 
     let
         orElse :: a -> a -> a
@@ -433,6 +427,19 @@ stepWithAxiom'
         { variableRenamingOriginal = original
         , variableRenamingRenamed  = renamed
         }
+
+    assertAxiomVariablesCovered condition variables substituted
+        | Predicate.isFalse condition =
+            -- If the condition is false, the substitution is allowed to be
+            -- incomplete.
+            return ()
+        | Set.null uncovered =
+            -- All variables are covered.
+            return ()
+        | otherwise =
+            Monad.Catch.throwM (MissingAxiomVariables uncovered)
+      where
+        uncovered = Set.difference variables substituted
 
 stepWithAxiom
     :: ( FreshVariable variable
