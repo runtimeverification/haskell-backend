@@ -44,9 +44,6 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, make, merge )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
@@ -66,6 +63,7 @@ evaluateApplication
         , Hashable variable
         , Show (variable Meta)
         , Show (variable Object)
+        , Typeable variable
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns

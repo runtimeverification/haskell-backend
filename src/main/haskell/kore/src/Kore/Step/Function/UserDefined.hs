@@ -45,9 +45,6 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -70,6 +67,7 @@ axiomFunctionEvaluator
         , SortedVariable variable
         , Show (variable level)
         , ShowMetaOrObject variable
+        , Typeable variable
         )
     => AxiomPattern level
     -- ^ Axiom defining the current function.

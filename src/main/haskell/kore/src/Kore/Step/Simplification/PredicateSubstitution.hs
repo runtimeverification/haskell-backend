@@ -27,9 +27,6 @@ import           Kore.Step.PredicateSubstitution
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 PureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( simplifyPartial )
 import           Kore.Step.StepperAttributes
@@ -59,6 +56,7 @@ create
             , Show (variable0 Meta)
             , Show (variable0 Object)
             , SortedVariable variable0
+            , Typeable variable0
             )
         => PureMLPatternSimplifier level variable0
         )
@@ -82,6 +80,7 @@ simplify
         , Show (variable Object)
         , FreshVariable variable
         , Hashable variable
+        , Typeable variable
         )
     => MetadataTools level StepperAttributes
     ->  (forall variable0
@@ -95,6 +94,7 @@ simplify
             , Show (variable0 Meta)
             , Show (variable0 Object)
             , SortedVariable variable0
+            , Typeable variable0
             )
         => PureMLPatternSimplifier level variable0
         )

@@ -66,9 +66,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 PureMLPatternSimplifier, SimplificationProof (..), Simplifier,
-                 defaultSMTTimeOut, evalSimplifierWithTimeout )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -261,6 +258,7 @@ main = do
                         , Show (variable Object)
                         , FreshVariable variable
                         , Hashable variable
+                        , Typeable variable
                         )
                     => PureMLPatternSimplifier Object variable
                 preSimplifier = Simplifier.create metadataTools Map.empty
@@ -305,6 +303,7 @@ main = do
                                     , Show (variable Object)
                                     , FreshVariable variable
                                     , Hashable variable
+                                    , Typeable variable
                                     )
                                 => PureMLPatternSimplifier Object variable
                             simplifier =

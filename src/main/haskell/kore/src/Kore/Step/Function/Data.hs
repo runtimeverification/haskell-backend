@@ -23,8 +23,6 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
-       SimplificationProof (..), Simplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Substitution.Class
@@ -61,6 +59,7 @@ newtype ApplicationFunctionEvaluator level =
             , SortedVariable variable
             , Show (variable level)
             , ShowMetaOrObject variable
+            , Typeable variable
             )
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level

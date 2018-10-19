@@ -17,12 +17,16 @@ module Kore.Step.Simplification.Data
     , PureMLPatternSimplifier (..)
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
+      -- * Re-exports
+    , Typeable
     ) where
 
 import           Control.Monad.Catch.Pure
                  ( Catch, SomeException )
 import qualified Control.Monad.Catch.Pure as Monad.Catch
 import           Control.Monad.Reader
+import           Data.Typeable
+                 ( Typeable )
 
 import Kore.AST.Common
        ( PureMLPattern, SortedVariable, Variable )
@@ -115,6 +119,7 @@ newtype PredicateSubstitutionSimplifier level =
             , Show (variable Meta)
             , Show (variable Object)
             , SortedVariable variable
+            , Typeable variable
             )
         => PredicateSubstitution level variable
         -> Simplifier

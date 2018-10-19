@@ -22,7 +22,6 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
 import           Kore.Step.StepperAttributes
@@ -42,6 +41,7 @@ create
         , Show (variable Object)
         , FreshVariable variable
         , Hashable variable
+        , Typeable variable
         )
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]

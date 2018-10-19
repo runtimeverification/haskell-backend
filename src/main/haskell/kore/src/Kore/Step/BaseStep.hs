@@ -35,6 +35,8 @@ import           Data.Semigroup
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
@@ -216,15 +218,17 @@ newtype UnificationProcedure level =
     does not apply to the given configuration.
 -}
 stepWithAxiom'
-    :: ( FreshVariable variable
-       , Hashable variable
-       , MetaOrObject level
-       , Ord (variable level)
-       , OrdMetaOrObject variable
-       , SortedVariable variable
-       , Show (variable level)
-       , ShowMetaOrObject variable
-       )
+    :: forall level variable.
+        ( FreshVariable variable
+        , Hashable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        , Typeable variable
+        )
     => MetadataTools level StepperAttributes
     -> UnificationProcedure level
     -> PredicateSubstitutionSimplifier level
@@ -428,6 +432,12 @@ stepWithAxiom'
         , variableRenamingRenamed  = renamed
         }
 
+    assertAxiomVariablesCovered
+        :: Monad.Catch.MonadThrow m
+        => Predicate level variable
+        -> Set (Variable level)
+        -> Set (Variable level)
+        -> m ()
     assertAxiomVariablesCovered condition variables substituted
         | Predicate.isFalse condition =
             -- If the condition is false, the substitution is allowed to be
@@ -437,7 +447,7 @@ stepWithAxiom'
             -- All variables are covered.
             return ()
         | otherwise =
-            Monad.Catch.throwM (missingAxiomVariables uncovered)
+            Monad.Catch.throwM (missingAxiomVariables uncovered condition)
       where
         uncovered = Set.difference variables substituted
 
@@ -450,6 +460,7 @@ stepWithAxiom
        , SortedVariable variable
        , Show (variable level)
        , ShowMetaOrObject variable
+       , Typeable variable
        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level

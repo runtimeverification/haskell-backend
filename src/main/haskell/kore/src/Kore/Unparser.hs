@@ -31,6 +31,7 @@ import           Kore.AST.Sentence
 import qualified Kore.Builtin as Builtin
 import           Kore.Parser.CString
                  ( escapeCString )
+import           Kore.Predicate.Predicate
 
 {- | Class of types that can be rendered in concrete Kore syntax.
 
@@ -445,6 +446,12 @@ instance
   where
     unparse Definition { definitionAttributes, definitionModules } =
         vsep (unparse definitionAttributes : map unparse definitionModules)
+
+instance
+    Unparse (variable level) =>
+    Unparse (Predicate level variable)
+  where
+    unparse = unparse . unwrapPredicate
 
 parameters :: Unparse p => [p] -> Doc ann
 parameters = parameters' . map unparse

@@ -36,9 +36,6 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Substitution
@@ -78,6 +75,7 @@ simplify
         , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
+        , Typeable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -127,6 +125,7 @@ makeAndEvaluateApplications
         , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
+        , Typeable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -165,6 +164,7 @@ evaluateApplicationFunction
         , ShowMetaOrObject variable
         , FreshVariable variable
         , Hashable variable
+        , Typeable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level

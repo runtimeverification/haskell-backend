@@ -2,17 +2,18 @@
 
 module Kore.Step.Error
     ( StepError (..)
-    , MissingAxiomVariables
+    , MissingAxiomVariables (..)
     , missingAxiomVariables
     , mapStepErrorVariables
     , stepErrorVariables
     , unificationToStepError
     , unificationOrSubstitutionToStepError
+    -- * Re-exports
+    , Typeable
     ) where
 
 import           Data.Bifunctor
                  ( first )
-import           Data.Dynamic
 import           Data.Foldable
                  ( asum )
 import           Data.Maybe
@@ -21,11 +22,13 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
+import           Data.Type.Equality
+import           Type.Reflection
 
 import Control.Exception.Pretty
 import Control.Exception.TH
 import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.Predicate.Predicate
 import Kore.Unification.Error
 import Kore.Unparser
 
@@ -78,10 +81,19 @@ unificationOrSubstitutionToStepError (Right res) = Right res
 
 {- | An exception to be thrown if axiom variables are not instantiated.
 
-The constructor is not exported; use 'missingAxiomVariables' instead.
+For the error message to be useful, the @variable@ type should be included in
+the 'Pretty' instance of 'MissingAxiomVariables'. Update that instance when
+adding a new variable type.
 
  -}
-data MissingAxiomVariables = MissingAxiomVariables !Dynamic
+data MissingAxiomVariables =
+        forall level variable.
+        (Typeable level, Typeable variable) =>
+        MissingAxiomVariables
+            { variables :: !(Set (Variable level))
+            , predicate :: !(Predicate level variable)
+            , variableType :: TypeRep variable
+            }
     deriving (Typeable)
 
 instance Show MissingAxiomVariables where
@@ -90,40 +102,43 @@ instance Show MissingAxiomVariables where
 mkException 'PrettyException ''MissingAxiomVariables
 
 instance Pretty MissingAxiomVariables where
-    pretty (MissingAxiomVariables dyn) =
-        (fromMaybe fallback . asum)
-            -- Try to get the set of missing variables in one of the known
-            -- variable types. The Unparse instance for the variable type is
-            -- resolved *here*, instead of where the exception is constructed.
-            -- When a new variable type is added, it must be added to this list,
-            -- but that should happen very rarely.
-            [ fromDynamic dyn >>= prettyObjectVariable
-            , fromDynamic dyn >>= prettyMetaVariable
+    pretty (MissingAxiomVariables { variables, predicate, variableType }) =
+        vsep
+            [ prettyVariables
+            , "Expected \\bottom predicate, but instead found:"
+            , prettyPredicate
             ]
       where
-        -- If the variable type cannot be resolved, at least show the type.
-        fallback =
-            vsep
-                [   "Variables from the left-hand side of the axiom \
-                    \are missing from the substitution!"
-                ,   "The variable list is unavailable; \
-                    \please report this as a bug."
-                , "missing :: " <> (pretty . show) dyn
-                ]
-
         message :: Doc ann
         message = "These axiom variables are missing from the substitution:"
 
-        prettyVariable :: Set (Variable level) -> Maybe (Doc ann)
-        prettyVariable missing =
-            (return . hang 4 . vsep)
-                (message : map unparse (Set.toList missing))
+        prettyVariables :: Doc ann
+        prettyVariables = do
+            (hang 4 . vsep)
+                (message : map unparse (Set.toList variables))
 
-        prettyObjectVariable :: Set (Variable Object) -> Maybe (Doc ann)
-        prettyObjectVariable = prettyVariable
+        -- If the variable type cannot be resolved, at least show the type.
+        fallback =
+            vsep
+                [   "The predicate cannot be displayed; \
+                    \please report this as a bug."
+                , "predicate :: " <> (pretty . show) (typeOf predicate)
+                ]
 
-        prettyMetaVariable :: Set (Variable Meta) -> Maybe (Doc ann)
-        prettyMetaVariable = prettyVariable
+        prettyPredicate =
+            (fromMaybe fallback . asum)
+                -- Try to get the set of missing variables in one of the known
+                -- variable types. The Unparse instance for the variable type is
+                -- resolved *here*, instead of where the exception is constructed.
+                -- When a new variable type is added, it must be added to this list,
+                -- but that should happen very rarely.
+                [ prettyCommonPredicate
+                ]
+
+        prettyCommonPredicate :: Maybe (Doc ann)
+        prettyCommonPredicate = do
+            Refl <- testEquality variableType (typeRep :: TypeRep Variable)
+            return (indent 4 $ unparse predicate)
 
 {- | Construct a 'MissingAxiomVariables' exception.
 
@@ -134,6 +149,12 @@ adding a new variable type.
  -}
 missingAxiomVariables
     :: (Typeable level, Typeable variable)
-    => Set (variable level)
+    => Set (Variable level)
+    -> Predicate level variable
     -> MissingAxiomVariables
-missingAxiomVariables = MissingAxiomVariables . toDyn
+missingAxiomVariables variables predicate =
+    MissingAxiomVariables
+        { variables
+        , predicate
+        , variableType = typeRep
+        }
