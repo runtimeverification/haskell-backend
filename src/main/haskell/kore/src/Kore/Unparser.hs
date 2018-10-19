@@ -11,6 +11,11 @@ module Kore.Unparser
     ( Unparse (..)
     , unparseToString
     , layoutPrettyUnbounded
+    , unparseAnd
+    , unparseEquals
+    , unparseImplies
+    , unparseRewrites
+    , unparseTop
     ) where
 
 import Data.Functor.Foldable
@@ -24,13 +29,13 @@ import Data.Text.Prettyprint.Doc hiding
 import Data.Text.Prettyprint.Doc.Render.String
        ( renderString )
 
-import           Kore.AST.Common
-import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-import           Kore.AST.Sentence
-import           Kore.Parser.CString
-                 ( escapeCString )
-import           Kore.Predicate.Predicate
+import Kore.AST.Common
+import Kore.AST.Kore
+import Kore.AST.MetaOrObject
+import Kore.AST.Sentence
+import Kore.Parser.CString
+       ( escapeCString )
+import Kore.Predicate.Predicate
 
 {- | Class of types that can be rendered in concrete Kore syntax.
 
@@ -103,13 +108,21 @@ instance Unparse (Variable level) where
 instance Unparse MLPatternType where
     unparse = ("\\" <>) . fromString . patternString
 
+unparseAnd
+    :: Doc ann
+    -> Doc ann
+    -> Doc ann
+    -> Doc ann
+unparseAnd sort first second =
+    "\\and"
+    <> parameters' [sort]
+    <> arguments' [first, second]
+
 instance Unparse child => Unparse (And level child) where
     unparse
         And { andSort, andFirst, andSecond }
       =
-        "\\and"
-        <> parameters [andSort]
-        <> arguments [andFirst, andSecond]
+        unparseAnd (unparse andSort) (unparse andFirst) (unparse andSecond)
 
 instance Unparse child => Unparse (Application level child) where
     unparse
@@ -151,6 +164,17 @@ instance
             BuiltinDomainSet _ ->
                 "/* not implemented: builtin SET.Set */ \"\""
 
+unparseEquals
+    :: Doc ann
+    -> Doc ann
+    -> Doc ann
+    -> Doc ann
+    -> Doc ann
+unparseEquals operandSort resultSort first second =
+    "\\equals"
+    <> parameters' [operandSort, resultSort]
+    <> arguments' [first, second]
+
 instance Unparse child => Unparse (Equals level child) where
     unparse
         Equals
@@ -160,9 +184,11 @@ instance Unparse child => Unparse (Equals level child) where
             , equalsSecond
             }
       =
-        "\\equals"
-        <> parameters [equalsOperandSort, equalsResultSort]
-        <> arguments [equalsFirst, equalsSecond]
+        unparseEquals
+            (unparse equalsOperandSort)
+            (unparse equalsResultSort)
+            (unparse equalsFirst)
+            (unparse equalsSecond)
 
 instance
     ( Unparse child
@@ -198,11 +224,22 @@ instance Unparse child => Unparse (Iff level child) where
         <> parameters [iffSort]
         <> arguments [iffFirst, iffSecond]
 
+unparseImplies
+    :: Doc ann
+    -> Doc ann
+    -> Doc ann
+    -> Doc ann
+unparseImplies sort first second =
+    "\\implies"
+    <> parameters' [sort]
+    <> arguments' [first, second]
+
 instance Unparse child => Unparse (Implies level child) where
     unparse Implies { impliesSort, impliesFirst, impliesSecond } =
-        "\\implies"
-        <> parameters [impliesSort]
-        <> arguments [impliesFirst, impliesSecond]
+        unparseImplies
+            (unparse impliesSort)
+            (unparse impliesFirst)
+            (unparse impliesSecond)
 
 instance Unparse child => Unparse (In level child) where
     unparse
@@ -235,15 +272,28 @@ instance Unparse child => Unparse (Or level child) where
         <> parameters [orSort]
         <> arguments [orFirst, orSecond]
 
+unparseRewrites
+    :: Doc ann
+    -> Doc ann
+    -> Doc ann
+    -> Doc ann
+unparseRewrites sort first second =
+    "\\rewrites"
+    <> parameters' [sort]
+    <> arguments' [first, second]
+
 instance Unparse child => Unparse (Rewrites level child) where
     unparse Rewrites { rewritesSort, rewritesFirst, rewritesSecond } =
-        "\\rewrites"
-        <> parameters [rewritesSort]
-        <> arguments [rewritesFirst, rewritesSecond]
+        unparseRewrites
+            (unparse rewritesSort)
+            (unparse rewritesFirst)
+            (unparse rewritesSecond)
+
+unparseTop :: Doc ann -> Doc ann
+unparseTop sort = "\\top" <> parameters' [sort] <> noArguments
 
 instance Unparse (Top level child) where
-    unparse Top { topSort } =
-        "\\top" <> parameters [topSort] <> noArguments
+    unparse Top { topSort } = unparseTop (unparse topSort)
 
 instance
     ( Unparse child
