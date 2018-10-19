@@ -66,8 +66,10 @@ simplifyBuiltinDomain =
         BuiltinDomainPattern pat -> (return . pure) (BuiltinDomainPattern pat)
         BuiltinDomainMap _map -> do
             _map <- sequence _map
+            -- MultiOr propagates \bottom children upward.
             return (BuiltinDomainMap <$> sequenceA _map)
         BuiltinDomainList _list -> do
             _list <- sequence _list
+            -- MultiOr propagates \bottom children upward.
             return (BuiltinDomainList <$> sequenceA _list)
         BuiltinDomainSet set -> (return . pure) (BuiltinDomainSet set)

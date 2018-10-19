@@ -7,8 +7,10 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( give )
+import qualified Data.Map.Strict as Map
+import           Data.Reflection
+                 ( give )
+import qualified Data.Sequence as Seq
 
 import           Kore.AST.Common
                  ( BuiltinDomain (..), DomainValue (..), Sort (..) )
@@ -23,6 +25,7 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -34,19 +37,20 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_domainValueSimplification :: [TestTree]
 test_domainValueSimplification =
+    give mockSymbolOrAliasSorts
     [ testCase "DomainValue evaluates to DomainValue"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ Predicated
                     { term =
-                        give mockSymbolOrAliasSorts $
-                            mkDomainValue
-                                testSort
-                                (BuiltinDomainPattern (mkStringLiteral "a"))
+                        mkDomainValue
+                            testSort
+                            (BuiltinDomainPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -60,7 +64,33 @@ test_domainValueSimplification =
                 )
             )
         )
+    , testCase "\\bottom propagates through builtin Map"
+        (assertEqualWithExplanation
+            "Expected \\bottom to propagate to the top level"
+            (OrOfExpandedPattern.make [])
+            (evaluate
+                mockMetadataTools
+                (DomainValue
+                    testSort
+                    (BuiltinDomainMap (Map.fromList [(Mock.aConcrete, bottom)]))
+                )
+            )
+        )
+    , testCase "\\bottom propagates through builtin List"
+        (assertEqualWithExplanation
+            "Expected \\bottom to propagate to the top level"
+            (OrOfExpandedPattern.make [])
+            (evaluate
+                mockMetadataTools
+                (DomainValue
+                    testSort
+                    (BuiltinDomainList (Seq.fromList [bottom]))
+                )
+            )
+        )
     ]
+  where
+    bottom = OrOfExpandedPattern.make [ExpandedPattern.bottom]
 
 testSort :: Sort Object
 testSort =
