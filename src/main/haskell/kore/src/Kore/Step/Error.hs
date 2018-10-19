@@ -5,18 +5,27 @@ module Kore.Step.Error
     , stepErrorVariables
     , unificationToStepError
     , unificationOrSubstitutionToStepError
+    , convertCommonExceptions
     ) where
 
-import           Control.Exception
-                 ( Exception (..) )
+import           Control.Monad.Catch
+                 ( Exception (..), MonadCatch, MonadThrow, SomeException )
+import qualified Control.Monad.Catch as Monad.Catch
 import           Data.Bifunctor
                  ( first )
+import           Data.Foldable
+                 ( asum )
+import           Data.Maybe
+                 ( fromMaybe )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
 import           Data.Typeable
 
+import Control.Exception.Pretty
+import Kore.AST.Common
+import Kore.AST.MetaOrObject
 import Kore.Unification.Error
 import Kore.Unparser
 
@@ -89,3 +98,22 @@ instance
         (hang 4 . vsep) (message : map unparse (Set.toList missing))
       where
         message = "These axiom variables are missing from the substitution:"
+
+convertCommonExceptions :: (MonadCatch m, MonadThrow m) => m a -> m a
+convertCommonExceptions go =
+    Monad.Catch.catchAll go rethrows
+  where
+    rethrows e =
+        Monad.Catch.throwM $ fromMaybe e $ convertCases e
+
+    convertCases :: SomeException -> Maybe SomeException
+    convertCases e =
+        asum
+            [ fromException e >>= convertCommonMissingAxiomVariables
+            ]
+
+    convertCommonMissingAxiomVariables
+        :: MissingAxiomVariables Object Variable
+        -> Maybe SomeException
+    convertCommonMissingAxiomVariables e =
+        Just (toException (PrettyException (pretty e)))
