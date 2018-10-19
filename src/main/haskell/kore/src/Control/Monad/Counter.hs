@@ -20,6 +20,9 @@ module Control.Monad.Counter
       -- * Implementation
     , Counter
     , runCounter, evalCounter
+      -- * Transformer
+    , CounterT
+    , runCounterT, evalCounterT
     ) where
 
 import qualified Control.Monad.Except as Monad.Except
@@ -32,43 +35,14 @@ import           Control.Monad.State
 import qualified Control.Monad.State.Class as Monad.State
 import qualified Control.Monad.State.Lazy as Monad.State.Lazy
 import qualified Control.Monad.State.Strict as Monad.State.Strict
+import           Control.Monad.Trans
+                 ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Control.Monad.Writer.Lazy as Monad.Writer.Lazy
 import qualified Control.Monad.Writer.Strict as Monad.Writer.Strict
 import           Numeric.Natural
 
-{- | A computation using a monotonic counter.
- -}
-newtype Counter a = Counter (Monad.State.Strict.State Natural a)
-  deriving (Applicative, Functor, Monad)
-
--- | The @MonadState@ instance must not be used to replay the counter!
-deriving instance MonadState Natural Counter
-
-instance MonadCounter Counter
-
-{- | Run a computation using a monotonic counter.
-
-  The counter is initialized to the given value. The final result and counter
-  are returned.
-
- -}
-runCounter
-    :: Counter a
-    -- ^ computation
-    -> Natural
-    -- ^ initial counter
-    -> (a, Natural)
-runCounter (Counter counting) = Monad.State.Strict.runState counting
-
-{- | Return the final result of a computation using a monotonic counter.
-
-  The counter is initialized to @0@.
-
- -}
-evalCounter :: Counter a -> a
-evalCounter (Counter counting) =
-    let (a, _) = Monad.State.Strict.runState counting 0 in a
+-- * Class
 
 {- | @MonadCounter@ abstracts a state monad carrying a monotonic counter.
 
@@ -166,3 +140,76 @@ findState predicate = findState0
                 else do
                     Monad.State.put s
                     findState0 actions
+
+-- * Implementation
+
+{- | A computation using a monotonic counter.
+ -}
+newtype Counter a = Counter (Monad.State.Strict.State Natural a)
+  deriving (Applicative, Functor, Monad)
+
+-- | The @MonadState@ instance must not be used to replay the counter!
+deriving instance MonadState Natural Counter
+
+instance MonadCounter Counter
+
+{- | Run a computation using a monotonic counter.
+
+  The counter is initialized to the given value. The final result and counter
+  are returned.
+
+ -}
+runCounter
+    :: Counter a
+    -- ^ computation
+    -> Natural
+    -- ^ initial counter
+    -> (a, Natural)
+runCounter (Counter counting) = Monad.State.Strict.runState counting
+
+{- | Return the final result of a computation using a monotonic counter.
+
+  The counter is initialized to @0@.
+
+ -}
+evalCounter :: Counter a -> a
+evalCounter (Counter counting) =
+    let (a, _) = Monad.State.Strict.runState counting 0 in a
+
+-- * Transformer
+
+newtype CounterT m a = CounterT (Monad.State.Strict.StateT Natural m a)
+    deriving (Applicative, Functor, Monad)
+
+-- | The @MonadState@ instance must not be used to replay the counter!
+deriving instance Monad m => MonadState Natural (CounterT m)
+
+instance Monad m => MonadCounter (CounterT m)
+
+instance MonadTrans CounterT where
+    lift m = CounterT (Monad.Trans.lift m)
+
+{- | Run a computation using a monotonic counter.
+
+  The counter is initialized to the given value. The final result and counter
+  are returned.
+
+ -}
+runCounterT
+    :: CounterT m a
+    -- ^ computation
+    -> Natural
+    -- ^ initial counter
+    -> m (a, Natural)
+runCounterT (CounterT counting) = Monad.State.Strict.runStateT counting
+
+{- | Return the final result of a computation using a monotonic counter.
+
+  The counter is initialized to @0@.
+
+ -}
+evalCounterT :: Monad m => CounterT m a -> m a
+evalCounterT (CounterT counting) =
+    do
+        (a, _) <- Monad.State.Strict.runStateT counting 0
+        return a
