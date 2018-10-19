@@ -3,7 +3,9 @@
 module Kore.Step.Error
     ( StepError (..)
     , MissingAxiomVariables (..)
+    , WhileApplyingAxiom (..)
     , missingAxiomVariables
+    , whileApplyingAxiom
     , mapStepErrorVariables
     , stepErrorVariables
     , unificationToStepError
@@ -12,6 +14,9 @@ module Kore.Step.Error
     , Typeable
     ) where
 
+import           Control.Monad.Catch
+                 ( Exception (..), MonadCatch, MonadThrow, SomeException )
+import qualified Control.Monad.Catch as Monad.Catch
 import           Data.Bifunctor
                  ( first )
 import           Data.Foldable
@@ -29,6 +34,8 @@ import Control.Exception.Pretty
 import Control.Exception.TH
 import Kore.AST.Common
 import Kore.Predicate.Predicate
+import Kore.Step.AxiomPatterns
+import Kore.Step.ExpandedPattern
 import Kore.Unification.Error
 import Kore.Unparser
 
@@ -92,14 +99,9 @@ data MissingAxiomVariables =
         MissingAxiomVariables
             { variables :: !(Set (Variable level))
             , predicate :: !(Predicate level variable)
-            , variableType :: TypeRep variable
+            , variableType :: !(TypeRep variable)
             }
     deriving (Typeable)
-
-instance Show MissingAxiomVariables where
-    show = show . pretty
-
-mkException 'PrettyException ''MissingAxiomVariables
 
 instance Pretty MissingAxiomVariables where
     pretty (MissingAxiomVariables { variables, predicate, variableType }) =
@@ -140,6 +142,11 @@ instance Pretty MissingAxiomVariables where
             Refl <- testEquality variableType (typeRep :: TypeRep Variable)
             return (indent 4 $ unparse predicate)
 
+instance Show MissingAxiomVariables where
+    show = show . pretty
+
+mkException 'PrettyException ''MissingAxiomVariables
+
 {- | Construct a 'MissingAxiomVariables' exception.
 
 For the error message to be useful, the @variable@ type should be included in
@@ -158,3 +165,92 @@ missingAxiomVariables variables predicate =
         , predicate
         , variableType = typeRep
         }
+
+data WhileApplyingAxiom =
+    forall level variable.
+    Typeable level =>
+    WhileApplyingAxiom
+        { expandedPattern :: !(ExpandedPattern level variable)
+        , axiomPattern :: !(AxiomPattern level)
+        , exception :: !SomeException
+        , variableType :: !(TypeRep variable)
+        }
+    deriving (Typeable)
+
+instance Pretty WhileApplyingAxiom where
+    pretty
+        WhileApplyingAxiom
+            { axiomPattern
+            , expandedPattern
+            , exception
+            , variableType
+            }
+      =
+        vsep
+            [ "While applying axiom:"
+            , indent 4 (prettyRewriteAxiomPattern axiomPattern)
+            , "to the configuration:"
+            , prettyExpandedPattern
+            , fromMaybe
+                (pretty $ displayException exception)
+                (prettyException <$> fromException exception)
+            ]
+      where
+        prettyException :: PrettyException -> Doc ann
+        prettyException = pretty
+
+        -- If the variable type cannot be resolved, at least show the type.
+        fallback =
+            vsep
+                [   "The configuration cannot be displayed; \
+                    \please report this as a bug."
+                , indent 4 expandedPatternType
+                ]
+          where
+            expandedPatternType =
+                mappend
+                    "expandedPattern :: "
+                    $ pretty $ show
+                    $ withTypeable variableType
+                    $ typeOf expandedPattern
+
+        prettyExpandedPattern =
+            (fromMaybe fallback . asum)
+                -- Try to get the set of missing variables in one of the known
+                -- variable types. The Unparse instance for the variable type is
+                -- resolved *here*, instead of where the exception is constructed.
+                -- When a new variable type is added, it must be added to this list,
+                -- but that should happen very rarely.
+                [ prettyCommonExpandedPattern
+                ]
+
+        prettyCommonExpandedPattern :: Maybe (Doc ann)
+        prettyCommonExpandedPattern = do
+            Refl <- testEquality variableType (typeRep :: TypeRep Variable)
+            return (indent 4 $ pretty expandedPattern)
+
+
+instance Show WhileApplyingAxiom where
+    show = show . pretty
+
+mkException 'PrettyException ''WhileApplyingAxiom
+
+whileApplyingAxiom
+    ::  ( MonadCatch m, MonadThrow m
+        , Typeable level, Typeable variable
+        )
+    => ExpandedPattern level variable
+    -> AxiomPattern level
+    -> m a
+    -> m a
+whileApplyingAxiom expandedPattern axiomPattern go =
+    Monad.Catch.catchAll go handler
+  where
+    handler exception =
+        Monad.Catch.throwM
+            WhileApplyingAxiom
+                { axiomPattern
+                , expandedPattern
+                , exception
+                , variableType = typeRep
+                }

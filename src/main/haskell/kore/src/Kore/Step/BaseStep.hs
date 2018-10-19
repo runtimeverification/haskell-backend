@@ -247,12 +247,12 @@ stepWithAxiom'
     (UnificationProcedure unificationProcedure')
     (PredicateSubstitutionSimplifier substitutionSimplifier)
     expandedPattern
-    AxiomPattern
+    axiomPattern@AxiomPattern
         { axiomPatternLeft = axiomLeftRaw
         , axiomPatternRight = axiomRightRaw
         , axiomPatternRequires = axiomRequiresRaw
         }
-  = do
+  = whileApplyingAxiom expandedPattern axiomPattern $ do
     -- Distinguish configuration (pattern) and axiom variables by lifting them
     -- into 'StepperVariable'.
     let
