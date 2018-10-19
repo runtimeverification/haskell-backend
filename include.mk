@@ -20,7 +20,7 @@ ifdef BUILD_NUMBER
 STACK_TEST_OPTS += --ta --xml=test-results.xml
 endif
 
-STACK_LOCAL_INSTALL_ROOT != stack path --local-install-root
+STACK_LOCAL_INSTALL_ROOT := $(shell stack path --local-install-root)
 KORE_EXEC ?= $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-exec
 KORE_EXEC_OPTS ?=
 

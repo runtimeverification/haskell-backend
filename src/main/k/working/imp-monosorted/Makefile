@@ -1,4 +1,4 @@
-TOP != git rev-parse --show-toplevel
+TOP := $(shell git rev-parse --show-toplevel)
 include $(TOP)/include.mk
 
 KOMPILED := imp-kompiled
