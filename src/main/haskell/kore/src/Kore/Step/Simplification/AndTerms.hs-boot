@@ -11,7 +11,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.ExpandedPattern
        ( ExpandedPattern )
 import Kore.Step.Simplification.Data
-       ( SimplificationProof )
+       ( PredicateSubstitutionSimplifier, SimplificationProof )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Substitution.Class
@@ -31,6 +31,7 @@ termAnd
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
@@ -47,6 +48,7 @@ termUnification
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe (m (ExpandedPattern level variable, SimplificationProof level))

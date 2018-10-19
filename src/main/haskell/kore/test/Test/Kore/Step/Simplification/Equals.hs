@@ -53,6 +53,7 @@ import           Kore.Step.StepperAttributes
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -613,7 +614,8 @@ evaluateOr
     -> Equals Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluateOr tools equals =
-    fst $ evalSimplifier $ simplify tools equals
+    fst $ evalSimplifier
+        $ simplify tools (Mock.substitutionSimplifier tools) equals
 
 evaluate
     :: MetadataTools Object StepperAttributes
@@ -629,7 +631,8 @@ evaluateGeneric
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 evaluateGeneric tools first second =
-    fst $ evalSimplifier $ makeEvaluate tools first second
+    fst $ evalSimplifier
+        $ makeEvaluate tools (Mock.substitutionSimplifier tools) first second
 
 evaluateTermsGeneric
     :: MetaOrObject level
@@ -639,4 +642,5 @@ evaluateTermsGeneric
     -> CommonPredicateSubstitution level
 evaluateTermsGeneric tools first second =
     fst $ evalSimplifier $
-        makeEvaluateTermsToPredicateSubstitution tools first second
+        makeEvaluateTermsToPredicateSubstitution
+            tools (Mock.substitutionSimplifier tools) first second

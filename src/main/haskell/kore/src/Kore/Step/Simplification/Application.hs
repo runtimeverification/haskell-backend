@@ -80,7 +80,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
@@ -129,7 +129,7 @@ makeAndEvaluateApplications
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
@@ -147,7 +147,7 @@ makeAndEvaluateApplications
     children
   = do
     (expandedApplication, _proof) <-
-        makeExpandedApplication tools symbol children
+        makeExpandedApplication tools substitutionSimplifier symbol children
     (functionApplication, _proof) <-
         evaluateApplicationFunction
             tools substitutionSimplifier simplifier symbolIdToEvaluator
@@ -167,7 +167,7 @@ evaluateApplicationFunction
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
@@ -207,11 +207,12 @@ makeExpandedApplication
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
     -> Simplifier
         (ExpandedApplication level variable, SimplificationProof level)
-makeExpandedApplication tools symbol children
+makeExpandedApplication tools substitutionSimplifier symbol children
   = do
     (   PredicateSubstitution
             { predicate = mergedPredicate
@@ -220,6 +221,7 @@ makeExpandedApplication tools symbol children
         , _proof) <-
             mergePredicatesAndSubstitutions
                 tools
+                substitutionSimplifier
                 (map ExpandedPattern.predicate children)
                 (map ExpandedPattern.substitution children)
     return

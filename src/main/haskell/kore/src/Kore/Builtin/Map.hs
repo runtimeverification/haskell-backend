@@ -71,8 +71,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
+                 SimplificationProof (..), Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -458,7 +458,7 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unify
-    :: forall level variable m p expanded proof.
+    :: forall level variable m p expanded proof .
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
@@ -470,10 +470,12 @@ unify
         , proof ~ SimplificationProof level
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> (p -> p -> Result (m (expanded, proof)))
     -> (p -> p -> Result (m (expanded, proof)))
 unify
     tools@MetadataTools { symbolOrAliasSorts }
+    substitutionSimplifier
     simplifyChild
   =
     unify0
@@ -569,41 +571,62 @@ unify
                             -- There is nothing with which to unify the
                             -- remainder of map2.
                             ExpandedPattern.bottom
-                        | otherwise = asBuiltinMap <$> propagatePredicates _intersect
-                (,) <$> normalize tools result <*> pure SimplificationProof
+                        | otherwise =
+                            asBuiltinMap <$> propagatePredicates _intersect
+                (normalized, _proof) <-
+                    normalize tools substitutionSimplifier result
+                return (normalized, SimplificationProof)
         return unified
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
 
     -- | Unify one concrete map with one framed concrete map.
     unifyFramed1
-        :: (level ~ Object, k ~ ConcretePurePattern Object)
+        :: forall k . (level ~ Object, k ~ ConcretePurePattern Object)
         => Sort level  -- ^ Sort of result
-        -> Map k (PureMLPattern level variable)  -- ^ concrete map
+        -> Map k p  -- ^ concrete map
         -> SymbolOrAlias level  -- ^ 'concat' symbol used for framing
-        -> Map k (PureMLPattern level variable)  -- ^ framed concrete map
-        -> PureMLPattern level variable  -- ^ framing variable
+        -> Map k p  -- ^ framed concrete map
+        -> p  -- ^ framing variable
         -> Result (m (expanded, proof))
-    unifyFramed1 resultSort map1 concat' map2 x = do
-        let (_diff1, _intersect, diff2) = heterogenousIntersection map1 map2
-        _intersect <- traverse (uncurry simplifyChild) _intersect
+    unifyFramed1 resultSort map1 concat' map2 x = do  -- Result monad
+        let
+            remainder1, remainder2 :: Map k p
+            intersect :: Map k (p, p)
+            (remainder1, intersect, remainder2) =
+                heterogenousIntersection map1 map2
+        (unifiedIntersect :: Map k (m (expanded, proof)))
+            <- traverse (uncurry simplifyChild) intersect
         -- The framing variable unifies with the remainder of map1.
         -- simplifyChild returns an action which returns the unified value.
-        returnDiff1 <- simplifyChild x (asBuiltinMap _diff1)
+        remainder1SubstitutionM <-
+            simplifyChild x (asBuiltinMap remainder1)
         let
-            unified = give symbolOrAliasSorts $ do
-                _intersect <-
-                    discardProofs <$> collectProvenExpandedPatterns _intersect
-                let q = asBuiltinMap <$> propagatePredicates _intersect
-                (_diff1, _) <- returnDiff1
+            unified :: m (expanded, proof)
+            unified = give symbolOrAliasSorts $ do  -- MonadCounter
+                (intersectMapWithProofs :: Map k (expanded, proof)) <-
+                    collectProvenExpandedPatterns unifiedIntersect
+                let
+                    intersectMap :: Map k expanded
+                    intersectMap =
+                        discardProofs intersectMapWithProofs
+                    propagated :: Predicated level variable (Map k p)
+                    propagated = propagatePredicates intersectMap
+                    intersectPattern :: expanded
+                    intersectPattern = asBuiltinMap <$> propagated
+                (remainder1Substitution, _) <- remainder1SubstitutionM
                 let result
-                        | not (Map.null diff2) =
+                        | not (Map.null remainder2) =
                             -- There is nothing with which to unify the
                             -- remainder of map2.
                             ExpandedPattern.bottom
                         | otherwise =
-                            App_ concat' <$> propagatePredicates [q, _diff1]
-                (,) <$> normalize tools result <*> pure SimplificationProof
+                            App_ concat'
+                                <$> propagatePredicates
+                                    [intersectPattern, remainder1Substitution]
+                (normalized, _proof) <-
+                    normalize tools substitutionSimplifier result
+                return (normalized, SimplificationProof)
         return unified
       where
         asBuiltinMap = asBuiltinDomainValue resultSort

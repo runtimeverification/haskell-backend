@@ -29,11 +29,17 @@ metaVariable = Variable
     , variableSort = SortVariableSort (SortVariable (testId "#s"))
     }
 
+metaFreshVariable :: Variable Meta
+metaFreshVariable = Variable
+    { variableName = testId "#var_v_1"
+    , variableSort = SortVariableSort (SortVariable (testId "#s"))
+    }
+
 test_freshVariable :: [TestTree]
 test_freshVariable =
     [ testCase "Testing freshVariable Object 2"
         (assertEqual ""
-            (objectVariable { variableName = testId "var_2" }, 3)
+            (objectVariable { variableName = testId "var_v_2" }, 3)
             (runCounter
                 (freshVariable objectVariable)
                 2
@@ -41,16 +47,24 @@ test_freshVariable =
         )
     , testCase "Testing freshVariable Meta 2"
         (assertEqual ""
-            (metaVariable { variableName = testId "#var_2" }, 3)
+            (metaVariable { variableName = testId "#var_v_2" }, 3)
             (runCounter
                 (freshVariable metaVariable)
                 2
             )
         )
+    , testCase "Testing freshVariable over fresh variable"
+        (assertEqual ""
+            (metaVariable { variableName = testId "#var_v_2" }, 3)
+            (runCounter
+                (freshVariable metaFreshVariable)
+                2
+            )
+        )
     , testCase "Testing freshVariable Functor Meta 1"
         (assertEqual ""
-            ( ( metaVariable { variableName = testId "#var_1" }
-              , metaVariable { variableName = testId "#var_2" }
+            ( ( metaVariable { variableName = testId "#var_v_1" }
+              , metaVariable { variableName = testId "#var_v_2" }
               )
             , 3
             )
@@ -64,7 +78,7 @@ test_freshVariable =
           )
     , testCase "Testing freshUnifiedVariable Meta 2"
         (assertEqual ""
-            (metaVariable { variableName = testId "#var_2" }, 3)
+            (metaVariable { variableName = testId "#var_v_2" }, 3)
             (runCounter
                 (freshVariable metaVariable)
                 2
@@ -86,7 +100,7 @@ test_freshVariable =
         )
     , testCase "Testing freshVariableSuchThat Meta 1"
         (assertEqual ""
-            (metaVariable { variableName = testId "#var_2" }, 3)
+            (metaVariable { variableName = testId "#var_v_2" }, 3)
             (runCounter
                 (freshVariableSuchThat
                     metaVariable

@@ -42,6 +42,8 @@ import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
+import           Kore.Step.Simplification.Data
+                 ( PredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
@@ -49,7 +51,7 @@ import           Kore.Substitution.Class
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Error
-                 ( UnificationError (..) )
+                 ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -71,37 +73,40 @@ unificationProcedure
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
+    -> PredicateSubstitutionSimplifier level m
     -> PureMLPattern level variable
     -- ^left-hand-side of unification
     -> PureMLPattern level variable
     -> ExceptT
         -- TODO: Consider using a false predicate instead of a Left error
-        UnificationError
+        (UnificationOrSubstitutionError level variable)
         m
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-unificationProcedure tools p1 p2
-    | p1Sort /= p2Sort =
-      return (PredicateSubstitution.bottom, EmptyUnificationProof)
-    | otherwise = do
-      let
-          unifiedTerm = termUnification tools p1 p2
-      (pat, _) <- ExceptT . sequence $ note UnsupportedPatterns unifiedTerm
-      let
-          (pred', _) = Ceil.makeEvaluateTerm tools (ExpandedPattern.term pat)
-      if ExpandedPattern.isBottom pat
-          then return
-              ( PredicateSubstitution.bottom
-              , EmptyUnificationProof
-              )
-          else return
-          ( PredicateSubstitution
-              (fst $ give symbolOrAliasSorts $
-                  makeAndPredicate (ExpandedPattern.predicate pat) pred')
-              (ExpandedPattern.substitution pat)
-          , EmptyUnificationProof
-          )
+unificationProcedure tools substitutionSimplifier p1 p2
+  | p1Sort /= p2Sort =
+    return (PredicateSubstitution.bottom, EmptyUnificationProof)
+  | otherwise = do
+    let
+        unifiedTerm = termUnification tools substitutionSimplifier p1 p2
+    (pat, _) <-
+        ExceptT . sequence
+            $ note (UnificationError UnsupportedPatterns) unifiedTerm
+    let
+        (pred', _) = Ceil.makeEvaluateTerm tools (ExpandedPattern.term pat)
+    if ExpandedPattern.isBottom pat
+        then return
+            ( PredicateSubstitution.bottom
+            , EmptyUnificationProof
+            )
+        else return
+            ( PredicateSubstitution
+                (fst $ give symbolOrAliasSorts $
+                    makeAndPredicate (ExpandedPattern.predicate pat) pred')
+                (ExpandedPattern.substitution pat)
+            , EmptyUnificationProof
+            )
   where
       symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
       resultSort = getPatternResultSort symbolOrAliasSorts

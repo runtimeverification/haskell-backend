@@ -74,7 +74,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, SimplificationProof (..),
+                 ( PredicateSubstitutionSimplifier (..),
+                 PureMLPatternSimplifier, SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -422,10 +423,12 @@ unify
         , proof ~ SimplificationProof level
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> (p -> p -> Result (m (expanded, proof)))
     -> (p -> p -> Result (m (expanded, proof)))
 unify
     tools@(MetadataTools.MetadataTools { symbolOrAliasSorts })
+    substitutionSimplifier
     _ -- not used for now.
   =
     unify0
@@ -435,10 +438,11 @@ unify
     -- NB: this is exactly the same for maps.
     normalize :: (level ~ Object) => expanded -> m expanded
     normalize r =
-        runExceptT (normalizePredicatedSubstitution tools r)
-            >>= \case
-                Left _ -> return ExpandedPattern.bottom
-                Right (normalized, _) -> return normalized
+        runExceptT
+            (normalizePredicatedSubstitution tools substitutionSimplifier r)
+        >>= \case
+            Left _ -> return ExpandedPattern.bottom
+            Right (normalized, _) -> return normalized
 
     -- | Unify the two argument patterns.
     unify0

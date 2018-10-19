@@ -12,12 +12,10 @@ import Test.Tasty.HUnit
 
 import Control.DeepSeq
        ( NFData, deepseq )
-import Control.Error.Util
-       ( hush )
 import Control.Exception
        ( ErrorCall (..), catch )
 import Control.Monad.Except
-       ( runExceptT )
+       ( ExceptT, runExceptT )
 import Data.Reflection
        ( give )
 
@@ -34,6 +32,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
+import           Kore.SMT.Config
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import           Kore.Step.PredicateSubstitution
@@ -44,12 +43,17 @@ import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unification.Error
+                 ( UnificationOrSubstitutionError )
+import           Kore.Unification.Unifier
+                 ( UnificationProof )
 
 import           Test.Kore
                  ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -681,6 +685,14 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                 (mkAnd    Mock.a         Mock.b)
             )
         )
+    , testCase "Merge error"
+        (assertEqualWithExplanation ""
+            Nothing
+            (match mockMetadataTools
+                (mkAnd (mkVar Mock.x) (mkVar Mock.x))
+                (mkAnd (mkVar Mock.y) (Mock.f (mkVar Mock.y)))
+            )
+        )
     ]
 
 
@@ -700,16 +712,34 @@ mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] []
 
 match
-    :: ( MetaOrObject level
-       , NFData (CommonPredicateSubstitution level)
-       )
+    :: forall level .
+        ( MetaOrObject level
+        , NFData (CommonPredicateSubstitution level)
+        )
     => MetadataTools level StepperAttributes
     -> CommonPurePattern level
     -> CommonPurePattern level
     -> Maybe (CommonPredicateSubstitution level)
 match tools first second =
-    fmap fst
-    . hush
-    . evalSimplifier
-    . runExceptT
-    $ matchAsUnification tools first second
+    case matchAsEither of
+        Left _err -> Nothing
+        Right result -> Just $ fst result
+  where
+    matchAsEither
+        :: Either
+            (UnificationOrSubstitutionError level Variable)
+            ( PredicateSubstitution level Variable
+            , UnificationProof level Variable
+            )
+    matchAsEither =
+        fst $ runSimplifier (SMTTimeOut 40) (runExceptT matchResult) 0
+    matchResult
+        :: ExceptT
+            (UnificationOrSubstitutionError level Variable)
+            Simplifier
+            ( PredicateSubstitution level Variable
+            , UnificationProof level Variable
+            )
+    matchResult =
+        matchAsUnification
+            tools (Mock.substitutionSimplifier tools) first second

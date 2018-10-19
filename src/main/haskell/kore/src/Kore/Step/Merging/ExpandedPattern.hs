@@ -55,7 +55,7 @@ mergeWithPredicateSubstitution
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
@@ -83,6 +83,7 @@ mergeWithPredicateSubstitution
         , _proof ) <-
             mergePredicatesAndSubstitutions
                 tools
+                substitutionSimplifier
                 [pattPredicate, conditionToMerge]
                 [pattSubstitution, substitutionToMerge]
     (evaluatedCondition, _) <-
@@ -91,6 +92,7 @@ mergeWithPredicateSubstitution
                 substitutionSimplifier simplifier mergedCondition
     mergeWithEvaluatedCondition
         tools
+        substitutionSimplifier
         patt {substitution = mergedSubstitution}
         evaluatedCondition
 
@@ -105,11 +107,13 @@ mergeWithEvaluatedCondition
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> ExpandedPattern level variable
     -> PredicateSubstitution level variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
+    substitutionSimplifier
     Predicated
         { term = pattTerm
         , substitution = pattSubstitution
@@ -124,6 +128,7 @@ mergeWithEvaluatedCondition
         , _proof
         ) <- mergePredicatesAndSubstitutions
             tools
+            substitutionSimplifier
             [predPredicate]
             [pattSubstitution, predSubstitution]
     return

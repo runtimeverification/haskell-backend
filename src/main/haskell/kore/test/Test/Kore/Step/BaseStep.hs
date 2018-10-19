@@ -7,8 +7,6 @@ import Test.Tasty.HUnit
 
 import Control.Monad.Except
        ( runExceptT )
-import Data.Bifunctor
-       ( first )
 import Data.Default
        ( def )
 import Data.Reflection
@@ -44,6 +42,8 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
+import           Kore.Unification.Error
+                 ( SubstitutionError (..) )
 import           Kore.Unification.Unifier
                  ( UnificationError (..), UnificationProof (..) )
 
@@ -322,7 +322,7 @@ test_baseStep =
                         asPureMetaPattern
                             (metaExists
                                 PatternSort
-                                (var_0 PatternSort)
+                                (var_a1_0 PatternSort)
                                 (a1 PatternSort)
                             )
                     , predicate = makeTruePredicate
@@ -332,7 +332,7 @@ test_baseStep =
                     (map stepProof
                         [ StepProofVariableRenamings
                             [ variableRenaming
-                                (a1 PatternSort) (var_0 PatternSort)
+                                (a1 PatternSort) (var_a1_0 PatternSort)
                             ]
                         , StepProofUnification EmptyUnificationProof
                         ]
@@ -475,17 +475,14 @@ test_baseStep =
     -- sigma(a, h(b)) with substitution b=a
     , testCase "Substitution (non-ctor)."
         (assertEqualWithExplanation ""
-            (Right Predicated
-                { term = asPureMetaPattern (metaH (b1 PatternSort))
-                , predicate = give mockSymbolOrAliasSorts $ makeEqualsPredicate
-                    (asPureMetaPattern (b1 PatternSort))
-                    (asPureMetaPattern (metaH (b1 PatternSort)))
-                , substitution =
-                    [   ( asMetaVariable (a1 PatternSort)
-                        , asPureMetaPattern (metaH (b1 PatternSort))
-                        )
-                    ]
-                }
+            -- TODO(virgil): This should probably be a normal result with
+            -- b=h(b) in the predicate.
+            (Left
+                (StepErrorSubstitution
+                    (NonCtorCircularVariableDependency
+                        [(asMetaVariable (b1 PatternSort))]
+                    )
+                )
             )
             (fst <$> runStep
                 mockMetadataTools
@@ -803,7 +800,7 @@ test_baseStep =
     , let
         fOfB = metaF (b1 PatternSort)
       in
-        testCase "Substitution normalization."
+        testCase "Substitution_normalization."
             (assertEqualWithExplanation ""
                 (Right
                     ( Predicated
@@ -927,8 +924,8 @@ test_baseStep =
     x1 = metaVariable "#x1" AstLocationTest
     y1 :: MetaSort sort => sort -> MetaVariable sort
     y1 = metaVariable "#y1" AstLocationTest
-    var_0 :: MetaSort sort => sort -> MetaVariable sort
-    var_0 = metaVariable "#var_0" AstLocationTest
+    var_a1_0 :: MetaSort sort => sort -> MetaVariable sort
+    var_a1_0 = metaVariable "#var_a1_0" AstLocationTest
     variableRenaming
         :: MetaSort sort
         => MetaVariable sort
@@ -1134,8 +1131,7 @@ runStep
         (StepError level Variable)
         (CommonExpandedPattern level, StepProof level Variable)
 runStep metadataTools configuration axiom =
-    first evalSimplifier
-    . evalSimplifier
+    evalSimplifier
     . runExceptT
     $ stepWithAxiom
         metadataTools

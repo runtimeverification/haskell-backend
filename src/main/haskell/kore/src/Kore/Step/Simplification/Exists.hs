@@ -86,7 +86,7 @@ simplify
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Simplifies patterns.
     -> Exists level variable (OrOfExpandedPattern level variable)
@@ -116,7 +116,7 @@ simplifyEvaluated
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Simplifies patterns.
     -> variable level
@@ -153,7 +153,7 @@ makeEvaluate
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Simplifies patterns.
     -> variable level

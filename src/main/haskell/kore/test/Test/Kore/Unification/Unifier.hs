@@ -8,8 +8,6 @@ import Test.Tasty.HUnit.Extensions
 
 import           Control.Exception
                  ( ErrorCall (ErrorCall), catch, evaluate )
-import           Control.Monad.Counter
-                 ( evalCounter )
 import           Control.Monad.Except
                  ( runExceptT )
 import           Data.CallStack
@@ -36,7 +34,6 @@ import           Kore.AST.PureML
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
-import           Kore.ASTPrettyPrint
 import           Kore.ASTUtils.SmartConstructors
                  ( mkSort, mkVar )
 import           Kore.IndexedModule.MetadataTools
@@ -302,9 +299,12 @@ andSimplifySuccess message term1 term2 resultTerm subst predicate proof =
         )
   where
     Right (subst', proof') =
-        evalCounter
+        evalSimplifier
         . runExceptT
-        $ simplifyAnds tools [(unificationProblem term1 term2)]
+        $ simplifyAnds
+            tools
+            (Mock.substitutionSimplifier tools)
+            [(unificationProblem term1 term2)]
 
     subst'' = subst'
         { substitution =
@@ -323,12 +323,14 @@ andSimplifyFailure message term1 term2 err =
     testCase
         message
         (assertEqualWithPrinter
-            prettyPrintToString
+            show
             ""
-            (Left err)
-            ( evalCounter
-              . runExceptT
-              $ simplifyAnds tools [(unificationProblem term1 term2)]
+            (Left (UnificationError err))
+            ( evalSimplifier . runExceptT
+                $ simplifyAnds
+                    tools
+                    (Mock.substitutionSimplifier tools)
+                    [(unificationProblem term1 term2)]
             )
         )
 
@@ -346,9 +348,12 @@ andSimplifyException message term1 term2 exceptionMessage =
     where
         test = do
             let var =
-                    evalCounter
+                    evalSimplifier
                     . runExceptT
-                    $ simplifyAnds tools [(unificationProblem term1 term2)]
+                    $ simplifyAnds
+                        tools
+                        (Mock.substitutionSimplifier tools)
+                        [(unificationProblem term1 term2)]
             _ <- evaluate (var)
             assertFailure "This evaluation should fail"
         handler (ErrorCall s) =
@@ -386,9 +391,10 @@ unificationProcedureSuccess
               }
           , proof'
           ) =
-        evalCounter . runExceptT $
+        evalSimplifier . runExceptT $
             ( unificationProcedure
                 tools
+                (Mock.substitutionSimplifier tools)
                 (extractPurePattern term1)
                 (extractPurePattern term2)
             )

@@ -63,7 +63,7 @@ newtype ApplicationFunctionEvaluator level =
             , ShowMetaOrObject variable
             )
         => MetadataTools level StepperAttributes
-        -> PredicateSubstitutionSimplifier level
+        -> PredicateSubstitutionSimplifier level Simplifier
         -> PureMLPatternSimplifier level variable
         -> Application level (PureMLPattern level variable)
         -> Simplifier

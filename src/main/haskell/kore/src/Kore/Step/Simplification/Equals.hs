@@ -52,7 +52,8 @@ import qualified Kore.Step.Simplification.AndTerms as AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Not as Not
@@ -139,6 +140,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> Equals level (OrOfExpandedPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -146,12 +148,13 @@ simplify
         )
 simplify
     tools
+     substitutionSimplifier
     Equals
         { equalsFirst = first
         , equalsSecond = second
         }
   =
-    simplifyEvaluated tools first second
+    simplifyEvaluated tools substitutionSimplifier first second
 
 simplifyEvaluated
     ::  ( MetaOrObject level
@@ -164,21 +167,23 @@ simplifyEvaluated
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluated tools first second
+simplifyEvaluated tools substitutionSimplifier first second
   | first == second =
     return (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise =
     case ( firstPatterns, secondPatterns )
       of
-        ([firstP], [secondP]) -> makeEvaluate tools firstP secondP
+        ([firstP], [secondP]) ->
+            makeEvaluate tools substitutionSimplifier firstP secondP
         _ ->
             give (MetadataTools.symbolOrAliasSorts tools)
-                $ makeEvaluate tools
+                $ makeEvaluate tools substitutionSimplifier
                     (OrOfExpandedPattern.toExpandedPattern first)
                     (OrOfExpandedPattern.toExpandedPattern second)
   where
@@ -200,12 +205,14 @@ makeEvaluate
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
     tools
+    _
     first@Predicated
         { term = Top_ _ }
     second@Predicated
@@ -218,6 +225,7 @@ makeEvaluate
         return (result, SimplificationProof)
 makeEvaluate
     tools
+    substitutionSimplifier
     Predicated
         { term = firstTerm
         , predicate = PredicateTrue
@@ -230,7 +238,8 @@ makeEvaluate
         }
   = do
     (result, _proof) <-
-        makeEvaluateTermsToPredicateSubstitution tools firstTerm secondTerm
+        makeEvaluateTermsToPredicateSubstitution
+            tools substitutionSimplifier firstTerm secondTerm
     case result of
         PredicateSubstitution {predicate = PredicateFalse} ->
             return (OrOfExpandedPattern.make [], SimplificationProof)
@@ -247,6 +256,7 @@ makeEvaluate
                 )
 makeEvaluate
     tools
+    substitutionSimplifier
     first@Predicated
         { term = firstTerm }
     second@Predicated
@@ -270,12 +280,15 @@ makeEvaluate
         (secondCeilNegation, _proof4) =
             give symbolOrAliasSorts $ Not.simplifyEvaluated secondCeil
     (termEquality, _proof) <-
-        makeEvaluateTermsAssumesNoBottom tools firstTerm secondTerm
+        makeEvaluateTermsAssumesNoBottom
+            tools substitutionSimplifier firstTerm secondTerm
     (negationAnd, _proof) <-
-        And.simplifyEvaluated tools firstCeilNegation secondCeilNegation
-    (ceilAnd, _proof) <- And.simplifyEvaluated tools firstCeil secondCeil
+        And.simplifyEvaluated
+            tools substitutionSimplifier firstCeilNegation secondCeilNegation
+    (ceilAnd, _proof) <-
+        And.simplifyEvaluated tools substitutionSimplifier firstCeil secondCeil
     (equalityAnd, _proof) <-
-        And.simplifyEvaluated tools termEquality ceilAnd
+        And.simplifyEvaluated tools substitutionSimplifier termEquality ceilAnd
     let
         (finalOr, _proof) =
             give symbolOrAliasSorts $ Or.simplifyEvaluated equalityAnd negationAnd
@@ -297,12 +310,14 @@ makeEvaluateTermsAssumesNoBottom
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottom
     tools
+    substitutionSimplifier
     firstTerm
     secondTerm
   =
@@ -319,7 +334,9 @@ makeEvaluateTermsAssumesNoBottom
             , SimplificationProof
             )
         )
-        (makeEvaluateTermsAssumesNoBottomMaybe tools firstTerm secondTerm)
+        (makeEvaluateTermsAssumesNoBottomMaybe
+            tools substitutionSimplifier firstTerm secondTerm
+        )
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
@@ -334,15 +351,17 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> Maybe
         (Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
         )
-makeEvaluateTermsAssumesNoBottomMaybe tools first second =
+makeEvaluateTermsAssumesNoBottomMaybe tools substitutionSimplifier first second
+  =
     give tools $ do  -- Maybe monad
-        result <- AndTerms.termEquals tools first second
+        result <- AndTerms.termEquals tools substitutionSimplifier first second
         return $ do -- Simplifier monad
             (PredicateSubstitution {predicate, substitution}, _proof) <- result
             return
@@ -378,18 +397,20 @@ makeEvaluateTermsToPredicateSubstitution
         , MonadCounter m
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> m
         (PredicateSubstitution level variable, SimplificationProof level)
-makeEvaluateTermsToPredicateSubstitution tools first second
+makeEvaluateTermsToPredicateSubstitution
+    tools substitutionSimplifier first second
   | first == second =
     return
         ( PredicateSubstitution.top
         , SimplificationProof
         )
   | otherwise = give symbolOrAliasSorts $
-    case AndTerms.termEquals tools first second of
+    case AndTerms.termEquals tools substitutionSimplifier first second of
         Nothing -> return
             ( PredicateSubstitution
                 { predicate = makeEqualsPredicate first second

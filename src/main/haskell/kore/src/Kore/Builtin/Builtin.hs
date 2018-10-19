@@ -606,7 +606,7 @@ functionEvaluator impl =
     evaluator
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PredicateSubstitutionSimplifier level
+        -> PredicateSubstitutionSimplifier level Simplifier
         -> PureMLPatternSimplifier Object variable
         -> Application Object (PureMLPattern Object variable)
         -> Simplifier

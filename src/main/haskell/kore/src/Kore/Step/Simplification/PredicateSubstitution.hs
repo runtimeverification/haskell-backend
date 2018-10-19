@@ -62,7 +62,7 @@ create
             )
         => PureMLPatternSimplifier level variable0
         )
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
 create tools simplifier =
     PredicateSubstitutionSimplifier
         (simplify tools simplifier)
@@ -106,7 +106,7 @@ simplify
 simplify
     tools
     simplifier
-    PredicateSubstitution { predicate, substitution }
+    initialValue@PredicateSubstitution { predicate, substitution }
   = do  -- MonadCounter m
     let
         unifiedSubstitution =
@@ -116,35 +116,46 @@ simplify
         traverse
             (`substitute` unifiedSubstitution)
             predicate
-    (   PredicateSubstitution
-            { predicate = simplifiedPredicate
-            , substitution = simplifiedSubstitution
-            }
-        , _proof
-        ) <-
-            Predicate.simplifyPartial
-                (PredicateSubstitutionSimplifier
-                    (simplify tools simplifier)
-                )
-                simplifier
-                substitutedPredicate
-
-    if null simplifiedSubstitution
-        then return
-            ( PredicateSubstitution
-                { predicate = simplifiedPredicate
-                , substitution
-                }
-            , SimplificationProof
-            )
+    if substitutedPredicate == predicate
+        then return (initialValue, SimplificationProof)
         else do
-            assertDistinctVariables (substitution ++ simplifiedSubstitution)
-            (mergedPredicateSubstitution, _proof) <-
-                mergePredicatesAndSubstitutions
-                    tools
-                    [simplifiedPredicate]
-                    [substitution, simplifiedSubstitution]
-            simplify tools simplifier mergedPredicateSubstitution
+            (   PredicateSubstitution
+                    { predicate = simplifiedPredicate
+                    , substitution = simplifiedSubstitution
+                    }
+                , _proof
+                ) <-
+                    Predicate.simplifyPartial
+                        substitutionSimplifier
+                        simplifier
+                        substitutedPredicate
+
+            if null simplifiedSubstitution
+                then return
+                    ( PredicateSubstitution
+                        { predicate = simplifiedPredicate
+                        , substitution
+                        }
+                    , SimplificationProof
+                    )
+                else do
+                    -- TODO(virgil): Optimize. Since both substitution and
+                    -- simplifiedSubstitution have distinct variables, it is
+                    -- enough to check that, say, simplifiedSubstitution's
+                    -- variables are not among substitution's variables.
+                    assertDistinctVariables
+                        (substitution ++ simplifiedSubstitution)
+                    (mergedPredicateSubstitution, _proof) <-
+                        mergePredicatesAndSubstitutions
+                            tools
+                            substitutionSimplifier
+                            [simplifiedPredicate]
+                            [substitution, simplifiedSubstitution]
+                    return (mergedPredicateSubstitution, SimplificationProof)
+  where
+    substitutionSimplifier =
+        PredicateSubstitutionSimplifier
+            (simplify tools simplifier)
 
 assertDistinctVariables
     :: forall level variable

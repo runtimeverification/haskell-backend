@@ -21,7 +21,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -118,6 +118,38 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                                 )
                             )
                             mkTop
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "map-like simplification"
+        (assertEqualWithExplanation ""
+            (OrOfExpandedPattern.make
+                [ Predicated
+                    { term = mkTop
+                    , predicate = makeCeilPredicate
+                        (mkAnd
+                            (Mock.plain10 Mock.cf)
+                            (Mock.plain10 (mkVar Mock.x))
+                        )
+                    , substitution = [(Mock.y, Mock.b)]
+                    }
+                ])
+            (evaluate
+                mockMetadataTools
+                Predicated
+                    { term = mkCeil
+                        (mkAnd
+                            (Mock.constr20
+                                (Mock.plain10 Mock.cf)
+                                Mock.b
+                            )
+                            (Mock.constr20
+                                (Mock.plain10 (mkVar Mock.x))
+                                (mkVar Mock.y)
+                            )
+                        )
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
