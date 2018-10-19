@@ -30,6 +30,8 @@ import Control.DeepSeq
        ( NFData )
 import Data.Proxy
        ( Proxy (Proxy) )
+import Data.Typeable
+       ( Typeable )
 import GHC.Generics
        ( Generic )
 
@@ -57,9 +59,7 @@ instance Show (IsMetaOrObject s) where
 * @ isObject Object && not (isMeta Object) @
 * @ not (isObject Meta) && isMeta Meta @
 -}
-class (Show level, Ord level, Eq level)
-    => MetaOrObject level
-  where
+class (Ord level, Show level, Typeable level) => MetaOrObject level where
     isMetaOrObject :: proxy level -> IsMetaOrObject level
     isObject :: level -> Bool
     isObject l = case isMetaOrObject (toProxy l) of IsObject -> True; _ -> False
