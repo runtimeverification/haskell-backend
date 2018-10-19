@@ -22,8 +22,16 @@ Use 'displayPrettyException' to decode a possible 'PrettyException' and display
 it nicely.
 
  -}
-data PrettyException = PrettyException !(Doc ())
-    deriving (Show, Typeable)
+data PrettyException =
+    forall e. (Pretty e, Exception e) =>
+    PrettyException e
+    deriving (Typeable)
+
+instance Pretty PrettyException where
+    pretty (PrettyException e) = pretty e
+
+instance Show PrettyException where
+    show = show . pretty
 
 instance Exception PrettyException
 
@@ -35,11 +43,9 @@ If the provided 'SomeException' is not a 'PrettyException', it will be rethrown.
 displayPrettyException :: SomeException -> IO ()
 displayPrettyException exn =
     case Exception.fromException exn of
-        Just (PrettyException doc) ->
-            Render.hPutDoc stderr (withTrailingNewline doc)
+        Just (PrettyException e) ->
+            Render.hPutDoc stderr
+                -- Ensure that the message has a trailing newline.
+                (pretty e <> hardline)
         Nothing ->
             Exception.throwIO exn
-  where
-    withTrailingNewline doc =
-        -- Ensure that the message has a trailing newline.
-        doc <> hardline

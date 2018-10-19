@@ -1,18 +1,18 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Step.Error
     ( StepError (..)
-    , MissingAxiomVariables (..)
+    , MissingAxiomVariables
+    , missingAxiomVariables
     , mapStepErrorVariables
     , stepErrorVariables
     , unificationToStepError
     , unificationOrSubstitutionToStepError
-    , convertCommonExceptions
     ) where
 
-import           Control.Monad.Catch
-                 ( Exception (..), MonadCatch, MonadThrow, SomeException )
-import qualified Control.Monad.Catch as Monad.Catch
 import           Data.Bifunctor
                  ( first )
+import           Data.Dynamic
 import           Data.Foldable
                  ( asum )
 import           Data.Maybe
@@ -21,9 +21,9 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
-import           Data.Typeable
 
 import Control.Exception.Pretty
+import Control.Exception.TH
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Unification.Error
@@ -76,44 +76,64 @@ unificationOrSubstitutionToStepError (Left (SubstitutionError err)) =
     Left $ StepErrorSubstitution err
 unificationOrSubstitutionToStepError (Right res) = Right res
 
-data MissingAxiomVariables level variable =
-    MissingAxiomVariables !(Set (variable level))
+{- | An exception to be thrown if axiom variables are not instantiated.
+
+The constructor is not exported; use 'missingAxiomVariables' instead.
+
+ -}
+data MissingAxiomVariables = MissingAxiomVariables !Dynamic
     deriving (Typeable)
 
-instance Show (MissingAxiomVariables level variable) where
-    show _ =
-        "Uncaught exception: Variables from the left-hand side of the axiom \
-        \are missing from the substitution!"
+instance Show MissingAxiomVariables where
+    show = show . pretty
 
--- | @displayException@ is unhelpful, but this error is handled elsewhere.
-instance
-    (Typeable level, Typeable variable) =>
-    Exception (MissingAxiomVariables level variable)
+mkException 'PrettyException ''MissingAxiomVariables
 
-instance
-    Unparse (variable level) =>
-    Pretty (MissingAxiomVariables level variable)
-  where
-    pretty (MissingAxiomVariables missing) =
-        (hang 4 . vsep) (message : map unparse (Set.toList missing))
+instance Pretty MissingAxiomVariables where
+    pretty (MissingAxiomVariables dyn) =
+        (fromMaybe fallback . asum)
+            -- Try to get the set of missing variables in one of the known
+            -- variable types. The Unparse instance for the variable type is
+            -- resolved *here*, instead of where the exception is constructed.
+            -- When a new variable type is added, it must be added to this list,
+            -- but that should happen very rarely.
+            [ fromDynamic dyn >>= prettyObjectVariable
+            , fromDynamic dyn >>= prettyMetaVariable
+            ]
       where
+        -- If the variable type cannot be resolved, at least show the type.
+        fallback =
+            vsep
+                [   "Variables from the left-hand side of the axiom \
+                    \are missing from the substitution!"
+                ,   "The variable list is unavailable; \
+                    \please report this as a bug."
+                , "missing :: " <> (pretty . show) dyn
+                ]
+
+        message :: Doc ann
         message = "These axiom variables are missing from the substitution:"
 
-convertCommonExceptions :: (MonadCatch m, MonadThrow m) => m a -> m a
-convertCommonExceptions go =
-    Monad.Catch.catchAll go rethrows
-  where
-    rethrows e =
-        Monad.Catch.throwM $ fromMaybe e $ convertCases e
+        prettyVariable :: Set (Variable level) -> Maybe (Doc ann)
+        prettyVariable missing =
+            (return . hang 4 . vsep)
+                (message : map unparse (Set.toList missing))
 
-    convertCases :: SomeException -> Maybe SomeException
-    convertCases e =
-        asum
-            [ fromException e >>= convertCommonMissingAxiomVariables
-            ]
+        prettyObjectVariable :: Set (Variable Object) -> Maybe (Doc ann)
+        prettyObjectVariable = prettyVariable
 
-    convertCommonMissingAxiomVariables
-        :: MissingAxiomVariables Object Variable
-        -> Maybe SomeException
-    convertCommonMissingAxiomVariables e =
-        Just (toException (PrettyException (pretty e)))
+        prettyMetaVariable :: Set (Variable Meta) -> Maybe (Doc ann)
+        prettyMetaVariable = prettyVariable
+
+{- | Construct a 'MissingAxiomVariables' exception.
+
+For the error message to be useful, the @variable@ type should be included in
+the 'Pretty' instance of 'MissingAxiomVariables'. Update that instance when
+adding a new variable type.
+
+ -}
+missingAxiomVariables
+    :: (Typeable level, Typeable variable)
+    => Set (variable level)
+    -> MissingAxiomVariables
+missingAxiomVariables = MissingAxiomVariables . toDyn

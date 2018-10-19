@@ -437,7 +437,7 @@ stepWithAxiom'
             -- All variables are covered.
             return ()
         | otherwise =
-            Monad.Catch.throwM (MissingAxiomVariables uncovered)
+            Monad.Catch.throwM (missingAxiomVariables uncovered)
       where
         uncovered = Set.difference variables substituted
 

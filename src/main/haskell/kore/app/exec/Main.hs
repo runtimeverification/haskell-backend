@@ -57,8 +57,6 @@ import           Kore.Predicate.Predicate
 import           Kore.SMT.Config
 import           Kore.Step.AxiomPatterns
                  ( AxiomPattern (..), koreIndexedModuleToAxiomPatterns )
-import           Kore.Step.Error
-                 ( convertCommonExceptions )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -283,7 +281,6 @@ main = do
             execResult <-
                 clockSomething "Executing"
                     $ evalSimplifierWithTimeout smtTimeOut
-                    $ convertCommonExceptions
                     $ do
                         functionAxiomPatterns <-
                             mapM (mapM (preSimplify prePatternSimplifier))
