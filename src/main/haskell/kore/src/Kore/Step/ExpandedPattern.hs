@@ -31,6 +31,7 @@ import           Data.Monoid
 import           Data.Reflection
                  ( Given )
 import qualified Data.Set as Set
+import           Data.Text.Prettyprint.Doc
 
 import           Kore.AST.Common
                  ( PureMLPattern, SortedVariable, Variable )
@@ -51,6 +52,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( CommonPredicateSubstitution, PredicateSubstitution (..) )
 import           Kore.Unification.Data
+import           Kore.Unparser
 import           Kore.Variables.Free
                  ( pureAllVariables )
 
@@ -92,6 +94,29 @@ instance
         where
             Predicated f predicate1 substitution1 = a
             Predicated x predicate2 substitution2 = b
+
+instance (Unparse (variable level), Unparse a) => Pretty (Predicated level variable a) where
+    pretty Predicated { term, predicate, substitution } =
+        unparseAnd
+            "_"
+            prettyTerm
+            (unparseAnd
+                "_"
+                prettyPredicate
+                prettySubstitution)
+      where
+        prettyTerm =
+            (group . align . vsep) [ "/* term */", unparse term ]
+        prettyPredicate =
+            (group . align . vsep) [ "/* predicate */", unparse (unwrapPredicate predicate) ]
+        prettySubstitution =
+            (group . align . vsep)
+                [ "/* substitution */"
+                , foldr unparseSubst (unparseTop "_") substitution
+                ]
+          where
+            unparseSubst (x, phi) =
+                unparseAnd "_" (unparseEquals "_" "_" (unparse x) (unparse phi))
 
 -- The monad instance for `Predicated` is intentionally omitted.
 -- It's not needed for anything, and has bad performance properties.
