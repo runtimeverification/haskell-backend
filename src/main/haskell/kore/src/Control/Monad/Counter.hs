@@ -25,6 +25,9 @@ module Control.Monad.Counter
     , runCounterT, evalCounterT
     ) where
 
+import           Control.Monad.Catch
+                 ( MonadCatch, MonadThrow )
+import qualified Control.Monad.Catch as Monad.Catch
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Identity as Monad.Identity
 import qualified Control.Monad.Reader as Monad.Reader
@@ -188,6 +191,15 @@ instance Monad m => MonadCounter (CounterT m)
 
 instance MonadTrans CounterT where
     lift m = CounterT (Monad.Trans.lift m)
+
+instance MonadThrow m => MonadThrow (CounterT m) where
+    throwM e = CounterT (Monad.Catch.throwM e)
+
+instance MonadCatch m => MonadCatch (CounterT m) where
+    catch (CounterT m) handler =
+        CounterT (Monad.Catch.catch m handler')
+      where
+        handler' e = case handler e of CounterT m' -> m'
 
 {- | Run a computation using a monotonic counter.
 
