@@ -22,6 +22,7 @@ import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
                  long, metavar, option, progDesc, readerError, str, strOption,
                  value )
+import           System.Exit
 
 import           Control.Exception.Pretty
 import           Kore.AST.Common
@@ -344,7 +345,9 @@ main = do
                             stepLimit
                             (initialPattern, mempty)
             case execResult of
-                Left exn -> displayPrettyException exn
+                Left exn -> do
+                    displayPrettyException exn
+                    exitFailure
                 Right (finalExpandedPattern, _) -> do
                     let
                         finalPattern = ExpandedPattern.term finalExpandedPattern
