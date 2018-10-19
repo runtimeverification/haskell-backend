@@ -385,11 +385,13 @@ main = do
                                             (strategy rewriteAxioms)
                                         )
                                         (pat, mempty)
-                                match =
+                                match target (config, _proof) =
                                     Search.matchWith
                                         metadataTools
                                         substitutionSimplifier
                                         simplifier
+                                        target
+                                        config
                                 runningPattern =
                                     if isKProgram
                                         then give (symbolOrAliasSorts metadataTools)
@@ -409,15 +411,15 @@ main = do
                                             (fst simplifiedPatterns) of
                                         [] -> ExpandedPattern.bottom
                                         (config : _) -> config
+                            executionTree <- runStrategy' initialPattern
                             solutions <-
                                 search
                                     Search.Config
                                         { bound = boundLimit
                                         , searchType = sType
                                         }
-                                    runStrategy'
                                     (match searchPattern)
-                                    initialPattern
+                                    executionTree
                             let
                                 (orPredicate, _proof) =
                                     give (symbolOrAliasSorts metadataTools)

@@ -88,10 +88,12 @@ data Config =
 
 {- | Construct a list of solutions to the execution search problem.
 
-The execution strategy generates a tree of reachable states (see
-'Kore.Step.Strategy.runStrategy'). The matching criterion returns a substitution
-which takes its argument to the search goal (see 'matchWith'). The 'searchType'
-is used to restrict which states may be considered for matching.
+The execution tree can be generated with 'Kore.Step.Strategy.runStrategy' or any
+of the related functions in "Kore.Step.Step".
+
+The matching criterion returns a substitution which takes its argument to the
+search goal (see 'matchWith'). The 'searchType' is used to restrict which states
+may be considered for matching.
 
 @search@ returns a list of substitutions which take the initial configuration to
 the goal defined by the matching criterion. The number of solutions returned is
@@ -102,15 +104,13 @@ See also: 'Kore.Step.Strategy.runStrategy', 'matchWith'
 -}
 search
     :: Config  -- ^ Search options
-    -> (config -> Simplifier (Tree (config, proof)))
-        -- ^ Execution strategy
     -> (config -> MaybeT Simplifier substitution)
         -- ^ Matching criterion
-    -> config  -- ^ Initial configuration
+    -> Tree config
+        -- ^ Execution tree
     -> Simplifier [substitution]
-search Config { searchType, bound } strategy match initialPattern = do
-    executionTree <- strategy initialPattern
-    let selectedConfigs = fst <$> pick executionTree
+search Config { searchType, bound } match executionTree = do
+    let selectedConfigs = pick executionTree
     matches <- catMaybes <$> traverse (runMaybeT . match) selectedConfigs
     return (Limit.takeWithin bound matches)
   where
