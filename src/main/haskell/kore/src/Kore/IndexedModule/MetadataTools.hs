@@ -19,6 +19,9 @@ import           Data.Graph
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -40,6 +43,8 @@ data MetadataTools level attributes = MetadataTools
     , isSubsortOf :: Sort level -> Sort level -> Bool
     {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
        including when @a@ equals @b@. -}
+    , subsorts :: Sort level -> Set (Sort Object)
+    -- ^ gets the subsorts for a sort
     }
   deriving Functor
 
@@ -51,7 +56,8 @@ type SymbolOrAliasSorts level = SymbolOrAlias level -> ApplicationSorts level
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::forall level atts . MetaOrObject level
+    :: forall level atts
+    .  MetaOrObject level
     => KoreIndexedModule atts
     -> MetadataTools level atts
 extractMetadataTools m =
@@ -60,20 +66,36 @@ extractMetadataTools m =
     , sortAttributes = getSortAttributes m
     , symbolOrAliasSorts  = getHeadApplicationSorts m
     , isSubsortOf = checkSubsort
+    , subsorts = \s ->
+        Set.fromList $ getSortFromId <$> (reachable' s)
     }
   where
+    subsortTable :: Map (Sort Object) [Sort Object]
+    subsortTable = Map.unionsWith (++)
+        [ Map.insert subsort [] $ Map.singleton supersort [subsort]
+        | Subsort subsort supersort <- indexedModuleSubsorts m]
+
+    (sortGraph, nodeFromVertex, getSortId) =
+        graphFromEdges [ ((),supersort,subsorts)
+                        | (supersort,subsorts)
+                            <- Map.toList subsortTable]
+
+    reversedGraph = transposeG sortGraph
+
+    getSortFromId id =
+        let (_, sort, _) = nodeFromVertex id
+        in sort
+
+    reachable' = case isMetaOrObject @level [] of
+        IsMeta -> const []
+        IsObject ->
+            maybe [] (reachable reversedGraph) . getSortId
+
+    checkSubsort :: Sort level -> Sort level -> Bool
     checkSubsort = case isMetaOrObject @level [] of
         IsMeta -> (==)
         IsObject ->
             let
-                subsortTable :: Map (Sort Object) [Sort Object]
-                subsortTable = Map.unionsWith (++)
-                   [ Map.insert subsort [] $ Map.singleton supersort [subsort]
-                   | Subsort subsort supersort <- indexedModuleSubsorts m]
-                (sortGraph, _, getSortId) =
-                    graphFromEdges [ ((),supersort,subsorts)
-                                   | (supersort,subsorts)
-                                     <- Map.toList subsortTable]
                 realCheckSubsort subsort supersort
                     | Just subId <- getSortId subsort
                     , Just supId <- getSortId supersort =

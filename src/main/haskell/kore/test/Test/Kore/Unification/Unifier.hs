@@ -25,6 +25,7 @@ import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
                  ( give )
+import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
@@ -238,6 +239,7 @@ tools = MetadataTools
     , sortAttributes = undefined
     , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
+    , subsorts = const Set.empty
     }
 
 unificationProblem

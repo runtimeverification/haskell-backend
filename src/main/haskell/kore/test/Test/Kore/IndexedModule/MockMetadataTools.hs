@@ -10,10 +10,11 @@ module Test.Kore.IndexedModule.MockMetadataTools
     , sortInjectionAttributes
     ) where
 
-import Data.Default
-       ( def )
-import Data.Maybe
-       ( fromMaybe )
+import           Data.Default
+                 ( def )
+import           Data.Maybe
+                 ( fromMaybe )
+import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( Sort, SymbolOrAlias (..) )
@@ -39,6 +40,7 @@ makeMetadataTools symbolOrAliasSorts attr isSubsortOf =
         , sortAttributes = const functionAttributes
         , symbolOrAliasSorts = symbolOrAliasSorts
         , isSubsortOf = \first second -> (first, second) `elem` isSubsortOf
+        , subsorts = const Set.empty
         }
 
 makeSymbolOrAliasSorts
