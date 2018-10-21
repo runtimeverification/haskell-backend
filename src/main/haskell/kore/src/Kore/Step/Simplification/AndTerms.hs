@@ -732,8 +732,9 @@ sortInjectionAndEqualsAssumesDifferentHeads
         else if isConstructorLikeTop tools (project firstChild)
              || isConstructorLikeTop tools (project secondChild)
             then return (return (ExpandedPattern.bottom, SimplificationProof))
-            else
-                empty
+            else empty
+                -- intersect the two lhs sub-sorts; if it's empty then bottom, else error
+                -- return (return (ExpandedPattern.bottom, SimplificationProof))
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools secondHead
@@ -766,6 +767,14 @@ sortInjectionAndEqualsAssumesDifferentHeads
                     , symbolOrAliasParams = [originSort, destinationSort]
                     }
                 [term]
+    f :: (a -> Bool) -> (a -> Bool) -> [a] -> ([a], [a])
+    f _ [] = ([], [])
+    f g h (x:xs) =
+        let (left, right) = f g h xs
+        in (if g x then x : left else left, if h x then x : right else right)
+    (firstSortSubsorts, secondSortSubsorts) =
+        f (isSubsortOf first) (isSubsortOf second)
+
 
 sortInjectionAndEqualsAssumesDifferentHeads _ _ _ _ = empty
 

@@ -16,6 +16,8 @@ module Kore.IndexedModule.MetadataTools
     ) where
 
 import           Data.Graph
+import           Data.Map.Strict
+                 ( Map )
 import qualified Data.Map.Strict as Map
 
 import Kore.AST.Common
@@ -63,7 +65,9 @@ extractMetadataTools m =
     checkSubsort = case isMetaOrObject @level [] of
         IsMeta -> (==)
         IsObject ->
-            let subsortTable = Map.unionsWith (++)
+            let
+                subsortTable :: Map (Sort Object) [Sort Object]
+                subsortTable = Map.unionsWith (++)
                    [ Map.insert subsort [] $ Map.singleton supersort [subsort]
                    | Subsort subsort supersort <- indexedModuleSubsorts m]
                 (sortGraph, _, getSortId) =
