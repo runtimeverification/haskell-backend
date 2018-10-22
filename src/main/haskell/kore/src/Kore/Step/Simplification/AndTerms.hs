@@ -733,10 +733,14 @@ sortInjectionAndEqualsAssumesDifferentHeads
         else if isConstructorLikeTop tools (project firstChild)
              || isConstructorLikeTop tools (project secondChild)
             then return (return (ExpandedPattern.bottom, SimplificationProof))
-            else if Set.disjoint firstSubsorts secondSubsorts
+            else if Set.null sortIntersection
                 then
                     return (return (ExpandedPattern.bottom, SimplificationProof))
-                else error "blah"
+                else error
+                   ( "Sort" ++ show firstOrigin
+                   ++ "\n and sort " ++ show secondOrigin
+                   ++ "\n have common subsorts: " ++ show sortIntersection
+                   )
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools secondHead
@@ -772,6 +776,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
                 [term]
     firstSubsorts = subsorts firstOrigin
     secondSubsorts = subsorts secondOrigin
+    sortIntersection = Set.intersection firstSubsorts secondSubsorts
 
 
 sortInjectionAndEqualsAssumesDifferentHeads _ _ _ _ = empty

@@ -5,10 +5,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Default
-       ( def )
-import Data.List
-       ( sort )
+import           Data.Default
+                 ( def )
+import           Data.List
+                 ( sort )
+import qualified Data.Set as Set
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
@@ -287,6 +288,7 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const Mock.constructorFunctionalAttributes
     , symbolOrAliasSorts  = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
+    , subsorts = const Set.empty
     }
 
 x :: MetaSort sort => sort -> MetaVariable sort
