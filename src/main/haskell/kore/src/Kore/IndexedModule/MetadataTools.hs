@@ -66,8 +66,7 @@ extractMetadataTools m =
     , sortAttributes = getSortAttributes m
     , symbolOrAliasSorts  = getHeadApplicationSorts m
     , isSubsortOf = checkSubsort
-    , subsorts = \s ->
-        Set.fromList $ getSortFromId <$> (reachable' s)
+    , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
     }
   where
     subsortTable :: Map (Sort Object) [Sort Object]
@@ -75,21 +74,23 @@ extractMetadataTools m =
         [ Map.insert subsort [] $ Map.singleton supersort [subsort]
         | Subsort subsort supersort <- indexedModuleSubsorts m]
 
-    (sortGraph, nodeFromVertex, getSortId) =
+    -- In `sortGraph`, and edge (a, b) represents a subsort relationship between
+    -- b and a.
+    (sortGraph, vertexToSort, sortToVertex) =
         graphFromEdges [ ((),supersort,subsorts)
                         | (supersort,subsorts)
                             <- Map.toList subsortTable]
 
-    reversedGraph = transposeG sortGraph
-
-    getSortFromId id =
-        let (_, sort, _) = nodeFromVertex id
+    getSortFromId :: Vertex -> Sort Object
+    getSortFromId sortId =
+        let (_, sort, _) = vertexToSort sortId
         in sort
 
-    reachable' = case isMetaOrObject @level [] of
+    getSubsorts :: Sort level -> [Vertex]
+    getSubsorts = case isMetaOrObject @level [] of
         IsMeta -> const []
         IsObject ->
-            maybe [] (reachable reversedGraph) . getSortId
+            maybe [] (reachable sortGraph) . sortToVertex
 
     checkSubsort :: Sort level -> Sort level -> Bool
     checkSubsort = case isMetaOrObject @level [] of
@@ -97,8 +98,8 @@ extractMetadataTools m =
         IsObject ->
             let
                 realCheckSubsort subsort supersort
-                    | Just subId <- getSortId subsort
-                    , Just supId <- getSortId supersort =
+                    | Just subId <- sortToVertex subsort
+                    , Just supId <- sortToVertex supersort =
                           path sortGraph supId subId
                 realCheckSubsort _ _ = False
             in realCheckSubsort
