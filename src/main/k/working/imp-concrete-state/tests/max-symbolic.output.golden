@@ -1,0 +1,15 @@
+<generatedTop>
+  <T>
+    <k>
+      .
+    </k>
+    <state>
+      x |-> var2066 y |-> var2746 z |-> var3429 max |-> var3429 .State
+    </state>
+  </T>
+  <generatedCounter>
+    0
+  </generatedCounter>
+</generatedTop> #And
+true ==K var2066 <=Int var2746 #And
+true ==K var2746 <=Int var3429

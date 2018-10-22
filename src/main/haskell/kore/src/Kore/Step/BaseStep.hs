@@ -370,13 +370,6 @@ stepWithAxiom'
         substitutions =
             Set.fromList . mapMaybe (toVariable . fst) $ normalizedSubstitution
 
-    -- if condition == Predicate.makeTruePredicate || Predicate.isFalse condition
-    --     then return ()
-    --     else error
-    --         ( "non-top predicate"
-    --           ++ show condition
-    --         )
-
     if Predicate.isFalse condition
        || variablesInLeftAxiom `Set.isSubsetOf` substitutions
         then return ()

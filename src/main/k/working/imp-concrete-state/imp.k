@@ -4,20 +4,20 @@ module IMP-SYNTAX
   imports DOMAINS-SYNTAX
   syntax AExp  ::= Int | Id
                  | "-" Int
-                 | AExp "/" AExp              [left]
-                 > AExp "+" AExp              [left]
+                 | AExp "/" AExp              [left, seqstrict]
+                 > AExp "+" AExp              [left, seqstrict]
                  | "(" AExp ")"               [bracket]
   syntax BExp  ::= Bool
-                 | AExp "<=" AExp             [latex({#1}\leq{#2})]
-                 | "!" BExp                   
-                 > BExp "&&" BExp             [left]
+                 | AExp "<=" AExp             [seqstrict, latex({#1}\leq{#2})]
+                 | "!" BExp                   [strict]
+                 > BExp "&&" BExp             [left, strict(1)]
                  | "(" BExp ")"               [bracket]
   syntax Block ::= "{" "}"
                  | "{" Stmt "}"
   syntax Stmt  ::= Block
-                 | Id "=" AExp ";"            
+                 | Id "=" AExp ";"            [strict(2)]
                  | "if" "(" BExp ")"
-                   Block "else" Block         
+                   Block "else" Block         [strict(1)]
                  | "while" "(" BExp ")" Block
                  > Stmt Stmt                  [left]
   syntax Pgm ::= "int" Ids ";" Stmt
