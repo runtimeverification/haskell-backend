@@ -97,8 +97,21 @@ axiomToIdAxiomPatternPair
         Left _ -> Nothing
         Right (FunctionAxiomPattern axiomPat) ->
             case fromPurePattern (axiomPatternLeft axiomPat) of
-                ApplicationPattern Application {applicationSymbolOrAlias = s} ->
-                    return (symbolOrAliasConstructor s, axiomPat)
+                ApplicationPattern Application { applicationSymbolOrAlias } ->
+                    case symbolOrAliasParams of
+                        [] -> return (symbolOrAliasConstructor, axiomPat)
+                        _ ->
+                            -- TODO (thomas.tuegel): Handle matching for
+                            -- parameterized symbols, then enable extraction of
+                            -- their axioms.
+                            Nothing
+                  where
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor
+                        , symbolOrAliasParams
+                        }
+                      =
+                        applicationSymbolOrAlias
                 _ -> Nothing
         Right (RewriteAxiomPattern _) -> Nothing
 
