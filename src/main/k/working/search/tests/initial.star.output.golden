@@ -1,0 +1,54 @@
+    Result
+  #Equals
+    <generatedTop>
+      <k>
+        final1
+      </k>
+      <generatedCounter>
+        0
+      </generatedCounter>
+    </generatedTop>
+#Or
+    Result
+  #Equals
+    <generatedTop>
+      <k>
+        final2
+      </k>
+      <generatedCounter>
+        0
+      </generatedCounter>
+    </generatedTop>
+#Or
+    Result
+  #Equals
+    <generatedTop>
+      <k>
+        initial
+      </k>
+      <generatedCounter>
+        0
+      </generatedCounter>
+    </generatedTop>
+#Or
+    Result
+  #Equals
+    <generatedTop>
+      <k>
+        next1
+      </k>
+      <generatedCounter>
+        0
+      </generatedCounter>
+    </generatedTop>
+#Or
+    Result
+  #Equals
+    <generatedTop>
+      <k>
+        next2
+      </k>
+      <generatedCounter>
+        0
+      </generatedCounter>
+    </generatedTop>

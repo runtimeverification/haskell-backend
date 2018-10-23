@@ -1,5 +1,8 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Test.Kore.Step.Strategy where
 
+import Test.QuickCheck.Instances ()
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -7,10 +10,13 @@ import Test.Tasty.QuickCheck
 import Data.Functor.Identity
 import Numeric.Natural
 import Prelude hiding
-       ( and, or )
+       ( and, const, or, seq )
 
+import           Data.Limit
+                 ( Limit (..) )
+import qualified Data.Limit as Limit
 import           Kore.Step.Strategy
-                 ( Limit (..), Strategy, Tree (..) )
+                 ( Strategy, Tree (..) )
 import qualified Kore.Step.Strategy as Strategy
 
 data Prim
@@ -19,6 +25,42 @@ data Prim
     | Throw
     deriving (Eq, Show)
 
+instance Arbitrary Prim where
+    arbitrary = do
+        c <- Const <$> arbitrary
+        elements [c, Succ, Throw]
+
+    shrink = \case
+        Const n -> Const <$> shrink n
+        Succ -> []
+        Throw -> []
+
+instance Arbitrary prim => Arbitrary (Strategy prim) where
+    arbitrary = do
+        s <- Strategy.seq <$> arbitrary <*> arbitrary
+        a <- Strategy.and <$> arbitrary <*> arbitrary
+        o <- Strategy.or <$> arbitrary <*> arbitrary
+        p <- Strategy.apply <$> arbitrary
+        elements [s, a, o, p, Strategy.stuck, Strategy.continue]
+
+    shrink =
+        \case
+            Strategy.Seq a b ->
+                [a, b]
+                ++ (Strategy.Seq <$> shrink a <*> pure b)
+                ++ (Strategy.Seq <$> pure a <*> shrink b)
+            Strategy.And a b ->
+                [a, b]
+                ++ (Strategy.And <$> shrink a <*> pure b)
+                ++ (Strategy.And <$> pure a <*> shrink b)
+            Strategy.Or a b ->
+                [a, b]
+                ++ (Strategy.Or <$> shrink a <*> pure b)
+                ++ (Strategy.Or <$> pure a <*> shrink b)
+            Strategy.Apply _ -> []
+            Strategy.Stuck -> []
+            Strategy.Continue -> []
+
 transitionPrim :: Prim -> Natural -> Identity [Natural]
 transitionPrim =
     \case
@@ -26,8 +68,11 @@ transitionPrim =
         Succ -> \n -> pure [succ n]
         Throw -> \_ -> pure []
 
-apply :: Prim -> Strategy Prim -> Strategy Prim
+apply :: Prim -> Strategy Prim
 apply = Strategy.apply
+
+seq :: Strategy Prim -> Strategy Prim -> Strategy Prim
+seq = Strategy.seq
 
 and :: Strategy Prim -> Strategy Prim -> Strategy Prim
 and = Strategy.and
@@ -35,59 +80,103 @@ and = Strategy.and
 or :: Strategy Prim -> Strategy Prim -> Strategy Prim
 or = Strategy.or
 
-many :: (Strategy Prim -> Strategy Prim) -> Strategy Prim -> Strategy Prim
+many :: Strategy Prim -> Strategy Prim
 many = Strategy.many
-
-step :: Strategy Prim -> Strategy Prim
-step = Strategy.step
 
 stuck :: Strategy Prim
 stuck = Strategy.stuck
 
-throw :: Strategy Prim -> Strategy Prim
+continue :: Strategy Prim
+continue = Strategy.continue
+
+throw :: Strategy Prim
 throw = apply Throw
 
+const :: Natural -> Strategy Prim
+const = apply . Const
+
+succ_ :: Strategy Prim
+succ_ = apply Succ
+
+unlimited :: Limit Natural
+unlimited = Unlimited
+
 runStrategy
-    :: Strategy Prim
-    -> Limit Natural
+    :: [Strategy Prim]
     -> Natural
-    -> Tree (Strategy Prim, Natural)
-runStrategy strategy stepLimit z =
+    -> Tree Natural
+runStrategy strategy z =
     let
-        Identity rs = Strategy.runStrategy transitionPrim strategy stepLimit z
+        Identity rs = Strategy.runStrategy transitionPrim strategy z
     in
         rs
+
+prop_SeqContinueIdentity :: Strategy Prim -> Natural -> Property
+prop_SeqContinueIdentity a n =
+    let
+        expect = runStrategy [a] n
+        left = runStrategy [seq continue a] n
+        right = runStrategy [seq a continue] n
+    in
+        (expect === left) .&&. (expect === right)
+
+prop_SeqStuckDominate :: Strategy Prim -> Natural -> Property
+prop_SeqStuckDominate a n =
+    let
+        expect = runStrategy [stuck] n
+        left = runStrategy [seq stuck a] n
+        right = runStrategy [seq a stuck] n
+    in
+        (expect === left) .&&. (expect === right)
+
+prop_AndStuckIdentity :: Strategy Prim -> Natural -> Property
+prop_AndStuckIdentity a n =
+    let
+        expect = runStrategy [a] n
+        left = runStrategy [and stuck a] n
+        right = runStrategy [and a stuck] n
+    in
+        (expect === left) .&&. (expect === right)
+
+prop_OrStuckIdentity :: Strategy Prim -> Natural -> Property
+prop_OrStuckIdentity a n =
+    let
+        expect = runStrategy [a] n
+        left = runStrategy [or stuck a] n
+        right = runStrategy [or a stuck] n
+    in
+        (expect === left) .&&. (expect === right)
+
+prop_Stuck :: Natural -> Property
+prop_Stuck n =
+    let
+        expect = Node n []
+        actual = runStrategy [stuck] n
+    in
+        expect === actual
+
+prop_Continue :: Natural -> Property
+prop_Continue n =
+    let
+        expect = Node n [ Node n [] ]
+        actual = runStrategy [continue] n
+    in
+        expect === actual
 
 test_And :: [TestTree]
 test_And =
     [
         let
-            expect =
-                Node (s0, 0)
-                    [ Node (s1, 0) []
-                    , Node (s2, 0)
-                        [ Node (s3, 1) [] ]
-                    ]
-            s0 = and s1 s2
-            s1 = stuck
-            s2 = apply (Const 1) s3
-            s3 = stuck
-            actual = runStrategy s0 Unlimited 0
+            expect = Node 0 [ Node 1 [] ]
+            strategy = [and stuck (const 1)]
+            actual = runStrategy strategy 0
         in
             testCase "Stuck on left" (expect @=? actual)
     ,
         let
-            expect =
-                Node (s0, 0)
-                    [ Node (s1, 0)
-                        [ Node (s3, 1) [] ]
-                    , Node (s2, 0) []
-                    ]
-            s0 = and s1 s2
-            s1 = apply (Const 1) s3
-            s2 = stuck
-            s3 = stuck
-            actual = runStrategy s0 Unlimited 0
+            expect = Node 0 [ Node 1 [] ]
+            strategy = [and (const 1) stuck]
+            actual = runStrategy strategy 0
         in
             testCase "Stuck on right" (expect @=? actual)
     ]
@@ -96,34 +185,16 @@ test_Or :: [TestTree]
 test_Or =
     [
         let
-            expect =
-                Node (s0, 0)
-                    [ Node (s1, 0)
-                        [ Node (or s2 stuck, 0)
-                            [ Node (s2, 0)
-                                [ Node (s3, 1) [] ]
-                            ]
-                        ]
-                    ]
-            s0 = or s1 s2
-            s1 = throw stuck
-            s2 = apply (Const 1) s3
-            s3 = stuck
-            actual = runStrategy s0 Unlimited 0
+            expect = Node 0 [ Node 1 [] ]
+            strategy = [or throw (const 1)]
+            actual = runStrategy strategy 0
         in
             testCase "Throw on left" (expect @=? actual)
     ,
         let
-            expect =
-                Node (s0, 0)
-                    [ Node (s1, 0)
-                        [ Node (s3, 1) [] ]
-                    ]
-            s0 = or s1 s2
-            s1 = apply (Const 1) s3
-            s2 = throw stuck
-            s3 = stuck
-            actual = runStrategy s0 Unlimited 0
+            expect = Node 0 [ Node 1 [] ]
+            strategy = [or (const 1) throw]
+            actual = runStrategy strategy 0
         in
             testCase "Throw on right" (expect @=? actual)
     ]
@@ -134,18 +205,15 @@ prop_stepLimit i =
   where
     n = fromInteger i
     level m = singleton . Node m
-    [expect] = foldr (\m -> level m . level m . level m) [] [0..n]
-    actual = snd <$> enumerate n
+    [expect] = foldr level [] [0..n]
+    actual = enumerate n
     singleton x = [x]
-
-enumStrategy :: (Strategy Prim -> Strategy Prim) -> Strategy Prim -> Strategy Prim
-enumStrategy each = step . each . apply Succ
 
 -- | Enumerate values from zero to @n@, then get stuck.
 enumerate
     :: Natural  -- ^ @n@
-    -> Tree (Strategy Prim, Natural)
-enumerate n = runStrategy (many (enumStrategy id) stuck) (Limit n) 0
+    -> Tree Natural
+enumerate n = runStrategy (Limit.replicate (Limit n) succ_) 0
 
 prop_pickLongest :: Integer -> Property
 prop_pickLongest i =
@@ -155,16 +223,34 @@ prop_pickLongest i =
     expect = n
     actual = Strategy.pickLongest (enumerate n)
 
--- | Enumerate values from zero to @n@, getting stuck after every result.
-enumerate'
-    :: Natural  -- ^ @n@
-    -> Tree (Strategy Prim, Natural)
-enumerate' n = runStrategy (many (enumStrategy $ and stuck) stuck) (Limit n) 0
-
-prop_pickStuck :: Integer -> Property
-prop_pickStuck i =
+prop_pickFinal :: Integer -> Property
+prop_pickFinal i =
     (i >= 0) ==> (expect === actual)
   where
     n = fromInteger i
+    expect = [n]
+    actual = Strategy.pickFinal (enumerate n)
+
+prop_pickOne :: Integer -> Property
+prop_pickOne i =
+    (i >= 1) ==> (expect == actual)
+  where
+    n = fromInteger i
+    expect = [1]
+    actual = Strategy.pickOne (enumerate n)
+
+prop_pickStar :: Integer -> Property
+prop_pickStar i =
+    (i >= 0) ==> (expect == actual)
+  where
+    n = fromInteger i
     expect = [0..n]
-    actual = Strategy.pickStuck (enumerate' n)
+    actual = Strategy.pickStar (enumerate n)
+
+prop_pickPlus :: Integer -> Property
+prop_pickPlus i =
+    (i >= 1) ==> (expect == actual)
+  where
+    n = fromInteger i
+    expect = [1..n]
+    actual = Strategy.pickPlus (enumerate n)
