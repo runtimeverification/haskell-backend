@@ -107,7 +107,9 @@ matchAsUnification
         )
 matchAsUnification tools first second =
     noteT UnsupportedPatterns
-    $ (,) <$> match tools Map.empty first second <*> return EmptyUnificationProof
+    $ (,)
+    <$> match tools Map.empty first second
+    <*> return EmptyUnificationProof
 
 match
     ::  ( Hashable variable
@@ -321,12 +323,12 @@ matchJoin
     -> [(PureMLPattern level variable, PureMLPattern level variable)]
     -> MaybeT m (PredicateSubstitution level variable)
 matchJoin tools quantifiedVariables patterns = do
-    matchedCounters <-
+    matched <-
         traverse (uncurry $ match tools quantifiedVariables) patterns
     MaybeT $ Just . fst <$> mergePredicatesAndSubstitutions
         tools
-        (map PredicateSubstitution.predicate matchedCounters)
-        (map PredicateSubstitution.substitution matchedCounters)
+        (map PredicateSubstitution.predicate matched)
+        (map PredicateSubstitution.substitution matched)
 
 -- Note that we can't match variables to stuff which can have more than one
 -- value, because if we take the axiom

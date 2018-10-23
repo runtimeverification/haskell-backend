@@ -408,13 +408,7 @@ substitutionToPredicate
     => [(variable level, PureMLPattern level variable)]
     -> Predicate level variable
 substitutionToPredicate =
-    foldl'
-        (\predicate subst ->
-            fst $
-                makeAndPredicate
-                    predicate (singleSubstitutionToPredicate subst)
-        )
-        makeTruePredicate
+    fst . makeMultipleAndPredicate . fmap singleSubstitutionToPredicate
 
 singleSubstitutionToPredicate
     ::  ( MetaOrObject level

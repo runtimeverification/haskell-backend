@@ -19,7 +19,7 @@ module Kore.Step.BaseStep
     , stepProof
     , stepProofSumName
     , stepWithAxiom
-    , stepWithAxiom'
+    , stepWithAxiomForUnifier
     ) where
 
 import qualified Control.Arrow as Arrow
@@ -180,20 +180,20 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Function.Matcher.matchAsUnification' to be used in
--- 'stepWithAxion\''.
+-- 'stepWithAxiomForUnifier'.
 newtype UnificationProcedure level =
     UnificationProcedure
         ( forall variable m
-        . ( SortedVariable variable
-          , Ord (variable level)
-          , Show (variable level)
-          , OrdMetaOrObject variable
-          , ShowMetaOrObject variable
-          , MetaOrObject level
-          , Hashable variable
-          , FreshVariable variable
-          , MonadCounter m
-          )
+        .   ( SortedVariable variable
+            , Ord (variable level)
+            , Show (variable level)
+            , OrdMetaOrObject variable
+            , ShowMetaOrObject variable
+            , MetaOrObject level
+            , Hashable variable
+            , FreshVariable variable
+            , MonadCounter m
+            )
         => MetadataTools level StepperAttributes
         -> PureMLPattern level variable
         -> PureMLPattern level variable
@@ -214,16 +214,16 @@ newtype UnificationProcedure level =
     Returns 'Left' only if there is an error. It is not an error if the axiom
     does not apply to the given configuration.
 -}
-stepWithAxiom'
-    :: ( FreshVariable variable
-       , Hashable variable
-       , MetaOrObject level
-       , Ord (variable level)
-       , OrdMetaOrObject variable
-       , SortedVariable variable
-       , Show (variable level)
-       , ShowMetaOrObject variable
-       )
+stepWithAxiomForUnifier
+    ::  ( FreshVariable variable
+        , Hashable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        )
     => MetadataTools level StepperAttributes
     -> UnificationProcedure level
     -> PredicateSubstitutionSimplifier level
@@ -234,10 +234,10 @@ stepWithAxiom'
     -> ExceptT
         (Simplifier (StepError level variable))
         Simplifier
-            ( ExpandedPattern.ExpandedPattern level variable
-            , StepProof level variable
-            )
-stepWithAxiom'
+        ( ExpandedPattern.ExpandedPattern level variable
+        , StepProof level variable
+        )
+stepWithAxiomForUnifier
     tools
     (UnificationProcedure unificationProcedure')
     (PredicateSubstitutionSimplifier substitutionSimplifier)
@@ -435,15 +435,15 @@ stepWithAxiom'
         }
 
 stepWithAxiom
-    :: ( FreshVariable variable
-       , Hashable variable
-       , MetaOrObject level
-       , Ord (variable level)
-       , OrdMetaOrObject variable
-       , SortedVariable variable
-       , Show (variable level)
-       , ShowMetaOrObject variable
-       )
+    ::  ( FreshVariable variable
+        , Hashable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> ExpandedPattern.ExpandedPattern level variable
@@ -453,11 +453,11 @@ stepWithAxiom
     -> ExceptT
         (Simplifier (StepError level variable))
         Simplifier
-            ( ExpandedPattern.ExpandedPattern level variable
-            , StepProof level variable
-            )
+        ( ExpandedPattern.ExpandedPattern level variable
+        , StepProof level variable
+        )
 stepWithAxiom tools =
-    stepWithAxiom'
+    stepWithAxiomForUnifier
         tools
         (UnificationProcedure unificationProcedure)
 
