@@ -4,6 +4,13 @@ Description : Strategies for pattern rewriting
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
+
+This module should be imported qualified to avoid collisions with "Prelude":
+
+@
+import Kore.Step.Strategy ( Strategy )
+import qualified Kore.Step.Strategy as Strategy
+@
 -}
 module Kore.Step.Strategy
     ( -- * Strategies
