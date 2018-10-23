@@ -56,13 +56,6 @@ import Control.Monad.Counter
     @Strategy prim@ represents a strategy for execution by applying rewrite
     axioms of type @prim@.
 
-    The strategy is represented as a tree where constructor is either a branch
-    ('and', 'or'), a continuation ('apply', 'step'), or a termination ('stuck').
-    The continutations should be thought of as constructing a linked list where
-    the head is a rule to apply and the tail is the rest of the strategy; this
-    representation ensures that the root of the strategy tree can always be
-    acted upon immediately.
-
  -}
 -- TODO (thomas.tuegel): This could be implemented as an algebra so that a
 -- strategy is a free monad over the primitive rule type and the result of
@@ -73,22 +66,22 @@ data Strategy prim where
     -- The recursive arguments of these constructors are /intentionally/ lazy to
     -- allow strategies to loop.
 
+    -- | Apply two strategies in sequence.
     Seq :: Strategy prim -> Strategy prim -> Strategy prim
 
     -- | Apply both strategies to the same configuration, i.e. in parallel.
     And :: Strategy prim -> Strategy prim -> Strategy prim
 
-    {- | Apply the second strategy if the first fails immediately.
-
-    A strategy is considered successful if produces any children.
-     -}
+    -- | Apply the second strategy if the first fails to produce children.
     Or :: Strategy prim -> Strategy prim -> Strategy prim
 
     -- | Apply the rewrite rule, then advance to the next strategy.
     Apply :: !prim -> Strategy prim
 
+    -- | @Stuck@ produces no children.
     Stuck :: Strategy prim
 
+    -- | @Continue@ produces one child identical to its parent.
     Continue :: Strategy prim
 
     deriving (Eq, Show)
@@ -166,16 +159,42 @@ apply
     -> Strategy prim
 apply = Apply
 
-{- | Terminate execution; the end of all strategies.
+{- | Produce no children; the end of all strategies.
 
-    @stuck@ does not necessarily indicate unsuccessful termination, but it
-    is not generally possible to determine if one branch of execution is
-    successful without looking at all the branches.
+@stuck@ does not necessarily indicate unsuccessful termination, but it
+is not generally possible to determine if one branch of execution is
+successful without looking at all the branches.
+
+@stuck@ is the annihilator of 'seq':
+@
+seq stuck a === stuck
+seq a stuck === stuck
+@
+
+@stuck@ is the identity of 'and':
+@
+and stuck a === a
+and a stuck === a
+@
+
+@stuck@ is the left-identity of 'or':
+@
+or stuck a === a
+@
 
  -}
 stuck :: Strategy prim
 stuck = Stuck
 
+{- | Produce one child identical to its parent.
+
+@continue@ is the identity of 'seq':
+@
+seq continue a === a
+seq a continue === a
+@
+
+ -}
 continue :: Strategy prim
 continue = Continue
 
