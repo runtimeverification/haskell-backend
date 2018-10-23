@@ -32,8 +32,6 @@ import Kore.AST.Sentence
 import Kore.IndexedModule.IndexedModule
        ( IndexedModule (..), KoreIndexedModule )
 import Kore.Step.AxiomPatterns
-       ( AxiomPattern (..), QualifiedAxiomPattern (..),
-       koreSentenceToAxiomPattern )
 import Kore.Step.Function.Data
        ( ApplicationFunctionEvaluator (..) )
 import Kore.Step.Function.UserDefined
@@ -87,9 +85,34 @@ axiomToIdAxiomPatternPair
 axiomPatternsToEvaluators
     :: Map.Map (Id level) [AxiomPattern level]
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
-axiomPatternsToEvaluators = fmap (map axiomPatternToEvaluator)
+axiomPatternsToEvaluators axiomPatterns =
+    -- remove the key if there are no associated function evaluators
+    Map.filter (not . null)
+        (mapMaybe axiomPatternEvaluator <$> axiomPatterns)
 
-axiomPatternToEvaluator
-    :: AxiomPattern level -> ApplicationFunctionEvaluator level
-axiomPatternToEvaluator axiomPat =
-    ApplicationFunctionEvaluator (axiomFunctionEvaluator axiomPat)
+{- | Return the function evaluator corresponding to the 'AxiomPattern'.
+
+@axiomPatternEvaluator@ returns 'Nothing' if the axiom pattern should not be
+used as a function evaluator, such as if it is an associativity or commutativity
+axiom; this is determined by checking the 'AxiomPatternAttributes'.
+
+ -}
+axiomPatternEvaluator
+    :: AxiomPattern level
+    -> Maybe (ApplicationFunctionEvaluator level)
+axiomPatternEvaluator axiomPat@AxiomPattern { axiomPatternAttributes }
+    | isAssociativityAxiom = Nothing
+    | isCommutativityAxiom = Nothing
+    -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
+    -- extraction of their axioms.
+    | isUnitAxiom = Nothing
+    | otherwise =
+        Just (ApplicationFunctionEvaluator $ axiomFunctionEvaluator axiomPat)
+  where
+    AxiomPatternAttributes
+        { axiomPatternAssoc = isAssociativityAxiom
+        , axiomPatternComm = isCommutativityAxiom
+        , axiomPatternUnit = isUnitAxiom
+        }
+      =
+        axiomPatternAttributes
