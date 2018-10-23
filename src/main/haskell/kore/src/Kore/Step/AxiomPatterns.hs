@@ -51,6 +51,12 @@ data AxiomPatternAttributes =
     -- ^ An axiom may be denoted as a heating or cooling rule.
     , axiomPatternProductionID :: !(Maybe Text)
     -- ^ The identifier from the front-end identifying a rule or group of rules.
+    , axiomPatternAssoc :: !Bool
+    -- ^ The axiom is an associativity axiom.
+    , axiomPatternComm :: !Bool
+    -- ^ The axiom is a commutativity axiom.
+    , axiomPatternUnit :: !Bool
+    -- ^ The axiom is a left- or right-unit axiom.
     }
   deriving (Eq, Ord, Show)
 
@@ -59,6 +65,9 @@ instance Default AxiomPatternAttributes where
         AxiomPatternAttributes
         { axiomPatternHeatCool = Nothing
         , axiomPatternProductionID = Nothing
+        , axiomPatternAssoc = False
+        , axiomPatternComm = False
+        , axiomPatternUnit = False
         }
 
 instance ParseAttributes AxiomPatternAttributes where
@@ -66,6 +75,9 @@ instance ParseAttributes AxiomPatternAttributes where
         AxiomPatternAttributes
             <$> Attribute.choose (Just <$> getHeatCool) (getNormal $> Nothing)
             <*> Attribute.optional (Attribute.parseStringAttribute "productionID")
+            <*> Attribute.choose (assertAssoc $> True) (pure False)
+            <*> Attribute.choose (assertComm $> True) (pure False)
+            <*> Attribute.choose (assertUnit $> True) (pure False)
       where
         getHeat = do
             Attribute.assertNoAttribute "cool"
@@ -77,6 +89,9 @@ instance ParseAttributes AxiomPatternAttributes where
         getNormal = do
             Attribute.assertNoAttribute "heat"
             Attribute.assertNoAttribute "cool"
+        assertAssoc = Attribute.assertKeyOnlyAttribute "assoc"
+        assertComm = Attribute.assertKeyOnlyAttribute "comm"
+        assertUnit = Attribute.assertKeyOnlyAttribute "unit"
 
 newtype AxiomPatternError = AxiomPatternError ()
 
