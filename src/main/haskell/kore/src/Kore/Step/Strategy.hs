@@ -284,7 +284,7 @@ The strategies are applied in sequence. The 'rootLabel' of is the initial
 configuration and the 'subForest' are the children returned by the first
 strategy in the list; the tree is unfolded likewise by recursion.
 
-See also: 'pickFirst'
+See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
  -}
 runStrategy
