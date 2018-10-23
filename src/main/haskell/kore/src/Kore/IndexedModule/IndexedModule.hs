@@ -31,16 +31,22 @@ module Kore.IndexedModule.IndexedModule
     , getIndexedSentence
     , hookedObjectSymbolSentences
     , indexedModuleSubsorts
+    , indexedModulesInScope
     ) where
 
 import           Control.Arrow
                  ( (&&&) )
 import           Control.Monad
                  ( foldM )
+import           Control.Monad.State.Strict
+                 ( execState )
+import qualified Control.Monad.State.Strict as Monad.State
 import           Data.Default
 import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix )
+import           Data.Map.Strict
+                 ( Map )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import           Data.Text
@@ -756,3 +762,40 @@ internalIndexedModuleSubsorts imod = let
                  | (_,SentenceAxiom { sentenceAxiomAttributes })
                      <- indexedModuleAxioms imod]
     in concat <$> mapM parseAttributesM attributes
+
+{- | Determine all indexed modules in scope from the given module.
+
+@indexedModulesInScope@ resolves all imported modules recursively so that
+traversing the 'Map' is equivalent to traversing all the (transitively) imported
+modules once.
+
+ -}
+indexedModulesInScope
+    :: IndexedModule sortParam pat var attrs
+    -> Map ModuleName (IndexedModule sortParam pat var attrs)
+indexedModulesInScope =
+    \imod -> execState (resolveModule imod) Map.empty
+  where
+    unlessM condM action = do
+        cond <- condM
+        if cond then return () else action
+
+    alreadyResolved name =
+        Monad.State.gets (Map.member name)
+
+    {- | Resolve one indexed module
+
+    If the module is not already part of the result, insert it and resolve its
+    imports. If the module is already part of the result, skip it.
+
+     -}
+    resolveModule imod =
+        unlessM (alreadyResolved name) $ do
+            -- resolve the module: insert it into the map
+            Monad.State.modify' (Map.insert name imod)
+            -- resolve this modules imports
+            mapM_ resolveImport (indexedModuleImports imod)
+      where
+        name = indexedModuleName imod
+
+    resolveImport (_, _, imod) = resolveModule imod
