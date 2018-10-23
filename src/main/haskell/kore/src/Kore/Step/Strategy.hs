@@ -88,7 +88,9 @@ data Strategy prim where
 
 {- | Apply two strategies in sequence.
 
-The first strategy is applied, then the second is applied all its children.
+The first strategy is applied, then the second is applied to all the children of
+the first.
+
  -}
 seq :: Strategy prim -> Strategy prim -> Strategy prim
 seq = Seq
