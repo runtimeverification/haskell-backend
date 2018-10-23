@@ -33,7 +33,6 @@ import qualified Kore.Attribute.Parser as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, wrapPredicate )
 
 {- | Denote the heating or cooling phase of execution.
 
@@ -211,12 +210,20 @@ patternToAxiomPattern axiomPatternAttributes pat =
                 , axiomPatternRequires = wrapPredicate requires
                 , axiomPatternAttributes
                 }
-        -- function axioms
+        -- function axioms: general
         Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
             pure $ FunctionAxiomPattern AxiomPattern
                 { axiomPatternLeft = lhs
                 , axiomPatternRight = rhs
                 , axiomPatternRequires = wrapPredicate requires
+                , axiomPatternAttributes
+                }
+        -- function axioms: trivial pre- and post-conditions
+        Equals_ _ _ lhs rhs ->
+            pure $ FunctionAxiomPattern AxiomPattern
+                { axiomPatternLeft = lhs
+                , axiomPatternRight = rhs
+                , axiomPatternRequires = makeTruePredicate
                 , axiomPatternAttributes
                 }
         Forall_ _ _ child -> patternToAxiomPattern axiomPatternAttributes child
