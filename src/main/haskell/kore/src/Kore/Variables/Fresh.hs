@@ -7,6 +7,13 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable
 
+The syntax of a variable generated from a regular one is
+var_<original-variable-name>_<disambiguating-number>
+As an example, a variable generated from "v" could be called "var_v_10". Note
+that a variable generated from "var_v_10" would NOT be called "var_var_v_10_11",
+it would use the same original variable name "v", so it would look something
+like "var_v_11".
+
 -}
 module Kore.Variables.Fresh
     ( FreshVariable (..)
@@ -59,19 +66,41 @@ a non-id symbol @_@ to avoid clashing with user-defined ids.
 freshVariablePrefix :: Text
 freshVariablePrefix = "var_"
 
+variableSeparator :: Text
+variableSeparator = "_"
+
 instance FreshVariable Variable where
     freshVariableFromVariable = freshVariableWith
-    freshVariableWith var n =
+    {-| See the comment at the top of the file for the variable name syntax. -}
+    freshVariableWith var n
+      | not (Text.null prefix) =
+        var
+            { variableName = Id
+                { getId = prefix <> Text.pack (show n)
+                , idLocation = AstLocationGeneratedVariable
+                }
+            }
+      | otherwise =
         var
             { variableName = Id
                 { getId =
                     metaObjectPrefix
                     <> freshVariablePrefix
+                    <> Text.pack
+                        (filter
+                            (`notElem` ("#`" :: String))
+                            (Text.unpack variableId)
+                        )
+                    <> variableSeparator
                     <> Text.pack (show n)
                 , idLocation = AstLocationGeneratedVariable
                 }
             }
       where
+        variableId :: Text
+        variableId = getId (variableName var)
+        prefix, _suffix :: Text
+        (prefix, _suffix) = Text.breakOnEnd variableSeparator variableId
         metaObjectPrefix =
             case isMetaOrObject var of
                 IsObject -> ""

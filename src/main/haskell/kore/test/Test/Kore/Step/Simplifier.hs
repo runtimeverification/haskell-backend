@@ -63,7 +63,7 @@ mockSimplifierHelper
             , ([ExpandedPattern level variable], SimplificationProof level)
             )
         ]
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)

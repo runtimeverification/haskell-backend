@@ -19,9 +19,7 @@ import Control.Monad
 import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
-       ( ExceptT (..) )
-import Control.Monad.Except
-       ( throwError )
+       ( ExceptT (..), throwError )
 import Data.Function
        ( on )
 import Data.Functor.Foldable
@@ -44,6 +42,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom, top )
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), top )
+import           Kore.Step.Simplification.Data
+                 ( PredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
@@ -55,7 +55,7 @@ import           Kore.Variables.Fresh
 import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
        ( termUnification )
 import {-# SOURCE #-} Kore.Step.Substitution
-       ( mergePredicatesAndSubstitutions )
+       ( mergePredicatesAndSubstitutionsExcept )
 
 {-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
@@ -97,27 +97,28 @@ simplifyCombinedItems =
 
 simplifyAnds
     :: forall level variable m
-     . ( MetaOrObject level
-       , Eq level
-       , Ord (variable level)
-       , Show (variable level)
-       , OrdMetaOrObject variable
-       , ShowMetaOrObject variable
-       , Hashable variable
-       , SortedVariable variable
-       , FreshVariable variable
-       , MonadCounter m
-       )
+     .  ( MetaOrObject level
+        , Eq level
+        , Ord (variable level)
+        , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , Hashable variable
+        , SortedVariable variable
+        , FreshVariable variable
+        , MonadCounter m
+        )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> [PureMLPattern level variable]
     -> ExceptT
-        UnificationError
+        ( UnificationOrSubstitutionError level variable )
         m
         ( ExpandedPattern level variable
         , UnificationProof level variable
         )
-simplifyAnds _ [] = throwError UnsupportedPatterns
-simplifyAnds tools patterns = do
+simplifyAnds _ _ [] = throwError (UnificationError UnsupportedPatterns)
+simplifyAnds tools substitutionSimplifier patterns = do
      result <- foldM
         simplifyAnds'
         ExpandedPattern.top
@@ -130,22 +131,27 @@ simplifyAnds tools patterns = do
         :: ExpandedPattern level variable
         -> PureMLPattern level variable
         -> ExceptT
-            UnificationError
+            ( UnificationOrSubstitutionError level variable )
             m
             ( ExpandedPattern level variable )
     simplifyAnds' intermediate (And_ _ lhs rhs) =
         foldM simplifyAnds' intermediate [lhs, rhs]
     simplifyAnds' intermediate pat = do
         (result, _) <- ExceptT . sequence
-            $ note UnsupportedPatterns
-            $ termUnification tools (ExpandedPattern.term intermediate) pat
-        (predSubst, _) <- mergePredicatesAndSubstitutions tools
-          [ ExpandedPattern.predicate result
-          , ExpandedPattern.predicate intermediate
-          ]
-          [ ExpandedPattern.substitution result
-          , ExpandedPattern.substitution intermediate
-          ]
+            $ note (UnificationError UnsupportedPatterns)
+            $ termUnification
+                tools
+                substitutionSimplifier
+                (ExpandedPattern.term intermediate)
+                pat
+        (predSubst, _) <-
+            mergePredicatesAndSubstitutionsExcept tools substitutionSimplifier
+                [ ExpandedPattern.predicate result
+                , ExpandedPattern.predicate intermediate
+                ]
+                [ ExpandedPattern.substitution result
+                , ExpandedPattern.substitution intermediate
+                ]
 
         return $ ExpandedPattern.Predicated
             ( ExpandedPattern.term result )
@@ -180,17 +186,19 @@ solveGroupedSubstitution
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> variable level
     -> [PureMLPattern level variable]
     -> ExceptT
-        UnificationError
+        ( UnificationOrSubstitutionError level variable )
         m
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-solveGroupedSubstitution _ _ [] = throwError UnsupportedPatterns
-solveGroupedSubstitution tools var patterns = do
-    (predSubst, proof) <- simplifyAnds tools patterns
+solveGroupedSubstitution _ _ _ [] =
+    throwError (UnificationError UnsupportedPatterns)
+solveGroupedSubstitution tools substitutionSimplifier var patterns = do
+    (predSubst, proof) <- simplifyAnds tools substitutionSimplifier patterns
     return
         ( PredicateSubstitution
             (ExpandedPattern.predicate predSubst)
@@ -208,36 +216,43 @@ solveGroupedSubstitution tools var patterns = do
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: ( MetaOrObject level
-       , Eq level
-       , Ord (variable level)
-       , Show (variable level)
-       , OrdMetaOrObject variable
-       , ShowMetaOrObject variable
-       , SortedVariable variable
-       , Hashable variable
-       , FreshVariable variable
-       , MonadCounter m
-       )
+    :: forall variable level m
+    .   ( MetaOrObject level
+        , Eq level
+        , Ord (variable level)
+        , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , SortedVariable variable
+        , Hashable variable
+        , FreshVariable variable
+        , MonadCounter m
+        )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> UnificationSubstitution level variable
     -> ExceptT
-        UnificationError
+        ( UnificationOrSubstitutionError level variable )
         m
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-normalizeSubstitutionDuplication tools subst =
+normalizeSubstitutionDuplication tools substitutionSimplifier subst =
     if null nonSingletonSubstitutions
         then return
             ( PredicateSubstitution Predicate.makeTruePredicate subst
             , EmptyUnificationProof
             )
         else do
-            (predSubst, proof') <- mergePredicateSubstitutionList tools <$>
-                mapM (uncurry $ solveGroupedSubstitution tools) varAndSubstList
+            (predSubst, proof') <-
+                mergePredicateSubstitutionList tools
+                <$> mapM
+                    (uncurry
+                        $ solveGroupedSubstitution tools substitutionSimplifier
+                    )
+                    varAndSubstList
             (finalSubst, proof) <-
-                normalizeSubstitutionDuplication tools
+                normalizeSubstitutionDuplication tools substitutionSimplifier
                     (concat singletonSubstitutions
                      ++ PredicateSubstitution.substitution predSubst
                     )
@@ -260,8 +275,11 @@ normalizeSubstitutionDuplication tools subst =
     groupedSubstitution = groupSubstitutionByVariable subst
     isSingleton [_] = True
     isSingleton _   = False
+    nonSingletonSubstitutions
+        :: [UnificationSubstitution level variable]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
+    varAndSubstList :: [(variable level, [PureMLPattern level variable])]
     varAndSubstList = fmap (fst . head &&& fmap snd) nonSingletonSubstitutions
 
 mergePredicateSubstitutionList

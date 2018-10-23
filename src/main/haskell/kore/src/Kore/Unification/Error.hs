@@ -42,7 +42,7 @@ data ClashReason level
 {-| 'SubstitutionError' specifies the various error cases related to
 substitutions.
 -}
-data SubstitutionError level variable
+newtype SubstitutionError level variable
     = NonCtorCircularVariableDependency [variable level]
     -- ^the circularity path may pass through non-constructors: maybe solvable.
     deriving (Eq, Show)

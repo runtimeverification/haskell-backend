@@ -4,7 +4,12 @@ module Test.Kore.Substitution.Class (test_class) where
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+       ( testCase )
+
+import Test.Kore
+import Test.Kore.Comparators ()
+import Test.Kore.Substitution
+import Test.Tasty.HUnit.Extensions
 
 import qualified Data.Text as Text
 
@@ -14,9 +19,6 @@ import           Kore.AST.MetaOrObject
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as S
 import           Kore.Variables.Fresh
-
-import Test.Kore
-import Test.Kore.Substitution
 
 type UnifiedPatternSubstitution =
     S.Substitution (Unified Variable) CommonKorePattern
@@ -35,7 +37,7 @@ testSubstitute = substitute
 test_class :: [TestTree]
 test_class =
     [ testCase "Testing substituting a variable."
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (objectTopPattern, 2)
             (runCounter
                 (testSubstitute objectVariableUnifiedPattern substitution1)
@@ -43,7 +45,7 @@ test_class =
             )
         )
     , testCase "Testing not substituting a variable."
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (metaVariableUnifiedPattern, 2)
             (runCounter
                 (testSubstitute metaVariableUnifiedPattern substitution1)
@@ -51,7 +53,7 @@ test_class =
             )
         )
     , testCase "Testing not substituting anything."
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (objectBottomPattern, 2)
             (runCounter
                 (testSubstitute objectBottomPattern substitution1)
@@ -59,7 +61,7 @@ test_class =
             )
         )
       , testCase "Testing exists => empty substitution."
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (existsObjectUnifiedPattern1, 2)
             (runCounter
                 (testSubstitute existsObjectUnifiedPattern1 substitution1)
@@ -67,7 +69,7 @@ test_class =
             )
         )
       , testCase "Testing forall."
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (forallObjectUnifiedPattern2, 2)
             (runCounter
                 (testSubstitute forallObjectUnifiedPattern1 substitution1)
@@ -75,7 +77,7 @@ test_class =
             )
         )
       , testCase "Testing binder renaming"
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (existsObjectUnifiedPattern1S 2, 3)
             (runCounter
                 (testSubstitute existsObjectUnifiedPattern1 substitution2)
@@ -83,7 +85,7 @@ test_class =
             )
         )
       , testCase "Testing binder renaming and substitution"
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (forallObjectUnifiedPattern1S3, 6)
             (runCounter
                 (testSubstitute forallObjectUnifiedPattern1 substitution3)
@@ -91,7 +93,7 @@ test_class =
             )
         )
       , testCase "Testing double binder renaming"
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (forallExistsObjectUnifiedPattern1S2, 9)
             (runCounter
                 (testSubstitute
@@ -100,7 +102,7 @@ test_class =
             )
         )
         , testCase "Testing double binder renaming 1"
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (forallExistsObjectUnifiedPattern2, 17)
             (runCounter
                 (testSubstitute
@@ -109,7 +111,7 @@ test_class =
             )
         )
         , testCase "Testing substitution state 1"
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (testSubstitutionStatePatternS3, 18)
             (runCounter
                 (testSubstitute
@@ -123,7 +125,7 @@ metaVariableSubstitute :: Int -> Variable Meta
 metaVariableSubstitute n =
     metaVariable
         { variableName = Id
-            { getId = "#" <> freshVariablePrefix <> Text.pack (show n)
+            { getId = "#" <> freshVariablePrefix <> Text.pack ("v_" ++ show n)
             , idLocation = AstLocationGeneratedVariable
             }
         }
@@ -136,7 +138,7 @@ objectVariableSubstitute :: Int -> Variable Object
 objectVariableSubstitute n =
     objectVariable
         { variableName = Id
-            { getId = freshVariablePrefix <> Text.pack (show n)
+            { getId = freshVariablePrefix <> Text.pack ("v_" ++ show n)
             , idLocation = AstLocationGeneratedVariable
             }
         }

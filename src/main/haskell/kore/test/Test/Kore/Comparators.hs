@@ -11,7 +11,13 @@ Portability : portable
 -}
 module Test.Kore.Comparators where
 
+import Numeric.Natural
+       ( Natural )
+
+import           Data.Functor.Impredicative
 import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.BaseStep
@@ -352,6 +358,34 @@ instance (Show child, EqualWithExplanation child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
+instance
+    ( Eq child
+    , Eq (variable level)
+    , Show child
+    , Show (variable level)
+    , EqualWithExplanation child
+    , EqualWithExplanation (variable level)
+    )
+    => StructEqualWithExplanation (Exists level variable child)
+  where
+    structFieldsWithNames
+        expected@(Exists _ _ _)
+        actual@(Exists _ _ _)
+      = [ EqWrap
+            "existsSort = "
+            (existsSort expected)
+            (existsSort actual)
+        , EqWrap
+            "existsVariable = "
+            (existsVariable expected)
+            (existsVariable actual)
+        , EqWrap
+            "existsChild = "
+            (existsChild expected)
+            (existsChild actual)
+        ]
+    structConstructorName _ = "Exists"
 instance
     ( EqualWithExplanation child
     , Eq child
@@ -361,7 +395,7 @@ instance
     , Show (variable level)
     ) => EqualWithExplanation (Exists level variable child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
@@ -799,7 +833,7 @@ instance
             (ExpandedPattern.substitution expected)
             (ExpandedPattern.substitution actual)
         ]
-    structConstructorName _ = "ExpandedPattern"
+    structConstructorName _ = "Predicated"
 
 instance
     ( Show level, Show (variable level)
@@ -924,6 +958,111 @@ instance EqualWithExplanation (PatternAttributesError.FunctionError level)
     printWithExplanation = show
 
 instance EqualWithExplanation (PatternAttributesError.FunctionalError level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation (variable level), Show (variable level))
+    => SumEqualWithExplanation (UnificationOrSubstitutionError level variable)
+  where
+    sumConstructorPair (UnificationError a1) (UnificationError a2) =
+        SumConstructorSameWithArguments (EqWrap "UnificationError" a1 a2)
+    sumConstructorPair a1@(UnificationError _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair (SubstitutionError a1) (SubstitutionError a2) =
+        SumConstructorSameWithArguments (EqWrap "SubstitutionError" a1 a2)
+    sumConstructorPair a1@(SubstitutionError _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+instance
+    (EqualWithExplanation (variable level), Show (variable level))
+    => EqualWithExplanation (UnificationOrSubstitutionError level variable)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( Show (variable Object), Show (variable Meta), Show child
+    , Eq (variable Meta), Eq (variable Object), Eq child
+    , EqualWithExplanation (variable Object)
+    , EqualWithExplanation (variable Meta)
+    , EqualWithExplanation child
+    )
+    => SumEqualWithExplanation (UnifiedPattern variable child)
+  where
+    sumConstructorPair (UnifiedPattern a1) (UnifiedPattern a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "UnifiedPattern" a1 a2)
+
+instance
+    ( Show (variable Object), Show (variable Meta), Show child
+    , Eq (variable Meta), Eq (variable Object), Eq child
+    , EqualWithExplanation (variable Meta)
+    , EqualWithExplanation (variable Object)
+    , EqualWithExplanation child
+    )
+    => EqualWithExplanation (UnifiedPattern variable child)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation (a Meta)
+    , EqualWithExplanation (a Object)
+    , Show (a Meta)
+    , Show (a Object)
+    )
+    => SumEqualWithExplanation (Unified a)
+  where
+    sumConstructorPair (UnifiedObject a1) (UnifiedObject a2) =
+        SumConstructorSameWithArguments (EqWrap "UnifiedObject" a1 a2)
+    sumConstructorPair a1@(UnifiedObject _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair (UnifiedMeta a1) (UnifiedMeta a2) =
+        SumConstructorSameWithArguments (EqWrap "UnifiedMeta" a1 a2)
+    sumConstructorPair a1@(UnifiedMeta _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+instance
+    ( EqualWithExplanation (a Meta)
+    , EqualWithExplanation (a Object)
+    , Show (a Meta)
+    , Show (a Object)
+    )
+    => EqualWithExplanation (Unified a)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation (Pattern level variable child)
+    , Show (Pattern level variable child)
+    )
+    => SumEqualWithExplanation (Rotate31 Pattern variable child level)
+  where
+    sumConstructorPair (Rotate31 a1) (Rotate31 a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "Rotate31" a1 a2)
+
+instance
+    ( EqualWithExplanation (Pattern level variable child)
+    , Show (Pattern level variable child)
+    )
+    => EqualWithExplanation (Rotate31 Pattern variable child level)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation Natural
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

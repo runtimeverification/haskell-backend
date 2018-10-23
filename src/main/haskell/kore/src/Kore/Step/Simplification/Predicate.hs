@@ -40,7 +40,7 @@ simplifyPartial
     ::  ( MetaOrObject level
         , Show (variable level)
         )
-    => PredicateSubstitutionSimplifier level
+    => PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -> Predicate level variable
     -> Simplifier
@@ -59,7 +59,7 @@ simplifyPartial
             ( PredicateSubstitution.bottom
             , SimplificationProof
             )
-        [Predicated
+        [ Predicated
                 { term = Top_ _
                 , predicate = simplifiedPredicate
                 , substitution = simplifiedSubstitution

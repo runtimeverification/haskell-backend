@@ -77,7 +77,7 @@ axiomFunctionEvaluator
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
     -> Application level (PureMLPattern level variable)
@@ -150,7 +150,7 @@ reevaluateFunctions
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
@@ -204,7 +204,7 @@ evaluatePredicate
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> ExpandedPattern level variable
@@ -232,6 +232,7 @@ evaluatePredicate
         ) <-
             mergePredicatesAndSubstitutions
                 tools
+                substitutionSimplifier
                 [evaluatedPredicate]
                 [substitution, evaluatedSubstitution]
     -- TODO(virgil): Do I need to re-evaluate the predicate?

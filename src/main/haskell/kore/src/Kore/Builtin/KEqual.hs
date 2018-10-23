@@ -87,14 +87,14 @@ evalKEq
     => Bool
     -> Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier Object Simplifier
     -> PureMLPatternSimplifier Object variable
     -> Application Object (PureMLPattern Object variable)
     -> Simplifier
         ( AttemptedFunction Object variable
         , SimplificationProof Object
         )
-evalKEq true false tools _ _ pat =
+evalKEq true false tools substitutionSimplifier _ pat =
     case pat of
         Application
             { applicationSymbolOrAlias =
@@ -104,7 +104,7 @@ evalKEq true false tools _ _ pat =
         _ -> notApplicableFunctionEvaluator
   where
     evalEq resultSort t1 t2 = do
-        (result, _proof) <- makeEvaluate tools ep1 ep2
+        (result, _proof) <- makeEvaluate tools substitutionSimplifier ep1 ep2
         if OrOfExpandedPattern.isTrue result
             then purePatternFunctionEvaluator (Bool.asPattern resultSort true)
         else if OrOfExpandedPattern.isFalse result

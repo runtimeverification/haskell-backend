@@ -94,7 +94,7 @@ axiomStep a =
 transitionRule
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> CommonPureMLPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> Prim (AxiomPattern level)

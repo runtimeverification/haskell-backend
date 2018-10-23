@@ -102,7 +102,7 @@ simplify
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPattern level variable
@@ -137,7 +137,7 @@ simplifyToOr
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPattern level variable
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -171,7 +171,7 @@ simplifyInternal
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
@@ -190,7 +190,7 @@ simplifyInternal
     halfSimplified <- traverse (unwrappedSimplifier substitutionSimplifier) patt
     -- TODO: Remove fst
     case fmap fst halfSimplified of
-        AndPattern p -> And.simplify tools p
+        AndPattern p -> And.simplify tools substitutionSimplifier p
         ApplicationPattern p ->
             --  TODO: Re-evaluate outside of the application and stop passing
             -- the simplifier.
@@ -203,7 +203,7 @@ simplifyInternal
         BottomPattern p -> return $ Bottom.simplify p
         CeilPattern p -> return $ Ceil.simplify tools p
         DomainValuePattern p -> return $ DomainValue.simplify tools p
-        EqualsPattern p -> Equals.simplify tools p
+        EqualsPattern p -> Equals.simplify tools substitutionSimplifier p
         ExistsPattern p ->
             Exists.simplify tools substitutionSimplifier simplifier p
         FloorPattern p -> return $ Floor.simplify p

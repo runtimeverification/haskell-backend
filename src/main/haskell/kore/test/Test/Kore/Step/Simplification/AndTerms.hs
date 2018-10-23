@@ -10,7 +10,6 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
-import           Control.Monad.Counter
 import           Kore.AST.Common
                  ( BuiltinDomain (..), CommonPurePattern )
 import           Kore.AST.MetaOrObject
@@ -20,19 +19,22 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
+                 ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termUnification )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -620,11 +622,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
             let term4 = Mock.builtinList $
                             [Mock.a, Mock.b]
             assertEqualWithExplanation "[same head, different head]"
-                ( Just $ Predicated
-                         { term = Mock.builtinList [Mock.a, mkBottom]
-                         , predicate = makeFalsePredicate
-                         , substitution = []
-                         }
+                ( Just $ ExpandedPattern.bottom
                 )
                 ( unify
                     mockMetadataTools
@@ -725,9 +723,12 @@ unify
     -> CommonPurePattern level
     -> Maybe (CommonExpandedPattern level)
 unify tools first second =
-    case termUnification tools first second of
+    case unification of
         Nothing -> Nothing
-        Just result -> Just $ fst $ evalCounter result
+        Just result -> Just $ fst $ evalSimplifier result
+  where
+    unification =
+        termUnification tools (Mock.substitutionSimplifier tools) first second
 
 simplify
     :: MetaOrObject level
@@ -736,4 +737,5 @@ simplify
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 simplify tools first second =
-    fst $ evalCounter (termAnd tools first second)
+    fst $ evalSimplifier
+        (termAnd tools (Mock.substitutionSimplifier tools) first second)

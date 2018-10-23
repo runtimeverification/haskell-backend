@@ -264,7 +264,7 @@ main = do
                     => PureMLPatternSimplifier Object variable
                 preSimplifier = Simplifier.create metadataTools Map.empty
                 preSubstitutionSimplifier
-                    :: PredicateSubstitutionSimplifier Object
+                    :: PredicateSubstitutionSimplifier Object Simplifier
                 preSubstitutionSimplifier =
                     PredicateSubstitution.create metadataTools preSimplifier
                 prePatternSimplifier =
@@ -310,7 +310,9 @@ main = do
                                 Simplifier.create
                                     metadataTools functionRegistry
                             substitutionSimplifier
-                                :: PredicateSubstitutionSimplifier Object
+                                :: PredicateSubstitutionSimplifier
+                                    Object
+                                    Simplifier
                             substitutionSimplifier =
                                 PredicateSubstitution.create
                                     metadataTools simplifier
@@ -556,10 +558,10 @@ constructorFunctions ixm =
         (attrs, attributes, constructorFunctions importedModule)
 
 preSimplify
-    :: (CommonPurePattern Object
+    ::  (  CommonPurePattern Object
         -> Simplifier
             (OrOfExpandedPattern Object Variable, SimplificationProof Object)
-       )
+        )
     -> AxiomPattern Object
     -> Simplifier (AxiomPattern Object)
 preSimplify simplifier

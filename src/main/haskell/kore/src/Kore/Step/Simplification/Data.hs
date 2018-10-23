@@ -79,7 +79,7 @@ Kore functions on PureMLPatterns.
 -}
 newtype PureMLPatternSimplifier level variable =
     PureMLPatternSimplifier
-        ( PredicateSubstitutionSimplifier level
+        ( PredicateSubstitutionSimplifier level Simplifier
         -> PureMLPattern level variable
         -> Simplifier
             ( OrOfExpandedPattern level variable
@@ -98,7 +98,7 @@ type CommonPureMLPatternSimplifier level =
 'PredicateSubstitution's. The minimal requirement from this function is
 that it applies the substitution on the predicate.
 -}
-newtype PredicateSubstitutionSimplifier level =
+newtype PredicateSubstitutionSimplifier level m =
     PredicateSubstitutionSimplifier
         (forall variable
         .   ( FreshVariable variable
@@ -113,7 +113,7 @@ newtype PredicateSubstitutionSimplifier level =
             , SortedVariable variable
             )
         => PredicateSubstitution level variable
-        -> Simplifier
+        -> m
             ( PredicateSubstitution level variable
             , SimplificationProof level
             )

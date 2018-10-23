@@ -12,11 +12,11 @@ import           Data.Reflection
                  ( give )
 
 import           Kore.AST.Common
-                 ( Application (..), CommonPurePattern, Id (..),
-                 PureMLPattern )
+                 ( Application (..), CommonPurePattern, Id (..), PureMLPattern,
+                 SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkOr, mkVar )
+                 ( mkAnd, mkOr, mkVar )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
@@ -43,7 +43,13 @@ import           Kore.Step.Simplification.Data
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
+import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+                 ( create )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
+import           Kore.Substitution.Class
+                 ( Hashable )
 import           Kore.Variables.Fresh
                  ( FreshVariable, freshVariableFromVariable )
 
@@ -233,8 +239,48 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                 (Mock.f Mock.c)
             )
         )
+    , testCase "Simplifies substitution-predicate."
+        -- Mock.plain10 below prevents:
+        -- 1. unification without substitution.
+        -- 2. Transforming the 'and' in an equals predicate,
+        --    as it would happen for functions.
+        (assertEqualWithExplanation ""
+            Predicated
+                { term = Mock.a
+                , predicate =
+                    makeCeilPredicate
+                        (Mock.plain10 Mock.cf)
+                , substitution =
+                    [ (Mock.var_x_1, Mock.cf), (Mock.var_y_1, Mock.b) ]
+                }
+            (evaluate
+                mockMetadataTools
+                (Map.fromList
+                    [   ( Mock.fId
+                        ,   [ appliedMockEvaluator Predicated
+                                { term = Mock.a
+                                , predicate =
+                                    makeCeilPredicate
+                                        (mkAnd
+                                            (Mock.constr20
+                                                (Mock.plain10 Mock.cf)
+                                                Mock.b
+                                            )
+                                            (Mock.constr20
+                                                (Mock.plain10 (mkVar Mock.x))
+                                                (mkVar Mock.y)
+                                            )
+                                        )
+                                , substitution = [(Mock.x, Mock.cf)]
+                                }
+                            ]
+                        )
+                    ]
+                )
+                (Mock.f (mkVar Mock.x))
+            )
+        )
     ]
-
 
 axiomEvaluator
     :: CommonPurePattern Object
@@ -273,7 +319,7 @@ mapVariables =
 mockEvaluator
     :: AttemptedFunction level variable
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -> Application level (PureMLPattern level variable)
     -> Simplifier
@@ -282,7 +328,7 @@ mockEvaluator evaluation _ _ _ _ =
     return (evaluation, SimplificationProof)
 
 evaluate
-    :: MetaOrObject level
+    :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -> CommonPurePattern level
@@ -291,16 +337,32 @@ evaluate metadataTools functionIdToEvaluator patt =
     fst
         $ evalSimplifier
         $ Pattern.simplify
-            metadataTools mockSubstitutionSimplifier functionIdToEvaluator patt
+            metadataTools substitutionSimplifier functionIdToEvaluator patt
+  where
+    substitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
+    substitutionSimplifier =
+        PredicateSubstitution.create metadataTools patternSimplifier
+    patternSimplifier
+        ::  ( MetaOrObject level
+            , SortedVariable variable
+            , Ord (variable level)
+            , Show (variable level)
+            , Ord (variable Meta)
+            , Ord (variable Object)
+            , Show (variable Meta)
+            , Show (variable Object)
+            , FreshVariable variable
+            , Hashable variable
+            )
+        => PureMLPatternSimplifier level variable
+    patternSimplifier =
+        Simplifier.create metadataTools functionIdToEvaluator
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+mockSymbolOrAliasSorts =
+    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
-    Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
-
-mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level
-mockSubstitutionSimplifier =
-    PredicateSubstitutionSimplifier
-        (\ps -> return (ps, SimplificationProof))
+    Mock.makeMetadataTools
+        mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts

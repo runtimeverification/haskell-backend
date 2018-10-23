@@ -51,10 +51,9 @@ unificationToStepError = first StepErrorUnification
 {-| Converts a Unification or Substitution error to a step error
 -}
 unificationOrSubstitutionToStepError
-    :: Either (UnificationOrSubstitutionError level variable) a
-    -> Either (StepError level variable) a
-unificationOrSubstitutionToStepError (Left (UnificationError err)) =
-    Left $ StepErrorUnification err
-unificationOrSubstitutionToStepError (Left (SubstitutionError err)) =
-    Left $ StepErrorSubstitution err
-unificationOrSubstitutionToStepError (Right res) = Right res
+    :: UnificationOrSubstitutionError level variable
+    -> StepError level variable
+unificationOrSubstitutionToStepError (UnificationError err) =
+    StepErrorUnification err
+unificationOrSubstitutionToStepError (SubstitutionError err) =
+    StepErrorSubstitution err

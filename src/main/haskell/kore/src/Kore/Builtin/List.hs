@@ -343,7 +343,9 @@ isSymbolElement = Builtin.isSymbol "LIST.element"
 
 unify
     :: forall level variable m p expanded proof.
-        ( OrdMetaOrObject variable, ShowMetaOrObject variable, Show (variable level)
+        ( OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , Show (variable level)
         , SortedVariable variable
         , MonadCounter m
         , MetaOrObject level
@@ -354,10 +356,12 @@ unify
         , proof ~ SimplificationProof level
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> (p -> p -> Result (m (expanded, proof)))
     -> (p -> p -> Result (m (expanded, proof)))
 unify
     tools@MetadataTools { symbolOrAliasSorts }
+    substitutionSimplifier
     simplifyChild
     (DV_ dvSort (BuiltinDomainList list1))
     (DV_ _    (BuiltinDomainList list2))
@@ -369,11 +373,12 @@ unify
           sequenceA -- float `Predicated` to the top
           <$> fmap fst -- discard the proof in (expanded, proof)
           <$> sequence unifiedList -- float the counter monad `m` to the top
-        res <- normalize tools $
+        (res, _proof) <- normalize tools substitutionSimplifier $
           (\l -> DV_ dvSort $ BuiltinDomainList l) <$> unifiedList'
         return (res, SimplificationProof)
 unify
     tools@MetadataTools { symbolOrAliasSorts }
+    substitutionSimplifier
     simplifyChild
     (App_ symConcat [DV_ _ (BuiltinDomainList list1), (Var_ v)])
     (DV_ dvSort (BuiltinDomainList list2))
@@ -382,28 +387,29 @@ unify
   = give symbolOrAliasSorts $
     let list2' = Seq.take (Seq.length list1) list2
         suffix = Seq.drop (Seq.length list1) list2
-        suffix' = Predicated {
-              term = suffix
+        suffix' = Predicated
+            { term = suffix
             , predicate = makeTruePredicate
             , substitution = [(v, DV_ dvSort $ BuiltinDomainList suffix)]
             }
 
       in
       do unifiedList <-
-            unify tools simplifyChild
+            unify tools substitutionSimplifier simplifyChild
                 (DV_ dvSort $ BuiltinDomainList list1)
                 (DV_ dvSort $ BuiltinDomainList list2')
          return $ do
             (unifiedList', _) <- unifiedList
-            res <- normalize tools $
-              (\(DV_ _ (BuiltinDomainList l1)) l2
-                 -> DV_ dvSort (BuiltinDomainList $ l1 >< l2)
-              ) <$> unifiedList' <*> suffix'
+            (res, _proof) <- normalize tools substitutionSimplifier $
+                (\(DV_ _ (BuiltinDomainList l1)) l2
+                    -> DV_ dvSort (BuiltinDomainList $ l1 >< l2)
+                ) <$> unifiedList' <*> suffix'
             return (res, SimplificationProof)
 unify
     tools
+    substitutionSimplifier
     simplifyChild
     p1@(DV_ _ _)
     p2@(App_ _ _)
-  = unify tools simplifyChild p2 p1
-unify _ _ _ _ = Unknown
+  = unify tools substitutionSimplifier simplifyChild p2 p1
+unify _ _ _ _ _ = Unknown

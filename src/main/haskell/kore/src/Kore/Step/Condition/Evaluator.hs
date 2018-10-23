@@ -57,7 +57,7 @@ evaluate
         , Show (variable level)
         , Given (MetadataTools level StepperAttributes)
         )
-    => PredicateSubstitutionSimplifier level
+    => PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> Predicate level variable

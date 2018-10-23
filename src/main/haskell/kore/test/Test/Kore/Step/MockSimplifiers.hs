@@ -15,7 +15,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  PureMLPatternSimplifier (PureMLPatternSimplifier),
-                 SimplificationProof (SimplificationProof) )
+                 SimplificationProof (SimplificationProof), Simplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
                  ( create )
 import           Kore.Step.StepperAttributes
@@ -23,7 +23,7 @@ import           Kore.Step.StepperAttributes
 
 substitutionSimplifier
     :: MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSubstitutionSimplifier level Simplifier
 substitutionSimplifier tools =
     PredicateSubstitution.create
         tools
