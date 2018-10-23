@@ -1,17 +1,21 @@
-  VarResult ==K <generatedTop>
-    <k>
-      final1
-    </k>
-    <generatedCounter>
-      0
-    </generatedCounter>
-  </generatedTop>
+    Result
+  #Equals
+    <generatedTop>
+      <k>
+        final1
+      </k>
+      <generatedCounter>
+        0
+      </generatedCounter>
+    </generatedTop>
 #Or
-  VarResult ==K <generatedTop>
-    <k>
-      final2
-    </k>
-    <generatedCounter>
-      0
-    </generatedCounter>
-  </generatedTop>
+    Result
+  #Equals
+    <generatedTop>
+      <k>
+        final2
+      </k>
+      <generatedCounter>
+        0
+      </generatedCounter>
+    </generatedTop>

@@ -1,3 +1,5 @@
-VarDotVar0 ==K <generatedCounter>
-  0
-</generatedCounter>
+  DotVar0
+#Equals
+  <generatedCounter>
+    0
+  </generatedCounter>
