@@ -11,7 +11,7 @@ module LIST-UNIFY-1
     </T>
 
   rule 
-    <k> V:Val => . ... </k>
+    <k> V:Val </k>
     <s1> (ListItem(V) => .List) X:List </s1>
 
 endmodule
