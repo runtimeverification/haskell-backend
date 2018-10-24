@@ -13,6 +13,8 @@ module Kore.Step.Simplification.Equals
     , simplify
     ) where
 
+import Control.Error
+       ( MaybeT (..) )
 import Data.Maybe
        ( fromMaybe )
 import Data.Reflection
@@ -320,22 +322,26 @@ makeEvaluateTermsAssumesNoBottom
     substitutionSimplifier
     firstTerm
     secondTerm
-  =
-    fromMaybe
-        (return
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkTop
-                    , predicate = give (MetadataTools.symbolOrAliasSorts tools)
-                        $ makeEqualsPredicate firstTerm secondTerm
-                    , substitution = []
-                    }
-                ]
-            , SimplificationProof
-            )
-        )
-        (makeEvaluateTermsAssumesNoBottomMaybe
-            tools substitutionSimplifier firstTerm secondTerm
+  = do
+    result <-
+        runMaybeT
+        $ makeEvaluateTermsAssumesNoBottomMaybe
+            tools
+            substitutionSimplifier
+            firstTerm
+            secondTerm
+    (return . fromMaybe def) result
+  where
+    def =
+        (OrOfExpandedPattern.make
+            [ Predicated
+                { term = mkTop
+                , predicate = give (MetadataTools.symbolOrAliasSorts tools)
+                    $ makeEqualsPredicate firstTerm secondTerm
+                , substitution = []
+                }
+            ]
+        , SimplificationProof
         )
 
 -- Do not export this. This not valid as a standalone function, it
@@ -354,26 +360,24 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe
-        (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-        )
+    -> MaybeT Simplifier
+        (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottomMaybe tools substitutionSimplifier first second
   =
-    give tools $ do  -- Maybe monad
-        result <- AndTerms.termEquals tools substitutionSimplifier first second
-        return $ do -- Simplifier monad
-            (PredicateSubstitution {predicate, substitution}, _proof) <- result
-            return
-                ( OrOfExpandedPattern.make
-                    [ Predicated
-                        { term = mkTop
-                        , predicate = predicate
-                        , substitution = substitution
-                        }
-                    ]
-                , SimplificationProof
-                )
+    give tools $ do
+        (result, _) <-
+            AndTerms.termEquals tools substitutionSimplifier first second
+        let PredicateSubstitution { predicate, substitution } = result
+        return
+            ( OrOfExpandedPattern.make
+                [ Predicated
+                    { term = mkTop
+                    , predicate = predicate
+                    , substitution = substitution
+                    }
+                ]
+            , SimplificationProof
+            )
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
 
@@ -400,8 +404,7 @@ makeEvaluateTermsToPredicateSubstitution
     -> PredicateSubstitutionSimplifier level m
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> m
-        (PredicateSubstitution level variable, SimplificationProof level)
+    -> m (PredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateTermsToPredicateSubstitution
     tools substitutionSimplifier first second
   | first == second =
@@ -409,19 +412,21 @@ makeEvaluateTermsToPredicateSubstitution
         ( PredicateSubstitution.top
         , SimplificationProof
         )
-  | otherwise = give symbolOrAliasSorts $
-    case AndTerms.termEquals tools substitutionSimplifier first second of
-        Nothing -> return
-            ( PredicateSubstitution
-                { predicate = makeEqualsPredicate first second
-                , substitution = []
-                }
-            , SimplificationProof
-            )
+  | otherwise = give symbolOrAliasSorts $ do
+    result <-
+        runMaybeT $ AndTerms.termEquals tools substitutionSimplifier first second
+    case result of
+        Nothing ->
+            return
+                ( PredicateSubstitution
+                    { predicate = makeEqualsPredicate first second
+                    , substitution = []
+                    }
+                , SimplificationProof
+                )
         Just wrappedResult -> do
-            (PredicateSubstitution {predicate, substitution}, _proof) <-
-                wrappedResult
-            let
+            let (PredicateSubstitution {predicate, substitution}, _proof) =
+                    wrappedResult
                 (firstCeil, _proof1) = Ceil.makeEvaluateTerm tools first
                 (secondCeil, _proof2) = Ceil.makeEvaluateTerm tools second
                 (firstCeilNegation, _proof3) = makeNotPredicate firstCeil

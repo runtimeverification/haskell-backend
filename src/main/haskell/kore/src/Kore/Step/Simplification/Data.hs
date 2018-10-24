@@ -14,12 +14,15 @@ module Kore.Step.Simplification.Data
     , evalSimplifier
     , defaultSMTTimeOut
     , PredicateSubstitutionSimplifier (..)
+    , liftPredicateSubstitutionSimplifier
     , PureMLPatternSimplifier (..)
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
     ) where
 
-import Control.Monad.Reader
+import           Control.Monad.Reader
+import qualified Control.Monad.Trans as Monad.Trans
+
 import Kore.AST.Common
        ( PureMLPattern, SortedVariable, Variable )
 import Kore.AST.MetaOrObject
@@ -118,3 +121,12 @@ newtype PredicateSubstitutionSimplifier level m =
             , SimplificationProof level
             )
         )
+
+liftPredicateSubstitutionSimplifier
+    :: (MonadTrans t, Monad m)
+    => PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level (t m)
+liftPredicateSubstitutionSimplifier
+    (PredicateSubstitutionSimplifier simplifier)
+  =
+    PredicateSubstitutionSimplifier (Monad.Trans.lift . simplifier)

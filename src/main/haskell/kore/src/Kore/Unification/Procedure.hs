@@ -11,8 +11,6 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import Control.Error.Util
-       ( note )
 import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
@@ -43,7 +41,8 @@ import           Kore.Step.Simplification.AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier )
+                 ( PredicateSubstitutionSimplifier,
+                 liftPredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
@@ -51,7 +50,7 @@ import           Kore.Substitution.Class
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Error
-                 ( UnificationError (..), UnificationOrSubstitutionError (..) )
+                 ( UnificationOrSubstitutionError (..) )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -89,10 +88,13 @@ unificationProcedure tools substitutionSimplifier p1 p2
     return (PredicateSubstitution.bottom, EmptyUnificationProof)
   | otherwise = do
     let
-        unifiedTerm = termUnification tools substitutionSimplifier p1 p2
-    (pat, _) <-
-        ExceptT . sequence
-            $ note (UnificationError UnsupportedPatterns) unifiedTerm
+        getUnifiedTerm =
+            termUnification
+                tools
+                (liftPredicateSubstitutionSimplifier substitutionSimplifier)
+                p1
+                p2
+    (pat, _) <- getUnifiedTerm
     let
         (pred', _) = Ceil.makeEvaluateTerm tools (ExpandedPattern.term pat)
     if ExpandedPattern.isBottom pat

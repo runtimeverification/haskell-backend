@@ -12,8 +12,6 @@ module Kore.Unification.UnifierImpl where
 
 import Control.Arrow
        ( (&&&) )
-import Control.Error.Util
-       ( note )
 import Control.Monad
        ( foldM )
 import Control.Monad.Counter
@@ -43,7 +41,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
                  ( PredicateSubstitution (..), top )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier )
+                 ( PredicateSubstitutionSimplifier (..),
+                 liftPredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
@@ -96,8 +95,8 @@ simplifyCombinedItems =
     addContents other proofItems = other : proofItems
 
 simplifyAnds
-    :: forall level variable m
-     .  ( MetaOrObject level
+    ::  forall level variable m unifier.
+        ( MetaOrObject level
         , Eq level
         , Ord (variable level)
         , Show (variable level)
@@ -107,16 +106,13 @@ simplifyAnds
         , SortedVariable variable
         , FreshVariable variable
         , MonadCounter m
+        , unifier ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> [PureMLPattern level variable]
-    -> ExceptT
-        ( UnificationOrSubstitutionError level variable )
-        m
-        ( ExpandedPattern level variable
-        , UnificationProof level variable
-        )
+    -> unifier m
+        (ExpandedPattern level variable, UnificationProof level variable)
 simplifyAnds _ _ [] = throwError (UnificationError UnsupportedPatterns)
 simplifyAnds tools substitutionSimplifier patterns = do
      result <- foldM
@@ -137,11 +133,10 @@ simplifyAnds tools substitutionSimplifier patterns = do
     simplifyAnds' intermediate (And_ _ lhs rhs) =
         foldM simplifyAnds' intermediate [lhs, rhs]
     simplifyAnds' intermediate pat = do
-        (result, _) <- ExceptT . sequence
-            $ note (UnificationError UnsupportedPatterns)
-            $ termUnification
+        (result, _) <-
+            termUnification
                 tools
-                substitutionSimplifier
+                (liftPredicateSubstitutionSimplifier substitutionSimplifier)
                 (ExpandedPattern.term intermediate)
                 pat
         (predSubst, _) <-
