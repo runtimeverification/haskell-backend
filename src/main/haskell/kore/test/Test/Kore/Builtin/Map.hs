@@ -23,7 +23,7 @@ import           Data.Text
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( asPurePattern )
+                 ( asPurePattern, fromConcretePurePattern )
 import           Kore.AST.Sentence
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
@@ -48,7 +48,9 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes, constructorAttribute )
+                 ( StepperAttributes, constructorAttribute,
+                 injectiveAttribute )
+import           Kore.Unification.Data
 
 import           Test.Kore
                  ( idGen, testId )
@@ -363,26 +365,36 @@ unit_concretizeKeys :: Assertion
 unit_concretizeKeys =
     let
         x =
-            mkVar Variable
+            Variable
                 { variableName = testId "x"
                 , variableSort = Test.Int.intSort
                 }
         v =
-            mkVar Variable
+            Variable
                 { variableName = testId "v"
                 , variableSort = Test.Int.intSort
                 }
         key = Test.Int.asConcretePattern 1
+        symbolicKey = fromConcretePurePattern key
         val = Test.Int.asPattern 2
         concrete = asPattern $ Map.fromList [(key, val)]
-        symbolic = asSymbolicPattern $ Map.fromList [(x, v)]
+        symbolic = asSymbolicPattern $ Map.fromList [(mkVar x, mkVar v)]
         original =
             mkAnd
                 (mkPair Test.Int.intSort mapSort (Test.Int.asPattern 1) concrete)
-                (mkPair Test.Int.intSort mapSort x symbolic)
+                (mkPair Test.Int.intSort mapSort (mkVar x) symbolic)
         expected =
-            ExpandedPattern.fromPurePattern
-            $ mkPair Test.Int.intSort mapSort (Test.Int.asPattern 1) concrete
+            Predicated
+                { term =
+                    mkPair Test.Int.intSort mapSort
+                        symbolicKey
+                        (asSymbolicPattern $ Map.fromList [(symbolicKey, val)])
+                , predicate = Predicate.makeTruePredicate
+                , substitution =
+                    [ (v, val)
+                    , (x, symbolicKey)
+                    ]
+                }
         actual = evaluate original
     in
         assertEqual "Expected simplified Map" expected actual
@@ -393,26 +405,39 @@ unit_concretizeKeysAxiom =
         x = mkIntVar (testId "x")
         v = mkIntVar (testId "v")
         key = Test.Int.asConcretePattern 1
+        symbolicKey = fromConcretePurePattern key
         val = Test.Int.asPattern 2
+        symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
         axiom =
             AxiomPattern
                 { axiomPatternLeft =
-                    mkPair Test.Int.intSort mapSort
-                        x
-                        (asSymbolicPattern $ Map.fromList [(x, v)])
+                    mkPair Test.Int.intSort mapSort x symbolicMap
                 , axiomPatternRight = v
                 , axiomPatternRequires = Predicate.makeTruePredicate
                 , axiomPatternAttributes = Default.def
                 }
         config =
-            ExpandedPattern.fromPurePattern
+            evaluate
             $ mkPair Test.Int.intSort mapSort
-                (Test.Int.asPattern 1)
+                symbolicKey
                 (asPattern $ Map.fromList [(key, val)])
         expected =
             Right
-                ( ExpandedPattern.fromPurePattern val
-                , mempty
+                ( Predicated
+                    { term = val
+                    , predicate =
+                        -- The predicate is not discharged because we do not
+                        -- provide functionality axioms for elementMap.
+                        give testSymbolOrAliasSorts
+                        Predicate.makeCeilPredicate
+                        $ asSymbolicPattern
+                        $ Map.fromList [(symbolicKey, val)]
+                    , substitution = []
+                    }
+                , mconcat
+                    [ stepProof (StepProofVariableRenamings [])
+                    , stepProof (StepProofUnification EmptyUnificationProof)
+                    ]
                 )
         actual = runStep config axiom
     in
@@ -578,7 +603,11 @@ pairSymbolDecl =
                     }
             , sentenceSymbolSorts = [lSort, rSort]
             , sentenceSymbolResultSort = pairSort lSort rSort
-            , sentenceSymbolAttributes = Attributes [constructorAttribute]
+            , sentenceSymbolAttributes =
+                Attributes
+                    [ constructorAttribute
+                    , injectiveAttribute
+                    ]
             }
     lSortVariable = SortVariable (testId "l")
     rSortVariable = SortVariable (testId "r")

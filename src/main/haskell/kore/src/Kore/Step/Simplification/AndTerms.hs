@@ -316,13 +316,13 @@ maybeTermAnd =
         , addS sortInjectionAndEqualsAssumesDifferentHeads
         , liftE constructorSortInjectionAndEquals
         , liftE constructorAndEqualsAssumesDifferentHeads
+        , Builtin.Map.unify
+        , Builtin.Set.unify
+        , Builtin.List.unify
         , liftE domainValueAndConstructorErrors
         , liftET domainValueAndEqualsAssumesDifferent
         , liftET stringLiteralAndEqualsAssumesDifferent
         , liftET charLiteralAndEqualsAssumesDifferent
-        , Builtin.Map.unify
-        , Builtin.Set.unify
-        , Builtin.List.unify
         , lift functionAnd
         ]
   where

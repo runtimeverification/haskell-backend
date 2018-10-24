@@ -261,7 +261,10 @@ evalConcat =
                     _map2 <- expectBuiltinDomainMap ctx _map2
                     let overlapping =
                             (not . Set.null)
-                            (Set.intersection (Map.keysSet _map1) (Map.keysSet _map2))
+                                (Set.intersection
+                                    (Map.keysSet _map1)
+                                    (Map.keysSet _map2)
+                                )
                     if overlapping
                         then
                             -- Result is ‘\bottom{}()’ when there is overlap
@@ -383,7 +386,7 @@ asExpandedPattern symbols resultSort =
  -}
 asBuiltinDomainValue
     :: Kore.Sort Object
-    -> Map (Kore.ConcretePurePattern Object) (Kore.PureMLPattern Object variable)
+    -> Builtin variable
     -> Kore.PureMLPattern Object variable
 asBuiltinDomainValue resultSort map' = DV_ resultSort (BuiltinDomainMap map')
 
@@ -437,8 +440,19 @@ lookupSymbolInKeys = Builtin.lookupSymbol "MAP.in_keys"
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
-isSymbolConcat :: MetadataTools Object Hook -> Kore.SymbolOrAlias Object -> Bool
+isSymbolConcat
+    :: MetadataTools Object Hook
+    -> Kore.SymbolOrAlias Object
+    -> Bool
 isSymbolConcat = Builtin.isSymbol "MAP.concat"
+
+{- | Check if the given symbol is hooked to @MAP.element@.
+ -}
+isSymbolElement
+    :: MetadataTools Object Hook
+    -> Kore.SymbolOrAlias Object
+    -> Bool
+isSymbolElement = Builtin.isSymbol "MAP.element"
 
 {- | Simplify the conjunction of two concrete Map domain values.
 
@@ -533,8 +547,18 @@ unify
                             unifyFramed1 resultSort map1 symbol2 map2 x
                         [ x@(Var_ _), DV_ _ (BuiltinDomainMap map2) ] ->
                             unifyFramed1 resultSort map1 symbol2 map2 x
-                        _ ->
+                        [ _, _ ] ->
                             unsolved dv1 app
+                        _ ->
+                            Builtin.wrongArity "MAP.concat"
+                | isSymbolElement hookTools symbol2 ->
+                    Monad.Trans.lift $ case args2 of
+                        [ key2, value2 ] ->
+                            -- The key is not concrete yet, or MAP.element would
+                            -- have evaluated to a domain value.
+                            unifyElement map1 symbol2 key2 value2
+                        _ ->
+                            Builtin.wrongArity "MAP.element"
                 | otherwise ->
                     empty
             _ ->
@@ -613,9 +637,31 @@ unify
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
 
+    unifyElement
+        :: forall k . (level ~ Object, k ~ ConcretePurePattern Object)
+        => Map k p  -- ^ concrete map
+        -> SymbolOrAlias level  -- ^ 'element' symbol
+        -> p  -- ^ key
+        -> p  -- ^ value
+        -> m (expanded, proof)
+    unifyElement map1 element' key2 value2 =
+        case Map.toList map1 of
+            [(Kore.fromConcretePurePattern -> key1, value1)] ->
+                give symbolOrAliasSorts $ do
+                    (key, _) <- unifyChildren key1 key2
+                    (value, _) <- unifyChildren value1 value2
+                    let result =
+                            App_ element' <$> args
+                          where
+                            args = propagatePredicates [key, value]
+                    return (result, SimplificationProof)
+            _ ->
+                -- Cannot unify a non-element Map with an element Map.
+                return (ExpandedPattern.bottom, SimplificationProof)
+
     -- | Return an unsolved predicate
     unsolved
-        :: (level ~ Object, k ~ ConcretePurePattern Object)
+        :: level ~ Object
         => PureMLPattern level variable
         -> PureMLPattern level variable
         -> m (expanded, proof)
