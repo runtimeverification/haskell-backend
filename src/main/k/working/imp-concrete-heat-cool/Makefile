@@ -22,11 +22,11 @@ $(DEFINITION): imp.k $(K)
 %.output.golden: %.output
 	mv $< $<.golden
 
-test: tests/sum.test tests/primes.test tests/collatz.test
+test: tests/sum.test tests/primes.test tests/collatz.test tests/max-symbolic.test
 
 test-k: tests/sum.test
 
-golden: tests/sum.output.golden tests/primes.output.golden tests/collatz.output.golden
+golden: tests/sum.output.golden tests/primes.output.golden tests/collatz.output.golden tests/max-symbolic.output.golden
 
 clean:
 	rm -rf $(KOMPILED) tests/*.imp.kore tests/*.output

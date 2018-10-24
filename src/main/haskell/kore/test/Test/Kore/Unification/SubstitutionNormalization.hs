@@ -1,12 +1,14 @@
 module Test.Kore.Unification.SubstitutionNormalization
     (test_substitutionNormalization) where
 
-import Control.Monad.Except
-       ( runExceptT )
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
+
+import           Control.Monad.Except
+                 ( runExceptT )
+import qualified Data.Set as Set
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
@@ -264,4 +266,5 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const Mock.functionalAttributes
     , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
+    , subsorts = const Set.empty
     }
