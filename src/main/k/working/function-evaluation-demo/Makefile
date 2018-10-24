@@ -4,16 +4,16 @@ include $(TOP)/include.mk
 KOMPILED := demo-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): demo.k $(KOMPILE_TARGETS)
+$(DEFINITION): demo.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module DEMO
 
-%.imp.kore: %.demo $(DEFINITION) $(KRUN_TARGETS)
+%.imp.kore: %.demo $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.demo $(DEFINITION) $(KRUN_TARGETS)
+%.output: %.demo $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.demo $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.demo $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
