@@ -4,16 +4,16 @@ include $(TOP)/include.mk
 KOMPILED := strict-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): strict.k $(KOMPILE_TARGETS)
+$(DEFINITION): strict.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module STRICT
 
-%.strict.kore: %.strict $(DEFINITION) $(KRUN_TARGETS)
+%.strict.kore: %.strict $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.strict $(DEFINITION) $(KRUN_TARGETS)
+%.output: %.strict $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.strict $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.strict $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
