@@ -29,7 +29,7 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeMultipleAndPredicate )
+                 ( Predicate, makeAndPredicate, makeMultipleAndPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
 import           Kore.Step.ExpandedPattern
@@ -76,22 +76,30 @@ normalize
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> ExpandedPattern level variable
-    -> m
-        ( ExpandedPattern level variable
-        , UnificationProof level variable
-        )
-normalize tools substitutionSimplifier r = do
-    result <- runExceptT $
-        normalizePredicatedSubstitution tools substitutionSimplifier r
-    case result of
-        Left _err -> return (ExpandedPattern.bottom, EmptyUnificationProof)
-        Right normalized@(Predicated{predicate}, _proof) ->
-            if Predicate.isFalse predicate
-                -- TODO(virgil) : remove this conversion to bottom when
-                -- implementing
-                -- 2018-09-18-Substitution-Predicate-Top-Evaluation.md
-                then return (ExpandedPattern.bottom, EmptyUnificationProof)
-                else return normalized
+    -> m ( ExpandedPattern level variable )
+normalize
+    tools@MetadataTools{ symbolOrAliasSorts }
+    substitutionSimplifier
+    Predicated { term, predicate, substitution }
+  = give symbolOrAliasSorts $ do
+    x <- runExceptT $
+        normalizeSubstitutionAfterMerge
+            tools
+            substitutionSimplifier
+            (PredicateSubstitution { predicate, substitution })
+    return $ case x of
+      Right (PredicateSubstitution p s, _) ->
+          if Predicate.isFalse p
+              then ExpandedPattern.bottom
+              else Predicated term p s
+      Left _ ->
+          Predicated
+              term
+              (fst
+                $ makeAndPredicate predicate
+                $ substitutionToPredicate substitution
+              )
+              []
 
 normalizeSubstitutionAfterMerge
     ::  ( MetaOrObject level
@@ -267,31 +275,55 @@ normalizePredicatedSubstitution
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> Predicated level variable a
-    -> ExceptT
-        (UnificationOrSubstitutionError level variable)
-        m
-        ( Predicated level variable a
-        , UnificationProof level variable
-        )
+    -> m ( Predicated level variable a
+         , UnificationProof level variable
+         )
 normalizePredicatedSubstitution
-    tools
+    tools@MetadataTools{ symbolOrAliasSorts }
     substitutionSimplifier
     Predicated { term, predicate, substitution }
-  = do
-    (PredicateSubstitution
-            { predicate = normalizePredicate
-            , substitution = normalizedSubstitution
-            }
-        , proof
-        ) <-
-        normalizeSubstitutionAfterMerge
-            tools substitutionSimplifier
-            PredicateSubstitution { predicate, substitution }
-    return
-        ( Predicated
-            { term
-            , predicate = normalizePredicate
-            , substitution = normalizedSubstitution
-            }
-        , proof
-        )
+  = give symbolOrAliasSorts $ do
+    x <- runExceptT $
+            normalizeSubstitutionAfterMerge
+                tools
+                substitutionSimplifier
+                PredicateSubstitution { predicate, substitution }
+    return $ case x of
+        Left _ ->
+            ( Predicated
+                  term
+                  (fst $ makeAndPredicate
+                      predicate
+                      (substitutionToPredicate substitution)
+                  )
+                  []
+            , EmptyUnificationProof
+            )
+        Right (PredicateSubstitution p s, _) ->
+            (Predicated term p s, EmptyUnificationProof)
+
+-- normalizePredicatedSubstitution
+--     tools@MetadataTools{ symbolOrAliasSorts }
+--     substitutionSimplifier
+--     Predicated { term, predicate, substitution }
+--   = fmap f . runExceptT $ do
+--     (PredicateSubstitution
+--             { predicate = normalizePredicate
+--             , substitution = normalizedSubstitution
+--             }
+--         , proof
+--         ) <-
+--         normalizeSubstitutionAfterMerge
+--             tools substitutionSimplifier
+--             PredicateSubstitution { predicate, substitution }
+--     return
+--         ( Predicated
+--             { term
+--             , predicate = normalizePredicate
+--             , substitution = normalizedSubstitution
+--             }
+--         , proof
+--         )
+--     where
+--         f (Right x) = x
+--         f (Left _) = give symbolOrAliasSorts $ (Predicated term (fst $ makeAndPredicate predicate (substitutionToPredicate substitution)) [], EmptyUnificationProof)

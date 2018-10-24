@@ -37,8 +37,6 @@ import           Control.Applicative
 import           Control.Error
                  ( MaybeT )
 import           Control.Monad.Counter
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -80,7 +78,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
-                 ( normalizePredicatedSubstitution )
+                 ( normalize )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
@@ -433,16 +431,6 @@ unify
   =
     unify0
   where
-    -- | Normalize the substitution of 'expanded', or return 'bottom' if
-    -- normalization fails.
-    -- NB: this is exactly the same for maps.
-    normalize :: (level ~ Object) => expanded -> m expanded
-    normalize r =
-        runExceptT
-            (normalizePredicatedSubstitution tools substitutionSimplifier r)
-        >>= \case
-            Left _ -> return ExpandedPattern.bottom
-            Right (normalized, _) -> return normalized
 
     -- | Unify the two argument patterns.
     unify0
@@ -505,7 +493,7 @@ unify
                             , substitution = [(x, DV_ resultSort (Kore.BuiltinDomainSet diff))]
                             }
                         | otherwise = ExpandedPattern.bottom
-                (,) <$> normalize result <*> pure SimplificationProof
+                (,) <$> normalize tools substitutionSimplifier result <*> pure SimplificationProof
         return unified
 
     unifyFramed _ _ _ _ = empty
