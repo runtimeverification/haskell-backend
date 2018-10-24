@@ -373,7 +373,7 @@ unify
           sequenceA -- float `Predicated` to the top
           <$> fmap fst -- discard the proof in (expanded, proof)
           <$> sequence unifiedList -- float the counter monad `m` to the top
-        (res, _proof) <- normalize tools substitutionSimplifier $
+        res <- normalize tools substitutionSimplifier $
           (\l -> DV_ dvSort $ BuiltinDomainList l) <$> unifiedList'
         return (res, SimplificationProof)
 unify
@@ -400,7 +400,7 @@ unify
                 (DV_ dvSort $ BuiltinDomainList list2')
          return $ do
             (unifiedList', _) <- unifiedList
-            (res, _proof) <- normalize tools substitutionSimplifier $
+            res <- normalize tools substitutionSimplifier $
                 (\(DV_ _ (BuiltinDomainList l1)) l2
                     -> DV_ dvSort (BuiltinDomainList $ l1 >< l2)
                 ) <$> unifiedList' <*> suffix'

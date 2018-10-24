@@ -242,7 +242,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
         )
     , testCase "Normalizes substitution"
         (assertEqualWithExplanation ""
-            (Right PredicateSubstitution
+            (PredicateSubstitution
                 { predicate = makeTruePredicate
                 , substitution =
                     [ (Mock.x, Mock.constr10 Mock.a)
@@ -262,7 +262,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
         )
     , testCase "Predicate from normalizing substitution"
         (assertEqualWithExplanation ""
-            (Right PredicateSubstitution
+            (PredicateSubstitution
                 { predicate = makeEqualsPredicate Mock.cf Mock.cg
                 , substitution =
                     [ (Mock.x, Mock.constr10 Mock.cf) ]
@@ -280,7 +280,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
         )
     , testCase "Normalizes substitution and substitutes in predicate"
         (assertEqualWithExplanation ""
-            (Right PredicateSubstitution
+            (PredicateSubstitution
                 { predicate = makeCeilPredicate (Mock.f Mock.a)
                 , substitution =
                     [ (Mock.x, Mock.constr10 Mock.a)
@@ -325,12 +325,10 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                 Right r -> Right (fst $ r)
     normalizeWithPredicate
         :: PredicateSubstitution Object Variable
-        -> Either
-            ( UnificationOrSubstitutionError Object Variable )
-            ( PredicateSubstitution Object Variable )
+        -> PredicateSubstitution Object Variable
     normalizeWithPredicate PredicateSubstitution {predicate, substitution} =
-        toPredicateSubstitution <$> fst
-            <$> (evalSimplifier $ runExceptT
+        toPredicateSubstitution . fst
+            $ (evalSimplifier
                 $ normalizePredicatedSubstitution
                     mockMetadataTools
                     (Mock.substitutionSimplifier mockMetadataTools)

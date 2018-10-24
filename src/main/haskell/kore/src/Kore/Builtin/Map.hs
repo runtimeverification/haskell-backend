@@ -573,7 +573,7 @@ unify
                             ExpandedPattern.bottom
                         | otherwise =
                             asBuiltinMap <$> propagatePredicates _intersect
-                (normalized, _proof) <-
+                normalized <-
                     normalize tools substitutionSimplifier result
                 return (normalized, SimplificationProof)
         return unified
@@ -624,7 +624,7 @@ unify
                             App_ concat'
                                 <$> propagatePredicates
                                     [intersectPattern, remainder1Substitution]
-                (normalized, _proof) <-
+                normalized <-
                     normalize tools substitutionSimplifier result
                 return (normalized, SimplificationProof)
         return unified
