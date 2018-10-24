@@ -313,7 +313,7 @@ externalizeFreshVars pat = cata renameFreshLocal pat
         Var_ v {
             variableName = variableName
                 { getId =
-                    freshPrefix <> (Text.drop (Text.length freshVariablePrefix) name)
+                    freshPrefix <> Text.filter (/= '_') name
                 }
         }
       where

@@ -1,0 +1,21 @@
+    true
+  #Equals
+    varvarVar'Ques'I1832 <=Int varvarVar'Ques'I2462
+#And
+    true
+  #Equals
+    varvarVar'Ques'I2462 <=Int varvarVar'Ques'I3095
+#And
+  <generatedTop>
+    <T>
+      <k>
+        .
+      </k>
+      <state>
+        x |-> varvarVar'Ques'I1832 y |-> varvarVar'Ques'I2462 z |-> varvarVar'Ques'I3095 max |-> varvarVar'Ques'I3095 .State
+      </state>
+    </T>
+    <generatedCounter>
+      0
+    </generatedCounter>
+  </generatedTop>
