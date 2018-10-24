@@ -1,0 +1,18 @@
+<generatedTop>
+  <T>
+    <k>
+      ready
+    </k>
+    <a>
+      .List
+    </a>
+    <b>
+      ListItem ( x )
+      ListItem ( z )
+      .List
+    </b>
+  </T>
+  <generatedCounter>
+    0
+  </generatedCounter>
+</generatedTop>
