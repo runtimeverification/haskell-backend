@@ -365,7 +365,8 @@ unify
     simplifyChild
     (DV_ dvSort (BuiltinDomainList list1))
     (DV_ _    (BuiltinDomainList list2))
-  | Seq.length list1 /= Seq.length list2 = Failure
+  | Seq.length list1 /= Seq.length list2 =
+        return $ return $ (ExpandedPattern.bottom, SimplificationProof)
   | otherwise = give symbolOrAliasSorts $ do
       unifiedList <- sequence $ Seq.zipWith simplifyChild list1 list2
       return $ do
@@ -382,7 +383,8 @@ unify
     simplifyChild
     (App_ symConcat [DV_ _ (BuiltinDomainList list1), (Var_ v)])
     (DV_ dvSort (BuiltinDomainList list2))
-  | Seq.length list1 > Seq.length list2 = Failure
+  | Seq.length list1 > Seq.length list2 =
+        return $ return $ (ExpandedPattern.bottom, SimplificationProof)
   | isSymbolConcat (StepperAttributes.hook <$> tools) symConcat
   = give symbolOrAliasSorts $
     let list2' = Seq.take (Seq.length list1) list2

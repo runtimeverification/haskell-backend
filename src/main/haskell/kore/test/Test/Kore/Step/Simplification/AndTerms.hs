@@ -648,7 +648,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
             let term7 = Mock.builtinList [Mock.a, Mock.a]
             let term8 = Mock.builtinList [Mock.a]
             assertEqualWithExplanation "different lengths"
-                ( Nothing
+                ( Just ExpandedPattern.bottom
                 )
                 ( unify
                     mockMetadataTools
