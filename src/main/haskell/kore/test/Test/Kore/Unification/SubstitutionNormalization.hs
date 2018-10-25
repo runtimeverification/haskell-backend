@@ -266,5 +266,5 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const Mock.functionalAttributes
     , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
-    , subsorts = const Set.empty
+    , subsorts = Set.singleton
     }

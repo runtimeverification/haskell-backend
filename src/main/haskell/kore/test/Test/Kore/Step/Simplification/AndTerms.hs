@@ -270,6 +270,26 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
                     (Mock.sortInjectionSubSubToTop Mock.aSubSubsort)
                 )
+            assertEqualWithExplanation
+                "different head constructors common subsort"
+                ( ExpandedPattern.bottom
+                , Just ExpandedPattern.bottom
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+                    (Mock.sortInjectionSubToTop Mock.aSubsort)
+                )
+            assertEqualWithExplanation
+                "different head constructors common subsort reversed"
+                ( ExpandedPattern.bottom
+                , Just ExpandedPattern.bottom
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    (Mock.sortInjectionSubToTop Mock.aSubsort)
+                    (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+                )
         )
     , testCase "constructor and"
         (do

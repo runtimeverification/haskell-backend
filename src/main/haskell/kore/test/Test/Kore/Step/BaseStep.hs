@@ -1000,7 +1000,7 @@ mockMetadataTools = MetadataTools
     , sortAttributes = undefined
     , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
-    , subsorts = const Set.empty
+    , subsorts = Set.singleton
     }
 
 asPureMetaPattern

@@ -43,7 +43,7 @@ data MetadataTools level attributes = MetadataTools
     , isSubsortOf :: Sort level -> Sort level -> Bool
     {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
        including when @a@ equals @b@. -}
-    , subsorts :: Sort level -> Set (Sort Object)
+    , subsorts :: Sort level -> Set (Sort level)
     -- ^ get the subsorts for a sort
     }
   deriving Functor
@@ -66,7 +66,9 @@ extractMetadataTools m =
     , sortAttributes = getSortAttributes m
     , symbolOrAliasSorts  = getHeadApplicationSorts m
     , isSubsortOf = checkSubsort
-    , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
+    , subsorts = case isMetaOrObject @level [] of
+            IsMeta   -> Set.singleton
+            IsObject -> Set.fromList . fmap getSortFromId . getSubsorts
     }
   where
     subsortTable :: Map (Sort Object) [Sort Object]
@@ -74,7 +76,7 @@ extractMetadataTools m =
         [ Map.insert subsort [] $ Map.singleton supersort [subsort]
         | Subsort subsort supersort <- indexedModuleSubsorts m]
 
-    -- In `sortGraph`, and edge (a, b) represents a subsort relationship between
+    -- In `sortGraph`, an edge (a, b) represents a subsort relationship between
     -- b and a.
     (sortGraph, vertexToSort, sortToVertex) =
         graphFromEdges [ ((),supersort,subsorts)
