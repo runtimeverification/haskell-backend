@@ -1,0 +1,17 @@
+<generatedTop>
+  <T>
+    <k>
+      ready
+    </k>
+    <a>
+      .Set
+    </a>
+    <b>
+      SetItem ( x )
+      SetItem ( z )
+    </b>
+  </T>
+  <generatedCounter>
+    0
+  </generatedCounter>
+</generatedTop>
