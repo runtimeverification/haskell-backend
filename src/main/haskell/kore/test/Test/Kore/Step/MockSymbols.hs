@@ -63,6 +63,8 @@ aSubsortId :: Id Object
 aSubsortId = testId "aSubSubsort"
 aSubSubsortId :: Id Object
 aSubSubsortId = testId "aSubSubsort"
+aOtherSortId :: Id Object
+aOtherSortId = testId "aOtherSort"
 bId :: Id Object
 bId = testId "b"
 bSort0Id :: Id Object
@@ -174,6 +176,11 @@ aSubsortSymbol = SymbolOrAlias
 aSubSubsortSymbol :: SymbolOrAlias Object
 aSubSubsortSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = aSubSubsortId
+    , symbolOrAliasParams      = []
+    }
+aOtherSortSymbol :: SymbolOrAlias Object
+aOtherSortSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = aOtherSortId
     , symbolOrAliasParams      = []
     }
 bSymbol :: SymbolOrAlias Object
@@ -391,6 +398,11 @@ sortInjectionSubSubToSubSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [subSubSort, subSort]
     }
+sortInjectionOtherToTopSymbol :: SymbolOrAlias Object
+sortInjectionOtherToTopSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = sortInjectionId
+    , symbolOrAliasParams      = [otherSort, topSort]
+    }
 unitMapSymbol :: SymbolOrAlias level
 unitMapSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = unitMapId
@@ -458,6 +470,11 @@ aSubSubsort
     :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
 aSubSubsort = mkApp aSubSubsortSymbol []
+
+aOtherSort
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+aOtherSort = mkApp aOtherSortSymbol []
 
 b   :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
@@ -693,6 +710,12 @@ sortInjectionSubSubToSub
     -> PureMLPattern Object variable
 sortInjectionSubSubToSub arg = mkApp sortInjectionSubSubToSubSymbol [arg]
 
+sortInjectionOtherToTop
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+sortInjectionOtherToTop arg = mkApp sortInjectionOtherToTopSymbol [arg]
+
 concatMap
     :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
@@ -737,6 +760,12 @@ symbolOrAliasSortsMapping =
         , ApplicationSorts
             { applicationSortsOperands = []
             , applicationSortsResult = subSubSort
+            }
+        )
+    ,   ( aOtherSortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult = otherSort
             }
         )
     ,   ( bSymbol
@@ -997,6 +1026,12 @@ symbolOrAliasSortsMapping =
             , applicationSortsResult = subSort
             }
         )
+    ,   ( sortInjectionOtherToTopSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [otherSort]
+            , applicationSortsResult = topSort
+            }
+        )
     ,   ( unitMapSymbol
         , ApplicationSorts
             { applicationSortsOperands = []
@@ -1038,6 +1073,9 @@ attributesMapping =
         , Mock.constructorFunctionalAttributes
         )
     ,   ( aSubSubsortSymbol
+        , Mock.constructorFunctionalAttributes
+        )
+    ,   ( aOtherSortSymbol
         , Mock.constructorFunctionalAttributes
         )
     ,   ( bSymbol
@@ -1169,6 +1207,9 @@ attributesMapping =
     ,   ( sortInjectionSubSubToSubSymbol
         , Mock.sortInjectionAttributes
         )
+    ,   ( sortInjectionOtherToTopSymbol
+        , Mock.sortInjectionAttributes
+        )
     ,   ( unitMapSymbol
         , Mock.defaultAttributes { hook = Hook (Just "MAP.unit") }
         )
@@ -1228,6 +1269,13 @@ subSubSort =
         , sortActualSorts = []
         }
 
+otherSort :: Sort Object
+otherSort =
+    SortActualSort SortActual
+        { sortActualName = testId "otherSort"
+        , sortActualSorts = []
+        }
+
 mapSort :: Sort Object
 mapSort =
     SortActualSort SortActual
@@ -1243,7 +1291,13 @@ listSort =
         }
 
 subsorts :: [(Sort Object, Sort Object)]
-subsorts = [(subSubSort, subSort), (subSubSort, topSort), (subSort, topSort)]
+subsorts =
+    [ (subSubSort, subSort)
+    , (subSubSort, topSort)
+    , (subSort, topSort)
+    , (subSubSort, otherSort)
+    , (otherSort, topSort)
+    ]
 
 builtinMap
     :: [(ConcretePurePattern Object, PureMLPattern Object variable)]

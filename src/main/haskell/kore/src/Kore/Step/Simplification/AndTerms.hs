@@ -13,16 +13,17 @@ module Kore.Step.Simplification.AndTerms
     , termUnification
     ) where
 
-import Control.Applicative
-       ( Alternative (..) )
-import Control.Exception
-       ( assert )
-import Data.Functor.Foldable
-       ( project )
-import Data.Reflection
-       ( give )
-import Prelude hiding
-       ( concat )
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Exception
+                 ( assert )
+import           Data.Functor.Foldable
+                 ( project )
+import           Data.Reflection
+                 ( give )
+import qualified Data.Set as Set
+import           Prelude hiding
+                 ( concat )
 
 import           Data.Result
 import           Kore.AST.Common
@@ -732,12 +733,19 @@ sortInjectionAndEqualsAssumesDifferentHeads
         else if isConstructorLikeTop tools (project firstChild)
              || isConstructorLikeTop tools (project secondChild)
             then return (return (ExpandedPattern.bottom, SimplificationProof))
-            else
-                empty
+            else if Set.null sortIntersection
+                then
+                    return (return (ExpandedPattern.bottom, SimplificationProof))
+                else error
+                   ( "Sort" ++ show firstOrigin
+                   ++ "\n and sort " ++ show secondOrigin
+                   ++ "\n have common subsort(s): " ++ show sortIntersection
+                   )
   where
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools secondHead
     isSubsortOf = MetadataTools.isSubsortOf tools
+    subsorts = MetadataTools.subsorts tools
     termSortInjection
         :: Sort level
         -> Sort level
@@ -766,6 +774,9 @@ sortInjectionAndEqualsAssumesDifferentHeads
                     , symbolOrAliasParams = [originSort, destinationSort]
                     }
                 [term]
+    firstSubsorts = subsorts firstOrigin
+    secondSubsorts = subsorts secondOrigin
+    sortIntersection = Set.intersection firstSubsorts secondSubsorts
 
 sortInjectionAndEqualsAssumesDifferentHeads _ _ _ _ = empty
 

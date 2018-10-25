@@ -206,16 +206,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Mock.sortInjection10 Mock.cfSort0)
                 )
             assertEqualWithExplanation "different head not subsort"
-                ( Predicated
-                    { term =
-                        mkAnd
-                            (Mock.sortInjectionSubToTop Mock.plain00Subsort)
-                            (Mock.sortInjection0ToTop Mock.plain00Sort0)
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , Nothing
-                )
+                ( ExpandedPattern.bottom, Just ExpandedPattern.bottom )
                 (simplifyUnify
                     mockMetadataTools
                     (Mock.sortInjectionSubToTop Mock.plain00Subsort)
@@ -278,6 +269,26 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     mockMetadataTools
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
                     (Mock.sortInjectionSubSubToTop Mock.aSubSubsort)
+                )
+            assertEqualWithExplanation
+                "different head constructors common subsort"
+                ( ExpandedPattern.bottom
+                , Just ExpandedPattern.bottom
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+                    (Mock.sortInjectionSubToTop Mock.aSubsort)
+                )
+            assertEqualWithExplanation
+                "different head constructors common subsort reversed"
+                ( ExpandedPattern.bottom
+                , Just ExpandedPattern.bottom
+                )
+                (simplifyUnify
+                    mockMetadataTools
+                    (Mock.sortInjectionSubToTop Mock.aSubsort)
+                    (Mock.sortInjectionOtherToTop Mock.aOtherSort)
                 )
         )
     , testCase "constructor and"

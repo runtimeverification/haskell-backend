@@ -5,12 +5,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Control.Monad.Except
-       ( runExceptT )
-import Data.Default
-       ( def )
-import Data.Reflection
-       ( give )
+import           Control.Monad.Except
+                 ( runExceptT )
+import           Data.Default
+                 ( def )
+import           Data.Reflection
+                 ( give )
+import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( Application (..), AstLocation (..), Id (..),
@@ -999,6 +1000,7 @@ mockMetadataTools = MetadataTools
     , sortAttributes = undefined
     , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
+    , subsorts = Set.singleton
     }
 
 asPureMetaPattern

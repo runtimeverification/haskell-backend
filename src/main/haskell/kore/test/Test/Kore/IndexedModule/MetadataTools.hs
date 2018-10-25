@@ -10,6 +10,7 @@ import           Data.Functor.Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import           Kore.AST.Builders
@@ -185,13 +186,26 @@ sortVarR = sortVariableSort "R"
 
 testSubsorts :: [TestTree]
 testSubsorts =
-    [test "direct subsort" (isSubsortOf meta sortA sortB)
-    ,test "transitive subsort" (isSubsortOf meta sortA sortC)
-    ,test "not subsort, known sorts" (not (isSubsortOf meta sortD sortE))
-    ,test "not subsort, unknown sorts" (not (isSubsortOf meta sortF sortG))
+    [ test "direct subsort" (isSubsortOf meta sortA sortB)
+    , test "transitive subsort" (isSubsortOf meta sortA sortC)
+    , test "not subsort, known sorts" (not (isSubsortOf meta sortD sortE))
+    , test "not subsort, unknown sorts" (not (isSubsortOf meta sortF sortG))
+    , testSubsort
+        "subsorts reflexivity"
+        [sortA]
+        (subsorts meta sortA)
+    , testSubsort
+        "direct subsorts"
+        [sortA, sortB]
+        (subsorts meta sortB)
+    , testSubsort
+        "transitive subsorts"
+        [sortA, sortB, sortC]
+        (subsorts meta sortC)
     ]
   where
     test name cond = testCase name (assertBool "" cond)
+    testSubsort name list = testCase name . assertEqual "" (Set.fromList list)
     moduleIndex :: Map.Map ModuleName (KoreIndexedModule ImplicitAttributes)
     Right moduleIndex = verifyAndIndexDefinition DoNotVerifyAttributes
         Builtin.koreVerifiers

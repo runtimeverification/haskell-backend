@@ -8,6 +8,7 @@ import Test.Tasty.HUnit
 import           Data.Default
                  ( def )
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
@@ -418,6 +419,7 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const Mock.constructorFunctionalAttributes
     , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
+    , subsorts = Set.singleton
     }
 
 sigmaSymbol :: SymbolOrAlias Meta

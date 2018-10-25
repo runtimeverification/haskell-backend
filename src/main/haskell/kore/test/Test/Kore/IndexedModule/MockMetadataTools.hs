@@ -10,10 +10,11 @@ module Test.Kore.IndexedModule.MockMetadataTools
     , sortInjectionAttributes
     ) where
 
-import Data.Default
-       ( def )
-import Data.Maybe
-       ( fromMaybe )
+import           Data.Default
+                 ( def )
+import           Data.Maybe
+                 ( fromMaybe )
+import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( Sort, SymbolOrAlias (..) )
@@ -38,7 +39,12 @@ makeMetadataTools symbolOrAliasSorts attr isSubsortOf =
         { symAttributes = attributesFunction attr
         , sortAttributes = const functionAttributes
         , symbolOrAliasSorts = symbolOrAliasSorts
+        -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
+        -- 'isSubsortOf' only work with direct (non-transitive) relationships.
+        -- For now, we can manually add the relationships for tests.
         , isSubsortOf = \first second -> (first, second) `elem` isSubsortOf
+        , subsorts = \sort ->
+            Set.fromList . fmap snd . filter ((==) sort . fst) $ isSubsortOf
         }
 
 makeSymbolOrAliasSorts
