@@ -342,14 +342,14 @@ asPattern
     -> Either
         (Kore.Error e)
         (Builtin variable -> Kore.PureMLPattern Object variable)
-asPattern indexedModule _
+asPattern indexedModule dvSort
   = do
-    symbolUnit <- lookupSymbolUnit indexedModule
+    symbolUnit <- lookupSymbolUnit dvSort indexedModule
     let applyUnit = Kore.App_ symbolUnit []
-    symbolElement <- lookupSymbolElement indexedModule
+    symbolElement <- lookupSymbolElement dvSort indexedModule
     let applyElement (key, value) =
             Kore.App_ symbolElement [Kore.fromConcretePurePattern key, value]
-    symbolConcat <- lookupSymbolConcat indexedModule
+    symbolConcat <- lookupSymbolConcat dvSort indexedModule
     let applyConcat map1 map2 = Kore.App_ symbolConcat [map1, map2]
         asPattern0 result =
             foldr applyConcat applyUnit
@@ -385,44 +385,50 @@ asBuiltinDomainValue resultSort map' = DV_ resultSort (BuiltinDomainMap map')
 {- | Find the symbol hooked to @MAP.unit@ in an indexed module.
  -}
 lookupSymbolUnit
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol "MAP.unit"
+lookupSymbolUnit = Builtin.lookupSymbolWithSort "MAP.unit"
 
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
 lookupSymbolUpdate
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolUpdate = Builtin.lookupSymbol "MAP.update"
+lookupSymbolUpdate = Builtin.lookupSymbolWithSort "MAP.update"
 
 {- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
  -}
 lookupSymbolLookup
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolLookup = Builtin.lookupSymbol "MAP.lookup"
+lookupSymbolLookup = Builtin.lookupSymbolWithSort "MAP.lookup"
 
 {- | Find the symbol hooked to @MAP.element@ in an indexed module.
  -}
 lookupSymbolElement
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbol "MAP.element"
+lookupSymbolElement = Builtin.lookupSymbolWithSort "MAP.element"
 
 {- | Find the symbol hooked to @MAP.concat@ in an indexed module.
  -}
 lookupSymbolConcat
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol "MAP.concat"
+lookupSymbolConcat = Builtin.lookupSymbolWithSort "MAP.concat"
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
  -}
 lookupSymbolInKeys
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolInKeys = Builtin.lookupSymbol "MAP.in_keys"
+lookupSymbolInKeys = Builtin.lookupSymbolWithSort "MAP.in_keys"
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}

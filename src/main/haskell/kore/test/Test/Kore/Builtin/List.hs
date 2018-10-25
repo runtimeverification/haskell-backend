@@ -217,16 +217,16 @@ builtinSymbol name =
         }
 
 symbolUnit :: SymbolOrAlias Object
-Right symbolUnit = List.lookupSymbolUnit indexedModule
+Right symbolUnit = List.lookupSymbolUnit listSort indexedModule
 
 symbolElement :: SymbolOrAlias Object
-Right symbolElement = List.lookupSymbolElement indexedModule
+Right symbolElement = List.lookupSymbolElement listSort indexedModule
 
 symbolConcat :: SymbolOrAlias Object
-Right symbolConcat = List.lookupSymbolConcat indexedModule
+Right symbolConcat = List.lookupSymbolConcat listSort indexedModule
 
 symbolGet :: SymbolOrAlias Object
-Right symbolGet = List.lookupSymbolGet indexedModule
+Right symbolGet = List.lookupSymbolGet listSort indexedModule
 
 {- | Declare the @LIST@ builtins.
  -}

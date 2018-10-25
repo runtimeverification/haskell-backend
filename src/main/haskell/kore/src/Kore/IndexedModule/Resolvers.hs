@@ -15,6 +15,7 @@ module Kore.IndexedModule.Resolvers
     , resolveAlias
     , resolveSymbol
     , resolveHook
+    , resolveHookWithSort
     , resolveHooks
     , findIndexedSort
     ) where
@@ -38,7 +39,7 @@ import Kore.AST.MetaOrObject
        ( IsMetaOrObject (..), MetaOrObject, Object, isMetaOrObject )
 import Kore.AST.Sentence
 import Kore.ASTHelpers
-       ( ApplicationSorts, symbolOrAliasSorts )
+       ( ApplicationSorts (..), symbolOrAliasSorts )
 import Kore.Error
        ( Error, koreFail, printError )
 import Kore.IndexedModule.IndexedModule
@@ -203,7 +204,7 @@ resolveSymbol
     :: MetaOrObject level
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error a) (atts, KoreSentenceSymbol level)
+    -> Either (Error e) (atts, KoreSentenceSymbol level)
 resolveSymbol m headId =
     case resolveThing (symbolSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
@@ -219,7 +220,7 @@ resolveAlias
     :: MetaOrObject level
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error a) (atts, KoreSentenceAlias level)
+    -> Either (Error e) (atts, KoreSentenceAlias level)
 resolveAlias m headId =
     case resolveThing (aliasSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
@@ -236,7 +237,7 @@ resolveSort
     :: MetaOrObject level
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error a) (atts, SortDescription level)
+    -> Either (Error e) (atts, SortDescription level)
 resolveSort m sortId =
     case resolveThing (sortSentencesMap (Proxy :: Proxy level)) m sortId of
         Nothing ->
@@ -248,21 +249,46 @@ resolveSort m sortId =
 resolveHook
     :: KoreIndexedModule atts
     -> Text
-    -> Either (Error a) (Id Object)
+    -> Either (Error e) (Id Object)
 resolveHook indexedModule builtinName =
-    case resolveHooks indexedModule builtinName of
-        [hookId] -> return hookId
-        [] ->
-            koreFail
-                ("Builtin '" ++ Text.unpack builtinName ++ "' is not hooked.")
-        hookIds ->
-            koreFail
-                ("Builtin '" ++ Text.unpack builtinName
-                    ++ "' is hooked to multiple identifiers: "
-                    ++ List.intercalate ", " (squotes . getIdForError <$> hookIds)
-                )
-          where
-            squotes str = "'" ++ str ++ "'"
+    resolveHookHandler builtinName $ resolveHooks indexedModule builtinName
+
+resolveHookWithSort
+    :: KoreIndexedModule atts
+    -> Text
+    -> Sort Object
+    -> Either (Error e) (Id Object)
+resolveHookWithSort indexedModule builtinName builtinSort =
+    resolveHookHandler builtinName $
+        filter
+        (\name ->
+            elem
+            builtinSort
+            ((\s -> applicationSortsResult s : applicationSortsOperands s)
+                $ getHeadApplicationSorts indexedModule
+                $ SymbolOrAlias name []
+            )
+        )
+        $ resolveHooks indexedModule builtinName
+
+resolveHookHandler
+    :: Text
+    -> [Id Object]
+    -> Either (Error e) (Id Object)
+resolveHookHandler builtinName lookupResults =
+    case lookupResults of
+    [hookId] -> return hookId
+    [] ->
+        koreFail
+            ("Builtin '" ++ Text.unpack builtinName ++ "' is not hooked.")
+    hookIds ->
+        koreFail
+            ("Builtin '" ++ Text.unpack builtinName
+                ++ "' is hooked to multiple identifiers: "
+                ++ List.intercalate ", " (squotes . getIdForError <$> hookIds)
+            )
+      where
+        squotes str = "'" ++ str ++ "'"
 
 resolveHooks
     :: KoreIndexedModule atts

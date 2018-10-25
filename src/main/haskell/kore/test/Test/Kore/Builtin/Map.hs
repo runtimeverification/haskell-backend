@@ -410,22 +410,22 @@ builtinSymbol name =
         }
 
 symbolUnit :: SymbolOrAlias Object
-Right symbolUnit = Map.lookupSymbolUnit indexedModule
+Right symbolUnit = Map.lookupSymbolUnit mapSort indexedModule
 
 symbolUpdate :: SymbolOrAlias Object
-Right symbolUpdate = Map.lookupSymbolUpdate indexedModule
+Right symbolUpdate = Map.lookupSymbolUpdate mapSort indexedModule
 
 symbolLookup :: SymbolOrAlias Object
-Right symbolLookup = Map.lookupSymbolLookup indexedModule
+Right symbolLookup = Map.lookupSymbolLookup mapSort indexedModule
 
 symbolElement :: SymbolOrAlias Object
-Right symbolElement = Map.lookupSymbolElement indexedModule
+Right symbolElement = Map.lookupSymbolElement mapSort indexedModule
 
 symbolConcat :: SymbolOrAlias Object
-Right symbolConcat = Map.lookupSymbolConcat indexedModule
+Right symbolConcat = Map.lookupSymbolConcat mapSort indexedModule
 
 symbolInKeys :: SymbolOrAlias Object
-Right symbolInKeys = Map.lookupSymbolInKeys indexedModule
+Right symbolInKeys = Map.lookupSymbolInKeys mapSort indexedModule
 
 {- | Declare the @MAP@ builtins.
  -}
