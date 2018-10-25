@@ -1243,13 +1243,13 @@ attributesMapping =
         , Mock.functionalAttributes { hook = Hook (Just "MAP.unit") }
         )
     ,   ( elementMapSymbol
-        , Mock.defaultAttributes { hook = Hook (Just "MAP.element") }
+        , Mock.functionalAttributes { hook = Hook (Just "MAP.element") }
         )
     ,   ( concatMapSymbol
         , Mock.functionalAttributes { hook = Hook (Just "MAP.concat") }
         )
     ,   ( elemListSymbol
-        , Mock.defaultAttributes { hook = Hook (Just "LIST.elem") }
+        , Mock.functionalAttributes { hook = Hook (Just "LIST.elem") }
         )
     ,   ( concatListSymbol
         , Mock.functionalAttributes { hook = Hook (Just "LIST.concat") }

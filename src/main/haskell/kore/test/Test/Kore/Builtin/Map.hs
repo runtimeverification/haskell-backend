@@ -4,7 +4,6 @@ import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
-import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
@@ -41,9 +40,11 @@ import           Test.Kore.Builtin.Int
                  ( genConcreteIntegerPattern, genInteger, genIntegerPattern )
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.Set as Test.Set
+import           Test.Kore.Comparators ()
 import           Test.Kore.Step.Condition.Evaluator
                  ( genSortedVariable )
 import           Test.SMT
+import           Test.Tasty.HUnit.Extensions
 
 genMapInteger :: Gen a -> Gen (Map Integer a)
 genMapInteger genElement =
@@ -219,8 +220,8 @@ test_keysUnit =
                 patExpect = Test.Set.asPattern Set.empty
                 predicate = mkEquals patExpect patKeys
             expect <- evaluateWith solver patExpect
-            assertEqual "" expect =<< evaluateWith solver patKeys
-            assertEqual "" ExpandedPattern.top =<< evaluateWith solver predicate
+            assertEqualWithExplanation "" expect =<< evaluateWith solver patKeys
+            assertEqualWithExplanation "" ExpandedPattern.top =<< evaluateWith solver predicate
         )
 
 test_keysElement :: TestTree
@@ -292,7 +293,7 @@ test_simplify =
                     $ Domain.BuiltinMap
                     $ Map.fromList [(key, x)]
             actual <- evaluateWith solver original
-            assertEqual "expected simplified Map" expected actual
+            assertEqualWithExplanation "expected simplified Map" expected actual
         )
 
 -- | Maps with symbolic keys are not simplified.
@@ -363,7 +364,7 @@ test_concretizeKeys =
         "unify a concrete Map with a symbolic Map"
         (\solver -> do
             actual <- evaluateWith solver original
-            assertEqual "expected simplified Map" expected actual
+            assertEqualWithExplanation "expected simplified Map" expected actual
         )
   where
     x =
@@ -426,7 +427,7 @@ test_concretizeKeysAxiom =
                         (asPattern $ Map.fromList [(key, val)])
             config <- evaluateWith solver pair
             actual <- runStepWith solver config axiom
-            assertEqual "expected MAP.lookup" expected actual
+            assertEqualWithExplanation "expected MAP.lookup" expected actual
         )
   where
     x = mkIntVar (testId "x")
@@ -446,13 +447,7 @@ test_concretizeKeysAxiom =
         Right
             ( Predicated
                 { term = val
-                , predicate =
-                    -- The predicate is not discharged because we do not
-                    -- provide functionality axioms for elementMap.
-                    give testSymbolOrAliasSorts
-                    Predicate.makeCeilPredicate
-                    $ asSymbolicPattern
-                    $ Map.fromList [(symbolicKey, val)]
+                , predicate = Predicate.makeTruePredicate
                 , substitution = []
                 }
             , mconcat

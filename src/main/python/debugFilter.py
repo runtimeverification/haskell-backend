@@ -28,6 +28,8 @@ def findElementEnd(start, line):
             if openBraces == 0:
                 return end
             openBraces -= 1
+            if openBraces == 0:
+                return end + 1
         elif line[end] == ",":
             if openBraces == 0:
                 return end
@@ -38,7 +40,8 @@ def findElementStartingWith(startIndex, prefix, line):
     """Finds an element's position given a prefix and a start index.
 
     Assumes a correctly parenthesized expression, with elements separated
-    by commas.
+    by commas. Assumes that an expression with parenthesis ends at the last
+    closed one.
 
     The prefix may include the preceding comma.
 
@@ -159,11 +162,11 @@ def cleanVariable(line):
             line)
         if start < 0:
             return line
-        (childrenStart, childrenEnd) = findElementAndSkipPrefix(
+        (sortStart, sortEnd) = findElementAndSkipPrefix(
             start,
             " variableSort = ",
             line)
-        assert childrenStart > 0
+        assert sortStart > 0
         (symbolStart, symbolEnd) = findElementAndSkipPrefix(
             start,
             "getId = ",
@@ -173,7 +176,7 @@ def cleanVariable(line):
             line[:start]
             + line[symbolStart : symbolEnd]
             + ":"
-            + line[childrenStart : childrenEnd]
+            + line[sortStart : sortEnd]
             + line[end : ]
             )
 

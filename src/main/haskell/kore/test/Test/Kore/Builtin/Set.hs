@@ -5,7 +5,6 @@ import           Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
-import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
@@ -40,9 +39,11 @@ import           Test.Kore.Builtin.Definition
 import           Test.Kore.Builtin.Int
                  ( genConcreteIntegerPattern, genInteger, genIntegerPattern )
 import qualified Test.Kore.Builtin.Int as Test.Int
+import           Test.Kore.Comparators ()
 import           Test.Kore.Step.Condition.Evaluator
                  ( genSortedVariable )
 import           Test.SMT
+import           Test.Tasty.HUnit.Extensions
 
 genSetInteger :: Gen (Set Integer)
 genSetInteger = Gen.set (Range.linear 0 32) genInteger
@@ -263,7 +264,7 @@ test_concretizeKeys :: TestTree
 test_concretizeKeys =
     testCaseWithSolver "unify Set with symbolic keys" $ \solver -> do
         actual <- evaluateWith solver original
-        assertEqual "" expected actual
+        assertEqualWithExplanation "" expected actual
   where
     x =
         Variable
@@ -312,7 +313,10 @@ test_concretizeKeysAxiom =
     testCaseWithSolver "unify Set with symbolic keys in axiom" $ \solver -> do
         let pair = mkPair intSort setSort symbolicKey concreteSet
         config <- evaluateWith solver pair
-        assertEqual "" expected =<< runStepWith solver config axiom
+        assertEqualWithExplanation
+            ""
+            expected
+            =<< runStepWith solver config axiom
   where
     x = mkIntVar (testId "x")
     key = 1
@@ -331,13 +335,7 @@ test_concretizeKeysAxiom =
         Right
             ( Predicated
                 { term = symbolicKey
-                , predicate =
-                    -- The predicate is not discharged because we do not
-                    -- provide functionality axioms for elementMap.
-                    give testSymbolOrAliasSorts
-                    Predicate.makeCeilPredicate
-                    $ asSymbolicPattern
-                    $ Set.fromList [symbolicKey]
+                , predicate = Predicate.makeTruePredicate
                 , substitution = []
                 }
             , mconcat
