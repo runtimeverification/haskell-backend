@@ -1,4 +1,4 @@
-TOP := $(shell git rev-parse --show-toplevel)
+TOP != git rev-parse --show-toplevel
 include $(TOP)/include.mk
 
 KOMPILED := map-unify-1-kompiled
