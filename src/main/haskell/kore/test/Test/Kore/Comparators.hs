@@ -21,6 +21,8 @@ import           Kore.AST.MetaOrObject
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.BaseStep
+import           Kore.Step.BaseStep as StepResult
+                 ( StepResult (..) )
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
@@ -1065,4 +1067,35 @@ instance
 instance EqualWithExplanation Natural
   where
     compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => StructEqualWithExplanation (StepResult level variable)
+  where
+    structFieldsWithNames
+        expected@(StepResult _ _)
+        actual@(StepResult _ _)
+      = [ EqWrap
+            "rewrittenPattern = "
+            (StepResult.rewrittenPattern expected)
+            (StepResult.rewrittenPattern actual)
+        , EqWrap
+            "remainder = "
+            (StepResult.remainder expected)
+            (StepResult.remainder actual)
+        ]
+    structConstructorName _ = "StepResult"
+
+instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => EqualWithExplanation (StepResult level variable)
+  where
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

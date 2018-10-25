@@ -18,6 +18,7 @@ module Kore.Step.ExpandedPattern
     , bottom
     , isBottom
     , isTop
+    , loBottomize
     , mapVariables
     , substitutionToPredicate
     , toMLPattern
@@ -216,9 +217,20 @@ isBottom
   = True
 isBottom _ = False
 
+{-| If an ExpandedPattern is bottom, it is converted to the canonical
+representation of bottom.
+-}
+loBottomize
+    :: MetaOrObject level
+    => ExpandedPattern level variable
+    -> ExpandedPattern level variable
+loBottomize patt =
+    if isBottom patt then bottom else patt
+
 {- | Construct an 'ExpandedPattern' from a 'PureMLPattern'.
 
-  The resulting @ExpandedPattern@ has a true predicate and an empty substitution.
+  The resulting @ExpandedPattern@ has a true predicate and an empty
+  substitution.
 
   See also: 'makeTruePredicate'
 

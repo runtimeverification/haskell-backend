@@ -447,7 +447,8 @@ evaluatePatterns first second =
             second
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+mockSymbolOrAliasSorts =
+    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
