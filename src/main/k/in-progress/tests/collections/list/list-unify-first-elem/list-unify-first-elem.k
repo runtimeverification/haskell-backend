@@ -1,4 +1,4 @@
-module LIST-UNIFY-1
+module LIST-UNIFY-FIRST-ELEM
   
   imports DOMAINS
   
@@ -7,11 +7,13 @@ module LIST-UNIFY-1
   configuration
     <T>
       <k> $PGM:Val </k>
-      <s1> ListItem(a) ListItem(b) ListItem(c) </s1>
+      <l> ListItem(a) ListItem(b) ListItem(c) </l>
+      <v> .K </v>
     </T>
 
   rule 
     <k> V:Val </k>
-    <s1> (ListItem(V) => .List) X:List </s1>
+    <l> ListItem(V) ... </l>
+    <v> . => V </v>
 
 endmodule

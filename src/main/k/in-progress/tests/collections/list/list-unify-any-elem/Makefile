@@ -1,19 +1,19 @@
 TOP != git rev-parse --show-toplevel
 include $(TOP)/include.mk
 
-KOMPILED := list-unify-3-kompiled
+KOMPILED := list-unify-any-elem-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-unify-3.k $(KOMPILE_TARGETS)
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-3
+$(DEFINITION): list-unify-any-elem.k $(KOMPILE_TARGETS)
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-any-elem
 
-%.list-unify-3.kore: %.list-unify-3 $(DEFINITION) $(KRUN_TARGETS)
+%.list-unify-any-elem.kore: %.list-unify-any-elem $(DEFINITION) $(KRUN_TARGETS)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.list-unify-3 $(DEFINITION) $(KRUN_TARGETS)
+%.output: %.list-unify-any-elem $(DEFINITION) $(KRUN_TARGETS)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.list-unify-3 $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.list-unify-any-elem $(DEFINITION) $(KRUN_TARGETS)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
@@ -29,6 +29,6 @@ test-k: tests/1.test tests/2.test tests/3.test
 golden: tests/1.output.golden tests/2.output.golden tests/3.output.golden
 
 clean:
-	rm -rf $(KOMPILED) tests/*.list-unify-3.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.list-unify-any-elem.kore tests/*.output
 
 .PHONY: test-k test golden clean %.test %.krun

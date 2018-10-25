@@ -1,19 +1,19 @@
 TOP != git rev-parse --show-toplevel
 include $(TOP)/include.mk
 
-KOMPILED := list-unify-2-kompiled
+KOMPILED := set-unify-framing-variable-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-unify-2.k $(KOMPILE_TARGETS)
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-2
+$(DEFINITION): set-unify-framing-variable.k $(KOMPILE_TARGETS)
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module set-unify-framing-variable
 
-%.list-unify-2.kore: %.list-unify-2 $(DEFINITION) $(KRUN_TARGETS)
+%.set-unify-framing-variable.kore: %.set-unify-framing-variable $(DEFINITION) $(KRUN_TARGETS)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.list-unify-2 $(DEFINITION) $(KRUN_TARGETS)
+%.output: %.set-unify-framing-variable $(DEFINITION) $(KRUN_TARGETS)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.list-unify-2 $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.set-unify-framing-variable $(DEFINITION) $(KRUN_TARGETS)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
@@ -29,6 +29,6 @@ test-k: tests/1.test tests/2.test tests/3.test
 golden: tests/1.output.golden tests/2.output.golden tests/3.output.golden
 
 clean:
-	rm -rf $(KOMPILED) tests/*.list-unify-2.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.set-unify-framing-variable.kore tests/*.output
 
 .PHONY: test-k test golden clean %.test %.krun

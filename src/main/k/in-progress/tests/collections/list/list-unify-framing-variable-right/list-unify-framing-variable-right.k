@@ -1,4 +1,4 @@
-module LIST-UNIFY-2
+module LIST-UNIFY-FRAMING-VARIABLE-RIGHT
   
   imports DOMAINS
   
@@ -12,6 +12,6 @@ module LIST-UNIFY-2
 
   rule 
     <k> V:Val </k>
-    <s1> X:List (ListItem(V) => .List) </s1>
+    <s1> (ListItem(V) => .List) X:List </s1>
 
 endmodule

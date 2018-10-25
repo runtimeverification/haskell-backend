@@ -1,4 +1,4 @@
-module LIST-UNIFY-5
+module MAP-UNIFY-FRAMING-VARIABLE
   
   imports DOMAINS
   
@@ -7,13 +7,11 @@ module LIST-UNIFY-5
   configuration
     <T>
       <k> $PGM:Val </k>
-      <l> ListItem(a) ListItem(b) ListItem(c) </l>
-      <v> .K </v>
+      <s1> a |-> 1 b |-> 2 c |-> 3 </s1>
     </T>
 
   rule 
     <k> V:Val </k>
-    <l> ... ListItem(V) </l>
-    <v> . => V </v>
+    <s1> ((V |-> _) => .Map) Rho:Map </s1>
 
 endmodule

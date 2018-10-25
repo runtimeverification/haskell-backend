@@ -1,4 +1,4 @@
-module LIST-UNIFY-4
+module LIST-UNIFY-ANY-ELEM
   
   imports DOMAINS
   
@@ -13,7 +13,7 @@ module LIST-UNIFY-4
 
   rule 
     <k> V:Val </k>
-    <l> ListItem(V) ... </l>
+    <l> ... ListItem(V) ... </l>
     <v> . => V </v>
 
 endmodule

@@ -1,4 +1,4 @@
-module MAP-UNIFY-1
+module LIST-UNIFY-LAST-ELEM
   
   imports DOMAINS
   
@@ -7,11 +7,13 @@ module MAP-UNIFY-1
   configuration
     <T>
       <k> $PGM:Val </k>
-      <s1> a |-> 1 b |-> 2 c |-> 3 </s1>
+      <l> ListItem(a) ListItem(b) ListItem(c) </l>
+      <v> .K </v>
     </T>
 
   rule 
     <k> V:Val </k>
-    <s1> ((V |-> _) => .Map) Rho:Map </s1>
+    <l> ... ListItem(V) </l>
+    <v> . => V </v>
 
 endmodule

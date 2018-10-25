@@ -1,4 +1,4 @@
-module SET-UNIFY-1
+module LIST-UNIFY-FRAMING-VARIABLE-LEFT
   
   imports DOMAINS
   
@@ -7,11 +7,11 @@ module SET-UNIFY-1
   configuration
     <T>
       <k> $PGM:Val </k>
-      <s1> SetItem(a) SetItem(b) SetItem(c) </s1>
+      <s1> ListItem(a) ListItem(b) ListItem(c) </s1>
     </T>
 
   rule 
     <k> V:Val </k>
-    <s1> (SetItem(V) => .Set) X:Set </s1>
+    <s1> X:List (ListItem(V) => .List) </s1>
 
 endmodule
