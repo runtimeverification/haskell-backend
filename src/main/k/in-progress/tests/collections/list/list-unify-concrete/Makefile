@@ -4,10 +4,10 @@ include $(TOP)/include.mk
 KOMPILED := list-unify-concrete-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-unify-concrete.k $(KOMPILE_TARGETS)
+$(DEFINITION): list-unify-concrete.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-concrete
 
-%.list-unify-concrete.kore: %.list-unify-concrete $(DEFINITION) $(KRUN_TARGETS)
+%.list-unify-concrete.kore: %.list-unify-concrete $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
 %.output: %.list-unify-concrete $(DEFINITION) $(KRUN_TARGETS)

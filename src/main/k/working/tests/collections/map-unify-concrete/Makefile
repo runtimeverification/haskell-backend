@@ -4,10 +4,10 @@ include $(TOP)/include.mk
 KOMPILED := map-unify-concrete-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): map-unify-concrete.k $(KOMPILE_TARGETS)
+$(DEFINITION): map-unify-concrete.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module map-unify-concrete
 
-%.map-unify-concrete.kore: %.map-unify-concrete $(DEFINITION) $(KRUN_TARGETS)
+%.map-unify-concrete.kore: %.map-unify-concrete $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
 %.output: %.map-unify-concrete $(DEFINITION) $(KRUN_TARGETS)

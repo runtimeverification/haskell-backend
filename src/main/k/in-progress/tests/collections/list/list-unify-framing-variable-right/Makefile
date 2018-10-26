@@ -4,10 +4,10 @@ include $(TOP)/include.mk
 KOMPILED := list-unify-framing-variable-right-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-unify-framing-variable-right.k $(KOMPILE_TARGETS)
+$(DEFINITION): list-unify-framing-variable-right.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-framing-variable-right
 
-%.list-unify-framing-variable-right.kore: %.list-unify-framing-variable-right $(DEFINITION) $(KRUN_TARGETS)
+%.list-unify-framing-variable-right.kore: %.list-unify-framing-variable-right $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
 %.output: %.list-unify-framing-variable-right $(DEFINITION) $(KRUN_TARGETS)

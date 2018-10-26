@@ -4,10 +4,10 @@ include $(TOP)/include.mk
 KOMPILED := list-unify-last-elem-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-unify-last-elem.k $(KOMPILE_TARGETS)
+$(DEFINITION): list-unify-last-elem.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-last-elem
 
-%.list-unify-last-elem.kore: %.list-unify-last-elem $(DEFINITION) $(KRUN_TARGETS)
+%.list-unify-last-elem.kore: %.list-unify-last-elem $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
 %.output: %.list-unify-last-elem $(DEFINITION) $(KRUN_TARGETS)

@@ -4,10 +4,10 @@ include $(TOP)/include.mk
 KOMPILED := list-unify-first-elem-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-unify-first-elem.k $(KOMPILE_TARGETS)
+$(DEFINITION): list-unify-first-elem.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-first-elem
 
-%.list-unify-first-elem.kore: %.list-unify-first-elem $(DEFINITION) $(KRUN_TARGETS)
+%.list-unify-first-elem.kore: %.list-unify-first-elem $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
 %.output: %.list-unify-first-elem $(DEFINITION) $(KRUN_TARGETS)

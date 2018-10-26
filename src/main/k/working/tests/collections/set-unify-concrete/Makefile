@@ -4,10 +4,10 @@ include $(TOP)/include.mk
 KOMPILED := set-unify-concrete-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): set-unify-concrete.k $(KOMPILE_TARGETS)
+$(DEFINITION): set-unify-concrete.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module set-unify-concrete
 
-%.set-unify-concrete.kore: %.set-unify-concrete $(DEFINITION) $(KRUN_TARGETS)
+%.set-unify-concrete.kore: %.set-unify-concrete $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
 %.output: %.set-unify-concrete $(DEFINITION) $(KRUN_TARGETS)
