@@ -1,0 +1,19 @@
+<generatedTop>
+  <T>
+    <k>
+      ready
+    </k>
+    <a>
+      x |-> 1
+      y |-> 2
+    </a>
+    <b>
+      x |-> 1
+      y |-> 2
+      z |-> 3
+    </b>
+  </T>
+  <generatedCounter>
+    0
+  </generatedCounter>
+</generatedTop>
