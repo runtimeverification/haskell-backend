@@ -1,4 +1,7 @@
-module Test.Kore.Unification.Unifier (test_unification) where
+module Test.Kore.Unification.Unifier
+    ( test_unification
+    , test_unsupportedConstructs
+    ) where
 
 import Test.Tasty
        ( TestTree, testGroup )
@@ -577,10 +580,6 @@ test_unification =
         []
         makeFalsePredicate
         EmptyUnificationProof
-    , andSimplifyFailure "Unsupported constructs"
-        (UnificationTerm (applyS f [aA]))
-        (UnificationTerm (applyS f [implies_ aA (next_ a1A)]))
-        UnsupportedPatterns
           {- currently this cannot even be built because of builder checkd
     , andSimplifyFailure "Unmatching sorts"
         (UnificationTerm aA)
@@ -595,6 +594,13 @@ test_unification =
             )
         )
     ]
+
+test_unsupportedConstructs :: TestTree
+test_unsupportedConstructs =
+    andSimplifyFailure "Unsupported constructs"
+        (UnificationTerm (applyS f [aA]))
+        (UnificationTerm (applyS f [implies_ aA (next_ a1A)]))
+        UnsupportedPatterns
 
 newtype V level = V Integer
     deriving (Show, Eq, Ord)

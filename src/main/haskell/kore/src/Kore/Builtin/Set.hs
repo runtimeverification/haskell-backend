@@ -37,6 +37,7 @@ import           Control.Applicative
 import           Control.Error
                  ( MaybeT )
 import           Control.Monad.Counter
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -44,12 +45,12 @@ import           Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( give )
-import           Data.Result
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
+
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
 import qualified Kore.AST.PureML as Kore
@@ -57,6 +58,8 @@ import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import           Kore.Builtin.Hook
+                 ( Hook )
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
@@ -64,10 +67,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
@@ -77,6 +78,7 @@ import           Kore.Step.Simplification.Data
                  Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( normalize )
 import           Kore.Substitution.Class
@@ -401,13 +403,17 @@ lookupSymbolDifference
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolDifference = Builtin.lookupSymbol "SET.difference"
 
+{- | Check if the given symbol is hooked to @MAP.concat@.
+ -}
+isSymbolConcat :: MetadataTools Object Hook -> Kore.SymbolOrAlias Object -> Bool
+isSymbolConcat = Builtin.isSymbol "SET.concat"
+
 {- | Simplify the conjunction of two concrete Set domain values.
 
     The sets are assumed to have the same sort, but this is not checked. If
     multiple sorts are hooked to the same builtin domain, the verifier should
     reject the definition.
  -}
-
 unify
     :: forall level variable m p expanded proof.
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
@@ -422,32 +428,40 @@ unify
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> Result (m (expanded, proof)))
-    -> (p -> p -> Result (m (expanded, proof)))
+    -> (p -> p -> m (expanded, proof))
+    -> (p -> p -> MaybeT m (expanded, proof))
 unify
     tools@(MetadataTools.MetadataTools { symbolOrAliasSorts })
     substitutionSimplifier
-    _ -- not used for now.
+    unifyChildren
   =
     unify0
   where
+    hookTools = StepperAttributes.hook <$> tools
 
     -- | Unify the two argument patterns.
     unify0
         :: Kore.PureMLPattern level variable
         -> Kore.PureMLPattern level variable
-        -> Result (m (expanded, proof))
+        -> MaybeT m (expanded, proof)
     unify0
         (DV_ resultSort (Kore.BuiltinDomainSet set1))
         (DV_ _    (Kore.BuiltinDomainSet set2))
       =
-        unifyConcrete resultSort set1 set2
+        Monad.Trans.lift (unifyConcrete resultSort set1 set2)
 
     unify0
-        (App_ _ [DV_ _ (Kore.BuiltinDomainSet set1), x@(Var_ _)])
-        (DV_ resultSort (Kore.BuiltinDomainSet set2))
-      =
-        unifyFramed resultSort set1 set2 x
+        (DV_ resultSort (Kore.BuiltinDomainSet set1))
+        (App_ symbol2 args2)
+      | isSymbolConcat hookTools symbol2 =
+        case args2 of
+            [DV_ _ (Kore.BuiltinDomainSet set2), x@(Var_ _)] ->
+                Monad.Trans.lift (unifyFramed resultSort set1 set2 x)
+            [x@(Var_ _), DV_ _ (Kore.BuiltinDomainSet set2)] ->
+                Monad.Trans.lift (unifyFramed resultSort set1 set2 x)
+            _ -> empty
+      | otherwise =
+        empty
 
     unify0 app_@(App_ _ _) dv_@(DV_ _ _) = unify0 dv_ app_
 
@@ -459,17 +473,17 @@ unify
         => Kore.Sort level -- ^ Sort of result
         -> Set.Set k
         -> Set.Set k
-        -> Result (m (expanded, proof))
-    unifyConcrete resultSort set1 set2 = do -- Result monad
-        let
-            term = DV_ resultSort (Kore.BuiltinDomainSet set1)
-            unified = give symbolOrAliasSorts $ do -- MonadCounter
-                let
-                    result
-                        | set1 == set2 = pure term
-                        | otherwise    = ExpandedPattern.bottom
-                pure $ (result, SimplificationProof)
-        return unified
+        -> m (expanded, proof)
+    unifyConcrete resultSort set1 set2
+      | set1 == set2 =
+        return (unified, SimplificationProof)
+      | otherwise =
+        return (ExpandedPattern.bottom, SimplificationProof)
+      where
+        unified =
+            (<$>)
+                (DV_ resultSort . Kore.BuiltinDomainSet)
+                (give symbolOrAliasSorts pure set1)
 
     -- | Unify one concrete set with one framed concrete set.
     unifyFramed
@@ -478,22 +492,21 @@ unify
         -> Set.Set k  -- ^ concrete set
         -> Set.Set k -- ^ framed concrete set
         -> Kore.PureMLPattern level variable  -- ^ framing variable
-        -> Result (m (expanded, proof))
-    unifyFramed resultSort set1 set2 (Var_ x) = do -- Result monad
-        let
-            term' = DV_ resultSort (Kore.BuiltinDomainSet set2)
-            diff = Set.difference set2 set1
-            unified = do -- MonadCounter
-                let
-                    result
-                        | Set.isSubsetOf set1 set2 =
-                            Predicated
-                            { term = term'
-                            , predicate = makeTruePredicate
-                            , substitution = [(x, DV_ resultSort (Kore.BuiltinDomainSet diff))]
-                            }
-                        | otherwise = ExpandedPattern.bottom
-                (,) <$> normalize tools substitutionSimplifier result <*> pure SimplificationProof
-        return unified
+        -> m (expanded, proof)
+    unifyFramed resultSort set1 set2 var
+      | Set.isSubsetOf set2 set1 = do
+        (remainder, _) <-
+            unifyChildren var
+            $ asBuiltinDomainSet
+            $ Set.difference set1 set2
+        let result =
+                -- Return the concrete set, but capture any predicates and
+                -- substitutions from unifying the framing variable.
+                asBuiltinDomainSet set1 <$ remainder
+        normalized <- normalize tools substitutionSimplifier result
+        return (normalized, SimplificationProof)
 
-    unifyFramed _ _ _ _ = empty
+      | otherwise =
+        return (ExpandedPattern.bottom, SimplificationProof)
+      where
+        asBuiltinDomainSet = DV_ resultSort . Kore.BuiltinDomainSet

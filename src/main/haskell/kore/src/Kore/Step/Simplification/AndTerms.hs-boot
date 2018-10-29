@@ -1,5 +1,8 @@
 module Kore.Step.Simplification.AndTerms where
 
+import Control.Error
+       ( ExceptT )
+
 import Control.Monad.Counter
        ( MonadCounter )
 import Kore.AST.Common
@@ -16,6 +19,8 @@ import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Substitution.Class
        ( Hashable )
+import Kore.Unification.Error
+       ( UnificationOrSubstitutionError )
 import Kore.Variables.Fresh
        ( FreshVariable )
 
@@ -46,9 +51,11 @@ termUnification
         , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
+        , unifier ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level (unifier m)
     -> PureMLPattern level variable
     -> PureMLPattern level variable
-    -> Maybe (m (ExpandedPattern level variable, SimplificationProof level))
+    -> unifier m
+        (ExpandedPattern level variable, SimplificationProof level)

@@ -258,7 +258,7 @@ prop_unifyFramingVariable set n =
                 }
     in
         allProperties
-            [patExpect === evaluate patActual
+            [ patExpect === evaluate patActual
             ]
   where
     mkBuiltinDomainSet set' = DV_ setSort (BuiltinDomainSet (Set.map Test.Int.asConcretePattern set'))

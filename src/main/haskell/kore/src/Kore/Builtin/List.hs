@@ -36,6 +36,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -43,9 +44,8 @@ import           Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( give )
-import           Data.Result
 import           Data.Sequence
-                 ( Seq, (><) )
+                 ( Seq )
 import qualified Data.Sequence as Seq
 import           Data.Text
                  ( Text )
@@ -64,7 +64,6 @@ import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
@@ -72,8 +71,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
-import           Kore.Step.Substitution
-                 ( normalize )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
@@ -345,6 +342,7 @@ unify
     :: forall level variable m p expanded proof.
         ( OrdMetaOrObject variable
         , ShowMetaOrObject variable
+        , Ord (variable level)
         , Show (variable level)
         , SortedVariable variable
         , MonadCounter m
@@ -357,61 +355,84 @@ unify
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> Result (m (expanded, proof)))
-    -> (p -> p -> Result (m (expanded, proof)))
+    -> (p -> p -> m (expanded, proof))
+    -> (p -> p -> MaybeT m (expanded, proof))
 unify
     tools@MetadataTools { symbolOrAliasSorts }
-    substitutionSimplifier
+    _
     simplifyChild
-    (DV_ dvSort (BuiltinDomainList list1))
-    (DV_ _    (BuiltinDomainList list2))
-  | Seq.length list1 /= Seq.length list2 =
-        return $ return $ (ExpandedPattern.bottom, SimplificationProof)
-  | otherwise = give symbolOrAliasSorts $ do
-      unifiedList <- sequence $ Seq.zipWith simplifyChild list1 list2
-      return $ do
-        unifiedList' <-
-          sequenceA -- float `Predicated` to the top
-          <$> fmap fst -- discard the proof in (expanded, proof)
-          <$> sequence unifiedList -- float the counter monad `m` to the top
-        res <- normalize tools substitutionSimplifier $
-          (\l -> DV_ dvSort $ BuiltinDomainList l) <$> unifiedList'
-        return (res, SimplificationProof)
-unify
-    tools@MetadataTools { symbolOrAliasSorts }
-    substitutionSimplifier
-    simplifyChild
-    (App_ symConcat [DV_ _ (BuiltinDomainList list1), (Var_ v)])
-    (DV_ dvSort (BuiltinDomainList list2))
-  | Seq.length list1 > Seq.length list2 =
-        return $ return $ (ExpandedPattern.bottom, SimplificationProof)
-  | isSymbolConcat (StepperAttributes.hook <$> tools) symConcat
-  = give symbolOrAliasSorts $
-    let list2' = Seq.take (Seq.length list1) list2
-        suffix = Seq.drop (Seq.length list1) list2
-        suffix' = Predicated
-            { term = suffix
-            , predicate = makeTruePredicate
-            , substitution = [(v, DV_ dvSort $ BuiltinDomainList suffix)]
-            }
+  =
+    unify0
+  where
+    hookTools = StepperAttributes.hook <$> tools
 
-      in
-      do unifiedList <-
-            unify tools substitutionSimplifier simplifyChild
-                (DV_ dvSort $ BuiltinDomainList list1)
-                (DV_ dvSort $ BuiltinDomainList list2')
-         return $ do
-            (unifiedList', _) <- unifiedList
-            res <- normalize tools substitutionSimplifier $
-                (\(DV_ _ (BuiltinDomainList l1)) l2
-                    -> DV_ dvSort (BuiltinDomainList $ l1 >< l2)
-                ) <$> unifiedList' <*> suffix'
-            return (res, SimplificationProof)
-unify
-    tools
-    substitutionSimplifier
-    simplifyChild
-    p1@(DV_ _ _)
-    p2@(App_ _ _)
-  = unify tools substitutionSimplifier simplifyChild p2 p1
-unify _ _ _ _ _ = Unknown
+    propagatePredicates
+        :: Traversable t
+        => t (Predicated level variable a)
+        -> Predicated level variable (t a)
+    propagatePredicates = give symbolOrAliasSorts sequenceA
+
+    discardProofs :: Seq (expanded, proof) -> Seq expanded
+    discardProofs = (<$>) fst
+
+    unify0
+        (DV_ dvSort (BuiltinDomainList list1))
+        (DV_ _      (BuiltinDomainList list2))
+      =
+        Monad.Trans.lift $ unifyConcrete dvSort list1 list2
+
+    unify0
+        (App_ symConcat [DV_ _ (BuiltinDomainList list1), v@(Var_ _)])
+        (DV_ dvSort (BuiltinDomainList list2))
+      | isSymbolConcat hookTools symConcat =
+        Monad.Trans.lift $ unifyFramed symConcat list1 v dvSort list2
+
+    unify0 p1@(DV_ _ _) p2@(App_ _ _) = unify0 p2 p1
+
+    unify0 _ _ = empty
+
+    unifyConcrete
+        :: (level ~ Object)
+        => Sort level
+        -> Seq p
+        -> Seq p
+        -> m (expanded, proof)
+    unifyConcrete dvSort list1 list2
+      | Seq.length list1 /= Seq.length list2 =
+        return (ExpandedPattern.bottom, SimplificationProof)
+      | otherwise =
+        do
+            unified <-
+                sequence $ Seq.zipWith simplifyChild list1 list2
+            let
+                propagatedUnified =
+                    (propagatePredicates . discardProofs) unified
+                result = asBuiltinDomainList <$> propagatedUnified
+            return (result, SimplificationProof)
+      where
+        asBuiltinDomainList = DV_ dvSort . BuiltinDomainList
+
+    unifyFramed
+        :: (level ~ Object)
+        => SymbolOrAlias level
+        -> Seq p
+        -> p
+        -> Sort level
+        -> Seq p
+        -> m (expanded, proof)
+    unifyFramed symConcat list1 v dvSort list2
+      | Seq.length list1 > Seq.length list2 =
+        return (ExpandedPattern.bottom, SimplificationProof)
+      | otherwise =
+        do
+            (prefixUnified, _) <- unifyConcrete dvSort list1 prefix2
+            (suffixUnified, _) <- simplifyChild v listSuffix2
+            let result =
+                    (<$>)
+                        (App_ symConcat)
+                        (propagatePredicates [prefixUnified, suffixUnified])
+            return (result, SimplificationProof)
+      where
+        asBuiltinDomainList = DV_ dvSort . BuiltinDomainList
+        (prefix2, suffix2) = Seq.splitAt (Seq.length list1) list2
+        listSuffix2 = asBuiltinDomainList suffix2

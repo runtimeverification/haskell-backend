@@ -38,17 +38,17 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
-                 ( Given, give )
+                 ( give )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Data.Result
 import           Kore.AST.Common
                  ( BuiltinDomain (BuiltinDomainMap), ConcretePurePattern,
                  PureMLPattern, Sort, SortedVariable, SymbolOrAlias )
@@ -64,7 +64,7 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts )
+                 ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -471,42 +471,16 @@ unify
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> Result (m (expanded, proof)))
-    -> (p -> p -> Result (m (expanded, proof)))
+    -> (p -> p -> m (expanded, proof))
+    -> (p -> p -> MaybeT m (expanded, proof))
 unify
     tools@MetadataTools { symbolOrAliasSorts }
     substitutionSimplifier
-    simplifyChild
+    unifyChildren
   =
     unify0
   where
     hookTools = StepperAttributes.hook <$> tools
-
-    {- | Take the intersection of two maps with different value types.
-
-        Returns the left-over elements of each map along with the pairs of
-        values in the intersection.
-     -}
-    heterogenousIntersection
-        :: Ord k
-        => Map k a
-        -> Map k b
-        ->  ( Map k a  -- left-over from first map
-            , Map k (a, b)  -- pairs of values under common keys
-            , Map k b  -- left-over from second map
-            )
-    heterogenousIntersection as bs =
-        ( Map.difference as bs
-        , Map.intersectionWith (,) as bs
-        , Map.difference bs as
-        )
-
-    -- | Sequence the actions in a map to return a collection of proven expanded
-    -- patterns.
-    collectProvenExpandedPatterns
-        :: Map k (m (expanded, proof))
-        -> m (Map k (expanded, proof))
-    collectProvenExpandedPatterns = sequence
 
     -- | Discard the proofs in a collection of proven expanded patterns.
     discardProofs :: Map k (expanded, proof) -> Map k expanded
@@ -515,22 +489,22 @@ unify
     -- | Given a collection 't' of 'Predicated' values, propagate all the
     -- predicates to the top level, returning a 'Predicated' collection.
     propagatePredicates
-        :: (level ~ Object, Given (SymbolOrAliasSorts level), Traversable t)
+        :: (level ~ Object, Traversable t)
         => t (Predicated level variable a)
         -> Predicated level variable (t a)
-    propagatePredicates = sequenceA
+    propagatePredicates = give symbolOrAliasSorts sequenceA
 
     -- | Unify the two argument patterns.
     unify0
         :: PureMLPattern level variable
         -> PureMLPattern level variable
-        -> Result (m (expanded, proof))
+        -> MaybeT m (expanded, proof)
 
     unify0
         (DV_ resultSort (BuiltinDomainMap map1))
         (DV_ _          (BuiltinDomainMap map2))
       =
-        unifyConcrete resultSort map1 map2
+        Monad.Trans.lift $ unifyConcrete resultSort map1 map2
 
     unify0
         (DV_ resultSort (BuiltinDomainMap map1))
@@ -539,9 +513,9 @@ unify
         -- Accept the arguments of concat in either order.
         case args2 of
             [ DV_ _ (BuiltinDomainMap map2), x@(Var_ _) ] ->
-                unifyFramed1 resultSort map1 concat2 map2 x
+                Monad.Trans.lift $ unifyFramed1 resultSort map1 concat2 map2 x
             [ x@(Var_ _), DV_ _ (BuiltinDomainMap map2) ] ->
-                unifyFramed1 resultSort map1 concat2 map2 x
+                Monad.Trans.lift $ unifyFramed1 resultSort map1 concat2 map2 x
             _ -> empty
 
     unify0 app_@(App_ _ _) dv_@(DV_ _ _) = unify0 dv_ app_
@@ -550,33 +524,33 @@ unify
 
     -- | Unify two concrete maps.
     unifyConcrete
-        :: (level ~ Object, k ~ ConcretePurePattern Object)
+        ::  forall k.
+            (level ~ Object, k ~ ConcretePurePattern Object)
         => Sort level  -- ^ result sort
         -> Map k (PureMLPattern level variable)
         -> Map k (PureMLPattern level variable)
-        -> Result (m (expanded, proof))
+        -> m (expanded, proof)
     unifyConcrete resultSort map1 map2 = do
-        let (diff1, _intersect, diff2) = heterogenousIntersection map1 map2
-        _intersect <- traverse (uncurry simplifyChild) _intersect
+        intersect <- sequence (Map.intersectionWith unifyChildren map1 map2)
         let
-            unified = give symbolOrAliasSorts $ do
-                _intersect <-
-                    discardProofs <$> collectProvenExpandedPatterns _intersect
-                let result
-                        | not (Map.null diff1) =
-                            -- There is nothing with which to unify the
-                            -- remainder of map1.
-                            ExpandedPattern.bottom
-                        | not (Map.null diff2) =
-                            -- There is nothing with which to unify the
-                            -- remainder of map2.
-                            ExpandedPattern.bottom
-                        | otherwise =
-                            asBuiltinMap <$> propagatePredicates _intersect
-                normalized <-
-                    normalize tools substitutionSimplifier result
-                return (normalized, SimplificationProof)
-        return unified
+            result
+              | not (Map.null remainder1) =
+                -- There is nothing with which to unify the
+                -- remainder of map1.
+                ExpandedPattern.bottom
+              | not (Map.null remainder2) =
+                -- There is nothing with which to unify the
+                -- remainder of map2.
+                ExpandedPattern.bottom
+              | otherwise =
+                asBuiltinMap <$> (propagatePredicates . discardProofs) intersect
+              where
+                -- Elements of map1 missing from map2
+                remainder1 = Map.difference map1 map2
+                -- Elements of map2 missing from map1
+                remainder2 = Map.difference map2 map1
+
+        return (result, SimplificationProof)
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
 
@@ -588,45 +562,30 @@ unify
         -> SymbolOrAlias level  -- ^ 'concat' symbol used for framing
         -> Map k p  -- ^ framed concrete map
         -> p  -- ^ framing variable
-        -> Result (m (expanded, proof))
-    unifyFramed1 resultSort map1 concat' map2 x = do  -- Result monad
-        let
-            remainder1, remainder2 :: Map k p
-            intersect :: Map k (p, p)
-            (remainder1, intersect, remainder2) =
-                heterogenousIntersection map1 map2
-        (unifiedIntersect :: Map k (m (expanded, proof)))
-            <- traverse (uncurry simplifyChild) intersect
+        -> m (expanded, proof)
+    unifyFramed1 resultSort map1 concat' map2 x = do
+        intersect <- sequence (Map.intersectionWith unifyChildren map1 map2)
         -- The framing variable unifies with the remainder of map1.
-        -- simplifyChild returns an action which returns the unified value.
-        remainder1SubstitutionM <-
-            simplifyChild x (asBuiltinMap remainder1)
+        let remainder1 = Map.difference map1 map2
+        -- The framing part of the unification result.
+        (frame, _) <- unifyChildren x (asBuiltinMap remainder1)
         let
-            unified :: m (expanded, proof)
-            unified = give symbolOrAliasSorts $ do  -- MonadCounter
-                (intersectMapWithProofs :: Map k (expanded, proof)) <-
-                    collectProvenExpandedPatterns unifiedIntersect
-                let
-                    intersectMap :: Map k expanded
-                    intersectMap =
-                        discardProofs intersectMapWithProofs
-                    propagated :: Predicated level variable (Map k p)
-                    propagated = propagatePredicates intersectMap
-                    intersectPattern :: expanded
-                    intersectPattern = asBuiltinMap <$> propagated
-                (remainder1Substitution, _) <- remainder1SubstitutionM
-                let result
-                        | not (Map.null remainder2) =
-                            -- There is nothing with which to unify the
-                            -- remainder of map2.
-                            ExpandedPattern.bottom
-                        | otherwise =
-                            App_ concat'
-                                <$> propagatePredicates
-                                    [intersectPattern, remainder1Substitution]
-                normalized <-
-                    normalize tools substitutionSimplifier result
-                return (normalized, SimplificationProof)
-        return unified
+            -- The concrete part of the unification result.
+            concrete :: ExpandedPattern level variable
+            concrete =
+                asBuiltinMap <$> (propagatePredicates . discardProofs) intersect
+
+            result
+              | not (Map.null remainder2) =
+                -- There is nothing with which to unify the remainder of map2.
+                ExpandedPattern.bottom
+              | otherwise =
+                App_ concat' <$> propagatePredicates [concrete, frame]
+              where
+                -- Elements of map2 missing from map1
+                remainder2 = Map.difference map2 map1
+
+        normalized <- normalize tools substitutionSimplifier result
+        return (normalized, SimplificationProof)
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
