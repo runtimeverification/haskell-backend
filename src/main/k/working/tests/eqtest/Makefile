@@ -10,7 +10,7 @@ $(DEFINITION): eqtest.k $(K)
 %.eqtest.kore: %.eqtest $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.eqtest $(DEFINITION) $(KRUN_TARGETS)
+%.output: %.eqtest $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
 %.krun: %.eqtest $(DEFINITION) $(KRUN_TARGETS)

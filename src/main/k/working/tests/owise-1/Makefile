@@ -10,7 +10,7 @@ $(DEFINITION): demo.k $(K)
 %.demo.kore: %.demo $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.demo $(DEFINITION) $(KRUN_TARGETS)
+%.output: %.demo $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
 %.krun: %.demo $(DEFINITION) $(KRUN_TARGETS)
