@@ -1,52 +1,52 @@
-TOP != git rev-parse --show-toplevel
+TOP := $(shell git rev-parse --show-toplevel)
 include $(TOP)/include.mk
 
 KOMPILED := search-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): search.k $(KOMPILE_TARGETS)
+$(DEFINITION): search.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module SEARCH
 
-%.search.kore: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.search.kore: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.star.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.star.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all
 
-%.plus.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.plus.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps
 
-%.one.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.one.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step
 
-%.final.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.final.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
 
-%.star.unreachable.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.star.unreachable.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all --pattern '<k> unreachable </k>'
 
-%.plus.unreachable.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.plus.unreachable.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps --pattern '<k> unreachable </k>'
 
-%.one.unreachable.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.one.unreachable.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step --pattern '<k> unreachable </k>'
 
-%.final.unreachable.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.final.unreachable.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final --pattern '<k> unreachable </k>'
 
-%.star.initial.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.star.initial.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all --pattern '<k> initial </k>'
 
-%.plus.initial.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.plus.initial.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps --pattern '<k> initial </k>'
 
-%.one.initial.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.one.initial.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step --pattern '<k> initial </k>'
 
-%.final.initial.output: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.final.initial.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final --pattern '<k> initial </k>'
 
-%.krun: %.search $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.search $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
