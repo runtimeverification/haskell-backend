@@ -9,13 +9,17 @@ Portability : POSIX
 -}
 module Kore.ASTVerifier.AttributesVerifier
     ( verifyAttributes
-    , verifyHookAttribute
+    , verifySortHookAttribute
+    , verifySymbolHookAttribute
     , verifyNoHookAttribute
     , AttributesVerification (..)
     ) where
 
+import Data.List
 import Data.Proxy
        ( Proxy )
+import Data.Text
+       ( Text )
 
 import Kore.AST.Common
 import Kore.AST.Kore
@@ -31,7 +35,6 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule
        ( KoreIndexedModule )
 import Kore.IndexedModule.Resolvers
-       ( resolveHook )
 
 {-| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. -}
@@ -76,12 +79,31 @@ verifyAttributePattern _
     If attribute verification is disabled, then 'emptyHook' is returned.
 
  -}
-verifyHookAttribute
+verifySortHookAttribute
     :: KoreIndexedModule atts
     -> AttributesVerification atts
     -> Attributes
     -> Either (Error VerifyError) Hook
-verifyHookAttribute indexedModule =
+verifySortHookAttribute _indexedModule =
+    \case
+        DoNotVerifyAttributes ->
+            \_ -> return emptyHook
+        VerifyAttributes _ ->
+            \attributes -> castError (parseAttributes attributes)
+
+{- | Verify that the @hook{}()@ attribute is present and well-formed.
+
+    It is an error if any builtin has been hooked multiple times.
+
+    If attribute verification is disabled, then 'emptyHook' is returned.
+
+ -}
+verifySymbolHookAttribute
+    :: KoreIndexedModule atts
+    -> AttributesVerification atts
+    -> Attributes
+    -> Either (Error VerifyError) Hook
+verifySymbolHookAttribute indexedModule =
     \case
         DoNotVerifyAttributes ->
             -- Do not attempt to parse, verify, or return the hook attribute.
@@ -93,12 +115,26 @@ verifyHookAttribute indexedModule =
                     -- The hook attribute is absent; nothing more to verify.
                     return ()
                 Just hookId -> do
-                    -- Verify that the builtin is only hooked once.
-                    -- The module is already indexed, so if it is hooked only
-                    -- once then it must be hooked here.
-                    _ <- resolveHook indexedModule hookId
+                    -- Verify that the the pair (sort signature, hook)
+                    -- is unique for all symbols with this hook.
+                    checkNoDuplicateHookedSymbols indexedModule hookId
                     return ()
             return hook
+
+checkNoDuplicateHookedSymbols
+    :: KoreIndexedModule atts
+    -> Text
+    -> Either (Error e) ()
+checkNoDuplicateHookedSymbols indexedModule builtinName =
+    (\l -> if length (nub l) < length l then err l else return ()) $
+    map (\name -> getHeadApplicationSorts indexedModule (SymbolOrAlias name [])) $
+    resolveHooks indexedModule builtinName
+      where
+        err l =
+            koreFail $
+            "Found symbols with identical hooks and identical sorts: "
+            ++
+            show l
 
 {- | Verify that the @hook{}()@ attribute is not present.
 

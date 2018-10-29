@@ -46,7 +46,6 @@ module Kore.Builtin.Builtin
     , runParser
     , appliedFunction
     , lookupSymbol
-    , lookupSymbolWithSort
     , isSymbol
     , expectNormalConcreteTerm
     , getAttemptedFunction
@@ -664,28 +663,14 @@ runParser ctx result =
 lookupSymbol
     :: Text
     -- ^ builtin name
-    -> KoreIndexedModule attrs
-    -> Either (Error e) (SymbolOrAlias Object)
-lookupSymbol builtinName indexedModule
-  = do
-    symbolOrAliasConstructor <-
-        IndexedModule.resolveHook indexedModule builtinName
-    return SymbolOrAlias
-        { symbolOrAliasConstructor
-        , symbolOrAliasParams = []
-        }
-
-lookupSymbolWithSort
-    :: Text
-    -- ^ builtin name
     -> Sort Object
     -- ^ the hooked sort
     -> KoreIndexedModule attrs
     -> Either (Error e) (SymbolOrAlias Object)
-lookupSymbolWithSort builtinName builtinSort indexedModule
+lookupSymbol builtinName builtinSort indexedModule
   = do
     symbolOrAliasConstructor <-
-        IndexedModule.resolveHookWithSort indexedModule builtinName builtinSort
+        IndexedModule.resolveHook indexedModule builtinName builtinSort
     return SymbolOrAlias
         { symbolOrAliasConstructor
         , symbolOrAliasParams = []

@@ -15,7 +15,6 @@ module Kore.IndexedModule.Resolvers
     , resolveAlias
     , resolveSymbol
     , resolveHook
-    , resolveHookWithSort
     , resolveHooks
     , findIndexedSort
     ) where
@@ -249,27 +248,24 @@ resolveSort m sortId =
 resolveHook
     :: KoreIndexedModule atts
     -> Text
-    -> Either (Error e) (Id Object)
-resolveHook indexedModule builtinName =
-    resolveHookHandler builtinName $ resolveHooks indexedModule builtinName
-
-resolveHookWithSort
-    :: KoreIndexedModule atts
-    -> Text
     -> Sort Object
     -> Either (Error e) (Id Object)
-resolveHookWithSort indexedModule builtinName builtinSort =
+resolveHook indexedModule builtinName builtinSort =
     resolveHookHandler builtinName $
-        filter
-        (\name ->
-            elem
-            builtinSort
-            ((\s -> applicationSortsResult s : applicationSortsOperands s)
-                $ getHeadApplicationSorts indexedModule
-                $ SymbolOrAlias name []
-            )
-        )
-        $ resolveHooks indexedModule builtinName
+    filter (\name ->
+        involvesSort indexedModule builtinSort (SymbolOrAlias name [])
+    ) $
+    resolveHooks indexedModule builtinName
+
+involvesSort
+    :: KoreIndexedModule atts
+    -> Sort Object
+    -> SymbolOrAlias Object
+    -> Bool
+involvesSort indexedModule builtinSort sym =
+    elem builtinSort $
+    (\s -> applicationSortsResult s : applicationSortsOperands s) $
+    getHeadApplicationSorts indexedModule sym
 
 resolveHookHandler
     :: Text

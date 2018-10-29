@@ -266,7 +266,7 @@ verifyHookSentence
       = do
         verifySortSentence sentence
         hook <-
-            verifyHookAttribute
+            verifySortHookAttribute
                 indexedModule
                 attributesVerification
                 sentenceSortAttributes
@@ -274,11 +274,15 @@ verifyHookSentence
         return (VerifySuccess ())
 
     verifyHookedSymbol
-        sentence@SentenceSymbol { sentenceSymbolAttributes }
+        sentence@SentenceSymbol
+            { sentenceSymbolAttributes
+            -- , sentenceSymbolSorts
+            -- , sentenceSymbolResultSort
+            }
       = do
         verifySymbolSentence indexedModule sentence
         hook <-
-            verifyHookAttribute
+            verifySymbolHookAttribute
                 indexedModule
                 attributesVerification
                 sentenceSymbolAttributes

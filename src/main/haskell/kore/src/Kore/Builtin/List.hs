@@ -310,7 +310,7 @@ lookupSymbolUnit
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbolWithSort "LIST.unit"
+lookupSymbolUnit = Builtin.lookupSymbol "LIST.unit"
 
 {- | Find the symbol hooked to @LIST.element@ in an indexed module.
  -}
@@ -318,7 +318,7 @@ lookupSymbolElement
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbolWithSort "LIST.element"
+lookupSymbolElement = Builtin.lookupSymbol "LIST.element"
 
 {- | Find the symbol hooked to @LIST.concat@ in an indexed module.
  -}
@@ -326,7 +326,7 @@ lookupSymbolConcat
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbolWithSort "LIST.concat"
+lookupSymbolConcat = Builtin.lookupSymbol "LIST.concat"
 
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}
@@ -334,7 +334,7 @@ lookupSymbolGet
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolGet = Builtin.lookupSymbolWithSort "LIST.get"
+lookupSymbolGet = Builtin.lookupSymbol "LIST.get"
 
 isSymbolConcat :: MetadataTools Object Hook -> Kore.SymbolOrAlias Object -> Bool
 isSymbolConcat = Builtin.isSymbol "LIST.concat"

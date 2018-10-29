@@ -375,7 +375,7 @@ lookupSymbolUnit
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbolWithSort "SET.unit"
+lookupSymbolUnit = Builtin.lookupSymbol "SET.unit"
 
 {- | Find the symbol hooked to @SET.element@ in an indexed module.
  -}
@@ -383,7 +383,7 @@ lookupSymbolElement
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbolWithSort "SET.element"
+lookupSymbolElement = Builtin.lookupSymbol "SET.element"
 
 {- | Find the symbol hooked to @SET.concat@ in an indexed module.
  -}
@@ -391,7 +391,7 @@ lookupSymbolConcat
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbolWithSort "SET.concat"
+lookupSymbolConcat = Builtin.lookupSymbol "SET.concat"
 
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
@@ -399,7 +399,7 @@ lookupSymbolIn
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolIn = Builtin.lookupSymbolWithSort "SET.in"
+lookupSymbolIn = Builtin.lookupSymbol "SET.in"
 
 {- | Find the symbol hooked to @SET.difference@ in an indexed module.
  -}
@@ -407,7 +407,7 @@ lookupSymbolDifference
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolDifference = Builtin.lookupSymbolWithSort "SET.difference"
+lookupSymbolDifference = Builtin.lookupSymbol "SET.difference"
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}

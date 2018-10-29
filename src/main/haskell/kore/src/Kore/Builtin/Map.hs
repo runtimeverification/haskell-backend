@@ -388,7 +388,7 @@ lookupSymbolUnit
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbolWithSort "MAP.unit"
+lookupSymbolUnit = Builtin.lookupSymbol "MAP.unit"
 
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
@@ -396,7 +396,7 @@ lookupSymbolUpdate
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolUpdate = Builtin.lookupSymbolWithSort "MAP.update"
+lookupSymbolUpdate = Builtin.lookupSymbol "MAP.update"
 
 {- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
  -}
@@ -404,7 +404,7 @@ lookupSymbolLookup
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolLookup = Builtin.lookupSymbolWithSort "MAP.lookup"
+lookupSymbolLookup = Builtin.lookupSymbol "MAP.lookup"
 
 {- | Find the symbol hooked to @MAP.element@ in an indexed module.
  -}
@@ -412,7 +412,7 @@ lookupSymbolElement
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbolWithSort "MAP.element"
+lookupSymbolElement = Builtin.lookupSymbol "MAP.element"
 
 {- | Find the symbol hooked to @MAP.concat@ in an indexed module.
  -}
@@ -420,7 +420,7 @@ lookupSymbolConcat
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbolWithSort "MAP.concat"
+lookupSymbolConcat = Builtin.lookupSymbol "MAP.concat"
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
  -}
@@ -428,7 +428,7 @@ lookupSymbolInKeys
     :: Sort Object
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
-lookupSymbolInKeys = Builtin.lookupSymbolWithSort "MAP.in_keys"
+lookupSymbolInKeys = Builtin.lookupSymbol "MAP.in_keys"
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
