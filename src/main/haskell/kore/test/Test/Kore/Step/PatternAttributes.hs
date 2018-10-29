@@ -254,16 +254,21 @@ test_patternAttributes = give mockSymbolOrAliasSorts
     ]
   where
     mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+    mockSymbolOrAliasSorts =
+        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools :: MetadataTools Object StepperAttributes
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
+            mockSymbolOrAliasSorts
+            Mock.attributesMapping
+            Mock.headTypeMapping
+            Mock.subsorts
 
     mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
     mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
     mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-    mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] []
+    mockMetaMetadataTools =
+        Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] []
 
 testSort :: Sort Object
 testSort =

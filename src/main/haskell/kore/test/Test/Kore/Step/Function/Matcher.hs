@@ -704,12 +704,14 @@ mockMetadataTools =
     Mock.makeMetadataTools
         mockSymbolOrAliasSorts
         Mock.attributesMapping
+        Mock.headTypeMapping
         Mock.subsorts
 
 mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
 mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools = Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] []
+mockMetaMetadataTools =
+    Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] []
 
 match
     :: forall level .

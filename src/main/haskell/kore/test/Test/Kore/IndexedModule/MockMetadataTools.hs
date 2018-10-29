@@ -21,8 +21,9 @@ import           Kore.AST.Common
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (MetadataTools), SymbolOrAliasSorts )
-import qualified Kore.IndexedModule.MetadataTools
+                 ( HeadType, MetadataTools (MetadataTools),
+                 SymbolOrAliasSorts )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (StepperAttributes) )
@@ -32,11 +33,13 @@ import qualified Kore.Step.StepperAttributes as StepperAttributes
 makeMetadataTools
     :: SymbolOrAliasSorts level
     -> [(SymbolOrAlias level, StepperAttributes)]
+    -> [(SymbolOrAlias level, HeadType)]
     -> [(Sort level, Sort level)]
     -> MetadataTools level StepperAttributes
-makeMetadataTools symbolOrAliasSorts attr isSubsortOf =
+makeMetadataTools symbolOrAliasSorts attr headTypes isSubsortOf =
     MetadataTools
         { symAttributes = attributesFunction attr
+        , symbolOrAliasType = headTypeFunction headTypes
         , sortAttributes = const functionAttributes
         , symbolOrAliasSorts = symbolOrAliasSorts
         -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
@@ -57,6 +60,12 @@ attributesFunction
     -> SymbolOrAlias level
     -> StepperAttributes
 attributesFunction = caseBasedFunction
+
+headTypeFunction
+    :: [(SymbolOrAlias level, HeadType)]
+    -> SymbolOrAlias level
+    -> HeadType
+headTypeFunction = caseBasedFunction
 
 caseBasedFunction
     :: (Eq a, Show a)

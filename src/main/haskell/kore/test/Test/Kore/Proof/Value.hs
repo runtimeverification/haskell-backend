@@ -15,7 +15,9 @@ import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( HeadType, MetadataTools )
+import qualified Kore.IndexedModule.MetadataTools as HeadType
+                 ( HeadType (..) )
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.StepperAttributes
 
@@ -169,11 +171,23 @@ symbolOrAliasAttrs =
     , (funSymbol, Mock.functionAttributes)
     ]
 
+symbolOrAliasType :: [(SymbolOrAlias Object, HeadType)]
+symbolOrAliasType =
+    [ (unitSymbol, HeadType.Symbol)
+    , (injSymbol subSort supSort, HeadType.Symbol)
+    , (injSymbol unitSort supSort, HeadType.Symbol)
+    , (injSymbol supSort supSort, HeadType.Symbol)
+    , (pairSymbol unitSort, HeadType.Symbol)
+    , (pairSymbol intSort, HeadType.Symbol)
+    , (funSymbol, HeadType.Symbol)
+    ]
+
 tools :: MetadataTools Object StepperAttributes
 tools =
     Mock.makeMetadataTools
         symbolOrAliasSorts
         symbolOrAliasAttrs
+        symbolOrAliasType
         []
 
 assertValue :: CommonPurePattern Object -> Assertion

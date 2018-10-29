@@ -29,6 +29,8 @@ import           Kore.Building.Sorts
 import           Kore.Error
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
+import qualified Kore.IndexedModule.MetadataTools as HeadType
+                 ( HeadType (..) )
 import           Kore.MetaML.AST
                  ( CommonMetaPattern )
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
@@ -263,6 +265,7 @@ mockSymbolOrAliasSorts = const ApplicationSorts
 mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.functionalAttributes
+    , symbolOrAliasType = const HeadType.Symbol
     , sortAttributes = const Mock.functionalAttributes
     , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False

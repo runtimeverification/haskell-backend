@@ -41,6 +41,8 @@ import           Kore.ASTHelpers
 import           Kore.ASTUtils.SmartConstructors
                  ( mkSort, mkVar )
 import           Kore.IndexedModule.MetadataTools
+import qualified Kore.IndexedModule.MetadataTools as HeadType
+                 ( HeadType (..) )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeCeilPredicate, makeFalsePredicate,
                  makeTruePredicate )
@@ -236,6 +238,7 @@ mockSymbolOrAliasSorts pHead = ApplicationSorts
 tools :: MetadataTools Object StepperAttributes
 tools = MetadataTools
     { symAttributes = mockStepperAttributes
+    , symbolOrAliasType = const HeadType.Symbol
     , sortAttributes = undefined
     , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False

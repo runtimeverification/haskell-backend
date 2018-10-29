@@ -737,11 +737,12 @@ mockMetadataTools =
     Mock.makeMetadataTools
         mockSymbolOrAliasSorts
         Mock.attributesMapping
+        Mock.headTypeMapping
         Mock.subsorts
 
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools =
-    Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] []
+    Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] []
 
 aDomainValue :: CommonPurePattern Object
 aDomainValue =

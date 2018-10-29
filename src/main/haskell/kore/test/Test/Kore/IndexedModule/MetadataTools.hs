@@ -29,6 +29,7 @@ import           Kore.Implicit.Attributes
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..), extractMetadataTools )
 import           Kore.Step.StepperAttributes
 
 import Test.Kore

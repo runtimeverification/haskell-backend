@@ -19,6 +19,10 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.IndexedModule.MetadataTools as HeadType
+                 ( HeadType (..) )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern,
                  PredicateSubstitution (PredicateSubstitution),
@@ -139,6 +143,47 @@ makeAndEvaluateApplications
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeAndEvaluateApplications
+    tools
+    substitutionSimplifier
+    simplifier
+    symbolIdToEvaluator
+    symbol
+    children
+  =
+    case MetadataTools.symbolOrAliasType tools symbol of
+        HeadType.Symbol ->
+            makeAndEvaluateSymbolApplications
+                tools
+                substitutionSimplifier
+                simplifier
+                symbolIdToEvaluator
+                symbol
+                children
+        HeadType.Alias -> error "Alias evaluation not implemented yet."
+
+makeAndEvaluateSymbolApplications
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Show (variable Meta)
+        , Show (variable Object)
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        , Hashable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PureMLPatternSimplifier level variable
+    -- ^ Evaluates functions.
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -- ^ Map from symbol IDs to defined functions
+    -> SymbolOrAlias level
+    -> [ExpandedPattern level variable]
+    -> Simplifier
+        (OrOfExpandedPattern level variable, SimplificationProof level)
+makeAndEvaluateSymbolApplications
     tools
     substitutionSimplifier
     simplifier

@@ -9,7 +9,8 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.IndexedModule.MetadataTools
-    ( MetadataTools (..)
+    ( HeadType (..)
+    , MetadataTools (..)
     , SymbolOrAliasSorts
     , extractMetadataTools
     , getResultSort
@@ -36,6 +37,8 @@ import Kore.IndexedModule.Resolvers
 data MetadataTools level attributes = MetadataTools
     { symAttributes :: SymbolOrAlias level -> attributes
     -- ^ get the attributes of a symbol or alias
+    , symbolOrAliasType :: SymbolOrAlias level -> HeadType
+    -- ^ whether a symbol or alias is a symbol
     , sortAttributes :: Sort level -> attributes
     -- ^ get the attributes of a sort
     , symbolOrAliasSorts :: SymbolOrAliasSorts level
@@ -63,6 +66,7 @@ extractMetadataTools
 extractMetadataTools m =
   MetadataTools
     { symAttributes = getHeadAttributes m
+    , symbolOrAliasType = getHeadType m
     , sortAttributes = getSortAttributes m
     , symbolOrAliasSorts  = getHeadApplicationSorts m
     , isSubsortOf = checkSubsort
