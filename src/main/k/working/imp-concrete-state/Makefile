@@ -25,21 +25,14 @@ $(DEFINITION): imp.k $(KOMPILE_TARGETS)
 %.output.golden: %.output
 	mv $< $<.golden
 
-test: \
-	tests/sum.test \
-	tests/primes.test \
-	tests/collatz.test \
-	tests/max-symbolic.test \
-	tests/max-symbolic.search.final.test
+all_tests := collatz max-symbolic.search.final primes sum
+k_tests := sum
 
-test-k: tests/sum.test
+test: $(foreach test, $(all_tests), tests/$(test).test)
 
-golden: \
-	tests/sum.output.golden \
-	tests/primes.output.golden \
-	tests/collatz.output.golden \
-	tests/max-symbolic.output.golden
-	tests/max-symbolic.search.final.output.golden
+test-k: $(foreach test, $(k_tests), tests/$(test).test)
+
+golden: $(foreach test, $(all_tests), tests/$(test).output.golden)
 
 clean:
 	rm -rf $(KOMPILED) tests/*.imp.kore tests/*.output
