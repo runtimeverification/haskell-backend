@@ -11,10 +11,11 @@ Portability : portable
 -}
 module Kore.Step.ExpandedPattern
     ( CommonExpandedPattern
-    , PredicateSubstitution.CommonPredicateSubstitution  -- TODO(virgil): Stop exporting this.
+    , CommonPredicateSubstitution  -- TODO(virgil): Stop exporting this.
     , ExpandedPattern
-    , PredicateSubstitution.PredicateSubstitution (..)  -- TODO(virgil): Stop exporting this.
+    , PredicateSubstitution (..)  -- TODO(virgil): Stop exporting this.
     , allVariables
+    , erasePredicatedTerm
     , bottom
     , isBottom
     , isTop
@@ -48,7 +49,7 @@ import           Kore.Predicate.Predicate
                  makeAndPredicate, makeFalsePredicate, makeTruePredicate,
                  substitutionToPredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.PredicateSubstitution
                  ( CommonPredicateSubstitution, PredicateSubstitution (..) )
 import           Kore.Unification.Data
 import           Kore.Variables.Free
@@ -140,6 +141,13 @@ allVariables
             (\ x y -> x <> pureAllVariables (snd y))
             Set.empty
             sub
+
+-- | Erase the @Predicated@ 'term' to yield a 'PredicateSubstitution'.
+erasePredicatedTerm
+    :: Predicated level variable child
+    -> PredicateSubstitution level variable
+erasePredicatedTerm Predicated { predicate, substitution } =
+    PredicateSubstitution { predicate, substitution }
 
 {-|'toMLPattern' converts an ExpandedPattern to a PureMLPattern.
 -}
