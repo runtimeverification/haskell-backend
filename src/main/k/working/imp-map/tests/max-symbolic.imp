@@ -6,5 +6,5 @@ x = symInt;
 y = symInt;
 z = symInt;
 max = x;
-if (y <= max) {max = y;} else {}
-if (y <= max) {max = z;} else {}
+if (max <= y) {max = y;} else {}
+if (max <= z) {max = z;} else {}
