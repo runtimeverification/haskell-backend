@@ -43,13 +43,10 @@ import           Kore.Step.BaseStep
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes, constructorAttribute,
-                 injectiveAttribute )
+                 ( StepperAttributes )
 import           Kore.Unification.Data
 
 import           Test.Kore
@@ -361,87 +358,113 @@ prop_unifyConcrete keys = do
     asVariablePattern = asPurePattern . VariablePattern
     variablesGen = (,) <$> variableGen <*> variableGen
 
+{- | Unify a concrete map with symbolic-keyed map.
+
+@
+(1, 1 |-> 2) ∧ (x, x |-> v)
+@
+
+Iterated unification must turn the symbolic key @x@ into a concrete key by
+unifying the first element of the pair. This also requires that Map unification
+return a partial result for unifying the second element of the pair.
+
+ -}
 unit_concretizeKeys :: Assertion
 unit_concretizeKeys =
-    let
-        x =
-            Variable
-                { variableName = testId "x"
-                , variableSort = Test.Int.intSort
-                }
-        v =
-            Variable
-                { variableName = testId "v"
-                , variableSort = Test.Int.intSort
-                }
-        key = Test.Int.asConcretePattern 1
-        symbolicKey = fromConcretePurePattern key
-        val = Test.Int.asPattern 2
-        concrete = asPattern $ Map.fromList [(key, val)]
-        symbolic = asSymbolicPattern $ Map.fromList [(mkVar x, mkVar v)]
-        original =
-            mkAnd
-                (mkPair Test.Int.intSort mapSort (Test.Int.asPattern 1) concrete)
-                (mkPair Test.Int.intSort mapSort (mkVar x) symbolic)
-        expected =
-            Predicated
-                { term =
-                    mkPair Test.Int.intSort mapSort
-                        symbolicKey
-                        (asSymbolicPattern $ Map.fromList [(symbolicKey, val)])
-                , predicate = Predicate.makeTruePredicate
-                , substitution =
-                    [ (v, val)
-                    , (x, symbolicKey)
-                    ]
-                }
-        actual = evaluate original
-    in
-        assertEqual "Expected simplified Map" expected actual
+    assertEqual "Expected simplified Map" expected actual
+  where
+    x =
+        Variable
+            { variableName = testId "x"
+            , variableSort = Test.Int.intSort
+            }
+    v =
+        Variable
+            { variableName = testId "v"
+            , variableSort = Test.Int.intSort
+            }
+    key = Test.Int.asConcretePattern 1
+    symbolicKey = fromConcretePurePattern key
+    val = Test.Int.asPattern 2
+    concrete = asPattern $ Map.fromList [(key, val)]
+    symbolic = asSymbolicPattern $ Map.fromList [(mkVar x, mkVar v)]
+    original =
+        mkAnd
+            (mkPair Test.Int.intSort mapSort (Test.Int.asPattern 1) concrete)
+            (mkPair Test.Int.intSort mapSort (mkVar x) symbolic)
+    expected =
+        Predicated
+            { term =
+                mkPair Test.Int.intSort mapSort
+                    symbolicKey
+                    (asSymbolicPattern $ Map.fromList [(symbolicKey, val)])
+            , predicate = Predicate.makeTruePredicate
+            , substitution =
+                [ (v, val)
+                , (x, symbolicKey)
+                ]
+            }
+    actual = evaluate original
 
+{- | Unify a concrete map with symbolic-keyed map in an axiom
+
+Apply the axiom
+@
+(x, x |-> v) => v
+@
+to the configuration
+@
+(1, 1 |-> 2)
+@
+yielding @2@.
+
+Iterated unification must turn the symbolic key @x@ into a concrete key by
+unifying the first element of the pair. This also requires that Map unification
+return a partial result for unifying the second element of the pair.
+
+ -}
 unit_concretizeKeysAxiom :: Assertion
 unit_concretizeKeysAxiom =
-    let
-        x = mkIntVar (testId "x")
-        v = mkIntVar (testId "v")
-        key = Test.Int.asConcretePattern 1
-        symbolicKey = fromConcretePurePattern key
-        val = Test.Int.asPattern 2
-        symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
-        axiom =
-            AxiomPattern
-                { axiomPatternLeft =
-                    mkPair Test.Int.intSort mapSort x symbolicMap
-                , axiomPatternRight = v
-                , axiomPatternRequires = Predicate.makeTruePredicate
-                , axiomPatternAttributes = Default.def
+    assertEqual "Expected MAP.lookup" expected actual
+  where
+    x = mkIntVar (testId "x")
+    v = mkIntVar (testId "v")
+    key = Test.Int.asConcretePattern 1
+    symbolicKey = fromConcretePurePattern key
+    val = Test.Int.asPattern 2
+    symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
+    axiom =
+        AxiomPattern
+            { axiomPatternLeft =
+                mkPair Test.Int.intSort mapSort x symbolicMap
+            , axiomPatternRight = v
+            , axiomPatternRequires = Predicate.makeTruePredicate
+            , axiomPatternAttributes = Default.def
+            }
+    config =
+        evaluate
+        $ mkPair Test.Int.intSort mapSort
+            symbolicKey
+            (asPattern $ Map.fromList [(key, val)])
+    expected =
+        Right
+            ( Predicated
+                { term = val
+                , predicate =
+                    -- The predicate is not discharged because we do not
+                    -- provide functionality axioms for elementMap.
+                    give testSymbolOrAliasSorts
+                    Predicate.makeCeilPredicate
+                    $ asSymbolicPattern
+                    $ Map.fromList [(symbolicKey, val)]
+                , substitution = []
                 }
-        config =
-            evaluate
-            $ mkPair Test.Int.intSort mapSort
-                symbolicKey
-                (asPattern $ Map.fromList [(key, val)])
-        expected =
-            Right
-                ( Predicated
-                    { term = val
-                    , predicate =
-                        -- The predicate is not discharged because we do not
-                        -- provide functionality axioms for elementMap.
-                        give testSymbolOrAliasSorts
-                        Predicate.makeCeilPredicate
-                        $ asSymbolicPattern
-                        $ Map.fromList [(symbolicKey, val)]
-                    , substitution = []
-                    }
-                , mconcat
-                    [ stepProof (StepProofVariableRenamings [])
-                    , stepProof (StepProofUnification EmptyUnificationProof)
-                    ]
-                )
-        actual = runStep config axiom
-    in
-        assertEqual "Expected MAP.lookup" expected actual
+            , mconcat
+                [ stepProof (StepProofVariableRenamings [])
+                , stepProof (StepProofUnification EmptyUnificationProof)
+                ]
+            )
+    actual = runStep config axiom
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonPurePattern Object
@@ -525,94 +548,6 @@ mapModule =
                 Test.Bool.boolSort [Test.Int.intSort, mapSort]
             ]
         }
-
-importKoreModule :: ModuleName -> KoreSentence
-importKoreModule moduleName =
-    asSentence
-        (SentenceImport
-            { sentenceImportModuleName = moduleName
-            , sentenceImportAttributes = Attributes []
-            }
-            :: KoreSentenceImport
-        )
-
-pairModuleName :: ModuleName
-pairModuleName = ModuleName "PAIR"
-
-{- | Declare the @Pair@ sort and constructors.
- -}
-pairModule :: KoreModule
-pairModule =
-    Module
-        { moduleName = pairModuleName
-        , moduleAttributes = Attributes []
-        , moduleSentences =
-            [ pairSortDecl
-            , pairSymbolDecl
-            ]
-        }
-
-pairSort :: Sort Object -> Sort Object -> Sort Object
-pairSort lSort rSort =
-    SortActualSort SortActual
-        { sortActualName = testId "Pair"
-        , sortActualSorts = [lSort, rSort]
-        }
-
--- | Declare 'Pair' in a Kore module.
-pairSortDecl :: KoreSentence
-pairSortDecl =
-    asSentence decl
-  where
-    lSortVariable = SortVariable (testId "l")
-    rSortVariable = SortVariable (testId "r")
-    lSort = SortVariableSort lSortVariable
-    rSort = SortVariableSort rSortVariable
-    decl :: KoreSentenceSort Object
-    decl =
-        SentenceSort
-            { sentenceSortName =
-                let SortActualSort SortActual { sortActualName } =
-                        pairSort lSort rSort
-                in sortActualName
-            , sentenceSortParameters = [lSortVariable, rSortVariable]
-            , sentenceSortAttributes = Attributes []
-            }
-
-pairId :: Id level
-pairId = testId "pair"
-
-symbolPair :: Sort Object -> Sort Object -> SymbolOrAlias Object
-symbolPair lSort rSort =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = pairId
-        , symbolOrAliasParams = [lSort, rSort]
-        }
-
-pairSymbolDecl :: KoreSentence
-pairSymbolDecl =
-    asSentence decl
-  where
-    decl :: KoreSentenceSymbol Object
-    decl =
-        SentenceSymbol
-            { sentenceSymbolSymbol =
-                Symbol
-                    { symbolConstructor = pairId
-                    , symbolParams = [lSortVariable, rSortVariable]
-                    }
-            , sentenceSymbolSorts = [lSort, rSort]
-            , sentenceSymbolResultSort = pairSort lSort rSort
-            , sentenceSymbolAttributes =
-                Attributes
-                    [ constructorAttribute
-                    , injectiveAttribute
-                    ]
-            }
-    lSortVariable = SortVariable (testId "l")
-    rSortVariable = SortVariable (testId "r")
-    lSort = SortVariableSort lSortVariable
-    rSort = SortVariableSort rSortVariable
 
 testModuleName :: ModuleName
 testModuleName = ModuleName "TEST"
@@ -742,36 +677,7 @@ mkIntVar :: Id Object -> CommonPurePattern Object
 mkIntVar variableName =
     mkVar Variable { variableName, variableSort = Test.Int.intSort }
 
-mkPair
-    :: Sort Object
-    -> Sort Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
-mkPair lSort rSort l r = App_ (symbolPair lSort rSort) [l, r]
-
 mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
 mockSubstitutionSimplifier =
     PredicateSubstitutionSimplifier
         (\x -> return (x, SimplificationProof))
-
-substitutionSimplifier
-    :: MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-substitutionSimplifier tools =
-    PredicateSubstitution.create
-        tools
-        (PureMLPatternSimplifier
-            (\_ p ->
-                return
-                    ( OrOfExpandedPattern.make
-                        [ Predicated
-                            { term = Kore.mkTop
-                            , predicate = Predicate.wrapPredicate p
-                            , substitution = []
-                            }
-                        ]
-                    , SimplificationProof
-                    )
-            )
-        )

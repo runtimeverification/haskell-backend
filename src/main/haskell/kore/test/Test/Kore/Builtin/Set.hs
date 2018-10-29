@@ -2,7 +2,11 @@ module Test.Kore.Builtin.Set where
 
 import Test.QuickCheck
        ( Property, property, (.&&.), (===), (==>) )
+import Test.Tasty.HUnit
 
+import           Control.Error
+                 ( runExceptT )
+import qualified Data.Default as Default
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -31,15 +35,19 @@ import qualified Kore.Builtin.Set as Set
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Step.AxiomPatterns
+                 ( AxiomPattern (..) )
+import           Kore.Step.BaseStep
+import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unification.Data
 
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+import           Kore.Predicate.Predicate as Predicate
 import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -264,6 +272,100 @@ prop_unifyFramingVariable set n =
     mkBuiltinDomainSet set' = DV_ setSort (BuiltinDomainSet (Set.map Test.Int.asConcretePattern set'))
     mkDummyVar x = Variable (noLocationId x) setSort
 
+{- | Unify a concrete Set with symbolic-keyed Set.
+
+@
+(1, [1]) ∧ (x, [x])
+@
+
+Iterated unification must turn the symbolic key @x@ into a concrete key by
+unifying the first element of the pair. This also requires that Set unification
+return a partial result for unifying the second element of the pair.
+
+ -}
+unit_concretizeKeys :: Assertion
+unit_concretizeKeys =
+    assertEqual "" expected actual
+  where
+    x =
+        Variable
+            { variableName = testId "x"
+            , variableSort = Test.Int.intSort
+            }
+    key = 1
+    symbolicKey = Test.Int.asPattern key
+    concrete = asPattern $ Set.fromList [key]
+    symbolic = asSymbolicPattern $ Set.fromList [mkVar x]
+    original =
+        mkAnd
+            (mkPair Test.Int.intSort setSort (Test.Int.asPattern 1) concrete)
+            (mkPair Test.Int.intSort setSort (mkVar x) symbolic)
+    expected =
+        Predicated
+            { term =
+                mkPair Test.Int.intSort setSort
+                    symbolicKey
+                    (asSymbolicPattern $ Set.fromList [symbolicKey])
+            , predicate = Predicate.makeTruePredicate
+            , substitution =
+                [ (x, symbolicKey) ]
+            }
+    actual = evaluate original
+
+{- | Unify a concrete Set with symbolic-keyed Set in an axiom
+
+Apply the axiom
+@
+(x, [x]) => x
+@
+to the configuration
+@
+(1, [1])
+@
+yielding @1@.
+
+Iterated unification must turn the symbolic key @x@ into a concrete key by
+unifying the first element of the pair. This also requires that Set unification
+return a partial result for unifying the second element of the pair.
+
+ -}
+unit_concretizeKeysAxiom :: Assertion
+unit_concretizeKeysAxiom =
+    assertEqual "" expected actual
+  where
+    x = mkIntVar (testId "x")
+    key = 1
+    symbolicKey = Test.Int.asPattern key
+    symbolicSet = asSymbolicPattern $ Set.fromList [x]
+    concreteSet = asPattern $ Set.fromList [key]
+    axiom =
+        AxiomPattern
+            { axiomPatternLeft = mkPair Test.Int.intSort setSort x symbolicSet
+            , axiomPatternRight = x
+            , axiomPatternRequires = Predicate.makeTruePredicate
+            , axiomPatternAttributes = Default.def
+            }
+    config = evaluate $ mkPair Test.Int.intSort setSort symbolicKey concreteSet
+    expected =
+        Right
+            ( Predicated
+                { term = symbolicKey
+                , predicate =
+                    -- The predicate is not discharged because we do not
+                    -- provide functionality axioms for elementMap.
+                    give testSymbolOrAliasSorts
+                    Predicate.makeCeilPredicate
+                    $ asSymbolicPattern
+                    $ Set.fromList [symbolicKey]
+                , substitution = []
+                }
+            , mconcat
+                [ stepProof (StepProofVariableRenamings [])
+                , stepProof (StepProofUnification EmptyUnificationProof)
+                ]
+            )
+    actual = runStep config axiom
+
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set Integer -> CommonPurePattern Object
 Right asPattern = (. Set.map Test.Int.asConcretePattern) <$> Set.asPattern indexedModule setSort
@@ -362,6 +464,22 @@ setModule =
             ]
         }
 
+testModuleName :: ModuleName
+testModuleName = ModuleName "TEST"
+
+testModule :: KoreModule
+testModule =
+    Module
+        { moduleName = testModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ importKoreModule Test.Bool.boolModuleName
+            , importKoreModule Test.Int.intModuleName
+            , importKoreModule setModuleName
+            , importKoreModule pairModuleName
+            ]
+        }
+
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
     fst $ evalSimplifier
@@ -370,22 +488,24 @@ evaluate pat =
   where
     tools = extractMetadataTools indexedModule
 
-mapDefinition :: KoreDefinition
-mapDefinition =
+setDefinition :: KoreDefinition
+setDefinition =
     Definition
         { definitionAttributes = Attributes []
         , definitionModules =
             [ Test.Bool.boolModule
             , Test.Int.intModule
+            , pairModule
             , setModule
+            , testModule
             ]
         }
 
 indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
-indexedModules = verify mapDefinition
+indexedModules = verify setDefinition
 
 indexedModule :: KoreIndexedModule StepperAttributes
-Just indexedModule = Map.lookup setModuleName indexedModules
+Just indexedModule = Map.lookup testModuleName indexedModules
 
 evaluators :: Map (Id Object) [Builtin.Function]
 evaluators = Builtin.evaluators Set.builtinFunctions indexedModule
@@ -401,7 +521,26 @@ verify defn =
     attrVerify = defaultAttributesVerification Proxy
 
 testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } = extractMetadataTools indexedModule
+metadataTools :: MetadataTools Object StepperAttributes
+metadataTools@MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } =
+    extractMetadataTools indexedModule
+
+runStep
+    :: CommonExpandedPattern Object
+    -- ^ configuration
+    -> AxiomPattern Object
+    -- ^ axiom
+    -> Either
+        (StepError Object Variable)
+        (CommonExpandedPattern Object, StepProof Object Variable)
+runStep configuration axiom =
+    (evalSimplifier . runExceptT)
+        (stepWithAxiom
+            metadataTools
+            (substitutionSimplifier metadataTools)
+            configuration
+            axiom
+        )
 
 allProperties :: [Property] -> Property
 allProperties = foldr (.&&.) (property True)
