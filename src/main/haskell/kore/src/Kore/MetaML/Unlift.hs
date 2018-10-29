@@ -13,9 +13,9 @@ for all MetaML constructs up to patterns.
 -}
 module Kore.MetaML.Unlift ( UnliftableFromMetaML (..) ) where
 
-import Control.Applicative
-import Data.Functor.Foldable
-import Data.Maybe
+import           Control.Applicative
+import           Data.Functor.Foldable
+import           Data.Maybe
 import qualified Data.Text as Text
 
 import Kore.AST.Common
@@ -53,12 +53,13 @@ parseObjectId input location =
 unliftObjectId :: Id Meta -> Maybe (Id Object)
 unliftObjectId
     Id
-        { getId = Text.unpack -> '#' : oid
+        { getId = mid
         , idLocation = location
         }
   =
-    parseObjectId oid location
-unliftObjectId _  = Nothing
+    case Text.unpack mid of
+        '#' : oid -> parseObjectId oid location
+        _ -> Nothing
 
 instance UnliftableFromMetaML (Id Object) where
     unliftFromMeta (Fix (StringLiteralPattern (StringLiteral str))) =
