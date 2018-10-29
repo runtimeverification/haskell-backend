@@ -67,4 +67,4 @@ stylish:
 	fi
 	find $(HS_SOURCE_DIRS) \
 		\( -name '*.hs' -o -name '*.hs-boot' \) \
-		-exec stylish-haskell -i '{}' \;
+		-print0 | xargs -0L1 stylish-haskell -i
