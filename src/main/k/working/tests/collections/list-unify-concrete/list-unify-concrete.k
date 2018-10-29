@@ -21,7 +21,7 @@ module LIST-UNIFY-CONCRETE
     <a> .List => ListItem(x) ListItem(y) ListItem(z) </a>
     <b> .List => ListItem(x) ListItem(y) ListItem(z) </b>
 
-  // *FAIL* (crash)
+  // PASS
   rule 
     <k> test2 => ready ... </k>
     <a> .List => ListItem(x) ListItem(y) </a>
@@ -33,7 +33,7 @@ module LIST-UNIFY-CONCRETE
     <a> .List => ListItem(x) ListItem(y) </a>
     <b> .List => ListItem(x) ListItem(z) </b>
   
-  // *FAIL* (crash)
+  // PASS
   rule 
     <k> test4 => ready ... </k>
     <b> .List => ListItem(x) ListItem(z) </b>
@@ -42,7 +42,7 @@ module LIST-UNIFY-CONCRETE
   rule 
     <k> test5 => ready ... </k>
 
-  // --- compare two maps ---
+  // --- compare two lists ---
 
   rule 
     <k> ready => success ... </k>
