@@ -17,6 +17,7 @@ target
 !docs/hash-symbol.pdf
 *.fdb_latexmk
 *.fls
+*.tix
 *.toc
 .stack-work
 .*.swp
