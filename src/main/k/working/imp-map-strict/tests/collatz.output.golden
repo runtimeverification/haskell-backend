@@ -4,7 +4,11 @@
       .
     </k>
     <state>
-      m |-> 2 n |-> 1 q |-> 1 r |-> 3 s |-> 66 .State
+      m |-> 2
+      n |-> 1
+      q |-> 1
+      r |-> 3
+      s |-> 66
     </state>
   </T>
   <generatedCounter>
