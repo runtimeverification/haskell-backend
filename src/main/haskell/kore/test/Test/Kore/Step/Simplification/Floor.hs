@@ -194,7 +194,8 @@ test_floorSimplification =
     mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts symbolOrAliasSortsMapping
 
 makeFloor
-    :: [ExpandedPattern Object variable]
+    :: Ord (variable Object)
+    => [ExpandedPattern Object variable]
     -> Floor Object (OrOfExpandedPattern Object variable)
 makeFloor patterns =
     Floor

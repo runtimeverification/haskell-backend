@@ -33,7 +33,7 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that value.
 -}
 simplify
-    :: ( Eq (variable Object), Show (variable Object)
+    :: ( Ord (variable Object), Show (variable Object)
        , SortedVariable variable
        )
     => MetadataTools Object attrs

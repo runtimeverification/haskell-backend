@@ -145,7 +145,7 @@ expectBuiltinDomainList ctx =
             empty
 
 returnList
-    :: Monad m
+    :: (Monad m, Ord (variable Object))
     => Kore.Sort Object
     -> (Builtin variable)
     -> m (AttemptedFunction Object variable)
@@ -170,7 +170,8 @@ evalGet =
   where
     ctx = "LIST.get"
     evalGet0
-        :: MetadataTools Object StepperAttributes
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
         -> Kore.Sort Object
         -> [Kore.PureMLPattern Object variable]
@@ -216,7 +217,8 @@ evalConcat =
   where
     ctx = "LIST.concat"
     evalConcat0
-        :: MetadataTools Object StepperAttributes
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
         -> Kore.Sort Object
         -> [Kore.PureMLPattern Object variable]

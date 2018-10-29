@@ -426,7 +426,8 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
             mockSymbolOrAliasSorts attributesMapping headTypeMapping []
 
 makeApplication
-    :: SymbolOrAlias level
+    :: (MetaOrObject level, Ord (variable level))
+    => SymbolOrAlias level
     -> [[ExpandedPattern level variable]]
     -> Application level (OrOfExpandedPattern level variable)
 makeApplication symbol patterns =

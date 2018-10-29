@@ -246,7 +246,8 @@ test_forallSimplification = give mockSymbolOrAliasSorts
     mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
 makeForall
-    :: variable Object
+    :: Ord (variable Object)
+    => variable Object
     -> [ExpandedPattern Object variable]
     -> Forall Object variable (OrOfExpandedPattern Object variable)
 makeForall variable patterns =
@@ -281,4 +282,3 @@ makeEvaluate
     -> CommonExpandedPattern level
 makeEvaluate variable child =
     fst $ Forall.makeEvaluate variable child
-

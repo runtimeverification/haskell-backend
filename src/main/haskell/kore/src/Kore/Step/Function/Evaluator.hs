@@ -166,7 +166,7 @@ evaluateApplication
 -- move the recursive simplification call from UserDefined.hs here.
 
 evaluateSortInjection
-    :: (MetaOrObject level)
+    :: (MetaOrObject level, Ord (variable level))
     => MetadataTools level StepperAttributes
     -> OrOfExpandedPattern level variable
     -> Application level (PureMLPattern level variable)

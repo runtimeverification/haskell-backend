@@ -26,7 +26,7 @@ import           Kore.Step.Simplification.Data
 {-| simplifies a Top pattern, which means returning an always-true or.
 -}
 simplify
-    :: MetaOrObject level
+    :: (MetaOrObject level, Ord (variable level))
     => Top level child
     -> ( OrOfExpandedPattern level variable
        , SimplificationProof level
