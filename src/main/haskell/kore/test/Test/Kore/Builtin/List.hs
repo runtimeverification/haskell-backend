@@ -183,12 +183,32 @@ listSort =
         , sortActualSorts = []
         }
 
+-- | Another sort with the same hook
+listSort2 :: Sort Object
+listSort2 =
+    SortActualSort SortActual
+        { sortActualName = testId "List2"
+        , sortActualSorts = []
+        }
+
 -- | Declare 'listSort' in a Kore module.
 listSortDecl :: KoreSentence
 listSortDecl =
     (asSentence . SentenceHookedSort) (SentenceSort
         { sentenceSortName =
             let SortActualSort SortActual { sortActualName } = listSort
+            in sortActualName
+        , sentenceSortParameters = []
+        , sentenceSortAttributes = Attributes [ hookAttribute "LIST.List" ]
+        }
+        :: KoreSentenceSort Object)
+
+-- | Declare 'listSort' in a Kore module.
+listSortDecl2 :: KoreSentence
+listSortDecl2 =
+    (asSentence . SentenceHookedSort) (SentenceSort
+        { sentenceSortName =
+            let SortActualSort SortActual { sortActualName } = listSort2
             in sortActualName
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes [ hookAttribute "LIST.List" ]
@@ -217,16 +237,16 @@ builtinSymbol name =
         }
 
 symbolUnit :: SymbolOrAlias Object
-Right symbolUnit = List.lookupSymbolUnit indexedModule
+Right symbolUnit = List.lookupSymbolUnit listSort indexedModule
 
 symbolElement :: SymbolOrAlias Object
-Right symbolElement = List.lookupSymbolElement indexedModule
+Right symbolElement = List.lookupSymbolElement listSort indexedModule
 
 symbolConcat :: SymbolOrAlias Object
-Right symbolConcat = List.lookupSymbolConcat indexedModule
+Right symbolConcat = List.lookupSymbolConcat listSort indexedModule
 
 symbolGet :: SymbolOrAlias Object
-Right symbolGet = List.lookupSymbolGet indexedModule
+Right symbolGet = List.lookupSymbolGet listSort indexedModule
 
 {- | Declare the @LIST@ builtins.
  -}
@@ -246,6 +266,17 @@ listModule =
                 listSort [listSort, listSort]
             , hookedSymbolDecl "LIST.get" (builtinSymbol "getList")
                 Test.Int.intSort [listSort, Test.Int.intSort]
+            -- A second collection of hooked sorts and symbols
+            -- To test that `asPattern` picks the right one
+            , listSortDecl2
+            , hookedSymbolDecl "LIST.unit" (builtinSymbol "unitList2")
+                listSort2 []
+            , hookedSymbolDecl "LIST.element" (builtinSymbol "elementList2")
+                listSort2 [Test.Int.intSort]
+            , hookedSymbolDecl "LIST.concat" (builtinSymbol "concatList2")
+                listSort2 [listSort2, listSort2]
+            , hookedSymbolDecl "LIST.get" (builtinSymbol "getList2")
+                Test.Int.intSort [listSort2, Test.Int.intSort]
             ]
         }
 

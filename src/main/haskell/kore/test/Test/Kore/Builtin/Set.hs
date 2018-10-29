@@ -324,19 +324,19 @@ builtinSymbol name =
         }
 
 symbolUnit :: SymbolOrAlias Object
-Right symbolUnit = Set.lookupSymbolUnit indexedModule
+Right symbolUnit = Set.lookupSymbolUnit setSort indexedModule
 
 symbolElement :: SymbolOrAlias Object
-Right symbolElement = Set.lookupSymbolElement indexedModule
+Right symbolElement = Set.lookupSymbolElement setSort indexedModule
 
 symbolConcat :: SymbolOrAlias Object
-Right symbolConcat = Set.lookupSymbolConcat indexedModule
+Right symbolConcat = Set.lookupSymbolConcat setSort indexedModule
 
 symbolIn :: SymbolOrAlias Object
-Right symbolIn = Set.lookupSymbolIn indexedModule
+Right symbolIn = Set.lookupSymbolIn setSort indexedModule
 
 symbolDifference :: SymbolOrAlias Object
-Right symbolDifference = Set.lookupSymbolDifference indexedModule
+Right symbolDifference = Set.lookupSymbolDifference setSort indexedModule
 
 {- | Declare the @SET@ builtins.
  -}

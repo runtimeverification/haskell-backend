@@ -663,13 +663,14 @@ runParser ctx result =
 lookupSymbol
     :: Text
     -- ^ builtin name
+    -> Sort Object
+    -- ^ the hooked sort
     -> KoreIndexedModule attrs
     -> Either (Error e) (SymbolOrAlias Object)
-lookupSymbol builtinName indexedModule
+lookupSymbol builtinName builtinSort indexedModule
   = do
     symbolOrAliasConstructor <-
-        IndexedModule.resolveHook indexedModule builtinName
-    _ <- IndexedModule.resolveSymbol indexedModule symbolOrAliasConstructor
+        IndexedModule.resolveHook indexedModule builtinName builtinSort
     return SymbolOrAlias
         { symbolOrAliasConstructor
         , symbolOrAliasParams = []

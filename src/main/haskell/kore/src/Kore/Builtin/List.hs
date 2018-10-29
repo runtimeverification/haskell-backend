@@ -279,12 +279,12 @@ asPattern
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
     -> Either (Kore.Error e) (Builtin variable -> Kore.PureMLPattern Object variable)
-asPattern indexedModule _ = do
-    symbolUnit <- lookupSymbolUnit indexedModule
+asPattern indexedModule dvSort = do
+    symbolUnit <- lookupSymbolUnit dvSort indexedModule
     let applyUnit = Kore.App_ symbolUnit []
-    symbolElement <- lookupSymbolElement indexedModule
+    symbolElement <- lookupSymbolElement dvSort indexedModule
     let applyElement elem' = Kore.App_ symbolElement [elem']
-    symbolConcat <- lookupSymbolConcat indexedModule
+    symbolConcat <- lookupSymbolConcat dvSort indexedModule
     let applyConcat list1 list2 = Kore.App_ symbolConcat [list1, list2]
     let asPattern0 list =
             foldr applyConcat applyUnit
@@ -307,28 +307,32 @@ asExpandedPattern symbols resultSort =
 {- | Find the symbol hooked to @LIST.unit@ in an indexed module.
  -}
 lookupSymbolUnit
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolUnit = Builtin.lookupSymbol "LIST.unit"
 
 {- | Find the symbol hooked to @LIST.element@ in an indexed module.
  -}
 lookupSymbolElement
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolElement = Builtin.lookupSymbol "LIST.element"
 
 {- | Find the symbol hooked to @LIST.concat@ in an indexed module.
  -}
 lookupSymbolConcat
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolConcat = Builtin.lookupSymbol "LIST.concat"
 
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}
 lookupSymbolGet
-    :: KoreIndexedModule attrs
+    :: Sort Object
+    -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolGet = Builtin.lookupSymbol "LIST.get"
 
