@@ -13,6 +13,9 @@ $(DEFINITION): imp.k $(KOMPILE_TARGETS)
 %.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
+%.search.final.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
+
 %.krun: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
@@ -22,11 +25,21 @@ $(DEFINITION): imp.k $(KOMPILE_TARGETS)
 %.output.golden: %.output
 	mv $< $<.golden
 
-test: tests/sum.test tests/primes.test tests/collatz.test tests/max-symbolic.test
+test: \
+	tests/sum.test \
+	tests/primes.test \
+	tests/collatz.test \
+	tests/max-symbolic.test \
+	tests/max-symbolic.search.final.test
 
 test-k: tests/sum.test
 
-golden: tests/sum.output.golden tests/primes.output.golden tests/collatz.output.golden tests/max-symbolic.output.golden
+golden: \
+	tests/sum.output.golden \
+	tests/primes.output.golden \
+	tests/collatz.output.golden \
+	tests/max-symbolic.output.golden
+	tests/max-symbolic.search.final.output.golden
 
 clean:
 	rm -rf $(KOMPILED) tests/*.imp.kore tests/*.output
