@@ -41,7 +41,9 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.Builtin.Hook
                  ( Hook (..) )
 import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+                 ( HeadType, SymbolOrAliasSorts )
+import qualified Kore.IndexedModule.MetadataTools as HeadType
+                 ( HeadType (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -1224,6 +1226,175 @@ attributesMapping =
         )
     ,   ( concatListSymbol
         , Mock.defaultAttributes { hook = Hook (Just "LIST.concat") }
+        )
+    ]
+
+headTypeMapping :: [(SymbolOrAlias Object, HeadType)]
+headTypeMapping =
+    [   ( aSymbol
+        , HeadType.Symbol
+        )
+    ,   ( aSort0Symbol
+        , HeadType.Symbol
+        )
+    ,   ( aSort1Symbol
+        , HeadType.Symbol
+        )
+    ,   ( aSubsortSymbol
+        , HeadType.Symbol
+        )
+    ,   ( aSubSubsortSymbol
+        , HeadType.Symbol
+        )
+    ,   ( aOtherSortSymbol
+        , HeadType.Symbol
+        )
+    ,   ( bSymbol
+        , HeadType.Symbol
+        )
+    ,   ( bSort0Symbol
+        , HeadType.Symbol
+        )
+    ,   ( cSymbol
+        , HeadType.Symbol
+        )
+    ,   ( dSymbol
+        , HeadType.Symbol
+        )
+    ,   ( eSymbol
+        , HeadType.Symbol
+        )
+    ,   ( fSymbol
+        , HeadType.Symbol
+        )
+    ,   ( gSymbol
+        , HeadType.Symbol
+        )
+    ,   ( hSymbol
+        , HeadType.Symbol
+        )
+    ,   ( cfSymbol
+        , HeadType.Symbol
+        )
+    ,   ( cfSort0Symbol
+        , HeadType.Symbol
+        )
+    ,   ( cfSort1Symbol
+        , HeadType.Symbol
+        )
+    ,   ( cgSymbol
+        , HeadType.Symbol
+        )
+    ,   ( cgSort0Symbol
+        , HeadType.Symbol
+        )
+    ,   ( chSymbol
+        , HeadType.Symbol
+        )
+    ,   ( plain00Symbol
+        , HeadType.Symbol
+        )
+    ,   ( plain00Sort0Symbol
+        , HeadType.Symbol
+        )
+    ,   ( plain00SubsortSymbol
+        , HeadType.Symbol
+        )
+    ,   ( plain00SubSubsortSymbol
+        , HeadType.Symbol
+        )
+    ,   ( plain10Symbol
+        , HeadType.Symbol
+        )
+    ,   ( plain11Symbol
+        , HeadType.Symbol
+        )
+    ,   ( plain20Symbol
+        , HeadType.Symbol
+        )
+    ,   ( constr10Symbol
+        , HeadType.Symbol
+        )
+    ,   ( constr11Symbol
+        , HeadType.Symbol
+        )
+    ,   ( constr20Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functional00Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functional01Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functional10Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functional11Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functional20Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functional00SubSubSortSymbol
+        , HeadType.Symbol
+        )
+    ,   ( functionalConstr10Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functionalConstr11Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functionalConstr20Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functionalTopConstr20Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functionalTopConstr21Symbol
+        , HeadType.Symbol
+        )
+    ,   ( injective10Symbol
+        , HeadType.Symbol
+        )
+    ,   ( injective11Symbol
+        , HeadType.Symbol
+        )
+    ,   ( sortInjection10Symbol
+        , HeadType.Symbol
+        )
+    ,   ( sortInjection11Symbol
+        , HeadType.Symbol
+        )
+    ,   ( sortInjection0ToTopSymbol
+        , HeadType.Symbol
+        )
+    ,   ( sortInjectionSubToTopSymbol
+        , HeadType.Symbol
+        )
+    ,   ( sortInjectionSubSubToTopSymbol
+        , HeadType.Symbol
+        )
+    ,   ( sortInjectionSubSubToSubSymbol
+        , HeadType.Symbol
+        )
+    ,   ( sortInjectionOtherToTopSymbol
+        , HeadType.Symbol
+        )
+    ,   ( unitMapSymbol
+        , HeadType.Symbol
+        )
+    ,   ( elementMapSymbol
+        , HeadType.Symbol
+        )
+    ,   ( concatMapSymbol
+        , HeadType.Symbol
+        )
+    ,   ( elemListSymbol
+        , HeadType.Symbol
+        )
+    ,   ( concatListSymbol
+        , HeadType.Symbol
         )
     ]
 

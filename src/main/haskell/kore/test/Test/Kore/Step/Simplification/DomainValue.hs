@@ -102,7 +102,8 @@ mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
 mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
-mockMetadataTools = Mock.makeMetadataTools mockSymbolOrAliasSorts [] []
+mockMetadataTools =
+    Mock.makeMetadataTools mockSymbolOrAliasSorts [] [] []
 
 evaluate
     :: (MetaOrObject Object)

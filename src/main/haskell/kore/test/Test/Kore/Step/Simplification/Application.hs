@@ -23,6 +23,8 @@ import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.IndexedModule.MetadataTools as HeadType
+                 ( HeadType (..) )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -394,9 +396,34 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
             , Mock.constructorFunctionalAttributes
             )
         ]
-    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts symbolOrAliasSortsMapping
+    headTypeMapping =
+        [   ( aSymbol
+            , HeadType.Symbol
+            )
+        ,   ( bSymbol
+            , HeadType.Symbol
+            )
+        ,   ( cSymbol
+            , HeadType.Symbol
+            )
+        ,   ( dSymbol
+            , HeadType.Symbol
+            )
+        ,   ( fSymbol
+            , HeadType.Symbol
+            )
+        ,   ( gSymbol
+            , HeadType.Symbol
+            )
+        ,   ( sigmaSymbol
+            , HeadType.Symbol
+            )
+        ]
+    mockSymbolOrAliasSorts =
+        Mock.makeSymbolOrAliasSorts symbolOrAliasSortsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSymbolOrAliasSorts attributesMapping []
+        Mock.makeMetadataTools
+            mockSymbolOrAliasSorts attributesMapping headTypeMapping []
 
 makeApplication
     :: SymbolOrAlias level

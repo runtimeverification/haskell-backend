@@ -301,9 +301,14 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     ]
 
   where
-    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+    mockSymbolOrAliasSorts =
+        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
-        Mock.makeMetadataTools mockSymbolOrAliasSorts Mock.attributesMapping []
+        Mock.makeMetadataTools
+            mockSymbolOrAliasSorts
+            Mock.attributesMapping
+            Mock.headTypeMapping
+            []
     normalize
         :: UnificationSubstitution Object Variable
         -> UnificationSubstitution Object Variable

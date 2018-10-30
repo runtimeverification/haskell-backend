@@ -300,7 +300,10 @@ mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapp
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
-        mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
+        mockSymbolOrAliasSorts
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.subsorts
 
 evaluate
     :: MetadataTools Object StepperAttributes

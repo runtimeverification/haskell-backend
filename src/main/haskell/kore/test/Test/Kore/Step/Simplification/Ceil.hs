@@ -320,10 +320,14 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         , predicate = makeTruePredicate
         , substitution = []
         }
-    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+    mockSymbolOrAliasSorts =
+        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
+            mockSymbolOrAliasSorts
+            Mock.attributesMapping
+            Mock.headTypeMapping
+            Mock.subsorts
 
 makeCeil
     :: [ExpandedPattern Object variable]

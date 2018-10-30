@@ -265,7 +265,10 @@ test_existsSimplification = give mockSymbolOrAliasSorts
         Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymbolOrAliasSorts Mock.attributesMapping Mock.subsorts
+            mockSymbolOrAliasSorts
+            Mock.attributesMapping
+            Mock.headTypeMapping
+            Mock.subsorts
 
 makeExists
     :: variable Object

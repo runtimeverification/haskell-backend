@@ -8,8 +8,10 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Kore.IndexedModule.Resolvers
-    ( getHeadApplicationSorts
+    ( HeadType(..)
+    , getHeadApplicationSorts
     , getHeadAttributes
+    , getHeadType
     , getSortAttributes
     , resolveSort
     , resolveAlias
@@ -31,6 +33,8 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import Kore.AST.Common
+       ( Id, Sort (..), SortActual (..), SymbolOrAlias (..), Variable,
+       getIdForError )
 import Kore.AST.Error
        ( koreFailWithLocations )
 import Kore.AST.Kore
@@ -130,6 +134,27 @@ getHeadAttributes m patternHead =
   where
     headName = symbolOrAliasConstructor patternHead
 
+-- |The type of a 'SymbolOrAlias'.
+data HeadType
+    = Alias
+    | Symbol
+
+-- |Given a KoreIndexedModule and a head, retrieves the head type.
+getHeadType
+    :: MetaOrObject level
+    => KoreIndexedModule atts  -- ^module representing a verified definition
+    -> SymbolOrAlias level     -- ^the head we want to find sorts for
+    -> HeadType
+getHeadType m patternHead =
+    case resolveSymbol m headName of
+        Right _ -> Symbol
+        Left _ ->
+            case resolveAlias m headName of
+                Right _ -> Alias
+                Left _ ->
+                    error ("Head " ++ show patternHead ++ " not defined.")
+  where
+    headName = symbolOrAliasConstructor patternHead
 
 getSortAttributes
     :: MetaOrObject level
