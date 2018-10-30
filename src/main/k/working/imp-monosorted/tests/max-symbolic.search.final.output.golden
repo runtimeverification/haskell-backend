@@ -1,0 +1,95 @@
+      Result
+    #Equals
+      <generatedTop>
+        <T>
+          <k>
+            .
+          </k>
+          <state>
+            x |-> varvarVar'Ques'I1832 y |-> varvarVar'Ques'I2462 z |-> varvarVar'Ques'I3095 max |-> varvarVar'Ques'I1832 .State
+          </state>
+        </T>
+        <generatedCounter>
+          0
+        </generatedCounter>
+      </generatedTop>
+  #And
+      false
+    #Equals
+      varvarVar'Ques'I1832 <=Int varvarVar'Ques'I2462
+  #And
+      false
+    #Equals
+      varvarVar'Ques'I1832 <=Int varvarVar'Ques'I3095
+#Or
+      Result
+    #Equals
+      <generatedTop>
+        <T>
+          <k>
+            .
+          </k>
+          <state>
+            x |-> varvarVar'Ques'I1832 y |-> varvarVar'Ques'I2462 z |-> varvarVar'Ques'I3095 max |-> varvarVar'Ques'I2462 .State
+          </state>
+        </T>
+        <generatedCounter>
+          0
+        </generatedCounter>
+      </generatedTop>
+  #And
+      false
+    #Equals
+      varvarVar'Ques'I2462 <=Int varvarVar'Ques'I3095
+  #And
+      true
+    #Equals
+      varvarVar'Ques'I1832 <=Int varvarVar'Ques'I2462
+#Or
+      Result
+    #Equals
+      <generatedTop>
+        <T>
+          <k>
+            .
+          </k>
+          <state>
+            x |-> varvarVar'Ques'I1832 y |-> varvarVar'Ques'I2462 z |-> varvarVar'Ques'I3095 max |-> varvarVar'Ques'I3095 .State
+          </state>
+        </T>
+        <generatedCounter>
+          0
+        </generatedCounter>
+      </generatedTop>
+  #And
+      false
+    #Equals
+      varvarVar'Ques'I1832 <=Int varvarVar'Ques'I2462
+  #And
+      true
+    #Equals
+      varvarVar'Ques'I1832 <=Int varvarVar'Ques'I3095
+#Or
+      Result
+    #Equals
+      <generatedTop>
+        <T>
+          <k>
+            .
+          </k>
+          <state>
+            x |-> varvarVar'Ques'I1832 y |-> varvarVar'Ques'I2462 z |-> varvarVar'Ques'I3095 max |-> varvarVar'Ques'I3095 .State
+          </state>
+        </T>
+        <generatedCounter>
+          0
+        </generatedCounter>
+      </generatedTop>
+  #And
+      true
+    #Equals
+      varvarVar'Ques'I1832 <=Int varvarVar'Ques'I2462
+  #And
+      true
+    #Equals
+      varvarVar'Ques'I2462 <=Int varvarVar'Ques'I3095

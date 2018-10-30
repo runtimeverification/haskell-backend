@@ -72,6 +72,8 @@ import           Kore.Step.Function.Registry
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
+                 ( toPredicate )
 import           Kore.Step.Search
                  ( SearchType (..), search )
 import qualified Kore.Step.Search as Search
@@ -428,8 +430,8 @@ mainWithOptions
                             (orPredicate, _proof) =
                                 give symbolOrAliasSorts
                                 $ makeMultipleOrPredicate
-                                $ map
-                                    ExpandedPattern.substitutionToPredicate
+                                $ fmap
+                                    PredicateSubstitution.toPredicate
                                     solutions
                         return (unwrapPredicate orPredicate)
         let

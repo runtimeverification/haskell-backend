@@ -31,12 +31,11 @@ import qualified Data.Limit as Limit
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( Meta (..), MetaOrObject, Object (..) )
+                 ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateFalse, makeMultipleAndPredicate )
+                 ( pattern PredicateFalse )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
@@ -53,12 +52,12 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Strategy
                  ( Tree (..) )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.Substitution
+                 ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
-import           Kore.Unification.Unifier
-                 ( UnificationSubstitution )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -128,32 +127,45 @@ matchWith
         , FreshVariable variable
         , Hashable variable
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , ShowMetaOrObject variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
-    -> MaybeT Simplifier (UnificationSubstitution level variable)
+    -> MaybeT Simplifier (PredicateSubstitution level variable)
 matchWith tools substitutionSimplifier simplifier e1 e2 = do
     (unifier, _proof) <- hushT (unificationProcedure tools substitutionSimplifier t1 t2)
-    let (predicate, _proof) = give (MetadataTools.symbolOrAliasSorts tools)
-            $ makeMultipleAndPredicate
+    (predSubst, _proof) <-
+            lift
+            $ mergePredicatesAndSubstitutions
+                tools
+                substitutionSimplifier
                 [ PredicateSubstitution.predicate unifier
                 , ExpandedPattern.predicate e1
                 , ExpandedPattern.predicate e2
                 ]
-    (predSubst, _proof) <-
-        give tools $ lift $ Predicate.evaluate substitutionSimplifier simplifier predicate
-    let evaluatedPred = PredicateSubstitution.predicate predSubst
+                [ PredicateSubstitution.substitution unifier ]
+    (predSubst', _proof) <-
+        give tools
+        $ lift
+        $ Predicate.evaluate substitutionSimplifier simplifier
+        $ PredicateSubstitution.predicate predSubst
+    let evaluatedPred = PredicateSubstitution.predicate predSubst'
     case evaluatedPred of
         PredicateFalse -> nothing
-        _ -> return (PredicateSubstitution.substitution unifier)
+        _ ->
+            lift
+            $ fst <$> mergePredicatesAndSubstitutions
+                tools
+                substitutionSimplifier
+                [ PredicateSubstitution.predicate predSubst' ]
+                [ PredicateSubstitution.substitution predSubst'
+                , PredicateSubstitution.substitution predSubst
+                ]
   where
     t1 = ExpandedPattern.term e1
     t2 = ExpandedPattern.term e2
