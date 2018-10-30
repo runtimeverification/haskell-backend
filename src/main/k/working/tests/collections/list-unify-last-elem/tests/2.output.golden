@@ -1,7 +1,7 @@
 <generatedTop>
   <T>
     <k>
-      a
+      b
     </k>
     <l>
       ListItem ( a )
@@ -9,8 +9,8 @@
       ListItem ( c )
       .List
     </l>
-    <v> 
-      .K
+    <v>
+      .
     </v>
   </T>
   <generatedCounter>

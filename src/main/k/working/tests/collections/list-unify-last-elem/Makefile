@@ -5,7 +5,7 @@ KOMPILED := list-unify-last-elem-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
 $(DEFINITION): list-unify-last-elem.k $(K)
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-last-elem
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-UNIFY-LAST-ELEM
 
 %.list-unify-last-elem.kore: %.list-unify-last-elem $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
