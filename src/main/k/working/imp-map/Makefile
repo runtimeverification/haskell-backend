@@ -1,19 +1,19 @@
-TOP != git rev-parse --show-toplevel
+TOP := $(shell git rev-parse --show-toplevel)
 include $(TOP)/include.mk
 
 KOMPILED := imp-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): imp.k $(KOMPILE_TARGETS)
+$(DEFINITION): imp.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module IMP
 
-%.imp.kore: %.imp $(DEFINITION) $(KRUN_TARGETS)
+%.imp.kore: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.imp $(DEFINITION) $(KRUN_TARGETS)
+%.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.imp $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

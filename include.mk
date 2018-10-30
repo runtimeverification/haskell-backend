@@ -14,8 +14,8 @@ K_LIB := $(K_PACKAGE)/lib
 K := $(K_LIB)/java/kernel-1.0-SNAPSHOT.jar
 JAVA_CLASSPATH := '$(K_LIB)/java/*'
 JAVA := java -ea -cp $(JAVA_CLASSPATH)
-KOMPILE := $(JAVA) org.kframework.main.Main -kompile
-KRUN := $(JAVA) org.kframework.main.Main -krun
+KOMPILE := $(K_BIN)/kompile
+KRUN := $(K_BIN)/krun
 
 HS_TOP := $(TOP)/src/main/haskell/kore
 HS_SOURCE_DIRS := $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test
@@ -51,3 +51,4 @@ $(KORE_EXEC): FORCE
 
 $(K): $(K_SRC)
 	cd $(K_SUBMODULE) && mvn package -q -DskipTests -U
+	rm -f $(K_BIN)/ng

@@ -1,4 +1,4 @@
-TOP != git rev-parse --show-toplevel
+TOP := $(shell git rev-parse --show-toplevel)
 include $(TOP)/include.mk
 
 KOMPILED := map-unify-framing-variable-kompiled
@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): map-unify-framing-variable.k $(KOMPILE_TARGETS)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module map-unify-framing-variable
 
-%.map-unify-framing-variable.kore: %.map-unify-framing-variable $(DEFINITION) $(KRUN_TARGETS)
+%.map-unify-framing-variable.kore: %.map-unify-framing-variable $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.map-unify-framing-variable $(DEFINITION) $(KRUN_TARGETS)
+%.output: %.map-unify-framing-variable $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.map-unify-framing-variable $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.map-unify-framing-variable $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
@@ -22,9 +22,9 @@ $(DEFINITION): map-unify-framing-variable.k $(KOMPILE_TARGETS)
 %.output.golden: %.output
 	mv $< $<.golden
 
-test: tests/1.test tests/2.test tests/3.test 
+test: tests/1.test tests/2.test tests/3.test
 
-test-k: tests/1.test tests/2.test tests/3.test 
+test-k: tests/1.test tests/2.test tests/3.test
 
 golden: tests/1.output.golden tests/2.output.golden tests/3.output.golden
 
