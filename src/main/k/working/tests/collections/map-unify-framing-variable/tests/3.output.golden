@@ -1,11 +1,11 @@
 <generatedTop>
   <T>
     <k>
-      a
+      c
     </k>
     <s1>
-      b |-> 2 
-      c |-> 3
+      a |-> 1
+      b |-> 2
     </s1>
   </T>
   <generatedCounter>

@@ -5,7 +5,7 @@ KOMPILED := map-unify-framing-variable-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
 $(DEFINITION): map-unify-framing-variable.k $(KOMPILE_TARGETS)
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module map-unify-framing-variable
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module MAP-UNIFY-FRAMING-VARIABLE
 
 %.map-unify-framing-variable.kore: %.map-unify-framing-variable $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
