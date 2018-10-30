@@ -5,7 +5,7 @@ KOMPILED := set-unify-framing-variable-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
 $(DEFINITION): set-unify-framing-variable.k $(K)
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module set-unify-framing-variable
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module SET-UNIFY-FRAMING-VARIABLE
 
 %.set-unify-framing-variable.kore: %.set-unify-framing-variable $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
