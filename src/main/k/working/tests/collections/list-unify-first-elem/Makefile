@@ -5,7 +5,7 @@ KOMPILED := list-unify-first-elem-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
 $(DEFINITION): list-unify-first-elem.k $(K)
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-first-elem
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-UNIFY-FIRST-ELEM
 
 %.list-unify-first-elem.kore: %.list-unify-first-elem $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
