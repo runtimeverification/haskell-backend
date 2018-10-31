@@ -17,6 +17,7 @@ import           Data.Reflection
                  ( give )
 import           Data.Set
                  ( Set )
+import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
@@ -54,6 +55,7 @@ import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 {- |
@@ -267,6 +269,56 @@ prop_inKeysUnit key =
     in
         allProperties
             [ Test.Bool.asExpandedPattern False === evaluate patInKeys
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
+prop_keysUnit :: Property
+prop_keysUnit =
+    let
+        patUnit = App_ symbolUnit []
+        patKeys = App_ symbolKeys [patUnit]
+        predicate = mkEquals (Test.Set.asPattern Set.empty) patKeys
+    in
+        allProperties
+            [ evaluate (Test.Set.asPattern Set.empty) === evaluate patKeys
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
+prop_keysElement :: (Integer, Integer) -> Property
+prop_keysElement (key, value) =
+    let
+        concrete = Map.singleton key value
+        concreteKeys = Map.keysSet concrete
+        patConcreteKeys =
+            Test.Set.asPattern
+            $ Set.map Test.Int.asConcretePattern concreteKeys
+        patMap =
+            asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
+            $ Map.map Test.Int.asPattern concrete
+        patSymbolicKeys = App_ symbolKeys [patMap]
+        predicate = mkEquals patConcreteKeys patSymbolicKeys
+    in
+        allProperties
+            [ evaluate patConcreteKeys === evaluate patSymbolicKeys
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
+prop_keys :: Map Integer Integer -> Property
+prop_keys map1 =
+    let
+        keys1 = Map.keysSet map1
+        patConcreteKeys =
+            Test.Set.asPattern $ Set.map Test.Int.asConcretePattern keys1
+        patMap =
+            asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
+            $ Map.map Test.Int.asPattern map1
+        patSymbolicKeys = App_ symbolKeys [patMap]
+        predicate = mkEquals patConcreteKeys patSymbolicKeys
+    in
+        allProperties
+            [ evaluate patConcreteKeys === evaluate patSymbolicKeys
             , ExpandedPattern.top === evaluate predicate
             ]
 
@@ -523,6 +575,9 @@ Right symbolConcat = Map.lookupSymbolConcat mapSort indexedModule
 symbolInKeys :: SymbolOrAlias Object
 Right symbolInKeys = Map.lookupSymbolInKeys mapSort indexedModule
 
+symbolKeys :: SymbolOrAlias Object
+Right symbolKeys = Map.lookupSymbolKeys mapSort indexedModule
+
 {- | Declare the @MAP@ builtins.
  -}
 mapModule :: KoreModule
@@ -533,6 +588,7 @@ mapModule =
         , moduleSentences =
             [ importKoreModule Test.Bool.boolModuleName
             , importKoreModule Test.Int.intModuleName
+            , importKoreModule Test.Set.setModuleName
             , mapSortDecl
             , hookedSymbolDecl "MAP.unit" (builtinSymbol "unitMap")
                 mapSort []
@@ -546,6 +602,8 @@ mapModule =
                 mapSort [mapSort, Test.Int.intSort, Test.Int.intSort]
             , hookedSymbolDecl "MAP.in_keys" (builtinSymbol "inKeysMap")
                 Test.Bool.boolSort [Test.Int.intSort, mapSort]
+            , hookedSymbolDecl "MAP.keys" (builtinSymbol "keysMap")
+                Test.Set.setSort [mapSort]
             ]
         }
 
@@ -560,6 +618,7 @@ testModule =
         , moduleSentences =
             [ importKoreModule Test.Bool.boolModuleName
             , importKoreModule Test.Int.intModuleName
+            , importKoreModule Test.Set.setModuleName
             , importKoreModule mapModuleName
             , importKoreModule pairModuleName
             ]
@@ -580,6 +639,7 @@ mapDefinition =
         , definitionModules =
             [ Test.Bool.boolModule
             , Test.Int.intModule
+            , Test.Set.setModule
             , mapModule
             , pairModule
             , testModule
@@ -593,7 +653,7 @@ indexedModule :: KoreIndexedModule StepperAttributes
 Just indexedModule = Map.lookup testModuleName indexedModules
 
 evaluators :: Map (Id Object) [Builtin.Function]
-evaluators = Builtin.evaluators Map.builtinFunctions indexedModule
+evaluators = Builtin.koreEvaluators indexedModule
 
 verify
     :: ParseAttributes a

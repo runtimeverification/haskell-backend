@@ -97,7 +97,10 @@ prop_inElement value =
 prop_inConcat :: Integer -> Set Integer -> Property
 prop_inConcat elem' values =
     let patIn = App_ symbolIn [ patElem , patSet ]
-        patSet = asPattern (Set.insert elem' values)
+        patSet =
+            asPattern
+            $ Set.map Test.Int.asConcretePattern
+            $ Set.insert elem' values
         patElem = Test.Int.asPattern elem'
         patTrue = Test.Bool.asPattern True
         predicate = mkEquals patTrue patIn
@@ -115,7 +118,7 @@ prop_inConcat elem' values =
 prop_concatUnit :: Set Integer -> Property
 prop_concatUnit values =
     let patUnit = App_ symbolUnit []
-        patValues = asPattern values
+        patValues = asPattern $ Set.map Test.Int.asConcretePattern values
         patConcat1 = App_ symbolConcat [ patUnit, patValues ]
         patConcat2 = App_ symbolConcat [ patValues, patUnit ]
         predicate1 = mkEquals patValues patConcat1
@@ -137,9 +140,9 @@ prop_concatUnit values =
  -}
 prop_concatAssociates :: Set Integer -> Set Integer -> Set Integer -> Property
 prop_concatAssociates values1 values2 values3 =
-    let patSet1 = asPattern values1
-        patSet2 = asPattern values2
-        patSet3 = asPattern values3
+    let patSet1 = asPattern $ Set.map Test.Int.asConcretePattern values1
+        patSet2 = asPattern $ Set.map Test.Int.asConcretePattern values2
+        patSet3 = asPattern $ Set.map Test.Int.asConcretePattern values3
         patConcat12 = App_ symbolConcat [ patSet1, patSet2 ]
         patConcat23 = App_ symbolConcat [ patSet2, patSet3 ]
         patConcat12_3 = App_ symbolConcat [ patConcat12, patSet3 ]
@@ -153,10 +156,10 @@ prop_concatAssociates values1 values2 values3 =
 
 prop_difference :: Set Integer -> Set Integer -> Property
 prop_difference set1 set2 =
-    let patSet1 = asPattern set1
-        patSet2 = asPattern set2
+    let patSet1 = asPattern $ Set.map Test.Int.asConcretePattern set1
+        patSet2 = asPattern $ Set.map Test.Int.asConcretePattern set2
         set3 = Set.difference set1 set2
-        patSet3 = asPattern set3
+        patSet3 = asPattern $ Set.map Test.Int.asConcretePattern set3
         patDifference = App_ symbolDifference [ patSet1, patSet2 ]
         predicate = mkEquals patSet3 patDifference
     in
@@ -196,7 +199,7 @@ prop_unifyConcreteSetWithItself
     -> Property
 prop_unifyConcreteSetWithItself set =
     let
-        patSet    = asPattern set
+        patSet    = asPattern $ Set.map Test.Int.asConcretePattern set
         patExpect = patSet
         patActual = give testSymbolOrAliasSorts (mkAnd patSet patSet)
         predicate = give testSymbolOrAliasSorts (mkEquals patExpect patActual)
@@ -220,8 +223,8 @@ prop_unifyConcrete
     -> Property
 prop_unifyConcrete set1 set2 =
     let
-        patSet1 = asPattern set1
-        patSet2 = asPattern set2
+        patSet1 = asPattern $ Set.map Test.Int.asConcretePattern set1
+        patSet2 = asPattern $ Set.map Test.Int.asConcretePattern set2
         patExpect =
             if set1 == set2
                 then patSet1
@@ -251,11 +254,11 @@ prop_unifyFramingVariable set n =
     let
         var       = mkDummyVar "dummy"
         patVar    = Var_ var
-        patElem   = asPattern $ Set.singleton n
+        patElem   = asPattern $ Set.singleton (Test.Int.asConcretePattern n)
         patSet1   = App_ symbolConcat [patElem, patVar]
         -- ^ set with single concrete elem and framing var
         set2      = Set.insert n set
-        patSet2   = asPattern $ set2
+        patSet2   = asPattern $ Set.map Test.Int.asConcretePattern set2
         -- ^ set obtained by inserting the random element into the original set
         patActual = give testSymbolOrAliasSorts (mkAnd patSet1 patSet2)
         patExpect =
@@ -269,7 +272,9 @@ prop_unifyFramingVariable set n =
             [ patExpect === evaluate patActual
             ]
   where
-    mkBuiltinDomainSet set' = DV_ setSort (BuiltinDomainSet (Set.map Test.Int.asConcretePattern set'))
+    mkBuiltinDomainSet set' =
+        (DV_ setSort . BuiltinDomainSet)
+            (Set.map Test.Int.asConcretePattern set')
     mkDummyVar x = Variable (noLocationId x) setSort
 
 {- | Unify a concrete Set with symbolic-keyed Set.
@@ -294,7 +299,8 @@ unit_concretizeKeys =
             }
     key = 1
     symbolicKey = Test.Int.asPattern key
-    concrete = asPattern $ Set.fromList [key]
+    concreteKey = Test.Int.asConcretePattern key
+    concrete = asPattern $ Set.fromList [concreteKey]
     symbolic = asSymbolicPattern $ Set.fromList [mkVar x]
     original =
         mkAnd
@@ -336,8 +342,9 @@ unit_concretizeKeysAxiom =
     x = mkIntVar (testId "x")
     key = 1
     symbolicKey = Test.Int.asPattern key
+    concreteKey = Test.Int.asConcretePattern key
     symbolicSet = asSymbolicPattern $ Set.fromList [x]
-    concreteSet = asPattern $ Set.fromList [key]
+    concreteSet = asPattern $ Set.fromList [concreteKey]
     axiom =
         AxiomPattern
             { axiomPatternLeft = mkPair Test.Int.intSort setSort x symbolicSet
@@ -367,8 +374,8 @@ unit_concretizeKeysAxiom =
     actual = runStep config axiom
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
-asPattern :: Set Integer -> CommonPurePattern Object
-Right asPattern = (. Set.map Test.Int.asConcretePattern) <$> Set.asPattern indexedModule setSort
+asPattern :: Set.Builtin -> CommonPurePattern Object
+Right asPattern = Set.asPattern indexedModule setSort
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object

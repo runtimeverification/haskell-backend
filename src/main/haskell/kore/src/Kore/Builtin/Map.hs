@@ -29,6 +29,7 @@ module Kore.Builtin.Map
     , lookupSymbolElement
     , lookupSymbolConcat
     , lookupSymbolInKeys
+    , lookupSymbolKeys
     , isSymbolConcat
     -- * Unification
     , unify
@@ -61,6 +62,7 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Builtin.Hook
                  ( Hook )
+import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
@@ -131,6 +133,9 @@ symbolVerifiers =
       )
     , ( "MAP.in_keys"
       , Builtin.verifySymbol Bool.assertSort [anySort, assertSort]
+      )
+    , ( "MAP.keys"
+      , Builtin.verifySymbol Builtin.Set.assertSort [assertSort]
       )
     ]
   where
@@ -318,6 +323,29 @@ evalInKeys =
                 $ Map.member _key _map
         )
 
+evalKeys :: Builtin.Function
+evalKeys =
+    Builtin.functionEvaluator evalKeys0
+  where
+    ctx = "MAP.in_keys"
+    evalKeys0
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
+        -> PureMLPatternSimplifier Object variable
+        -> Kore.Sort Object
+        -> [Kore.PureMLPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
+    evalKeys0 _ _ resultSort = \arguments ->
+        Builtin.getAttemptedFunction
+        (do
+            let _map =
+                    case arguments of
+                        [_map] -> _map
+                        _ -> Builtin.wrongArity ctx
+            _map <- expectBuiltinDomainMap ctx _map
+            Builtin.Set.returnSet resultSort (Map.keysSet _map)
+        )
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -329,6 +357,7 @@ builtinFunctions =
         , ("MAP.unit", evalUnit)
         , ("MAP.update", evalUpdate)
         , ("MAP.in_keys", evalInKeys)
+        , ("MAP.keys", evalKeys)
         ]
 
 {- | Render a 'Map' as a domain value pattern of the given sort.
@@ -437,6 +466,14 @@ lookupSymbolInKeys
     -> KoreIndexedModule attrs
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolInKeys = Builtin.lookupSymbol "MAP.in_keys"
+
+{- | Find the symbol hooked to @MAP.keys@ in an indexed module.
+ -}
+lookupSymbolKeys
+    :: Sort Object
+    -> KoreIndexedModule attrs
+    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+lookupSymbolKeys = Builtin.lookupSymbol "MAP.keys"
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
