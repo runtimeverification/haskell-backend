@@ -11,7 +11,7 @@ import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
-                 ( Given, give )
+                 ( give )
 import           Data.Semigroup
                  ( (<>) )
 import qualified Data.Set as Set
@@ -36,12 +36,10 @@ import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object (..), asUnified )
 import           Kore.AST.PureML
-                 ( UnfixedCommonPurePattern, groundHead )
+                 ( UnfixedCommonPurePattern )
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkApp, mkDomainValue )
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
@@ -54,8 +52,8 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts,
-                 extractMetadataTools )
+                 ( MetadataTools (..), extractMetadataTools )
+
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Predicate.Predicate
@@ -99,8 +97,8 @@ import           Kore.Variables.Fresh
                  ( FreshVariable, freshVariablePrefix )
 
 import GlobalMain
-       ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,
-       mainGlobal )
+       ( MainOptions (..), clockSomething, clockSomethingIO, mainGlobal )
+
 
 {-
 Main module to run kore-exec
@@ -195,9 +193,6 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for file to contain the output pattern
     , mainModuleName      :: !Text
     -- ^ The name of the main module in the definition
-    , isKProgram          :: !Bool
-    -- ^ Whether the pattern file represents a program to be put in the
-    -- initial configuration before execution
     , smtTimeOut          :: !SMTTimeOut
     , stepLimit           :: !(Limit Natural)
     , strategy
@@ -234,9 +229,6 @@ parseKoreExecOptions =
             <> long "module"
             <> help "The name of the main module in the Kore definition."
             <> value "" )
-        <*> enableDisableFlag "is-program"
-            True False False
-            "Whether the pattern represents a program."
         <*> option readSMTTimeOut
             ( metavar "SMT_TIMEOUT"
             <> long "smt-timeout"
@@ -340,7 +332,6 @@ mainWithOptions
         , outputFileName
         , mainModuleName
         , smtTimeOut
-        , isKProgram
         , stepLimit
         , strategy
         , koreSearchOptions
@@ -384,12 +375,7 @@ mainWithOptions
                             )
                             (Limit.replicate stepLimit (strategy rewriteAxioms))
                             (pat, mempty)
-                    runningPattern =
-                        if isKProgram
-                            then give symbolOrAliasSorts
-                                $ makeKInitConfig purePattern
-                            else purePattern
-                    expandedPattern = makeExpandedPattern runningPattern
+                    expandedPattern = makeExpandedPattern purePattern
                 simplifiedPatterns <-
                     ExpandedPattern.simplify
                         metadataTools
@@ -583,66 +569,6 @@ makeExpandedPattern pat =
     , predicate = makeTruePredicate
     , substitution = []
     }
-
-makeKInitConfig
-    :: (Given (SymbolOrAliasSorts Object))
-    => CommonPurePattern Object
-    -> CommonPurePattern Object
-makeKInitConfig pat =
-    mkApp initTCellHead
-        [ mkApp mapElementHead
-            [ mkApp kSeqHead
-                [ mkApp (injHead configVarSort kItemSort)
-                    [ mkDomainValue configVarSort
-                        $ BuiltinDomainPattern
-                        $ StringLiteral_ "$PGM"
-                    ]
-                , mkApp dotKHead []
-                ]
-            , pat
-            ]
-        ]
-
-initTCellHead :: SymbolOrAlias Object
-initTCellHead = groundHead "LblinitTCell" AstLocationImplicit
-
-kSeqHead :: SymbolOrAlias Object
-kSeqHead = groundHead "kseq" AstLocationImplicit
-
-dotKHead :: SymbolOrAlias Object
-dotKHead = groundHead "dotk" AstLocationImplicit
-
-mapElementHead :: SymbolOrAlias Object
-mapElementHead = groundHead "Lbl'UndsPipe'-'-GT-Unds'" AstLocationImplicit
-
-injHead :: Sort Object -> Sort Object -> SymbolOrAlias Object
-injHead fromSort toSort =
-    SymbolOrAlias
-    { symbolOrAliasConstructor = Id
-        { getId = "inj"
-        , idLocation = AstLocationImplicit
-        }
-    , symbolOrAliasParams = [fromSort, toSort]
-    }
-
-
-groundObjectSort :: Text -> Sort Object
-groundObjectSort name =
-    SortActualSort
-        SortActual
-        { sortActualName =
-            Id
-            { getId = name
-            , idLocation = AstLocationImplicit
-            }
-        , sortActualSorts = []
-        }
-
-configVarSort :: Sort Object
-configVarSort = groundObjectSort "SortKConfigVar"
-
-kItemSort :: Sort Object
-kItemSort = groundObjectSort "SortKItem"
 
 -- TODO (traiansf): Get rid of this.
 -- The function below works around several limitations of
