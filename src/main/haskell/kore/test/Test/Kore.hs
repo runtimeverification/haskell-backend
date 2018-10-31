@@ -6,6 +6,7 @@ import Test.QuickCheck.Gen
 import Test.QuickCheck.Instances ()
 
 import           Data.Functor.Foldable
+import           Data.Proxy
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -217,9 +218,10 @@ equalsGen childGen x = equalsInGen childGen x Equals
 
 domainValueGen
     :: MetaOrObject level
-    => level
-    -> Gen (DomainValue level (BuiltinDomain CommonKorePattern))
-domainValueGen x =
+    => Gen child
+    -> level
+    -> Gen (DomainValue level (BuiltinDomain child))
+domainValueGen _ x =
     DomainValue
         <$> scale (`div` 2) (sortGen x)
         <*> builtinPatternGen
@@ -294,8 +296,24 @@ patternGen childGen x =
         , VariablePattern <$> variableGen x
         ]
 
-purePatternGen :: MetaOrObject level => level -> Gen (CommonPurePattern level)
-purePatternGen level = embed <$> patternGen (purePatternGen level) level
+purePatternGen :: forall level. MetaOrObject level => level -> Gen (CommonPurePattern level)
+purePatternGen level =
+    childGen
+  where
+    childGen = embed <$> sized purePatternGenWorker
+    purePatternGenWorker n
+      | n <= 0 =
+        case isMetaOrObject (Proxy :: Proxy level) of
+            IsMeta ->
+                oneof
+                    [ StringLiteralPattern <$> stringLiteralGen
+                    , CharLiteralPattern <$> charLiteralGen
+                    ]
+            IsObject ->
+                oneof
+                    [ DomainValuePattern <$> domainValueGen childGen level
+                    ]
+      | otherwise = patternGen childGen level
 
 korePatternGen :: Gen CommonKorePattern
 korePatternGen = sized (\n ->
@@ -309,7 +327,8 @@ korePatternGen = sized (\n ->
             , (15, asKorePattern <$> patternGen korePatternGen Object)
             , (1, asKorePattern . StringLiteralPattern <$> stringLiteralGen)
             , (1, asKorePattern . CharLiteralPattern <$> charLiteralGen)
-            , (1, asKorePattern . DomainValuePattern <$> domainValueGen Object)
+            , (1, asKorePattern . DomainValuePattern
+                <$> domainValueGen korePatternGen Object)
             , (1, asKorePattern . NextPattern
                 <$> nextGen korePatternGen Object)
             , (1, asKorePattern . RewritesPattern
