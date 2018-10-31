@@ -93,7 +93,7 @@ notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
 
 -- |Yields a pure 'Simplifier' which produces a given 'PureMLPattern'
 purePatternFunctionEvaluator
-    :: (MetaOrObject level)
+    :: (MetaOrObject level, Ord (variable level))
     => PureMLPattern level variable
     -> Simplifier (AttemptedFunction level variable, SimplificationProof level')
 purePatternFunctionEvaluator p =

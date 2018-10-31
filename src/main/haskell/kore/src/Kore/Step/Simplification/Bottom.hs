@@ -13,6 +13,7 @@ module Kore.Step.Simplification.Bottom
 
 import           Kore.AST.Common
                  ( Bottom (..) )
+import           Kore.AST.MetaOrObject
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -23,7 +24,8 @@ import           Kore.Step.Simplification.Data
 {-| simplifies a Bottom pattern, which means returning an always-false or.
 -}
 simplify
-    :: Bottom level child
+    :: (MetaOrObject level, Ord (variable level))
+    => Bottom level child
     -> ( OrOfExpandedPattern level variable
        , SimplificationProof level
        )

@@ -31,7 +31,7 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that variable.
 -}
 simplify
-    :: MetaOrObject level
+    :: (MetaOrObject level, Ord (variable level))
     => variable level
     -> ( OrOfExpandedPattern level variable
        , SimplificationProof level

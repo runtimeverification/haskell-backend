@@ -162,7 +162,7 @@ expectBuiltinDomainMap ctx _map =
                 empty
 
 returnMap
-    :: Monad m
+    :: (Monad m, Ord (variable Object))
     => Kore.Sort Object
     -> Builtin variable
     -> m (AttemptedFunction Object variable)
@@ -177,7 +177,8 @@ evalLookup =
   where
     ctx = "MAP.lookup"
     evalLookup0
-        :: MetadataTools Object StepperAttributes
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
         -> Sort Object
         -> [PureMLPattern Object variable]
@@ -223,7 +224,8 @@ evalConcat =
   where
     ctx = "MAP.concat"
     evalConcat0
-        :: MetadataTools Object StepperAttributes
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
         -> Sort Object
         -> [PureMLPattern Object variable]

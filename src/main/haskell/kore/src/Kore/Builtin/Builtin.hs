@@ -446,9 +446,9 @@ parseString parser lit =
   See also: 'ExpandedPattern'
  -}
 appliedFunction
-    :: Monad m
-    => ExpandedPattern Object variable
-    -> m (AttemptedFunction Object variable)
+    :: (Monad m, Ord (variable level), level ~ Object)
+    => ExpandedPattern level variable
+    -> m (AttemptedFunction level variable)
 appliedFunction epat =
     (return . Applied . OrOfExpandedPattern.make) [epat]
 
@@ -483,11 +483,12 @@ unaryOperator
     get :: DomainValue Object (BuiltinDomain child) -> a
     get = runParser (Text.unpack ctx) . parseDomainValue parser
     unaryOperator0
-        :: MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Sort Object
-        -> [PureMLPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        :: (Ord (variable level), level ~ Object)
+        => MetadataTools level StepperAttributes
+        -> PureMLPatternSimplifier level variable
+        -> Sort level
+        -> [PureMLPattern level variable]
+        -> Simplifier (AttemptedFunction level variable)
     unaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a] -> do
@@ -529,11 +530,12 @@ binaryOperator
     get :: DomainValue Object (BuiltinDomain child) -> a
     get = runParser (Text.unpack ctx) . parseDomainValue parser
     binaryOperator0
-        :: MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Sort Object
-        -> [PureMLPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        :: (Ord (variable level), level ~ Object)
+        => MetadataTools level StepperAttributes
+        -> PureMLPatternSimplifier level variable
+        -> Sort level
+        -> [PureMLPattern level variable]
+        -> Simplifier (AttemptedFunction level variable)
     binaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a, DomainValuePattern b] -> do
@@ -575,11 +577,12 @@ ternaryOperator
     get :: DomainValue Object (BuiltinDomain child) -> a
     get = runParser (Text.unpack ctx) . parseDomainValue parser
     ternaryOperator0
-        :: MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Sort Object
-        -> [PureMLPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        :: (Ord (variable level), level ~ Object)
+        => MetadataTools level StepperAttributes
+        -> PureMLPatternSimplifier level variable
+        -> Sort level
+        -> [PureMLPattern level variable]
+        -> Simplifier (AttemptedFunction level variable)
     ternaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
             [DomainValuePattern a, DomainValuePattern b, DomainValuePattern c] -> do

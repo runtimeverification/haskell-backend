@@ -32,10 +32,11 @@ module Kore.Step.OrOfExpandedPattern
     , traverseFlattenWithPairsGeneric
     ) where
 
-import Data.List
-       ( foldl' )
-import Data.Reflection
-       ( Given )
+import           Data.List
+                 ( foldl' )
+import           Data.Reflection
+                 ( Given )
+import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( PureMLPattern, SortedVariable, Variable )
@@ -76,17 +77,42 @@ inside an 'MultiOr'.
 -}
 data OrBool = OrTrue | OrFalse | OrUnknown
 
-{-|'filterOr' simplifies an 'OrOfExpandedPattern' by handling Top and Bottom
-patterns.
--}
-filterOr
-    :: OrOfExpandedPattern level variable -> OrOfExpandedPattern level variable
-filterOr = filterGeneric patternToOrBool
+{- | Simplify the disjunction of patterns.
 
-{-|'make' constructs a normalized 'OrOfExpandedPattern'.
--}
+The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
+idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
+duplicated patterns from the result.
+
+See also: 'filterUnique'
+
+ -}
+filterOr
+    :: (MetaOrObject level, Ord (variable level))
+    => OrOfExpandedPattern level variable
+    -> OrOfExpandedPattern level variable
+filterOr =
+    filterGeneric patternToOrBool . filterUnique
+
+{- | Simplify the disjunction by eliminating duplicate elements.
+
+The idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
+duplicated patterns from the result.
+
+Note: The patterns are only compared for literal syntactic equality. Filtering
+does not account for α-equivalence, so patterns containing @\\forall@ and
+@\\exists@ may be considered inequal although they are equivalent in the
+matching logic sense.
+
+ -}
+filterUnique :: Ord a => MultiOr a -> MultiOr a
+filterUnique = MultiOr . Set.toList . Set.fromList . extract
+
+{-| 'make' constructs a normalized 'OrOfExpandedPattern'.
+ -}
 make
-    :: [ExpandedPattern level variable] -> OrOfExpandedPattern level variable
+    :: (MetaOrObject level, Ord (variable level))
+    => [ExpandedPattern level variable]
+    -> OrOfExpandedPattern level variable
 make patts = filterOr (MultiOr patts)
 
 {-|'makeMultiOr' constructs a 'MultiOr'.
@@ -98,7 +124,7 @@ makeMultiOr = MultiOr
 'PureMLPatterns'.
 -}
 makeFromSinglePurePattern
-    :: MetaOrObject level
+    :: (MetaOrObject level, Ord (variable level))
     => PureMLPattern level variable
     -> OrOfExpandedPattern level variable
 makeFromSinglePurePattern patt = make [ ExpandedPattern.fromPurePattern patt ]
@@ -118,7 +144,10 @@ extract (MultiOr x) = x
 
 {-| 'isFalse' checks if the 'Or' is composed only of bottom patterns.
 -}
-isFalse :: OrOfExpandedPattern level variable -> Bool
+isFalse
+    :: (MetaOrObject level, Ord (variable level))
+    => OrOfExpandedPattern level variable
+    -> Bool
 isFalse patt =
     case filterOr patt of
         MultiOr [] -> True
@@ -182,7 +211,8 @@ fullCrossProduct ors =
 into an OrOfExpandedPattern by or-ing all the inner elements.
 -}
 flatten
-    :: MultiOr (OrOfExpandedPattern level variable)
+    :: (MetaOrObject level, Ord (variable level))
+    => MultiOr (OrOfExpandedPattern level variable)
     -> OrOfExpandedPattern level variable
 flatten ors =
     filterOr (flattenGeneric ors)
@@ -199,7 +229,8 @@ patternToOrBool patt
 {-| fmaps an or in a similar way to traverseWithPairs.
 -}
 fmapWithPairs
-    ::  (  ExpandedPattern level variable
+    :: (MetaOrObject level, Ord (variable level))
+    =>  (  ExpandedPattern level variable
         -> (ExpandedPattern level variable, a)
         )
     -> OrOfExpandedPattern level variable
@@ -218,7 +249,7 @@ proofs for each transformation: this function will return the transformed or
 and a list of the proofs involved in the transformation.
 -}
 traverseWithPairs
-    :: Monad f
+    :: (MetaOrObject level, Monad f, Ord (variable level))
     =>  (  ExpandedPattern level variable
         -> f (ExpandedPattern level variable, a)
         )
@@ -232,7 +263,8 @@ traverseWithPairs mapper patt = do
 'traverseFlattenWithPairs'.
 -}
 fmapFlattenWithPairs
-    ::  (  ExpandedPattern level variable
+    :: (MetaOrObject level, Ord (variable level))
+    =>  (  ExpandedPattern level variable
         -> (OrOfExpandedPattern level variable, a)
         )
     -> OrOfExpandedPattern level variable
@@ -247,7 +279,7 @@ that its function returns an 'OrOfExpandedPattern', so the actual result
 is flattened at the end.
 -}
 traverseFlattenWithPairs
-    :: Monad f
+    :: (Monad f, MetaOrObject level, Ord (variable level))
     =>  (  ExpandedPattern level variable
         -> f (OrOfExpandedPattern level variable, a)
         )
@@ -261,7 +293,7 @@ traverseFlattenWithPairs mapper patt = do
 except that it works with 'MultiOr's.
 -}
 traverseFlattenWithPairsGeneric
-    :: Monad f
+    :: (Monad f, MetaOrObject level, Ord (variable level))
     =>  (  a
         -> f (OrOfExpandedPattern level variable, pair)
         )
@@ -337,10 +369,23 @@ crossProductGenericF
 crossProductGenericF joiner (MultiOr first) (MultiOr second) =
     MultiOr <$> sequenceA (joiner <$> first <*> second)
 
-{-| 'merge' merges two 'OrOfExpandedPattern'.
--}
+{- | Merge two disjunctions of patterns.
+
+The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
+idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
+duplicated patterns from the result.
+
+Note: The patterns are only compared for literal syntactic equality. Filtering
+does not account for α-equivalence, so patterns containing @\\forall@ and
+@\\exists@ may be considered inequal although they are equivalent in the
+matching logic sense.
+
+See also: 'filterOr'
+
+ -}
 merge
-    :: OrOfExpandedPattern level variable
+    :: (MetaOrObject level, Ord (variable level))
+    => OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
 merge patts1 patts2 =

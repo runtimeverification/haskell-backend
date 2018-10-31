@@ -330,7 +330,8 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             Mock.subsorts
 
 makeCeil
-    :: [ExpandedPattern Object variable]
+    :: Ord (variable Object)
+    => [ExpandedPattern Object variable]
     -> Ceil Object (OrOfExpandedPattern Object variable)
 makeCeil patterns =
     Ceil

@@ -22,7 +22,7 @@ import           Kore.Step.Simplification.Data
                  Simplifier )
 
 mockSimplifier
-    :: (MetaOrObject level, Eq level, Eq (variable level))
+    :: (MetaOrObject level, Eq level, Ord (variable level))
     =>  [   ( PureMLPattern level variable
             , ([ExpandedPattern level variable], SimplificationProof level)
             )
@@ -38,7 +38,7 @@ mockSimplifier values =
         )
 
 mockPredicateSimplifier
-    :: (MetaOrObject level, Eq level, Eq (variable level))
+    :: (MetaOrObject level, Eq level, Ord (variable level))
     =>  [   ( PureMLPattern level variable
             , ([ExpandedPattern level variable], SimplificationProof level)
             )
@@ -57,7 +57,7 @@ mockPredicateSimplifier values =
         )
 
 mockSimplifierHelper
-    ::  (MetaOrObject level, Eq level, Eq (variable level))
+    ::  (MetaOrObject level, Eq level, Ord (variable level))
     =>  (PureMLPattern level variable -> ExpandedPattern level variable)
     ->  [   ( PureMLPattern level variable
             , ([ExpandedPattern level variable], SimplificationProof level)

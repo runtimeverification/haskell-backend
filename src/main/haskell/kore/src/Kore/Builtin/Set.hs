@@ -165,7 +165,7 @@ expectBuiltinDomainSet ctx tools _set =
                 empty
 
 returnSet
-    :: Monad m
+    :: (Monad m, Ord (variable Object))
     => Kore.Sort Object
     -> Builtin
     -> m (AttemptedFunction Object variable)
@@ -193,7 +193,8 @@ evalIn =
     Builtin.functionEvaluator evalIn0
   where
     evalIn0
-        :: MetadataTools Object StepperAttributes
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
         -> Kore.Sort Object
         -> [Kore.PureMLPattern Object variable]
@@ -228,7 +229,8 @@ evalConcat =
   where
     ctx = "SET.concat"
     evalConcat0
-        :: MetadataTools Object StepperAttributes
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
         -> Kore.Sort Object
         -> [Kore.PureMLPattern Object variable]
@@ -267,7 +269,8 @@ evalDifference =
   where
     ctx = "SET.difference"
     evalDifference0
-        :: MetadataTools Object StepperAttributes
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object variable
         -> Kore.Sort Object
         -> [Kore.PureMLPattern Object variable]

@@ -271,14 +271,15 @@ test_existsSimplification = give mockSymbolOrAliasSorts
             Mock.subsorts
 
 makeExists
-    :: variable Object
+    :: Ord (variable Object)
+    => variable Object
     -> [ExpandedPattern Object variable]
     -> Exists Object variable (OrOfExpandedPattern Object variable)
 makeExists variable patterns =
     Exists
         { existsSort = testSort
-        , existsVariable  = variable
-        , existsChild       = OrOfExpandedPattern.make patterns
+        , existsVariable = variable
+        , existsChild = OrOfExpandedPattern.make patterns
         }
 
 testSort :: Sort Object
