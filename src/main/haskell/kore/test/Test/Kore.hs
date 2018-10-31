@@ -294,6 +294,9 @@ patternGen childGen x =
         , VariablePattern <$> variableGen x
         ]
 
+purePatternGen :: MetaOrObject level => level -> Gen (CommonPurePattern level)
+purePatternGen level = embed <$> patternGen (purePatternGen level) level
+
 korePatternGen :: Gen CommonKorePattern
 korePatternGen = sized (\n ->
     if n<=0
