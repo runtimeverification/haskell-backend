@@ -1,0 +1,81 @@
+      Result
+    #Equals
+      <generatedTop>
+        <T>
+          <k>
+            .
+          </k>
+          <state>
+            r |-> 0
+            x |-> varvarVar'Ques'I1657
+            y |-> varvarVar'Ques'I2341
+          </state>
+        </T>
+        <generatedCounter>
+          0
+        </generatedCounter>
+      </generatedTop>
+  #And
+      false
+    #Equals
+      ( false
+          #Equals
+            varvarVar'Ques'I1657 <=Int varvarVar'Ques'I2341
+        #And
+          true
+      #Or
+            true
+          #Equals
+            varvarVar'Ques'I1657 <=Int varvarVar'Ques'I2341
+        #And
+          false
+      #Or
+        notBool varvarVar'Ques'I1657 <=Int varvarVar'Ques'I2341 )
+  #And
+      true
+    #Equals
+      varvarVar'Ques'I1657 <=Int varvarVar'Ques'I2341
+#Or
+      Result
+    #Equals
+      <generatedTop>
+        <T>
+          <k>
+            .
+          </k>
+          <state>
+            r |-> 0
+            x |-> varvarVar'Ques'I1657
+            y |-> varvarVar'Ques'I2341
+          </state>
+        </T>
+        <generatedCounter>
+          0
+        </generatedCounter>
+      </generatedTop>
+  #And
+      false
+    #Equals
+      varvarVar'Ques'I1657 <=Int varvarVar'Ques'I2341
+#Or
+      Result
+    #Equals
+      <generatedTop>
+        <T>
+          <k>
+            .
+          </k>
+          <state>
+            r |-> 0
+            x |-> varvarVar'Ques'I1657
+            y |-> varvarVar'Ques'I2341
+          </state>
+        </T>
+        <generatedCounter>
+          0
+        </generatedCounter>
+      </generatedTop>
+  #And
+      true
+    #Equals
+      varvarVar'Ques'I1657 <=Int varvarVar'Ques'I2341

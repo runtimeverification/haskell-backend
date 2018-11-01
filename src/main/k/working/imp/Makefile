@@ -25,8 +25,9 @@ $(DEFINITION): imp.k $(K)
 %.output.golden: %.output
 	mv $< $<.golden
 
-all_tests := collatz max-symbolic.search.final primes sum
-k_tests := sum
+all_tests := \
+	collatz impossible-branch.search.final max-symbolic.search.final primes sum
+k_tests := impossible-branch.search.final max-symbolic.search.final sum
 
 test: $(foreach test, $(all_tests), tests/$(test).test)
 
