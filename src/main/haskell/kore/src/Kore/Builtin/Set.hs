@@ -57,8 +57,6 @@ import           Kore.AST.Common
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
 import qualified Kore.AST.PureML as Kore
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd )
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
@@ -72,8 +70,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -495,7 +491,7 @@ unify
                 [x@(Var_ _), DV_ _ (Kore.BuiltinDomainSet set2)] ->
                     unifyFramed resultSort set1 set2 x
                 _ ->
-                    unsolved dv1 app2
+                    give symbolOrAliasSorts Builtin.unifyUnsolved dv1 app2
            )
       | isSymbolElement hookTools symbol2 =
         Monad.Trans.lift
@@ -574,17 +570,3 @@ unify
             _ ->
                 -- Cannot unify a non-element Set with an element Set.
                 return (ExpandedPattern.bottom, SimplificationProof)
-
-    -- | Return an unsolved predicate
-    unsolved
-        :: level ~ Object
-        => Kore.PureMLPattern level variable
-        -> Kore.PureMLPattern level variable
-        -> m (expanded, proof)
-    unsolved a b =
-        let
-            unified = give symbolOrAliasSorts mkAnd a b
-            predicate = give symbolOrAliasSorts makeCeilPredicate unified
-            expanded = (give symbolOrAliasSorts pure unified) { predicate }
-        in
-            return (expanded, SimplificationProof)
