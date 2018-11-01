@@ -464,11 +464,38 @@ instance
     printWithExplanation = show
 
 instance
-    (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Iff level child)
+    ( Eq child
+    , Show child
+    , EqualWithExplanation child
+    )
+    => StructEqualWithExplanation (Iff level child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    structFieldsWithNames
+        expected@(Iff _ _ _)
+        actual@(Iff _ _ _)
+      = [ EqWrap
+            "iffSort = "
+            (iffSort expected)
+            (iffSort actual)
+        , EqWrap
+            "iffFirst = "
+            (iffFirst expected)
+            (iffFirst actual)
+        , EqWrap
+            "iffSecond = "
+            (iffSecond expected)
+            (iffSecond actual)
+        ]
+    structConstructorName _ = "Iff"
+instance
+    ( EqualWithExplanation child
+    , Eq child
+    , Show child
+    ) => EqualWithExplanation (Iff level child)
+  where
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
 instance (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Implies level child)
   where
