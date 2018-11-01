@@ -20,9 +20,9 @@ where `X` and `Y` are sets of variables and ◆ denotes "strong-eventually"
 
 Consider also the axiom
 
-`∀ Z . α(Z) → ⚪ β(Z)`.
+`∀ Z . α(Z) → •β(Z)`.
 
-where ⚪  denotes "strong-next".
+where • denotes "strong-next".
 
 The steps below show how the given goal is transformed by "applying" the 
 given axiom.
@@ -30,15 +30,15 @@ given axiom.
 Unrolling "strong-eventually"
 ------------------------------
 
-Let `Δ = ν f . ⚪ f` denote the formula for diverging computation.
+Let `Δ = ν f . •f` denote the formula for diverging computation.
 Then,  for any formula ψ:
 
 - `◆ ψ = ◇ ψ ∨ Δ` by the definition of "strong eventually"
-- `    = ψ ∨ ⚪ ◇ ψ ∨ Δ` by unrolling `◆`
-- `    = ψ ∨ ⚪ ◇ ψ ∨ ⚪ Δ` by unrolling `Δ`
-- `    = ψ ∨ ⚪ (◇ ψ ∨ Δ)`
-  because `⚪` commutes with `∨` 
-- `    = ψ ∨ ⚪ ◆ ψ`
+- `    = ψ ∨ •◇ ψ ∨ Δ` by unrolling `◆`
+- `    = ψ ∨ •◇ ψ ∨ •Δ` by unrolling `Δ`
+- `    = ψ ∨ •(◇ ψ ∨ Δ)`
+  because `•` commutes with `∨` 
+- `    = ψ ∨ •◆ ψ`
 
 
 Therefore proving
@@ -47,16 +47,16 @@ Therefore proving
 ```
 is equivalent to proving
 ```
-∀ X . φ(X) →  ∃ Y . ψ(X, Y) ∨ ⚪ ◆ ∃ Y . ψ(X, Y)`
+∀ X . φ(X) →  ∃ Y . ψ(X, Y) ∨ •◆ ∃ Y . ψ(X, Y)`
 ```
 
 We can now move `∃ Y . ψ(X, Y)` to the right of the implication,
 and (assuming law of excluded middle) we obtain the equivalent:
 ```
-∀ X . φ(X) ∧ ¬∃ Y . ψ(X, Y) →  ⚪ ◆ ∃ Y . ψ(X, Y)`
+∀ X . φ(X) ∧ ¬∃ Y . ψ(X, Y) →  •◆ ∃ Y . ψ(X, Y)`
 ```
 
-Applying the axiom `∀ Z . α(Z) → ⚪ β(Z)`
+Applying the axiom `∀ Z . α(Z) → •β(Z)`
 ------------------------------------------
 
 In the following let `Φ(X) = φ(X) ∧ ¬∃ Y . ψ(X, Y)`
@@ -67,14 +67,14 @@ We can now split the original goal onto `∃ Y. α(Y)` to obtain
 the equivalent goal:
 
 ```
-(∀ X . Φ(X) ∧ (∃ Z. α(Z)) → ⚪ Ψ(X))
+(∀ X . Φ(X) ∧ (∃ Z. α(Z)) → •Ψ(X))
 ∧
-(∀ X . Φ(X) ∧ (¬ ∃ Z. α(Z)) → ⚪ Ψ(X))
+(∀ X . Φ(X) ∧ (¬ ∃ Z. α(Z)) → •Ψ(X))
 ```
 
 Now we know, from the basic symbolic execution algorithm that
 ```
-Φ(X) ∧ (∃ Y .α(Y)) → ⚪ Φ'(X)    (Step)
+Φ(X) ∧ (∃ Y .α(Y)) → •Φ'(X)    (Step)
 ```
 for some `Φ'` determined by the algorithm.
 
@@ -85,10 +85,10 @@ It is then sound to replace the first conjunct in the goal above with
 
 That is indeed so, because
 
-`∀ X . Φ'(X) → Ψ(X)` implies `∀ X . ⚪ Φ'(X) → ⚪ Ψ(X)`
+`∀ X . Φ'(X) → Ψ(X)` implies `∀ X . •Φ'(X) → •Ψ(X)`
 which, by using `(Step)` and implication transitivity, implies that
 ```
-Φ(X) ∧ (∃ Y . α(Y)) → ⚪ Ψ(X)
+Φ(X) ∧ (∃ Y . α(Y)) → •Ψ(X)
 ```
 
 
@@ -96,7 +96,7 @@ Therefore, it is sound to replace the original goal with
 ```
 (∀ X . Φ'(X) → ◆ ∃ Y . ψ(X, Y))
 ∧
-(∀ X . Φ(X) ∧ (¬ ∃ Z. α(Z)) → ⚪ ◆ ∃ Y . ψ(X, Y))
+(∀ X . Φ(X) ∧ (¬ ∃ Z. α(Z)) → •◆ ∃ Y . ψ(X, Y))
 ```
 
 Examples of using the above procedure 
