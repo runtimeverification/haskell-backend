@@ -173,6 +173,9 @@ applyKoreSearchOptions koreSearchOptions koreExecOpts =
         Just koreSearchOpts ->
             koreExecOpts
                 { koreSearchOptions = Just koreSearchOpts
+                , strategy =
+                    -- Search relies on exploring the entire space of states.
+                    allAxioms
                 , stepLimit = min stepLimit searchTypeStepLimit
                 }
           where
@@ -246,19 +249,26 @@ parseKoreExecOptions =
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
             -- works correctly.
-            <> value allAxioms
+            <> value anyAxiom
             <> help "Select rewrites using STRATEGY."
             )
       where
+        strategies =
+            [ ("any", anyAxiom)
+            , ("all", allAxioms)
+            , ("any-heating-cooling", heatingCooling anyAxiom)
+            , ("all-heating-cooling", heatingCooling allAxioms)
+            ]
         readStrategy = do
             strat <- str
-            case strat of
-                "simple" -> pure allAxioms
-                "default" -> pure (heatingCooling allAxioms)
-                _ ->
+            let found = lookup strat strategies
+            case found of
+                Just strategy -> pure strategy
+                Nothing ->
                     let
                         unknown = "Unknown strategy '" ++ strat ++ "'. "
-                        known = "Known strategies are: simple, default."
+                        names = intercalate ", " (fst <$> strategies)
+                        known = "Known strategies are: " ++ names
                     in
                         readerError (unknown ++ known)
     depth =
@@ -326,7 +336,9 @@ main :: IO ()
 main = do
     options <- mainGlobal parseKoreExecOptions parserInfoModifiers
     case localOptions options of
-        Nothing -> return () -- global options parsed, but local failed; exit gracefully
+        Nothing ->
+            -- global options parsed, but local failed; exit gracefully
+            return ()
         Just koreExecOpts -> mainWithOptions koreExecOpts
 
 mainWithOptions :: KoreExecOptions -> IO ()
