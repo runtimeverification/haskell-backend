@@ -191,7 +191,7 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for file containing a pattern to verify and use for execution
     , outputFileName      :: !(Maybe FilePath)
     -- ^ Name for file to contain the output pattern
-    , mainModuleName      :: !Text
+    , mainModuleName      :: !ModuleName
     -- ^ The name of the main module in the definition
     , smtTimeOut          :: !SMTTimeOut
     , stepLimit           :: !(Limit Natural)
@@ -215,7 +215,7 @@ parseKoreExecOptions =
         <*> strOption
             (  metavar "PATTERN_FILE"
             <> long "pattern"
-            <> help "Kore pattern source file to verify and execute. Needs --module."
+            <> help "Verify and execute the Kore pattern found in PATTERN_FILE."
             )
         <*> optional
             (strOption
@@ -224,11 +224,7 @@ parseKoreExecOptions =
                 <> help "Output file to contain final Kore pattern."
                 )
             )
-        <*> strOption
-            (  metavar "MODULE"
-            <> long "module"
-            <> help "The name of the main module in the Kore definition."
-            <> value "" )
+        <*> parseMainModuleName
         <*> option readSMTTimeOut
             ( metavar "SMT_TIMEOUT"
             <> long "smt-timeout"
@@ -271,6 +267,15 @@ parseKoreExecOptions =
             <> long "depth"
             <> help "Execute up to DEPTH steps."
             )
+    parseMainModuleName =
+        fmap ModuleName $ strOption info
+      where
+        info =
+            mconcat
+                [ metavar "MODULE"
+                , long "module"
+                , help "The name of the main module in the Kore definition."
+                ]
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -340,7 +345,7 @@ mainWithOptions
         parsedDefinition <- parseDefinition definitionFileName
         indexedModules <- verifyDefinition True parsedDefinition
         indexedModule <-
-            constructorFunctions <$> mainModule (ModuleName mainModuleName) indexedModules
+            constructorFunctions <$> mainModule mainModuleName indexedModules
         purePattern <-
             mainPatternParseAndVerify indexedModule patternFileName
         let
