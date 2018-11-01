@@ -53,6 +53,7 @@ import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
+import qualified Kore.Builtin.String as String
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule )
@@ -79,6 +80,7 @@ koreVerifiers =
         <> List.sortDeclVerifiers
         <> Map.sortDeclVerifiers
         <> Set.sortDeclVerifiers
+        <> String.sortDeclVerifiers
     , symbolVerifiers =
            Bool.symbolVerifiers
         <> Int.symbolVerifiers
@@ -86,9 +88,11 @@ koreVerifiers =
         <> Map.symbolVerifiers
         <> KEqual.symbolVerifiers
         <> Set.symbolVerifiers
+        <> String.symbolVerifiers
     , patternVerifier =
            Bool.patternVerifier
         <> Int.patternVerifier
+        <> String.patternVerifier
     }
 
 {- | Construct an evaluation context for Kore builtin functions.
@@ -114,6 +118,7 @@ koreEvaluators = evaluators builtins
             , List.builtinFunctions
             , Map.builtinFunctions
             , Set.builtinFunctions
+            , String.builtinFunctions
             ]
 
 {- | Construct an evaluation context for the given builtin functions.
