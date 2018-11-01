@@ -1,4 +1,9 @@
-module Test.Kore.Builtin.KEqual (prop_keq, prop_kneq, test_KEqual) where
+module Test.Kore.Builtin.KEqual
+    ( prop_keq
+    , prop_kneq
+    , test_KEqual
+    , test_KIte
+    ) where
 
 import Test.QuickCheck
        ( Property, (===) )
@@ -45,6 +50,7 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
+import qualified Test.Kore.Builtin.Builtin as Test.Builtin
 
 prop_kneq :: Bool -> Bool -> Property
 prop_kneq = propBinary (/=) kneqSymbol
@@ -70,6 +76,9 @@ keqSymbol = Test.Bool.builtinSymbol "keqBool"
 kneqSymbol :: SymbolOrAlias Object
 kneqSymbol = Test.Bool.builtinSymbol "kneqBool"
 
+kiteSymbol :: SymbolOrAlias Object
+kiteSymbol = Test.Bool.builtinSymbol "kiteK"
+
 kEqualModuleName :: ModuleName
 kEqualModuleName = ModuleName "KEQUAL"
 
@@ -84,6 +93,11 @@ kEqualModule =
             [ Test.Bool.boolSortDecl
             , Test.Bool.binarySymbolDecl "KEQUAL.eq" keqSymbol
             , Test.Bool.binarySymbolDecl "KEQUAL.neq" kneqSymbol
+            , Test.Builtin.hookedSymbolDecl
+                "KEQUAL.ite"
+                kiteSymbol
+                kSort
+                [Test.Bool.boolSort, kSort, kSort]
             , sortDecl kSort
             , sortDecl kItemSort
             , sortDecl idSort
@@ -263,6 +277,46 @@ test_KEqual =
             , variableSort = Test.Bool.boolSort
             }
         ]
+
+test_KIte :: [TestTree]
+test_KIte =
+    [ testCase "ite true"
+        (assertEqual ""
+            ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
+            , SimplificationProof
+            )
+            (evalSimplifier
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators
+                    (App_ kiteSymbol
+                        [ Test.Bool.asPattern True
+                        , Test.Bool.asPattern False
+                        , Test.Bool.asPattern True
+                        ]
+                    )
+                )
+            )
+        )
+    , testCase "ite false"
+        (assertEqual ""
+            ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern True)
+            , SimplificationProof
+            )
+            (evalSimplifier
+                (Pattern.simplify
+                    tools (Mock.substitutionSimplifier tools) evaluators
+                    (App_ kiteSymbol
+                        [ Test.Bool.asPattern False
+                        , Test.Bool.asPattern False
+                        , Test.Bool.asPattern True
+                        ]
+                    )
+                )
+            )
+        )
+    ]
+  where
+    tools = constructorFunctions (extractMetadataTools indexedModule)
 
 kseqSymbol :: PureSentenceSymbol Object
 kseqSymbol = symbol_ "kseq" AstLocationImplicit [kItemSort, kSort] kSort

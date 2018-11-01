@@ -318,6 +318,35 @@ argument is not positive.
         [hook{}("INT.log2")]
 ~~~
 
+## STRING
+
+Depends on `BOOL`.
+
+### STRING.String
+
+The builtin String sort:
+
+~~~
+    hooked-sort String{}
+        [hook{}("STRING.String")]
+~~~
+
+Valid domain values are strings.
+
+~~~
+    \dv{String{}}("string")
+~~~
+
+### STRING.lt
+
+Comparison: is the first argument less than the second?
+
+~~~
+    hooked-symbol lt{}(String{}, String{}) : Bool{}
+        [hook{}("STRING.lt")]
+~~~
+
+
 ## MAP
 
 Depends on `BOOL`.
@@ -501,4 +530,38 @@ Is the element a member of the given set?
 ~~~
     hooked-symbol in{}(Elem{}, Set{}) : Bool{}
         [hook{}("SET.in")]
+~~~
+
+## KEQUAL
+
+Depends on `BOOL`.
+
+The sorts on which equality is tested are referred to as `Item`.
+
+### KEQUAL.eq
+
+Comparison: is the first argument equal to the second?
+
+~~~
+    hooked-symbol eq{}(Item{}, Item{}) : Bool{}
+        [hook{}("KEQUAL.eq")]
+~~~
+
+
+### KEQUAL.neq
+
+Comparison: is the first argument inequal to the second?
+
+~~~
+    hooked-symbol neq{}(Item{}, Item{}) : Bool{}
+        [hook{}("KEQUAL.neq")]
+~~~
+
+### KEQUAL.ite
+
+If-then-else: if condition then something, else something else.
+
+~~~
+    hooked-symbol neq{}(Bool{}, Item{}, Item{}) : Item{}
+        [hook{}("KEQUAL.ite")]
 ~~~

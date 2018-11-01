@@ -19,6 +19,7 @@ module Kore.Builtin.KEqual
     , builtinFunctions
     ) where
 
+import qualified Data.Functor.Foldable as Functor.Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
@@ -27,10 +28,14 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Common
-                 ( Application (..), PureMLPattern, SortedVariable )
+                 ( Application (..), BuiltinDomain (..), DomainValue (..),
+                 Pattern (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
+import           Kore.AST.Sentence
+                 ( SentenceSymbol (..) )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
@@ -61,20 +66,55 @@ symbolVerifiers =
       , Builtin.verifySymbol Bool.assertSort [trivialVerifier, trivialVerifier])
     , ("KEQUAL.neq"
       , Builtin.verifySymbol Bool.assertSort [trivialVerifier, trivialVerifier])
+    , ("KEQUAL.ite", iteVerifier)
     ]
   where
     trivialVerifier :: Builtin.SortVerifier
     trivialVerifier = const $ const $ Right ()
 
-{- | @builtinFunctions@ defines the hooks for @KEQUAL.eq@ and @KEQUAL.neq@
-which can take arbitrary terms (of the same sort) and check whether they are
-equal or not, producing a builtin boolean value.
+    iteVerifier :: Builtin.SymbolVerifier
+    iteVerifier
+        findSort
+        SentenceSymbol
+            { sentenceSymbolSorts = sorts
+            , sentenceSymbolResultSort = result
+            }
+      =
+        Kore.Error.withContext "In argument sorts" $
+            case sorts of
+                [firstSort, secondSort, thirdSort] -> do
+                    Bool.assertSort findSort firstSort
+                    Kore.Error.koreFailWhen
+                        (secondSort /= thirdSort)
+                        "Expected continuations to match"
+                    Kore.Error.koreFailWhen
+                        (secondSort /= result)
+                        "Expected continuations to match"
+                    return ()
+                _ ->
+                    Kore.Error.koreFail
+                        ( "Wrong arity, expected 3 but got "
+                        ++ show arity ++ " in KEQUAL.ite"
+                        )
+      where
+        arity = length sorts
+
+{- | @builtinFunctions@ defines the hooks for @KEQUAL.eq@, @KEQUAL.neq@, and
+@KEQUAL.ite@.
+
+@KEQUAL.eq@ and @KEQUAL.neq@ can take arbitrary terms (of the same sort) and
+check whether they are equal or not, producing a builtin boolean value.
+
+@KEQUAL.ite@ can take a boolean expression and two arbitrary terms (of the same
+sort) and return the first term if the expression is true, and the second
+otherwise.
  -}
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
     [ ("KEQUAL.eq", ApplicationFunctionEvaluator (evalKEq True False))
     , ("KEQUAL.neq", ApplicationFunctionEvaluator (evalKEq False True))
+    , ("KEQUAL.ite", ApplicationFunctionEvaluator evalKIte)
     ]
 
 evalKEq
@@ -113,3 +153,42 @@ evalKEq true false tools substitutionSimplifier _ pat =
       where
         ep1 = ExpandedPattern.fromPurePattern t1
         ep2 = ExpandedPattern.fromPurePattern t2
+
+evalKIte
+    ::  forall variable
+    .   ( FreshVariable variable
+        , Hashable variable
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , ShowMetaOrObject variable
+        )
+    => MetadataTools.MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object Simplifier
+    -> PureMLPatternSimplifier Object variable
+    -> Application Object (PureMLPattern Object variable)
+    -> Simplifier
+        ( AttemptedFunction Object variable
+        , SimplificationProof Object
+        )
+evalKIte _ _ _ pat =
+    case pat of
+        Application
+            {  applicationChildren = [expr, t1, t2] } ->
+            evalIte expr t1 t2
+        _ -> Builtin.wrongArity "KEQUAL.ite"
+  where
+    evaluate :: Functor.Foldable.Fix (Pattern Object variable) -> Maybe Bool
+    evaluate (Functor.Foldable.Fix  (DomainValuePattern a)) = Just (get a)
+    evaluate _ = Nothing
+
+    get :: DomainValue Object (BuiltinDomain child) -> Bool
+    get =
+        Builtin.runParser "KEQUAL.ite"
+        . Builtin.parseDomainValue Bool.parse
+
+    evalIte expr t1 t2 =
+        case evaluate expr of
+            Just result
+                | result    -> purePatternFunctionEvaluator t1
+                | otherwise -> purePatternFunctionEvaluator t2
+            Nothing    -> notApplicableFunctionEvaluator
