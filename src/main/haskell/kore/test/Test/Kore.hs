@@ -7,6 +7,8 @@ import Test.QuickCheck.Instances ()
 
 import           Data.Functor.Foldable
 import           Data.Proxy
+import           Data.Reflection
+                 ( Given )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -16,8 +18,11 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.ASTUtils.SmartPatterns
+import Kore.IndexedModule.MetadataTools
+       ( SymbolOrAliasSorts )
 import Kore.MetaML.AST
 import Kore.Parser.LexemeImpl
+import Kore.Predicate.Predicate
 
 couple :: Gen a -> Gen [a]
 couple gen = do
@@ -271,7 +276,6 @@ rewritesGen childGen x = binaryOperatorGen childGen x Rewrites
 topGen :: MetaOrObject level => level -> Gen (Top level child)
 topGen x = topBottomGen x Top
 
-
 patternGen
     :: MetaOrObject level
     => Gen child
@@ -296,7 +300,10 @@ patternGen childGen x =
         , VariablePattern <$> variableGen x
         ]
 
-purePatternGen :: forall level. MetaOrObject level => level -> Gen (CommonPurePattern level)
+purePatternGen
+    :: forall level. MetaOrObject level
+    => level
+    -> Gen (CommonPurePattern level)
 purePatternGen level =
     childGen
   where
@@ -335,6 +342,29 @@ korePatternGen = sized (\n ->
                 <$> rewritesGen korePatternGen Object)
             ]
     )
+
+predicateGen
+    ::  ( Given (SymbolOrAliasSorts level)
+        , MetaOrObject level
+        )
+    => level
+    -> Gen (Predicate level Variable)
+predicateGen level =
+    oneof
+        [ makeAndPredicate <$> predicateGen level <*> predicateGen level
+        , makeCeilPredicate <$> purePatternGen level
+        , makeEqualsPredicate <$> purePatternGen level <*> purePatternGen level
+        , makeExistsPredicate <$> variableGen level <*> predicateGen level
+        , makeForallPredicate <$> variableGen level <*> predicateGen level
+        , pure makeFalsePredicate
+        , makeFloorPredicate <$> purePatternGen level
+        , makeIffPredicate <$> predicateGen level <*> predicateGen level
+        , makeImpliesPredicate <$> predicateGen level <*> predicateGen level
+        , makeInPredicate <$> purePatternGen level <*> purePatternGen level
+        , makeNotPredicate <$> predicateGen level
+        , makeOrPredicate <$> predicateGen level <*> predicateGen level
+        , pure makeTruePredicate
+        ]
 
 sentenceAliasGen
     :: MetaOrObject level

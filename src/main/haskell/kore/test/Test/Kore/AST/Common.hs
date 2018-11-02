@@ -1,23 +1,43 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Test.Kore.AST.Common
     ( test_withSort
     , test_id
     , test_prettyPrintAstLocation
     , test_astTraversals
+    , arbitrarySortedVariable
     ) where
 
 import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
        ( assertBool, assertEqual, assertFailure, testCase )
+import Test.Tasty.QuickCheck
+
+import Data.Proxy
 
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.Implicit.ImplicitSorts
 import Test.Kore
-       ( testId )
+       ( idGen, testId )
 
 import Test.Tasty.HUnit.Extensions
+
+instance forall level. MetaOrObject level => Arbitrary (Id level) where
+    arbitrary =
+        case isMetaOrObject (Proxy :: Proxy level) of
+            IsMeta -> idGen Meta
+            IsObject -> idGen Object
+
+arbitrarySortedVariable
+    :: forall level.
+        MetaOrObject level
+    => Sort level
+    -> Gen (Variable level)
+arbitrarySortedVariable sort = Variable <$> arbitrary <*> pure sort
+
 test_withSort :: TestTree
 test_withSort =
     testGroup "withSort"

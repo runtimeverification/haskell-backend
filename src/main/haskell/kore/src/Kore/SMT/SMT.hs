@@ -7,281 +7,421 @@ Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Kore.SMT.SMT
-    ( SMTAttributes(..)
-    , unsafeTryRefutePattern
-    , unsafeTryRefutePredicate
+    ( unsafeTryRefutePredicate
     ) where
 
-import           Control.Lens
-                 ( Lens', makeLenses, use, (%=) )
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Error
+                 ( MaybeT, runMaybeT )
 import           Control.Monad.Except
-import           Control.Monad.State
-import           Data.Default
-import qualified Data.Map as Map
+import           Control.Monad.State.Strict
+                 ( StateT, evalStateT )
+import qualified Control.Monad.State.Strict as Monad.State
+import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Functor.Foldable as Functor.Foldable
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Proxy
 import           Data.Reflection
                  ( Given (..) )
-import           Data.SBV
-import           Data.Text
-                 ( Text )
+import           Data.SBV as SMT
 import qualified Data.Text as Text
 import           GHC.IO.Unsafe
-import           Text.Megaparsec
+import           Prelude hiding
+                 ( and, not, or )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-import           Kore.ASTUtils.SmartPatterns
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Builtin.Bool as Bool
+import qualified Kore.Builtin.Bool as Builtin.Bool
+import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Builtin.Hook
-import qualified Kore.Builtin.Int as Int
+import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
-import qualified Kore.Predicate.Predicate as KorePredicate
+import qualified Kore.Predicate.Predicate as Kore
 import           Kore.SMT.Config
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
+import qualified Kore.Step.StepperAttributes as StepperAttributes
 
-data TranslatePredicateError
-    = UnknownHookedSort (Sort Object)
-    | UnknownHookedSymbol (SymbolOrAlias Object)
-    | UnknownPatternConstructor Pat
-    | ExpectedDVPattern Pat
-    | MalformedDVLiteral Pat
-    deriving(Eq, Ord, Show)
+data TranslationVariables var =
+    TranslationVariables
+        { boolVariables :: Map (PureMLPattern Object var) SBool
+        , intVariables :: Map (PureMLPattern Object var) SInteger
+        }
 
-type Pat = PureMLPattern Object Variable
-type Translating
-    = ExceptT TranslatePredicateError (StateT TranslationState Symbolic)
+emptyTranslationVariables :: TranslationVariables variable
+emptyTranslationVariables =
+    TranslationVariables
+        { boolVariables = Map.empty
+        , intVariables = Map.empty
+        }
 
-data SMTAttributes
-    = SMTAttributes
-    { hook :: !Hook
-    } deriving(Eq, Show)
+lookupBoolPattern
+    :: (Monad m, MonadPlus m, Ord (variable Object))
+    => PureMLPattern Object variable
+    -> StateT (TranslationVariables variable) m SBool
+lookupBoolPattern pat =
+    maybe empty return =<< Monad.State.gets (Map.lookup pat . boolVariables)
 
-instance Default SMTAttributes where
-    def = SMTAttributes def
+lookupIntPattern
+    :: (Monad m, MonadPlus m, Ord (variable Object))
+    => PureMLPattern Object variable
+    -> StateT (TranslationVariables variable) m SInteger
+lookupIntPattern pat =
+    maybe empty return =<< Monad.State.gets (Map.lookup pat . intVariables)
 
-instance ParseAttributes SMTAttributes where
-    attributesParser = do
-        hook <- attributesParser
-        pure SMTAttributes { hook }
+freeBoolVariableFor
+    ::  ( Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        , s ~ TranslationVariables variable
+        )
+    => p
+    -> StateT s (MaybeT Symbolic) SBool
+freeBoolVariableFor pat = do
+    var <- liftSMT SMT.free_
+    Monad.State.modify' (insertBoolVariable pat var)
+    return var
 
--- Either a variable with a SMT-hooked sort
--- or a pattern with an Uninterpreted Function head
-type VarOrUF = Either (Id Object) Pat
+insertBoolVariable
+    :: Ord (var Object)
+    => PureMLPattern Object var
+    -> SBool
+    -> TranslationVariables var
+    -> TranslationVariables var
+insertBoolVariable pat var tvs@TranslationVariables { boolVariables } =
+    tvs { boolVariables = Map.insert pat var boolVariables }
 
-data TranslationState
-    = TranslationState
-      { _boolVars :: Map.Map VarOrUF SBool
-      , _intVars  :: Map.Map VarOrUF SInteger
-      }
+translateUninterpretedBool
+    :: Ord (variable Object)
+    => PureMLPattern Object variable
+    -> StateT (TranslationVariables variable) (MaybeT Symbolic) SBool
+translateUninterpretedBool pat =
+    lookupBoolPattern pat <|> freeBoolVariableFor pat
 
-makeLenses ''TranslationState
+freeIntVariableFor
+    ::  ( Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        , s ~ TranslationVariables variable
+        )
+    => p
+    -> StateT s (MaybeT Symbolic) SInteger
+freeIntVariableFor pat = do
+    var <- liftSMT SMT.free_
+    Monad.State.modify' (insertIntVariable pat var)
+    return var
 
-getVar
-    :: Lens' TranslationState (Map.Map VarOrUF b)
-    -> (String -> Symbolic b)
-    -> VarOrUF
-    -> Translating b
-getVar lens makeNewVar i = do
-  v' <- Map.lookup i <$> use lens
-  case v' of
-    Nothing -> do
-      v <- lift $ lift $ makeNewVar (either getIdForError show i)
-      lens %= Map.insert i v
-      return v
-    Just v -> return v
+insertIntVariable
+    :: Ord (var Object)
+    => PureMLPattern Object var
+    -> SInteger
+    -> TranslationVariables var
+    -> TranslationVariables var
+insertIntVariable pat var tvs@TranslationVariables { intVariables } =
+    tvs { intVariables = Map.insert pat var intVariables }
 
-getBoolVar :: VarOrUF -> Translating SBool
-getBoolVar = getVar boolVars sBool
+translateUninterpretedInt
+    :: Ord (variable Object)
+    => PureMLPattern Object variable
+    -> StateT (TranslationVariables variable) (MaybeT Symbolic) SInteger
+translateUninterpretedInt pat =
+    lookupIntPattern pat <|> freeIntVariableFor pat
 
-getIntVar :: VarOrUF -> Translating SInteger
-getIntVar  = getVar intVars sInteger
-
-goUnaryOp
-    :: Monad m
-    => (t1 -> b)
-    -> (t2 -> m t1)
-    -> t2
-    -> m b
-goUnaryOp op cont x1 = do
-    tx1 <- cont x1
-    return (op tx1)
-
-goBinaryOp
-    :: Monad m
-    => (t1 -> t1 -> b)
-    -> (t2 -> m t1)
-    -> t2 -> t2
-    -> m b
-goBinaryOp op cont x1 x2 = do
-    tx1 <- cont x1
-    tx2 <- cont x2
-    return (tx1 `op` tx2)
+liftSMT :: Symbolic a -> StateT s (MaybeT Symbolic) a
+liftSMT = Monad.Trans.lift . Monad.Trans.lift
 
 config :: SMTConfig
 config = z3
 
--- | Returns `Just False` if the SMT solver can prove the pattern
--- is undecidable, and `Nothing` otherwise.
-unsafeTryRefutePattern
-    :: ( Given (MetadataTools Object SMTAttributes)
-       , Ord (variable Object)
-       , SortedVariable variable
-       )
-    => SMTTimeOut --timeout in ms
-    -> PureMLPattern Object variable
-    -> Maybe Bool
-unsafeTryRefutePattern (SMTTimeOut timeout) p = unsafePerformIO $ do
-  let smtPredicate = setTimeOut timeout >> patternToSMT True p -- 20ms
-        >>= (\case {
-               Right p' -> return $ bnot p' ;
-               Left _ -> sBool "TranslationFailed"
-          })
-  res <- proveWith config smtPredicate
-  return $ case res of
-    ThmResult (Satisfiable   _ _) -> Nothing
-    ThmResult (Unsatisfiable _ _) -> Just False
-    _ -> Nothing
-
 unsafeTryRefutePredicate
     :: forall level variable .
-       ( Given (MetadataTools level SMTAttributes)
+       ( Given (MetadataTools level StepperAttributes)
        , MetaOrObject level
        , Ord (variable level)
        , Show (variable level)
        , SortedVariable variable
        )
-    => SMTTimeOut --timeout in ms
-    -> KorePredicate.Predicate level variable
+    => SMTTimeOut
+    -> Kore.Predicate level variable
     -> Maybe Bool
-unsafeTryRefutePredicate timeout p =
+{-# NOINLINE unsafeTryRefutePredicate #-} -- Needed by: unsafePerformIO
+unsafeTryRefutePredicate (SMTTimeOut timeout) p =
   case isMetaOrObject (Proxy :: Proxy level) of
     IsMeta   -> Nothing
-    IsObject -> unsafeTryRefutePattern timeout $ KorePredicate.unwrapPredicate p
+    IsObject ->
+        unsafePerformIO $ do
+            let smtPredicate = do
+                    setTimeOut timeout
+                    smt <- runMaybeT (translatePredicate p)
+                    case smt of
+                        Nothing -> sBool "TranslationFailed"
+                        Just p' -> return $ bnot p'
+            res <- proveWith config smtPredicate
+            return $ case res of
+                ThmResult (Satisfiable   _ _) -> Nothing
+                ThmResult (Unsatisfiable _ _) -> Just False
+                _ -> Nothing
 
-patternToSMT
-    :: ( Ord (variable Object)
-       , SortedVariable variable
-       , Given (MetadataTools Object SMTAttributes)
-       )
-    => Bool
-    -> PureMLPattern Object variable
-    -> Symbolic (Either TranslatePredicateError SBool)
-patternToSMT sloppy p =
-    flip evalStateT (TranslationState Map.empty Map.empty)
-  $ runExceptT
-  $ goBoolean $ convertPatternVariables p
+translatePredicate
+    :: forall variable.
+       (Ord (variable Object), Given (MetadataTools Object StepperAttributes))
+    => Kore.Predicate Object variable
+    -> MaybeT Symbolic SBool
+translatePredicate predicate =
+    evalStateT
+        (translatePredicatePattern $ Kore.unwrapPredicate predicate)
+        emptyTranslationVariables
+  where
+    translatePredicatePattern
+        :: s ~ TranslationVariables variable
+        => PureMLPattern Object variable
+        -> StateT s (MaybeT Symbolic) SBool
+    translatePredicatePattern pat =
+        case Functor.Foldable.project pat of
+            -- Logical connectives: translate as connectives
+            AndPattern and -> translatePredicateAnd and
+            BottomPattern _ -> return SMT.false
+            EqualsPattern eq ->
+                -- Equality of predicates and builtins can be translated to
+                -- equality in the SMT solver, but other patterns must remain
+                -- uninterpreted.
+                translatePredicateEquals eq <|> translateUninterpretedBool pat
+            IffPattern iff -> translatePredicateIff iff
+            ImpliesPattern implies -> translatePredicateImplies implies
+            NotPattern not -> translatePredicateNot not
+            OrPattern or -> translatePredicateOr or
+            TopPattern _ -> return SMT.true
+
+            -- Uninterpreted: translate as variables
+            ApplicationPattern _ -> translateUninterpretedBool pat
+            CeilPattern _ -> translateUninterpretedBool pat
+            ExistsPattern _ -> translateUninterpretedBool pat
+            FloorPattern _ -> translateUninterpretedBool pat
+            ForallPattern _ -> translateUninterpretedBool pat
+            InPattern _ -> translateUninterpretedBool pat
+
+            -- Invalid: no translation, should not occur in predicates
+            DomainValuePattern _ -> empty
+            NextPattern _ -> empty
+            RewritesPattern _ -> empty
+            VariablePattern _ -> empty
+
+    hookTools :: MetadataTools Object Hook
+    hookTools = StepperAttributes.hook <$> given
+
+    translatePredicateAnd And { andFirst, andSecond } =
+        (SMT.&&&)
+            <$> translatePredicatePattern andFirst
+            <*> translatePredicatePattern andSecond
+
+    translatePredicateEquals
+        Equals
+            { equalsOperandSort
+            , equalsResultSort
+            , equalsFirst
+            , equalsSecond
+            }
+      | equalsOperandSort == equalsResultSort =
+        -- Child patterns are predicates.
+        translatePredicateEqualsPredicate
+      | otherwise =
+        case getHook (sortAttributes hookTools equalsOperandSort) of
+            Nothing -> empty
+            Just builtinSort ->
+                -- Child patterns are hooked to builtins that may be
+                -- translatable to SMT theories.
+                translatePredicateEqualsBuiltin builtinSort
       where
-        goBoolean
-            :: CommonPurePattern Object
-            -> Translating SBool
-        goBoolean (And_     _   x1 x2) = goBinaryOp (&&&) goBoolean x1 x2
-        goBoolean (Or_      _   x1 x2) = goBinaryOp (|||) goBoolean x1 x2
-        goBoolean (Implies_ _   x1 x2) = goBinaryOp (==>) goBoolean x1 x2
-        goBoolean (Iff_     _   x1 x2) = goBinaryOp (<=>) goBoolean x1 x2
-        goBoolean (Not_     _   x1)    = goUnaryOp (bnot) goBoolean x1
-        goBoolean (Equals_  s _ x1 x2) =
-          case getHookString $ getSortHook s of
-                "BOOL.Bool" -> goBinaryOp (<=>) goBoolean x1 x2
-                "INT.Int"   -> goBinaryOp (.==) goInteger x1 x2
-                _ -> throwError $ UnknownHookedSort s
-        goBoolean pat@(App_ h [x1, x2]) =
-          case getHookString $ getSymbolHook h of
-                "INT.le" -> goBinaryOp (.<=) goInteger x1 x2
-                "INT.ge" -> goBinaryOp (.>=) goInteger x1 x2
-                "INT.gt" -> goBinaryOp (.>)  goInteger x1 x2
-                "INT.lt" -> goBinaryOp (.<)  goInteger x1 x2
-                "INT.eq" -> goBinaryOp (.==) goInteger x1 x2
-                _ ->
-                  if sloppy
-                    then getBoolVar (Right pat)
-                    else throwError $ UnknownHookedSymbol h
-        goBoolean (V v) = getBoolVar (Left $ variableName v)
-        goBoolean pat@(DV_ _ _) = goBoolLiteral pat "BOOL.Bool"
-        goBoolean (Top_ _)    = return true
-        goBoolean (Bottom_ _) = return false
-        goBoolean pat = throwError $ UnknownPatternConstructor pat
-        goInteger
-            :: Given (MetadataTools Object SMTAttributes)
-            => CommonPurePattern Object
-            -> Translating SInteger
-        goInteger pat@(App_ h [x1, x2]) =
-          case getHookString $ getSymbolHook h of
-                "INT.add" -> goBinaryOp (+) goInteger x1 x2
-                "INT.sub" -> goBinaryOp (-) goInteger x1 x2
-                "INT.mul" -> goBinaryOp (*) goInteger x1 x2
-                "INT.tdiv" -> goBinaryOp (sDiv) goInteger x1 x2
-                "INT.tmod" -> goBinaryOp (sMod) goInteger x1 x2
-                _ ->
-                  if sloppy
-                    then getIntVar (Right pat)
-                    else throwError $ UnknownHookedSymbol h
-        goInteger (V v) = getIntVar (Left $ variableName v)
-        goInteger pat@(DV_ _ _) = goIntLiteral pat "INT.Int"
-        goInteger pat = throwError $ UnknownPatternConstructor pat
-        goIntLiteral
-            :: Given (MetadataTools Object SMTAttributes)
-            => CommonPurePattern Object
-            -> Text
-            -> Translating (SInteger)
-        goIntLiteral pat@(DV_ sort (BuiltinDomainPattern (StringLiteral_ str))) hookName
-         | (getHookString $ getSortHook sort) == hookName
-            = let parsed = runParser Int.parse "" str
-              in
-              case parsed of
-                Right i -> return $ literal i
-                Left _ -> throwError $ ExpectedDVPattern pat
-        goIntLiteral pat _ = throwError $ ExpectedDVPattern pat
-        goBoolLiteral
-            :: Given (MetadataTools Object SMTAttributes)
-            => CommonPurePattern Object
-            -> Text
-            -> Translating (SBool)
-        goBoolLiteral pat@(DV_ sort (BuiltinDomainPattern (StringLiteral_ str))) hookName
-         | (getHookString $ getSortHook sort) == hookName
-            = let parsed = runParser Bool.parse "" str
-              in
-              case parsed of
-                Right i -> return $ literal i
-                Left _ -> throwError $ ExpectedDVPattern pat
-        goBoolLiteral pat _ = throwError $ ExpectedDVPattern pat
+        translatePredicateEqualsPredicate =
+            (SMT.<=>)
+                <$> translatePredicatePattern equalsFirst
+                <*> translatePredicatePattern equalsSecond
+        translatePredicateEqualsBuiltin builtinSort
+          | builtinSort == Builtin.Bool.sort =
+            translateEqualsBool equalsFirst equalsSecond
+          | builtinSort == Builtin.Int.sort =
+            translateEqualsInt equalsFirst equalsSecond
+          | otherwise = empty
 
+    translatePredicateIff Iff { iffFirst, iffSecond } =
+        (SMT.<=>)
+            <$> translatePredicatePattern iffFirst
+            <*> translatePredicatePattern iffSecond
 
-getHookString :: Hook -> Text
-getHookString (Hook (Just s)) = s
-getHookString _ = ""
+    translatePredicateImplies Implies { impliesFirst, impliesSecond } =
+        (SMT.==>)
+            <$> translatePredicatePattern impliesFirst
+            <*> translatePredicatePattern impliesSecond
 
-getSymbolHook
-    :: Given (MetadataTools Object SMTAttributes)
-    => SymbolOrAlias Object
-    -> Hook
-getSymbolHook sym = hook $ symAttributes given sym
+    translatePredicateNot Not { notChild } =
+        SMT.bnot <$> translatePredicatePattern notChild
 
-getSortHook
-    :: Given (MetadataTools Object SMTAttributes)
-    => Sort Object
-    -> Hook
-getSortHook sort = hook $ sortAttributes given sort
+    translatePredicateOr Or { orFirst, orSecond } =
+        (SMT.|||)
+            <$> translatePredicatePattern orFirst
+            <*> translatePredicatePattern orSecond
 
-convertPatternVariables
-    :: forall level v .
-    (MetaOrObject level, Eq (v level), Ord (v level), SortedVariable v)
-    => PureMLPattern level v
-    -> PureMLPattern level Variable
-convertPatternVariables p = flip evalState Map.empty (go p)
-    where go = changeVar changeVar' go
-          changeVar' v = do
-            vars <- get
-            case Map.lookup v vars of
-              Nothing -> do
-                let v1 =
-                        varS
-                            (Text.pack $ show $ Map.size vars)
-                            (sortedVariableSort v)
-                modify (Map.insert v v1)
-                return v1
-              Just v1 -> return v1
+translateEqualsInt
+    :: forall p s variable.
+        ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        , s ~ TranslationVariables variable
+        )
+    => p
+    -> p
+    -> StateT s (MaybeT Symbolic) SBool
+translateEqualsInt first second =
+    (SMT..==) <$> translateInt first <*> translateInt second
+
+translateInt
+    :: forall p s variable.
+        ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        , s ~ TranslationVariables variable
+        )
+    => p
+    -> StateT s (MaybeT Symbolic) SInteger
+translateInt pat =
+    case Functor.Foldable.project pat of
+        VariablePattern _ -> translateUninterpretedInt pat
+        DomainValuePattern dv ->
+            (return . SMT.literal . Builtin.runParser ctx)
+            (Builtin.parseDomainValue Builtin.Int.parse dv)
+            where
+            ctx = Text.unpack Builtin.Int.sort
+        ApplicationPattern app ->
+            translateApplication app
+        _ -> empty
+  where
+    hookTools :: MetadataTools Object Hook
+    hookTools = StepperAttributes.hook <$> given
+
+    translateApplication
+        Application
+            { applicationSymbolOrAlias
+            , applicationChildren
+            }
+      =
+        case getHook (symAttributes hookTools applicationSymbolOrAlias) of
+            Nothing -> empty
+            Just hook ->
+                case hook of
+                    "INT.min" -> binaryOp SMT.smin
+                    "INT.max" -> binaryOp SMT.smax
+                    "INT.add" -> binaryOp (+)
+                    "INT.sub" -> binaryOp (-)
+                    "INT.mul" -> binaryOp (*)
+                    "INT.tdiv" -> binaryOp sQuot
+                    "INT.tmod" -> binaryOp sRem
+                    "INT.and" -> binaryOp (.&.)
+                    "INT.or" -> binaryOp (.|.)
+                    "INT.xor" -> binaryOp xor
+                    "INT.not" -> unaryOp complement
+                    _ -> empty
+              where
+                ctx = Text.unpack hook
+                unaryOp op =
+                    case applicationChildren of
+                        [first] ->
+                            op <$> translateInt first
+                        _ ->
+                            Builtin.wrongArity ctx
+                binaryOp op =
+                    case applicationChildren of
+                        [first, second] ->
+                            op <$> translateInt first <*> translateInt second
+                        _ ->
+                            Builtin.wrongArity ctx
+
+translateEqualsBool
+    :: forall p s variable.
+        ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        , s ~ TranslationVariables variable
+        )
+    => p
+    -> p
+    -> StateT s (MaybeT Symbolic) SBool
+translateEqualsBool first second =
+    (SMT..==) <$> translateBool first <*> translateBool second
+
+translateBool
+    :: forall p s variable.
+        ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        , s ~ TranslationVariables variable
+        )
+    => p
+    -> StateT s (MaybeT Symbolic) SBool
+translateBool pat =
+    case Functor.Foldable.project pat of
+        VariablePattern _ -> translateUninterpretedBool pat
+        DomainValuePattern dv ->
+            (return . SMT.literal . Builtin.runParser ctx)
+            (Builtin.parseDomainValue Builtin.Bool.parse dv)
+            where
+            ctx = Text.unpack Builtin.Bool.sort
+        NotPattern Not { notChild } ->
+            -- \not is equivalent to BOOL.not for functional patterns.
+            -- The following is safe because non-functional patterns will fail
+            -- to translate.
+            SMT.bnot <$> translateBool notChild
+        ApplicationPattern app ->
+            translateApplication app
+        _ -> empty
+  where
+    hookTools :: MetadataTools Object Hook
+    hookTools = StepperAttributes.hook <$> given
+
+    translateApplication
+        Application
+            { applicationSymbolOrAlias
+            , applicationChildren
+            }
+      =
+        case getHook (symAttributes hookTools applicationSymbolOrAlias) of
+            Nothing -> empty
+            Just hook ->
+                case hook of
+                    "INT.gt" -> binaryIntOp (SMT..>)
+                    "INT.ge" -> binaryIntOp (SMT..>=)
+                    "INT.eq" -> binaryIntOp (SMT..==)
+                    "INT.le" -> binaryIntOp (SMT..<=)
+                    "INT.lt" -> binaryIntOp (SMT..<)
+                    "INT.ne" -> binaryIntOp (SMT../=)
+
+                    "BOOL.or" -> binaryOp (SMT.|||)
+                    "BOOL.and" -> binaryOp (SMT.&&&)
+                    "BOOL.xor" -> binaryOp (SMT.<+>)
+                    "BOOL.ne" -> binaryOp (SMT../=)
+                    "BOOL.eq" -> binaryOp (SMT.<=>)
+                    "BOOL.not" -> unaryOp SMT.bnot
+                    "BOOL.implies" -> binaryOp (SMT.==>)
+                    _ -> empty
+              where
+                ctx = Text.unpack hook
+                unaryOp op =
+                    case applicationChildren of
+                        [first] ->
+                            op <$> translateBool first
+                        _ ->
+                            Builtin.wrongArity ctx
+                binaryOp op =
+                    case applicationChildren of
+                        [first, second] ->
+                            op <$> translateBool first <*> translateBool second
+                        _ ->
+                            Builtin.wrongArity ctx
+                binaryIntOp op =
+                    case applicationChildren of
+                        [first, second] ->
+                            op <$> translateInt first <*> translateInt second
+                        _ ->
+                            Builtin.wrongArity ctx
