@@ -123,7 +123,7 @@ goBinaryOp op cont x1 x2 = do
     return (tx1 `op` tx2)
 
 config :: SMTConfig
-config = z3 -- { transcript = Just "/Users/phillip/smt.log"}
+config = z3
 
 -- | Returns `Just False` if the SMT solver can prove the pattern
 -- is undecidable, and `Nothing` otherwise.
