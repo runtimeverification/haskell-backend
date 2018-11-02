@@ -429,11 +429,11 @@ makeEvaluateTermsToPredicateSubstitution
                     wrappedResult
                 (firstCeil, _proof1) = Ceil.makeEvaluateTerm tools first
                 (secondCeil, _proof2) = Ceil.makeEvaluateTerm tools second
-                (firstCeilNegation, _proof3) = makeNotPredicate firstCeil
-                (secondCeilNegation, _proof4) = makeNotPredicate secondCeil
-                (ceilNegationAnd, _proof5) =
+                firstCeilNegation = makeNotPredicate firstCeil
+                secondCeilNegation = makeNotPredicate secondCeil
+                ceilNegationAnd =
                     makeAndPredicate firstCeilNegation secondCeilNegation
-                (finalPredicate, _proof6) =
+                finalPredicate =
                     makeOrPredicate predicate ceilNegationAnd
             return
                 ( PredicateSubstitution

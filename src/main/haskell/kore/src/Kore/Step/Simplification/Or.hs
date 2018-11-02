@@ -115,7 +115,7 @@ halfSimplifyEvaluated
          : patts
          ) ->
             let
-                (mergedPredicate, _proof) =
+                mergedPredicate =
                     makeOrPredicate firstPredicate predicate
             in
                 ( OrOfExpandedPattern.make

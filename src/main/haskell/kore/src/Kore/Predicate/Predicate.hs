@@ -9,8 +9,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Predicate.Predicate
-    ( PredicateProof (..)
-    , CommonPredicate -- Constructor not exported on purpose
+    ( CommonPredicate -- Constructor not exported on purpose
     , Predicate -- Constructor not exported on purpose
     , pattern PredicateFalse
     , pattern PredicateTrue
@@ -68,12 +67,6 @@ import Kore.IndexedModule.MetadataTools
        ( SymbolOrAliasSorts )
 import Kore.Variables.Free
        ( freePureVariables, pureAllVariables )
-
-{-| 'PredicateProof' is a placeholder for a proof showing that a Predicate
-evaluation was correct.
--}
-data PredicateProof level = PredicateProof
-    deriving (Show, Eq)
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
@@ -148,12 +141,10 @@ makeMultipleAndPredicate
         , Eq (variable level)
         , Show (variable level))
     => [Predicate level variable]
-    -> (Predicate level variable, PredicateProof level)
+    -> Predicate level variable
 makeMultipleAndPredicate =
-    foldl'
-        (\(cond1, _) cond2 -> makeAndPredicate cond1 cond2)
-        (makeTruePredicate, PredicateProof)
-    . nub -- 'and' is idempotent so we eliminate duplicates
+    foldl' makeAndPredicate makeTruePredicate . nub
+    -- 'and' is idempotent so we eliminate duplicates
     -- TODO: This is O(n^2), consider doing something better.
 
 {-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
@@ -166,12 +157,10 @@ makeMultipleOrPredicate
         , Eq (variable level)
         , Show (variable level))
     => [Predicate level variable]
-    -> (Predicate level variable, PredicateProof level)
+    -> Predicate level variable
 makeMultipleOrPredicate =
-    foldl'
-        (\(cond1, _) cond2 -> makeOrPredicate cond1 cond2)
-        (makeFalsePredicate, PredicateProof)
-    . nub -- 'or' is idempotent so we eliminate duplicates
+    foldl' makeOrPredicate makeFalsePredicate . nub
+    -- 'or' is idempotent so we eliminate duplicates
     -- TODO: This is O(n^2), consider doing something better.
 
 {-| 'makeAndPredicate' combines two Predicates with an 'and', doing some
@@ -187,20 +176,15 @@ makeAndPredicate
         , Show (variable level))
     => Predicate level variable
     -> Predicate level variable
-    -> (Predicate level variable, PredicateProof level)
-makeAndPredicate b@PredicateFalse _ = (b, PredicateProof)
-makeAndPredicate _ b@PredicateFalse = (b, PredicateProof)
-makeAndPredicate PredicateTrue second = (second, PredicateProof)
-makeAndPredicate first PredicateTrue = (first, PredicateProof)
-makeAndPredicate (GenericPredicate first) (GenericPredicate second)
-  | first == second =
-    ( GenericPredicate first
-    , PredicateProof
-    )
-makeAndPredicate (GenericPredicate first) (GenericPredicate second) =
-    ( GenericPredicate $ mkAnd first second
-    , PredicateProof
-    )
+    -> Predicate level variable
+makeAndPredicate b@PredicateFalse _ = b
+makeAndPredicate _ b@PredicateFalse = b
+makeAndPredicate PredicateTrue second = second
+makeAndPredicate first PredicateTrue = first
+makeAndPredicate p@(GenericPredicate first) (GenericPredicate second)
+  | first == second = p
+  | otherwise =
+    GenericPredicate (mkAnd first second)
 
 {-| 'makeOrPredicate' combines two Predicates with an 'or', doing
 some simplification.
@@ -210,23 +194,19 @@ makeOrPredicate
         , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
-        , Show (variable level))
+        , Show (variable level)
+        )
     => Predicate level variable
     -> Predicate level variable
-    -> (Predicate level variable, PredicateProof level)
-makeOrPredicate t@PredicateTrue _ = (t, PredicateProof)
-makeOrPredicate _ t@PredicateTrue = (t, PredicateProof)
-makeOrPredicate PredicateFalse second = (second, PredicateProof)
-makeOrPredicate first PredicateFalse = (first, PredicateProof)
-makeOrPredicate (GenericPredicate first) (GenericPredicate second)
-  | first == second =
-    ( GenericPredicate first
-    , PredicateProof
-    )
-makeOrPredicate (GenericPredicate first) (GenericPredicate second) =
-    ( GenericPredicate $ mkOr first second
-    , PredicateProof
-    )
+    -> Predicate level variable
+makeOrPredicate t@PredicateTrue _ = t
+makeOrPredicate _ t@PredicateTrue = t
+makeOrPredicate PredicateFalse second = second
+makeOrPredicate first PredicateFalse = first
+makeOrPredicate p@(GenericPredicate first) (GenericPredicate second)
+  | first == second = p
+  | otherwise =
+    GenericPredicate (mkOr first second)
 
 {-| 'makeImpliesPredicate' combines two Predicates into an
 implication, doing some simplification.
@@ -238,16 +218,13 @@ makeImpliesPredicate
         , Show (variable level))
     => Predicate level variable
     -> Predicate level variable
-    -> (Predicate level variable, PredicateProof level)
-makeImpliesPredicate PredicateFalse _ = (GenericPredicate mkTop, PredicateProof)
-makeImpliesPredicate _ t@PredicateTrue = (t, PredicateProof)
-makeImpliesPredicate PredicateTrue second = (second, PredicateProof)
-makeImpliesPredicate first PredicateFalse =
-    (fst $ makeNotPredicate first, PredicateProof)
+    -> Predicate level variable
+makeImpliesPredicate PredicateFalse _ = GenericPredicate mkTop
+makeImpliesPredicate _ t@PredicateTrue = t
+makeImpliesPredicate PredicateTrue second = second
+makeImpliesPredicate first PredicateFalse = makeNotPredicate first
 makeImpliesPredicate (GenericPredicate first) (GenericPredicate second) =
-    ( GenericPredicate $ mkImplies first second
-    , PredicateProof
-    )
+    GenericPredicate $ mkImplies first second
 
 {-| 'makeIffPredicate' combines two evaluated with an 'iff', doing
 some simplification.
@@ -259,17 +236,13 @@ makeIffPredicate
         , Show (variable level))
     => Predicate level variable
     -> Predicate level variable
-    -> (Predicate level variable, PredicateProof level)
-makeIffPredicate PredicateFalse second =
-    (fst $ makeNotPredicate second, PredicateProof)
-makeIffPredicate PredicateTrue second = (second, PredicateProof)
-makeIffPredicate first PredicateFalse =
-    (fst $ makeNotPredicate first, PredicateProof)
-makeIffPredicate first PredicateTrue = (first, PredicateProof)
+    -> Predicate level variable
+makeIffPredicate PredicateFalse second = makeNotPredicate second
+makeIffPredicate PredicateTrue second = second
+makeIffPredicate first PredicateFalse = makeNotPredicate first
+makeIffPredicate first PredicateTrue = first
 makeIffPredicate (GenericPredicate first) (GenericPredicate second) =
-    ( GenericPredicate $ mkIff first second
-    , PredicateProof
-    )
+    GenericPredicate $ mkIff first second
 
 {-| 'makeNotPredicate' negates an evaluated Predicate, doing some
 simplification.
@@ -280,13 +253,11 @@ makeNotPredicate
         , SortedVariable variable
         , Show (variable level))
     => Predicate level variable
-    -> (Predicate level variable, PredicateProof level)
-makeNotPredicate PredicateFalse = (GenericPredicate mkTop, PredicateProof)
-makeNotPredicate PredicateTrue  = (GenericPredicate mkBottom, PredicateProof)
+    -> Predicate level variable
+makeNotPredicate PredicateFalse = GenericPredicate mkTop
+makeNotPredicate PredicateTrue  = GenericPredicate mkBottom
 makeNotPredicate (GenericPredicate predicate) =
-    ( GenericPredicate $ mkNot predicate
-    , PredicateProof
-    )
+    GenericPredicate $ mkNot predicate
 
 {-| 'makeEqualsPredicate' combines two patterns with equals, producing a
 predicate.
@@ -351,13 +322,11 @@ makeExistsPredicate
         , Show (variable level))
     => variable level
     -> Predicate level variable
-    -> (Predicate level variable, PredicateProof level)
-makeExistsPredicate _ p@PredicateFalse = (p, PredicateProof)
-makeExistsPredicate _ t@PredicateTrue = (t, PredicateProof)
+    -> Predicate level variable
+makeExistsPredicate _ p@PredicateFalse = p
+makeExistsPredicate _ t@PredicateTrue = t
 makeExistsPredicate v (GenericPredicate p) =
-    ( GenericPredicate $ mkExists v p
-    , PredicateProof
-    )
+    GenericPredicate $ mkExists v p
 
 {-| Universal quantification for the given variable in the given predicate.
 -}
@@ -368,13 +337,11 @@ makeForallPredicate
         , Show (variable level))
     => variable level
     -> Predicate level variable
-    -> (Predicate level variable, PredicateProof level)
-makeForallPredicate _ p@PredicateFalse = (p, PredicateProof)
-makeForallPredicate _ t@PredicateTrue = (t, PredicateProof)
+    -> Predicate level variable
+makeForallPredicate _ p@PredicateFalse = p
+makeForallPredicate _ t@PredicateTrue = t
 makeForallPredicate v (GenericPredicate p) =
-    ( GenericPredicate $ mkForall v p
-    , PredicateProof
-    )
+    GenericPredicate $ mkForall v p
 
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
@@ -401,18 +368,17 @@ makePredicate
         , Eq (variable level)
         , Show (variable level))
     => PureMLPattern level variable
-    -> Either (Error e) (Predicate level variable, PredicateProof level)
+    -> Either (Error e) (Predicate level variable)
 makePredicate = elgot makePredicateBottomUp makePredicateTopDown
   where
     makePredicateBottomUp
-        :: Pattern level variable
-            (Either (Error e) (Predicate level variable, PredicateProof level))
-        ->  Either (Error e) (Predicate level variable, PredicateProof level)
+        :: Pattern level variable (Either (Error e) (Predicate level variable))
+        -> Either (Error e) (Predicate level variable)
     makePredicateBottomUp patE = do
         pat <- sequence patE
-        case fst <$> pat of
-            TopPattern _ -> return (makeTruePredicate, PredicateProof)
-            BottomPattern _ -> return (makeFalsePredicate, PredicateProof)
+        case pat of
+            TopPattern _ -> return makeTruePredicate
+            BottomPattern _ -> return makeFalsePredicate
             AndPattern p -> return $ makeAndPredicate (andFirst p) (andSecond p)
             OrPattern p -> return $ makeOrPredicate (orFirst p) (orSecond p)
             IffPattern p -> return $ makeIffPredicate (iffFirst p) (iffSecond p)
@@ -427,19 +393,19 @@ makePredicate = elgot makePredicateBottomUp makePredicateTopDown
                 ("Cannot translate to predicate: " ++ show p)
     makePredicateTopDown
         :: PureMLPattern level variable
-        ->  Either
-            (Either (Error e) (Predicate level variable, PredicateProof level))
+        -> Either
+            (Either (Error e) (Predicate level variable))
             (Pattern level variable (PureMLPattern level variable))
     makePredicateTopDown =
         \case
             Ceil_ _ _ p ->
-                Left (pure (makeCeilPredicate p, PredicateProof))
+                Left (pure (makeCeilPredicate p))
             Floor_ _ _ p ->
-                Left (pure (makeFloorPredicate p, PredicateProof))
+                Left (pure (makeFloorPredicate p))
             Equals_ _ _ p1 p2 ->
-                Left (pure (makeEqualsPredicate p1 p2, PredicateProof))
+                Left (pure (makeEqualsPredicate p1 p2))
             In_ _ _ p1 p2 ->
-                Left (pure (makeInPredicate p1 p2, PredicateProof))
+                Left (pure (makeInPredicate p1 p2))
             p -> Right (project p)
 
 {- | Replace all variables in a @Predicate@ using the provided mapping.
@@ -479,7 +445,7 @@ substitutionToPredicate
     => [(variable level, PureMLPattern level variable)]
     -> Predicate level variable
 substitutionToPredicate =
-    fst . makeMultipleAndPredicate . fmap singleSubstitutionToPredicate
+    makeMultipleAndPredicate . fmap singleSubstitutionToPredicate
 
 singleSubstitutionToPredicate
     ::  ( MetaOrObject level

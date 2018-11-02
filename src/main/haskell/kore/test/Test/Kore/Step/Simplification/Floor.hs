@@ -113,7 +113,7 @@ test_floorSimplification =
                 [ Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ give mockSymbolOrAliasSorts $ makeAndPredicate
+                        give mockSymbolOrAliasSorts $ makeAndPredicate
                             (makeFloorPredicate a)
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution = [(x, fOfB)]

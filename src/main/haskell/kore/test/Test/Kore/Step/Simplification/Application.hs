@@ -153,9 +153,10 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
             (OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkApp sigmaSymbol [a, b]
-                    , predicate = fst $ makeAndPredicate
-                        (makeEqualsPredicate fOfA fOfB)
-                        (makeEqualsPredicate gOfA gOfB)
+                    , predicate =
+                        makeAndPredicate
+                            (makeEqualsPredicate fOfA fOfB)
+                            (makeEqualsPredicate gOfA gOfB)
                     , substitution =
                         [ (x, fOfA)
                         , (y, gOfA)
@@ -198,9 +199,9 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkApp fSymbol [a]
                     , predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
-                            (fst $ makeAndPredicate
+                            (makeAndPredicate
                                 (makeEqualsPredicate fOfA fOfB)
                                 (makeEqualsPredicate gOfA gOfB)
                             )

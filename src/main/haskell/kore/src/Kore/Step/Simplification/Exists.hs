@@ -216,8 +216,7 @@ makeEvaluateNoFreeVarInSubstitution
         (False, False) -> patt
         (False, True) ->
             let
-                (predicate', _proof) =
-                    makeExistsPredicate variable predicate
+                predicate' = makeExistsPredicate variable predicate
             in
                 Predicated
                     { term = term

@@ -103,7 +103,7 @@ asPredicateSubstitution
     Predicated {term, predicate, substitution}
   =
     let
-        (andPatt, _proof) = makeAndPredicate predicate (wrapPredicate term)
+        andPatt = makeAndPredicate predicate (wrapPredicate term)
     in
         ( PredicateSubstitution
             { predicate = andPatt

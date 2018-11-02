@@ -139,7 +139,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeCeilPredicate fOfX)
                             (makeCeilPredicate gOfX)
                     , substitution = []
@@ -338,7 +338,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                 , Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeCeilPredicate fOfX)
                             (makeCeilPredicate gOfX)
                     , substitution = []

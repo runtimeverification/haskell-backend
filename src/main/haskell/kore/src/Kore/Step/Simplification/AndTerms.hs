@@ -499,8 +499,7 @@ bottomTermEquals
             ( Predicated
                 { term = mkTop
                 , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
-                    case makeNotPredicate predicate of
-                        (predicate', _proof) -> predicate'
+                    makeNotPredicate predicate
                 , substitution = []
                 }
             , SimplificationProof

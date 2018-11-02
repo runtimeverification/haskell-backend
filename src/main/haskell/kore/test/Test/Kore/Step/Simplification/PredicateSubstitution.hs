@@ -199,7 +199,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                 )
                 PredicateSubstitution
                     { predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeEqualsPredicate
                                 (Mock.constr10 (mkVar Mock.x))
                                 (Mock.f (mkVar Mock.y))
@@ -239,7 +239,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                 )
                 PredicateSubstitution
                     { predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeEqualsPredicate
                                 (Mock.constr10 (mkVar Mock.x))
                                 (Mock.f (mkVar Mock.y))

@@ -87,7 +87,7 @@ instance
     pure a = Predicated a makeTruePredicate []
     a <*> b = Predicated
         { term = f x
-        , predicate = fst (predicate1 `makeAndPredicate` predicate2)
+        , predicate = predicate1 `makeAndPredicate` predicate2
         , substitution = substitution1 ++ substitution2
         }
         where

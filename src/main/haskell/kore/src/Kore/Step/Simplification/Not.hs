@@ -122,8 +122,8 @@ makeEvaluate
             -- TODO: Remove fst.
             { term = mkTop
             , predicate =
-                fst $ makeNotPredicate
-                    (fst $ makeAndPredicate
+                makeNotPredicate
+                    (makeAndPredicate
                         predicate
                         (substitutionToPredicate substitution)
                     )

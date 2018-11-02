@@ -543,7 +543,7 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
                 { predicate =
-                    fst $ makeAndPredicate
+                    makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -558,7 +558,7 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
                 { predicate =
-                    fst $ makeAndPredicate
+                    makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -579,7 +579,7 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
                 { predicate =
-                    fst $ makeAndPredicate
+                    makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -594,7 +594,7 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
                 { predicate =
-                    fst $ makeAndPredicate
+                    makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -609,7 +609,7 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
                 { predicate =
-                    fst $ makeAndPredicate
+                    makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -630,7 +630,7 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
                 { predicate =
-                    fst $ makeAndPredicate
+                    makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -645,7 +645,7 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
                 { predicate =
-                    fst $ makeAndPredicate
+                    makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -660,7 +660,7 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation ""
             (Just PredicateSubstitution
                 { predicate =
-                    fst $ makeAndPredicate
+                    makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]

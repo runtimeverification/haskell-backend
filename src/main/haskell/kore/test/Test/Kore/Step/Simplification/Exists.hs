@@ -190,7 +190,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
             (OrOfExpandedPattern.make
                 [ Predicated
                     { term = fOfA
-                    , predicate = fst $
+                    , predicate =
                         makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
                     , substitution = []
                     }
