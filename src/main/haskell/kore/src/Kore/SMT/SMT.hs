@@ -8,7 +8,6 @@ Stability   : experimental
 Portability : portable
 -}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Kore.SMT.SMT
@@ -192,7 +191,7 @@ patternToSMT sloppy p =
           case getHookString $ getSortHook s of
                 "BOOL.Bool" -> goBinaryOp (<=>) goBoolean x1 x2
                 "INT.Int"   -> goBinaryOp (.==) goInteger x1 x2
-                other -> throwError $ UnknownHookedSort s
+                _ -> throwError $ UnknownHookedSort s
         goBoolean pat@(App_ h [x1, x2]) =
           case getHookString $ getSymbolHook h of
                 "INT.le" -> goBinaryOp (.<=) goInteger x1 x2
@@ -200,7 +199,7 @@ patternToSMT sloppy p =
                 "INT.gt" -> goBinaryOp (.>)  goInteger x1 x2
                 "INT.lt" -> goBinaryOp (.<)  goInteger x1 x2
                 "INT.eq" -> goBinaryOp (.==) goInteger x1 x2
-                other ->
+                _ ->
                   if sloppy
                     then getBoolVar (Right pat)
                     else throwError $ UnknownHookedSymbol h
@@ -220,7 +219,7 @@ patternToSMT sloppy p =
                 "INT.mul" -> goBinaryOp (*) goInteger x1 x2
                 "INT.tdiv" -> goBinaryOp (sDiv) goInteger x1 x2
                 "INT.tmod" -> goBinaryOp (sMod) goInteger x1 x2
-                other ->
+                _ ->
                   if sloppy
                     then getIntVar (Right pat)
                     else throwError $ UnknownHookedSymbol h
