@@ -11,11 +11,10 @@ Portability : portable
 {-# LANGUAGE TemplateHaskell #-}
 
 module Kore.SMT.SMT
-( SMTAttributes(..)
-, unsafeTryRefutePattern
-, unsafeTryRefutePredicate
-)
-where
+    ( SMTAttributes(..)
+    , unsafeTryRefutePattern
+    , unsafeTryRefutePredicate
+    ) where
 
 import           Control.Lens
                  ( Lens', makeLenses, use, (%=) )
@@ -24,9 +23,13 @@ import           Control.Monad.State
 import           Data.Default
 import qualified Data.Map as Map
 import           Data.Proxy
+import           Data.Reflection
+                 ( Given (..) )
+import           Data.SBV
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
+import           GHC.IO.Unsafe
 import           Text.Megaparsec
 
 import           Kore.AST.Common
@@ -41,11 +44,6 @@ import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as KorePredicate
 import           Kore.SMT.Config
-
-import Data.Reflection
-import Data.SBV
-
-import GHC.IO.Unsafe
 
 data TranslatePredicateError
     = UnknownHookedSort (Sort Object)
