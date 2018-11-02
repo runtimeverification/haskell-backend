@@ -7,7 +7,6 @@ Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Kore.SMT.SMT
