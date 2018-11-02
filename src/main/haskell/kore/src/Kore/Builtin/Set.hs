@@ -16,10 +16,12 @@ builtin modules.
  -}
 module Kore.Builtin.Set
     ( sort
+    , assertSort
     , sortDeclVerifiers
     , symbolVerifiers
     , builtinFunctions
     , Builtin
+    , returnSet
     , asPattern
     , asExpandedPattern
       -- * Symbols
@@ -69,7 +71,7 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
@@ -412,10 +414,21 @@ lookupSymbolDifference
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolDifference = Builtin.lookupSymbol "SET.difference"
 
-{- | Check if the given symbol is hooked to @MAP.concat@.
+{- | Check if the given symbol is hooked to @SET.concat@.
  -}
-isSymbolConcat :: MetadataTools Object Hook -> Kore.SymbolOrAlias Object -> Bool
+isSymbolConcat
+    :: MetadataTools Object Hook
+    -> Kore.SymbolOrAlias Object
+    -> Bool
 isSymbolConcat = Builtin.isSymbol "SET.concat"
+
+{- | Check if the given symbol is hooked to @SET.element@.
+ -}
+isSymbolElement
+    :: MetadataTools Object Hook
+    -> Kore.SymbolOrAlias Object
+    -> Bool
+isSymbolElement = Builtin.isSymbol "SET.element"
 
 {- | Simplify the conjunction of two concrete Set domain values.
 
@@ -448,6 +461,14 @@ unify
   where
     hookTools = StepperAttributes.hook <$> tools
 
+    -- | Given a collection 't' of 'Predicated' values, propagate all the
+    -- predicates to the top level, returning a 'Predicated' collection.
+    propagatePredicates
+        :: (level ~ Object, Traversable t)
+        => t (Predicated level variable a)
+        -> Predicated level variable (t a)
+    propagatePredicates = give symbolOrAliasSorts sequenceA
+
     -- | Unify the two argument patterns.
     unify0
         :: Kore.PureMLPattern level variable
@@ -460,15 +481,28 @@ unify
         Monad.Trans.lift (unifyConcrete resultSort set1 set2)
 
     unify0
-        (DV_ resultSort (Kore.BuiltinDomainSet set1))
-        (App_ symbol2 args2)
+        dv1@(DV_ resultSort (Kore.BuiltinDomainSet set1))
+        app2@(App_ symbol2 args2)
       | isSymbolConcat hookTools symbol2 =
-        case args2 of
-            [DV_ _ (Kore.BuiltinDomainSet set2), x@(Var_ _)] ->
-                Monad.Trans.lift (unifyFramed resultSort set1 set2 x)
-            [x@(Var_ _), DV_ _ (Kore.BuiltinDomainSet set2)] ->
-                Monad.Trans.lift (unifyFramed resultSort set1 set2 x)
-            _ -> empty
+        Monad.Trans.lift
+           (case args2 of
+                [DV_ _ (Kore.BuiltinDomainSet set2), x@(Var_ _)] ->
+                    unifyFramed resultSort set1 set2 x
+                [x@(Var_ _), DV_ _ (Kore.BuiltinDomainSet set2)] ->
+                    unifyFramed resultSort set1 set2 x
+                _ ->
+                    give symbolOrAliasSorts Builtin.unifyUnsolved dv1 app2
+           )
+      | isSymbolElement hookTools symbol2 =
+        Monad.Trans.lift
+            (case args2 of
+                [ key2 ] ->
+                    -- The key is not concrete yet, or SET.element would
+                    -- have evaluated to a domain value.
+                    unifyElement set1 symbol2 key2
+                _ ->
+                    Builtin.wrongArity "SET.element"
+            )
       | otherwise =
         empty
 
@@ -519,3 +553,20 @@ unify
         return (ExpandedPattern.bottom, SimplificationProof)
       where
         asBuiltinDomainSet = DV_ resultSort . Kore.BuiltinDomainSet
+
+    unifyElement
+        :: forall k . (level ~ Object, k ~ Kore.ConcretePurePattern Object)
+        => Set k  -- ^ concrete set
+        -> Kore.SymbolOrAlias level  -- ^ 'element' symbol
+        -> p  -- ^ key
+        -> m (expanded, proof)
+    unifyElement set1 element' key2 =
+        case Set.toList set1 of
+            [Kore.fromConcretePurePattern -> key1] ->
+                give symbolOrAliasSorts $ do
+                    (key, _) <- unifyChildren key1 key2
+                    let result = App_ element' <$> propagatePredicates [key]
+                    return (result, SimplificationProof)
+            _ ->
+                -- Cannot unify a non-element Set with an element Set.
+                return (ExpandedPattern.bottom, SimplificationProof)

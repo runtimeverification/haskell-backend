@@ -4,7 +4,10 @@ import Test.QuickCheck
        ( Gen, Property, property, (.&&.), (===), (==>) )
 import Test.Tasty.HUnit
 
+import           Control.Error
+                 ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Default as Default
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -14,13 +17,14 @@ import           Data.Reflection
                  ( give )
 import           Data.Set
                  ( Set )
+import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( asPurePattern )
+                 ( asPurePattern, fromConcretePurePattern )
 import           Kore.AST.Sentence
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
@@ -34,18 +38,24 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
+import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.AxiomPatterns
+import           Kore.Step.BaseStep
+import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unification.Data
 
 import           Test.Kore
                  ( idGen, testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 {- |
@@ -262,6 +272,56 @@ prop_inKeysUnit key =
             , ExpandedPattern.top === evaluate predicate
             ]
 
+prop_keysUnit :: Property
+prop_keysUnit =
+    let
+        patUnit = App_ symbolUnit []
+        patKeys = App_ symbolKeys [patUnit]
+        predicate = mkEquals (Test.Set.asPattern Set.empty) patKeys
+    in
+        allProperties
+            [ evaluate (Test.Set.asPattern Set.empty) === evaluate patKeys
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
+prop_keysElement :: (Integer, Integer) -> Property
+prop_keysElement (key, value) =
+    let
+        concrete = Map.singleton key value
+        concreteKeys = Map.keysSet concrete
+        patConcreteKeys =
+            Test.Set.asPattern
+            $ Set.map Test.Int.asConcretePattern concreteKeys
+        patMap =
+            asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
+            $ Map.map Test.Int.asPattern concrete
+        patSymbolicKeys = App_ symbolKeys [patMap]
+        predicate = mkEquals patConcreteKeys patSymbolicKeys
+    in
+        allProperties
+            [ evaluate patConcreteKeys === evaluate patSymbolicKeys
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
+prop_keys :: Map Integer Integer -> Property
+prop_keys map1 =
+    let
+        keys1 = Map.keysSet map1
+        patConcreteKeys =
+            Test.Set.asPattern $ Set.map Test.Int.asConcretePattern keys1
+        patMap =
+            asPattern
+            $ Map.mapKeys Test.Int.asConcretePattern
+            $ Map.map Test.Int.asPattern map1
+        patSymbolicKeys = App_ symbolKeys [patMap]
+        predicate = mkEquals patConcreteKeys patSymbolicKeys
+    in
+        allProperties
+            [ evaluate patConcreteKeys === evaluate patSymbolicKeys
+            , ExpandedPattern.top === evaluate predicate
+            ]
+
 {- |
     @
         inKeys{}(element{}(key, value), key) === \dv{Bool{}}("true")
@@ -350,6 +410,114 @@ prop_unifyConcrete keys = do
     asVariablePattern = asPurePattern . VariablePattern
     variablesGen = (,) <$> variableGen <*> variableGen
 
+{- | Unify a concrete map with symbolic-keyed map.
+
+@
+(1, 1 |-> 2) ∧ (x, x |-> v)
+@
+
+Iterated unification must turn the symbolic key @x@ into a concrete key by
+unifying the first element of the pair. This also requires that Map unification
+return a partial result for unifying the second element of the pair.
+
+ -}
+unit_concretizeKeys :: Assertion
+unit_concretizeKeys =
+    assertEqual "Expected simplified Map" expected actual
+  where
+    x =
+        Variable
+            { variableName = testId "x"
+            , variableSort = Test.Int.intSort
+            }
+    v =
+        Variable
+            { variableName = testId "v"
+            , variableSort = Test.Int.intSort
+            }
+    key = Test.Int.asConcretePattern 1
+    symbolicKey = fromConcretePurePattern key
+    val = Test.Int.asPattern 2
+    concrete = asPattern $ Map.fromList [(key, val)]
+    symbolic = asSymbolicPattern $ Map.fromList [(mkVar x, mkVar v)]
+    original =
+        mkAnd
+            (mkPair Test.Int.intSort mapSort (Test.Int.asPattern 1) concrete)
+            (mkPair Test.Int.intSort mapSort (mkVar x) symbolic)
+    expected =
+        Predicated
+            { term =
+                mkPair Test.Int.intSort mapSort
+                    symbolicKey
+                    (asSymbolicPattern $ Map.fromList [(symbolicKey, val)])
+            , predicate = Predicate.makeTruePredicate
+            , substitution =
+                [ (v, val)
+                , (x, symbolicKey)
+                ]
+            }
+    actual = evaluate original
+
+{- | Unify a concrete map with symbolic-keyed map in an axiom
+
+Apply the axiom
+@
+(x, x |-> v) => v
+@
+to the configuration
+@
+(1, 1 |-> 2)
+@
+yielding @2@.
+
+Iterated unification must turn the symbolic key @x@ into a concrete key by
+unifying the first element of the pair. This also requires that Map unification
+return a partial result for unifying the second element of the pair.
+
+ -}
+unit_concretizeKeysAxiom :: Assertion
+unit_concretizeKeysAxiom =
+    assertEqual "Expected MAP.lookup" expected actual
+  where
+    x = mkIntVar (testId "x")
+    v = mkIntVar (testId "v")
+    key = Test.Int.asConcretePattern 1
+    symbolicKey = fromConcretePurePattern key
+    val = Test.Int.asPattern 2
+    symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
+    axiom =
+        AxiomPattern
+            { axiomPatternLeft =
+                mkPair Test.Int.intSort mapSort x symbolicMap
+            , axiomPatternRight = v
+            , axiomPatternRequires = Predicate.makeTruePredicate
+            , axiomPatternAttributes = Default.def
+            }
+    config =
+        evaluate
+        $ mkPair Test.Int.intSort mapSort
+            symbolicKey
+            (asPattern $ Map.fromList [(key, val)])
+    expected =
+        Right
+            ( Predicated
+                { term = val
+                , predicate =
+                    -- The predicate is not discharged because we do not
+                    -- provide functionality axioms for elementMap.
+                    give testSymbolOrAliasSorts
+                    Predicate.makeCeilPredicate
+                    $ asSymbolicPattern
+                    $ Map.fromList [(symbolicKey, val)]
+                , substitution = []
+                }
+            , mconcat
+                [ stepProof (StepProofVariableRenamings [])
+                , stepProof (StepProofUnification EmptyUnificationProof)
+                ]
+            )
+    actual = runStep config axiom
+
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonPurePattern Object
 Right asPattern = Map.asPattern indexedModule mapSort
@@ -377,26 +545,6 @@ mapSortDecl =
         , sentenceSortAttributes = Attributes [ hookAttribute "MAP.Map" ]
         }
         :: KoreSentenceSort Object)
-
-importBool :: KoreSentence
-importBool =
-    asSentence
-        (SentenceImport
-            { sentenceImportModuleName = Test.Bool.boolModuleName
-            , sentenceImportAttributes = Attributes []
-            }
-            :: KoreSentenceImport
-        )
-
-importInt :: KoreSentence
-importInt =
-    asSentence
-        (SentenceImport
-            { sentenceImportModuleName = Test.Int.intModuleName
-            , sentenceImportAttributes = Attributes []
-            }
-            :: KoreSentenceImport
-        )
 
 mapModuleName :: ModuleName
 mapModuleName = ModuleName "MAP"
@@ -427,6 +575,9 @@ Right symbolConcat = Map.lookupSymbolConcat mapSort indexedModule
 symbolInKeys :: SymbolOrAlias Object
 Right symbolInKeys = Map.lookupSymbolInKeys mapSort indexedModule
 
+symbolKeys :: SymbolOrAlias Object
+Right symbolKeys = Map.lookupSymbolKeys mapSort indexedModule
+
 {- | Declare the @MAP@ builtins.
  -}
 mapModule :: KoreModule
@@ -435,8 +586,9 @@ mapModule =
         { moduleName = mapModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importBool
-            , importInt
+            [ importKoreModule Test.Bool.boolModuleName
+            , importKoreModule Test.Int.intModuleName
+            , importKoreModule Test.Set.setModuleName
             , mapSortDecl
             , hookedSymbolDecl "MAP.unit" (builtinSymbol "unitMap")
                 mapSort []
@@ -450,6 +602,25 @@ mapModule =
                 mapSort [mapSort, Test.Int.intSort, Test.Int.intSort]
             , hookedSymbolDecl "MAP.in_keys" (builtinSymbol "inKeysMap")
                 Test.Bool.boolSort [Test.Int.intSort, mapSort]
+            , hookedSymbolDecl "MAP.keys" (builtinSymbol "keysMap")
+                Test.Set.setSort [mapSort]
+            ]
+        }
+
+testModuleName :: ModuleName
+testModuleName = ModuleName "TEST"
+
+testModule :: KoreModule
+testModule =
+    Module
+        { moduleName = testModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ importKoreModule Test.Bool.boolModuleName
+            , importKoreModule Test.Int.intModuleName
+            , importKoreModule Test.Set.setModuleName
+            , importKoreModule mapModuleName
+            , importKoreModule pairModuleName
             ]
         }
 
@@ -468,7 +639,10 @@ mapDefinition =
         , definitionModules =
             [ Test.Bool.boolModule
             , Test.Int.intModule
+            , Test.Set.setModule
             , mapModule
+            , pairModule
+            , testModule
             ]
         }
 
@@ -476,10 +650,10 @@ indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
 indexedModules = verify mapDefinition
 
 indexedModule :: KoreIndexedModule StepperAttributes
-Just indexedModule = Map.lookup mapModuleName indexedModules
+Just indexedModule = Map.lookup testModuleName indexedModules
 
 evaluators :: Map (Id Object) [Builtin.Function]
-evaluators = Builtin.evaluators Map.builtinFunctions indexedModule
+evaluators = Builtin.koreEvaluators indexedModule
 
 verify
     :: ParseAttributes a
@@ -491,8 +665,27 @@ verify defn =
   where
     attrVerify = defaultAttributesVerification Proxy
 
+metadataTools :: MetadataTools Object StepperAttributes
 testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } = extractMetadataTools indexedModule
+metadataTools@MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } =
+    extractMetadataTools indexedModule
+
+runStep
+    :: CommonExpandedPattern Object
+    -- ^ configuration
+    -> AxiomPattern Object
+    -- ^ axiom
+    -> Either
+        (StepError Object Variable)
+        (CommonExpandedPattern Object, StepProof Object Variable)
+runStep configuration axiom =
+    (evalSimplifier . runExceptT)
+        (stepWithAxiom
+            metadataTools
+            (substitutionSimplifier metadataTools)
+            configuration
+            axiom
+        )
 
 -- * Generators and properties
 
@@ -543,3 +736,8 @@ mkNot = give testSymbolOrAliasSorts Kore.mkNot
 mkIntVar :: Id Object -> CommonPurePattern Object
 mkIntVar variableName =
     mkVar Variable { variableName, variableSort = Test.Int.intSort }
+
+mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
+mockSubstitutionSimplifier =
+    PredicateSubstitutionSimplifier
+        (\x -> return (x, SimplificationProof))

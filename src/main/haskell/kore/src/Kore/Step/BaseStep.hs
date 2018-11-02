@@ -241,7 +241,7 @@ stepWithAxiomForUnifier
     (UnificationProcedure unificationProcedure')
     substitutionSimplifier
     expandedPattern
-    AxiomPattern
+    axiom@AxiomPattern
         { axiomPatternLeft = axiomLeftRaw
         , axiomPatternRight = axiomRightRaw
         , axiomPatternRequires = axiomRequiresRaw
@@ -358,12 +358,14 @@ stepWithAxiomForUnifier
     if Predicate.isFalse condition
        || variablesInLeftAxiom `Set.isSubsetOf` substitutions
         then return ()
-        else error
-            (  "Unexpected non-false predicate " ++ show condition
-            ++ "\nwhen substitutions " ++ show substitutions
-            ++ "\ndo not cover all variables in left axiom:"
-            ++ show variablesInLeftAxiom ++ "."
-            )
+        else
+            (error . unlines)
+            [ "While applying axiom:", show axiom
+            , "to configuration:", show expandedPattern
+            , "Unexpected non-false predicate:", show condition
+            , "when substitutions:", show substitutions
+            , "do not cover all variables in left axiom:", show variablesInLeftAxiom
+            ]
 
     let
         orElse :: a -> a -> a

@@ -49,6 +49,8 @@ module Kore.Builtin.Builtin
     , isSymbol
     , expectNormalConcreteTerm
     , getAttemptedFunction
+      -- * Implementing builtin unification
+    , unifyUnsolved
     ) where
 
 import           Control.Error
@@ -60,6 +62,8 @@ import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.HashMap.Strict
                  ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
+import           Data.Reflection
+                 ( Given )
 import           Data.Semigroup
                  ( Semigroup (..) )
 import           Data.Text
@@ -83,6 +87,8 @@ import           Kore.AST.PureML
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkAnd )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern StringLiteral_ )
 import           Kore.ASTVerifier.Error
@@ -97,12 +103,14 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, SortDescription )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools (..), SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
+import           Kore.Predicate.Predicate
+                 ( makeCeilPredicate )
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
+                 ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
                  AttemptedFunction (..) )
@@ -718,3 +726,26 @@ getAttemptedFunction
     -> m (AttemptedFunction level variable)
 getAttemptedFunction attempt =
     fromMaybe NotApplicable <$> runMaybeT attempt
+
+-- | Return an unsolved unification problem.
+unifyUnsolved
+    ::  ( Given (SymbolOrAliasSorts level)
+        , Monad m
+        , Ord (variable level)
+        , SortedVariable variable
+        , Show (variable level)
+        , level ~ Object
+        , expanded ~ ExpandedPattern level variable
+        , patt ~ PureMLPattern level variable
+        , proof ~ SimplificationProof level
+        )
+    => patt
+    -> patt
+    -> m (expanded, proof)
+unifyUnsolved a b =
+    let
+        unified = mkAnd a b
+        predicate = makeCeilPredicate unified
+        expanded = (pure unified) { predicate }
+    in
+        return (expanded, SimplificationProof)

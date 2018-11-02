@@ -6,7 +6,7 @@
             .
           </k>
           <state>
-            x |-> varvarVar'Ques'I2085 y |-> varvarVar'Ques'I2765 z |-> varvarVar'Ques'I3448 max |-> varvarVar'Ques'I2085 .State
+            x |-> varvarVar'Ques'I2033 y |-> varvarVar'Ques'I2713 z |-> varvarVar'Ques'I3396 max |-> varvarVar'Ques'I2033 .State
           </state>
         </T>
         <generatedCounter>
@@ -16,11 +16,11 @@
   #And
       false
     #Equals
-      varvarVar'Ques'I2085 <=Int varvarVar'Ques'I2765
+      varvarVar'Ques'I2033 <=Int varvarVar'Ques'I2713
   #And
       false
     #Equals
-      varvarVar'Ques'I2085 <=Int varvarVar'Ques'I3448
+      varvarVar'Ques'I2033 <=Int varvarVar'Ques'I3396
 #Or
       Result
     #Equals
@@ -30,7 +30,7 @@
             .
           </k>
           <state>
-            x |-> varvarVar'Ques'I2085 y |-> varvarVar'Ques'I2765 z |-> varvarVar'Ques'I3448 max |-> varvarVar'Ques'I2765 .State
+            x |-> varvarVar'Ques'I2033 y |-> varvarVar'Ques'I2713 z |-> varvarVar'Ques'I3396 max |-> varvarVar'Ques'I2713 .State
           </state>
         </T>
         <generatedCounter>
@@ -40,11 +40,11 @@
   #And
       false
     #Equals
-      varvarVar'Ques'I2765 <=Int varvarVar'Ques'I3448
+      varvarVar'Ques'I2713 <=Int varvarVar'Ques'I3396
   #And
       true
     #Equals
-      varvarVar'Ques'I2085 <=Int varvarVar'Ques'I2765
+      varvarVar'Ques'I2033 <=Int varvarVar'Ques'I2713
 #Or
       Result
     #Equals
@@ -54,7 +54,7 @@
             .
           </k>
           <state>
-            x |-> varvarVar'Ques'I2085 y |-> varvarVar'Ques'I2765 z |-> varvarVar'Ques'I3448 max |-> varvarVar'Ques'I3448 .State
+            x |-> varvarVar'Ques'I2033 y |-> varvarVar'Ques'I2713 z |-> varvarVar'Ques'I3396 max |-> varvarVar'Ques'I3396 .State
           </state>
         </T>
         <generatedCounter>
@@ -64,11 +64,11 @@
   #And
       false
     #Equals
-      varvarVar'Ques'I2085 <=Int varvarVar'Ques'I2765
+      varvarVar'Ques'I2033 <=Int varvarVar'Ques'I2713
   #And
       true
     #Equals
-      varvarVar'Ques'I2085 <=Int varvarVar'Ques'I3448
+      varvarVar'Ques'I2033 <=Int varvarVar'Ques'I3396
 #Or
       Result
     #Equals
@@ -78,7 +78,7 @@
             .
           </k>
           <state>
-            x |-> varvarVar'Ques'I2085 y |-> varvarVar'Ques'I2765 z |-> varvarVar'Ques'I3448 max |-> varvarVar'Ques'I3448 .State
+            x |-> varvarVar'Ques'I2033 y |-> varvarVar'Ques'I2713 z |-> varvarVar'Ques'I3396 max |-> varvarVar'Ques'I3396 .State
           </state>
         </T>
         <generatedCounter>
@@ -88,8 +88,8 @@
   #And
       true
     #Equals
-      varvarVar'Ques'I2085 <=Int varvarVar'Ques'I2765
+      varvarVar'Ques'I2033 <=Int varvarVar'Ques'I2713
   #And
       true
     #Equals
-      varvarVar'Ques'I2765 <=Int varvarVar'Ques'I3448
+      varvarVar'Ques'I2713 <=Int varvarVar'Ques'I3396

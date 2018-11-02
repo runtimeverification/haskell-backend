@@ -13,6 +13,9 @@ $(DEFINITION): imp.k $(K)
 %.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
+%.search.final.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
+
 %.krun: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
@@ -22,11 +25,14 @@ $(DEFINITION): imp.k $(K)
 %.output.golden: %.output
 	mv $< $<.golden
 
-test: tests/sum.test tests/primes.test tests/collatz.test
+all_tests := collatz max-symbolic.search.final primes sum
+k_tests := sum
 
-test-k: tests/sum.test
+test: $(foreach test, $(all_tests), tests/$(test).test)
 
-golden: tests/sum.output.golden tests/primes.output.golden tests/collatz.output.golden
+test-k: $(foreach test, $(k_tests), tests/$(test).test)
+
+golden: $(foreach test, $(all_tests), tests/$(test).output.golden)
 
 clean:
 	rm -rf $(KOMPILED) tests/*.imp.kore tests/*.output

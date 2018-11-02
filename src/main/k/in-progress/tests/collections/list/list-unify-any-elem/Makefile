@@ -5,7 +5,7 @@ KOMPILED := list-unify-any-elem-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
 $(DEFINITION): list-unify-any-elem.k $(K)
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-any-elem
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-UNIFY-ANY-ELEM
 
 %.list-unify-any-elem.kore: %.list-unify-any-elem $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run

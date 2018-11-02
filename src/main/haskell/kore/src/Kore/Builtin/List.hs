@@ -65,6 +65,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
 import           Kore.Step.Simplification.Data
@@ -196,7 +197,8 @@ evalGet =
                                 -- negative indices count from end of list
                                 _ix + Seq.length _list
                             | otherwise = _ix
-                    (Builtin.appliedFunction . maybeBottom) (Seq.lookup ix _list)
+                    (Builtin.appliedFunction . maybeBottom)
+                        (Seq.lookup ix _list)
             emptyList <|> bothConcrete
         )
     maybeBottom =
@@ -280,7 +282,8 @@ asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin variable -> Kore.PureMLPattern Object variable)
+    -> Either (Kore.Error e)
+        (Builtin variable -> Kore.PureMLPattern Object variable)
 asPattern indexedModule dvSort = do
     symbolUnit <- lookupSymbolUnit dvSort indexedModule
     let applyUnit = Kore.App_ symbolUnit []
@@ -302,7 +305,8 @@ asExpandedPattern
     :: KoreIndexedModule attrs
     -- ^ dictionary of Map constructor symbols
     -> Kore.Sort Object
-    -> Either (Kore.Error e) (Builtin variable -> ExpandedPattern Object variable)
+    -> Either (Kore.Error e)
+        (Builtin variable -> ExpandedPattern Object variable)
 asExpandedPattern symbols resultSort =
     (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
 
@@ -338,10 +342,16 @@ lookupSymbolGet
     -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
 lookupSymbolGet = Builtin.lookupSymbol "LIST.get"
 
-isSymbolConcat :: MetadataTools Object Hook -> Kore.SymbolOrAlias Object -> Bool
+isSymbolConcat
+    :: MetadataTools Object Hook
+    -> Kore.SymbolOrAlias Object
+    -> Bool
 isSymbolConcat = Builtin.isSymbol "LIST.concat"
 
-isSymbolElement :: MetadataTools Object Hook -> Kore.SymbolOrAlias Object -> Bool
+isSymbolElement
+    :: MetadataTools Object Hook
+    -> Kore.SymbolOrAlias Object
+    -> Bool
 isSymbolElement = Builtin.isSymbol "LIST.element"
 
 unify
@@ -382,20 +392,41 @@ unify
     discardProofs = (<$>) fst
 
     unify0
-        (DV_ dvSort (BuiltinDomainList list1))
-        (DV_ _      (BuiltinDomainList list2))
-      =
-        Monad.Trans.lift $ unifyConcrete dvSort list1 list2
+        :: PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> MaybeT m (expanded, proof)
 
-    unify0
-        (App_ symConcat [DV_ _ (BuiltinDomainList list1), v@(Var_ _)])
-        (DV_ dvSort (BuiltinDomainList list2))
-      | isSymbolConcat hookTools symConcat =
-        Monad.Trans.lift $ unifyFramed symConcat list1 v dvSort list2
+    unify0 dv1@(DV_ resultSort (BuiltinDomainList list1)) =
+        \case
+            dv2@(DV_ _ builtin2) ->
+                case builtin2 of
+                    BuiltinDomainList list2 ->
+                        Monad.Trans.lift $ unifyConcrete resultSort list1 list2
+                    _ ->
+                        (error . unlines)
+                            [ "Cannot unify a builtin List domain value:"
+                            , show dv1
+                            , "with:"
+                            , show dv2
+                            , "This should have been a sort error."
+                            ]
+            app@(App_ symbol2 args2)
+              | isSymbolConcat hookTools symbol2 ->
+                Monad.Trans.lift $ case args2 of
+                    [ DV_ _ (BuiltinDomainList list2), x@(Var_ _) ] ->
+                        unifyFramedRight resultSort list1 symbol2 list2 x
+                    [ x@(Var_ _), DV_ _ (BuiltinDomainList list2) ] ->
+                        unifyFramedLeft resultSort list1 symbol2 x list2
+                    [ _, _ ] ->
+                        give symbolOrAliasSorts Builtin.unifyUnsolved dv1 app
+                    _ -> Builtin.wrongArity "LIST.concat"
+              | otherwise -> empty
+            _ -> empty
 
-    unify0 p1@(DV_ _ _) p2@(App_ _ _) = unify0 p2 p1
-
-    unify0 _ _ = empty
+    unify0 pat1 =
+        \case
+            dv@(DV_ _ (BuiltinDomainList _)) -> unify0 dv pat1
+            _ -> empty
 
     unifyConcrete
         :: (level ~ Object)
@@ -418,27 +449,56 @@ unify
       where
         asBuiltinDomainList = DV_ dvSort . BuiltinDomainList
 
-    unifyFramed
+    unifyFramedRight
         :: (level ~ Object)
-        => SymbolOrAlias level
+        => Sort level
+        -> Seq p
+        -> SymbolOrAlias level
         -> Seq p
         -> p
-        -> Sort level
-        -> Seq p
         -> m (expanded, proof)
-    unifyFramed symConcat list1 v dvSort list2
-      | Seq.length list1 > Seq.length list2 =
+    unifyFramedRight resultSort list1 symConcat prefix2 frame2
+      | Seq.length prefix2 > Seq.length list1 =
         return (ExpandedPattern.bottom, SimplificationProof)
       | otherwise =
         do
-            (prefixUnified, _) <- unifyConcrete dvSort list1 prefix2
-            (suffixUnified, _) <- simplifyChild v listSuffix2
+            (prefixUnified, _) <- unifyConcrete resultSort prefix1 prefix2
+            (suffixUnified, _) <- simplifyChild frame2 listSuffix1
             let result =
                     (<$>)
                         (App_ symConcat)
                         (propagatePredicates [prefixUnified, suffixUnified])
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = DV_ dvSort . BuiltinDomainList
-        (prefix2, suffix2) = Seq.splitAt (Seq.length list1) list2
-        listSuffix2 = asBuiltinDomainList suffix2
+        asBuiltinDomainList = DV_ resultSort . BuiltinDomainList
+        (prefix1, suffix1) = Seq.splitAt prefixLength list1
+          where
+            prefixLength = Seq.length prefix2
+        listSuffix1 = asBuiltinDomainList suffix1
+
+    unifyFramedLeft
+        :: level ~ Object
+        => Sort level
+        -> Seq p
+        -> SymbolOrAlias level
+        -> p
+        -> Seq p
+        -> m (expanded, proof)
+    unifyFramedLeft resultSort list1 symConcat frame2 suffix2
+      | Seq.length suffix2 > Seq.length list1 =
+        return (ExpandedPattern.bottom, SimplificationProof)
+      | otherwise =
+        do
+            (prefixUnified, _) <- simplifyChild frame2 listPrefix1
+            (suffixUnified, _) <- unifyConcrete resultSort suffix1 suffix2
+            let result =
+                    (<$>)
+                        (App_ symConcat)
+                        (propagatePredicates [prefixUnified, suffixUnified])
+            return (result, SimplificationProof)
+      where
+        asBuiltinDomainList = DV_ resultSort . BuiltinDomainList
+        (prefix1, suffix1) = Seq.splitAt prefixLength list1
+          where
+            prefixLength = Seq.length list1 - Seq.length suffix2
+        listPrefix1 = asBuiltinDomainList prefix1
