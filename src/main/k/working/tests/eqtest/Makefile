@@ -13,7 +13,7 @@ $(DEFINITION): eqtest.k $(K)
 %.output: %.eqtest $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.eqtest $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.eqtest $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
