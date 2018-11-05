@@ -414,9 +414,9 @@ unify
               | isSymbolConcat hookTools symbol2 ->
                 Monad.Trans.lift $ case args2 of
                     [ DV_ _ (BuiltinDomainList list2), x@(Var_ _) ] ->
-                        unifyFramedRight resultSort list1 symbol2 list2 x
+                        unifyFramedRight resultSort dv1 list2 x
                     [ x@(Var_ _), DV_ _ (BuiltinDomainList list2) ] ->
-                        unifyFramedLeft resultSort list1 symbol2 x list2
+                        unifyFramedLeft resultSort dv1 x list2
                     [ _, _ ] ->
                         give symbolOrAliasSorts Builtin.unifyUnsolved dv1 app
                     _ -> Builtin.wrongArity "LIST.concat"
@@ -452,22 +452,25 @@ unify
     unifyFramedRight
         :: (level ~ Object)
         => Sort level
-        -> Seq p
-        -> SymbolOrAlias level
+        -> p
         -> Seq p
         -> p
         -> m (expanded, proof)
-    unifyFramedRight resultSort list1 symConcat prefix2 frame2
+    unifyFramedRight
+        resultSort
+        dv1@(DV_ _ (BuiltinDomainList list1))
+        prefix2
+        frame2
       | Seq.length prefix2 > Seq.length list1 =
         return (ExpandedPattern.bottom, SimplificationProof)
       | otherwise =
         do
             (prefixUnified, _) <- unifyConcrete resultSort prefix1 prefix2
             (suffixUnified, _) <- simplifyChild frame2 listSuffix1
-            let result =
-                    (<$>)
-                        (App_ symConcat)
-                        (propagatePredicates [prefixUnified, suffixUnified])
+            let result = give symbolOrAliasSorts $
+                    pure dv1
+                    <* prefixUnified
+                    <* suffixUnified
             return (result, SimplificationProof)
       where
         asBuiltinDomainList = DV_ resultSort . BuiltinDomainList
@@ -475,26 +478,30 @@ unify
           where
             prefixLength = Seq.length prefix2
         listSuffix1 = asBuiltinDomainList suffix1
+    unifyFramedRight _ _ _ _ = error "The impossible happened."
 
     unifyFramedLeft
         :: level ~ Object
         => Sort level
-        -> Seq p
-        -> SymbolOrAlias level
+        -> p
         -> p
         -> Seq p
         -> m (expanded, proof)
-    unifyFramedLeft resultSort list1 symConcat frame2 suffix2
+    unifyFramedLeft
+        resultSort
+        dv1@(DV_ _ (BuiltinDomainList list1))
+        frame2
+        suffix2
       | Seq.length suffix2 > Seq.length list1 =
         return (ExpandedPattern.bottom, SimplificationProof)
       | otherwise =
         do
             (prefixUnified, _) <- simplifyChild frame2 listPrefix1
             (suffixUnified, _) <- unifyConcrete resultSort suffix1 suffix2
-            let result =
-                    (<$>)
-                        (App_ symConcat)
-                        (propagatePredicates [prefixUnified, suffixUnified])
+            let result = give symbolOrAliasSorts $
+                    pure dv1
+                    <* prefixUnified
+                    <* suffixUnified
             return (result, SimplificationProof)
       where
         asBuiltinDomainList = DV_ resultSort . BuiltinDomainList
@@ -502,3 +509,4 @@ unify
           where
             prefixLength = Seq.length list1 - Seq.length suffix2
         listPrefix1 = asBuiltinDomainList prefix1
+    unifyFramedLeft _ _ _ _ = error "The impossible happened."
