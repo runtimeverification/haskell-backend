@@ -535,9 +535,10 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
           $ assertEqualWithExplanation ""
             (Just Predicated
                 { term =
-                    Mock.concatMap
-                        (Mock.builtinMap [(Mock.aConcrete, fOfA)])
-                        (Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                    Mock.builtinMap
+                        [ (Mock.aConcrete, fOfA)
+                        , (Mock.bConcrete, fOfB)
+                        ]
                 , predicate = makeTruePredicate
                 , substitution =
                     [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
@@ -561,9 +562,10 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
           $ assertEqualWithExplanation ""
             (Just Predicated
                 { term =
-                    Mock.concatMap
-                        (Mock.builtinMap [(Mock.aConcrete, fOfA)])
-                        (Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                    Mock.builtinMap
+                        [ (Mock.aConcrete, fOfA)
+                        , (Mock.bConcrete, fOfB)
+                        ]
                 , predicate = makeTruePredicate
                 , substitution =
                     [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
@@ -587,9 +589,10 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
           $ assertEqualWithExplanation ""
             (Just Predicated
                 { term =
-                    Mock.concatMap
-                        (Mock.builtinMap [(Mock.aConcrete, fOfA)])
-                        (Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                    Mock.builtinMap
+                        [ (Mock.aConcrete, fOfA)
+                        , (Mock.bConcrete, fOfB)
+                        ]
                 , predicate = makeTruePredicate
                 , substitution =
                     [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
@@ -613,9 +616,10 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
             $ assertEqualWithExplanation ""
                 (Just Predicated
                     { term =
-                        Mock.concatMap
-                            (Mock.builtinMap [(Mock.aConcrete, fOfA)])
-                            (Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        Mock.builtinMap
+                            [ (Mock.aConcrete, fOfA)
+                            , (Mock.bConcrete, fOfB)
+                            ]
                     , predicate = makeTruePredicate
                     , substitution =
                         [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
@@ -680,12 +684,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 testCase "[a] `concat` x /\\ [a, b] "
                 $ assertEqualWithExplanation ""
                     (Just Predicated
-                        { term =
-                            -- The unit test does not use the simplifier, so
-                            -- concatList will not be evaluated.
-                            Mock.concatList
-                                (Mock.builtinList [Mock.a])
-                                (Mock.builtinList [Mock.b])
+                        { term = Mock.builtinList $ [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution =
                             [(Mock.x, Mock.builtinList [Mock.b])]

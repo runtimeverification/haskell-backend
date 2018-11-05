@@ -578,9 +578,9 @@ unify
                     -- Accept the arguments of MAP.concat in either order.
                     Monad.Trans.lift $ case args2 of
                         [ DV_ _ (BuiltinDomainMap map2), x@(Var_ _) ] ->
-                            unifyFramed1 resultSort map1 symbol2 map2 x
+                            unifyFramed1 resultSort dv1 map2 x
                         [ x@(Var_ _), DV_ _ (BuiltinDomainMap map2) ] ->
-                            unifyFramed1 resultSort map1 symbol2 map2 x
+                            unifyFramed1 resultSort dv1 map2 x
                         [ _, _ ] ->
                             give symbolOrAliasSorts
                                 (Builtin.unifyUnsolved dv1 app)
@@ -640,12 +640,15 @@ unify
     unifyFramed1
         :: forall k . (level ~ Object, k ~ ConcretePurePattern Object)
         => Sort level  -- ^ Sort of result
-        -> Map k p  -- ^ concrete map
-        -> SymbolOrAlias level  -- ^ 'concat' symbol used for framing
+        -> p  -- ^ concrete map
         -> Map k p  -- ^ framed concrete map
         -> p  -- ^ framing variable
         -> m (expanded, proof)
-    unifyFramed1 resultSort map1 concat' map2 x = do
+    unifyFramed1
+        resultSort
+        dv1@(DV_ _ (BuiltinDomainMap map1))
+        map2
+        x = do
         intersect <- sequence (Map.intersectionWith unifyChildren map1 map2)
         -- The framing variable unifies with the remainder of map1.
         let remainder1 = Map.difference map1 map2
@@ -661,8 +664,10 @@ unify
               | not (Map.null remainder2) =
                 -- There is nothing with which to unify the remainder of map2.
                 ExpandedPattern.bottom
-              | otherwise =
-                App_ concat' <$> propagatePredicates [concrete, frame]
+              | otherwise = give symbolOrAliasSorts $
+                    pure dv1 -- (DV_ resultSort (BuiltinDomainMap map1))
+                    <* concrete
+                    <* frame
               where
                 -- Elements of map2 missing from map1
                 remainder2 = Map.difference map2 map1
@@ -671,6 +676,9 @@ unify
         return (normalized, SimplificationProof)
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
+
+    unifyFramed1 _ _ _ _ = error "The impossible happened"
+
 
     unifyElement
         :: forall k . (level ~ Object, k ~ ConcretePurePattern Object)
