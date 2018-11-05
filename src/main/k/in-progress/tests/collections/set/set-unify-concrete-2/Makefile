@@ -13,7 +13,7 @@ $(DEFINITION): set-unify-concrete-2.k $(K)
 %.output: %.set-unify-concrete-2 $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.set-unify-concrete-2 $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.set-unify-concrete-2 $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
