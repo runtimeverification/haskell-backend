@@ -8,7 +8,7 @@ Maintainer  : traian.serbanuta@runtimeverification.com
 module Kore.Step.Search
     ( Config (..)
     , SearchType (..)
-    , search
+    , searchTree
     , matchWith
     ) where
 
@@ -60,7 +60,7 @@ import           Kore.Variables.Fresh
 
 {-| Which configurations are considered for matching?
 
-See also: 'search'
+See also: 'searchTree'
 
  -}
 data SearchType
@@ -91,21 +91,21 @@ The matching criterion returns a substitution which takes its argument to the
 search goal (see 'matchWith'). The 'searchType' is used to restrict which states
 may be considered for matching.
 
-@search@ returns a list of substitutions which take the initial configuration to
-the goal defined by the matching criterion. The number of solutions returned is
-limited by 'bound'.
+@searchTree@ returns a list of substitutions which take the initial
+configuration to the goal defined by the matching criterion. The number of
+solutions returned is limited by 'bound'.
 
 See also: 'Kore.Step.Strategy.runStrategy', 'matchWith'
 
 -}
-search
+searchTree
     :: Config  -- ^ Search options
     -> (config -> MaybeT Simplifier substitution)
         -- ^ Matching criterion
     -> Tree config
         -- ^ Execution tree
     -> Simplifier [substitution]
-search Config { searchType, bound } match executionTree = do
+searchTree Config { searchType, bound } match executionTree = do
     let selectedConfigs = pick executionTree
     matches <- catMaybes <$> traverse (runMaybeT . match) selectedConfigs
     return (Limit.takeWithin bound matches)
