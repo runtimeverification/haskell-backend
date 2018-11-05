@@ -7,7 +7,7 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): demo.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module demo
 
-%.demo.kore: %.demo $(DEFINITION) $(KORE_EXEC)
+%.demo.kore: %.demo $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
 %.output: %.demo $(DEFINITION) $(K) $(KORE_EXEC)
