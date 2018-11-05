@@ -33,13 +33,12 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
 import           Kore.SMT.Config
+import           Kore.Step.ExpandedPattern
+                 ( CommonPredicateSubstitution, PredicateSubstitution,
+                 Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
-import           Kore.Step.PredicateSubstitution
-                 ( CommonPredicateSubstitution,
-                 PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), bottom, top )
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -61,8 +60,9 @@ test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads = give mockSymbolOrAliasSorts
     [ testCase "And"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
+            (Just Predicated
+                { term = ()
+                , predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.b)]
                 }
             )
@@ -73,8 +73,9 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
+            (Just Predicated
+                { term = ()
+                , predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.a)]
                 }
             )
@@ -85,7 +86,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application different constructors"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution.bottom)
+            (Just Predicated.bottomPredicate)
             (match mockMetadataTools
                 (Mock.constr10 (mkVar Mock.x))
                 (Mock.constr11 Mock.a)
@@ -93,8 +94,9 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application different functions"
         (assertEqualWithExplanation ""
-            ( Just PredicateSubstitution
-                { predicate =
+            ( Just Predicated
+                { term = ()
+                , predicate =
                     makeEqualsPredicate
                         (Mock.f (mkVar Mock.x))
                         (Mock.g Mock.a)
@@ -108,8 +110,9 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Application different symbols"
         (assertEqualWithExplanation ""
-            ( Just PredicateSubstitution
-                { predicate =
+            ( Just Predicated
+                { term = ()
+                , predicate =
                     makeEqualsPredicate
                         (Mock.plain10 (mkVar Mock.x))
                         (Mock.plain11 Mock.a)
@@ -123,7 +126,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Bottom"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution.top)
+            (Just Predicated.topPredicate)
             (match mockMetadataTools
                 mkBottom
                 mkBottom
@@ -131,8 +134,9 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Ceil"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
+            (Just Predicated
+                { term = ()
+                , predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.a)]
                 }
             )
@@ -143,7 +147,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "CharLiteral"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution.top)
+            (Just Predicated.topPredicate)
             (match mockMetaMetadataTools
                 (mkCharLiteral 'a')
                 (mkCharLiteral 'a')
@@ -151,7 +155,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "DomainValue"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution.top)
+            (Just Predicated.topPredicate)
             (match mockMetadataTools
                 (mkDomainValue Mock.testSort1
                     (BuiltinDomainPattern  (mkStringLiteral "10"))
@@ -163,8 +167,9 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Equals"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
-                { predicate = makeTruePredicate
+            (Just Predicated
+                { term = ()
+                , predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.b)]
                 }
             )
@@ -175,9 +180,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Exists"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.y, Mock.a)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -187,9 +193,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Floor"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.a)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -199,9 +206,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Forall"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.y, Mock.a)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -211,9 +219,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Iff"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -223,9 +232,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Implies"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -235,9 +245,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "In"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -247,9 +258,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Next"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.a)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -259,9 +271,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Not"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.a)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -271,9 +284,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Or"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -283,9 +297,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Rewrites"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -295,7 +310,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "StringLiteral"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution.top)
+            (Just Predicated.topPredicate)
             (match mockMetaMetadataTools
                 (mkStringLiteral "10")
                 (mkStringLiteral "10")
@@ -303,7 +318,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Top"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution.top)
+            (Just Predicated.topPredicate)
             (match mockMetadataTools
                 mkTop
                 mkTop
@@ -311,7 +326,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Variable (quantified)"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution.top)
+            (Just Predicated.topPredicate)
             (match mockMetadataTools
                 (mkExists Mock.x (Mock.plain10 (mkVar Mock.x)))
                 (mkExists Mock.y (Mock.plain10 (mkVar Mock.y)))
@@ -319,11 +334,12 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         )
     , testCase "Iff vs Or"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeEqualsPredicate
                     (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
                     (mkOr (Mock.plain10 Mock.a) Mock.b)
                 , substitution = []
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -337,9 +353,10 @@ test_matcherVariableFunction :: [TestTree]
 test_matcherVariableFunction = give mockSymbolOrAliasSorts
     [ testCase "Functional"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.functional00)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -349,9 +366,10 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         )
     , testCase "Function"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeCeilPredicate Mock.cf
                 , substitution = [(Mock.x, Mock.cf)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -361,11 +379,12 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         )
     , testCase "Non-functional"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeEqualsPredicate
                     (mkVar Mock.x)
                     (Mock.constr10 Mock.cf)
                 , substitution = []
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -375,11 +394,12 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         )
     , testCase "Unidirectional"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeEqualsPredicate
                     (mkVar Mock.x)
                     (Mock.functional10 (mkVar Mock.y))
                 , substitution = []
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -392,9 +412,10 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
           x = Variable (testId "x") Mock.subSort
       in testCase "Injection"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(x, Mock.sortInjectionSubSubToSub a)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -407,11 +428,12 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
           xSub = Variable (testId "x") Mock.subSort
       in testCase "Injection + rhs var predicate"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeEqualsPredicate
                     (mkVar Mock.x)
                     (Mock.functional10 (mkVar Mock.y))
                 , substitution = [(xSub, Mock.sortInjectionSubSubToSub aSubSub)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -430,11 +452,12 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
           xSub = Variable (testId "x") Mock.subSort
       in testCase "rhs var predicate + Injection"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeEqualsPredicate
                     (mkVar Mock.x)
                     (Mock.functional10 (mkVar Mock.y))
                 , substitution = [(xSub, Mock.sortInjectionSubSubToSub aSubSub)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -450,9 +473,10 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         )
     , testCase "Quantified" $ do
         assertEqualWithExplanation "positive case"
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.a)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -483,10 +507,11 @@ test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
     [ testCase "no-var - no-var"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeEqualsPredicate
                     (Mock.plain10 Mock.a) (Mock.plain11 Mock.b)
                 , substitution = []
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -496,11 +521,12 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
         )
     , testCase "var - no-var"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeEqualsPredicate
                     (Mock.plain10 (mkVar Mock.x))
                     (Mock.plain11 Mock.b)
                 , substitution = []
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -510,10 +536,11 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
         )
     , testCase "no-var - var"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeEqualsPredicate
                     (Mock.plain10 Mock.a) (Mock.plain11 (mkVar Mock.x))
                 , substitution = []
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -523,11 +550,12 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
         )
     , testCase "var - var"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate = makeEqualsPredicate
                     (Mock.plain10 (mkVar Mock.x))
                     (Mock.plain11 (mkVar Mock.y))
                 , substitution = []
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -541,12 +569,13 @@ test_matcherMergeSubresults :: [TestTree]
 test_matcherMergeSubresults = give mockSymbolOrAliasSorts
     [ testCase "And"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -556,12 +585,13 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         )
     , testCase "Application"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -577,12 +607,13 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         )
     , testCase "Equals"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -592,12 +623,13 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         )
     , testCase "Iff"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -607,12 +639,13 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         )
     , testCase "Implies"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -628,12 +661,13 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         )
     , testCase "In"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -643,12 +677,13 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         )
     , testCase "Or"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -658,12 +693,13 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         )
     , testCase "Rewrites"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution
+            (Just Predicated
                 { predicate =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cf)
                         (makeEqualsPredicate Mock.cf Mock.cg)
                 , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                , term = ()
                 }
             )
             (match mockMetadataTools
@@ -679,7 +715,7 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
         )
     , testCase "Merge conflict"
         (assertEqualWithExplanation ""
-            (Just PredicateSubstitution.bottom)
+            (Just Predicated.bottomPredicate)
             (match mockMetadataTools
                 (mkAnd (mkVar Mock.x) (mkVar Mock.x))
                 (mkAnd    Mock.a         Mock.b)

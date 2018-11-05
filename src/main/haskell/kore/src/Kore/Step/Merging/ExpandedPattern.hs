@@ -23,11 +23,7 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern,
-                 PredicateSubstitution (PredicateSubstitution),
-                 Predicated (..) )
-import           Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier )
@@ -67,7 +63,7 @@ mergeWithPredicateSubstitution
     tools
     substitutionSimplifier
     simplifier
-    PredicateSubstitution
+    Predicated
         { predicate = conditionToMerge
         , substitution = substitutionToMerge
         }
@@ -76,7 +72,7 @@ mergeWithPredicateSubstitution
         , substitution = pattSubstitution
         }
   = do
-    (   PredicateSubstitution
+    (   Predicated
             { predicate = mergedCondition
             , substitution = mergedSubstitution
             }
@@ -118,10 +114,10 @@ mergeWithEvaluatedCondition
         { term = pattTerm
         , substitution = pattSubstitution
         }  -- The predicate was already included in the PredicateSubstitution
-    PredicateSubstitution
-        {predicate = predPredicate, substitution = predSubstitution}
+    Predicated
+        { predicate = predPredicate, substitution = predSubstitution }
   = do
-    (   PredicateSubstitution
+    (   Predicated
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }

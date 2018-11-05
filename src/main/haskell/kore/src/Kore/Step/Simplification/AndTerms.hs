@@ -50,9 +50,8 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), erasePredicatedTerm )
-import           Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..),
+                 erasePredicatedTerm )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom, fromPurePattern, isBottom )
 import           Kore.Step.PatternAttributes
@@ -647,7 +646,7 @@ equalInjectiveHeadsAndEquals
                 substitutionSimplifier
                 predicates
                 substitutions
-        let PredicateSubstitution
+        let Predicated
                 { predicate = mergedPredicate
                 , substitution = mergedSubstitution
                 }

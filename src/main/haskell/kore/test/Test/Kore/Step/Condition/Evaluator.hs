@@ -116,8 +116,9 @@ prop_andNegation = give testSymbolOrAliasSorts $ do
     return (expected === actual)
   where
     expected =
-        PredicateSubstitution
-            { predicate = makeFalsePredicate
+        Predicated
+            { term = ()
+            , predicate = makeFalsePredicate
             , substitution = []
             }
 

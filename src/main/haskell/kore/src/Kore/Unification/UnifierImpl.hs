@@ -35,11 +35,9 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution (..) )
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), bottom, top )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), top )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  liftPredicateSubstitutionSimplifier )
@@ -150,8 +148,8 @@ simplifyAnds tools substitutionSimplifier patterns = do
 
         return $ ExpandedPattern.Predicated
             ( ExpandedPattern.term result )
-            ( PredicateSubstitution.predicate predSubst )
-            ( PredicateSubstitution.substitution predSubst )
+            ( Predicated.predicate predSubst )
+            ( Predicated.substitution predSubst )
 
 
 groupSubstitutionByVariable
@@ -195,9 +193,11 @@ solveGroupedSubstitution _ _ _ [] =
 solveGroupedSubstitution tools substitutionSimplifier var patterns = do
     (predSubst, proof) <- simplifyAnds tools substitutionSimplifier patterns
     return
-        ( PredicateSubstitution
-            (ExpandedPattern.predicate predSubst)
-            (termAndSubstitution predSubst)
+        ( Predicated
+            { term = ()
+            , predicate = ExpandedPattern.predicate predSubst
+            , substitution = termAndSubstitution predSubst
+            }
         , proof
         )
   where
@@ -235,7 +235,7 @@ normalizeSubstitutionDuplication
 normalizeSubstitutionDuplication tools substitutionSimplifier subst =
     if null nonSingletonSubstitutions
         then return
-            ( PredicateSubstitution Predicate.makeTruePredicate subst
+            ( Predicated () Predicate.makeTruePredicate subst
             , EmptyUnificationProof
             )
         else do
@@ -249,17 +249,19 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
             (finalSubst, proof) <-
                 normalizeSubstitutionDuplication tools substitutionSimplifier
                     (concat singletonSubstitutions
-                     ++ PredicateSubstitution.substitution predSubst
+                     ++ Predicated.substitution predSubst
                     )
             let
-                pred' =
-                    give symbolOrAliasSorts $ Predicate.makeAndPredicate
-                        (PredicateSubstitution.predicate predSubst)
-                        (PredicateSubstitution.predicate finalSubst)
+                pred' = give symbolOrAliasSorts
+                    $ Predicate.makeAndPredicate
+                    (Predicated.predicate predSubst)
+                    (Predicated.predicate finalSubst)
             return
-                ( PredicateSubstitution
-                    pred'
-                    ( PredicateSubstitution.substitution finalSubst )
+                ( Predicated
+                    { term = ()
+                    , predicate = pred'
+                    , substitution = Predicated.substitution finalSubst
+                    }
                 , CombinedUnificationProof
                     [ proof'
                     , proof
@@ -290,19 +292,22 @@ mergePredicateSubstitutionList
     -> [(PredicateSubstitution level variable, UnificationProof level variable)]
     -> (PredicateSubstitution level variable, UnificationProof level variable)
 mergePredicateSubstitutionList _ [] =
-    ( PredicateSubstitution.top
+    ( Predicated.topPredicate
     , EmptyUnificationProof
     )
 mergePredicateSubstitutionList tools (p:ps) =
     foldl' mergePredicateSubstitutions p ps
-
   where
     symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     mergePredicateSubstitutions
-        (PredicateSubstitution {predicate = p1, substitution = s1}, proofs)
-        (PredicateSubstitution {predicate = p2, substitution = s2}, proof) =
-        ( PredicateSubstitution
-            (give symbolOrAliasSorts $ Predicate.makeAndPredicate p1 p2)
-            (s1 ++ s2)
+        ( Predicated { predicate = p1, substitution = s1 }, proofs)
+        ( Predicated { predicate = p2, substitution = s2 }, proof) =
+        ( Predicated
+            { term = ()
+            , predicate =
+                give symbolOrAliasSorts
+                $ Predicate.makeAndPredicate p1 p2
+            , substitution = s1 ++ s2
+            }
         , proofs <> proof
         )

@@ -52,8 +52,6 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -393,7 +391,7 @@ unificationProcedureSuccess
             (sortBy (compare `on` fst) substitution, predicate, proof')
         )
   where
-    Right ( PredicateSubstitution.PredicateSubstitution
+    Right ( Predicated
               { substitution
               , predicate
               }

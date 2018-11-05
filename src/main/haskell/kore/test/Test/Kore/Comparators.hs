@@ -22,10 +22,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.BaseStep
 import           Kore.Step.Error
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import           Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+import           Kore.Step.ExpandedPattern
+                 ( Predicated (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.OrOfExpandedPattern
@@ -36,6 +34,10 @@ import           Kore.Unification.Error
 import           Kore.Unification.Unifier
 
 import Test.Tasty.HUnit.Extensions
+
+instance EqualWithExplanation () where
+    compareWithExplanation () () = Nothing
+    printWithExplanation = show
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 
@@ -838,67 +840,36 @@ instance
     printWithExplanation = show
 
 instance
-    ( Show level, Show (variable level)
+    ( Show level, Show (variable level), Show child
     , Eq level, Eq (variable level)
-    , EqualWithExplanation(variable level)
+    , EqualWithExplanation (variable level)
+    , EqualWithExplanation child
     )
-    => StructEqualWithExplanation (ExpandedPattern level variable)
+    => StructEqualWithExplanation (Predicated level variable child)
   where
-    structFieldsWithNames
-        expected@(Predicated _ _ _)
-        actual@(Predicated _ _ _)
-      = [ EqWrap
+    structFieldsWithNames expected actual =
+        [ EqWrap
             "term = "
-            (ExpandedPattern.term expected)
-            (ExpandedPattern.term actual)
+            (term expected)
+            (term actual)
         , EqWrap
             "predicate = "
-            (ExpandedPattern.predicate expected)
-            (ExpandedPattern.predicate actual)
+            (predicate expected)
+            (predicate actual)
         , EqWrap
             "substitution = "
-            (ExpandedPattern.substitution expected)
-            (ExpandedPattern.substitution actual)
+            (substitution expected)
+            (substitution actual)
         ]
     structConstructorName _ = "Predicated"
 
 instance
-    ( Show level, Show (variable level)
+    ( Show level, Show (variable level), Show child
     , Eq level, Eq (variable level)
-    , EqualWithExplanation(variable level)
+    , EqualWithExplanation (variable level)
+    , EqualWithExplanation child
     )
-    => EqualWithExplanation (ExpandedPattern level variable)
-  where
-    compareWithExplanation = structCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation(variable level)
-    )
-    => StructEqualWithExplanation (PredicateSubstitution level variable)
-  where
-    structFieldsWithNames
-        expected@(PredicateSubstitution _ _)
-        actual@(PredicateSubstitution _ _)
-      = [ EqWrap
-            "predicate = "
-            (PredicateSubstitution.predicate expected)
-            (PredicateSubstitution.predicate actual)
-        , EqWrap
-            "substitution = "
-            (PredicateSubstitution.substitution expected)
-            (PredicateSubstitution.substitution actual)
-        ]
-    structConstructorName _ = "PredicateSubstitution"
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation(variable level)
-    )
-    => EqualWithExplanation (PredicateSubstitution level variable)
+    => EqualWithExplanation (Predicated level variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

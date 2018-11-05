@@ -10,10 +10,11 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.ExpandedPattern
-    ( CommonExpandedPattern
-    , CommonPredicateSubstitution  -- TODO(virgil): Stop exporting this.
+    ( Predicated (..)
     , ExpandedPattern
-    , PredicateSubstitution (..)  -- TODO(virgil): Stop exporting this.
+    , CommonExpandedPattern
+    , PredicateSubstitution
+    , CommonPredicateSubstitution
     , allVariables
     , erasePredicatedTerm
     , bottom
@@ -23,15 +24,24 @@ module Kore.Step.ExpandedPattern
     , substitutionToPredicate
     , toMLPattern
     , top
+    , topPredicate
+    , bottomPredicate
     , fromPurePattern
-    , Predicated(..)
+    , toPredicate
+    , freeVariables
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
+import           Data.Functor
+                 ( ($>) )
 import           Data.Monoid
                  ( (<>) )
 import           Data.Reflection
                  ( Given )
 import qualified Data.Set as Set
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
                  ( PureMLPattern, SortedVariable, Variable )
@@ -49,57 +59,71 @@ import           Kore.Predicate.Predicate
                  makeAndPredicate, makeFalsePredicate, makeTruePredicate,
                  substitutionToPredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.PredicateSubstitution
-                 ( CommonPredicateSubstitution, PredicateSubstitution (..) )
 import           Kore.Unification.Data
 import           Kore.Variables.Free
                  ( pureAllVariables )
 
-{-|'ExpandedPattern' is a representation of a PureMLPattern that is easier
-to use when executing Kore. It consists of an "and" between a term, a
-predicate and a substitution
--}
+{- | @Predicated@ represents a value conditioned on a predicate.
 
-type ExpandedPattern level variable =
-    Predicated level variable (PureMLPattern level variable)
+@Predicated level variable child@ represents a @child@ conditioned on a
+@predicate@ and @substitution@ (which is a specialized form of predicate).
 
+The 'Applicative' instance conjoins the predicates and substitutions so that the
+result is conditioned on the combined predicates of the inputs. The combined
+predicate and substitution are /not/ normalized.
+
+There is intentionally no 'Monad' instance; such an instance would have
+quadratic complexity.
+
+ -}
 data Predicated level variable child = Predicated
     { term :: child
     , predicate :: !(Predicate level variable)
     , substitution :: !(UnificationSubstitution level variable)
     }
-    deriving(Eq, Ord, Show)
-
-instance Functor (Predicated level variable) where
-    fmap f (Predicated a p s) = Predicated (f a) p s
-
--- `<*>` does not do normalization for now.
--- Use Kore.Step.Substitution.normalize until then.
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 instance
-  ( MetaOrObject level
-  , SortedVariable variable
-  , Show (variable level)
-  , Eq (variable level)
-  , Given (SymbolOrAliasSorts level)
-  )
-  => Applicative (Predicated level variable) where
+    (NFData child, NFData (variable level)) =>
+    NFData (Predicated level variable child)
+
+instance
+    ( MetaOrObject level
+    , SortedVariable variable
+    , Show (variable level)
+    , Eq (variable level)
+    , Given (SymbolOrAliasSorts level)
+    ) =>
+    Applicative (Predicated level variable)
+  where
     pure a = Predicated a makeTruePredicate []
-    a <*> b = Predicated
-        { term = f x
-        , predicate = predicate1 `makeAndPredicate` predicate2
-        , substitution = substitution1 ++ substitution2
-        }
-        where
-            Predicated f predicate1 substitution1 = a
-            Predicated x predicate2 substitution2 = b
+    a <*> b =
+        Predicated
+            { term = f x
+            , predicate = predicate1 `makeAndPredicate` predicate2
+            , substitution = substitution1 ++ substitution2
+            }
+      where
+        Predicated f predicate1 substitution1 = a
+        Predicated x predicate2 substitution2 = b
 
--- The monad instance for `Predicated` is intentionally omitted.
--- It's not needed for anything, and has bad performance properties.
+{- | The conjunction of a pattern, predicate, and substitution.
 
-{-|'CommonExpandedPattern' particularizes ExpandedPattern to Variable.
+The form of @ExpandedPattern@ is intended to be convenient for Kore execution.
+
+ -}
+type ExpandedPattern level variable =
+    Predicated level variable (PureMLPattern level variable)
+
+{- | 'CommonExpandedPattern' particularizes 'ExpandedPattern' to 'Variable'.
 -}
 type CommonExpandedPattern level = ExpandedPattern level Variable
+
+-- | A predicate and substitution without an accompanying term.
+type PredicateSubstitution level variable = Predicated level variable ()
+
+-- | A 'PredicateSubstitution' of the 'Variable' type.
+type CommonPredicateSubstitution level = PredicateSubstitution level Variable
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
 in an ExpandedPattern.
@@ -146,8 +170,7 @@ allVariables
 erasePredicatedTerm
     :: Predicated level variable child
     -> PredicateSubstitution level variable
-erasePredicatedTerm Predicated { predicate, substitution } =
-    PredicateSubstitution { predicate, substitution }
+erasePredicatedTerm = (<$) ()
 
 {-|'toMLPattern' converts an ExpandedPattern to a PureMLPattern.
 -}
@@ -226,9 +249,10 @@ isBottom _ = False
 
 {- | Construct an 'ExpandedPattern' from a 'PureMLPattern'.
 
-  The resulting @ExpandedPattern@ has a true predicate and an empty substitution.
+  The resulting @ExpandedPattern@ has a true predicate and an empty
+  substitution.
 
-  See also: 'makeTruePredicate'
+  See also: 'makeTruePredicate', 'pure'
 
  -}
 fromPurePattern
@@ -244,3 +268,44 @@ fromPurePattern term =
                 , predicate = makeTruePredicate
                 , substitution = []
                 }
+
+topPredicate :: MetaOrObject level => PredicateSubstitution level variable
+topPredicate = top $> ()
+
+bottomPredicate :: MetaOrObject level => PredicateSubstitution level variable
+bottomPredicate = bottom $> ()
+
+{- | Transform a predicate and substitution into a predicate only.
+
+    See also: 'substitutionToPredicate'.
+
+-}
+toPredicate
+    :: ( MetaOrObject level
+       , Given (SymbolOrAliasSorts level)
+       , SortedVariable variable
+       , Eq (variable level)
+       , Show (variable level)
+       )
+    => PredicateSubstitution level variable
+    -> Predicate level variable
+toPredicate Predicated { predicate, substitution } =
+    makeAndPredicate
+        predicate
+        (substitutionToPredicate substitution)
+
+{- | Extract the set of free variables from a predicate and substitution.
+
+    See also: 'Predicate.freeVariables'.
+-}
+
+freeVariables
+    :: ( MetaOrObject level
+       , Ord (variable level)
+       , Show (variable level)
+       , Given (SymbolOrAliasSorts level)
+       , SortedVariable variable
+       )
+    => PredicateSubstitution level variable
+    -> Set.Set (variable level)
+freeVariables = Predicate.freeVariables . toPredicate

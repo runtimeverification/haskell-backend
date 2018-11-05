@@ -36,10 +36,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), bottom )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
@@ -120,7 +119,7 @@ normalizeSubstitution tools substitution =
         :: Maybe [variable level]
         -> m (PredicateSubstitution level variable)
     maybeToBottom = maybe
-        (return PredicateSubstitution.bottom)
+        (return Predicated.bottomPredicate)
         normalizeSortedSubstitution'
 
 checkCircularVariableDependency
@@ -186,12 +185,13 @@ normalizeSortedSubstitution
     -> [(Unified variable, PureMLPattern level variable)]
     -> m (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
-    return PredicateSubstitution
-        { predicate = makeTruePredicate
+    return Predicated
+        { term = ()
+        , predicate = makeTruePredicate
         , substitution = result
         }
 normalizeSortedSubstitution ((_, Bottom_ _) : _) _ _ =
-    return PredicateSubstitution.bottom
+    return Predicated.bottomPredicate
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result

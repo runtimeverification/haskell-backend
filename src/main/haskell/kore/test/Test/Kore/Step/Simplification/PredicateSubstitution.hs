@@ -23,17 +23,13 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( fromPurePattern )
+import           Kore.Step.ExpandedPattern
+                 ( CommonPredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..), AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.PredicateSubstitution
-                 ( CommonPredicateSubstitution,
-                 PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), bottom, top )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (SimplificationProof), Simplifier,
@@ -61,28 +57,32 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
     [ testCase "Identity for top and bottom"
         (do
             assertEqualWithExplanation ""
-                PredicateSubstitution.bottom
-                (runSimplifier Map.empty PredicateSubstitution.bottom)
+                Predicated.bottomPredicate
+                (runSimplifier Map.empty Predicated.bottomPredicate)
             assertEqualWithExplanation ""
-                PredicateSubstitution.top
-                (runSimplifier Map.empty PredicateSubstitution.top)
+                Predicated.topPredicate
+                (runSimplifier Map.empty Predicated.topPredicate)
         )
     , testCase "Applies substitution to predicate"
         (assertEqualWithExplanation ""
-            PredicateSubstitution
-                { predicate = makeEqualsPredicate
-                    (Mock.f Mock.a)
-                    (Mock.g Mock.b)
+            Predicated
+                { term = ()
+                , predicate =
+                    makeEqualsPredicate
+                        (Mock.f Mock.a)
+                        (Mock.g Mock.b)
                 , substitution =
                     [ (Mock.x, Mock.a)
                     , (Mock.y, Mock.b)
                     ]
                 }
             (runSimplifier Map.empty
-                PredicateSubstitution
-                    { predicate = makeEqualsPredicate
-                        (Mock.f (mkVar Mock.x))
-                        (Mock.g (mkVar Mock.y))
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.f (mkVar Mock.x))
+                            (Mock.g (mkVar Mock.y))
                     , substitution =
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
@@ -92,20 +92,24 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
         )
     , testCase "Simplifies predicate after substitution"
         (assertEqualWithExplanation ""
-            PredicateSubstitution
-                { predicate = makeEqualsPredicate
-                    Mock.functional00
-                    Mock.functional01
+            Predicated
+                { term = ()
+                , predicate =
+                    makeEqualsPredicate
+                        Mock.functional00
+                        Mock.functional01
                 , substitution =
                     [ (Mock.x, Mock.functional00)
                     , (Mock.y, Mock.functional01)
                     ]
                 }
             (runSimplifier Map.empty
-                PredicateSubstitution
-                    { predicate = makeEqualsPredicate
-                        (Mock.constr10 (mkVar Mock.x))
-                        (Mock.constr10 (mkVar Mock.y))
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.constr10 (mkVar Mock.x))
+                            (Mock.constr10 (mkVar Mock.y))
                     , substitution =
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
@@ -115,10 +119,9 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
         )
     , testCase "Simplifies predicate after substitution"
         (assertEqualWithExplanation ""
-            PredicateSubstitution
-                { predicate = makeEqualsPredicate
-                    Mock.functional00
-                    Mock.a
+            Predicated
+                { term = ()
+                , predicate = makeEqualsPredicate Mock.functional00 Mock.a
                 , substitution =
                     [ (Mock.x, Mock.functional00)
                     , (Mock.y, Mock.functional01)
@@ -135,10 +138,12 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         )
                     ]
                 )
-                PredicateSubstitution
-                    { predicate = makeEqualsPredicate
-                        (Mock.f (mkVar Mock.x))
-                        (Mock.f (mkVar Mock.y))
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.f (mkVar Mock.x))
+                            (Mock.f (mkVar Mock.y))
                     , substitution =
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
@@ -148,8 +153,9 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
         )
     , testCase "Merges substitution from predicate simplification"
         (assertEqualWithExplanation ""
-            PredicateSubstitution
-                { predicate = makeTruePredicate
+            Predicated
+                { term = ()
+                , predicate = makeTruePredicate
                 , substitution =
                     [ (Mock.x, Mock.a)
                     , (Mock.y, Mock.b)
@@ -165,10 +171,12 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         )
                     ]
                 )
-                PredicateSubstitution
-                    { predicate = makeEqualsPredicate
-                        (Mock.constr10 (mkVar Mock.x))
-                        (Mock.f (mkVar Mock.y))
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.constr10 (mkVar Mock.x))
+                            (Mock.f (mkVar Mock.y))
                     , substitution =
                         [ (Mock.y, Mock.b)
                         ]
@@ -177,8 +185,9 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
         )
     , testCase "Reapplies substitution from predicate simplification"
         (assertEqualWithExplanation ""
-            PredicateSubstitution
-                { predicate =
+            Predicated
+                { term = ()
+                , predicate =
                     makeEqualsPredicate
                         (Mock.f Mock.a)
                         (Mock.g Mock.a)
@@ -197,8 +206,9 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         )
                     ]
                 )
-                PredicateSubstitution
-                    { predicate =
+                Predicated
+                    { term = ()
+                    , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate
                                 (Mock.constr10 (mkVar Mock.x))
@@ -216,8 +226,9 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
         )
     , testCase "Simplifies after reapplying substitution"
         (assertEqualWithExplanation ""
-            PredicateSubstitution
-                { predicate =
+            Predicated
+                { term = ()
+                , predicate =
                     makeEqualsPredicate
                         (Mock.g Mock.b)
                         (Mock.g Mock.a)
@@ -237,8 +248,9 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         )
                     ]
                 )
-                PredicateSubstitution
-                    { predicate =
+                Predicated
+                    { term = ()
+                    , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate
                                 (Mock.constr10 (mkVar Mock.x))
@@ -319,7 +331,7 @@ simpleEvaluator ((from, to) : ps) app
     return
         ( Applied
             (OrOfExpandedPattern.make
-                [ExpandedPattern.fromPurePattern to]
+                [Predicated.fromPurePattern to]
             )
         , SimplificationProof
         )

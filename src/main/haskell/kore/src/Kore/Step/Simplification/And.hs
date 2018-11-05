@@ -20,8 +20,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom, isBottom, isTop )
 import           Kore.Step.OrOfExpandedPattern
@@ -213,7 +211,7 @@ makeEvaluateNonBool
             }
         , _proof
         ) <- makeTermAnd tools substitutionSimplifier firstTerm secondTerm
-    (   PredicateSubstitution.PredicateSubstitution
+    (   Predicated
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }

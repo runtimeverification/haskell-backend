@@ -33,16 +33,10 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (Predicated),
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..),
                  substitutionToPredicate )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
-import qualified Kore.Step.ExpandedPattern as Predicated
-                 ( Predicated (..) )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..) )
 import           Kore.Step.StepperAttributes
@@ -86,21 +80,20 @@ normalize
         normalizeSubstitutionAfterMerge
             tools
             substitutionSimplifier
-            (PredicateSubstitution { predicate, substitution })
+            (Predicated { term = (), predicate, substitution })
     return $ case x of
-        Right (PredicateSubstitution p s, _) ->
-            if Predicate.isFalse p
-                then ExpandedPattern.bottom
-                else Predicated term p s
-        Left _ ->
-            Predicated
-                { term
-                , predicate =
-                    makeAndPredicate
-                        predicate
-                        (substitutionToPredicate substitution)
-                , substitution = []
-                }
+      Right (Predicated { predicate = p, substitution = s }, _) ->
+          if Predicate.isFalse p
+              then ExpandedPattern.bottom
+              else Predicated term p s
+      Left _ ->
+          Predicated
+              { term
+              , predicate =
+                    makeAndPredicate predicate
+                    $ substitutionToPredicate substitution
+              , substitution = []
+              }
 
 normalizeSubstitutionAfterMerge
     ::  ( MetaOrObject level
@@ -125,9 +118,9 @@ normalizeSubstitutionAfterMerge
 normalizeSubstitutionAfterMerge
     tools
     wrappedSimplifier@(PredicateSubstitutionSimplifier substitutionSimplifier)
-    PredicateSubstitution {predicate, substitution}
+    Predicated { predicate, substitution }
   = do
-    (PredicateSubstitution
+    (Predicated
             { predicate = duplicationPredicate
             , substitution = duplicationSubstitution
             }
@@ -135,7 +128,7 @@ normalizeSubstitutionAfterMerge
         ) <-
             normalizeSubstitutionDuplication' substitution
 
-    PredicateSubstitution
+    Predicated
         { predicate = normalizePredicate
         , substitution = normalizedSubstitution
         } <- normalizeSubstitution' duplicationSubstitution
@@ -147,8 +140,9 @@ normalizeSubstitutionAfterMerge
 
     (resultPredicateSubstitution, _proof) <-
         lift $ substitutionSimplifier
-            PredicateSubstitution
-                { predicate = mergedPredicate
+            Predicated
+                { term = ()
+                , predicate = mergedPredicate
                 , substitution = normalizedSubstitution
                 }
 
@@ -211,8 +205,9 @@ mergePredicatesAndSubstitutions
                         )
             in
                 return
-                    ( PredicateSubstitution
-                        { predicate = mergedPredicate
+                    ( Predicated
+                        { term = ()
+                        , predicate = mergedPredicate
                         , substitution = []
                         }
                     , EmptyUnificationProof
@@ -248,15 +243,17 @@ mergePredicatesAndSubstitutionsExcept
         mergedPredicate =
             give (symbolOrAliasSorts tools) $
                 makeMultipleAndPredicate predicates
-    (PredicateSubstitution {predicate, substitution}, _proof) <-
+    (Predicated {predicate, substitution}, _proof) <-
         normalizeSubstitutionAfterMerge tools substitutionSimplifier
-            PredicateSubstitution
-                { predicate = mergedPredicate
+            Predicated
+                { term = ()
+                , predicate = mergedPredicate
                 , substitution = mergedSubstitution
                 }
     return
-        (PredicateSubstitution
-            { predicate = predicate
+        (Predicated
+            { term = ()
+            , predicate = predicate
             , substitution = substitution
             }
         , EmptyUnificationProof
@@ -288,43 +285,18 @@ normalizePredicatedSubstitution
             normalizeSubstitutionAfterMerge
                 tools
                 substitutionSimplifier
-                PredicateSubstitution { predicate, substitution }
+                Predicated { term = (), predicate, substitution }
     return $ case x of
         Left _ ->
             ( Predicated
-                  term
-                  (makeAndPredicate
-                      predicate
-                      (substitutionToPredicate substitution)
-                  )
-                  []
+                { term
+                , predicate =
+                    makeAndPredicate
+                        predicate
+                        (substitutionToPredicate substitution)
+                , substitution = []
+                }
             , EmptyUnificationProof
             )
-        Right (PredicateSubstitution p s, _) ->
+        Right (Predicated { predicate = p, substitution = s }, _) ->
             (Predicated term p s, EmptyUnificationProof)
-
--- normalizePredicatedSubstitution
---     tools@MetadataTools{ symbolOrAliasSorts }
---     substitutionSimplifier
---     Predicated { term, predicate, substitution }
---   = fmap f . runExceptT $ do
---     (PredicateSubstitution
---             { predicate = normalizePredicate
---             , substitution = normalizedSubstitution
---             }
---         , proof
---         ) <-
---         normalizeSubstitutionAfterMerge
---             tools substitutionSimplifier
---             PredicateSubstitution { predicate, substitution }
---     return
---         ( Predicated
---             { term
---             , predicate = normalizePredicate
---             , substitution = normalizedSubstitution
---             }
---         , proof
---         )
---     where
---         f (Right x) = x
---         f (Left _) = give symbolOrAliasSorts $ (Predicated term (fst $ makeAndPredicate predicate (substitutionToPredicate substitution)) [], EmptyUnificationProof)

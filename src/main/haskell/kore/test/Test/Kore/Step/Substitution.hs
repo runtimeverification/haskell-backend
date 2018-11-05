@@ -10,31 +10,25 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import           Kore.AST.Common
-                 ( Variable )
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar )
-import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( Predicated (Predicated) )
-import qualified Kore.Step.ExpandedPattern as Predicated
-                 ( Predicated (..) )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutionsExcept,
-                 normalizePredicatedSubstitution )
-import           Kore.Unification.Error
-import           Kore.Unification.Unifier
-                 ( UnificationSubstitution )
+import Kore.AST.Common
+       ( Variable )
+import Kore.AST.MetaOrObject
+       ( Object )
+import Kore.ASTUtils.SmartConstructors
+       ( mkVar )
+import Kore.Predicate.Predicate
+       ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
+       makeTruePredicate )
+import Kore.Step.ExpandedPattern
+       ( PredicateSubstitution, Predicated (..) )
+import Kore.Step.Simplification.Data
+       ( evalSimplifier )
+import Kore.Step.Substitution
+       ( mergePredicatesAndSubstitutionsExcept,
+       normalizePredicatedSubstitution )
+import Kore.Unification.Error
+import Kore.Unification.Unifier
+       ( UnificationSubstitution )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -48,14 +42,15 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     [ testCase "Constructor normalization"
         -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
         (assertEqual ""
-            ( Right
-                ( PredicateSubstitution
-                    makeTruePredicate
+            ( Right Predicated
+                { term = ()
+                , predicate = makeTruePredicate
+                , substitution =
                     [   ( Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
-                )
+                }
             )
             ( normalize
                 [   ( Mock.x
@@ -72,14 +67,15 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     , testCase "Constructor normalization with variables"
         -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
         (assertEqual ""
-            ( Right
-                ( PredicateSubstitution
-                    makeTruePredicate
+            ( Right Predicated
+                { term = ()
+                , predicate = makeTruePredicate
+                , substitution =
                     [   ( Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
                     ]
-                )
+                }
             )
             ( normalize
                 [   ( Mock.x
@@ -96,7 +92,12 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
         (assertEqual ""
-            ( Right $ PredicateSubstitution makeFalsePredicate [] )
+            ( Right Predicated
+                { term = ()
+                , predicate = makeFalsePredicate
+                , substitution = []
+                }
+            )
             ( normalize
                 [   ( Mock.x
                     , Mock.constr10 Mock.a
@@ -128,14 +129,15 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     , testCase "Constructor and constructor of function"
         -- [x=constructor(a)] + [x=constructor(f(a))]
         (assertEqual ""
-            ( Right
-                ( PredicateSubstitution
-                    ( makeEqualsPredicate Mock.a (Mock.f Mock.a) )
+            ( Right Predicated
+                { term = ()
+                , predicate =  makeEqualsPredicate Mock.a (Mock.f Mock.a)
+                , substitution =
                     [   ( Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
-                )
+                }
             )
             ( normalize
                 [   ( Mock.x
@@ -154,17 +156,18 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     , testCase "Constructor and constructor of function with variables"
         -- [x=constructor(y)] + [x=constructor(f(y))]
         (assertEqual ""
-            ( Right
-                ( PredicateSubstitution
-                    ( makeEqualsPredicate
+            ( Right Predicated
+                { term = ()
+                , predicate =
+                    makeEqualsPredicate
                         ( mkVar Mock.y )
                         ( Mock.f (mkVar Mock.y) )
-                    )
+                , substitution =
                     [   ( Mock.x
                         , Mock.constr10 (Mock.f (mkVar Mock.y))
                         )
                     ]
-                )
+                }
             )
             ( normalize
                 [   ( Mock.x
@@ -181,17 +184,18 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     , testCase "Constructor and constructor of functional symbol"
         -- [x=constructor(y)] + [x=constructor(functional(y))]
         (assertEqual ""
-            ( Right
-                ( PredicateSubstitution
-                    ( makeEqualsPredicate
-                          ( mkVar Mock.y )
-                          ( Mock.functional10 (mkVar Mock.y) )
-                    )
+            ( Right Predicated
+                { term = ()
+                , predicate =
+                    makeEqualsPredicate
+                        ( mkVar Mock.y )
+                        ( Mock.functional10 (mkVar Mock.y) )
+                , substitution =
                     [   ( Mock.x
                         , Mock.constr10 (Mock.functional10 (mkVar Mock.y))
                         )
                     ]
-                )
+                }
             )
             ( normalize
                 [   ( Mock.x
@@ -242,8 +246,9 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
         )
     , testCase "Normalizes substitution"
         (assertEqualWithExplanation ""
-            (PredicateSubstitution
-                { predicate = makeTruePredicate
+            (Predicated
+                { term = ()
+                , predicate = makeTruePredicate
                 , substitution =
                     [ (Mock.x, Mock.constr10 Mock.a)
                     , (Mock.y, Mock.a)
@@ -251,8 +256,9 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                 }
             )
             (normalizeWithPredicate
-                PredicateSubstitution
-                    { predicate = makeTruePredicate
+                Predicated
+                    { term = ()
+                    , predicate = makeTruePredicate
                     , substitution =
                         [ (Mock.x, Mock.constr10 Mock.a)
                         , (Mock.x, Mock.constr10 (mkVar Mock.y))
@@ -262,15 +268,17 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
         )
     , testCase "Predicate from normalizing substitution"
         (assertEqualWithExplanation ""
-            (PredicateSubstitution
-                { predicate = makeEqualsPredicate Mock.cf Mock.cg
+            (Predicated
+                { term = ()
+                , predicate = makeEqualsPredicate Mock.cf Mock.cg
                 , substitution =
                     [ (Mock.x, Mock.constr10 Mock.cf) ]
                 }
             )
             (normalizeWithPredicate
-                PredicateSubstitution
-                    { predicate = makeTruePredicate
+                Predicated
+                    { term = ()
+                    , predicate = makeTruePredicate
                     , substitution =
                         [ (Mock.x, Mock.constr10 Mock.cf)
                         , (Mock.x, Mock.constr10 Mock.cg)
@@ -280,8 +288,9 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
         )
     , testCase "Normalizes substitution and substitutes in predicate"
         (assertEqualWithExplanation ""
-            (PredicateSubstitution
-                { predicate = makeCeilPredicate (Mock.f Mock.a)
+            (Predicated
+                { term = ()
+                , predicate = makeCeilPredicate (Mock.f Mock.a)
                 , substitution =
                     [ (Mock.x, Mock.constr10 Mock.a)
                     , (Mock.y, Mock.a)
@@ -289,8 +298,9 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                 }
             )
             (normalizeWithPredicate
-                PredicateSubstitution
-                    { predicate = makeCeilPredicate (Mock.f (mkVar Mock.y))
+                Predicated
+                    { term = ()
+                    , predicate = makeCeilPredicate (Mock.f (mkVar Mock.y))
                     , substitution =
                         [ (Mock.x, Mock.constr10 Mock.a)
                         , (Mock.x, Mock.constr10 (mkVar Mock.y))
@@ -331,17 +341,9 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     normalizeWithPredicate
         :: PredicateSubstitution Object Variable
         -> PredicateSubstitution Object Variable
-    normalizeWithPredicate PredicateSubstitution {predicate, substitution} =
-        toPredicateSubstitution . fst
-            $ (evalSimplifier
-                $ normalizePredicatedSubstitution
-                    mockMetadataTools
-                    (Mock.substitutionSimplifier mockMetadataTools)
-                    Predicated {term = (), predicate, substitution}
-            )
-      where
-        toPredicateSubstitution
-            :: Predicated Object Variable a
-            -> PredicateSubstitution Object Variable
-        toPredicateSubstitution Predicated {predicate=p, substitution=s} =
-            PredicateSubstitution {predicate=p, substitution=s}
+    normalizeWithPredicate Predicated {predicate, substitution} =
+        fst $ evalSimplifier
+            $ normalizePredicatedSubstitution
+                mockMetadataTools
+                (Mock.substitutionSimplifier mockMetadataTools)
+                Predicated {term = (), predicate, substitution}

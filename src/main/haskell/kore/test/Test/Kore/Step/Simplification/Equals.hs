@@ -30,18 +30,13 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeIffPredicate, makeNotPredicate,
                  makeOrPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom, top )
+                 ( CommonExpandedPattern, CommonPredicateSubstitution,
+                 Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.PredicateSubstitution
-                 ( CommonPredicateSubstitution,
-                 PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), bottom, top )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
@@ -61,7 +56,7 @@ test_equalsSimplification_OrOfExpandedPatterns :: [TestTree]
 test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
     [ testCase "bottom == bottom"
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ ExpandedPattern.top ])
+            (OrOfExpandedPattern.make [ Predicated.top ])
             (evaluateOr
                 mockMetadataTools
                 Equals
@@ -74,7 +69,7 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
         )
     , testCase "a == a"
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ ExpandedPattern.top ])
+            (OrOfExpandedPattern.make [ Predicated.top ])
             (evaluateOr
                 mockMetadataTools
                 Equals
@@ -238,14 +233,14 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     [ testCase "bottom == bottom"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.top
+            Predicated.topPredicate
             mkBottom
             mkBottom
         )
     , testCase "domain-value == domain-value"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.top
+            Predicated.topPredicate
             (mkDomainValue
                 testSort
                 (BuiltinDomainPattern (mkStringLiteral "a"))
@@ -258,7 +253,7 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "domain-value != domain-value"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottom
+            Predicated.bottomPredicate
             (mkDomainValue
                 testSort
                 (BuiltinDomainPattern (mkStringLiteral "a"))
@@ -271,7 +266,7 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "domain-value != domain-value because of sorts"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottom
+            Predicated.bottomPredicate
             (mkDomainValue
                 testSort
                 (BuiltinDomainPattern (mkStringLiteral "a"))
@@ -284,50 +279,51 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "\"a\" == \"a\""
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution.top
+            Predicated.topPredicate
             (mkStringLiteral "a")
             (mkStringLiteral "a")
         )
     , testCase "\"a\" != \"b\""
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution.bottom
+            Predicated.bottomPredicate
             (mkStringLiteral "a")
             (mkStringLiteral "b")
         )
     , testCase "'a' == 'a'"
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution.top
+            Predicated.topPredicate
             (mkCharLiteral 'a')
             (mkCharLiteral 'a')
         )
     , testCase "'a' != 'b'"
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution.bottom
+            Predicated.bottomPredicate
             (mkCharLiteral 'a')
             (mkCharLiteral 'b')
         )
     , testCase "a != bottom"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottom
+            Predicated.bottomPredicate
             mkBottom
             Mock.a
         )
     , testCase "a == a"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.top
+            Predicated.topPredicate
             Mock.a
             Mock.a
         )
     , testCase "f(a) vs g(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeEqualsPredicate fOfA gOfA
+            Predicated
+                { term = ()
+                , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = []
                 }
             fOfA
@@ -336,7 +332,7 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "constructor1(a) vs constructor1(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.top
+            Predicated.topPredicate
             constructor1OfA
             constructor1OfA
         )
@@ -344,29 +340,30 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
         "functionalconstructor1(a) vs functionalconstructor2(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottom
+            Predicated.bottomPredicate
             functionalConstructor1OfA
             functionalConstructor2OfA
         )
     , testCase "constructor1(a) vs constructor2(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottom
+            Predicated.bottomPredicate
             constructor1OfA
             constructor2OfA
         )
     , testCase "constructor1(f(a)) vs constructor1(f(a))"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.top
+            Predicated.topPredicate
             (Mock.constr10 fOfA)
             (Mock.constr10 fOfA)
         )
     , testCase "sigma(f(a), f(b)) vs sigma(g(a), g(b))"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate =
+            Predicated
+                { term = ()
+                , predicate =
                     makeOrPredicate
                         (makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
@@ -394,8 +391,9 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "equals(x, functional) becomes a substitution"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeTruePredicate
+            Predicated
+                { term = ()
+                , predicate = makeTruePredicate
                 , substitution = [(Mock.x, functionalOfA)]
                 }
                 (mkVar Mock.x)
@@ -404,8 +402,9 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "equals(functional, x) becomes a substitution"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeTruePredicate
+            Predicated
+                { term = ()
+                , predicate = makeTruePredicate
                 , substitution = [(Mock.x, functionalOfA)]
                 }
                 functionalOfA
@@ -414,8 +413,9 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "equals(x, function) becomes a substitution + ceil"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeCeilPredicate fOfA
+            Predicated
+                { term = ()
+                , predicate = makeCeilPredicate fOfA
                 , substitution = [(Mock.x, fOfA)]
                 }
             (mkVar Mock.x)
@@ -424,8 +424,9 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "equals(function, x) becomes a substitution + ceil"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeCeilPredicate fOfA
+            Predicated
+                { term = ()
+                , predicate = makeCeilPredicate fOfA
                 , substitution = [(Mock.x, fOfA)]
                 }
             fOfA
@@ -434,9 +435,9 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "equals(x, constructor) becomes a predicate"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate =
-                    makeEqualsPredicate (mkVar Mock.x) constructor1OfA
+            Predicated
+                { term = ()
+                , predicate = makeEqualsPredicate (mkVar Mock.x) constructor1OfA
                 , substitution = []
                 }
             (mkVar Mock.x)
@@ -445,9 +446,9 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "equals(constructor, x) becomes a predicate"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate =
-                    makeEqualsPredicate constructor1OfA (mkVar Mock.x)
+            Predicated
+                { term = ()
+                , predicate = makeEqualsPredicate constructor1OfA (mkVar Mock.x)
                 , substitution = []
                 }
             constructor1OfA
@@ -456,9 +457,9 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "equals(x, something) becomes a predicate"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate =
-                    makeEqualsPredicate (mkVar Mock.x) plain1OfA
+            Predicated
+                { term = ()
+                , predicate = makeEqualsPredicate (mkVar Mock.x) plain1OfA
                 , substitution = []
                 }
             (mkVar Mock.x)
@@ -467,9 +468,9 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "equals(something, x) becomes a predicate"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate =
-                    makeEqualsPredicate plain1OfA (mkVar Mock.x)
+            Predicated
+                { term = ()
+                , predicate = makeEqualsPredicate plain1OfA (mkVar Mock.x)
                 , substitution = []
                 }
             plain1OfA
@@ -478,8 +479,9 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
     , testCase "equals(function, constructor) is not simplifiable"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution
-                { predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
+            Predicated
+                { term = ()
+                , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
                 , substitution = []
                 }
                 (Mock.f Mock.a)
@@ -521,7 +523,7 @@ assertTermEqualsGeneric tools expected first second =
         => CommonPurePattern level
         -> CommonExpandedPattern level
     termToExpandedPattern (Bottom_ _) =
-        ExpandedPattern.bottom
+        Predicated.bottom
     termToExpandedPattern term =
         Predicated
             { term = term
@@ -533,11 +535,11 @@ assertTermEqualsGeneric tools expected first second =
         => CommonPredicateSubstitution level
         -> CommonExpandedPattern level
     predSubstToExpandedPattern
-        PredicateSubstitution {predicate = PredicateFalse}
+        Predicated {predicate = PredicateFalse}
       =
-        ExpandedPattern.bottom
+        Predicated.bottom
     predSubstToExpandedPattern
-        PredicateSubstitution {predicate, substitution}
+        Predicated {predicate, substitution}
       =
         Predicated
             { term = mkTop

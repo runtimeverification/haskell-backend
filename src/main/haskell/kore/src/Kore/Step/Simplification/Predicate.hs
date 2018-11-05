@@ -17,15 +17,10 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.Predicate.Predicate
                  ( Predicate, unwrapPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( Predicated (Predicated) )
+                 ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
-                 ( Predicated (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), bottom )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
                  PureMLPatternSimplifier (PureMLPatternSimplifier),
@@ -56,7 +51,7 @@ simplifyPartial
         simplifier substitutionSimplifier (unwrapPredicate predicate)
     case OrOfExpandedPattern.extractPatterns patternOr of
         [] -> return
-            ( PredicateSubstitution.bottom
+            ( Predicated.bottomPredicate
             , SimplificationProof
             )
         [ Predicated
@@ -65,8 +60,9 @@ simplifyPartial
                 , substitution = simplifiedSubstitution
                 }
             ] -> return
-                ( PredicateSubstitution
-                    { predicate = simplifiedPredicate
+                ( Predicated
+                    { term = ()
+                    , predicate = simplifiedPredicate
                     , substitution = simplifiedSubstitution
                     }
                 , SimplificationProof
