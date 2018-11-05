@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := set-unify-concrete-2-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): set-unify-concrete-2.k $(KOMPILE_TARGETS)
+$(DEFINITION): set-unify-concrete-2.k $(K)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module set-unify-concrete-2
 
 %.set-unify-concrete-2.kore: %.set-unify-concrete-2 $(DEFINITION) $(KRUN_TARGETS)
