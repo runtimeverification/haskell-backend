@@ -13,7 +13,7 @@ $(DEFINITION): demo.k $(K)
 %.output: %.demo $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.demo $(DEFINITION) $(KRUN_TARGETS)
+%.krun: %.demo $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
