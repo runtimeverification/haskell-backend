@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.SMT.SMT
+Module      : Kore.SMT.SMT
 Description : Basic SMT interface.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -10,6 +10,7 @@ Portability : portable
 
 module Kore.SMT.SMT
     ( unsafeTryRefutePredicate
+    , translatePredicate
     ) where
 
 import           Control.Applicative
@@ -17,14 +18,7 @@ import           Control.Applicative
 import           Control.Error
                  ( MaybeT, runMaybeT )
 import           Control.Monad.Except
-import           Control.Monad.State.Strict
-                 ( StateT, evalStateT )
-import qualified Control.Monad.State.Strict as Monad.State
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Functor.Foldable as Functor.Foldable
-import           Data.Map.Strict
-                 ( Map )
-import qualified Data.Map.Strict as Map
 import           Data.Proxy
 import           Data.Reflection
                  ( Given (..) )
@@ -43,99 +37,17 @@ import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Kore
 import           Kore.SMT.Config
+import           Kore.SMT.Translator
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 
-data TranslationVariables var =
-    TranslationVariables
-        { boolVariables :: Map (PureMLPattern Object var) SBool
-        , intVariables :: Map (PureMLPattern Object var) SInteger
-        }
-
-emptyTranslationVariables :: TranslationVariables variable
-emptyTranslationVariables =
-    TranslationVariables
-        { boolVariables = Map.empty
-        , intVariables = Map.empty
-        }
-
-lookupBoolPattern
-    :: (Monad m, MonadPlus m, Ord (variable Object))
-    => PureMLPattern Object variable
-    -> StateT (TranslationVariables variable) m SBool
-lookupBoolPattern pat =
-    maybe empty return =<< Monad.State.gets (Map.lookup pat . boolVariables)
-
-lookupIntPattern
-    :: (Monad m, MonadPlus m, Ord (variable Object))
-    => PureMLPattern Object variable
-    -> StateT (TranslationVariables variable) m SInteger
-lookupIntPattern pat =
-    maybe empty return =<< Monad.State.gets (Map.lookup pat . intVariables)
-
-freeBoolVariableFor
-    ::  ( Ord (variable Object)
-        , p ~ PureMLPattern Object variable
-        , s ~ TranslationVariables variable
-        )
-    => p
-    -> StateT s (MaybeT Symbolic) SBool
-freeBoolVariableFor pat = do
-    var <- liftSMT SMT.free_
-    Monad.State.modify' (insertBoolVariable pat var)
-    return var
-
-insertBoolVariable
-    :: Ord (var Object)
-    => PureMLPattern Object var
-    -> SBool
-    -> TranslationVariables var
-    -> TranslationVariables var
-insertBoolVariable pat var tvs@TranslationVariables { boolVariables } =
-    tvs { boolVariables = Map.insert pat var boolVariables }
-
-translateUninterpretedBool
-    :: Ord (variable Object)
-    => PureMLPattern Object variable
-    -> StateT (TranslationVariables variable) (MaybeT Symbolic) SBool
-translateUninterpretedBool pat =
-    lookupBoolPattern pat <|> freeBoolVariableFor pat
-
-freeIntVariableFor
-    ::  ( Ord (variable Object)
-        , p ~ PureMLPattern Object variable
-        , s ~ TranslationVariables variable
-        )
-    => p
-    -> StateT s (MaybeT Symbolic) SInteger
-freeIntVariableFor pat = do
-    var <- liftSMT SMT.free_
-    Monad.State.modify' (insertIntVariable pat var)
-    return var
-
-insertIntVariable
-    :: Ord (var Object)
-    => PureMLPattern Object var
-    -> SInteger
-    -> TranslationVariables var
-    -> TranslationVariables var
-insertIntVariable pat var tvs@TranslationVariables { intVariables } =
-    tvs { intVariables = Map.insert pat var intVariables }
-
-translateUninterpretedInt
-    :: Ord (variable Object)
-    => PureMLPattern Object variable
-    -> StateT (TranslationVariables variable) (MaybeT Symbolic) SInteger
-translateUninterpretedInt pat =
-    lookupIntPattern pat <|> freeIntVariableFor pat
-
-liftSMT :: Symbolic a -> StateT s (MaybeT Symbolic) a
-liftSMT = Monad.Trans.lift . Monad.Trans.lift
-
 config :: SMTConfig
 config = z3
 
+{- | Attempt to disprove the given predicate using SMT.
+
+ -}
 unsafeTryRefutePredicate
     :: forall level variable .
        ( Given (MetadataTools level StepperAttributes)
@@ -165,20 +77,27 @@ unsafeTryRefutePredicate (SMTTimeOut timeout) p =
                 ThmResult (Unsatisfiable _ _) -> Just False
                 _ -> Nothing
 
+{- | Translate a predicate for SMT.
+
+The predicate may inhabit an arbitrary sort. Logical connectives are translated
+to their SMT counterparts. Quantifiers, @\\ceil@, @\\floor@, and @\\in@ are
+uninterpreted (translated as variables) as is @\\equals@ if its arguments are
+not builtins or predicates. All other patterns are not translated and prevent
+the predicate from being sent to SMT.
+
+ -}
 translatePredicate
     :: forall variable.
-       (Ord (variable Object), Given (MetadataTools Object StepperAttributes))
+        (Ord (variable Object), Given (MetadataTools Object StepperAttributes))
     => Kore.Predicate Object variable
     -> MaybeT Symbolic SBool
 translatePredicate predicate =
-    evalStateT
+    runTranslator
         (translatePredicatePattern $ Kore.unwrapPredicate predicate)
-        emptyTranslationVariables
   where
     translatePredicatePattern
-        :: s ~ TranslationVariables variable
-        => PureMLPattern Object variable
-        -> StateT s (MaybeT Symbolic) SBool
+        :: PureMLPattern Object variable
+        -> Translator (PureMLPattern Object variable) SBool
     translatePredicatePattern pat =
         case Functor.Foldable.project pat of
             -- Logical connectives: translate as connectives
@@ -240,11 +159,17 @@ translatePredicate predicate =
                 <$> translatePredicatePattern equalsFirst
                 <*> translatePredicatePattern equalsSecond
         translatePredicateEqualsBuiltin builtinSort
-          | builtinSort == Builtin.Bool.sort =
-            translateEqualsBool equalsFirst equalsSecond
-          | builtinSort == Builtin.Int.sort =
-            translateEqualsInt equalsFirst equalsSecond
+          | builtinSort == Builtin.Bool.sort = translateEqualsBool
+          | builtinSort == Builtin.Int.sort = translateEqualsInt
           | otherwise = empty
+        translateEqualsInt =
+            (SMT..==)
+                <$> translateInt equalsFirst
+                <*> translateInt equalsSecond
+        translateEqualsBool =
+            (SMT..==)
+                <$> translateBool equalsFirst
+                <*> translateBool equalsSecond
 
     translatePredicateIff Iff { iffFirst, iffSecond } =
         (SMT.<=>)
@@ -264,35 +189,22 @@ translatePredicate predicate =
             <$> translatePredicatePattern orFirst
             <*> translatePredicatePattern orSecond
 
-translateEqualsInt
-    :: forall p s variable.
-        ( Given (MetadataTools Object StepperAttributes)
-        , Ord (variable Object)
-        , p ~ PureMLPattern Object variable
-        , s ~ TranslationVariables variable
-        )
-    => p
-    -> p
-    -> StateT s (MaybeT Symbolic) SBool
-translateEqualsInt first second =
-    (SMT..==) <$> translateInt first <*> translateInt second
-
+-- | Translate a functional pattern in the builtin Int sort for SMT.
 translateInt
-    :: forall p s variable.
+    :: forall p variable.
         ( Given (MetadataTools Object StepperAttributes)
         , Ord (variable Object)
         , p ~ PureMLPattern Object variable
-        , s ~ TranslationVariables variable
         )
     => p
-    -> StateT s (MaybeT Symbolic) SInteger
+    -> Translator p SInteger
 translateInt pat =
     case Functor.Foldable.project pat of
         VariablePattern _ -> translateUninterpretedInt pat
         DomainValuePattern dv ->
             (return . SMT.literal . Builtin.runParser ctx)
-            (Builtin.parseDomainValue Builtin.Int.parse dv)
-            where
+                (Builtin.parseDomainValue Builtin.Int.parse dv)
+          where
             ctx = Text.unpack Builtin.Int.sort
         ApplicationPattern app ->
             translateApplication app
@@ -338,28 +250,15 @@ translateInt pat =
                         _ ->
                             Builtin.wrongArity ctx
 
-translateEqualsBool
-    :: forall p s variable.
-        ( Given (MetadataTools Object StepperAttributes)
-        , Ord (variable Object)
-        , p ~ PureMLPattern Object variable
-        , s ~ TranslationVariables variable
-        )
-    => p
-    -> p
-    -> StateT s (MaybeT Symbolic) SBool
-translateEqualsBool first second =
-    (SMT..==) <$> translateBool first <*> translateBool second
-
+-- | Translate a functional pattern in the builtin Bool sort for SMT.
 translateBool
-    :: forall p s variable.
+    :: forall p variable.
         ( Given (MetadataTools Object StepperAttributes)
         , Ord (variable Object)
         , p ~ PureMLPattern Object variable
-        , s ~ TranslationVariables variable
         )
     => p
-    -> StateT s (MaybeT Symbolic) SBool
+    -> Translator p SBool
 translateBool pat =
     case Functor.Foldable.project pat of
         VariablePattern _ -> translateUninterpretedBool pat
