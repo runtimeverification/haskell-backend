@@ -3,6 +3,17 @@ Algorithm for applying one rule to a pattern
 
 **Input:** `φ(X)`, `∀ Y .α(Y) -> •β(Y)`
 
+We assume `α(Y) = tα(Y) ∧ pα(Y)` such that:
+
+- `tα(Y)` is a pattern formed only with constructors, subsort injections,
+  domain values, and variables, and therefore functional.
+- `pα(Y)` is a predicate
+
+We also assume `φ(X) = tφ(X) ∧ pφ(X)` such that:
+
+- `tφ(X)` is a function-like pattern
+- `pφ(X)` is a predicate
+
 Note: • is "strong next" in this document
 
 **Output:** a pattern `φ'(X)` satisfying the same assumptions we put on
@@ -13,35 +24,44 @@ Note: • is "strong next" in this document
 
 **Algorithm:**
 
-1. Call *And Simplification* on `φ(X) ∧ α(Y)` to obtain a functional
+1. Call *And Simplification* on `tφ(X) ∧ tα(Y)` to obtain a function-like
    pattern  `t(X,Y)`, a substitution `subst(X,Y)`, and a predicate `p(X,Y)`.
+
+   Note: *And Simplification* can be performed such that `t(X,Y) = tα(Y)`
  
+   Then, `α(Y) ∧ φ(X) = tα(Y) ∧ subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X)`
+
+   Note: `\ceil(α(Y) ∧ φ(X)) = subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X)`
+   (by Prop 5.12 and \ceil(t) = \top)
+
    Note: if the unification fails, then `p(X,Y)` will be `⊥`
 
-   Note: `\ceil(α(Y) ∧ φ(X)) = subst(X,Y) ∧ p(X,Y)`
-   (by Prop 5.12 and \ceil(t) = \top)
-1. Call *Simplification Procedure* on `∃ Y . (subst(X,Y) ∧ p(X,Y) ∧ β(Y))`
+   Note: We assume that `subst(X,Y)` assigns a value to each variable in `Y`.
+   If that does not happen, then the algorithm will fail.
+2. Call *Simplification Procedure* on
+   `∃ Y . (subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ β(Y))`
    and obtain a pattern `φ'(X)` *without existential quantification*.
-1. Return `φ'(X)`
+3. Return `φ'(X)`
 
 **Proof Object Generation.**
 
-1. `α(Y) -> •β(Y)` // by axiom
-1. `α(Y) ∧ \ceil(α(Y) ∧ φ(X)) -> (•β(Y)) ∧ \ceil(α(Y) ∧ φ(X))`
-        // by (1) and propositional reasoning
-1. `α(Y) ∧ \ceil(α(Y) ∧ φ(X)) = α(Y) ∧ φ(X)` // by ML paper Prop. 5.24
-1. `α(Y) ∧ φ(X) -> (•β(Y)) ∧ \ceil(α(Y) ∧ φ(X))` // by (2) and (3)
-1. `α(Y) ∧ φ(X) = t(X,Y) ∧ subst(X,Y) ∧ p(X,Y)` // by Unification Procedure
-1. `α(Y) ∧ φ(X) -> subst(X,Y) ∧ p(X,Y) ∧ •β(Y)` // by (4) (5)
-1. `α(Y) ∧ φ(X) -> ∃ Y . (subst(X,Y) ∧ p(X,Y) ∧ •β(Y))`
-        // by (7) FOL reasoning
-1. `α(Y) ∧ φ(X) -> •(∃ v . (β(Y) ∧ subst(X,Y) ∧ p(X,Y)))`
-        // by (8) Propagation
-1. `∃ Y . (β(Y) ∧ subst(X,Y) ∧ p(X,Y)) = φ'(X)`
-        // by (recursively calling) *Basic Simplification*
-1. `α(Y) ∧ φ(X) -> •φ'(X)` // by (9) and (10)
-1. `∀ Y . α(Y) ∧ φ(X) -> •φ'(X)` // by (11)
-1. `(∃ Y . α(Y)) ∧ φ(X) -> •φ'(X)` // by (12), FOL reasoning, and Prop 5.12
+1.  `α(Y) -> •β(Y)` // by axiom
+2.  `α(Y) ∧ \ceil(α(Y) ∧ φ(X)) -> (•β(Y)) ∧ \ceil(α(Y) ∧ φ(X))`
+    // by (1) and propositional reasoning
+3.  `α(Y) ∧ \ceil(α(Y) ∧ φ(X)) = α(Y) ∧ φ(X)` // by ML paper Prop. 5.24
+4.  `α(Y) ∧ φ(X) -> (•β(Y)) ∧ \ceil(α(Y) ∧ φ(X))` // by (2) and (3)
+5.  `α(Y) ∧ φ(X) =  tα(Y) ∧ subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X)`
+    // by Unification Procedure
+6.  `α(Y) ∧ φ(X) -> subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ •β(Y)` // by (4) (5)
+7.  `α(Y) ∧ φ(X) -> ∃ Y . (subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ •β(Y))`
+    // by (7) FOL reasoning
+8.  `α(Y) ∧ φ(X) -> •(∃ Y . (subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ •β(Y)))`
+    // by (8) Propagation
+9.  `∃ Y . (subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ •β(Y)) = φ'(X)`
+    // by (recursively calling) *Basic Simplification*
+10. `α(Y) ∧ φ(X) -> •φ'(X)` // by (9) and (10)
+11. `∀ Y . α(Y) ∧ φ(X) -> •φ'(X)` // by (11)
+12. `(∃ Y . α(Y)) ∧ φ(X) -> •φ'(X)` // by (12), FOL reasoning, and Prop 5.12
 
 **Note:** `φ'(X)` will be `⊥` if the unification fails.
 
