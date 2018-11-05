@@ -196,7 +196,6 @@ translatePredicate predicate =
             TopPattern _ -> return SMT.true
 
             -- Uninterpreted: translate as variables
-            ApplicationPattern _ -> translateUninterpretedBool pat
             CeilPattern _ -> translateUninterpretedBool pat
             ExistsPattern _ -> translateUninterpretedBool pat
             FloorPattern _ -> translateUninterpretedBool pat
@@ -204,6 +203,7 @@ translatePredicate predicate =
             InPattern _ -> translateUninterpretedBool pat
 
             -- Invalid: no translation, should not occur in predicates
+            ApplicationPattern _ -> empty
             DomainValuePattern _ -> empty
             NextPattern _ -> empty
             RewritesPattern _ -> empty
