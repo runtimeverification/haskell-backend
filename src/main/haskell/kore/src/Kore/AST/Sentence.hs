@@ -24,6 +24,7 @@ module Kore.AST.Sentence where
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import           Data.Default
 import           Data.Functor.Classes
 import           Data.Functor.Foldable
 import           Data.Text
@@ -48,6 +49,9 @@ newtype Attributes =
   deriving (Eq, Generic, Show)
 
 instance NFData Attributes
+
+instance Default Attributes where
+    def = Attributes []
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,

@@ -31,7 +31,9 @@ test_runParser =
         attrs =
             Kore.Attributes [ Kore.asKorePattern metaPattern ]
           where
-            metaPattern = Kore.StringLiteralPattern (Kore.StringLiteral "meta-pattern")
+            metaPattern =
+                Kore.StringLiteralPattern
+                    (Kore.StringLiteral "meta-pattern")
       in
         testCase "Rejects meta-level attribute patterns"
             (equiv attrs expect actual)
@@ -44,11 +46,20 @@ test_runParser =
             (equiv attrs expect actual)
     , let
         expect = pure [[], []]
-        actual = map arguments . Foldable.toList <$> someAttributesWithName "key"
+        actual =
+            map arguments . Foldable.toList
+                <$> someAttributesWithName "key"
         attrs = multipleAttrs
       in
         testCase "Accepts multiple occurrences of the same attribute"
             (equiv attrs expect actual)
+    ,   let
+            expect = return multipleAttrs
+            actual = attributesParser
+            attrs = multipleAttrs
+        in
+            testCase "Reconstructs parsed attributes"
+                (equiv attrs expect actual)
     ]
   where
     reject = Kore.Error.koreFail "Expected object-level application pattern"
