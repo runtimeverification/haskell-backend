@@ -81,7 +81,10 @@ import           Kore.Error
 import qualified Kore.Error
 
 -- | Run the parser from the @ParseAttributes@ instance.
-parseAttributes :: ParseAttributes atts => Attributes -> Either (Error ParseError) atts
+parseAttributes
+    :: ParseAttributes atts
+    => Attributes
+    -> Either (Error ParseError) atts
 parseAttributes = runParser attributesParser
 
 {- | Run the parser from the @ParseAttributes@ instance
