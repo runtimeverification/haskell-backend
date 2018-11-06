@@ -19,6 +19,8 @@ import           Control.Error
                  ( MaybeT, runMaybeT )
 import           Control.Monad.Except
 import qualified Data.Functor.Foldable as Functor.Foldable
+import           Data.Maybe
+                 ( fromMaybe )
 import           Data.Proxy
 import           Data.Reflection
                  ( Given (..) )
@@ -60,21 +62,17 @@ unsafeTryRefutePredicate
     -> Kore.Predicate level variable
     -> Maybe Bool
 {-# NOINLINE unsafeTryRefutePredicate #-} -- Needed by: unsafePerformIO
-unsafeTryRefutePredicate (SMTTimeOut timeout) p =
+unsafeTryRefutePredicate (SMTTimeOut timeout) korePredicate =
   case isMetaOrObject (Proxy :: Proxy level) of
     IsMeta   -> Nothing
     IsObject ->
         unsafePerformIO $ do
             let smtPredicate = do
-                    setTimeOut timeout
-                    smt <- runMaybeT (translatePredicate p)
-                    case smt of
-                        Nothing -> sBool "TranslationFailed"
-                        Just p' -> return $ bnot p'
-            res <- proveWith config smtPredicate
-            return $ case res of
-                ThmResult (Satisfiable   _ _) -> Nothing
-                ThmResult (Unsatisfiable _ _) -> Just False
+                    SMT.setTimeOut timeout
+                    translatePredicate korePredicate
+            SatResult result <- SMT.satWith config smtPredicate
+            return $ case result of
+                Unsatisfiable {} -> Just False
                 _ -> Nothing
 
 {- | Translate a predicate for SMT.
@@ -90,11 +88,15 @@ translatePredicate
     :: forall variable.
         (Ord (variable Object), Given (MetadataTools Object StepperAttributes))
     => Kore.Predicate Object variable
-    -> MaybeT Symbolic SBool
-translatePredicate predicate =
-    runTranslator
-        (translatePredicatePattern $ Kore.unwrapPredicate predicate)
+    -> Symbolic SBool
+translatePredicate predicate = do
+    let translator = translatePredicatePattern $ Kore.unwrapPredicate predicate
+    orAssumeSat (runTranslator translator)
   where
+    -- | If translation fails, assume that the predicate is satisfiable.
+    orAssumeSat :: MaybeT Symbolic SBool -> Symbolic SBool
+    orAssumeSat sym = fromMaybe SMT.true <$> runMaybeT sym
+
     translatePredicatePattern
         :: PureMLPattern Object variable
         -> Translator (PureMLPattern Object variable) SBool
