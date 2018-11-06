@@ -173,6 +173,9 @@ applyKoreSearchOptions koreSearchOptions koreExecOpts =
         Just koreSearchOpts ->
             koreExecOpts
                 { koreSearchOptions = Just koreSearchOpts
+                , strategy =
+                    -- Search relies on exploring the entire space of states.
+                    allAxioms
                 , stepLimit = min stepLimit searchTypeStepLimit
                 }
           where
@@ -191,7 +194,7 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for file containing a pattern to verify and use for execution
     , outputFileName      :: !(Maybe FilePath)
     -- ^ Name for file to contain the output pattern
-    , mainModuleName      :: !Text
+    , mainModuleName      :: !ModuleName
     -- ^ The name of the main module in the definition
     , smtTimeOut          :: !SMTTimeOut
     , stepLimit           :: !(Limit Natural)
@@ -215,7 +218,7 @@ parseKoreExecOptions =
         <*> strOption
             (  metavar "PATTERN_FILE"
             <> long "pattern"
-            <> help "Kore pattern source file to verify and execute. Needs --module."
+            <> help "Verify and execute the Kore pattern found in PATTERN_FILE."
             )
         <*> optional
             (strOption
@@ -224,11 +227,7 @@ parseKoreExecOptions =
                 <> help "Output file to contain final Kore pattern."
                 )
             )
-        <*> strOption
-            (  metavar "MODULE"
-            <> long "module"
-            <> help "The name of the main module in the Kore definition."
-            <> value "" )
+        <*> parseMainModuleName
         <*> option readSMTTimeOut
             ( metavar "SMT_TIMEOUT"
             <> long "smt-timeout"
@@ -250,19 +249,26 @@ parseKoreExecOptions =
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
             -- works correctly.
-            <> value allAxioms
+            <> value anyAxiom
             <> help "Select rewrites using STRATEGY."
             )
       where
+        strategies =
+            [ ("any", anyAxiom)
+            , ("all", allAxioms)
+            , ("any-heating-cooling", heatingCooling anyAxiom)
+            , ("all-heating-cooling", heatingCooling allAxioms)
+            ]
         readStrategy = do
             strat <- str
-            case strat of
-                "simple" -> pure allAxioms
-                "default" -> pure (heatingCooling allAxioms)
-                _ ->
+            let found = lookup strat strategies
+            case found of
+                Just strategy -> pure strategy
+                Nothing ->
                     let
                         unknown = "Unknown strategy '" ++ strat ++ "'. "
-                        known = "Known strategies are: simple, default."
+                        names = intercalate ", " (fst <$> strategies)
+                        known = "Known strategies are: " ++ names
                     in
                         readerError (unknown ++ known)
     depth =
@@ -271,6 +277,15 @@ parseKoreExecOptions =
             <> long "depth"
             <> help "Execute up to DEPTH steps."
             )
+    parseMainModuleName =
+        fmap ModuleName $ strOption info
+      where
+        info =
+            mconcat
+                [ metavar "MODULE"
+                , long "module"
+                , help "The name of the main module in the Kore definition."
+                ]
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -321,7 +336,9 @@ main :: IO ()
 main = do
     options <- mainGlobal parseKoreExecOptions parserInfoModifiers
     case localOptions options of
-        Nothing -> return () -- global options parsed, but local failed; exit gracefully
+        Nothing ->
+            -- global options parsed, but local failed; exit gracefully
+            return ()
         Just koreExecOpts -> mainWithOptions koreExecOpts
 
 mainWithOptions :: KoreExecOptions -> IO ()
@@ -340,7 +357,7 @@ mainWithOptions
         parsedDefinition <- parseDefinition definitionFileName
         indexedModules <- verifyDefinition True parsedDefinition
         indexedModule <-
-            constructorFunctions <$> mainModule (ModuleName mainModuleName) indexedModules
+            constructorFunctions <$> mainModule mainModuleName indexedModules
         purePattern <-
             mainPatternParseAndVerify indexedModule patternFileName
         let
