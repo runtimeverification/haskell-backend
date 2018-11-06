@@ -49,6 +49,13 @@ test_runParser =
       in
         testCase "Accepts multiple occurrences of the same attribute"
             (equiv attrs expect actual)
+    ,   let
+            expect = return multipleAttrs
+            actual = attributesParser
+            attrs = multipleAttrs
+        in
+            testCase "Reconstructs parsed attributes"
+                (equiv attrs expect actual)
     ]
   where
     reject = Kore.Error.koreFail "Expected object-level application pattern"

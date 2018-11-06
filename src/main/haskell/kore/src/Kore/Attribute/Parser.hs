@@ -47,11 +47,11 @@ import           Control.Monad.Except
 import qualified Control.Monad.Except as Except
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT (runReaderT) )
+import qualified Control.Monad.Reader as Monad.Reader
 import qualified Control.Monad.Reader as Reader
 import           Data.Default
                  ( Default )
-import           Data.Foldable
-                 ( foldlM )
+import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( ($>) )
 import           Data.HashMap.Strict
@@ -67,7 +67,8 @@ import qualified Data.Text as Text
 import           Kore.AST.Common
                  ( Application (..), Id (..),
                  Pattern (ApplicationPattern, StringLiteralPattern), Sort,
-                 StringLiteral (..), SymbolOrAlias (..), Variable )
+                 StringLiteral (..), SymbolOrAlias (..), Variable,
+                 noLocationId )
 import           Kore.AST.Kore
                  ( CommonKorePattern, pattern KoreMetaPattern,
                  pattern KoreObjectPattern )
@@ -100,6 +101,31 @@ class Default atts => ParseAttributes atts where
 
      -}
     attributesParser :: Parser atts
+
+instance ParseAttributes Attributes where
+    attributesParser = do
+        attrMap <- Monad.Reader.ask
+        let attrs = HashMap.toList attrMap >>= reconstructAttribute
+        return (Attributes attrs)
+      where
+        -- Reconstruct one occurrence of an attribute
+        reconstructAttribute1 sym Occurrence { sortParameters, arguments } =
+            let
+                app =
+                    Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor = noLocationId sym
+                                , symbolOrAliasParams = sortParameters
+                                }
+                        , applicationChildren = arguments
+                        }
+            in
+                KoreObjectPattern (ApplicationPattern app)
+
+        -- Reconstruct all occurrences of an attribute
+        reconstructAttribute (sym, occurs) =
+            reconstructAttribute1 sym <$> Foldable.toList occurs
 
 -- | One occurrence of an attribute, represented as a list of its arguments.
 data Occurrence = Occurrence
@@ -153,7 +179,7 @@ runParser :: Parser a -> Attributes -> Either (Error ParseError) a
 runParser Parser { getParser } (Attributes attrs) = do
     -- attributeMap associates the arguments of an attribute (each time it
     -- occurs) with the name of the attribute
-    attributeMap <- foldlM recordOccurrence HashMap.empty attrs
+    attributeMap <- Foldable.foldlM recordOccurrence HashMap.empty attrs
     runReaderT getParser attributeMap
   where
     -- | Record one occurrence of an attribute.
