@@ -34,7 +34,6 @@ all_tests := \
 	sum
 k_tests := \
 	impossible-branch.search.final \
-	max-symbolic.search.final \
 	sum
 
 test: $(foreach test, $(all_tests), tests/$(test).test)
