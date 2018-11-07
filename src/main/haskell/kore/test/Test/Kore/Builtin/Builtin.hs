@@ -5,7 +5,13 @@ module Test.Kore.Builtin.Builtin
     , mkPair
     , importKoreModule
     , substitutionSimplifier
+    , testSymbol
     ) where
+
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -19,7 +25,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.ExpandedPattern
-                 ( Predicated (..) )
+                 ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
@@ -176,4 +182,24 @@ substitutionSimplifier tools =
                     , SimplificationProof
                     )
             )
+        )
+
+-- | 'testSymbol' is useful for writing unit tests for symbols.
+testSymbol
+    :: (CommonPurePattern Object -> CommonExpandedPattern Object)
+    -- ^ evaluator function for the builtin
+    -> String
+    -- ^ test name
+    -> SymbolOrAlias Object
+    -- ^ symbol being tested
+    -> [CommonPurePattern Object]
+    -- ^ arguments for symbol
+    -> CommonExpandedPattern Object
+    -- ^ expected result
+    -> TestTree
+testSymbol evaluate title symbol args expected =
+    testCase title
+        (assertEqual ""
+            expected
+            (evaluate $ App_ symbol args)
         )

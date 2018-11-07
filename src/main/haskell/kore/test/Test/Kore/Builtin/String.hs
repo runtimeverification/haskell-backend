@@ -2,6 +2,8 @@ module Test.Kore.Builtin.String where
 
 import Test.QuickCheck
        ( Property, (===) )
+import Test.Tasty
+       ( TestTree )
 
 import           Data.Map
                  ( Map )
@@ -35,6 +37,7 @@ import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
+import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 -- | Test a comparison operator hooked to the given symbol
@@ -53,6 +56,253 @@ prop_lt = propComparison (<) ltSymbol
 
 ltSymbol :: SymbolOrAlias Object
 ltSymbol = builtinSymbol "ltString"
+
+concatSymbol :: SymbolOrAlias Object
+concatSymbol = builtinSymbol "concatString"
+
+test_concat :: [TestTree]
+test_concat =
+    [ testString
+        "concat simple"
+        concatSymbol
+        (asPattern <$> ["foo", "bar"])
+        (asExpandedPattern "foobar")
+    , testString
+        "concat left identity"
+        concatSymbol
+        (asPattern <$> ["", "bar"])
+        (asExpandedPattern "bar")
+    , testString
+        "concat right identity"
+        concatSymbol
+        (asPattern <$> ["foo", ""])
+        (asExpandedPattern "foo")
+    ]
+
+substrSymbol :: SymbolOrAlias Object
+substrSymbol = builtinSymbol "substrString"
+
+test_substr :: [TestTree]
+test_substr =
+    [ testString
+        "substr simple"
+        substrSymbol
+        [asPattern "foobar", Test.Int.asPattern 0, Test.Int.asPattern 6]
+        (asExpandedPattern "foobar")
+    , testString
+        "substr out of bounds"
+        substrSymbol
+        [asPattern "foobar", Test.Int.asPattern 0, Test.Int.asPattern 10]
+        (asExpandedPattern "foobar")
+    , testString
+        "substr negative start"
+        substrSymbol
+        [asPattern "foobar", Test.Int.asPattern (-10), Test.Int.asPattern 6]
+        (asExpandedPattern "foobar")
+    , testString
+        "substr negative end"
+        substrSymbol
+        [asPattern "foobar", Test.Int.asPattern 0, Test.Int.asPattern (-1)]
+        (asExpandedPattern "")
+    , testString
+        "substr actual substring"
+        substrSymbol
+        [asPattern "foobar", Test.Int.asPattern 0, Test.Int.asPattern 3]
+        (asExpandedPattern "foo")
+    ]
+
+lengthSymbol :: SymbolOrAlias Object
+lengthSymbol = builtinSymbol "lengthString"
+
+test_length :: [TestTree]
+test_length =
+    [ testString
+        "length simple"
+        lengthSymbol
+        [asPattern "foobar"]
+        (Test.Int.asExpandedPattern 6)
+    , testString
+        "length zero"
+        lengthSymbol
+        [asPattern ""]
+        (Test.Int.asExpandedPattern 0)
+    ]
+
+findSymbol :: SymbolOrAlias Object
+findSymbol = builtinSymbol "findString"
+
+test_find :: [TestTree]
+test_find =
+    [ testString
+        "find simple"
+        findSymbol
+        [asPattern "foobar", asPattern "foobar", Test.Int.asPattern 0]
+        (Test.Int.asExpandedPattern 0)
+    , testString
+        "find subpattern"
+        findSymbol
+        [asPattern "foobar", asPattern "bar", Test.Int.asPattern 0]
+        (Test.Int.asExpandedPattern 3)
+    , testString
+        "find empty pattern"
+        findSymbol
+        [asPattern "foobar", asPattern "", Test.Int.asPattern 0]
+        (Test.Int.asExpandedPattern 0)
+    , testString
+        "find negative index"
+        findSymbol
+        [asPattern "foobar", asPattern "foobar", Test.Int.asPattern (-1)]
+        (Test.Int.asExpandedPattern 0)
+    , testString
+        "find after end of string"
+        findSymbol
+        [asPattern "foobar", asPattern "bar", Test.Int.asPattern 10]
+        (Test.Int.asExpandedPattern (-1))
+    , testString
+        "find pattern that does not exist"
+        findSymbol
+        [asPattern "foobar", asPattern "nope", Test.Int.asPattern 0]
+        (Test.Int.asExpandedPattern (-1))
+    ]
+
+string2BaseSymbol :: SymbolOrAlias Object
+string2BaseSymbol = builtinSymbol "string2baseString"
+
+test_string2Base :: [TestTree]
+test_string2Base =
+    -- Decimal
+    [ testString
+        "string2Base decimal simple"
+        string2BaseSymbol
+        [asPattern "42", Test.Int.asPattern 10]
+        (Test.Int.asExpandedPattern 42)
+    , testString
+        "string2Base decimal negative"
+        string2BaseSymbol
+        [asPattern "-42", Test.Int.asPattern 10]
+        (Test.Int.asExpandedPattern (-42))
+    , testString
+        "string2Base decimal is bottom"
+        string2BaseSymbol
+        [asPattern "-42.3", Test.Int.asPattern 10]
+        bottom
+    , testString
+        "string2Base decimal empty string is bottom"
+        string2BaseSymbol
+        [asPattern "", Test.Int.asPattern 10]
+        bottom
+    , testString
+        "string2Base decimal non-number is bottom"
+        string2BaseSymbol
+        [asPattern "foobar", Test.Int.asPattern 10]
+        bottom
+    , testString
+        "string2Base decimal from hex is bottom"
+        string2BaseSymbol
+        [asPattern "baad", Test.Int.asPattern 10]
+        bottom
+
+    -- Octal
+    , testString
+        "string2Base octal simple"
+        string2BaseSymbol
+        [asPattern "42", Test.Int.asPattern 8]
+        (Test.Int.asExpandedPattern 34)
+    , testString
+        "string2Base octal negative"
+        string2BaseSymbol
+        [asPattern "-42", Test.Int.asPattern 8]
+        (Test.Int.asExpandedPattern (-34))
+    , testString
+        "string2Base octal is bottom"
+        string2BaseSymbol
+        [asPattern "-42.3", Test.Int.asPattern 8]
+        bottom
+    , testString
+        "string2Base octal empty string is bottom"
+        string2BaseSymbol
+        [asPattern "", Test.Int.asPattern 8]
+        bottom
+    , testString
+        "string2Base octal non-number is bottom"
+        string2BaseSymbol
+        [asPattern "foobar", Test.Int.asPattern 8]
+        bottom
+    , testString
+        "string2Base octal from hex is bottom"
+        string2BaseSymbol
+        [asPattern "baad", Test.Int.asPattern 8]
+        bottom
+
+    -- Hexadecimal
+    , testString
+        "string2Base hex simple"
+        string2BaseSymbol
+        [asPattern "42", Test.Int.asPattern 16]
+        (Test.Int.asExpandedPattern 66)
+    , testString
+        "string2Base hex negative"
+        string2BaseSymbol
+        [asPattern "-42", Test.Int.asPattern 16]
+        (Test.Int.asExpandedPattern (-66))
+    , testString
+        "string2Base hex is bottom"
+        string2BaseSymbol
+        [asPattern "-42.3", Test.Int.asPattern 16]
+        bottom
+    , testString
+        "string2Base hex empty string is bottom"
+        string2BaseSymbol
+        [asPattern "", Test.Int.asPattern 16]
+        bottom
+    , testString
+        "string2Base hex non-number is bottom"
+        string2BaseSymbol
+        [asPattern "foobar", Test.Int.asPattern 16]
+        bottom
+    , testString
+        "string2Base hex from hex is bottom"
+        string2BaseSymbol
+        [asPattern "baad", Test.Int.asPattern 16]
+        (Test.Int.asExpandedPattern 47789)
+    ]
+
+string2IntSymbol :: SymbolOrAlias Object
+string2IntSymbol = builtinSymbol "string2intString"
+
+test_string2Int :: [TestTree]
+test_string2Int =
+    [ testString
+        "string2Base decimal simple"
+        string2IntSymbol
+        [asPattern "42"]
+        (Test.Int.asExpandedPattern 42)
+    , testString
+        "string2Int decimal negative"
+        string2IntSymbol
+        [asPattern "-42"]
+        (Test.Int.asExpandedPattern (-42))
+    , testString
+        "string2Int decimal is bottom"
+        string2IntSymbol
+        [asPattern "-42.3"]
+        bottom
+    , testString
+        "string2Int decimal empty string is bottom"
+        string2IntSymbol
+        [asPattern ""]
+        bottom
+    , testString
+        "string2Int decimal non-number is bottom"
+        string2IntSymbol
+        [asPattern "foobar"]
+        bottom
+    , testString
+        "string2Int decimal from hex is bottom"
+        string2IntSymbol
+        [asPattern "baad"]
+        bottom
+    ]
 
 -- | Another name for asPattern.
 stringLiteral :: String -> CommonPurePattern Object
@@ -115,16 +365,6 @@ comparisonSymbolDecl builtinName symbol =
         Test.Bool.boolSort
         [stringSort, stringSort]
 
-importBool :: KoreSentence
-importBool =
-    asSentence
-        (SentenceImport
-            { sentenceImportModuleName = Test.Bool.boolModuleName
-            , sentenceImportAttributes = Attributes []
-            }
-            :: KoreSentenceImport
-        )
-
 stringModuleName :: ModuleName
 stringModuleName = ModuleName "STRING"
 
@@ -136,9 +376,40 @@ stringModule =
         { moduleName = stringModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importBool
+            [ importKoreModule Test.Bool.boolModuleName
+            , importKoreModule Test.Int.intModuleName
             , stringSortDecl
             , comparisonSymbolDecl "STRING.lt" ltSymbol
+            , hookedSymbolDecl
+                "STRING.concat"
+                concatSymbol
+                stringSort
+                [stringSort, stringSort]
+            , hookedSymbolDecl
+                "STRING.substr"
+                substrSymbol
+                stringSort
+                [stringSort, Test.Int.intSort, Test.Int.intSort]
+            , hookedSymbolDecl
+                "STRING.length"
+                lengthSymbol
+                Test.Int.intSort
+                [stringSort]
+            , hookedSymbolDecl
+                "STRING.find"
+                findSymbol
+                Test.Int.intSort
+                [stringSort, stringSort, Test.Int.intSort]
+            , hookedSymbolDecl
+                "STRING.string2base"
+                string2BaseSymbol
+                Test.Int.intSort
+                [stringSort, Test.Int.intSort]
+            , hookedSymbolDecl
+                "STRING.string2int"
+                string2IntSymbol
+                Test.Int.intSort
+                [stringSort]
             ]
         }
 
@@ -153,7 +424,11 @@ stringDefinition :: KoreDefinition
 stringDefinition =
     Definition
         { definitionAttributes = Attributes []
-        , definitionModules = [ Test.Bool.boolModule, stringModule ]
+        , definitionModules =
+            [ Test.Bool.boolModule
+            , Test.Int.intModule
+            , stringModule
+            ]
         }
 
 indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
@@ -174,3 +449,11 @@ verify defn =
         (verifyAndIndexDefinition attrVerify Builtin.koreVerifiers defn)
   where
     attrVerify = defaultAttributesVerification Proxy
+
+testString
+    :: String
+    -> SymbolOrAlias Object
+    -> [CommonPurePattern Object]
+    -> CommonExpandedPattern Object
+    -> TestTree
+testString = testSymbol evaluate

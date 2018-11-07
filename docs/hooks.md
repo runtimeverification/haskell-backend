@@ -225,6 +225,17 @@ The result is `bottom{}()` if the second argument is zero.
         [hook{}("INT.tmod")]
 ~~~
 
+### INT.emod
+
+Remainder of the first argument divided by the second (using the euclidean
+algorithm).
+The result is `bottom{}()` if the second argument is zero.
+
+~~~
+    hooked-symbol emod{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.emod")]
+~~~
+
 ### INT.and
 
 Bitwise and of the arguments.
@@ -346,6 +357,64 @@ Comparison: is the first argument less than the second?
         [hook{}("STRING.lt")]
 ~~~
 
+### STRING.concat
+
+Concatenate two strings.
+
+~~~
+    hooked-symbol concat{}(String{}, String{}) : String{}
+        [hook{}("STRING.concat")]
+~~~
+
+### STRING.string2int
+
+Convert a base10 string to its integer value.
+
+~~~
+    hooked-symbol string2int{}(String{}) : Int{}
+        [hook{}("STRING.string2int")]
+~~~
+
+### STRING.string2base
+
+Takes a string and a base and converts the string from `base` to its integer
+value.
+Currently only works for base 8, 10, and 16.
+
+~~~
+    hooked-symbol string2base{}(String{}, Int{}) : Int{}
+        [hook{}("STRING.string2base")]
+~~~
+
+### STRING.substr
+
+Substr takes a string and two indices (start and end) and returns the substring
+that starts at index `start` and ends at index `end`.
+
+~~~
+    hooked-symbol substr{}(String{}, Int{}, Int{}) : String{}
+        [hook{}("STRING.substr")]
+~~~
+
+### STRING.length
+
+Calculates the length of a string.
+
+~~~
+    hooked-symbol length{}(String{}): Int{}
+        [hook{}("STRING.length")]
+~~~
+
+### STRING.find
+
+Takes a string, a substring and an index and searches for `substring` in
+the `string`, starting at `index`, returning the resulting index, or `-1` if it
+is not found.
+
+~~~
+    hooked-symbol find{}(String{}, String{}, Int{}): Int{}
+        [hook{}("STRING.find")]
+~~~
 
 ## MAP
 
