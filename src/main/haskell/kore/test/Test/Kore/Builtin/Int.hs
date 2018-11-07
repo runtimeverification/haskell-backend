@@ -4,6 +4,8 @@ module Test.Kore.Builtin.Int where
 
 import Test.QuickCheck
        ( Property, (===) )
+import Test.Tasty
+       ( TestTree )
 
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
@@ -292,6 +294,38 @@ powmodSymbol = builtinSymbol "powmodInt"
 log2Symbol :: SymbolOrAlias Object
 log2Symbol = builtinSymbol "log2Int"
 
+emodSymbol :: SymbolOrAlias Object
+emodSymbol = builtinSymbol "emodInt"
+
+test_emod :: [TestTree]
+test_emod =
+    [ testInt
+        "emod normal"
+        emodSymbol
+        (asPattern <$> [193, 12])
+        (asExpandedPattern 1)
+    , testInt
+        "emod negative lhs"
+        emodSymbol
+        (asPattern <$> [-193, 12])
+        (asExpandedPattern 11)
+    , testInt
+        "emod negative rhs"
+        emodSymbol
+        (asPattern <$> [193, -12])
+        (asExpandedPattern 1)
+    , testInt
+        "emod both negative"
+        emodSymbol
+        (asPattern <$> [-193, -12])
+        (asExpandedPattern (-1))
+    , testInt
+        "emod bottom"
+        emodSymbol
+        (asPattern <$> [193, 0])
+        bottom
+    ]
+
 -- | Another name for asPattern.
 intLiteral :: Integer -> CommonPurePattern Object
 intLiteral = asPattern
@@ -413,6 +447,7 @@ intModule =
             , unarySymbolDecl "INT.abs" absSymbol
             , binarySymbolDecl "INT.tdiv" tdivSymbol
             , binarySymbolDecl "INT.tmod" tmodSymbol
+            , binarySymbolDecl "INT.emod" emodSymbol
             , binarySymbolDecl "INT.and" andSymbol
             , binarySymbolDecl "INT.or" orSymbol
             , binarySymbolDecl "INT.xor" xorSymbol
@@ -457,3 +492,11 @@ verify defn =
         (verifyAndIndexDefinition attrVerify Builtin.koreVerifiers defn)
   where
     attrVerify = defaultAttributesVerification Proxy
+
+testInt
+    :: String
+    -> SymbolOrAlias Object
+    -> [CommonPurePattern Object]
+    -> CommonExpandedPattern Object
+    -> TestTree
+testInt = testSymbol evaluate

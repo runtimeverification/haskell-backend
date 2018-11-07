@@ -271,7 +271,7 @@ builtinFunctions =
 
       -- TODO (thomas.tuegel): Implement division.
     , ("INT.ediv", Builtin.notImplemented)
-    , ("INT.emod", Builtin.notImplemented)
+    , partialBinaryOperator "INT.emod" emod
     , partialBinaryOperator "INT.tdiv" tdiv
     , partialBinaryOperator "INT.tmod" tmod
 
@@ -307,6 +307,10 @@ builtinFunctions =
     tmod n d
         | d == 0 = Nothing
         | otherwise = Just (rem n d)
+    emod a b
+        | b == 0 = Nothing
+        | b < 0  = Just (rem a b)
+        | otherwise = Just (mod a b)
     pow b e
         | e < 0 = Nothing
         | otherwise = Just (b ^ e)
