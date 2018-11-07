@@ -133,7 +133,7 @@ makeEvaluateNonBoolCeil
   =
     let
         (termCeil, _proof1) = makeEvaluateTerm tools term
-        (ceilPredicate, _proof2) =
+        ceilPredicate =
             give symbolOrAliasSorts $ makeAndPredicate predicate termCeil
     in
         ( OrOfExpandedPattern.make
@@ -184,7 +184,7 @@ makeEvaluateTerm
   =
     let
         (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) children)
-        (result, _proof) = give (MetadataTools.symbolOrAliasSorts tools )
+        result = give (MetadataTools.symbolOrAliasSorts tools )
             $ makeMultipleAndPredicate ceils
     in
         (result, SimplificationProof)
@@ -196,4 +196,3 @@ makeEvaluateTerm
     ( give (MetadataTools.symbolOrAliasSorts tools ) $ makeCeilPredicate term
     , SimplificationProof
     )
-

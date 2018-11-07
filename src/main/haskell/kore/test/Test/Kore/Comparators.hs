@@ -953,11 +953,6 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PredicateProof level)
-  where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
 instance EqualWithExplanation (SimplificationProof level)
   where
     compareWithExplanation = rawCompareWithExplanation

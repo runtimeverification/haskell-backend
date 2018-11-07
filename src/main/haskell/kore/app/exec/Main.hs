@@ -430,7 +430,7 @@ mainWithOptions
                                 (match searchPattern)
                                 executionTree
                         let
-                            (orPredicate, _proof) =
+                            orPredicate =
                                 give symbolOrAliasSorts
                                 $ makeMultipleOrPredicate
                                 $ fmap
@@ -501,7 +501,7 @@ mainParseSearchPattern indexedModule tools patternFileName
             Predicated
                 { term
                 , predicate =
-                    either (error . printError) fst
+                    either (error . printError) id
                         (give (symbolOrAliasSorts tools)
                             makePredicate predicateTerm
                         )

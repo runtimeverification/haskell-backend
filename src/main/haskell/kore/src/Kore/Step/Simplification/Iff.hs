@@ -151,14 +151,11 @@ makeEvaluateNonBoolIff
         [ Predicated
             { term = t
             , predicate =
-                -- TODO: Remove fst
-                fst $ makeIffPredicate
-                    -- TODO: Remove fst
-                    (fst $ makeAndPredicate
+                makeIffPredicate
+                    (makeAndPredicate
                         firstPredicate
                         (substitutionToPredicate firstSubstitution))
-                    -- TODO: Remove fst
-                    (fst $ makeAndPredicate
+                    (makeAndPredicate
                         secondPredicate
                         (substitutionToPredicate secondSubstitution)
                     )

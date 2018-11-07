@@ -177,7 +177,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
             Predicated
                 { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
                 , predicate =
-                    fst $ makeAndPredicate
+                    makeAndPredicate
                         (makeCeilPredicate Mock.cg)
                         (makeCeilPredicate Mock.cf)
                 , substitution = []

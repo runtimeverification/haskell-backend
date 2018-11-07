@@ -104,7 +104,7 @@ unificationProcedure tools substitutionSimplifier p1 p2
             )
         else return
             ( PredicateSubstitution
-                (fst $ give symbolOrAliasSorts $
+                (give symbolOrAliasSorts $
                     makeAndPredicate (ExpandedPattern.predicate pat) pred')
                 (ExpandedPattern.substitution pat)
             , EmptyUnificationProof

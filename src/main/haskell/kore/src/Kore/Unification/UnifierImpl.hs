@@ -252,10 +252,10 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
                      ++ PredicateSubstitution.substitution predSubst
                     )
             let
-                (pred', _proof'') = give symbolOrAliasSorts
-                    $ Predicate.makeAndPredicate
-                    (PredicateSubstitution.predicate predSubst)
-                    (PredicateSubstitution.predicate finalSubst)
+                pred' =
+                    give symbolOrAliasSorts $ Predicate.makeAndPredicate
+                        (PredicateSubstitution.predicate predSubst)
+                        (PredicateSubstitution.predicate finalSubst)
             return
                 ( PredicateSubstitution
                     pred'
@@ -302,7 +302,7 @@ mergePredicateSubstitutionList tools (p:ps) =
         (PredicateSubstitution {predicate = p1, substitution = s1}, proofs)
         (PredicateSubstitution {predicate = p2, substitution = s2}, proof) =
         ( PredicateSubstitution
-            (fst $ give symbolOrAliasSorts $ Predicate.makeAndPredicate p1 p2)
+            (give symbolOrAliasSorts $ Predicate.makeAndPredicate p1 p2)
             (s1 ++ s2)
         , proofs <> proof
         )

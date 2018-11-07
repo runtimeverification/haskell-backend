@@ -94,9 +94,7 @@ toPredicate
     => PredicateSubstitution level variable
     -> Predicate level variable
 toPredicate PredicateSubstitution { predicate, substitution } =
-    fst $ makeAndPredicate
-        predicate
-        (substitutionToPredicate substitution)
+    makeAndPredicate predicate (substitutionToPredicate substitution)
 
 {- | Extract the set of free variables from a predicate and substitution.
 

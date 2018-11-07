@@ -88,18 +88,19 @@ normalize
             substitutionSimplifier
             (PredicateSubstitution { predicate, substitution })
     return $ case x of
-      Right (PredicateSubstitution p s, _) ->
-          if Predicate.isFalse p
-              then ExpandedPattern.bottom
-              else Predicated term p s
-      Left _ ->
-          Predicated
-              term
-              (fst
-                $ makeAndPredicate predicate
-                $ substitutionToPredicate substitution
-              )
-              []
+        Right (PredicateSubstitution p s, _) ->
+            if Predicate.isFalse p
+                then ExpandedPattern.bottom
+                else Predicated term p s
+        Left _ ->
+            Predicated
+                { term
+                , predicate =
+                    makeAndPredicate
+                        predicate
+                        (substitutionToPredicate substitution)
+                , substitution = []
+                }
 
 normalizeSubstitutionAfterMerge
     ::  ( MetaOrObject level
@@ -140,7 +141,7 @@ normalizeSubstitutionAfterMerge
         } <- normalizeSubstitution' duplicationSubstitution
 
     let
-        (mergedPredicate, _proof1) = give symbolOrAliasSorts $
+        mergedPredicate = give symbolOrAliasSorts $
             makeMultipleAndPredicate
                 [predicate, duplicationPredicate, normalizePredicate]
 
@@ -203,7 +204,7 @@ mergePredicatesAndSubstitutions
     case result of
         Left _ ->
             let
-                (mergedPredicate, _proof) =
+                mergedPredicate =
                     give (symbolOrAliasSorts tools) $ makeMultipleAndPredicate
                         (  predicates
                         ++ map substitutionToPredicate substitutions
@@ -244,7 +245,7 @@ mergePredicatesAndSubstitutionsExcept
   = do
     let
         mergedSubstitution = concat substitutions
-        (mergedPredicate, _proof) =
+        mergedPredicate =
             give (symbolOrAliasSorts tools) $
                 makeMultipleAndPredicate predicates
     (PredicateSubstitution {predicate, substitution}, _proof) <-
@@ -292,7 +293,7 @@ normalizePredicatedSubstitution
         Left _ ->
             ( Predicated
                   term
-                  (fst $ makeAndPredicate
+                  (makeAndPredicate
                       predicate
                       (substitutionToPredicate substitution)
                   )

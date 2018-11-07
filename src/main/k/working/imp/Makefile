@@ -17,7 +17,8 @@ $(DEFINITION): imp.k $(K)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
 %.search.final.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final \
+		$(foreach pat, $(wildcard $*.search.pattern), --pattern "$$(cat $(pat))")
 
 %.test: %.output
 	diff -u $<.golden $<
@@ -25,8 +26,15 @@ $(DEFINITION): imp.k $(K)
 %.output.golden: %.output
 	mv $< $<.golden
 
-all_tests := collatz max-symbolic.search.final primes sum
-k_tests := sum
+all_tests := \
+	collatz \
+	impossible-branch.search.final \
+	max-symbolic.search.final \
+	primes \
+	sum
+k_tests := \
+	impossible-branch.search.final \
+	sum
 
 test: $(foreach test, $(all_tests), tests/$(test).test)
 

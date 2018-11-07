@@ -295,12 +295,12 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeIffPredicate
-                            (fst $ makeAndPredicate
+                        makeIffPredicate
+                            (makeAndPredicate
                                 (makeCeilPredicate Mock.cf)
                                 (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                             )
-                            (fst $ makeAndPredicate
+                            (makeAndPredicate
                                 (makeCeilPredicate Mock.cg)
                                 (makeEqualsPredicate (mkVar Mock.y) Mock.b)
                             )

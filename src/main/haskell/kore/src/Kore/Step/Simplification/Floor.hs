@@ -123,9 +123,7 @@ makeEvaluateNonBoolFloor
     ( OrOfExpandedPattern.make
         [ Predicated
             { term = mkTop
-            , predicate =
-                case makeAndPredicate (makeFloorPredicate term) predicate of
-                    (predicate', _proof) -> predicate'
+            , predicate = makeAndPredicate (makeFloorPredicate term) predicate
             , substitution = substitution
             }
         ]

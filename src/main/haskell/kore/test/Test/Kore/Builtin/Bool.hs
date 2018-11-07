@@ -190,8 +190,9 @@ evaluate pat =
                     tools (Mock.substitutionSimplifier tools) evaluators pat
                 )
     in term
-  where
-    tools = extractMetadataTools indexedModule
+
+tools :: MetadataTools Object StepperAttributes
+tools = extractMetadataTools indexedModule
 
 boolDefinition :: KoreDefinition
 boolDefinition =

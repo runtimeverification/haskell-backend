@@ -116,7 +116,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate somethingOfA)
                     , substitution = [(Mock.x, fOfB)]
@@ -144,9 +144,9 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = mkTop
                         , predicate =
-                            fst $ makeAndPredicate
+                            makeAndPredicate
                                 (makeEqualsPredicate fOfA gOfA)
-                                (fst $ makeAndPredicate
+                                (makeAndPredicate
                                     (makeCeilPredicate somethingOfA)
                                     (makeCeilPredicate somethingOfB)
                                 )
@@ -183,9 +183,9 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
-                            (fst $ makeAndPredicate
+                            (makeAndPredicate
                                 (makeCeilPredicate somethingOfA)
                                 (makeCeilPredicate somethingOfB)
                             )
@@ -211,7 +211,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate fOfA)
                     , substitution = [(Mock.x, fOfB)]
@@ -236,7 +236,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate fOfA)
                     , substitution = [(Mock.x, fOfB)]
@@ -285,9 +285,9 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeAndPredicate
+                        makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
-                            (fst $ makeAndPredicate
+                            (makeAndPredicate
                                 (makeCeilPredicate fOfA)
                                 (makeCeilPredicate fOfB)
                             )

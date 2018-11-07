@@ -35,17 +35,6 @@ import           Kore.Step.Simplification.Data
                  SimplificationProof (SimplificationProof), Simplifier )
 import           Kore.Step.StepperAttributes
 
-convertStepperToSMT
-    :: MetadataTools level StepperAttributes
-    -> MetadataTools level SMTAttributes
-convertStepperToSMT tools =
-    tools
-    { symAttributes  = convert . symAttributes  tools
-    , sortAttributes = convert . sortAttributes tools
-    , isSubsortOf = const $ const False -- no subsort info needed by SMT
-    }
-    where convert (StepperAttributes _ _ _ _ _ hook) = SMTAttributes hook
-
 {-| 'evaluate' attempts to evaluate a Kore predicate. -}
 evaluate
     ::  forall level variable .
@@ -69,8 +58,7 @@ evaluate
     substitutionSimplifier
     (PureMLPatternSimplifier simplifier)
     predicate''
-  = give (convertStepperToSMT tools)
-    $ do
+  = give tools $ do
     smtTimeOut <- ask
     (patt, _proof) <-
         simplifier substitutionSimplifier (unwrapPredicate predicate'')
@@ -103,7 +91,7 @@ asPredicateSubstitution
     Predicated {term, predicate, substitution}
   =
     let
-        (andPatt, _proof) = makeAndPredicate predicate (wrapPredicate term)
+        andPatt = makeAndPredicate predicate (wrapPredicate term)
     in
         ( PredicateSubstitution
             { predicate = andPatt

@@ -177,13 +177,13 @@ makeEvaluateImpliesNonBool
             { term = t
             , predicate =
                 -- TODO: Remove fst
-                fst $ makeImpliesPredicate
+                makeImpliesPredicate
                     -- TODO: Remove fst
-                    (fst $ makeAndPredicate
+                    (makeAndPredicate
                         firstPredicate
                         (substitutionToPredicate firstSubstitution))
                     -- TODO: Remove fst
-                    (fst $ makeAndPredicate
+                    (makeAndPredicate
                         secondPredicate
                         (substitutionToPredicate secondSubstitution)
                     )

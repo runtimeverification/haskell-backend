@@ -158,7 +158,7 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeIffPredicate
+                        makeIffPredicate
                             (makeEqualsPredicate fOfA fOfB)
                             (makeEqualsPredicate gOfA gOfB)
                     , substitution = []
@@ -185,29 +185,29 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate =
-                        fst $ makeOrPredicate
-                            ( fst $ makeAndPredicate
+                        makeOrPredicate
+                            ( makeAndPredicate
                                 (makeEqualsPredicate hOfA hOfB)
-                                (fst $ makeAndPredicate
-                                    (fst $ makeAndPredicate
+                                (makeAndPredicate
+                                    (makeAndPredicate
                                         (makeEqualsPredicate fOfA fOfB)
                                         (makeCeilPredicate hOfA)
                                     )
-                                    (fst $ makeAndPredicate
+                                    (makeAndPredicate
                                         (makeEqualsPredicate gOfA gOfB)
                                         (makeCeilPredicate hOfB)
                                     )
                                 )
                             )
-                            (fst $ makeAndPredicate
-                                (fst $ makeNotPredicate
-                                    (fst $ makeAndPredicate
+                            (makeAndPredicate
+                                (makeNotPredicate
+                                    (makeAndPredicate
                                         (makeEqualsPredicate fOfA fOfB)
                                         (makeCeilPredicate hOfA)
                                     )
                                 )
-                                (fst $ makeNotPredicate
-                                    (fst $ makeAndPredicate
+                                (makeNotPredicate
+                                    (makeAndPredicate
                                         (makeEqualsPredicate gOfA gOfB)
                                         (makeCeilPredicate hOfB)
                                     )
@@ -367,20 +367,20 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
             mockMetadataTools
             PredicateSubstitution
                 { predicate =
-                    fst $ makeOrPredicate
-                        (fst $ makeAndPredicate
+                    makeOrPredicate
+                        (makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeEqualsPredicate fOfB gOfB)
                         )
-                        (fst $ makeAndPredicate
-                            (fst $ makeNotPredicate
-                                (fst $ makeAndPredicate
+                        (makeAndPredicate
+                            (makeNotPredicate
+                                (makeAndPredicate
                                     (makeCeilPredicate fOfA)
                                     (makeCeilPredicate fOfB)
                                 )
                             )
-                            (fst $ makeNotPredicate
-                                (fst $ makeAndPredicate
+                            (makeNotPredicate
+                                (makeAndPredicate
                                     (makeCeilPredicate gOfA)
                                     (makeCeilPredicate gOfB)
                                 )

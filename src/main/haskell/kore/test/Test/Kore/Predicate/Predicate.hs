@@ -56,7 +56,7 @@ test_predicate = give mockSymbolOrAliasSorts
             :: CommonPredicate Meta
             -> CommonPredicate Meta
             -> CommonPredicate Meta
-        makeOr c1 c2 = fst (makeOrPredicate c1 c2)
+        makeOr c1 c2 = makeOrPredicate c1 c2
       in
         testCase "Or truth table"
             (do
@@ -78,7 +78,7 @@ test_predicate = give mockSymbolOrAliasSorts
             :: CommonPredicate Meta
             -> CommonPredicate Meta
             -> CommonPredicate Meta
-        makeImplies c1 c2 = fst (makeImpliesPredicate c1 c2)
+        makeImplies c1 c2 = makeImpliesPredicate c1 c2
       in
         testCase "Implies truth table"
             (do
@@ -100,7 +100,7 @@ test_predicate = give mockSymbolOrAliasSorts
             :: CommonPredicate Meta
             -> CommonPredicate Meta
             -> CommonPredicate Meta
-        makeIff c1 c2 = fst (makeIffPredicate c1 c2)
+        makeIff c1 c2 = makeIffPredicate c1 c2
       in
         testCase "Iff truth table"
             (do
@@ -119,7 +119,7 @@ test_predicate = give mockSymbolOrAliasSorts
             )
     , let
         makeNot :: CommonPredicate Meta -> CommonPredicate Meta
-        makeNot p = fst (makeNotPredicate p)
+        makeNot p = makeNotPredicate p
       in
         testCase "Not truth table"
             (do
@@ -149,34 +149,22 @@ test_predicate = give mockSymbolOrAliasSorts
                 (wrapPredicate $
                     mkAnd pa1 pa2
                 )
-                (fst $
-                    makeAndPredicate pr1 pr2
-                )
+                (makeAndPredicate pr1 pr2)
             assertEqualWithExplanation ""
                 (wrapPredicate pa1)
-                (fst $
-                    makeAndPredicate pr1 makeTruePredicate
-                )
+                (makeAndPredicate pr1 makeTruePredicate)
             assertEqualWithExplanation ""
                 (wrapPredicate pa2)
-                (fst $
-                    makeAndPredicate makeTruePredicate pr2
-                )
+                (makeAndPredicate makeTruePredicate pr2)
             assertEqualWithExplanation ""
                 makeFalsePredicate
-                (fst $
-                    makeAndPredicate pr1 makeFalsePredicate
-                )
+                (makeAndPredicate pr1 makeFalsePredicate)
             assertEqualWithExplanation ""
                 makeFalsePredicate
-                (fst $
-                    makeAndPredicate makeFalsePredicate pr2
-                )
+                (makeAndPredicate makeFalsePredicate pr2)
             assertEqualWithExplanation ""
                 pr1
-                (fst $
-                    makeAndPredicate pr1 pr1
-                )
+                (makeAndPredicate pr1 pr1)
         )
     ,  testCase "Wrapping or predicates without full simplification"
         (do
@@ -184,66 +172,44 @@ test_predicate = give mockSymbolOrAliasSorts
                 (wrapPredicate $
                     mkOr pa1 pa2
                 )
-                (fst $
-                    makeOrPredicate pr1 pr2
-                )
+                (makeOrPredicate pr1 pr2)
             assertEqualWithExplanation ""
                 makeTruePredicate
-                (fst $
-                    makeOrPredicate pr1 makeTruePredicate
-                )
+                (makeOrPredicate pr1 makeTruePredicate)
             assertEqualWithExplanation ""
                 makeTruePredicate
-                (fst $
-                    makeOrPredicate makeTruePredicate pr2
-                )
+                (makeOrPredicate makeTruePredicate pr2)
             assertEqualWithExplanation ""
                 (wrapPredicate pa1)
-                (fst $
-                    makeOrPredicate pr1 makeFalsePredicate
-                )
+                (makeOrPredicate pr1 makeFalsePredicate)
             assertEqualWithExplanation ""
                 (wrapPredicate pa2)
-                (fst $
-                    makeOrPredicate makeFalsePredicate pr2
-                )
+                (makeOrPredicate makeFalsePredicate pr2)
             assertEqualWithExplanation ""
                 pr1
-                (fst $
-                    makeOrPredicate pr1 pr1
-                )
-        )
+                (makeOrPredicate pr1 pr1)
+ )
     ,  testCase "Wrapping and predicates without full simplification"
         (do
             assertEqualWithExplanation ""
                 (wrapPredicate $
                     mkImplies pa1 pa2
                 )
-                (fst $
-                    makeImpliesPredicate pr1 pr2
-                )
+                (makeImpliesPredicate pr1 pr2)
             assertEqualWithExplanation ""
                 makeTruePredicate
-                (fst $
-                    makeImpliesPredicate pr1 makeTruePredicate
-                )
+                (makeImpliesPredicate pr1 makeTruePredicate)
             assertEqualWithExplanation ""
                 (wrapPredicate pa2)
-                (fst $
-                    makeImpliesPredicate makeTruePredicate pr2
-                )
+                (makeImpliesPredicate makeTruePredicate pr2)
             assertEqualWithExplanation ""
                 (wrapPredicate $
                     mkNot pa1
                 )
-                (fst $
-                    makeImpliesPredicate pr1 makeFalsePredicate
-                )
+                (makeImpliesPredicate pr1 makeFalsePredicate)
             assertEqualWithExplanation ""
                 makeTruePredicate
-                (fst $
-                    makeImpliesPredicate makeFalsePredicate pr2
-                )
+                (makeImpliesPredicate makeFalsePredicate pr2)
         )
     , testCase "Wrapping iff predicates without full simplification"
         (do
@@ -251,42 +217,30 @@ test_predicate = give mockSymbolOrAliasSorts
                 (wrapPredicate $
                     mkIff pa1 pa2
                 )
-                (fst $
-                    makeIffPredicate pr1 pr2
-                )
+                (makeIffPredicate pr1 pr2)
             assertEqualWithExplanation ""
                 (wrapPredicate pa1)
-                (fst $
-                    makeIffPredicate pr1 makeTruePredicate
-                )
+                (makeIffPredicate pr1 makeTruePredicate)
             assertEqualWithExplanation ""
                 (wrapPredicate pa2)
-                (fst $
-                    makeIffPredicate makeTruePredicate pr2
-                )
+                (makeIffPredicate makeTruePredicate pr2)
             assertEqualWithExplanation ""
                 (wrapPredicate $
                     mkNot pa1
                 )
-                (fst $
-                    makeIffPredicate pr1 makeFalsePredicate
-                )
+                (makeIffPredicate pr1 makeFalsePredicate)
             assertEqualWithExplanation ""
                 (wrapPredicate $
                     mkNot pa2
                 )
-                (fst $
-                    makeIffPredicate makeFalsePredicate pr2
-                )
+                (makeIffPredicate makeFalsePredicate pr2)
         )
     , testCase "Wrapping not predicates without full simplification"
         (assertEqualWithExplanation ""
             (wrapPredicate $
                 mkNot pa1
             )
-            (fst $
-                makeNotPredicate pr1
-            )
+            (makeNotPredicate pr1)
         )
     , testCase "isFalsePredicate True"
         (assertEqual ""
@@ -309,16 +263,12 @@ test_predicate = give mockSymbolOrAliasSorts
                 (wrapPredicate $
                     mkAnd pa1 pa2
                 )
-                (fst $
-                    makeMultipleAndPredicate [pr1, makeTruePredicate, pr2]
-                )
+                (makeMultipleAndPredicate [pr1, makeTruePredicate, pr2])
             assertEqualWithExplanation "Removes duplicates"
                 (wrapPredicate $
                     mkAnd pa1 pa2
                 )
-                (fst $
-                    makeMultipleAndPredicate [pr1, makeTruePredicate, pr2, pr1]
-                )
+                (makeMultipleAndPredicate [pr1, makeTruePredicate, pr2, pr1])
         )
     , testCase "Multiple Or"
         ( do
@@ -326,16 +276,12 @@ test_predicate = give mockSymbolOrAliasSorts
                 (wrapPredicate $
                     mkOr pa1 pa2
                 )
-                (fst $
-                    makeMultipleOrPredicate [pr1, makeFalsePredicate, pr2]
-                )
+                (makeMultipleOrPredicate [pr1, makeFalsePredicate, pr2])
             assertEqualWithExplanation "Removes duplicates"
                 (wrapPredicate $
                     mkOr pa1 pa2
                 )
-                (fst $
-                    makeMultipleOrPredicate [pr1, makeFalsePredicate, pr2, pr1]
-                )
+                (makeMultipleOrPredicate [pr1, makeFalsePredicate, pr2, pr1])
         )
     , testCase "freeVariables"
         ( do
@@ -352,7 +298,7 @@ test_predicate = give mockSymbolOrAliasSorts
             assertEqual "quantified variables are not included"
                 Set.empty
                 (freeVariables
-                    (fst $ makeExistsPredicate
+                    (makeExistsPredicate
                         (asVariable $ a PatternSort)
                         makeTruePredicate
                     )
@@ -364,7 +310,7 @@ test_predicate = give mockSymbolOrAliasSorts
                 makeTruePredicate
                 (substitutionToPredicate [] :: CommonPredicate Meta)
             assertEqual "a = b"
-                (fst $ makeAndPredicate pr1 makeTruePredicate)
+                (makeAndPredicate pr1 makeTruePredicate)
                 (substitutionToPredicate
                     [    ( asVariable (a PatternSort)
                          , asPureMetaPattern (b PatternSort)
@@ -374,7 +320,7 @@ test_predicate = give mockSymbolOrAliasSorts
         )
     , let
         makeExists :: CommonPredicate Meta -> CommonPredicate Meta
-        makeExists p = fst (makeExistsPredicate (asVariable (a PatternSort)) p)
+        makeExists p = makeExistsPredicate (asVariable (a PatternSort)) p
       in
         testCase "Exists truth table"
             (do
@@ -387,7 +333,7 @@ test_predicate = give mockSymbolOrAliasSorts
             )
     , let
         makeForall :: CommonPredicate Meta -> CommonPredicate Meta
-        makeForall p = fst (makeForallPredicate (asVariable (a PatternSort)) p)
+        makeForall p = makeForallPredicate (asVariable (a PatternSort)) p
       in
         testCase "Forall truth table"
             (do
@@ -429,7 +375,7 @@ makePredicateYieldsWrapPredicate
 makePredicateYieldsWrapPredicate msg p =
     assertEqual msg
         (Right (wrapPredicate p))
-        (fst <$> makePredicate p)
+        (makePredicate p)
 
 
 pr1 :: CommonPredicate Meta
@@ -480,7 +426,7 @@ makeAnd
     -> CommonPredicate Meta
     -> CommonPredicate Meta
 makeAnd p1 p2 =
-    fst $ give mockSymbolOrAliasSorts (makeAndPredicate p1 p2)
+    give mockSymbolOrAliasSorts (makeAndPredicate p1 p2)
 
 a :: MetaSort sort => sort -> MetaVariable sort
 a = metaVariable "#a" AstLocationTest
