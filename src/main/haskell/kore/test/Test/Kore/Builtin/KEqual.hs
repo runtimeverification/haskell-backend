@@ -12,6 +12,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
+import qualified Control.Lens as Lens
+import           Data.Function
+                 ( (&) )
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -43,7 +46,6 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 
@@ -123,7 +125,6 @@ sortDecl sort =
 evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
     let
-        tools = extractMetadataTools indexedModule
         (Predicated { term }, _) =
             evalSimplifier
                 (Pattern.simplify
@@ -269,7 +270,6 @@ test_KEqual =
         )
     ]
   where
-    tools = constructorFunctions (extractMetadataTools indexedModule)
     pat symbol = App_  symbol
         [ Test.Bool.asPattern True
         , Var_ Variable
@@ -315,8 +315,9 @@ test_KIte =
             )
         )
     ]
-  where
-    tools = constructorFunctions (extractMetadataTools indexedModule)
+
+tools :: MetadataTools Object StepperAttributes
+tools = extractMetadataTools $ constructorFunctions indexedModule
 
 kseqSymbol :: PureSentenceSymbol Object
 kseqSymbol = symbol_ "kseq" AstLocationImplicit [kItemSort, kSort] kSort
@@ -380,22 +381,32 @@ idSort = groundObjectSort "SortId"
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: MetadataTools Object StepperAttributes
-    -> MetadataTools Object StepperAttributes
-constructorFunctions tools =
-    tools
-    { symAttributes = \h -> let atts = symAttributes tools h in
-        atts
-        { isConstructor = isConstructor atts || isFunction atts || isCons h
-        , isFunctional = isFunctional atts || isCons h || isInj h
-        , isInjective =
-            isInjective atts || isFunction atts || isCons h || isInj h
-        , isSortInjection = isSortInjection atts || isInj h
+    :: KoreIndexedModule StepperAttributes
+    -> KoreIndexedModule StepperAttributes
+constructorFunctions ixm =
+    ixm
+        { indexedModuleObjectSymbolSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectSymbolSentences ixm)
+        , indexedModuleObjectAliasSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectAliasSentences ixm)
+        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
         }
-    }
   where
-    isInj :: SymbolOrAlias Object -> Bool
-    isInj h =
-        getId (symbolOrAliasConstructor h) == "inj"
-    isCons :: SymbolOrAlias Object -> Bool
-    isCons h = getId (symbolOrAliasConstructor h) `elem` ["kseq", "dotk"]
+    constructorFunctions1 ident (atts, defn) =
+        ( atts
+            & constructor Lens.<>~ Constructor isCons
+            & functional Lens.<>~ Functional (isCons || isInj)
+            & injective Lens.<>~ Injective (isCons || isInj)
+            & sortInjection Lens.<>~ SortInjection isInj
+        , defn
+        )
+      where
+        isInj = getId ident == "inj"
+        isCons = elem (getId ident) ["kseq", "dotk"]
+
+    recurseIntoImports (attrs, attributes, importedModule) =
+        (attrs, attributes, constructorFunctions importedModule)

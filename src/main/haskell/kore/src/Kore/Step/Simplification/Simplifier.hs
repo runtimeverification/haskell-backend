@@ -26,7 +26,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( StepperAttributes )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh

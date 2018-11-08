@@ -12,6 +12,7 @@ module Kore.Step.Function.Registry
     , axiomPatternsToEvaluators
     ) where
 
+import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import           Data.Map
                  ( Map )
@@ -36,7 +37,6 @@ import Kore.Step.Function.Data
 import Kore.Step.Function.UserDefined
        ( axiomFunctionEvaluator )
 import Kore.Step.StepperAttributes
-       ( StepperAttributes )
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
@@ -136,18 +136,14 @@ axiomPatternEvaluator
     :: AxiomPattern level
     -> Maybe (ApplicationFunctionEvaluator level)
 axiomPatternEvaluator axiomPat@AxiomPattern { axiomPatternAttributes }
-    | isAssociativityAxiom = Nothing
-    | isCommutativityAxiom = Nothing
+    | isAssoc = Nothing
+    | isComm = Nothing
     -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
     -- extraction of their axioms.
-    | isUnitAxiom = Nothing
+    | isUnit = Nothing
     | otherwise =
         Just (ApplicationFunctionEvaluator $ axiomFunctionEvaluator axiomPat)
   where
-    AxiomPatternAttributes
-        { axiomPatternAssoc = isAssociativityAxiom
-        , axiomPatternComm = isCommutativityAxiom
-        , axiomPatternUnit = isUnitAxiom
-        }
-      =
-        axiomPatternAttributes
+    Assoc { isAssoc } = Lens.view assoc axiomPatternAttributes
+    Comm { isComm } = Lens.view comm axiomPatternAttributes
+    Unit { isUnit } = Lens.view unit axiomPatternAttributes

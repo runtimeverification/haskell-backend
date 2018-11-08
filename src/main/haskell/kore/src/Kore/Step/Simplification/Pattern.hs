@@ -78,7 +78,7 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( StepperAttributes )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh

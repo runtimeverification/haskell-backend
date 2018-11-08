@@ -30,6 +30,7 @@ module Kore.Builtin
     , notImplementedInternal
     ) where
 
+import qualified Control.Lens as Lens
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Map
                  ( Map )
@@ -45,9 +46,9 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
+import qualified Kore.Attribute.Hook as Attribute.Hook
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Hook as Hook
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Builtin.List as List
@@ -59,7 +60,8 @@ import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( StepperAttributes )
+import qualified Kore.Step.StepperAttributes as StepperAttributes
 
 {- | The default type of builtin domain values.
  -}
@@ -154,9 +156,11 @@ evaluators builtins indexedModule =
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
     lookupBuiltins :: StepperAttributes -> Maybe [Builtin.Function]
-    lookupBuiltins StepperAttributes { hook } =
+    lookupBuiltins attrs =
         do
-            name <- Hook.getHook hook
+            name <-
+                Attribute.Hook.getHook
+                $ Lens.view StepperAttributes.hook attrs
             impl <- Map.lookup name builtins
             pure [impl]
 

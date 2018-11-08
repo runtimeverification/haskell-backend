@@ -10,8 +10,9 @@ module Test.Kore.IndexedModule.MockMetadataTools
     , sortInjectionAttributes
     ) where
 
-import           Data.Default
-                 ( def )
+import qualified Control.Lens as Lens
+import           Data.Function
+                 ( (&) )
 import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Set as Set
@@ -20,15 +21,17 @@ import           Kore.AST.Common
                  ( Sort, SymbolOrAlias (..) )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
+import           Kore.Attribute.Constructor
+import           Kore.Attribute.Function
+import           Kore.Attribute.Functional
+import           Kore.Attribute.Injective
+import           Kore.Attribute.SortInjection
 import           Kore.IndexedModule.MetadataTools
                  ( HeadType, MetadataTools (MetadataTools),
                  SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (StepperAttributes) )
-import qualified Kore.Step.StepperAttributes as StepperAttributes
-                 ( StepperAttributes (..) )
 
 makeMetadataTools
     :: SymbolOrAliasSorts level
@@ -76,71 +79,36 @@ caseBasedFunction cases arg =
         (lookup arg cases)
 
 functionAttributes :: StepperAttributes
-functionAttributes = StepperAttributes
-    { isConstructor = False
-    , isFunctional = False
-    , isFunction = True
-    , isInjective = False
-    , isSortInjection = False
-    , hook = def
-    }
+functionAttributes =
+    defaultAttributes
+        & Lens.set function (Function True)
 
 functionalAttributes :: StepperAttributes
-functionalAttributes = StepperAttributes
-    { isConstructor = False
-    , isFunctional = True
-    , isFunction = False
-    , isInjective = False
-    , isSortInjection = False
-    , hook = def
-    }
-
-constructorFunctionalAttributes :: StepperAttributes
-constructorFunctionalAttributes = StepperAttributes
-    { isConstructor = True
-    , isFunctional = True
-    , isFunction = False
-    , isInjective = True
-    , isSortInjection = False
-    , hook = def
-    }
+functionalAttributes =
+    defaultAttributes
+        & Lens.set functional (Functional True)
 
 constructorAttributes :: StepperAttributes
-constructorAttributes = StepperAttributes
-    { isConstructor = True
-    , isFunctional = False
-    , isFunction = False
-    , isInjective = True
-    , isSortInjection = False
-    , hook = def
-    }
+constructorAttributes =
+    defaultStepperAttributes
+        & Lens.set constructor (Constructor True)
+        & Lens.set injective (Injective True)
+
+constructorFunctionalAttributes :: StepperAttributes
+constructorFunctionalAttributes =
+    constructorAttributes
+        & Lens.set functional (Functional True)
 
 injectiveAttributes :: StepperAttributes
-injectiveAttributes = StepperAttributes
-    { isConstructor = False
-    , isFunctional = False
-    , isFunction = False
-    , isInjective = True
-    , isSortInjection = False
-    , hook = def
-    }
+injectiveAttributes =
+    defaultAttributes
+        & Lens.set injective (Injective True)
 
 sortInjectionAttributes :: StepperAttributes
-sortInjectionAttributes = StepperAttributes
-    { isConstructor = False
-    , isFunctional = False
-    , isFunction = False
-    , isInjective = True
-    , isSortInjection = True
-    , hook = def
-    }
+sortInjectionAttributes =
+    defaultAttributes
+        & Lens.set injective (Injective True)
+        & Lens.set sortInjection (SortInjection True)
 
 defaultAttributes :: StepperAttributes
-defaultAttributes = StepperAttributes
-    { isConstructor = False
-    , isFunctional = False
-    , isFunction = False
-    , isInjective = False
-    , isSortInjection = False
-    , hook = def
-    }
+defaultAttributes = defaultStepperAttributes

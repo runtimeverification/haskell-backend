@@ -28,13 +28,12 @@ import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (..), verifyAndIndexDefinition )
+import qualified Kore.Attribute.Null as Attribute
 import           Kore.Building.AsAst
 import           Kore.Building.Patterns
 import           Kore.Building.Sorts
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.Attributes
-                 ( ImplicitAttributes )
 import           Kore.IndexedModule.IndexedModule
 import           Kore.MetaML.AST
                  ( MetaMLPattern )
@@ -2773,14 +2772,14 @@ runAction proof (description, action) =
         Left err -> Left (description ++ " : " ++ err)
         result   -> result
 
-defaultIndexedModule :: KoreIndexedModule ImplicitAttributes
+defaultIndexedModule :: KoreIndexedModule Attribute.Null
 defaultIndexedModule =
     case defaultIndexedModuleWithError of
         Left err -> error (printError err)
         Right m  -> m
 
 defaultIndexedModuleWithError
-    :: Either (Error MLError) (KoreIndexedModule ImplicitAttributes)
+    :: Either (Error MLError) (KoreIndexedModule Attribute.Null)
 defaultIndexedModuleWithError = do
     modules <-
         castError
@@ -2838,4 +2837,3 @@ defaultIndexedModuleWithError = do
                 }
             ]
         }
-

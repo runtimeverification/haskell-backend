@@ -31,7 +31,7 @@ import           Kore.Step.Simplification.Data
                  PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( StepperAttributes )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh

@@ -3,6 +3,9 @@ module Main (main) where
 import           Control.Applicative
                  ( Alternative (..), optional )
 import qualified Control.Arrow as Arrow
+import qualified Control.Lens as Lens
+import           Data.Function
+                 ( (&) )
 import           Data.Functor.Foldable
                  ( Fix (..), cata )
 import           Data.List
@@ -53,7 +56,6 @@ import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
-
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Predicate.Predicate
@@ -84,7 +86,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 import           Kore.Substitution.Class
                  ( Hashable, substitute )
 import qualified Kore.Substitution.List as ListSubstitution
@@ -607,21 +608,17 @@ constructorFunctions ixm =
         , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
         }
   where
-    constructorFunctions1 h (atts, defn) =
+    constructorFunctions1 ident (atts, defn) =
         ( atts
-            { isConstructor = isConstructor atts || isCons h
-            , isFunctional = isFunctional atts || isCons h || isInj h
-            , isInjective = isInjective atts || isCons h || isInj h
-            , isSortInjection = isSortInjection atts || isInj h
-            }
+            & constructor Lens.<>~ Constructor isCons
+            & functional Lens.<>~ Functional (isCons || isInj)
+            & injective Lens.<>~ Injective (isCons || isInj)
+            & sortInjection Lens.<>~ SortInjection isInj
         , defn
         )
-
-    isInj :: Id Object -> Bool
-    isInj ident = getId ident == "inj"
-
-    isCons :: Id Object -> Bool
-    isCons ident = elem (getId ident) ["kseq", "dotk"]
+      where
+        isInj = getId ident == "inj"
+        isCons = elem (getId ident) ["kseq", "dotk"]
 
     recurseIntoImports (attrs, attributes, importedModule) =
         (attrs, attributes, constructorFunctions importedModule)

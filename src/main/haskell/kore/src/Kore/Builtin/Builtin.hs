@@ -91,11 +91,10 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern StringLiteral_ )
+import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
-import           Kore.Attribute.Parser
-                 ( parseAttributes )
-import           Kore.Builtin.Hook
+import           Kore.Attribute.Hook
                  ( Hook (..) )
 import           Kore.Error
                  ( Error )
@@ -290,7 +289,7 @@ verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
     do
         SentenceSort { sentenceSortAttributes } <- findSort sortActualName
         let expectHook = Hook (Just builtinName)
-        declHook <- Kore.Error.castError (parseAttributes sentenceSortAttributes)
+        declHook <- Verifier.Attributes.parseAttributes sentenceSortAttributes
         Kore.Error.koreFailWhen (expectHook /= declHook)
             ("Sort '" ++ getIdForError sortActualName
                 ++ "' is not hooked to builtin sort '"

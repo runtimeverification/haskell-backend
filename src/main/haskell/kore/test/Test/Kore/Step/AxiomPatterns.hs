@@ -26,9 +26,9 @@ import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (..), verifyAndIndexDefinition )
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.Attributes
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.Parser.ParserImpl
@@ -331,8 +331,8 @@ parseAxiom str =
 
 extractIndexedModule
     :: Text
-    -> Either (Error a) (Map.Map ModuleName (KoreIndexedModule ImplicitAttributes))
-    -> KoreIndexedModule ImplicitAttributes
+    -> Either (Error a) (Map.Map ModuleName (KoreIndexedModule Attribute.Null))
+    -> KoreIndexedModule Attribute.Null
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)

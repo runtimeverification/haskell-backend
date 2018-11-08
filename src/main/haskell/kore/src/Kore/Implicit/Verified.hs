@@ -24,11 +24,10 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  verifyImplicitKoreDefinition )
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( Error, printError )
-import           Kore.Implicit.Attributes
-                 ( ImplicitAttributes )
 import           Kore.Implicit.Definitions
                  ( uncheckedKoreDefinition, uncheckedMetaDefinition )
 import           Kore.MetaML.AST
@@ -42,7 +41,7 @@ checkedMetaDefinition = do
     return uncheckedMetaDefinition
   where
     attributesVerification =
-        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
+        defaultAttributesVerification (Proxy :: Proxy Attribute.Null)
 
 {-| 'implicitMetaDefinition' is a definition with everything Meta
 that is implicitly defined and visible everywhere. This definition passes
@@ -63,7 +62,7 @@ checkedKoreDefinition = do
     return uncheckedKoreDefinition
   where
     attributesVerification =
-        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
+        defaultAttributesVerification (Proxy :: Proxy Attribute.Null)
 
 {-| 'implicitKoreDefinition' is a definition with everything
 that is implicitly defined and visible everywhere. This definition passes

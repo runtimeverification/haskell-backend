@@ -36,6 +36,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import qualified Control.Lens as Lens
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -55,9 +56,9 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.ASTUtils.SmartPatterns as Kore
-import qualified Kore.Builtin.Builtin as Builtin
-import           Kore.Builtin.Hook
+import           Kore.Attribute.Hook
                  ( Hook )
+import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
@@ -380,7 +381,7 @@ unify
   =
     unify0
   where
-    hookTools = StepperAttributes.hook <$> tools
+    hookTools = Lens.view StepperAttributes.hook <$> tools
 
     propagatePredicates
         :: Traversable t

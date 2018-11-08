@@ -31,10 +31,9 @@ import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.Attributes
-                 ( ImplicitAttributes )
 import           Kore.MetaML.Lift
                  ( liftDefinition )
 import           Kore.Parser.Parser
@@ -100,7 +99,7 @@ verify definition =
         Left e  -> Left (printError e)
         Right _ -> Right definition
   where
-    attributesVerification :: AttributesVerification ImplicitAttributes
+    attributesVerification :: AttributesVerification Attribute.Null
     attributesVerification = defaultAttributesVerification Proxy
 
 runParser :: String -> VerifyRequest -> IO LazyByteString.ByteString

@@ -42,7 +42,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( StepperAttributes )
 import           Kore.Substitution.Class
                  ( Hashable (..), PatternSubstitutionClass (..) )
 import qualified Kore.Substitution.List as ListSubstitution

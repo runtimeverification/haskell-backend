@@ -25,6 +25,8 @@ import           Data.Either
                  ( isRight )
 import           Data.Functor.Foldable
                  ( cata )
+import           Data.Reflection
+                 ( give )
 
 import           Kore.AST.Common
                  ( Application (..), DomainValue (..), Pattern (..),
@@ -37,7 +39,6 @@ import           Kore.Proof.Functional
 import           Kore.Step.PatternAttributesError
                  ( FunctionError (..), FunctionalError (..), TotalError (..) )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..), isTotal )
 
 functionalProofVars
     :: Prism
@@ -132,9 +133,9 @@ checkFunctionalHead
 checkFunctionalHead _ (VariablePattern v) =
     Right (DoNotDescend (FunctionalVariable v))
 checkFunctionalHead tools (ApplicationPattern ap)
-    | isFunctional (MetadataTools.symAttributes tools patternHead) =
+    | give tools isFunctional_ patternHead =
         return (Descend (FunctionalHead patternHead))
-    | isSortInjection (MetadataTools.symAttributes tools patternHead) =
+    | give tools isSortInjection_ patternHead =
         assert (MetadataTools.isSubsortOf tools sortFrom sortTo)
         $ return (Descend (FunctionalHead patternHead))
     | otherwise = Left (NonFunctionalHead patternHead)
@@ -152,7 +153,7 @@ isConstructorLikeTop
     -> Pattern level variable pat
     -> Bool
 isConstructorLikeTop tools (ApplicationPattern ap) =
-    isConstructor (MetadataTools.symAttributes tools patternHead)
+    give tools isConstructor_ patternHead
   where
     patternHead = applicationSymbolOrAlias ap
 isConstructorLikeTop _ p = isRight (isPreconstructedPattern undefined p)
@@ -174,7 +175,7 @@ checkFunctionHead
         (FunctionError level)
         (PartialPatternProof (FunctionProof level variable))
 checkFunctionHead tools (ApplicationPattern ap)
-  | isFunction (MetadataTools.symAttributes tools patternHead) =
+  | give tools isFunction_ patternHead =
     Right (Descend (FunctionHead patternHead))
   where
     patternHead = applicationSymbolOrAlias ap

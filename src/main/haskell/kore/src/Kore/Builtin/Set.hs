@@ -38,6 +38,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import qualified Control.Lens as Lens
 import           Control.Monad.Counter
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
@@ -59,10 +60,10 @@ import           Kore.AST.MetaOrObject
 import qualified Kore.AST.PureML as Kore
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.ASTUtils.SmartPatterns as Kore
+import           Kore.Attribute.Hook
+                 ( Hook )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
-import           Kore.Builtin.Hook
-                 ( Hook )
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
@@ -459,7 +460,7 @@ unify
   =
     unify0
   where
-    hookTools = StepperAttributes.hook <$> tools
+    hookTools = Lens.view StepperAttributes.hook <$> tools
 
     -- | Given a collection 't' of 'Predicated' values, propagate all the
     -- predicates to the top level, returning a 'Predicated' collection.

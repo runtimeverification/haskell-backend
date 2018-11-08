@@ -17,6 +17,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT, runMaybeT )
+import qualified Control.Lens as Lens
 import           Control.Monad.Except
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Maybe
@@ -32,9 +33,9 @@ import           Prelude hiding
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
+import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Builtin as Builtin
-import           Kore.Builtin.Hook
 import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Kore
@@ -131,7 +132,7 @@ translatePredicate predicate = do
             VariablePattern _ -> empty
 
     hookTools :: MetadataTools Object Hook
-    hookTools = StepperAttributes.hook <$> given
+    hookTools = Lens.view StepperAttributes.hook <$> given
 
     translatePredicateAnd And { andFirst, andSecond } =
         (SMT.&&&)
@@ -213,7 +214,7 @@ translateInt pat =
         _ -> empty
   where
     hookTools :: MetadataTools Object Hook
-    hookTools = StepperAttributes.hook <$> given
+    hookTools = Lens.view StepperAttributes.hook <$> given
 
     translateApplication
         Application
@@ -279,7 +280,7 @@ translateBool pat =
         _ -> empty
   where
     hookTools :: MetadataTools Object Hook
-    hookTools = StepperAttributes.hook <$> given
+    hookTools = Lens.view StepperAttributes.hook <$> given
 
     translateApplication
         Application

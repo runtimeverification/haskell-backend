@@ -23,6 +23,8 @@ import           Data.Functor.Foldable
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Reflection
+                 ( give )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -40,7 +42,7 @@ import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( StepperAttributes, isConstructor_ )
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Data
@@ -157,7 +159,7 @@ checkApplicationConstructor
     -> Pattern level variable ()
     -> Either checkError ()
 checkApplicationConstructor tools err (ApplicationPattern (Application h _))
-    | isConstructor (symAttributes tools h) = return ()
+    | give tools isConstructor_ h = return ()
     | otherwise = Left err
 checkApplicationConstructor _ _ _ = return ()
 

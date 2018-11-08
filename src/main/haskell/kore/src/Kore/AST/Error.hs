@@ -33,8 +33,10 @@ import Kore.Error
 {-|'koreFailWithLocations' produces an error result with a context containing
 the provided locations. -}
 koreFailWithLocations
-    :: AstWithLocation astWithLocation
-    => [astWithLocation] -> String -> Either (Error a) b
+    :: (AstWithLocation astWithLocation, MonadError (Error e) m)
+    => [astWithLocation]
+    -> String
+    -> m a
 koreFailWithLocations locations errorMessage =
     withLocationsContext locations (koreFail errorMessage)
 
@@ -51,8 +53,10 @@ koreFailWithLocationsWhen condition locations errorMessage =
 whenever the given action fails.
 -}
 withLocationsContext
-    :: AstWithLocation astWithLocation
-    => [astWithLocation] -> Either (Error a) result -> Either (Error a) result
+    :: (AstWithLocation astWithLocation, MonadError (Error e) m)
+    => [astWithLocation]
+    -> m result
+    -> m result
 withLocationsContext locations =
     withContext
         (  "("

@@ -5,6 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertBool, assertEqual, testCase )
 
+import qualified Control.Lens as Lens
 import           Data.Functor.Foldable
                  ( Fix (..) )
 import qualified Data.Map as Map
@@ -23,9 +24,11 @@ import           Kore.AST.Sentence
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTVerifier.DefinitionVerifier
+import           Kore.Attribute.Constructor
+import           Kore.Attribute.Functional
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.Attributes
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
@@ -47,7 +50,7 @@ objectA = SentenceSymbol
           }
     , sentenceSymbolSorts = []
     , sentenceSymbolResultSort = objectS1
-    , sentenceSymbolAttributes = Attributes [ keyOnlyAttribute "constructor" ]
+    , sentenceSymbolAttributes = Attributes [ constructorAttribute ]
     }
 
 metaA :: PureSentenceSymbol Meta
@@ -131,23 +134,35 @@ test_metadataTools :: [TestTree]
 test_metadataTools =
     [ testCase "constructor object"
         (assertEqual ""
-            True
-            (isConstructor (symAttributes metadataTools (symbolHead objectA)))
+            (Constructor True)
+            (Lens.view constructor
+                $ symAttributes metadataTools
+                $ symbolHead objectA
+            )
         )
     , testCase "constructor meta"
         (assertEqual ""
-            False
-            (isConstructor (symAttributes metadataTools (symbolHead metaA)))
+            (Constructor False)
+            (Lens.view constructor
+                $ symAttributes metadataTools
+                $ symbolHead metaA
+            )
         )
     , testCase "functional object"
         (assertEqual ""
-            False
-            (isFunctional (symAttributes metadataTools (symbolHead metaA)))
+            (Functional False)
+            (Lens.view functional
+                $ symAttributes metadataTools
+                $ symbolHead objectA
+            )
         )
     , testCase "functional meta"
         (assertEqual ""
-            False
-            (isFunctional (symAttributes metadataTools (symbolHead metaA)))
+            (Functional False)
+            (Lens.view functional
+                $ symAttributes metadataTools
+                $ symbolHead metaA
+            )
         )
     , testCase "getArgumentSorts object"
         (assertEqual ""
@@ -207,11 +222,11 @@ testSubsorts =
   where
     test name cond = testCase name (assertBool "" cond)
     testSubsort name list = testCase name . assertEqual "" (Set.fromList list)
-    moduleIndex :: Map.Map ModuleName (KoreIndexedModule ImplicitAttributes)
+    moduleIndex :: Map.Map ModuleName (KoreIndexedModule Attribute.Null)
     Right moduleIndex = verifyAndIndexDefinition DoNotVerifyAttributes
         Builtin.koreVerifiers
         testSubsortDefinition
-    meta :: MetadataTools Object ImplicitAttributes
+    meta :: MetadataTools Object Attribute.Null
     meta = extractMetadataTools $ moduleIndex Map.! testObjectModuleName
 
 

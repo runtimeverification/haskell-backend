@@ -5,10 +5,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import qualified Control.Lens as Lens
 import           Control.Monad.Except
                  ( runExceptT )
 import           Data.Default
                  ( def )
+import           Data.Function
+                 ( (&) )
 import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
@@ -44,7 +47,6 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import           Kore.Unification.Unifier
@@ -981,14 +983,16 @@ test_baseStep =
 
 mockStepperAttributes :: SymbolOrAlias Meta -> StepperAttributes
 mockStepperAttributes patternHead =
-    StepperAttributes
-    { isConstructor   = patternHead /= hSymbol && patternHead /= iSymbol
-    , isFunctional    = patternHead /= iSymbol
-    , isFunction      = patternHead /= iSymbol
-    , isInjective     = patternHead /= hSymbol && patternHead /= iSymbol
-    , isSortInjection = False
-    , hook            = def
-    }
+    defaultStepperAttributes
+        & Lens.set constructor Constructor { isConstructor }
+        & Lens.set functional Functional { isDeclaredFunctional }
+        & Lens.set function Function { isDeclaredFunction }
+        & Lens.set injective Injective { isDeclaredInjective }
+  where
+    isConstructor = patternHead /= hSymbol && patternHead /= iSymbol
+    isDeclaredFunctional = patternHead /= iSymbol
+    isDeclaredFunction = patternHead /= iSymbol
+    isDeclaredInjective = patternHead /= hSymbol && patternHead /= iSymbol
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
 mockSymbolOrAliasSorts = const ApplicationSorts

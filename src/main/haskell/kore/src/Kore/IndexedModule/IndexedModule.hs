@@ -42,6 +42,7 @@ import           Control.Monad.State.Strict
                  ( execState )
 import qualified Control.Monad.State.Strict as Monad.State
 import           Data.Default
+import qualified Data.Foldable as Foldable
 import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix )
@@ -53,17 +54,18 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import Kore.AST.Common
-import Kore.AST.Error
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.Sentence
-import Kore.Attribute.Parser
-       ( ParseAttributes, parseAttributes, parseAttributesM )
-import Kore.Attribute.Subsort
-import Kore.Builtin.Hook
-import Kore.Error
-import Kore.Implicit.ImplicitSorts
+import           Kore.AST.Common
+import           Kore.AST.Error
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.Sentence
+import           Kore.Attribute.Hook
+import           Kore.Attribute.Parser
+                 ( ParseAttributes )
+import qualified Kore.Attribute.Parser as Attribute.Parser
+import           Kore.Attribute.Subsort
+import           Kore.Error
+import           Kore.Implicit.ImplicitSorts
 
 type SortDescription level = SentenceSort level UnifiedPattern Variable
 
@@ -351,7 +353,7 @@ internalIndexModuleIfNeeded
             case Map.lookup koreModuleName indexedModules of
                 Just indexedModule -> return (indexedModules, indexedModule)
                 Nothing -> do
-                    parsedModuleAtts <- parseAttributesInModule moduleAtts
+                    parsedModuleAtts <- parseAttributes moduleAtts
                     let
                         indexedModulesAndStartingIndexedModule =
                             ( indexedModules
@@ -368,8 +370,8 @@ internalIndexModuleIfNeeded
                             nameToModule)
                         indexedModulesAndStartingIndexedModule
                         (moduleSentences koreModule)
-                    -- Parse subsorts to fail now if subsort attributes are malformed,
-                    -- so indexedModuleSubsorts can appear total
+                    -- Parse subsorts to fail now if subsort attributes are
+                    -- malformed, so indexedModuleSubsorts can appear total
                     -- TODO: consider making subsorts an IndexedModule field
                     _ <- internalIndexedModuleSubsorts newModule
                     return
@@ -438,7 +440,7 @@ indexModuleMetaSentence
             , sentenceAliasAttributes
             }
       = do
-        atts <- parseAttributesInModule sentenceAliasAttributes
+        atts <- parseAttributes sentenceAliasAttributes
         return
             ( indexedModules
             , indexedModule
@@ -454,7 +456,7 @@ indexModuleMetaSentence
             , sentenceSymbolAttributes
             }
       = do
-        atts <- parseAttributesInModule sentenceSymbolAttributes
+        atts <- parseAttributes sentenceSymbolAttributes
         return
             ( indexedModules
             , indexedModule
@@ -469,7 +471,7 @@ indexModuleMetaSentence
     indexSentenceAxiom
         _sentence@SentenceAxiom { sentenceAxiomAttributes }
       = do
-        atts <- parseAttributesInModule sentenceAxiomAttributes
+        atts <- parseAttributes sentenceAxiomAttributes
         return
             ( indexedModules
             , indexedModule
@@ -491,7 +493,7 @@ indexModuleMetaSentence
                 nameToModule
                 indexedModules
                 importedModuleName
-        atts <- parseAttributesInModule attributes
+        atts <- parseAttributes attributes
         return
             ( newIndexedModules
             , indexedModule
@@ -507,7 +509,7 @@ indexModuleMetaSentence
             , sentenceSortName
             }
       = do
-        atts <- parseAttributesInModule sentenceSortAttributes
+        atts <- parseAttributes sentenceSortAttributes
         return
             ( indexedModules
             , indexedModule
@@ -557,7 +559,7 @@ indexModuleObjectSentence
             , sentenceAliasAttributes
             }
       = do
-        atts <- parseAttributesInModule sentenceAliasAttributes
+        atts <- parseAttributes sentenceAliasAttributes
         return
             ( indexedModules
             , indexedModule
@@ -573,7 +575,7 @@ indexModuleObjectSentence
             , sentenceSymbolAttributes
             }
       = do
-        atts <- parseAttributesInModule sentenceSymbolAttributes
+        atts <- parseAttributes sentenceSymbolAttributes
         return
             ( indexedModules
             , indexedModule
@@ -615,7 +617,7 @@ indexModuleObjectSentence
                         , sentenceSymbolAttributes = Attributes []
                         }
                 )
-        atts <- parseAttributesInModule sentenceSortAttributes
+        atts <- parseAttributes sentenceSortAttributes
         return
             ( indexedModules'
             , indexedModule'
@@ -660,7 +662,7 @@ indexModuleObjectSentence
             }
         )
       = do
-        atts <- parseAttributesInModule sentenceSymbolAttributes
+        atts <- parseAttributes sentenceSymbolAttributes
         hook <- getHookAttribute sentenceSymbolAttributes
         return
             ( indexedModules
@@ -720,11 +722,12 @@ metaNameForObjectSort name = "#`" ++ name
 
 See also: 'parseAttributes'
 -}
-parseAttributesInModule
+parseAttributes
     :: ParseAttributes a
     => Attributes
     -> Either (Error IndexModuleError) a
-parseAttributesInModule = castError . parseAttributes
+parseAttributes =
+    Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 
 {- | Retrieve those object-level symbol sentences that are hooked.
 
@@ -754,14 +757,18 @@ indexedModuleSubsorts imod =
 
 internalIndexedModuleSubsorts
     :: IndexedModule sortParam pat variables atts
-    -> Either
-        (Error IndexModuleError)
-        [Subsort]
-internalIndexedModuleSubsorts imod = let
-    attributes = [sentenceAxiomAttributes
-                 | (_,SentenceAxiom { sentenceAxiomAttributes })
-                     <- indexedModuleAxioms imod]
-    in concat <$> mapM parseAttributesM attributes
+    -> Either (Error IndexModuleError) [Subsort]
+internalIndexedModuleSubsorts imod = do
+    let
+        attributes =
+            [ sentenceAxiomAttributes
+            | (_, SentenceAxiom { sentenceAxiomAttributes })
+                <- indexedModuleAxioms imod
+            ]
+    Subsorts subsorts <-
+        Attribute.Parser.liftParser
+        $ Foldable.foldrM Attribute.Parser.parseAttributesWith def attributes
+    return subsorts
 
 {- | Determine all indexed modules in scope from the given module.
 

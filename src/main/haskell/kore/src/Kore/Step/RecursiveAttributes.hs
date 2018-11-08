@@ -14,6 +14,7 @@ module Kore.Step.RecursiveAttributes
     , isTotalPattern
     ) where
 
+
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
@@ -48,10 +49,6 @@ isFunctionalPattern, isFunctionPattern, isTotalPattern
     -> Bool
 --TODO(traiansf): we assume below that the pattern does not contain
 --sort injection symbols where the parameter sorts are not in subsort relation.
-isFunctionalPattern = recursivelyCheckHeadProperty
-    (\atts -> isFunctional atts || isSortInjection atts)
-isFunctionPattern = recursivelyCheckHeadProperty
-    (\atts -> isFunctional atts || isFunction atts || isSortInjection atts)
-isTotalPattern = recursivelyCheckHeadProperty
-    (\atts -> isFunctional atts || isTotal atts || isSortInjection atts)
-
+isFunctionalPattern = recursivelyCheckHeadProperty isFunctional
+isFunctionPattern = recursivelyCheckHeadProperty isFunction
+isTotalPattern = recursivelyCheckHeadProperty isTotal

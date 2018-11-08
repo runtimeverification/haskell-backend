@@ -15,9 +15,9 @@ import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Attribute.Hook as Attribute.Hook
 import           Kore.Building.Implicit
 import           Kore.Building.Patterns as Patterns
-import qualified Kore.Builtin.Hook as Builtin.Hook
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 
@@ -652,7 +652,7 @@ test_patternVerifier =
             { sentenceSortName = testId name
             , sentenceSortParameters = []
             , sentenceSortAttributes =
-                Attributes [ Builtin.Hook.hookAttribute "INT.Int" ]
+                Attributes [ Attribute.Hook.hookAttribute "INT.Int" ]
             }
       where
         SortName name = intSortName
@@ -665,7 +665,7 @@ test_patternVerifier =
             { sentenceSortName = testId name
             , sentenceSortParameters = []
             , sentenceSortAttributes =
-                Attributes [ Builtin.Hook.hookAttribute "BOOL.Bool" ]
+                Attributes [ Attribute.Hook.hookAttribute "BOOL.Bool" ]
             }
       where
         SortName name = boolSortName

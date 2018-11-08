@@ -20,9 +20,9 @@ import           Kore.AST.Sentence
 import           Kore.ASTHelpers
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.Attributes
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
@@ -150,7 +150,7 @@ testDefinition =
             ]
         }
 
-testIndexedModule :: KoreIndexedModule ImplicitAttributes
+testIndexedModule :: KoreIndexedModule Attribute.Null
 testIndexedModule =
     case
         verifyAndIndexDefinition
@@ -168,7 +168,7 @@ test_resolvers :: [TestTree]
 test_resolvers =
     [ testCase "object sort"
         (assertEqual ""
-            (Right (def :: ImplicitAttributes, SentenceSort
+            (Right (def :: Attribute.Null, SentenceSort
                 { sentenceSortName = testId "s1"
                 , sentenceSortParameters = []
                 , sentenceSortAttributes =
@@ -184,7 +184,7 @@ test_resolvers =
         )
     , testCase "meta sort"
         (assertEqual ""
-            (Right (def :: ImplicitAttributes, SentenceSort
+            (Right (def :: Attribute.Null, SentenceSort
                 { sentenceSortName = charMetaId
                 , sentenceSortParameters = []
                 , sentenceSortAttributes = Attributes []
@@ -194,7 +194,7 @@ test_resolvers =
         )
     , testCase "object symbol"
         (assertEqual ""
-            (Right (def :: ImplicitAttributes, SentenceSymbol
+            (Right (def :: Attribute.Null, SentenceSymbol
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol objectA
                 , sentenceSymbolSorts = []
@@ -205,7 +205,7 @@ test_resolvers =
         )
     , testCase "meta symbol"
         (assertEqual ""
-            (Right (def :: ImplicitAttributes, SentenceSymbol
+            (Right (def :: Attribute.Null, SentenceSymbol
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol metaA
                 , sentenceSymbolSorts = []
@@ -216,7 +216,7 @@ test_resolvers =
         )
     , testCase "object alias"
         (assertEqual ""
-            (Right (def :: ImplicitAttributes, SentenceAlias
+            (Right (def :: Attribute.Null, SentenceAlias
                 { sentenceAliasAttributes = Attributes []
                 , sentenceAliasAlias = sentenceAliasAlias objectB
                 , sentenceAliasSorts = []
@@ -229,7 +229,7 @@ test_resolvers =
         )
     , testCase "meta alias"
         (assertEqual ""
-            (Right (def :: ImplicitAttributes, SentenceAlias
+            (Right (def :: Attribute.Null, SentenceAlias
                 { sentenceAliasAttributes = Attributes []
                 , sentenceAliasAlias = sentenceAliasAlias metaB
                 , sentenceAliasSorts = []

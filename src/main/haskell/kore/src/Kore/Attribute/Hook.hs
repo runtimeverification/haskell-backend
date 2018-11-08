@@ -1,45 +1,44 @@
 {-|
-Module      : Data.Builtin.Hook
+Module      : Data.Attribute.Hook
 Description : Representation and parser for hook attributes
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
-module Kore.Builtin.Hook
+module Kore.Attribute.Hook
     ( Hook (..)
     , emptyHook
-    , hookAttribute
+    , hookId, hookSymbol, hookAttribute
     , getHookAttribute
     ) where
 
-import Data.Default
-       ( Default (..) )
-import Data.Functor
-       ( ($>) )
-import Data.Hashable
-       ( Hashable )
-import Data.Text
-       ( Text )
-import GHC.Generics
-       ( Generic )
+import qualified Control.Monad as Monad
+import           Data.Default
+                 ( Default (..) )
+import           Data.Hashable
+                 ( Hashable )
+import qualified Data.Maybe as Maybe
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
-                 ( Application (..),
+                 ( Application (..), Id,
                  Pattern (ApplicationPattern, StringLiteralPattern),
-                 StringLiteral (..) )
+                 StringLiteral (..), SymbolOrAlias (..) )
 import           Kore.AST.Kore
                  ( CommonKorePattern, pattern KoreMetaPattern,
                  pattern KoreObjectPattern )
+import           Kore.AST.MetaOrObject
+                 ( Object )
 import           Kore.AST.Sentence
                  ( Attributes )
 import           Kore.Attribute.Parser
                  ( ParseAttributes )
-import qualified Kore.Attribute.Parser as Attribute
+import qualified Kore.Attribute.Parser as Parser
 import           Kore.Error
-import           Kore.Implicit.Attributes
-                 ( attributeHead )
 
 newtype Hook = Hook { getHook :: Maybe Text }
   deriving (Eq, Generic, Ord, Read, Show)
@@ -55,14 +54,28 @@ instance Default Hook where
 
 instance Hashable Hook
 
+{- | Kore identifier representing a @hook@ attribute symbol.
+ -}
+hookId :: Id Object
+hookId = "hook"
+
+{- | Kore symbol representing the head of a @hook@ attribute.
+
+Kore syntax: @hook{}@
+
+ -}
+hookSymbol :: SymbolOrAlias Object
+hookSymbol =
+    SymbolOrAlias
+        { symbolOrAliasConstructor = hookId
+        , symbolOrAliasParams = []
+        }
+
 {- | Kore pattern representing a @hook@ attribute
 
-  Kore syntax:
-  @
-    hook{}("HOOKED.function")
-  @
-  where @"HOOKED.function"@ is a literal string referring to a known builtin
-  function.
+Kore syntax: @hook{}("HOOKED.function")@
+@"HOOKED.function"@ is a literal string referring to a known builtin
+function.
 
  -}
 hookAttribute :: String  -- ^ hooked function name
@@ -70,7 +83,7 @@ hookAttribute :: String  -- ^ hooked function name
 hookAttribute builtin =
     (KoreObjectPattern . ApplicationPattern)
         Application
-            { applicationSymbolOrAlias = attributeHead "hook"
+            { applicationSymbolOrAlias = hookSymbol
             , applicationChildren = [lit]
             }
   where
@@ -85,12 +98,16 @@ hookAttribute builtin =
 
  -}
 instance ParseAttributes Hook where
-    attributesParser =
-        Hook <$> Attribute.choose correctAttribute noAttribute
+    parseAttribute =
+        withApplication $ \params args (Hook hook) -> do
+            Parser.getZeroParams params
+            arg <- Parser.getOneArgument args
+            StringLiteral name <- Parser.getStringLiteral arg
+            Monad.unless (Maybe.isNothing hook) failDuplicate
+            return Hook { getHook = Just (Text.pack name) }
       where
-        correctAttribute = Just <$> Attribute.parseStringAttribute "hook"
-        noAttribute = Attribute.assertNoAttribute "hook" $> Nothing
-
+        withApplication = Parser.withApplication hookId
+        failDuplicate = Parser.failDuplicate hookId
 
 {- | Look up a required @hook{}()@ attribute from the given attributes.
 
@@ -102,5 +119,6 @@ getHookAttribute
     => Attributes
     -> m Text
 getHookAttribute attributes = do
-    hook <- Attribute.parseAttributesM attributes
+    let parser = Parser.parseAttributes attributes
+    hook <- Parser.liftParser parser
     maybe (koreFail "missing hook attribute") return (getHook hook)

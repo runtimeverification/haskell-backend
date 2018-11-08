@@ -5,36 +5,55 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( Assertion, assertEqual, assertFailure, testCase )
 
-import Data.Default
-       ( def )
+import qualified Control.Lens as Lens
+import           Data.Default
+                 ( def )
+import           Data.Function
+                 ( (&) )
+
+import Kore.AST.Common
+import Kore.AST.Kore
+import Kore.AST.Sentence
+       ( Attributes (..) )
+import Kore.Attribute.Hook
+import Kore.Attribute.Parser
+       ( ParseError, parseAttributes )
+import Kore.Error
+       ( Error )
+import Kore.Step.StepperAttributes
 
 import Test.Kore.Comparators ()
 
-import           Kore.AST.Kore
-                 ( CommonKorePattern )
-import           Kore.AST.Sentence
-                 ( Attributes (..) )
-import           Kore.Attribute.Parser
-                 ( parseAttributes )
-import qualified Kore.Attribute.Parser as Attribute
-import           Kore.Builtin.Hook
-import           Kore.Error
-                 ( Error )
-import           Kore.Implicit.Attributes
-                 ( keyOnlyAttribute )
-import           Kore.Step.StepperAttributes
-
-
-parseStepperAttributes :: [CommonKorePattern] -> Either (Error Attribute.ParseError) StepperAttributes
-parseStepperAttributes atts = parseAttributes (Attributes atts)
+parse
+    :: [CommonKorePattern]
+    -> Either (Error ParseError) StepperAttributes
+parse = parseAttributes . Attributes
 
 testAttribute :: CommonKorePattern
-testAttribute = keyOnlyAttribute "test"
+testAttribute =
+    (KoreObjectPattern . ApplicationPattern)
+        Application
+            { applicationSymbolOrAlias =
+                SymbolOrAlias
+                    { symbolOrAliasConstructor = "test"
+                    , symbolOrAliasParams = []
+                    }
+            , applicationChildren = []
+            }
 
 badHookAttribute :: CommonKorePattern
-badHookAttribute = keyOnlyAttribute "hook"
+badHookAttribute =
+    (KoreObjectPattern . ApplicationPattern)
+        Application
+            { applicationSymbolOrAlias = hookSymbol
+            , applicationChildren = []
+            }
 
-expectError :: Show a => String -> Either (Error Attribute.ParseError) a -> Assertion
+expectError
+    :: Show a
+    => String
+    -> Either (Error ParseError) a
+    -> Assertion
 expectError _ (Left _) = pure ()
 expectError what (Right got) =
     assertFailure
@@ -45,54 +64,47 @@ test_stepperAttributes :: [TestTree]
 test_stepperAttributes =
     [ testCase "Parsing a constructor attribute"
         (assertEqual "[constructor{}()]"
-            (Right True)
-            (isConstructor <$> parseStepperAttributes [constructorAttribute])
+            (Right Constructor { isConstructor = True })
+            (Lens.view constructor <$> parse [constructorAttribute])
         )
     , testCase "Parsing a function attribute"
         (assertEqual "[function{}()]"
-            (Right True)
-            (isFunction <$> parseStepperAttributes [functionAttribute])
+            (Right Function { isDeclaredFunction = True })
+            (Lens.view function <$> parse [functionAttribute])
         )
     , testCase "Parsing a functional attribute"
         (assertEqual "[functional{}()]"
-            (Right True)
-            (isFunctional <$> parseStepperAttributes [functionalAttribute])
+            (Right Functional { isDeclaredFunctional = True })
+            (Lens.view functional <$> parse [functionalAttribute])
         )
     , testCase "Parsing a hook attribute"
         (assertEqual "[function{}(),hook{}(\"builtin\")]"
-            (Right ((Hook . Just) "builtin"))
-            (hook <$>
-                parseStepperAttributes
-                [ hookAttribute "builtin" ]
-            )
+            (Right Hook { getHook = Just "builtin" })
+            (Lens.view hook <$> parse [ hookAttribute "builtin" ])
         )
     , testCase "Parsing an illegal hook attribute"
         (expectError "[hook{}()]"
-            (parseStepperAttributes [ badHookAttribute ])
+            (parse [ badHookAttribute ])
         )
     , testCase "Parsing repeated hook attribute"
         (expectError
             "[function{}(),hook{}(\"BUILTIN.1\"),hook{}(\"BUILTIN.2\")]"
-            (parseStepperAttributes [ badHookAttribute ])
+            (parse [ badHookAttribute ])
         )
     , testCase "Ignoring unknown attribute"
         (assertEqual "[test{}()]"
             (Right def)
-            (parseStepperAttributes
-                [testAttribute]
-            )
+            (parse [testAttribute])
         )
     , testCase "Testing parseAttributes"
         (assertEqual "[functional{}(),function{}(),hook{}(\"builtin\")]"
-            (Right StepperAttributes
-                { isFunction = True
-                , isFunctional = True
-                , isConstructor = False
-                , isInjective = False
-                , isSortInjection = False
-                , hook = (Hook . Just) "builtin"
-                })
-            (parseStepperAttributes
+            (defaultStepperAttributes
+                & Lens.set function (Function True)
+                & Lens.set functional (Functional True)
+                & Lens.set hook (Hook $ Just "builtin")
+                & Right
+            )
+            (parse
                 [ functionAttribute
                 , functionalAttribute
                 , testAttribute

@@ -29,11 +29,11 @@ import           Kore.AST.Sentence
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
+import           Kore.Attribute.Hook
+                 ( hookAttribute )
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Builtin as Builtin
-import           Kore.Builtin.Hook
-                 ( hookAttribute )
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule

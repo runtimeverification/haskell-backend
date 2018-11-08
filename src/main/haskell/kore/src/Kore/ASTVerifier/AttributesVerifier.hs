@@ -13,6 +13,7 @@ module Kore.ASTVerifier.AttributesVerifier
     , verifySymbolHookAttribute
     , verifyNoHookAttribute
     , AttributesVerification (..)
+    , parseAttributes
     ) where
 
 import Data.List
@@ -21,26 +22,28 @@ import Data.Proxy
 import Data.Text
        ( Text )
 
-import Kore.AST.Common
-import Kore.AST.Kore
-       ( KorePattern, applyKorePattern )
-import Kore.AST.MetaOrObject
-       ( Object )
-import Kore.AST.Sentence
-import Kore.ASTVerifier.Error
-import Kore.Attribute.Parser
-       ( parseAttributes )
-import Kore.Builtin.Hook
-import Kore.Error
-import Kore.IndexedModule.IndexedModule
-       ( KoreIndexedModule )
-import Kore.IndexedModule.Resolvers
+import           Kore.AST.Common
+import           Kore.AST.Kore
+                 ( KorePattern, applyKorePattern )
+import           Kore.AST.MetaOrObject
+                 ( Object )
+import           Kore.AST.Sentence
+import           Kore.ASTVerifier.Error
+import           Kore.Attribute.Hook
+import qualified Kore.Attribute.Parser as Attribute.Parser
+import           Kore.Error
+import           Kore.IndexedModule.IndexedModule
+                 ( KoreIndexedModule )
+import           Kore.IndexedModule.Resolvers
 
 {-| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. -}
 data AttributesVerification atts
     = VerifyAttributes (Proxy atts)
     | DoNotVerifyAttributes
+
+parseAttributes :: Attributes -> Either (Error VerifyError) Hook
+parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 
 {-|'verifyAttributes' verifies the wellformedness of the given attributes.
 -}
@@ -89,7 +92,7 @@ verifySortHookAttribute _indexedModule =
         DoNotVerifyAttributes ->
             \_ -> return emptyHook
         VerifyAttributes _ ->
-            \attributes -> castError (parseAttributes attributes)
+            \attributes -> parseAttributes attributes
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 
@@ -109,15 +112,15 @@ verifySymbolHookAttribute indexedModule =
             -- Do not attempt to parse, verify, or return the hook attribute.
             \_ -> return emptyHook
         VerifyAttributes _ -> \attributes -> do
-            hook@Hook { getHook } <- castError (parseAttributes attributes)
+            hook@Hook { getHook } <- parseAttributes attributes
             case getHook of
                 Nothing ->
                     -- The hook attribute is absent; nothing more to verify.
                     return ()
-                Just hookId -> do
+                Just hookName -> do
                     -- Verify that the the pair (sort signature, hook)
                     -- is unique for all symbols with this hook.
-                    checkNoDuplicateHookedSymbols indexedModule hookId
+                    checkNoDuplicateHookedSymbols indexedModule hookName
                     return ()
             return hook
 

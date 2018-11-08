@@ -18,9 +18,9 @@ import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.Attributes
 import           Kore.Implicit.ImplicitSorts
 import           Kore.Unparser
 
@@ -114,7 +114,7 @@ expectFailureWithError description expectedError definition =
                     expectedError actualError
         )
 
-attributesVerificationForTests :: AttributesVerification ImplicitAttributes
+attributesVerificationForTests :: AttributesVerification Attribute.Null
 attributesVerificationForTests = defaultAttributesVerification Proxy
 
 printDefinition :: KoreDefinition -> String
