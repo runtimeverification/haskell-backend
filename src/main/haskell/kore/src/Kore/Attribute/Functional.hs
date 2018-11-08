@@ -11,8 +11,12 @@ module Kore.Attribute.Functional
     , functionalId, functionalSymbol, functionalAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -24,7 +28,7 @@ import qualified Kore.Attribute.Parser as Parser
 {- | @Functional@ represents the @functional@ attribute for symbols.
  -}
 newtype Functional = Functional { isDeclaredFunctional :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Functional where
     (<>) (Functional a) (Functional b) = Functional (a || b)
@@ -34,6 +38,8 @@ instance Monoid Functional where
 
 instance Default Functional where
     def = mempty
+
+instance NFData Functional
 
 -- | Kore identifier representing the @functional@ attribute symbol.
 functionalId :: Id Object

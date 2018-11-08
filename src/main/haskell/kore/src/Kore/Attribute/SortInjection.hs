@@ -11,8 +11,12 @@ module Kore.Attribute.SortInjection
     , sortInjectionId, sortInjectionSymbol, sortInjectionAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -23,7 +27,7 @@ import qualified Kore.Attribute.Parser as Parser
 
 -- | @SortInjection@ represents the @sortInjection@ attribute for symbols.
 newtype SortInjection = SortInjection { isSortInjection :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup SortInjection where
     (<>) (SortInjection a) (SortInjection b) = SortInjection (a || b)
@@ -33,6 +37,8 @@ instance Monoid SortInjection where
 
 instance Default SortInjection where
     def = mempty
+
+instance NFData SortInjection
 
 -- | Kore identifier representing the @sortInjection@ attribute symbol.
 sortInjectionId :: Id Object

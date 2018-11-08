@@ -42,6 +42,8 @@ module Kore.Step.StepperAttributes
     , isTotal_, isTotal
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
@@ -50,6 +52,8 @@ import           Control.Monad
 import           Data.Default
 import           Data.Reflection
                  ( Given, given )
+import           GHC.Generics
+                 ( Generic )
 
 import Kore.AST.Common
        ( SymbolOrAlias )
@@ -90,9 +94,11 @@ data StepperAttributes =
       -- ^ The builtin sort or symbol hooked to a sort or symbol
     , smtlib        :: !Smtlib
     }
-  deriving (Eq, Show)
+  deriving (Generic, Eq, Show)
 
 Lens.makeLenses ''StepperAttributes
+
+instance NFData StepperAttributes
 
 instance ParseAttributes StepperAttributes where
     parseAttribute attr =

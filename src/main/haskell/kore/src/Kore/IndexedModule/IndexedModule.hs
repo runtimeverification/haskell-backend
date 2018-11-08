@@ -36,6 +36,8 @@ module Kore.IndexedModule.IndexedModule
 
 import           Control.Arrow
                  ( (&&&) )
+import           Control.DeepSeq
+                 ( NFData (..) )
 import           Control.Monad
                  ( foldM )
 import           Control.Monad.State.Strict
@@ -53,6 +55,8 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
 import           Kore.AST.Error
@@ -121,6 +125,7 @@ data IndexedModule sortParam pat variable atts =
         -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
         -- identifiers
     }
+    deriving Generic
 
 -- |Convenient notation for retrieving a sentence from a
 -- @(attributes,sentence)@ pair format.
@@ -137,6 +142,8 @@ deriving instance
 
 type KoreIndexedModule =
     IndexedModule UnifiedSortVariable UnifiedPattern Variable
+
+instance NFData a => NFData (KoreIndexedModule a)
 
 indexedModuleRawSentences  :: KoreIndexedModule atts -> [KoreSentence]
 indexedModuleRawSentences im =
