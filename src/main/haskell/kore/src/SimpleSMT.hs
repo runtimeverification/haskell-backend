@@ -140,6 +140,8 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Concurrent
                  ( forkIO )
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Exception as X
 import           Control.Monad
                  ( forever, when )
@@ -166,6 +168,8 @@ import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Lazy.IO as Text.Lazy
 import           Data.Void
                  ( Void )
+import           GHC.Generics
+                 ( Generic )
 import           Numeric
                  ( readHex, showFFloat, showHex )
 import           Prelude hiding
@@ -204,7 +208,9 @@ data Value =  Bool  !Bool           -- ^ Boolean value
 data SExpr
     = Atom !Text
     | List ![SExpr]
-    deriving (Eq, Ord, Show)
+    deriving (Generic, Eq, Ord, Show)
+
+instance NFData SExpr
 
 -- | Stream an S-expression into 'Builder'.
 buildSExpr :: SExpr -> Builder

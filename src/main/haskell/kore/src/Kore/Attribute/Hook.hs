@@ -12,6 +12,8 @@ module Kore.Attribute.Hook
     , getHookAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData (..) )
 import qualified Control.Monad as Monad
 import           Data.Default
                  ( Default (..) )
@@ -53,6 +55,8 @@ instance Default Hook where
     def = emptyHook
 
 instance Hashable Hook
+
+instance NFData Hook
 
 {- | Kore identifier representing a @hook@ attribute symbol.
  -}

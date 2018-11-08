@@ -11,8 +11,12 @@ module Kore.Attribute.Function
     , functionId, functionSymbol, functionAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -23,7 +27,7 @@ import qualified Kore.Attribute.Parser as Parser
 
 -- | @Function@ represents the @function@ attribute for symbols.
 newtype Function = Function { isDeclaredFunction :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Function where
     (<>) (Function a) (Function b) = Function (a || b)
@@ -33,6 +37,8 @@ instance Monoid Function where
 
 instance Default Function where
     def = mempty
+
+instance NFData Function
 
 -- | Kore identifier representing the @function@ attribute symbol.
 functionId :: Id Object

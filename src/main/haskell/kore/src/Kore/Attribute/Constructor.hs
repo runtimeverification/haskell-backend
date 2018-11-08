@@ -11,8 +11,12 @@ module Kore.Attribute.Constructor
     , constructorId, constructorSymbol, constructorAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -23,7 +27,7 @@ import qualified Kore.Attribute.Parser as Parser
 
 -- | @Constructor@ represents the @constructor@ attribute for symbols.
 newtype Constructor = Constructor { isConstructor :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Constructor where
     (<>) (Constructor a) (Constructor b) = Constructor (a || b)
@@ -33,6 +37,8 @@ instance Monoid Constructor where
 
 instance Default Constructor where
     def = mempty
+
+instance NFData Constructor
 
 -- | Kore identifier representing the @constructor@ attribute symbol.
 constructorId :: Id Object

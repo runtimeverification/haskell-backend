@@ -12,12 +12,16 @@ module Kore.Attribute.Smtlib
     , applySExpr
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Error as Error
 import qualified Control.Monad as Monad
 import           Data.Default
 import           Data.Maybe
                  ( fromMaybe, isNothing )
 import qualified Data.Text as Text
+import           GHC.Generics
+                 ( Generic )
 import           SimpleSMT
 
 import           Kore.AST.Common
@@ -46,7 +50,7 @@ valid SMT-LIB S-expressions.
 
  -}
 newtype Smtlib = Smtlib { getSmtlib :: Maybe SExpr }
-    deriving (Eq, Ord, Show)
+    deriving (Generic, Eq, Ord, Show)
 
 instance Default Smtlib where
     def = Smtlib Nothing
@@ -63,6 +67,8 @@ instance ParseAttributes Smtlib where
       where
         withApplication = Parser.withApplication smtlibId
         failDuplicate = Parser.failDuplicate smtlibId
+
+instance NFData Smtlib
 
 -- | Kore identifier representing the @smtlib@ attribute symbol.
 smtlibId :: Id Object

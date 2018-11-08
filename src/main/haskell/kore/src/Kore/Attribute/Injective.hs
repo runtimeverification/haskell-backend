@@ -11,8 +11,12 @@ module Kore.Attribute.Injective
     , injectiveId, injectiveSymbol, injectiveAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -24,7 +28,7 @@ import qualified Kore.Attribute.Parser as Parser
 {- | @Injective@ represents the @injective@ attribute for symbols.
  -}
 newtype Injective = Injective { isDeclaredInjective :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Injective where
     (<>) (Injective a) (Injective b) = Injective (a || b)
@@ -34,6 +38,8 @@ instance Monoid Injective where
 
 instance Default Injective where
     def = mempty
+
+instance NFData Injective
 
 -- | Kore identifier representing the @injective@ attribute symbol.
 injectiveId :: Id Object
