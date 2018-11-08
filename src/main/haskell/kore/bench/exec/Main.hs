@@ -2,12 +2,39 @@ module Main where
 
 import Criterion.Main
 
-import System.Directory
-       ( removeFile )
-import System.FilePath
-       ( takeFileName, (</>) )
-import System.IO.Temp
-       ( writeSystemTempFile )
+import qualified Control.Lens as Lens
+import           Data.Function
+                 ( (&) )
+import Data.Limit
+       ( Limit (Unlimited) )
+import qualified Data.Map as Map
+
+import           Kore.AST.MetaOrObject
+                 ( Object (..) )
+import           Kore.AST.PureToKore
+                 ( patternKoreToPure )
+import           Kore.AST.Sentence
+                 ( ModuleName (..) )
+import           Kore.ASTVerifier.DefinitionVerifier
+                 ( AttributesVerification (DoNotVerifyAttributes),
+                 verifyAndIndexDefinition )
+import qualified Kore.Builtin as Builtin
+import           Kore.Exec
+import           Kore.Parser.Parser
+                 ( fromKore, fromKorePattern )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
+import           Kore.Step.Step
+                 ( anyAxiom )
+import           Kore.Step.StepperAttributes
+
+import           Kore.AST.Common
+import           Kore.IndexedModule.IndexedModule
+                 ( IndexedModule (..), KoreIndexedModule )
+import qualified SMT
+
+import           System.FilePath
+                 ( takeFileName, (</>) )
 import qualified System.Process as Proc
 
 import qualified Paths
@@ -16,16 +43,28 @@ import qualified Paths
 data Definition = Definition
     { root :: !FilePath
     , kFile :: !FilePath
+    , definitionFile :: !FilePath
+    , mainModuleName :: !ModuleName
     , testFiles :: ![FilePath]
     }
 
 main :: IO ()
-main = defaultMain 
-    [ bgroup 
-        (takeFileName root) 
-        [ exec root kFile test |  test <- testFiles ] 
-    | Definition { root, kFile, testFiles } <- definitions
-    ]
+main = defaultMain groups
+  where
+    groups = group <$> definitions
+
+group :: Definition -> Benchmark
+group Definition
+    { root
+    , kFile
+    , definitionFile
+    , mainModuleName
+    , testFiles }
+  =
+    bgroup (takeFileName root) tests
+  where
+    tests =
+        (execBenchmark root kFile definitionFile mainModuleName) <$> testFiles
 
 {- | List of Definitions to benchmark
 
@@ -34,38 +73,33 @@ each Definition's tests.
 -}
 definitions :: [Definition]
 definitions =
-    [ Definition 
+    [ Definition
         { root = Paths.dataFileName "../../k/working/function-evaluation-demo"
         , kFile = "demo.k"
-        , testFiles = 
+        , definitionFile = "demo-kompiled/definition.kore"
+        , mainModuleName = ModuleName "DEMO"
+        , testFiles =
             [ "tests/Nat.demo"
             , "tests/NatList.demo"
             , "tests/Truth.demo"
             ]
         }
-    , Definition
-        { root = Paths.dataFileName "../../k/working/imp-monosorted"
-        , kFile = "imp.k"
-        , testFiles = impTests
-        }
-    , Definition
-        { root = Paths.dataFileName "../../k/working/imp-concrete-state"
-        , kFile = "imp.k"
-        , testFiles = impTests
-        }
-    , Definition
-        { root = Paths.dataFileName "../../k/working/imp-concrete-heat-cool"
-        , kFile = "imp.k"
-        , testFiles = impTests
-        }
+    , impDefinition "../../k/working/imp-monosorted"
+    , impDefinition "../../k/working/imp-concrete-state"
+    , impDefinition "../../k/working/imp-concrete-heat-cool"
     ]
-  where 
-    impTests =
-        [ "tests/collatz.imp"
-        , "tests/max-symbolic.imp"
-        , "tests/primes.imp"
-        , "tests/sum.imp"
-        ]
+  where
+    impDefinition root = Definition
+        { root = Paths.dataFileName root
+        , kFile = "imp.k"
+        , mainModuleName = ModuleName "IMP"
+        , definitionFile = "imp-kompiled/definition.kore"
+        , testFiles =
+            [ "tests/collatz.imp"
+            , "tests/primes.imp"
+            , "tests/sum.imp"
+            ]
+        }
 
 {- | Path to the directory containing kompile, kast, and krun -}
 kBin :: FilePath
@@ -73,39 +107,87 @@ kBin = "../../../../.build/k/k-distribution/target/release/k/bin"
 
 {- | Declare an execution benchmark
 
-Before Criterion starts timing, kompile the K definition and kast the program
-into a temporary file. Then each benchmark times krun without kast.
+Before Criterion starts timing, kompile the K definition and parse the input
+program into a kore pattern. Then each benchmark times concrete execution
+alone.
 -}
-exec
+execBenchmark
     :: FilePath
     -> FilePath
     -> FilePath
+    -> ModuleName
+    -> FilePath
     -> Benchmark
-exec root kFile test = envWithCleanup setUp cleanUp $ bench name . nfIO . krun
+execBenchmark root kFile definitionFile mainModuleName test =
+    env setUp $ bench name . nfIO . execution
   where
     name = takeFileName test
     setUp = do
         kompile
-        kastFile <- writeKast
-        koreExec <- getKoreExec
-        return (koreExec, kastFile)
-    cleanUp (_, kastFile) = removeFile kastFile
-    krun (koreExec, kastFile) = myShell $ (kBin </> "krun") 
-        ++ " --haskell-backend-command \"" ++ koreExec ++ "\" -d " ++ root 
-        ++ " --parser cat " ++ kastFile
-    kompile = myShell $ (kBin </> "kompile") 
+        definition <- readFile $ root </> definitionFile
+        let
+            Right parsedDefinition = fromKore "" definition
+            Right indexedModules =
+                verifyAndIndexDefinition
+                    DoNotVerifyAttributes
+                    Builtin.koreVerifiers
+                    parsedDefinition
+            Just indexedModule =
+                constructorFunctions <$> Map.lookup mainModuleName indexedModules
+        pat <- parseProgram
+        let
+            Right parsedPattern = fromKorePattern "" pat
+            Right purePattern = patternKoreToPure Object parsedPattern
+        return (indexedModule, purePattern)
+    execution (indexedModule, purePattern) =
+        SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier
+        $ exec indexedModule purePattern Unlimited anyAxiom
+    kompile = myShell $ (kBin </> "kompile")
         ++ " --backend haskell -d " ++ root
         ++ " " ++ (root </> kFile)
-    writeKast = do
-        let kastProc = Proc.proc (kBin </> "kast") ["-d", root, (root </> test)]
-        kast <- Proc.readCreateProcess (quiet kastProc) ""
-        writeSystemTempFile "kast" kast 
-    getKoreExec = do
-        let command = "stack path --local-install-root"
-        [stackRoot] <- lines <$> Proc.readCreateProcess (Proc.shell command) ""
-        return $ stackRoot </> "bin" </> "kore-exec"
+    parseProgram =
+        let kastArgs = ["-d", root, "--kore", (root </> test)]
+            kastProc = Proc.proc (kBin </> "kast") kastArgs
+        in  Proc.readCreateProcess (quiet kastProc) ""
     quiet p = p { Proc.std_out = Proc.NoStream, Proc.std_err = Proc.NoStream }
     myShell command = do
         (_, _, _, ph) <- Proc.createProcess $ quiet $ Proc.shell command
         _ <- Proc.waitForProcess ph
         return ()
+
+-- TODO (traiansf): Get rid of this.
+-- The function below works around several limitations of
+-- the current tool by tricking the tool into believing that
+-- functions are constructors (so that function patterns can match)
+-- and that @kseq@ and @dotk@ are both functional and constructor.
+constructorFunctions
+    :: KoreIndexedModule StepperAttributes
+    -> KoreIndexedModule StepperAttributes
+constructorFunctions ixm =
+    ixm
+        { indexedModuleObjectSymbolSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectSymbolSentences ixm)
+        , indexedModuleObjectAliasSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectAliasSentences ixm)
+        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
+        }
+  where
+    constructorFunctions1 ident (atts, defn) =
+        ( atts
+            & lensConstructor Lens.<>~ Constructor isCons
+            & lensFunctional Lens.<>~ Functional (isCons || isInj)
+            & lensInjective Lens.<>~ Injective (isCons || isInj)
+            & lensSortInjection Lens.<>~ SortInjection isInj
+        , defn
+        )
+      where
+        isInj = getId ident == "inj"
+        isCons = elem (getId ident) ["kseq", "dotk"]
+
+    recurseIntoImports (attrs, attributes, importedModule) =
+        (attrs, attributes, constructorFunctions importedModule)
