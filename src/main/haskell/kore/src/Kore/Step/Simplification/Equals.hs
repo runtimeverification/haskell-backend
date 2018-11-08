@@ -36,17 +36,12 @@ import           Kore.Predicate.Predicate
                  makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
                  makeOrPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( top )
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, toExpandedPattern )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), top )
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -176,7 +171,7 @@ simplifyEvaluated
         (OrOfExpandedPattern level variable, SimplificationProof level)
 simplifyEvaluated tools substitutionSimplifier first second
   | first == second =
-    return (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    return (OrOfExpandedPattern.make [Predicated.top], SimplificationProof)
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise =
     case ( firstPatterns, secondPatterns )
@@ -242,10 +237,11 @@ makeEvaluate
     (result, _proof) <-
         makeEvaluateTermsToPredicateSubstitution
             tools substitutionSimplifier firstTerm secondTerm
-    case result of
-        PredicateSubstitution {predicate = PredicateFalse} ->
+    let Predicated { predicate, substitution } = result
+    case predicate of
+        PredicateFalse ->
             return (OrOfExpandedPattern.make [], SimplificationProof)
-        PredicateSubstitution {predicate, substitution} ->
+        _ ->
             return
                 (OrOfExpandedPattern.make
                     [ Predicated
@@ -367,7 +363,7 @@ makeEvaluateTermsAssumesNoBottomMaybe tools substitutionSimplifier first second
     give tools $ do
         (result, _) <-
             AndTerms.termEquals tools substitutionSimplifier first second
-        let PredicateSubstitution { predicate, substitution } = result
+        let Predicated { predicate, substitution } = result
         return
             ( OrOfExpandedPattern.make
                 [ Predicated
@@ -409,23 +405,29 @@ makeEvaluateTermsToPredicateSubstitution
     tools substitutionSimplifier first second
   | first == second =
     return
-        ( PredicateSubstitution.top
+        ( Predicated.topPredicate
         , SimplificationProof
         )
   | otherwise = give symbolOrAliasSorts $ do
     result <-
-        runMaybeT $ AndTerms.termEquals tools substitutionSimplifier first second
+        runMaybeT
+        $ AndTerms.termEquals
+            tools
+            substitutionSimplifier
+            first
+            second
     case result of
         Nothing ->
             return
-                ( PredicateSubstitution
-                    { predicate = makeEqualsPredicate first second
+                ( Predicated
+                    { term = ()
+                    , predicate = makeEqualsPredicate first second
                     , substitution = []
                     }
                 , SimplificationProof
                 )
         Just wrappedResult -> do
-            let (PredicateSubstitution {predicate, substitution}, _proof) =
+            let (Predicated { predicate, substitution }, _proof) =
                     wrappedResult
                 (firstCeil, _proof1) = Ceil.makeEvaluateTerm tools first
                 (secondCeil, _proof2) = Ceil.makeEvaluateTerm tools second
@@ -436,8 +438,9 @@ makeEvaluateTermsToPredicateSubstitution
                 finalPredicate =
                     makeOrPredicate predicate ceilNegationAnd
             return
-                ( PredicateSubstitution
-                    { predicate = finalPredicate
+                ( Predicated
+                    { term = ()
+                    , predicate = finalPredicate
                     , substitution = substitution
                     }
                 , SimplificationProof

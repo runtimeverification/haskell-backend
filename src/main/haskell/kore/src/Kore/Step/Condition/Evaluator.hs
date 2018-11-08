@@ -24,8 +24,6 @@ import           Kore.Predicate.Predicate
 import           Kore.SMT.SMT
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
-import           Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, toExpandedPattern )
@@ -93,8 +91,9 @@ asPredicateSubstitution
     let
         andPatt = makeAndPredicate predicate (wrapPredicate term)
     in
-        ( PredicateSubstitution
-            { predicate = andPatt
+        ( Predicated
+            { term = ()
+            , predicate = andPatt
             , substitution = substitution
             }
         , SimplificationProof

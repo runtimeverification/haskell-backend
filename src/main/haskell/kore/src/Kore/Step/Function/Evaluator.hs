@@ -31,8 +31,6 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
-import           Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
@@ -141,7 +139,7 @@ evaluateApplication
 
     unchangedPatt =
         case childrenPredicateSubstitution of
-            PredicateSubstitution {predicate, substitution} ->
+            Predicated { predicate, substitution } ->
                 Predicated
                     { term         = asPurePattern $ ApplicationPattern app
                     , predicate    = predicate

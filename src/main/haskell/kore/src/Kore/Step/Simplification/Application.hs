@@ -24,13 +24,9 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern,
-                 PredicateSubstitution (PredicateSubstitution),
-                 Predicated (..) )
+                 ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..) )
 import           Kore.Step.Function.Evaluator
@@ -234,10 +230,7 @@ evaluateApplicationFunction
         substitutionSimplifier
         simplifier
         symbolIdToEvaluator
-        PredicateSubstitution
-            { predicate = predicate
-            , substitution = substitution
-            }
+        Predicated { term = (), predicate, substitution }
         term
 
 makeExpandedApplication
@@ -259,7 +252,7 @@ makeExpandedApplication
         (ExpandedApplication level variable, SimplificationProof level)
 makeExpandedApplication tools substitutionSimplifier symbol children
   = do
-    (   PredicateSubstitution
+    (   Predicated
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }

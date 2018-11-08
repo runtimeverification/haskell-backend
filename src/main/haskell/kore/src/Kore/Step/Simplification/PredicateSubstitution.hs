@@ -22,10 +22,8 @@ import           Kore.AST.MetaOrObject
                  ( Meta, MetaOrObject, Object, Unified, asUnified )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  PureMLPatternSimplifier, SimplificationProof (..),
@@ -106,8 +104,8 @@ simplify
 simplify
     tools
     simplifier
-    initialValue@PredicateSubstitution { predicate, substitution }
-  = do  -- MonadCounter m
+    initialValue@Predicated { predicate, substitution }
+  = do
     let
         unifiedSubstitution =
             ListSubstitution.fromList
@@ -119,7 +117,7 @@ simplify
     if substitutedPredicate == predicate
         then return (initialValue, SimplificationProof)
         else do
-            (   PredicateSubstitution
+            (   Predicated
                     { predicate = simplifiedPredicate
                     , substitution = simplifiedSubstitution
                     }
@@ -132,8 +130,9 @@ simplify
 
             if null simplifiedSubstitution
                 then return
-                    ( PredicateSubstitution
-                        { predicate = simplifiedPredicate
+                    ( Predicated
+                        { term = ()
+                        , predicate = simplifiedPredicate
                         , substitution
                         }
                     , SimplificationProof

@@ -50,7 +50,7 @@ import           Kore.Proof.Functional
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution (..), Predicated (..) )
+                 ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
@@ -295,7 +295,7 @@ stepWithAxiomForUnifier
     -- Unify the left-hand side of the rewriting axiom with the initial
     -- configuration, producing a substitution (instantiating the axiom to the
     -- configuration) subject to a predicate.
-    ( PredicateSubstitution
+    ( Predicated
             { predicate = rawPredicate
             , substitution = rawSubstitution
             }
@@ -311,7 +311,7 @@ stepWithAxiomForUnifier
 
     -- Combine the all the predicates and substitutions generated above and
     -- simplify the result.
-    ( PredicateSubstitution
+    ( Predicated
             { predicate = normalizedCondition
             , substitution = normalizedSubstitution
             }

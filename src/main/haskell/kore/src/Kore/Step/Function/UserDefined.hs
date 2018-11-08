@@ -31,12 +31,8 @@ import           Kore.Step.BaseStep
                  stepWithAxiomForUnifier )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import           Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
 import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution (PredicateSubstitution) )
+                 ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.Function.Matcher
@@ -177,8 +173,9 @@ reevaluateFunctions
             tools
             substitutionSimplifier
             wrappedSimplifier
-            PredicateSubstitution
-                { predicate = rewritingCondition
+            Predicated
+                { term = ()
+                , predicate = rewritingCondition
                 , substitution = rewrittenSubstitution
                 }
             pattOr
@@ -216,7 +213,7 @@ evaluatePredicate
     simplifier
     Predicated {term, predicate, substitution}
   = do
-    (   PredicateSubstitution
+    (   Predicated
             { predicate = evaluatedPredicate
             , substitution = evaluatedSubstitution
             }
@@ -224,7 +221,7 @@ evaluatePredicate
         ) <- give (symbolOrAliasSorts tools) $
              give tools $
                  Predicate.evaluate substitutionSimplifier simplifier predicate
-    (   PredicateSubstitution
+    (   Predicated
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }

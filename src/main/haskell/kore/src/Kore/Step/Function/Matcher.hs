@@ -43,11 +43,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Step.PredicateSubstitution
-                 ( PredicateSubstitution (PredicateSubstitution) )
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( PredicateSubstitution (..), freeVariables, toPredicate,
-                 top )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -347,14 +345,14 @@ matchEqualHeadPatterns
                         Nothing -> nothing
                         Just variable ->
                             if variable == secondVariable
-                            then just PredicateSubstitution.top
+                            then just Predicated.topPredicate
                             else nothing
                 _ -> nothing
         _ -> nothing
   where
     topWhenEqualOrNothing first' second' =
         if first' == second'
-            then just PredicateSubstitution.top
+            then just Predicated.topPredicate
             else nothing
 
 matchJoin
@@ -389,8 +387,8 @@ matchJoin tools substitutionSimplifier quantifiedVariables patterns
     (merged, _proof) <- lift $ mergePredicatesAndSubstitutionsExcept
         tools
         substitutionSimplifier
-        (map PredicateSubstitution.predicate matched)
-        (map PredicateSubstitution.substitution matched)
+        (map Predicated.predicate matched)
+        (map Predicated.substitution matched)
     return merged
 
 -- Note that we can't match variables to stuff which can have more than one
@@ -429,8 +427,9 @@ matchVariableFunction
   = case Ceil.makeEvaluateTerm tools second of
         (predicate, _proof) ->
             just $
-                PredicateSubstitution
-                    { predicate = predicate
+                Predicated
+                    { term = ()
+                    , predicate
                     , substitution = [(var, second)]
                     }
 matchVariableFunction _ _ _ _ = nothing
@@ -462,7 +461,7 @@ matchNonVarToPattern tools substitutionSimplifier first second
   -- TODO(virgil): For simplification axioms this would need to return bottom!
   = give (MetadataTools.symbolOrAliasSorts tools) $
     MaybeT $ lift $ do -- MonadCounter
-        (PredicateSubstitution {predicate, substitution}, _proof) <-
+        (Predicated {predicate, substitution}, _proof) <-
             Equals.makeEvaluateTermsToPredicateSubstitution
                 tools substitutionSimplifier first second
         let
@@ -473,11 +472,12 @@ matchNonVarToPattern tools substitutionSimplifier first second
             leftVars = freePureVariables first
             (leftSubst, rightSubst) =
                 List.partition ((`elem` leftVars) . fst) substitution
-            finalPredicate = PredicateSubstitution.toPredicate
-                PredicateSubstitution { predicate, substitution = rightSubst }
-        return . return $ -- MonadCounter m => m (Maybe a)
-            PredicateSubstitution
-                { predicate = finalPredicate
+            finalPredicate = Predicated.toPredicate
+                Predicated { term = (), predicate, substitution = rightSubst }
+        (return . return)
+            Predicated
+                { term = ()
+                , predicate = finalPredicate
                 , substitution = leftSubst
                 }
 
@@ -500,4 +500,4 @@ checkVariableEscape vars predSubst
         "quantified variables in substitution or predicate escaping context"
   | otherwise = predSubst
   where
-    freeVars = PredicateSubstitution.freeVariables predSubst
+    freeVars = Predicated.freeVariables predSubst

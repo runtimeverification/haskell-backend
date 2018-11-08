@@ -28,10 +28,10 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
        ( Meta, MetaOrObject, Object )
 import Kore.SMT.Config
+import Kore.Step.ExpandedPattern
+       ( PredicateSubstitution )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
-import Kore.Step.PredicateSubstitution
-       ( PredicateSubstitution )
 import Kore.Substitution.Class
        ( Hashable )
 import Kore.Variables.Fresh

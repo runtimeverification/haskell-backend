@@ -18,11 +18,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern,
-                 PredicateSubstitution (PredicateSubstitution),
-                 Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import           Kore.Step.OrOfExpandedPattern
@@ -76,9 +72,10 @@ simplify
                 tools
                 substitutionSimplifier
                 wrappedSimplifier
-                PredicateSubstitution
-                    { predicate = predicate
-                    , substitution = substitution
+                Predicated
+                    { term = ()
+                    , predicate
+                    , substitution
                     }
             )
             simplifiedTerm

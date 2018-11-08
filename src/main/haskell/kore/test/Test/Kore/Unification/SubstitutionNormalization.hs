@@ -33,8 +33,7 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.MetaML.AST
                  ( CommonMetaPattern )
-import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
                  ( UnificationSubstitution )
@@ -249,7 +248,7 @@ runNormalizeSubstitution
         (SubstitutionError level Variable)
         (UnificationSubstitution level Variable)
 runNormalizeSubstitution substitution =
-    fmap PredicateSubstitution.substitution
+    fmap Predicated.substitution
     . evalCounter
     . runExceptT
     $ normalizeSubstitution mockMetadataTools substitution

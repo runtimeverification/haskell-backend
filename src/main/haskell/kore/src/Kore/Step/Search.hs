@@ -39,11 +39,8 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
-import           Kore.Step.ExpandedPattern as PredicateSubstitution
-                 ( PredicateSubstitution (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..) )
+                 ( ExpandedPattern, PredicateSubstitution )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
                  Simplifier )
@@ -138,23 +135,24 @@ matchWith
     -> ExpandedPattern level variable
     -> MaybeT Simplifier (PredicateSubstitution level variable)
 matchWith tools substitutionSimplifier simplifier e1 e2 = do
-    (unifier, _proof) <- hushT (unificationProcedure tools substitutionSimplifier t1 t2)
+    (unifier, _proof) <-
+        hushT $ unificationProcedure tools substitutionSimplifier t1 t2
     (predSubst, _proof) <-
             lift
             $ mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
-                [ PredicateSubstitution.predicate unifier
-                , ExpandedPattern.predicate e1
-                , ExpandedPattern.predicate e2
+                [ Predicated.predicate unifier
+                , Predicated.predicate e1
+                , Predicated.predicate e2
                 ]
-                [ PredicateSubstitution.substitution unifier ]
+                [ Predicated.substitution unifier ]
     (predSubst', _proof) <-
         give tools
         $ lift
         $ Predicate.evaluate substitutionSimplifier simplifier
-        $ PredicateSubstitution.predicate predSubst
-    let evaluatedPred = PredicateSubstitution.predicate predSubst'
+        $ Predicated.predicate predSubst
+    let evaluatedPred = Predicated.predicate predSubst'
     case evaluatedPred of
         PredicateFalse -> nothing
         _ ->
@@ -162,10 +160,10 @@ matchWith tools substitutionSimplifier simplifier e1 e2 = do
             $ fst <$> mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
-                [ PredicateSubstitution.predicate predSubst' ]
-                [ PredicateSubstitution.substitution predSubst'
-                , PredicateSubstitution.substitution predSubst
+                [ Predicated.predicate predSubst' ]
+                [ Predicated.substitution predSubst'
+                , Predicated.substitution predSubst
                 ]
   where
-    t1 = ExpandedPattern.term e1
-    t2 = ExpandedPattern.term e2
+    t1 = Predicated.term e1
+    t2 = Predicated.term e2

@@ -65,13 +65,12 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Registry
                  ( axiomPatternsToEvaluators, extractFunctionAxioms )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-import qualified Kore.Step.PredicateSubstitution as PredicateSubstitution
-                 ( toPredicate )
 import           Kore.Step.Search
                  ( SearchType (..), search )
 import qualified Kore.Step.Search as Search
@@ -434,7 +433,7 @@ mainWithOptions
                                 give symbolOrAliasSorts
                                 $ makeMultipleOrPredicate
                                 $ fmap
-                                    PredicateSubstitution.toPredicate
+                                    Predicated.toPredicate
                                     solutions
                         return (unwrapPredicate orPredicate)
         let
