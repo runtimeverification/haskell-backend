@@ -25,9 +25,14 @@ Note: • is "strong next" in this document
 **Algorithm:**
 
 1. Call *And Simplification* on `tφ(X) ∧ tα(Y)` to obtain a function-like
-   pattern  `t(X,Y)`, a substitution `subst(X,Y)`, and a predicate `p(X,Y)`.
+   pattern `t(X,Y)`, a substitution `subst(X,Y)`, and a predicate `p(X,Y)`.
 
    Note: *And Simplification* can be performed such that `t(X,Y) = tα(Y)`
+
+   Note: `subst(X,Y)` is meant to substitute (all) variables from `Y`
+   with terms (only) containing variables from `X`. If there are equalities
+   substituting variables from `X`, they should be considered as part of the
+   predicate `p(X,Y)`.
  
    Then, `α(Y) ∧ φ(X) = tα(Y) ∧ subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X)`
 

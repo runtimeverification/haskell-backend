@@ -7,36 +7,56 @@ by advancing it using a given rewrite axiom.
 This document *does not describe* how to select an axiom to be used for
 advancing the goal.
 
+Background
+----------
+
 Unless otherwise specified, we assume all pattern variables used in this
 document to be _extended function-like patterns_, that is patterns which
 can be written as `t ∧ p` where the interpretation of `t` contains at most one
 element and `p` is a predicate.
 
 _Extended constructor patterns_ will be those extended function-like patterns
-for which `t` is functional.
+for which `t` is a functional term, composed out of constructor-like symbols
+and variables.
 
-Problem statement
------------------
+### And-Not-Exists Simplification
+---------------------------------
+
+We will use the algorithm for simplifying patterns of the form
+`φ(X) ∧ ¬∃ Y . ψ(X, Y)`
+to a extended function-like pattern described in 
+[Configuration Splitting Simplification](2018-11-08-Configuration-Splitting-Simplification.md).
+
+This algorithm will be named `AndNotExistsSimplification` in the sequel.
+
+Note: the process is quite similar to unification, and the result is either
+`φ(X)`, if `φ(X)` and `ψ(X, Y)` are not unifiable, or
+`φ(X) ∧ p(X)`, where `p(X)` is the negation of the predicate of `ψ(X, Y)`
+on which the unifying substitution of `φ(X)` and `ψ(X, Y)` was applied, if
+the two are unifiable.
+
+
+Algorithm
+---------
 
 Consider the following "one-path" reachability goal
 
 ```
 ∀ X . φ(X) → ◆ ∃ Y . ψ(X, Y)
 ```
-where `X` and `Y` are sets of variables and ◆ denotes "strong-eventually"
+where `X` and `Y` are sets of variables and `◆` denotes "strong-eventually"
 
 Consider also the axiom
 
 `∀ Z . α(Z) → •β(Z)`.
 
-where • denotes "strong-next" (`α(Z)` is an extended constructor pattern).
+where `•` denotes "strong-next" (`α(Z)` is an extended constructor pattern).
 
 The steps below show how the given goal is transformed by "applying" the 
 given axiom.
 
 
-Unrolling "strong-eventually"
-------------------------------
+### Unrolling "strong-eventually"
 
 Let `Δ = ν f . •f` denote the formula for diverging computation.
 Then,  for any formula ψ:
@@ -64,29 +84,12 @@ and (assuming law of excluded middle) we obtain the equivalent:
 ∀ X . φ(X) ∧ ¬∃ Y . ψ(X, Y) →  •◆ ∃ Y . ψ(X, Y)`
 ```
 
-And-Not Simplification
-----------------------
 
-We assume there exists a procedure `AndNotSimplification` (its details will
-be presented in another document) which allows simplifying patterns of the form
-`φ(X) ∧ ¬∃ Y . ψ(X, Y)`
-to a extended function-like pattern.
-
-Note: the process is quite similar to unification, and the result is either
-`φ(X)`, if `φ(X)` and `ψ(X, Y)` are not unifiable, or
-`φ(X) ∧ p(X)`, where `p(X)` is the negation of the predicate of `ψ(X, Y)`
-on which the unifying substitution of `φ(X)` and `ψ(X, Y)` was applied, if
-the two are unifiable.
-
-After the document for And-Not Simplification is written, this section should
-dissapear and references below should point to that document.
-
-Applying the axiom `∀ Z . α(Z) → •β(Z)`
-------------------------------------------
+### Applying the axiom `∀ Z . α(Z) → •β(Z)`
 
 In the following let `Ψ(X) = ◆ ∃ Y . ψ(X, Y)` and let `Φ(X)` be the extended
-function-like pattern obtained from applying
-[And-Not Simplification](#And-Not-Simplification) to `φ(X) ∧ ¬∃ Y . ψ(X, Y)`.
+function-like pattern obtained from applying the
+`AndNotExistsSimplification` algorithm to `φ(X) ∧ ¬∃ Y . ψ(X, Y)`.
 
 We can now split the original goal on `∃ Y. α(Y)` to obtain
 the equivalent goal:
@@ -97,7 +100,7 @@ the equivalent goal:
 (∀ X . Φ(X) ∧ (¬ ∃ Z. α(Z)) → •Ψ(X))
 ```
 
-Now we know, from the [basic symbolic execution algorithm](applying-axioms.md)
+Now we know, from the [basic symbolic execution algorithm](2018-11-08-Applying-Axioms.md)
 that
 ```
 Φ(X) ∧ (∃ Y .α(Y)) → •Φ'(X)    (Step)
@@ -117,7 +120,7 @@ which, by using `(Step)` and implication transitivity, implies that
 Φ(X) ∧ (∃ Y . α(Y)) → •Ψ(X)
 ```
 
-Moreover, we can apply [And-Not Simplification](#And-Not-Simplification) on
+Moreover, we can apply the `AndNotExistsSimplification` algorithm on
 `Φ(X) ∧ (¬ ∃ Z. α(Z))` to obtain an extended function-like pattern `Φα(X)`.
 
 
