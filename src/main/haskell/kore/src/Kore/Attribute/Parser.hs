@@ -21,6 +21,7 @@ This module is intended to be imported qualified or explicitly:
 module Kore.Attribute.Parser
     ( -- * Parsing attributes
       ParseAttributes (..)
+    , Attributes (..)
     , Parser
     , ParseError
     , parseAttributes
