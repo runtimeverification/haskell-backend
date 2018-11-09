@@ -5,8 +5,8 @@ import Criterion.Main
 import qualified Control.Lens as Lens
 import           Data.Function
                  ( (&) )
-import Data.Limit
-       ( Limit (Unlimited) )
+import           Data.Limit
+                 ( Limit (Unlimited) )
 import qualified Data.Map as Map
 
 import           Kore.AST.MetaOrObject

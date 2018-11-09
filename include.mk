@@ -18,7 +18,7 @@ KOMPILE := $(K_BIN)/kompile
 KRUN := $(K_BIN)/krun
 
 HS_TOP := $(TOP)/src/main/haskell/kore
-HS_SOURCE_DIRS := $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test
+HS_SOURCE_DIRS := $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test $(HS_TOP)/bench
 STACK_OPTS ?= --pedantic
 STACK_BUILD_OPTS = $(STACK_OPTS) --no-run-tests --no-run-benchmarks
 STACK_HADDOCK_OPTS = $(STACK_OPTS) --no-run-tests --no-run-benchmarks
