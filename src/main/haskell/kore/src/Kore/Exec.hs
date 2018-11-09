@@ -1,3 +1,13 @@
+{-|
+Module      : Kore.Exec
+Description : Expose concrete execution as a library
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Stability   : experimental
+Portability : portable
+
+Expose concrete execution as a library
+-}
 module Kore.Exec
     ( exec
     , search
@@ -61,14 +71,19 @@ import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
+-- | Concrete execution
 exec
     :: KoreIndexedModule StepperAttributes
+    -- ^ The main module
     -> CommonPurePattern Object
+    -- ^ The input pattern
     -> Limit Natural
+    -- ^ The step limit
     -> ([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
+    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> Simplifier (CommonPurePattern Object)
 exec indexedModule purePattern stepLimit strategy =
-    helper indexedModule purePattern stepLimit strategy execute
+    setUpConcreteExecution indexedModule purePattern stepLimit strategy execute
   where
     execute
         :: MetadataTools Object StepperAttributes
@@ -81,13 +96,20 @@ exec indexedModule purePattern stepLimit strategy =
             let (finalConfig, _) = pickLongest executionTree
             return (ExpandedPattern.toMLPattern finalConfig)
 
+-- | Concrete execution search
 search
     :: KoreIndexedModule StepperAttributes
+    -- ^ The main module
     -> CommonPurePattern Object
+    -- ^ The input pattern
     -> Limit Natural
+    -- ^ The step limit
     -> ([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
+    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> CommonExpandedPattern Object
+    -- ^ The pattern to match during execution
     -> Search.Config
+    -- ^ The bound on the number of search matches and the search type
     -> Simplifier (CommonPurePattern Object)
 search
     indexedModule
@@ -97,7 +119,7 @@ search
     searchPattern
     searchConfig
   =
-    helper indexedModule purePattern stepLimit strategy execute
+    setUpConcreteExecution indexedModule purePattern stepLimit strategy execute
   where
     execute metadataTools simplifier substitutionSimplifier executionTree = do
         let
@@ -116,18 +138,25 @@ search
                 $ fmap Predicated.toPredicate solutions
         return (unwrapPredicate orPredicate)
 
-helper
+-- | Provide a MetadataTools, simplifier, subsitution simplifier, and execution
+-- tree to the callback.
+setUpConcreteExecution
     :: KoreIndexedModule StepperAttributes
+    -- ^ The main module
     -> CommonPurePattern Object
+    -- ^ The input pattern
     -> Limit Natural
+    -- ^ The step limit
     -> ([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
+    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> (MetadataTools Object StepperAttributes
         -> PureMLPatternSimplifier Object Variable
         -> PredicateSubstitutionSimplifier Object Simplifier
         -> Tree (CommonExpandedPattern Object, StepProof Object Variable)
         -> Simplifier a)
+    -- ^ Callback to do the execution
     -> Simplifier a
-helper indexedModule purePattern stepLimit strategy execute = do
+setUpConcreteExecution indexedModule purePattern stepLimit strategy execute = do
     let
         metadataTools = extractMetadataTools indexedModule
     axiomsAndSimplifiers <-
