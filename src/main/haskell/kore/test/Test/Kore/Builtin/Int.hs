@@ -24,6 +24,7 @@ import           GHC.Integer.Logarithms
                  ( integerLog2# )
 
 import           Kore.AST.Common
+import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
@@ -32,6 +33,8 @@ import           Kore.Attribute.Hook
                  ( hookAttribute )
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
+import           Kore.Attribute.Smtlib
+                 ( smtlibAttribute )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Error
@@ -45,6 +48,8 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore
                  ( testId )
+import           Test.Kore.Builtin.Bool
+                 ( boolSort )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Step.MockSimplifiers as Mock
@@ -374,42 +379,6 @@ builtinSymbol name =
         , symbolOrAliasParams = []
         }
 
-{- | Declare a hooked symbol with one argument.
-
-  The result and argument have sort 'intSort'.
-
- -}
-unarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
-unarySymbolDecl builtinName symbol =
-    hookedSymbolDecl builtinName symbol intSort [intSort]
-
-{- | Declare a hooked symbol with two arguments.
-
-  The result and arguments all have sort 'intSort'.
-
-  -}
-binarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
-binarySymbolDecl builtinName symbol =
-    hookedSymbolDecl builtinName symbol intSort [intSort, intSort]
-
-{- | Declare a hooked symbol with three arguments.
-
-  The result and arguments all have sort 'intSort'.
-
-  -}
-ternarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
-ternarySymbolDecl builtinName symbol =
-    hookedSymbolDecl builtinName symbol intSort [intSort, intSort, intSort]
-
-{- | Declare a hooked symbol with two arguments.
-
-  The arguments have sort 'intSort' and the result is 'Test.Bool.boolSort'.
-
-  -}
-comparisonSymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
-comparisonSymbolDecl builtinName symbol =
-    hookedSymbolDecl builtinName symbol Test.Bool.boolSort [intSort, intSort]
-
 importBool :: KoreSentence
 importBool =
     asSentence
@@ -423,6 +392,21 @@ importBool =
 intModuleName :: ModuleName
 intModuleName = ModuleName "INT"
 
+comparisonSymbolDecl
+    :: SymbolOrAlias Object -> [CommonKorePattern] -> KoreSentence
+comparisonSymbolDecl symbol =
+    hookedSymbolDecl symbol boolSort [intSort, intSort]
+
+unarySymbolDecl
+   :: SymbolOrAlias Object -> [CommonKorePattern] -> KoreSentence
+unarySymbolDecl symbol =
+    hookedSymbolDecl symbol intSort [intSort]
+
+binarySymbolDecl
+    :: SymbolOrAlias Object -> [CommonKorePattern] -> KoreSentence
+binarySymbolDecl symbol =
+    hookedSymbolDecl symbol intSort [intSort, intSort]
+
 {- | Declare the @INT@ builtins.
  -}
 intModule :: KoreModule
@@ -433,30 +417,56 @@ intModule =
         , moduleSentences =
             [ importBool
             , intSortDecl
-            , comparisonSymbolDecl "INT.gt" gtSymbol
-            , comparisonSymbolDecl "INT.ge" geSymbol
-            , comparisonSymbolDecl "INT.eq" eqSymbol
-            , comparisonSymbolDecl "INT.le" leSymbol
-            , comparisonSymbolDecl "INT.lt" ltSymbol
-            , comparisonSymbolDecl "INT.ne" neSymbol
-            , binarySymbolDecl "INT.min" minSymbol
-            , binarySymbolDecl "INT.max" maxSymbol
-            , binarySymbolDecl "INT.add" addSymbol
-            , binarySymbolDecl "INT.sub" subSymbol
-            , binarySymbolDecl "INT.mul" mulSymbol
-            , unarySymbolDecl "INT.abs" absSymbol
-            , binarySymbolDecl "INT.tdiv" tdivSymbol
-            , binarySymbolDecl "INT.tmod" tmodSymbol
-            , binarySymbolDecl "INT.emod" emodSymbol
-            , binarySymbolDecl "INT.and" andSymbol
-            , binarySymbolDecl "INT.or" orSymbol
-            , binarySymbolDecl "INT.xor" xorSymbol
-            , unarySymbolDecl "INT.not" notSymbol
-            , binarySymbolDecl "INT.shl" shlSymbol
-            , binarySymbolDecl "INT.shr" shrSymbol
-            , binarySymbolDecl "INT.pow" powSymbol
-            , ternarySymbolDecl "INT.powmod" powmodSymbol
-            , unarySymbolDecl "INT.log2" log2Symbol
+            -- comparison symbols
+            , comparisonSymbolDecl gtSymbol
+                [hookAttribute "INT.gt", smtlibAttribute ">"]
+            , comparisonSymbolDecl geSymbol
+                [hookAttribute "INT.ge", smtlibAttribute ">="]
+            , comparisonSymbolDecl eqSymbol
+                [hookAttribute "INT.eq", smtlibAttribute "="]
+            , comparisonSymbolDecl leSymbol
+                [hookAttribute "INT.le", smtlibAttribute "<="]
+            , comparisonSymbolDecl ltSymbol
+                [hookAttribute "INT.lt", smtlibAttribute "<"]
+            , comparisonSymbolDecl neSymbol
+                [hookAttribute "INT.ne", smtlibAttribute "distinct"]
+
+            , binarySymbolDecl minSymbol
+                [hookAttribute "INT.min", smtlibAttribute "int_min"]
+            , binarySymbolDecl maxSymbol
+                [hookAttribute "INT.max", smtlibAttribute "int_max"]
+            , binarySymbolDecl addSymbol
+                [hookAttribute "INT.add", smtlibAttribute "+"]
+            , binarySymbolDecl subSymbol
+                [hookAttribute "INT.sub", smtlibAttribute "-"]
+            , binarySymbolDecl mulSymbol
+                [hookAttribute "INT.mul", smtlibAttribute "*"]
+            , unarySymbolDecl absSymbol
+                [hookAttribute "INT.abs", smtlibAttribute "int_abs"]
+            , binarySymbolDecl tdivSymbol
+                [hookAttribute "INT.tdiv", smtlibAttribute "div"]
+            , binarySymbolDecl tmodSymbol
+                [hookAttribute "INT.tmod", smtlibAttribute "mod"]
+            , binarySymbolDecl emodSymbol
+                [hookAttribute "INT.emod", smtlibAttribute "mod"]
+            , binarySymbolDecl andSymbol
+                [hookAttribute "INT.and"]
+            , binarySymbolDecl orSymbol
+                [hookAttribute "INT.or"]
+            , binarySymbolDecl xorSymbol
+                [hookAttribute "INT.xor"]
+            , unarySymbolDecl notSymbol
+                [hookAttribute "INT.not"]
+            , binarySymbolDecl shlSymbol
+                [hookAttribute "INT.shl"]
+            , binarySymbolDecl shrSymbol
+                [hookAttribute "INT.shr"]
+            , binarySymbolDecl powSymbol
+                [hookAttribute "INT.pow"]
+            , hookedSymbolDecl powmodSymbol intSort [intSort, intSort, intSort]
+                [hookAttribute "INT.powmod"]
+            , unarySymbolDecl log2Symbol
+                [hookAttribute "INT.log2"]
             ]
         }
 

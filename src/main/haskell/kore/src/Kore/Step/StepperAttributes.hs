@@ -33,8 +33,11 @@ module Kore.Step.StepperAttributes
     , sortInjectionAttribute
     , isSortInjection_
     -- * Hooked symbols
-    , lensHook, Hook
+    , lensHook, Hook (..)
     , hookAttribute
+    -- * SMT symbols
+    , smtlib, Smtlib (..)
+    , smtlibAttribute
     -- * Total symbols
     , isTotal_, isTotal
     ) where
@@ -57,6 +60,7 @@ import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Parser
        ( ParseAttributes (..) )
+import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..) )
@@ -84,6 +88,7 @@ data StepperAttributes =
       -- ^ Whether a symbol is a sort injection
     , hook          :: !Hook
       -- ^ The builtin sort or symbol hooked to a sort or symbol
+    , smtlib        :: !Smtlib
     }
   deriving (Eq, Show)
 
@@ -97,6 +102,7 @@ instance ParseAttributes StepperAttributes where
         >=> lensSortInjection (parseAttribute attr)
         >=> lensInjective (parseAttribute attr)
         >=> lensHook (parseAttribute attr)
+        >=> lensSmtlib (parseAttribute attr)
 
 defaultStepperAttributes :: StepperAttributes
 defaultStepperAttributes =
@@ -107,6 +113,7 @@ defaultStepperAttributes =
     , injective      = def
     , sortInjection  = def
     , hook           = def
+    , smtlib         = def
     }
 
 -- | See also: 'defaultStepperAttributes'

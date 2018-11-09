@@ -46,6 +46,7 @@ dependencies:
   - recursion-schemes
   - reflection
   - sbv
+  - simple-smt
   - template-haskell
   - text
   - time

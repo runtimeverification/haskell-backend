@@ -258,25 +258,49 @@ listModule =
         , moduleSentences =
             [ importInt
             , listSortDecl
-            , hookedSymbolDecl "LIST.unit" (builtinSymbol "unitList")
-                listSort []
-            , hookedSymbolDecl "LIST.element" (builtinSymbol "elementList")
-                listSort [Test.Int.intSort]
-            , hookedSymbolDecl "LIST.concat" (builtinSymbol "concatList")
-                listSort [listSort, listSort]
-            , hookedSymbolDecl "LIST.get" (builtinSymbol "getList")
-                Test.Int.intSort [listSort, Test.Int.intSort]
+            , hookedSymbolDecl
+                (builtinSymbol "unitList")
+                listSort
+                []
+                [hookAttribute "LIST.unit"]
+            , hookedSymbolDecl
+                (builtinSymbol "elementList")
+                listSort
+                [Test.Int.intSort]
+                [hookAttribute "LIST.element"]
+            , hookedSymbolDecl
+                (builtinSymbol "concatList")
+                listSort
+                [listSort, listSort]
+                [hookAttribute "LIST.concat"]
+            , hookedSymbolDecl
+                (builtinSymbol "getList")
+                Test.Int.intSort
+                [listSort, Test.Int.intSort]
+                [hookAttribute "LIST.get"]
             -- A second collection of hooked sorts and symbols
             -- To test that `asPattern` picks the right one
             , listSortDecl2
-            , hookedSymbolDecl "LIST.unit" (builtinSymbol "unitList2")
-                listSort2 []
-            , hookedSymbolDecl "LIST.element" (builtinSymbol "elementList2")
-                listSort2 [Test.Int.intSort]
-            , hookedSymbolDecl "LIST.concat" (builtinSymbol "concatList2")
-                listSort2 [listSort2, listSort2]
-            , hookedSymbolDecl "LIST.get" (builtinSymbol "getList2")
-                Test.Int.intSort [listSort2, Test.Int.intSort]
+            , hookedSymbolDecl
+                (builtinSymbol "unitList2")
+                listSort2
+                []
+                [hookAttribute "LIST.unit"]
+            , hookedSymbolDecl
+                (builtinSymbol "elementList2")
+                listSort2
+                [Test.Int.intSort]
+                [hookAttribute "LIST.element"]
+            , hookedSymbolDecl
+                (builtinSymbol "concatList2")
+                listSort2
+                [listSort2, listSort2]
+                [hookAttribute "LIST.concat"]
+            , hookedSymbolDecl
+                (builtinSymbol "getList2")
+                Test.Int.intSort
+                [listSort2, Test.Int.intSort]
+                [hookAttribute "LIST.get"]
             ]
         }
 

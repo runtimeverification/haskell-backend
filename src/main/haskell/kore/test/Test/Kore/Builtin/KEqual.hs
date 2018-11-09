@@ -93,13 +93,15 @@ kEqualModule =
         , moduleAttributes = Attributes []
         , moduleSentences =
             [ Test.Bool.boolSortDecl
-            , Test.Bool.binarySymbolDecl "KEQUAL.eq" keqSymbol
-            , Test.Bool.binarySymbolDecl "KEQUAL.neq" kneqSymbol
+            , Test.Bool.binarySymbolDecl keqSymbol
+                [hookAttribute "KEQUAL.eq"]
+            , Test.Bool.binarySymbolDecl kneqSymbol
+                [hookAttribute "KEQUAL.neq"]
             , Test.Builtin.hookedSymbolDecl
-                "KEQUAL.ite"
                 kiteSymbol
                 kSort
                 [Test.Bool.boolSort, kSort, kSort]
+                [hookAttribute "KEQUAL.ite"]
             , sortDecl kSort
             , sortDecl kItemSort
             , sortDecl idSort

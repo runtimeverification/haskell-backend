@@ -590,20 +590,41 @@ mapModule =
             , importKoreModule Test.Int.intModuleName
             , importKoreModule Test.Set.setModuleName
             , mapSortDecl
-            , hookedSymbolDecl "MAP.unit" (builtinSymbol "unitMap")
-                mapSort []
-            , hookedSymbolDecl "MAP.element" (builtinSymbol "elementMap")
-                mapSort [Test.Int.intSort, Test.Int.intSort]
-            , hookedSymbolDecl "MAP.concat" (builtinSymbol "concatMap")
-                mapSort [mapSort, mapSort]
-            , hookedSymbolDecl "MAP.lookup" (builtinSymbol "lookupMap")
-                Test.Int.intSort [mapSort, Test.Int.intSort]
-            , hookedSymbolDecl "MAP.update" (builtinSymbol "updateMap")
-                mapSort [mapSort, Test.Int.intSort, Test.Int.intSort]
-            , hookedSymbolDecl "MAP.in_keys" (builtinSymbol "inKeysMap")
-                Test.Bool.boolSort [Test.Int.intSort, mapSort]
-            , hookedSymbolDecl "MAP.keys" (builtinSymbol "keysMap")
-                Test.Set.setSort [mapSort]
+            , hookedSymbolDecl
+                (builtinSymbol "unitMap")
+                mapSort
+                []
+                [hookAttribute "MAP.unit"]
+            , hookedSymbolDecl
+                (builtinSymbol "elementMap")
+                mapSort
+                [Test.Int.intSort, Test.Int.intSort]
+                [hookAttribute "MAP.element"]
+            , hookedSymbolDecl
+                (builtinSymbol "concatMap")
+                mapSort
+                [mapSort, mapSort]
+                [hookAttribute "MAP.concat"]
+            , hookedSymbolDecl
+                (builtinSymbol "lookupMap")
+                Test.Int.intSort
+                [mapSort, Test.Int.intSort]
+                [hookAttribute "MAP.lookup"]
+            , hookedSymbolDecl
+                (builtinSymbol "updateMap")
+                mapSort
+                [mapSort, Test.Int.intSort, Test.Int.intSort]
+                [hookAttribute "MAP.update"]
+            , hookedSymbolDecl
+                (builtinSymbol "inKeysMap")
+                Test.Bool.boolSort
+                [Test.Int.intSort, mapSort]
+                [hookAttribute "MAP.in_keys"]
+            , hookedSymbolDecl
+                (builtinSymbol "keysMap")
+                Test.Set.setSort
+                [mapSort]
+                [hookAttribute "MAP.keys"]
             ]
         }
 

@@ -352,19 +352,6 @@ builtinSymbol name =
         , symbolOrAliasParams = []
         }
 
-{- | Declare a hooked symbol with two arguments.
-
-  The arguments have sort 'stringSort' and the result is 'Test.Bool.boolSort'.
-
-  -}
-comparisonSymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
-comparisonSymbolDecl builtinName symbol =
-    hookedSymbolDecl
-        builtinName
-        symbol
-        Test.Bool.boolSort
-        [stringSort, stringSort]
-
 stringModuleName :: ModuleName
 stringModuleName = ModuleName "STRING"
 
@@ -379,37 +366,41 @@ stringModule =
             [ importKoreModule Test.Bool.boolModuleName
             , importKoreModule Test.Int.intModuleName
             , stringSortDecl
-            , comparisonSymbolDecl "STRING.lt" ltSymbol
             , hookedSymbolDecl
-                "STRING.concat"
+                ltSymbol
+                Test.Bool.boolSort
+                [stringSort, stringSort]
+                [hookAttribute "STRING.lt"]
+            , hookedSymbolDecl
                 concatSymbol
                 stringSort
                 [stringSort, stringSort]
+                [hookAttribute "STRING.concat"]
             , hookedSymbolDecl
-                "STRING.substr"
                 substrSymbol
                 stringSort
                 [stringSort, Test.Int.intSort, Test.Int.intSort]
+                [hookAttribute "STRING.substr"]
             , hookedSymbolDecl
-                "STRING.length"
                 lengthSymbol
                 Test.Int.intSort
                 [stringSort]
+                [hookAttribute "STRING.length"]
             , hookedSymbolDecl
-                "STRING.find"
                 findSymbol
                 Test.Int.intSort
                 [stringSort, stringSort, Test.Int.intSort]
+                [hookAttribute "STRING.find"]
             , hookedSymbolDecl
-                "STRING.string2base"
                 string2BaseSymbol
                 Test.Int.intSort
                 [stringSort, Test.Int.intSort]
+                [hookAttribute "STRING.string2base"]
             , hookedSymbolDecl
-                "STRING.string2int"
                 string2IntSymbol
                 Test.Int.intSort
                 [stringSort]
+                [hookAttribute "STRING.string2int"]
             ]
         }
 

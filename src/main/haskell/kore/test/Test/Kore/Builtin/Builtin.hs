@@ -14,13 +14,12 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import           Kore.AST.Common
+import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
-import           Kore.Attribute.Hook
-                 ( hookAttribute )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -35,20 +34,20 @@ import Test.Kore
 
 -- | Declare a symbol hooked to the given builtin name.
 hookedSymbolDecl
-    :: String
-    -- ^ builtin name
-    -> SymbolOrAlias Object
+    :: SymbolOrAlias Object
     -- ^ symbol
     -> Sort Object
     -- ^ result sort
     -> [Sort Object]
     -- ^ argument sorts
+    -> [CommonKorePattern]
+    -- ^ declaration attributes
     -> KoreSentence
 hookedSymbolDecl
-    builtinName
     SymbolOrAlias { symbolOrAliasConstructor }
     sentenceSymbolResultSort
     sentenceSymbolSorts
+    (Attributes -> sentenceSymbolAttributes)
   =
     (asSentence . SentenceHookedSymbol)
         (SentenceSymbol
@@ -65,7 +64,6 @@ hookedSymbolDecl
             { symbolConstructor = symbolOrAliasConstructor
             , symbolParams = []
             }
-    sentenceSymbolAttributes = Attributes [ hookAttribute builtinName ]
 
 pairModuleName :: ModuleName
 pairModuleName = ModuleName "PAIR"

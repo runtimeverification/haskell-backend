@@ -12,6 +12,7 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Common
+import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
@@ -20,6 +21,8 @@ import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import           Kore.Attribute.Hook
                  ( hookAttribute )
+import           Kore.Attribute.Smtlib
+                 ( smtlibAttribute )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Error
@@ -142,26 +145,12 @@ notSymbol = builtinSymbol "notBool"
 impliesSymbol :: SymbolOrAlias Object
 impliesSymbol = builtinSymbol "impliesBool"
 
-{- | Declare a hooked symbol with two arguments.
-
-  The result and arguments all have sort 'boolSort'.
-
-  -}
-binarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
-binarySymbolDecl builtinName symbol =
-    hookedSymbolDecl builtinName symbol boolSort [boolSort, boolSort]
-
-{- | Declare a hooked symbol with one argument.
-
-  The result and argument have sort 'boolSort'.
-
- -}
-unarySymbolDecl :: String -> SymbolOrAlias Object -> KoreSentence
-unarySymbolDecl builtinName symbol =
-    hookedSymbolDecl builtinName symbol boolSort [boolSort]
-
 boolModuleName :: ModuleName
 boolModuleName = ModuleName "BOOL"
+
+binarySymbolDecl :: SymbolOrAlias Object -> [CommonKorePattern] -> KoreSentence
+binarySymbolDecl symbol attrs =
+    hookedSymbolDecl symbol boolSort [boolSort, boolSort] attrs
 
 {- | Declare the @BOOL@ builtins.
  -}
@@ -172,13 +161,20 @@ boolModule =
         , moduleAttributes = Attributes []
         , moduleSentences =
             [ boolSortDecl
-            , binarySymbolDecl "BOOL.or" orSymbol
-            , binarySymbolDecl "BOOL.and" andSymbol
-            , binarySymbolDecl "BOOL.xor" xorSymbol
-            , binarySymbolDecl "BOOL.ne" neSymbol
-            , binarySymbolDecl "BOOL.eq" eqSymbol
-            , unarySymbolDecl "BOOL.not" notSymbol
-            , binarySymbolDecl "BOOL.implies" impliesSymbol
+            , binarySymbolDecl orSymbol
+                [hookAttribute "BOOL.or", smtlibAttribute "or"]
+            , binarySymbolDecl andSymbol
+                [hookAttribute "BOOL.and", smtlibAttribute "and"]
+            , binarySymbolDecl xorSymbol
+                [hookAttribute "BOOL.xor", smtlibAttribute "xor"]
+            , binarySymbolDecl neSymbol
+                [hookAttribute "BOOL.ne", smtlibAttribute "distinct"]
+            , binarySymbolDecl eqSymbol
+                [hookAttribute "BOOL.eq", smtlibAttribute "="]
+            , binarySymbolDecl impliesSymbol
+                [hookAttribute "BOOL.implies", smtlibAttribute "=>"]
+            , hookedSymbolDecl notSymbol boolSort [boolSort]
+                [hookAttribute "BOOL.not", smtlibAttribute "not"]
             ]
         }
 

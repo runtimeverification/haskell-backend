@@ -458,16 +458,31 @@ setModule =
             [ importInt
             , importBool
             , setSortDecl
-            , hookedSymbolDecl "SET.unit" (builtinSymbol "unitSet")
-                setSort []
-            , hookedSymbolDecl "SET.element" (builtinSymbol "elementSet")
-                setSort [Test.Int.intSort]
-            , hookedSymbolDecl "SET.concat" (builtinSymbol "concatSet")
-                setSort [setSort, setSort]
-            , hookedSymbolDecl "SET.in" (builtinSymbol "inSet")
-                Test.Bool.boolSort [Test.Int.intSort, setSort]
-            , hookedSymbolDecl "SET.difference" (builtinSymbol "differenceSet")
-                setSort [setSort, setSort]
+            , hookedSymbolDecl
+                (builtinSymbol "unitSet")
+                setSort
+                []
+                [hookAttribute "SET.unit"]
+            , hookedSymbolDecl
+                (builtinSymbol "elementSet")
+                setSort
+                [Test.Int.intSort]
+                [hookAttribute "SET.element"]
+            , hookedSymbolDecl
+                (builtinSymbol "concatSet")
+                setSort
+                [setSort, setSort]
+                [hookAttribute "SET.concat"]
+            , hookedSymbolDecl
+                (builtinSymbol "inSet")
+                Test.Bool.boolSort
+                [Test.Int.intSort, setSort]
+                [hookAttribute "SET.in"]
+            , hookedSymbolDecl
+                (builtinSymbol "differenceSet")
+                setSort
+                [setSort, setSort]
+                [hookAttribute "SET.difference"]
             ]
         }
 
