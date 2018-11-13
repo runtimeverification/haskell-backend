@@ -1,5 +1,12 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+{-|
+Module      : Kore.Step.AxiomPatterns
+Description : Rewriting and function axioms
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : thomas.tuegel@runtimeverification.com
+-}
 module Kore.Step.AxiomPatterns
     ( AxiomPattern (..)
     , AxiomPatternAttributes (..)
