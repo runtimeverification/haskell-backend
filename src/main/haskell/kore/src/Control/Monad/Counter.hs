@@ -1,5 +1,3 @@
-{-# LANGUAGE DefaultSignatures #-}
-
 {-|
 Module      : Control.Monad.Counter
 Description : Monads carrying a monotonically-increasing counter
@@ -15,15 +13,24 @@ concrete implementation of the class.
 module Control.Monad.Counter
     ( -- * Class
       MonadCounter (..)
+    , incrementState
     , findState
     , module Numeric.Natural
       -- * Implementation
+    , CounterT (..)
+    , runCounterT, evalCounterT
     , Counter
     , runCounter, evalCounter
     ) where
 
+import           Control.Applicative
+                 ( Alternative )
+import           Control.Monad
+                 ( MonadPlus )
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Identity as Monad.Identity
+import           Control.Monad.IO.Class
+                 ( MonadIO (..) )
 import qualified Control.Monad.Reader as Monad.Reader
 import qualified Control.Monad.RWS.Lazy as Monad.RWS.Lazy
 import qualified Control.Monad.RWS.Strict as Monad.RWS.Strict
@@ -32,20 +39,57 @@ import           Control.Monad.State
 import qualified Control.Monad.State.Class as Monad.State
 import qualified Control.Monad.State.Lazy as Monad.State.Lazy
 import qualified Control.Monad.State.Strict as Monad.State.Strict
+import           Control.Monad.Trans
+                 ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
+import           Control.Monad.Trans.Maybe
+                 ( MaybeT )
 import qualified Control.Monad.Writer.Lazy as Monad.Writer.Lazy
 import qualified Control.Monad.Writer.Strict as Monad.Writer.Strict
 import           Numeric.Natural
 
 {- | A computation using a monotonic counter.
  -}
-newtype Counter a = Counter (Monad.State.Strict.State Natural a)
-  deriving (Applicative, Functor, Monad)
+type Counter = CounterT Monad.Identity.Identity
 
--- | The @MonadState@ instance must not be used to replay the counter!
-deriving instance MonadState Natural Counter
+{- | A computation using a monotonic counter.
+ -}
+newtype CounterT m a =
+    CounterT { getCounterT :: Monad.State.Strict.StateT Natural m a }
+    deriving (Alternative, Applicative, Functor, Monad, MonadPlus, MonadTrans)
 
-instance MonadCounter Counter
+instance Monad m => MonadCounter (CounterT m) where
+    increment = CounterT incrementState
+
+deriving instance Monad m => MonadState Natural (CounterT m)
+
+instance MonadIO m => MonadIO (CounterT m) where
+    liftIO = CounterT . liftIO
+
+{- | Run a computation using a monotonic counter.
+
+  The counter is initialized to the given value. The final result and counter
+  are returned.
+
+ -}
+runCounterT
+    :: CounterT m a
+    -- ^ computation
+    -> Natural
+    -- ^ initial counter
+    -> m (a, Natural)
+runCounterT (CounterT counting) =
+    Monad.State.Strict.runStateT counting
+
+{- | Return the final result of a computation using a monotonic counter.
+
+  The counter is initialized to @0@.
+
+ -}
+evalCounterT :: Monad m => CounterT m a -> m a
+evalCounterT (CounterT counting) = do
+    (a, _) <- Monad.State.Strict.runStateT counting 0
+    return a
 
 {- | Run a computation using a monotonic counter.
 
@@ -59,7 +103,7 @@ runCounter
     -> Natural
     -- ^ initial counter
     -> (a, Natural)
-runCounter (Counter counting) = Monad.State.Strict.runState counting
+runCounter counter = Monad.Identity.runIdentity . runCounterT counter
 
 {- | Return the final result of a computation using a monotonic counter.
 
@@ -67,8 +111,7 @@ runCounter (Counter counting) = Monad.State.Strict.runState counting
 
  -}
 evalCounter :: Counter a -> a
-evalCounter (Counter counting) =
-    let (a, _) = Monad.State.Strict.runState counting 0 in a
+evalCounter counter = let (a, _) = runCounter counter 0 in a
 
 {- | @MonadCounter@ abstracts a state monad carrying a monotonic counter.
 
@@ -88,17 +131,23 @@ class Monad m => MonadCounter m where
       generate duplicate fresh variables.
      -}
     increment :: m Natural
-    default increment :: MonadState Natural m => m Natural
-    increment = do
-        n <- Monad.State.get
-        Monad.State.modify' succ
-        return n
+
+-- | Generic implementation of 'increment' for any 'MonadState'.
+incrementState :: MonadState Natural m => m Natural
+incrementState = do
+    n <- Monad.State.get
+    Monad.State.modify' succ
+    return n
 
 instance MonadCounter m => MonadCounter (Monad.Except.ExceptT e m) where
     increment = Monad.Trans.lift increment
     {-# INLINE increment #-}
 
 instance MonadCounter m => MonadCounter (Monad.Identity.IdentityT m) where
+    increment = Monad.Trans.lift increment
+    {-# INLINE increment #-}
+
+instance MonadCounter m => MonadCounter (MaybeT m) where
     increment = Monad.Trans.lift increment
     {-# INLINE increment #-}
 
