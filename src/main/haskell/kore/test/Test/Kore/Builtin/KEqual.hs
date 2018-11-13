@@ -46,13 +46,13 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
-import qualified Test.Kore.Step.MockSimplifiers as Mock
-
+import qualified SMT
 
 import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import qualified Test.Kore.Builtin.Builtin as Test.Builtin
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 prop_kneq :: Bool -> Bool -> Property
 prop_kneq = propBinary (/=) kneqSymbol
@@ -70,7 +70,7 @@ propBinary
 propBinary impl symb =
     \a b ->
         let pat = App_ symb (Test.Bool.asPattern <$> [a, b])
-        in Test.Bool.asPattern (impl a b) === evaluate pat
+        in Test.Bool.asExpandedPattern (impl a b) === evaluate pat
 
 keqSymbol :: SymbolOrAlias Object
 keqSymbol = Test.Bool.builtinSymbol "keqBool"
@@ -124,15 +124,16 @@ sortDecl sort =
         }
         :: KoreSentenceSort Object)
 
-evaluate :: CommonPurePattern Object -> CommonPurePattern Object
+evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
     let
-        (Predicated { term }, _) =
-            evalSimplifier
+        (result, _) =
+            SMT.unsafeRunSMT SMT.defaultConfig
+            $ evalSimplifier
                 (Pattern.simplify
                     tools (Mock.substitutionSimplifier tools) evaluators pat
                 )
-    in term
+    in result
 
 kEqualDefinition :: KoreDefinition
 kEqualDefinition =
@@ -164,109 +165,75 @@ test_KEqual :: [TestTree]
 test_KEqual =
     [ testCase "equals with variable"
         (assertEqual ""
-            ( ExpandedPattern.fromPurePattern (pat keqSymbol)
-            , SimplificationProof
-            )
-            (evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators
-                    (pat keqSymbol)
-                )
-            )
+            (ExpandedPattern.fromPurePattern $ pat keqSymbol)
+            (evaluate $ pat keqSymbol)
         )
     , testCase "not equals with variable"
         (assertEqual ""
-            ( ExpandedPattern.fromPurePattern (pat kneqSymbol)
-            , SimplificationProof
-            )
-            (evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators
-                    (pat kneqSymbol)
-                )
-            )
+            (ExpandedPattern.fromPurePattern $ pat kneqSymbol)
+            (evaluate $ pat kneqSymbol)
         )
     , testCase "dotk equals dotk"
         (assertEqual ""
-            ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern True)
-            , SimplificationProof
-            )
-            (evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators
-                    (App_ keqSymbol
-                        [ App_ dotKHead []
-                        , App_ dotKHead []
-                        ]
-                    )
+            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern True)
+            (evaluate
+                (App_ keqSymbol
+                    [ App_ dotKHead []
+                    , App_ dotKHead []
+                    ]
                 )
             )
         )
     , testCase "distinct domain values"
         (assertEqual ""
-            ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
-            , SimplificationProof
-            )
-            (evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators
-                    (App_ keqSymbol
-                        [ DV_ idSort
-                            (BuiltinDomainPattern (StringLiteral_ "t"))
-                        , DV_ idSort
-                            (BuiltinDomainPattern (StringLiteral_ "x"))
-                        ]
-                    )
+            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern False)
+            (evaluate
+                (App_ keqSymbol
+                    [ DV_ idSort
+                        (BuiltinDomainPattern (StringLiteral_ "t"))
+                    , DV_ idSort
+                        (BuiltinDomainPattern (StringLiteral_ "x"))
+                    ]
                 )
             )
         )
     , testCase "injected distinct domain values"
         (assertEqual ""
-            ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
-            , SimplificationProof
-            )
-            (evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators
-                    (App_ keqSymbol
-                        [ App_ (injHead idSort kItemSort)
-                            [ DV_ idSort
-                                (BuiltinDomainPattern (StringLiteral_ "t"))
-                            ]
-                        , App_ (injHead idSort kItemSort)
-                            [ DV_ idSort
-                                (BuiltinDomainPattern (StringLiteral_ "x"))
-                            ]
+            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern False)
+            (evaluate
+                (App_ keqSymbol
+                    [ App_ (injHead idSort kItemSort)
+                        [ DV_ idSort
+                            (BuiltinDomainPattern (StringLiteral_ "t"))
                         ]
-                    )
+                    , App_ (injHead idSort kItemSort)
+                        [ DV_ idSort
+                            (BuiltinDomainPattern (StringLiteral_ "x"))
+                        ]
+                    ]
                 )
             )
         )
     , testCase "distinct Id domain values casted to K"
         (assertEqual ""
-            ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
-            , SimplificationProof
-            )
-            (evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators
-                    (App_ keqSymbol
-                        [ App_ kSeqHead
-                            [ App_ (injHead idSort kItemSort)
-                                [ DV_ idSort
-                                    (BuiltinDomainPattern (StringLiteral_ "t"))
-                                ]
-                            , App_ dotKHead []
+            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern False)
+            (evaluate
+                (App_ keqSymbol
+                    [ App_ kSeqHead
+                        [ App_ (injHead idSort kItemSort)
+                            [ DV_ idSort
+                                (BuiltinDomainPattern (StringLiteral_ "t"))
                             ]
-                        , App_ kSeqHead
-                            [ App_ (injHead idSort kItemSort)
-                                [ DV_ idSort
-                                    (BuiltinDomainPattern (StringLiteral_ "x"))
-                                ]
-                            , App_ dotKHead []
-                            ]
+                        , App_ dotKHead []
                         ]
-                    )
+                    , App_ kSeqHead
+                        [ App_ (injHead idSort kItemSort)
+                            [ DV_ idSort
+                                (BuiltinDomainPattern (StringLiteral_ "x"))
+                            ]
+                        , App_ dotKHead []
+                        ]
+                    ]
                 )
             )
         )
@@ -284,35 +251,25 @@ test_KIte :: [TestTree]
 test_KIte =
     [ testCase "ite true"
         (assertEqual ""
-            ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern False)
-            , SimplificationProof
-            )
-            (evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators
-                    (App_ kiteSymbol
-                        [ Test.Bool.asPattern True
-                        , Test.Bool.asPattern False
-                        , Test.Bool.asPattern True
-                        ]
-                    )
+            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern False)
+            (evaluate
+                (App_ kiteSymbol
+                    [ Test.Bool.asPattern True
+                    , Test.Bool.asPattern False
+                    , Test.Bool.asPattern True
+                    ]
                 )
             )
         )
     , testCase "ite false"
         (assertEqual ""
-            ( ExpandedPattern.fromPurePattern (Test.Bool.asPattern True)
-            , SimplificationProof
-            )
-            (evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators
-                    (App_ kiteSymbol
-                        [ Test.Bool.asPattern False
-                        , Test.Bool.asPattern False
-                        , Test.Bool.asPattern True
-                        ]
-                    )
+            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern True)
+            (evaluate
+                (App_ kiteSymbol
+                    [ Test.Bool.asPattern False
+                    , Test.Bool.asPattern False
+                    , Test.Bool.asPattern True
+                    ]
                 )
             )
         )

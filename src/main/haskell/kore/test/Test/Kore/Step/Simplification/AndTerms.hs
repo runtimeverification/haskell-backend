@@ -33,6 +33,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier, liftPredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -775,7 +776,9 @@ unify
     -> CommonPurePattern level
     -> Maybe (CommonExpandedPattern level)
 unify tools first second =
-    fst <$> evalSimplifier (runMaybeT $ unification)
+    (<$>) fst
+    $ SMT.unsafeRunSMT SMT.defaultConfig
+    $ evalSimplifier $ runMaybeT $ unification
   where
     substitutionSimplifier =
         liftPredicateSubstitutionSimplifier
@@ -793,5 +796,5 @@ simplify
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 simplify tools first second =
-    fst $ evalSimplifier
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
         (termAnd tools (Mock.substitutionSimplifier tools) first second)

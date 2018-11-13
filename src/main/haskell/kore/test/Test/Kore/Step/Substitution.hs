@@ -10,25 +10,26 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Kore.AST.Common
-       ( Variable )
-import Kore.AST.MetaOrObject
-       ( Object )
-import Kore.ASTUtils.SmartConstructors
-       ( mkVar )
-import Kore.Predicate.Predicate
-       ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
-       makeTruePredicate )
-import Kore.Step.ExpandedPattern
-       ( PredicateSubstitution, Predicated (..) )
-import Kore.Step.Simplification.Data
-       ( evalSimplifier )
-import Kore.Step.Substitution
-       ( mergePredicatesAndSubstitutionsExcept,
-       normalizePredicatedSubstitution )
-import Kore.Unification.Error
-import Kore.Unification.Unifier
-       ( UnificationSubstitution )
+import           Kore.AST.Common
+                 ( Variable )
+import           Kore.AST.MetaOrObject
+                 ( Object )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkVar )
+import           Kore.Predicate.Predicate
+                 ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeTruePredicate )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution, Predicated (..) )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
+import           Kore.Step.Substitution
+                 ( mergePredicatesAndSubstitutionsExcept,
+                 normalizePredicatedSubstitution )
+import           Kore.Unification.Error
+import           Kore.Unification.Unifier
+                 ( UnificationSubstitution )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -328,7 +329,8 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     normalize s1 s2 =
         let
             result =
-                evalSimplifier
+                SMT.unsafeRunSMT SMT.defaultConfig
+                $ evalSimplifier
                 $ runExceptT $ mergePredicatesAndSubstitutionsExcept
                     mockMetadataTools
                     (Mock.substitutionSimplifier mockMetadataTools)
@@ -342,8 +344,10 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
         :: PredicateSubstitution Object Variable
         -> PredicateSubstitution Object Variable
     normalizeWithPredicate Predicated {predicate, substitution} =
-        fst $ evalSimplifier
-            $ normalizePredicatedSubstitution
-                mockMetadataTools
-                (Mock.substitutionSimplifier mockMetadataTools)
-                Predicated {term = (), predicate, substitution}
+        fst
+        $ SMT.unsafeRunSMT SMT.defaultConfig
+        $ evalSimplifier
+        $ normalizePredicatedSubstitution
+            mockMetadataTools
+            (Mock.substitutionSimplifier mockMetadataTools)
+            Predicated {term = (), predicate, substitution}

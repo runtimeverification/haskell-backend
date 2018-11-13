@@ -33,6 +33,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified SMT
 
 import           Test.Kore
                  ( testId )
@@ -181,7 +182,8 @@ boolModule =
 evaluate :: CommonPurePattern Object -> CommonPurePattern Object
 evaluate pat =
     let (Predicated { term }, _) =
-            evalSimplifier
+            SMT.unsafeRunSMT SMT.defaultConfig
+            $ evalSimplifier
                 (Pattern.simplify
                     tools (Mock.substitutionSimplifier tools) evaluators pat
                 )

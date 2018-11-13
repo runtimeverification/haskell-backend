@@ -48,6 +48,7 @@ import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import           Kore.Unification.Unifier
                  ( UnificationError (..), UnificationProof (..) )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
@@ -1138,8 +1139,9 @@ runStep
         (StepError level Variable)
         (CommonExpandedPattern level, StepProof level Variable)
 runStep metadataTools configuration axiom =
-    evalSimplifier
-    . runExceptT
+    SMT.unsafeRunSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ runExceptT
     $ stepWithAxiom
         metadataTools
         (Mock.substitutionSimplifier metadataTools)

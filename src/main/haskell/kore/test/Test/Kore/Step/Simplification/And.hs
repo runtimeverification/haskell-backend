@@ -36,6 +36,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -428,7 +429,7 @@ evaluate
     :: And Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate patt =
-    fst $ evalSimplifier $
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier $
         simplify
             mockMetadataTools
             (Mock.substitutionSimplifier mockMetadataTools)
@@ -439,7 +440,7 @@ evaluatePatterns
     -> CommonExpandedPattern Object
     -> CommonExpandedPattern Object
 evaluatePatterns first second =
-    fst $ evalSimplifier $
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier $
         makeEvaluate
             mockMetadataTools
             (Mock.substitutionSimplifier mockMetadataTools)

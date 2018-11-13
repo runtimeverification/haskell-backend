@@ -44,7 +44,7 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
-
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -289,7 +289,9 @@ runSimplifier
 runSimplifier patternSimplifierMap predicateSubstitution =
     case simplifier of
         (PredicateSubstitutionSimplifier unwrapped) ->
-            fst $ evalSimplifier
+            fst
+            $ SMT.unsafeRunSMT SMT.defaultConfig
+            $ evalSimplifier
             $ unwrapped predicateSubstitution
   where
     simplifier =

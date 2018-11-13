@@ -39,13 +39,13 @@ dependencies:
   - integer-gmp
   - lens
   - megaparsec >= 6.4.0
+  - mmorph
   - mtl
   - optparse-applicative
   - parser-combinators
   - prettyprinter
   - recursion-schemes
   - reflection
-  - sbv
   - simple-smt
   - template-haskell
   - text

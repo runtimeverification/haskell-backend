@@ -49,6 +49,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unification.Data
+import qualified SMT
 
 import           Test.Kore
                  ( idGen, testId )
@@ -647,7 +648,7 @@ testModule =
 
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
-    fst $ evalSimplifier
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
         $ Pattern.simplify
             tools (Mock.substitutionSimplifier tools) evaluators pat
   where
@@ -700,7 +701,7 @@ runStep
         (StepError Object Variable)
         (CommonExpandedPattern Object, StepProof Object Variable)
 runStep configuration axiom =
-    (evalSimplifier . runExceptT)
+    (SMT.unsafeRunSMT SMT.defaultConfig . evalSimplifier . runExceptT)
         (stepWithAxiom
             metadataTools
             (substitutionSimplifier metadataTools)

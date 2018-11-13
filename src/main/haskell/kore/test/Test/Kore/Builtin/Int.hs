@@ -45,6 +45,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified SMT
 
 import           Test.Kore
                  ( testId )
@@ -472,7 +473,7 @@ intModule =
 
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
-    fst $ evalSimplifier
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
     $ Pattern.simplify tools (Mock.substitutionSimplifier tools) evaluators pat
   where
     tools = extractMetadataTools indexedModule

@@ -65,6 +65,7 @@ import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import           Kore.Unification.UnifierImpl
+import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.AST.MLPatterns
@@ -314,8 +315,9 @@ andSimplifySuccess message term1 term2 resultTerm subst predicate proof =
         )
   where
     Right (subst', proof') =
-        evalSimplifier
-        . runExceptT
+        SMT.unsafeRunSMT SMT.defaultConfig
+        $ evalSimplifier
+        $ runExceptT
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
@@ -341,12 +343,13 @@ andSimplifyFailure message term1 term2 err =
             show
             ""
             (Left (UnificationError err))
-            ( evalSimplifier . runExceptT
-                $ simplifyAnds
-                    tools
-                    (Mock.substitutionSimplifier tools)
-                    [(unificationProblem term1 term2)]
-            )
+            $ SMT.unsafeRunSMT SMT.defaultConfig
+            $ evalSimplifier
+            $ runExceptT
+            $ simplifyAnds
+                tools
+                (Mock.substitutionSimplifier tools)
+                [(unificationProblem term1 term2)]
         )
 
 andSimplifyException
@@ -362,14 +365,15 @@ andSimplifyException message term1 term2 exceptionMessage =
         ( catch test handler )
     where
         test = do
-            let var =
-                    evalSimplifier
-                    . runExceptT
-                    $ simplifyAnds
-                        tools
-                        (Mock.substitutionSimplifier tools)
-                        [(unificationProblem term1 term2)]
-            _ <- evaluate (var)
+            var <-
+                SMT.runSMT SMT.defaultConfig
+                $ evalSimplifier
+                $ runExceptT
+                $ simplifyAnds
+                    tools
+                    (Mock.substitutionSimplifier tools)
+                    [(unificationProblem term1 term2)]
+            _ <- evaluate var
             assertFailure "This evaluation should fail"
         handler (ErrorCall s) =
             assertEqual ""
@@ -406,7 +410,7 @@ unificationProcedureSuccess
               }
           , proof'
           ) =
-        evalSimplifier . runExceptT $
+        SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier $ runExceptT $
             ( unificationProcedure
                 tools
                 (Mock.substitutionSimplifier tools)
@@ -712,6 +716,7 @@ simplifyPattern (UnificationTerm pStub) =
     let pat =
             project
             $ ExpandedPattern.term
+            $ SMT.unsafeRunSMT SMT.defaultConfig
             $ evalSimplifier
             $ do
                 simplifiedPatterns <-

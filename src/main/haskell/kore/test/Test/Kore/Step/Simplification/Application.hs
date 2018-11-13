@@ -48,6 +48,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Variables.Fresh
                  ( freshVariableFromVariable )
+import qualified SMT
 
 import           Test.Kore
                  ( testId )
@@ -459,6 +460,7 @@ evaluate
     application
   =
     fst
+        $ SMT.unsafeRunSMT SMT.defaultConfig
         $ evalSimplifier
         $ simplify
             tools

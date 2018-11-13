@@ -14,7 +14,6 @@ import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
-import Kore.SMT.Config
 import Kore.SMT.SMT
 import Kore.Step.StepperAttributes
 
@@ -54,7 +53,7 @@ div   a b = App_ Builtin.Int.tdivSymbol [a, b]
 
 run :: CommonPredicate Object -> Property
 run prop =
-  (give tools $ unsafeTryRefutePredicate (SMTTimeOut 1000) prop)
+  (give tools $ unsafeTryRefutePredicate prop)
   ===
   Just False
 

@@ -47,6 +47,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
+import qualified SMT
 
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
@@ -253,6 +254,7 @@ test_functionRegistry =
             (App_ sHead [])
             ( ExpandedPattern.term
             $ head $ OrOfExpandedPattern.extractPatterns $ fst
+            $ SMT.unsafeRunSMT SMT.defaultConfig
             $ evalSimplifier
             $ ExpandedPattern.simplify
                 testMetadataTools

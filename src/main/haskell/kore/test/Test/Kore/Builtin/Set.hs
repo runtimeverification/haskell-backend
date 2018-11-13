@@ -35,6 +35,7 @@ import qualified Kore.Builtin.Set as Set
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
                  ( AxiomPattern (..) )
 import           Kore.Step.BaseStep
@@ -46,8 +47,8 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unification.Data
+import qualified SMT
 
-import           Kore.Predicate.Predicate as Predicate
 import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -504,7 +505,7 @@ testModule =
 
 evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
 evaluate pat =
-    fst $ evalSimplifier
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
         $ Pattern.simplify
             tools (Mock.substitutionSimplifier tools) evaluators pat
   where
@@ -556,7 +557,7 @@ runStep
         (StepError Object Variable)
         (CommonExpandedPattern Object, StepProof Object Variable)
 runStep configuration axiom =
-    (evalSimplifier . runExceptT)
+    (SMT.unsafeRunSMT SMT.defaultConfig . evalSimplifier . runExceptT)
         (stepWithAxiom
             metadataTools
             (substitutionSimplifier metadataTools)

@@ -11,7 +11,6 @@ module Kore.Step.Condition.Evaluator
     ( evaluate
     ) where
 
-import Control.Monad.Reader
 import Data.Reflection
 
 import           Kore.AST.Common
@@ -57,13 +56,12 @@ evaluate
     (PureMLPatternSimplifier simplifier)
     predicate''
   = give tools $ do
-    smtTimeOut <- ask
     (patt, _proof) <-
         simplifier substitutionSimplifier (unwrapPredicate predicate'')
     let patt' =
             if not(OrOfExpandedPattern.isTrue patt)
                && not(OrOfExpandedPattern.isFalse patt)
-               && unsafeTryRefutePredicate smtTimeOut predicate'' == Just False
+               && unsafeTryRefutePredicate predicate'' == Just False
             then ExpandedPattern.bottom
             else
                 give symbolOrAliasSorts

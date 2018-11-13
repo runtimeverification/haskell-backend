@@ -11,12 +11,12 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-import           Kore.SMT.Config
 import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified SMT
 
 import           Test.Kore.AST.Common
                  ( arbitrarySortedVariable )
@@ -126,11 +126,10 @@ evaluate
     :: Predicate Object Variable
     -> PredicateSubstitution Object Variable
 evaluate predicate =
-    fst $ fst $
-    give tools $
-    give testSymbolOrAliasSorts $
-    flip (runSimplifier $ SMTTimeOut 1000) 0 $
-    Evaluator.evaluate
+    fst $ give tools $ give testSymbolOrAliasSorts
+    $ SMT.unsafeRunSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ Evaluator.evaluate
         (Mock.substitutionSimplifier tools)
         (mockSimplifier [])
         predicate

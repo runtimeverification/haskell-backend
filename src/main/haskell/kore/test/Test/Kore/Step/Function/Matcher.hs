@@ -32,7 +32,6 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
-import           Kore.SMT.Config
 import           Kore.Step.ExpandedPattern
                  ( CommonPredicateSubstitution, PredicateSubstitution,
                  Predicated (..) )
@@ -46,6 +45,7 @@ import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import           Kore.Unification.Unifier
                  ( UnificationProof )
+import qualified SMT
 
 import           Test.Kore
                  ( testId )
@@ -770,7 +770,8 @@ match tools first second =
             , UnificationProof level Variable
             )
     matchAsEither =
-        fst $ runSimplifier (SMTTimeOut 40) (runExceptT matchResult) 0
+        SMT.unsafeRunSMT SMT.defaultConfig
+        $ evalSimplifier (runExceptT matchResult)
     matchResult
         :: ExceptT
             (UnificationOrSubstitutionError level Variable)

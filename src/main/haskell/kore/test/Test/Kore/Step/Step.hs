@@ -45,6 +45,7 @@ import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
@@ -525,6 +526,7 @@ runStep
     -> [(CommonExpandedPattern level, StepProof level Variable)]
 runStep metadataTools configuration axioms =
     pickFinal
+        $ SMT.unsafeRunSMT SMT.defaultConfig
         $ evalSimplifier
         $ runStrategy
             (transitionRule
@@ -548,6 +550,7 @@ runSteps
     -> (CommonExpandedPattern level, StepProof level Variable)
 runSteps metadataTools stepLimit configuration axioms =
     pickLongest
+        $ SMT.unsafeRunSMT SMT.defaultConfig
         $ evalSimplifier
         $ runStrategy
             (transitionRule

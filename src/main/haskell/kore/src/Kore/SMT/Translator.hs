@@ -6,11 +6,10 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.SMT.Translator
     ( Translator
     , runTranslator
+    , translateUninterpreted
     , translateUninterpretedBool
     , translateUninterpretedInt
     ) where
@@ -19,63 +18,54 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
-import           Control.Lens
-                 ( Lens' )
-import qualified Control.Lens as Lens
+import           Control.Monad.Counter
+                 ( CounterT, evalCounterT )
+import qualified Control.Monad.Counter as Monad.Counter
 import           Control.Monad.Except
+import qualified Control.Monad.Morph as Morph
 import           Control.Monad.State.Strict
                  ( StateT, evalStateT )
 import qualified Control.Monad.State.Strict as Monad.State
-import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
-import           Data.SBV as SMT
 import           Prelude hiding
                  ( and, not, or )
 
-data TranslationState p =
-    TranslationState
-        { _boolVariables :: !(Map p SBool)
-        , _intVariables :: !(Map p SInteger)
-        }
+import           SMT
+                 ( MonadSMT (..), SExpr (..), SMT )
+import qualified SMT
 
-Lens.makeLenses ''TranslationState
+type Translator p = MaybeT (StateT (Map p SExpr) (CounterT SMT))
 
-type Translator p = StateT (TranslationState p) (MaybeT Symbolic)
-
-liftSymbolic :: Symbolic a -> Translator p a
-liftSymbolic symb = (Monad.Trans.lift (Monad.Trans.lift symb))
-
-runTranslator :: Translator p a -> MaybeT Symbolic a
-runTranslator translator =
-    evalStateT translator emptyTranslationState
-  where
-    emptyTranslationState :: TranslationState p
-    emptyTranslationState =
-        TranslationState
-            { _boolVariables = Map.empty
-            , _intVariables = Map.empty
-            }
+runTranslator :: Ord p => Translator p a -> MaybeT SMT a
+runTranslator = Morph.hoist (evalCounterT . flip evalStateT Map.empty)
 
 translateUninterpreted
-    :: (Ord p, SymWord a)
-    => Lens' (TranslationState p) (Map p (SBV a))
-    -> p
-    -> Translator p (SBV a)
-translateUninterpreted lens pat =
+    :: Ord p
+    => SExpr  -- ^ type name
+    -> p  -- ^ uninterpreted pattern
+    -> Translator p SExpr
+translateUninterpreted t pat =
     lookupPattern <|> freeVariable
   where
     lookupPattern = do
-        result <- Lens.zoom lens $ Monad.State.gets $ Map.lookup pat
+        result <- Monad.State.gets $ Map.lookup pat
         maybe empty return result
     freeVariable = do
-        var <- liftSymbolic SMT.free_
-        Lens.zoom lens $ Monad.State.modify' (Map.insert pat var)
+        n <- Monad.Counter.increment
+        var <- liftSMT $ SMT.declare ("<" ++ show n ++ ">") t
+        Monad.State.modify' (Map.insert pat var)
         return var
 
-translateUninterpretedBool :: Ord p => p -> Translator p SBool
-translateUninterpretedBool = translateUninterpreted boolVariables
+translateUninterpretedBool
+    :: Ord p
+    => p  -- ^ uninterpreted pattern
+    -> Translator p SExpr
+translateUninterpretedBool = translateUninterpreted SMT.tBool
 
-translateUninterpretedInt :: Ord p => p -> Translator p SInteger
-translateUninterpretedInt = translateUninterpreted intVariables
+translateUninterpretedInt
+    :: Ord p
+    => p  -- ^ uninterpreted pattern
+    -> Translator p SExpr
+translateUninterpretedInt = translateUninterpreted SMT.tInt

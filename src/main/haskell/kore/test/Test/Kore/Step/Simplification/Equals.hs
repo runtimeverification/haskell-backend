@@ -44,6 +44,7 @@ import           Kore.Step.Simplification.Equals
                  simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -801,7 +802,7 @@ evaluateOr
     -> Equals Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluateOr tools equals =
-    fst $ evalSimplifier
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
         $ simplify tools (Mock.substitutionSimplifier tools) equals
 
 evaluate
@@ -818,7 +819,7 @@ evaluateGeneric
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 evaluateGeneric tools first second =
-    fst $ evalSimplifier
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
         $ makeEvaluate tools (Mock.substitutionSimplifier tools) first second
 
 evaluateTermsGeneric
@@ -828,6 +829,6 @@ evaluateTermsGeneric
     -> CommonPurePattern level
     -> CommonPredicateSubstitution level
 evaluateTermsGeneric tools first second =
-    fst $ evalSimplifier $
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier $
         makeEvaluateTermsToPredicateSubstitution
             tools (Mock.substitutionSimplifier tools) first second

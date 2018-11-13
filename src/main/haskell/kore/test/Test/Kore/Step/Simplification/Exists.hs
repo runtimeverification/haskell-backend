@@ -38,6 +38,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -297,7 +298,8 @@ evaluate
     -> Exists level Variable (CommonOrOfExpandedPattern level)
     -> CommonOrOfExpandedPattern level
 evaluate tools exists =
-    fst $ evalSimplifier
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig
+        $ evalSimplifier
         $ Exists.simplify
             tools
             (Mock.substitutionSimplifier tools)
@@ -313,7 +315,8 @@ makeEvaluate
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 makeEvaluate tools variable child =
-    fst $ evalSimplifier
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig
+        $ evalSimplifier
         $ Exists.makeEvaluate
             tools
             (Mock.substitutionSimplifier tools)

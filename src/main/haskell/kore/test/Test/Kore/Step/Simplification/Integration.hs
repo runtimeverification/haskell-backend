@@ -51,6 +51,7 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -367,7 +368,7 @@ evaluateWithAxioms
     -> CommonExpandedPattern Object
     -> CommonOrOfExpandedPattern Object
 evaluateWithAxioms tools axioms patt =
-    fst $ evalSimplifier $
+    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier $
         ExpandedPattern.simplify
             tools
             (PredicateSubstitution.create tools simplifier)
@@ -393,4 +394,3 @@ evaluateWithAxioms tools axioms patt =
             [ (Mock.concatMapId, [Map.evalConcat])
             , (Mock.elementMapId, [Map.evalElement])
             ]
-

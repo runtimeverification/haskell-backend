@@ -53,6 +53,7 @@ import           Kore.Step.Simplification.Data
                  ( CommonPureMLPatternSimplifier, SimplificationProof (..),
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
@@ -430,6 +431,7 @@ evaluateWithAxiom
             }
     evaluated =
         fst
+            $ SMT.unsafeRunSMT SMT.defaultConfig
             $ evalSimplifier
             $ axiomFunctionEvaluator
                 axiom
