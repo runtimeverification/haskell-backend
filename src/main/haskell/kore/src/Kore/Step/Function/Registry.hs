@@ -12,7 +12,6 @@ module Kore.Step.Function.Registry
     , axiomPatternsToEvaluators
     ) where
 
-import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import           Data.Map
                  ( Map )
@@ -144,6 +143,6 @@ axiomPatternEvaluator axiomPat@AxiomPattern { axiomPatternAttributes }
     | otherwise =
         Just (ApplicationFunctionEvaluator $ axiomFunctionEvaluator axiomPat)
   where
-    Assoc { isAssoc } = Lens.view assoc axiomPatternAttributes
-    Comm { isComm } = Lens.view comm axiomPatternAttributes
-    Unit { isUnit } = Lens.view unit axiomPatternAttributes
+    Assoc { isAssoc } = assoc axiomPatternAttributes
+    Comm { isComm } = comm axiomPatternAttributes
+    Unit { isUnit } = unit axiomPatternAttributes

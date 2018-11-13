@@ -2,12 +2,12 @@
 
 module Kore.Step.AxiomPatterns
     ( AxiomPattern (..)
-    , AxiomPatternAttributes
-    , heatCool, HeatCool (..)
-    , productionID, ProductionID (..)
-    , assoc, Assoc (..)
-    , comm, Comm (..)
-    , unit, Unit (..)
+    , AxiomPatternAttributes (..)
+    , lensHeatCool, HeatCool (..)
+    , lensProductionID, ProductionID (..)
+    , lensAssoc, Assoc (..)
+    , lensComm, Comm (..)
+    , lensUnit, Unit (..)
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
@@ -17,7 +17,7 @@ module Kore.Step.AxiomPatterns
     , extractRewriteAxioms
     ) where
 
-import qualified Control.Lens as Lens
+import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( (>=>) )
 import           Data.Default
@@ -48,15 +48,15 @@ import           Kore.Predicate.Predicate
  -}
 data AxiomPatternAttributes =
     AxiomPatternAttributes
-    { _heatCool :: !HeatCool
+    { heatCool :: !HeatCool
     -- ^ An axiom may be denoted as a heating or cooling rule.
-    , _productionID :: !ProductionID
+    , productionID :: !ProductionID
     -- ^ The identifier from the front-end identifying a rule or group of rules.
-    , _assoc :: !Assoc
+    , assoc :: !Assoc
     -- ^ The axiom is an associativity axiom.
-    , _comm :: !Comm
+    , comm :: !Comm
     -- ^ The axiom is a commutativity axiom.
-    , _unit :: !Unit
+    , unit :: !Unit
     -- ^ The axiom is a left- or right-unit axiom.
     }
     deriving (Eq, Ord, Show)
@@ -66,20 +66,20 @@ Lens.makeLenses ''AxiomPatternAttributes
 instance Default AxiomPatternAttributes where
     def =
         AxiomPatternAttributes
-            { _heatCool = def
-            , _productionID = def
-            , _assoc = def
-            , _comm = def
-            , _unit = def
+            { heatCool = def
+            , productionID = def
+            , assoc = def
+            , comm = def
+            , unit = def
             }
 
 instance ParseAttributes AxiomPatternAttributes where
     parseAttribute attr =
-            heatCool (parseAttribute attr)
-        >=> productionID (parseAttribute attr)
-        >=> assoc (parseAttribute attr)
-        >=> comm (parseAttribute attr)
-        >=> unit (parseAttribute attr)
+            lensHeatCool (parseAttribute attr)
+        >=> lensProductionID (parseAttribute attr)
+        >=> lensAssoc (parseAttribute attr)
+        >=> lensComm (parseAttribute attr)
+        >=> lensUnit (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -110,7 +110,7 @@ data QualifiedAxiomPattern level
  -}
 isHeatingRule :: AxiomPattern level -> Bool
 isHeatingRule AxiomPattern { axiomPatternAttributes } =
-    case Lens.view heatCool axiomPatternAttributes of
+    case heatCool axiomPatternAttributes of
         Heat -> True
         _ -> False
 
@@ -118,7 +118,7 @@ isHeatingRule AxiomPattern { axiomPatternAttributes } =
  -}
 isCoolingRule :: AxiomPattern level -> Bool
 isCoolingRule AxiomPattern { axiomPatternAttributes } =
-    case Lens.view heatCool axiomPatternAttributes of
+    case heatCool axiomPatternAttributes of
         Cool -> True
         _ -> False
 
@@ -126,7 +126,7 @@ isCoolingRule AxiomPattern { axiomPatternAttributes } =
  -}
 isNormalRule :: AxiomPattern level -> Bool
 isNormalRule AxiomPattern { axiomPatternAttributes } =
-    case Lens.view heatCool axiomPatternAttributes of
+    case heatCool axiomPatternAttributes of
         Normal -> True
         _ -> False
 
