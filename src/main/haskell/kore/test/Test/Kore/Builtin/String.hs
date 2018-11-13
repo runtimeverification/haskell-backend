@@ -1,10 +1,11 @@
 module Test.Kore.Builtin.String where
 
-import Test.QuickCheck
-       ( Property, (===) )
-import Test.Tasty
-       ( TestTree )
+import           Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
+import           Test.Tasty
 
+import qualified Control.Monad.Trans as Trans
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -32,7 +33,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import qualified SMT
+import           SMT
+                 ( SMT )
 
 import           Test.Kore
                  ( testId )
@@ -40,20 +42,29 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.SMT
 
 -- | Test a comparison operator hooked to the given symbol
-propComparison
-    :: (String -> String -> Bool)
+testComparison
+    :: TestName
+    -> (String -> String -> Bool)
     -- ^ implementation
     -> SymbolOrAlias Object
     -- ^ symbol
-    -> (String -> String -> Property)
-propComparison impl symb a b =
-    let pat = App_ symb (asPattern <$> [a, b])
-    in Test.Bool.asExpandedPattern (impl a b) === evaluate pat
+    -> TestTree
+testComparison name impl symb =
+    testPropertyWithSolver
+        name
+        (do
+            a <- forAll (Gen.string (Range.linear 0 256) Gen.unicode)
+            b <- forAll (Gen.string (Range.linear 0 256) Gen.unicode)
+            let pat = App_ symb (asPattern <$> [a, b])
+                expect = Test.Bool.asExpandedPattern (impl a b)
+            (===) expect =<< evaluate pat
+        )
 
-prop_lt :: String -> String -> Property
-prop_lt = propComparison (<) ltSymbol
+test_lt :: TestTree
+test_lt = testComparison "STRING.lt" (<) ltSymbol
 
 ltSymbol :: SymbolOrAlias Object
 ltSymbol = builtinSymbol "ltString"
@@ -405,12 +416,29 @@ stringModule =
             ]
         }
 
-evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
-evaluate pat =
-    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
-    $ Pattern.simplify tools (Mock.substitutionSimplifier tools) evaluators pat
-  where
-    tools = extractMetadataTools indexedModule
+evaluate
+    :: CommonPurePattern Object
+    -> PropertyT SMT (CommonExpandedPattern Object)
+evaluate = Trans.lift . evaluate'
+
+evaluate'
+    :: CommonPurePattern Object
+    -> SMT (CommonExpandedPattern Object)
+evaluate' =
+    (<$>) fst
+    . evalSimplifier
+    . Pattern.simplify
+        testTools
+        testSubstitutionSimplifier
+        evaluators
+
+testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+testTools :: MetadataTools Object StepperAttributes
+testTools@MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } =
+    extractMetadataTools indexedModule
+
+testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
+testSubstitutionSimplifier = Mock.substitutionSimplifier testTools
 
 stringDefinition :: KoreDefinition
 stringDefinition =
@@ -448,4 +476,4 @@ testString
     -> [CommonPurePattern Object]
     -> CommonExpandedPattern Object
     -> TestTree
-testString = testSymbol evaluate
+testString = testSymbol evaluate'

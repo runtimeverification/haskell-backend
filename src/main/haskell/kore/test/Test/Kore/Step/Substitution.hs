@@ -2,13 +2,14 @@ module Test.Kore.Step.Substitution
     ( test_mergeAndNormalizeSubstitutions
     ) where
 
-import Control.Monad.Except
-import Data.Reflection
-       ( give )
-import Test.Tasty
-       ( TestTree )
-import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+import           Control.Monad.Except
+import qualified Control.Monad.Morph as Morph
+import           Data.Reflection
+                 ( give )
+import           Test.Tasty
+                 ( TestTree )
+import           Test.Tasty.HUnit
+                 ( assertEqual, testCase )
 
 import           Kore.AST.Common
                  ( Variable )
@@ -29,6 +30,8 @@ import           Kore.Step.Substitution
 import           Kore.Unification.Error
 import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
+import           SMT
+                 ( SMT )
 import qualified SMT
 
 import           Test.Kore.Comparators ()
@@ -42,273 +45,276 @@ test_mergeAndNormalizeSubstitutions :: [TestTree]
 test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     [ testCase "Constructor normalization"
         -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
-        (assertEqual ""
-            ( Right Predicated
-                { term = ()
-                , predicate = makeTruePredicate
-                , substitution =
+        $ do
+            let expect =
+                    Right Predicated
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [   ( Mock.x
+                                , Mock.constr10 Mock.a
+                                )
+                            ]
+                        }
+            actual <-
+                normalize
                     [   ( Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
-                }
-            )
-            ( normalize
-                [   ( Mock.x
-                    , Mock.constr10 Mock.a
-                    )
-                ]
-                [   ( Mock.x
-                    , Mock.constr10 Mock.a
-                    )
-                ]
-            )
-        )
+                    [   ( Mock.x
+                        , Mock.constr10 Mock.a
+                        )
+                    ]
+            assertEqual "" expect actual
 
     , testCase "Constructor normalization with variables"
         -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
-        (assertEqual ""
-            ( Right Predicated
-                { term = ()
-                , predicate = makeTruePredicate
-                , substitution =
+        $ do
+            let expect =
+                    Right Predicated
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [   ( Mock.x
+                                , Mock.constr10 (mkVar Mock.y)
+                                )
+                            ]
+                        }
+            actual <-
+                normalize
                     [   ( Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
                     ]
-                }
-            )
-            ( normalize
-                [   ( Mock.x
-                    , Mock.constr10 (mkVar Mock.y)
-                    )
-                ]
-                [   ( Mock.x
-                    , Mock.constr10 (mkVar Mock.y)
-                    )
-                ]
-            )
-        )
+                    [   ( Mock.x
+                        , Mock.constr10 (mkVar Mock.y)
+                        )
+                    ]
+            assertEqual "" expect actual
 
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
-        (assertEqual ""
-            ( Right Predicated
-                { term = ()
-                , predicate = makeFalsePredicate
-                , substitution = []
-                }
-            )
-            ( normalize
-                [   ( Mock.x
-                    , Mock.constr10 Mock.a
-                    )
-                ]
-                [   ( Mock.x
-                    , Mock.constr10 (Mock.constr10 Mock.a)
-                    )
-                ]
-            )
-        )
-
-    , testCase "Double constructor is bottom with variables"
-        -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
-        (assertEqual ""
-            ( Left (UnificationError UnsupportedPatterns) )
-            ( normalize
-                [   ( Mock.x
-                    , Mock.constr10 (mkVar Mock.y)
-                    )
-                ]
-                [   ( Mock.x
-                    , Mock.constr10 (Mock.constr10 (mkVar Mock.y))
-                    )
-                ]
-            )
-        )
-
-    , testCase "Constructor and constructor of function"
-        -- [x=constructor(a)] + [x=constructor(f(a))]
-        (assertEqual ""
-            ( Right Predicated
-                { term = ()
-                , predicate =  makeEqualsPredicate Mock.a (Mock.f Mock.a)
-                , substitution =
+        $ do
+            let expect =
+                    Right Predicated
+                        { term = ()
+                        , predicate = makeFalsePredicate
+                        , substitution = []
+                        }
+            actual <-
+                normalize
                     [   ( Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
-                }
-            )
-            ( normalize
-                [   ( Mock.x
-                    , Mock.constr10 Mock.a
-                    )
-                ]
-                [   ( Mock.x
-                    , Mock.constr10 (Mock.f Mock.a)
-                    )
-                ]
-            )
-        )
+                    [   ( Mock.x
+                        , Mock.constr10 (Mock.constr10 Mock.a)
+                        )
+                    ]
+            assertEqual "" expect actual
+
+    , testCase "Double constructor is bottom with variables"
+        -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
+        $ do
+            let expect = Left (UnificationError UnsupportedPatterns)
+            actual <-
+                normalize
+                    [   ( Mock.x
+                        , Mock.constr10 (mkVar Mock.y)
+                        )
+                    ]
+                    [   ( Mock.x
+                        , Mock.constr10 (Mock.constr10 (mkVar Mock.y))
+                        )
+                    ]
+            assertEqual "" expect actual
+
+    , testCase "Constructor and constructor of function"
+        -- [x=constructor(a)] + [x=constructor(f(a))]
+        $ do
+            let expect =
+                    Right Predicated
+                        { term = ()
+                        , predicate = makeEqualsPredicate Mock.a (Mock.f Mock.a)
+                        , substitution =
+                            [   ( Mock.x
+                                , Mock.constr10 Mock.a
+                                )
+                            ]
+                        }
+            actual <-
+                normalize
+                    [   ( Mock.x
+                        , Mock.constr10 Mock.a
+                        )
+                    ]
+                    [   ( Mock.x
+                        , Mock.constr10 (Mock.f Mock.a)
+                        )
+                    ]
+            assertEqual "" expect actual
 
     -- TODO(Vladimir): this should be fixed by making use of the predicate from
     -- `solveGroupSubstitutions`.
     , testCase "Constructor and constructor of function with variables"
         -- [x=constructor(y)] + [x=constructor(f(y))]
-        (assertEqual ""
-            ( Right Predicated
-                { term = ()
-                , predicate =
-                    makeEqualsPredicate
-                        ( mkVar Mock.y )
-                        ( Mock.f (mkVar Mock.y) )
-                , substitution =
+        $ do
+            let expect =
+                    Right Predicated
+                        { term = ()
+                        , predicate =
+                            makeEqualsPredicate
+                                ( mkVar Mock.y )
+                                ( Mock.f (mkVar Mock.y) )
+                        , substitution =
+                            [   ( Mock.x
+                                , Mock.constr10 (Mock.f (mkVar Mock.y))
+                                )
+                            ]
+                        }
+            actual <-
+                normalize
+                    [   ( Mock.x
+                        , Mock.constr10 (mkVar Mock.y)
+                        )
+                    ]
                     [   ( Mock.x
                         , Mock.constr10 (Mock.f (mkVar Mock.y))
                         )
                     ]
-                }
-            )
-            ( normalize
-                [   ( Mock.x
-                    , Mock.constr10 (mkVar Mock.y)
-                    )
-                ]
-                [   ( Mock.x
-                    , Mock.constr10 (Mock.f (mkVar Mock.y))
-                    )
-                ]
-            )
-        )
+            assertEqual "" expect actual
 
     , testCase "Constructor and constructor of functional symbol"
         -- [x=constructor(y)] + [x=constructor(functional(y))]
-        (assertEqual ""
-            ( Right Predicated
-                { term = ()
-                , predicate =
-                    makeEqualsPredicate
-                        ( mkVar Mock.y )
-                        ( Mock.functional10 (mkVar Mock.y) )
-                , substitution =
+        $ do
+            let expect =
+                    Right Predicated
+                        { term = ()
+                        , predicate =
+                            makeEqualsPredicate
+                                ( mkVar Mock.y )
+                                ( Mock.functional10 (mkVar Mock.y) )
+                        , substitution =
+                            [   ( Mock.x
+                                , Mock.constr10
+                                    (Mock.functional10 $ mkVar Mock.y)
+                                )
+                            ]
+                        }
+            actual <-
+                normalize
+                    [   ( Mock.x
+                        , Mock.constr10 (mkVar Mock.y)
+                        )
+                    ]
                     [   ( Mock.x
                         , Mock.constr10 (Mock.functional10 (mkVar Mock.y))
                         )
                     ]
-                }
-            )
-            ( normalize
-                [   ( Mock.x
-                    , Mock.constr10 (mkVar Mock.y)
-                    )
-                ]
-                [   ( Mock.x
-                    , Mock.constr10 (Mock.functional10 (mkVar Mock.y))
-                    )
-                ]
-            )
-        )
+            assertEqual "" expect actual
 
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
-        (assertEqual ""
-            ( Left $ UnificationError UnsupportedPatterns )
-            ( normalize
-                [   ( Mock.x
-                    , mkVar Mock.y
-                    )
-                ]
-                [   ( Mock.x
-                    , Mock.constr10 (mkVar Mock.x)
-                    )
-                ]
-            )
-        )
+        $ do
+            let expect = Left $ UnificationError UnsupportedPatterns
+            actual <-
+                normalize
+                    [   ( Mock.x
+                        , mkVar Mock.y
+                        )
+                    ]
+                    [   ( Mock.x
+                        , Mock.constr10 (mkVar Mock.x)
+                        )
+                    ]
+            assertEqual "" expect actual
 
     , testCase "Non-ctor circular dependency"
         -- [x=y] + [y=f(x)]  === error
-        (assertEqual ""
-            ( Left
-                ( SubstitutionError
-                    ( NonCtorCircularVariableDependency [ Mock.x, Mock.y ] )
-                )
-            )
-            ( normalize
-                [   ( Mock.x
-                    , mkVar Mock.y
-                    )
-                ]
-                [   ( Mock.y
-                    , Mock.f (mkVar Mock.x)
-                    )
-                ]
-            )
-        )
+        $ do
+            let expect =
+                    Left
+                    $ SubstitutionError
+                    $ NonCtorCircularVariableDependency [ Mock.x, Mock.y ]
+            actual <-
+                normalize
+                    [   ( Mock.x
+                        , mkVar Mock.y
+                        )
+                    ]
+                    [   ( Mock.y
+                        , Mock.f (mkVar Mock.x)
+                        )
+                    ]
+            assertEqual "" expect actual
+
     , testCase "Normalizes substitution"
-        (assertEqualWithExplanation ""
-            (Predicated
-                { term = ()
-                , predicate = makeTruePredicate
-                , substitution =
-                    [ (Mock.x, Mock.constr10 Mock.a)
-                    , (Mock.y, Mock.a)
-                    ]
-                }
-            )
-            (normalizeWithPredicate
-                Predicated
-                    { term = ()
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        [ (Mock.x, Mock.constr10 Mock.a)
-                        , (Mock.x, Mock.constr10 (mkVar Mock.y))
-                        ]
-                    }
-            )
-        )
+        $ do
+            let expect =
+                    Predicated
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [ (Mock.x, Mock.constr10 Mock.a)
+                            , (Mock.y, Mock.a)
+                            ]
+                        }
+            actual <-
+                normalizeWithPredicate
+                    Predicated
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [ (Mock.x, Mock.constr10 Mock.a)
+                            , (Mock.x, Mock.constr10 (mkVar Mock.y))
+                            ]
+                        }
+            assertEqualWithExplanation "" expect actual
+
     , testCase "Predicate from normalizing substitution"
-        (assertEqualWithExplanation ""
-            (Predicated
-                { term = ()
-                , predicate = makeEqualsPredicate Mock.cf Mock.cg
-                , substitution =
-                    [ (Mock.x, Mock.constr10 Mock.cf) ]
-                }
-            )
-            (normalizeWithPredicate
-                Predicated
-                    { term = ()
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        [ (Mock.x, Mock.constr10 Mock.cf)
-                        , (Mock.x, Mock.constr10 Mock.cg)
-                        ]
-                    }
-            )
-        )
+        $ do
+            let expect =
+                    Predicated
+                        { term = ()
+                        , predicate = makeEqualsPredicate Mock.cf Mock.cg
+                        , substitution =
+                            [ (Mock.x, Mock.constr10 Mock.cf) ]
+                        }
+            actual <-
+                normalizeWithPredicate
+                    Predicated
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [ (Mock.x, Mock.constr10 Mock.cf)
+                            , (Mock.x, Mock.constr10 Mock.cg)
+                            ]
+                        }
+            assertEqualWithExplanation "" expect actual
+
     , testCase "Normalizes substitution and substitutes in predicate"
-        (assertEqualWithExplanation ""
-            (Predicated
-                { term = ()
-                , predicate = makeCeilPredicate (Mock.f Mock.a)
-                , substitution =
-                    [ (Mock.x, Mock.constr10 Mock.a)
-                    , (Mock.y, Mock.a)
-                    ]
-                }
-            )
-            (normalizeWithPredicate
-                Predicated
-                    { term = ()
-                    , predicate = makeCeilPredicate (Mock.f (mkVar Mock.y))
-                    , substitution =
-                        [ (Mock.x, Mock.constr10 Mock.a)
-                        , (Mock.x, Mock.constr10 (mkVar Mock.y))
-                        ]
-                    }
-            )
-        )
+        $ do
+            let expect =
+                    Predicated
+                        { term = ()
+                        , predicate = makeCeilPredicate (Mock.f Mock.a)
+                        , substitution =
+                            [ (Mock.x, Mock.constr10 Mock.a)
+                            , (Mock.y, Mock.a)
+                            ]
+                        }
+            actual <-
+                normalizeWithPredicate
+                    Predicated
+                        { term = ()
+                        , predicate = makeCeilPredicate (Mock.f (mkVar Mock.y))
+                        , substitution =
+                            [ (Mock.x, Mock.constr10 Mock.a)
+                            , (Mock.x, Mock.constr10 (mkVar Mock.y))
+                            ]
+                        }
+            assertEqualWithExplanation "" expect actual
     ]
 
   where
@@ -320,34 +326,37 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
             []
+
     normalize
         :: UnificationSubstitution Object Variable
         -> UnificationSubstitution Object Variable
-        -> Either
-            ( UnificationOrSubstitutionError Object Variable )
-            ( PredicateSubstitution Object Variable )
-    normalize s1 s2 =
-        let
-            result =
-                SMT.unsafeRunSMT SMT.defaultConfig
-                $ evalSimplifier
-                $ runExceptT $ mergePredicatesAndSubstitutionsExcept
-                    mockMetadataTools
-                    (Mock.substitutionSimplifier mockMetadataTools)
-                    []
-                    [s1, s2]
-        in
-            case result of
-                Left err -> Left err
-                Right r -> Right (fst $ r)
+        -> IO
+            (Either
+                ( UnificationOrSubstitutionError Object Variable )
+                ( PredicateSubstitution Object Variable )
+            )
+    normalize s1 s2 = runExceptT $ do
+        (result, _) <-
+            Morph.hoist (runSMT . evalSimplifier)
+            $ mergePredicatesAndSubstitutionsExcept
+                mockMetadataTools
+                (Mock.substitutionSimplifier mockMetadataTools)
+                []
+                [s1, s2]
+        return result
+
     normalizeWithPredicate
         :: PredicateSubstitution Object Variable
-        -> PredicateSubstitution Object Variable
+        -> IO (PredicateSubstitution Object Variable)
     normalizeWithPredicate Predicated {predicate, substitution} =
-        fst
-        $ SMT.unsafeRunSMT SMT.defaultConfig
+        (<$>) fst
+        $ runSMT
         $ evalSimplifier
         $ normalizePredicatedSubstitution
             mockMetadataTools
             (Mock.substitutionSimplifier mockMetadataTools)
             Predicated {term = (), predicate, substitution}
+
+-- | Run an 'SMT' computation with the default configuration.
+runSMT :: SMT a -> IO a
+runSMT = SMT.runSMT SMT.defaultConfig

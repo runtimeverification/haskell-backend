@@ -7,7 +7,10 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
 module SMT
-    ( SMT, runSMT, unsafeRunSMT
+    ( SMT, getSMT
+    , Solver
+    , newSolver, stopSolver, withSolver
+    , runSMT
     , MonadSMT (..)
     , Config (..)
     , defaultConfig
@@ -16,10 +19,8 @@ module SMT
     , declare
     , assert
     , check
-    , ackCommand
     , setInfo
-    , setTimeOut
-    , setLogic
+    , inNewScope
     -- * Expressions
     , SExpr (..)
     , SimpleSMT.tBool
@@ -33,11 +34,12 @@ module SMT
     , SimpleSMT.or
     ) where
 
+import           Control.Concurrent.MVar
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Identity as Identity
 import           Control.Monad.Reader
-                 ( MonadReader, ReaderT, runReaderT )
+                 ( ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.RWS.Lazy as RWS.Lazy
 import qualified Control.Monad.RWS.Strict as RWS.Strict
@@ -48,23 +50,32 @@ import qualified Control.Monad.Trans.Maybe as Maybe
 import qualified Control.Monad.Writer.Lazy as Writer.Lazy
 import qualified Control.Monad.Writer.Strict as Writer.Strict
 import           Data.Limit
-import           GHC.IO.Unsafe
-                 ( unsafePerformIO )
 import           SimpleSMT
                  ( Result (..), SExpr (..), Solver )
 import qualified SimpleSMT
 
+-- | Time-limit for SMT queries.
 newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }
     deriving (Eq, Ord, Read, Show)
 
+-- | Solver configuration
 data Config =
     Config
-        { executable :: String
+        { executable :: FilePath
+        -- ^ solver executable file name
         , arguments :: [String]
-        , logLevel :: Maybe Int
+        -- ^ default command-line arguments to solver
+        , logic :: String
+        -- ^ SMT-LIB2 logic
+        , preludeFile :: Maybe FilePath
+        -- ^ prelude of definitions to initialize solver
+        , logFile :: Maybe FilePath
+        -- ^ optional log file name
         , timeOut :: TimeOut
+        -- ^ query time limit
         }
 
+-- | Default configuration using the Z3 solver.
 defaultConfig :: Config
 defaultConfig =
     Config
@@ -73,16 +84,25 @@ defaultConfig =
             [ "-smt2"  -- use SMT-LIB2 format
             , "-in"  -- read from standard input
             ]
-        , logLevel = Nothing
+        , logic = "QF_NIA"  -- Quantifier-Free formulas
+                            -- with Non-linear Integer Arithmetic
+        , preludeFile = Nothing
+        , logFile = Nothing
         , timeOut = TimeOut (Limit 40)
         }
 
+{- | Query an external SMT solver.
 
-newtype SMT a = SMT { getSMT :: ReaderT Solver IO a }
+The solver may be shared among multiple threads. Individual commands will
+acquire and release the solver as needed, but sequences of commands from
+different threads may be interleaved; use 'inNewScope' to acquire exclusive
+access to the solver for a sequence of commands.
+
+ -}
+newtype SMT a = SMT { getSMT :: ReaderT (MVar Solver) IO a }
     deriving (Applicative, Functor, Monad)
 
-deriving instance MonadReader Solver SMT
-
+-- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
     liftSMT :: SMT a -> m a
 
@@ -122,49 +142,73 @@ instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Lazy.WriterT w m) where
 instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Strict.WriterT w m) where
     liftSMT = Trans.lift . liftSMT
 
-liftIO :: IO a -> SMT a
-liftIO = SMT . Trans.lift
+{- | Initialize a new solver with the given 'Config'.
 
-runSMT :: Config -> SMT a -> IO a
-runSMT config withSMT = do
-    logger <- traverse SimpleSMT.newLogger logLevel
-    solver <- SimpleSMT.newSolver exe args logger
-    a <- runReaderT getSMT solver
-    _ <- SimpleSMT.stop solver
-    return a
+The new solver is returned in an 'MVar' for thread-safety.
+
+ -}
+newSolver :: Config -> IO (MVar Solver)
+newSolver config = do
+    solver <- SimpleSMT.newSolver exe args Nothing
+    mvar <- newMVar solver
+    runReaderT getSMT mvar
+    return mvar
   where
-    Config { logLevel } = config
+    -- TODO (thomas.tuegel): Set up logging using logFile.
+    -- TODO (thomas.tuegel): Initialize solver from preludeFile.
     Config { timeOut } = config
+    Config { logic } = config
     Config { executable = exe, arguments = args } = config
     SMT { getSMT } = do
-        setLogic "QF_NIA"
+        setLogic logic
         setTimeOut timeOut
-        withSMT
 
-unsafeRunSMT :: Config -> SMT a -> a
-unsafeRunSMT config smt = unsafePerformIO $ runSMT config smt
-{-# NOINLINE unsafeRunSMT #-}
+{- | Shut down a solver.
 
+@stopSolver@ should not be called until all threads are done with the solver:
+the 'Solver' is never returned to the 'MVar', so any threads waiting for the
+solver will hang.
+
+ -}
+stopSolver :: MVar Solver -> IO ()
+stopSolver mvar = do
+    solver <- takeMVar mvar
+    _ <- SimpleSMT.stop solver
+    return ()
+
+-- | Run an external SMT solver.
+runSMT :: Config -> SMT a -> IO a
+runSMT config SMT { getSMT } = do
+    solver <- newSolver config
+    a <- runReaderT getSMT solver
+    stopSolver solver
+    return a
+
+{- | Declare a constant.
+
+The declared name is returned as an expression for convenience.
+
+ -}
 declare :: MonadSMT m => String -> SExpr -> m SExpr
-declare name typ = liftSMT $ do
-    solver <- Reader.ask
-    liftIO $ SimpleSMT.declare solver name typ
+declare name typ =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.declare solver name typ
 
+-- | Assume a fact.
 assert :: MonadSMT m => SExpr -> m ()
-assert fact = liftSMT $ do
-    solver <- Reader.ask
-    liftIO $ SimpleSMT.assert solver fact
+assert fact =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.assert solver fact
 
+{- | Check if the current set of assertions is satisfiable.
+
+See also: 'assert'
+
+ -}
 check :: MonadSMT m => m Result
-check = liftSMT $ do
-    solver <- Reader.ask
-    liftIO $ SimpleSMT.check solver
+check = liftSMT $ withSolver SimpleSMT.check
 
-ackCommand :: MonadSMT m => SExpr -> m ()
-ackCommand command = liftSMT $ do
-    solver <- Reader.ask
-    liftIO $ SimpleSMT.ackCommand solver command
-
+-- | SMT-LIB @set-info@ command.
 setInfo :: MonadSMT m => String -> SExpr -> m ()
 setInfo infoFlag expr =
     ackCommand $ case expr of
@@ -175,6 +219,40 @@ setInfo infoFlag expr =
   where
     command = Atom "set-info"
 
+{- | Run a query in a new solver scope.
+
+The query will have exclusive access to the solver, so it is safe to send
+multiple commands in sequence.
+
+ -}
+inNewScope :: MonadSMT m => SMT a -> m a
+inNewScope SMT { getSMT } =
+    liftSMT $ withSolver $ \solver -> do
+        -- Create an unshared "dummy" mutex for the solver.
+        mvar <- newMVar solver
+        -- Run the inner query with the unshared mutex.
+        -- The inner query will never block waiting to acquire the solver.
+        SimpleSMT.inNewScope solver (runReaderT getSMT mvar)
+
+-- --------------------------------
+-- Internal
+
+{- | Lift 'IO' actions 'SMT'.
+
+All the interfaces provided by "SimpleSMT" use a 'Solver' in 'IO'. 'SMT'
+encapsulates this access pattern.
+
+ -}
+liftIO :: IO a -> SMT a
+liftIO = SMT . Trans.lift
+
+-- | A command with an uninteresting result.
+ackCommand :: MonadSMT m => SExpr -> m ()
+ackCommand command =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.ackCommand solver command
+
+-- | Set the query time limit.
 setTimeOut :: MonadSMT m => TimeOut -> m ()
 setTimeOut TimeOut { getTimeOut } =
     case getTimeOut of
@@ -183,7 +261,14 @@ setTimeOut TimeOut { getTimeOut } =
         Unlimited ->
             return ()
 
+-- | Set the logic used by the solver.
 setLogic :: MonadSMT m => String -> m ()
-setLogic logic = liftSMT $ do
-    solver <- Reader.ask
-    liftIO $ SimpleSMT.setLogic solver logic
+setLogic logic =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.setLogic solver logic
+
+-- | Run an 'SMT' computation with the given solver.
+withSolver :: (Solver -> IO a) -> SMT a
+withSolver within = do
+    mvar <- SMT $ Reader.ask
+    liftIO $ withMVar mvar within

@@ -5,9 +5,7 @@ module Test.Kore.Step.Simplification.Equals
     ) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
 import Test.Tasty.HUnit
-       ( HasCallStack, testCase )
 
 import Data.Reflection
        ( give )
@@ -55,10 +53,10 @@ import           Test.Tasty.HUnit.Extensions
 
 test_equalsSimplification_OrOfExpandedPatterns :: [TestTree]
 test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
-    [ testCase "bottom == bottom"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ Predicated.top ])
-            (evaluateOr
+    [ testCase "bottom == bottom" $ do
+        let expect = OrOfExpandedPattern.make [ Predicated.top ]
+        actual <-
+            evaluateOr
                 mockMetadataTools
                 Equals
                     { equalsOperandSort = testSort
@@ -66,12 +64,12 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
                     , equalsFirst = OrOfExpandedPattern.make []
                     , equalsSecond = OrOfExpandedPattern.make []
                     }
-            )
-        )
-    , testCase "a == a"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ Predicated.top ])
-            (evaluateOr
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "a == a" $ do
+        let expect = OrOfExpandedPattern.make [ Predicated.top ]
+        actual <-
+            evaluateOr
                 mockMetadataTools
                 Equals
                     { equalsOperandSort = testSort
@@ -91,12 +89,12 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
                             }
                         ]
                     }
-            )
-        )
-    , testCase "a != bottom"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [])
-            (evaluateOr
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "a != bottom" $ do
+        let expect = OrOfExpandedPattern.make []
+        actual <-
+            evaluateOr
                 mockMetadataTools
                 Equals
                     { equalsOperandSort = testSort
@@ -110,19 +108,19 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
                             }
                         ]
                     }
-            )
-        )
-    , testCase "f(a) vs g(a)"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkTop
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluateOr
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "f(a) vs g(a)" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkTop
+                        , predicate = makeEqualsPredicate fOfA gOfA
+                        , substitution = []
+                        }
+                    ]
+        actual <-
+            evaluateOr
                 mockMetadataTools
                 Equals
                     { equalsOperandSort = testSort
@@ -142,26 +140,25 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
                             }
                         ]
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
     ]
 
 test_equalsSimplification_ExpandedPatterns :: [TestTree]
 test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
-    [ testCase "predicate-substitution vs predicate-substitution"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkTop
-                    , predicate =
-                        makeIffPredicate
-                            (makeEqualsPredicate fOfA fOfB)
-                            (makeEqualsPredicate gOfA gOfB)
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
+    [ testCase "predicate-substitution vs predicate-substitution" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkTop
+                        , predicate =
+                            makeIffPredicate
+                                (makeEqualsPredicate fOfA fOfB)
+                                (makeEqualsPredicate gOfA gOfB)
+                        , substitution = []
+                        }
+                    ]
+        actual <-
+            evaluate
                 mockMetadataTools
                 Predicated
                     { term = mkTop
@@ -173,47 +170,47 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = []
                     }
-            )
-        )
-    , testCase "constructor-patt vs constructor-patt"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkTop
-                    , predicate =
-                        makeOrPredicate
-                            ( makeAndPredicate
-                                (makeEqualsPredicate hOfA hOfB)
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "constructor-patt vs constructor-patt" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkTop
+                        , predicate =
+                            makeOrPredicate
+                                ( makeAndPredicate
+                                    (makeEqualsPredicate hOfA hOfB)
+                                    (makeAndPredicate
+                                        (makeAndPredicate
+                                            (makeEqualsPredicate fOfA fOfB)
+                                            (makeCeilPredicate hOfA)
+                                        )
+                                        (makeAndPredicate
+                                            (makeEqualsPredicate gOfA gOfB)
+                                            (makeCeilPredicate hOfB)
+                                        )
+                                    )
+                                )
                                 (makeAndPredicate
-                                    (makeAndPredicate
-                                        (makeEqualsPredicate fOfA fOfB)
-                                        (makeCeilPredicate hOfA)
+                                    (makeNotPredicate
+                                        (makeAndPredicate
+                                            (makeEqualsPredicate fOfA fOfB)
+                                            (makeCeilPredicate hOfA)
+                                        )
                                     )
-                                    (makeAndPredicate
-                                        (makeEqualsPredicate gOfA gOfB)
-                                        (makeCeilPredicate hOfB)
-                                    )
-                                )
-                            )
-                            (makeAndPredicate
-                                (makeNotPredicate
-                                    (makeAndPredicate
-                                        (makeEqualsPredicate fOfA fOfB)
-                                        (makeCeilPredicate hOfA)
+                                    (makeNotPredicate
+                                        (makeAndPredicate
+                                            (makeEqualsPredicate gOfA gOfB)
+                                            (makeCeilPredicate hOfB)
+                                        )
                                     )
                                 )
-                                (makeNotPredicate
-                                    (makeAndPredicate
-                                        (makeEqualsPredicate gOfA gOfB)
-                                        (makeCeilPredicate hOfB)
-                                    )
-                                )
-                            )
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
+                        , substitution = []
+                        }
+                    ]
+        actual <-
+            evaluate
                 mockMetadataTools
                 Predicated
                     { term = Mock.functionalConstr10 hOfA
@@ -225,8 +222,7 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = []
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
     ]
 
 test_equalsSimplification_Patterns :: [TestTree]
@@ -685,19 +681,26 @@ assertTermEqualsGeneric
     -> CommonPredicateSubstitution level
     -> CommonPurePattern level
     -> CommonPurePattern level
-    -> IO ()
-assertTermEqualsGeneric tools expected first second =
+    -> Assertion
+assertTermEqualsGeneric tools expectPure first second =
     give (MetadataTools.symbolOrAliasSorts tools) $ do
-        assertEqualWithExplanation "ExpandedPattern"
-            (OrOfExpandedPattern.make [ predSubstToExpandedPattern expected ])
-            (evaluateGeneric
+        let expectExpanded =
+                OrOfExpandedPattern.make
+                    [ predSubstToExpandedPattern expectPure ]
+        actualExpanded <-
+            evaluateGeneric
                 tools
                 (termToExpandedPattern first)
                 (termToExpandedPattern second)
-            )
-        assertEqualWithExplanation "PureMLPattern"
-            expected
-            (evaluateTermsGeneric tools first second)
+        assertEqualWithExplanation
+            "ExpandedPattern"
+            expectExpanded
+            actualExpanded
+        actualPure <- evaluateTermsGeneric tools first second
+        assertEqualWithExplanation
+            "PureMLPattern"
+            expectPure
+            actualPure
   where
     termToExpandedPattern
         :: MetaOrObject level
@@ -800,16 +803,18 @@ testSort2 =
 evaluateOr
     :: MetadataTools Object StepperAttributes
     -> Equals Object (CommonOrOfExpandedPattern Object)
-    -> CommonOrOfExpandedPattern Object
+    -> IO (CommonOrOfExpandedPattern Object)
 evaluateOr tools equals =
-    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
-        $ simplify tools (Mock.substitutionSimplifier tools) equals
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ simplify tools (Mock.substitutionSimplifier tools) equals
 
 evaluate
     :: MetadataTools Object StepperAttributes
     -> CommonExpandedPattern Object
     -> CommonExpandedPattern Object
-    -> CommonOrOfExpandedPattern Object
+    -> IO (CommonOrOfExpandedPattern Object)
 evaluate = evaluateGeneric
 
 evaluateGeneric
@@ -817,18 +822,25 @@ evaluateGeneric
     => MetadataTools level StepperAttributes
     -> CommonExpandedPattern level
     -> CommonExpandedPattern level
-    -> CommonOrOfExpandedPattern level
+    -> IO (CommonOrOfExpandedPattern level)
 evaluateGeneric tools first second =
-    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
-        $ makeEvaluate tools (Mock.substitutionSimplifier tools) first second
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ makeEvaluate tools (Mock.substitutionSimplifier tools) first second
 
 evaluateTermsGeneric
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -> CommonPurePattern level
     -> CommonPurePattern level
-    -> CommonPredicateSubstitution level
+    -> IO (CommonPredicateSubstitution level)
 evaluateTermsGeneric tools first second =
-    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier $
-        makeEvaluateTermsToPredicateSubstitution
-            tools (Mock.substitutionSimplifier tools) first second
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ makeEvaluateTermsToPredicateSubstitution
+        tools
+        (Mock.substitutionSimplifier tools)
+        first
+        second

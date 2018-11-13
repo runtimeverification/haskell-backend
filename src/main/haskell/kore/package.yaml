@@ -152,10 +152,12 @@ tests:
       - call-stack
       - directory >= 1.2.2
       - filepath
+      - hedgehog
       - QuickCheck
       - quickcheck-instances
       - tasty
       - tasty-ant-xml
+      - tasty-hedgehog
       - tasty-hunit
       - tasty-golden
       - tasty-quickcheck

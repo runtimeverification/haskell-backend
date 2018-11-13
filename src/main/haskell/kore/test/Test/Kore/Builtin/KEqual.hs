@@ -1,18 +1,17 @@
 module Test.Kore.Builtin.KEqual
-    ( prop_keq
-    , prop_kneq
+    ( test_keq
+    , test_kneq
     , test_KEqual
     , test_KIte
     ) where
 
-import Test.QuickCheck
-       ( Property, (===) )
-import Test.Tasty
-       ( TestTree )
-import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+import           Hedgehog
+import qualified Hedgehog.Gen as Gen
+import           Test.Tasty
+import           Test.Tasty.HUnit
 
 import qualified Control.Lens as Lens
+import qualified Control.Monad.Trans as Trans
 import           Data.Function
                  ( (&) )
 import           Data.Map
@@ -46,6 +45,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
+import           SMT
+                 ( SMT )
 import qualified SMT
 
 import           Test.Kore
@@ -53,24 +54,29 @@ import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import qualified Test.Kore.Builtin.Builtin as Test.Builtin
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.SMT
 
-prop_kneq :: Bool -> Bool -> Property
-prop_kneq = propBinary (/=) kneqSymbol
+test_kneq :: TestTree
+test_kneq = testBinary "KEQUAL.kneq" (/=) kneqSymbol
 
-prop_keq :: Bool -> Bool -> Property
-prop_keq = propBinary (==) keqSymbol
+test_keq :: TestTree
+test_keq = testBinary "KEQUAL.keq" (==) keqSymbol
 
 -- | Test a binary operator hooked to the given symbol.
-propBinary
-    :: (Bool -> Bool -> Bool)
+testBinary
+    :: TestName
+    -> (Bool -> Bool -> Bool)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
-    -> (Bool -> Bool -> Property)
-propBinary impl symb =
-    \a b ->
-        let pat = App_ symb (Test.Bool.asPattern <$> [a, b])
-        in Test.Bool.asExpandedPattern (impl a b) === evaluate pat
+    -> TestTree
+testBinary name impl symb =
+    testPropertyWithSolver name $ do
+        a <- forAll Gen.bool
+        b <- forAll Gen.bool
+        let original = App_ symb (Test.Bool.asPattern <$> [a, b])
+            expected = Test.Bool.asExpandedPattern (impl a b)
+        (===) expected =<< Trans.lift (evaluate original)
 
 keqSymbol :: SymbolOrAlias Object
 keqSymbol = Test.Bool.builtinSymbol "keqBool"
@@ -124,16 +130,19 @@ sortDecl sort =
         }
         :: KoreSentenceSort Object)
 
-evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
-evaluate pat =
-    let
-        (result, _) =
-            SMT.unsafeRunSMT SMT.defaultConfig
-            $ evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators pat
-                )
-    in result
+evaluate
+    :: CommonPurePattern Object
+    -> SMT (CommonExpandedPattern Object)
+evaluate =
+    (<$>) fst
+    . evalSimplifier
+    . Pattern.simplify
+        testTools
+        testSubstitutionSimplifier
+        evaluators
+
+runSMT :: SMT a -> IO a
+runSMT = SMT.runSMT SMT.defaultConfig
 
 kEqualDefinition :: KoreDefinition
 kEqualDefinition =
@@ -163,45 +172,48 @@ verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
 
 test_KEqual :: [TestTree]
 test_KEqual =
-    [ testCase "equals with variable"
-        (assertEqual ""
-            (ExpandedPattern.fromPurePattern $ pat keqSymbol)
-            (evaluate $ pat keqSymbol)
-        )
-    , testCase "not equals with variable"
-        (assertEqual ""
-            (ExpandedPattern.fromPurePattern $ pat kneqSymbol)
-            (evaluate $ pat kneqSymbol)
-        )
-    , testCase "dotk equals dotk"
-        (assertEqual ""
-            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern True)
-            (evaluate
-                (App_ keqSymbol
+    [ testCase "equals with variable" $ do
+        let expect = ExpandedPattern.fromPurePattern $ pat keqSymbol
+        actual <- runSMT $ evaluate $ pat keqSymbol
+        assertEqual "" expect actual
+
+    , testCase "not equals with variable" $ do
+        let expect = ExpandedPattern.fromPurePattern $ pat kneqSymbol
+        actual <- runSMT $ evaluate $ pat kneqSymbol
+        assertEqual "" expect actual
+
+    , testCase "dotk equals dotk" $ do
+        let expect =
+                ExpandedPattern.fromPurePattern
+                $ Test.Bool.asPattern True
+            original =
+                App_ keqSymbol
                     [ App_ dotKHead []
                     , App_ dotKHead []
                     ]
-                )
-            )
-        )
-    , testCase "distinct domain values"
-        (assertEqual ""
-            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern False)
-            (evaluate
-                (App_ keqSymbol
+        actual <- runSMT $ evaluate original
+        assertEqual "" expect actual
+
+    , testCase "distinct domain values" $ do
+        let expect =
+                ExpandedPattern.fromPurePattern
+                $ Test.Bool.asPattern False
+            original =
+                App_ keqSymbol
                     [ DV_ idSort
                         (BuiltinDomainPattern (StringLiteral_ "t"))
                     , DV_ idSort
                         (BuiltinDomainPattern (StringLiteral_ "x"))
                     ]
-                )
-            )
-        )
-    , testCase "injected distinct domain values"
-        (assertEqual ""
-            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern False)
-            (evaluate
-                (App_ keqSymbol
+        actual <- runSMT $ evaluate original
+        assertEqual "" expect actual
+
+    , testCase "injected distinct domain values" $ do
+        let expect =
+                ExpandedPattern.fromPurePattern
+                $ Test.Bool.asPattern False
+            original =
+                App_ keqSymbol
                     [ App_ (injHead idSort kItemSort)
                         [ DV_ idSort
                             (BuiltinDomainPattern (StringLiteral_ "t"))
@@ -211,14 +223,15 @@ test_KEqual =
                             (BuiltinDomainPattern (StringLiteral_ "x"))
                         ]
                     ]
-                )
-            )
-        )
-    , testCase "distinct Id domain values casted to K"
-        (assertEqual ""
-            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern False)
-            (evaluate
-                (App_ keqSymbol
+        actual <- runSMT $ evaluate original
+        assertEqual "" expect actual
+
+    , testCase "distinct Id domain values casted to K" $ do
+        let expect =
+                ExpandedPattern.fromPurePattern
+                $ Test.Bool.asPattern False
+            original =
+                App_ keqSymbol
                     [ App_ kSeqHead
                         [ App_ (injHead idSort kItemSort)
                             [ DV_ idSort
@@ -234,9 +247,8 @@ test_KEqual =
                         , App_ dotKHead []
                         ]
                     ]
-                )
-            )
-        )
+        actual <- runSMT $ evaluate original
+        assertEqual "" expect actual
     ]
   where
     pat symbol = App_  symbol
@@ -249,34 +261,38 @@ test_KEqual =
 
 test_KIte :: [TestTree]
 test_KIte =
-    [ testCase "ite true"
-        (assertEqual ""
-            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern False)
-            (evaluate
-                (App_ kiteSymbol
+    [ testCase "ite true" $ do
+        let expect =
+                ExpandedPattern.fromPurePattern
+                $ Test.Bool.asPattern False
+            original =
+                App_ kiteSymbol
                     [ Test.Bool.asPattern True
                     , Test.Bool.asPattern False
                     , Test.Bool.asPattern True
                     ]
-                )
-            )
-        )
-    , testCase "ite false"
-        (assertEqual ""
-            (ExpandedPattern.fromPurePattern $ Test.Bool.asPattern True)
-            (evaluate
-                (App_ kiteSymbol
+        actual <- runSMT $ evaluate original
+        assertEqual "" expect actual
+
+    , testCase "ite false" $ do
+        let expect =
+                ExpandedPattern.fromPurePattern
+                $ Test.Bool.asPattern True
+            original =
+                App_ kiteSymbol
                     [ Test.Bool.asPattern False
                     , Test.Bool.asPattern False
                     , Test.Bool.asPattern True
                     ]
-                )
-            )
-        )
+        actual <- runSMT $ evaluate original
+        assertEqual "" expect actual
     ]
 
-tools :: MetadataTools Object StepperAttributes
-tools = extractMetadataTools $ constructorFunctions indexedModule
+testTools :: MetadataTools Object StepperAttributes
+testTools = extractMetadataTools $ constructorFunctions indexedModule
+
+testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
+testSubstitutionSimplifier = Mock.substitutionSimplifier testTools
 
 kseqSymbol :: PureSentenceSymbol Object
 kseqSymbol = symbol_ "kseq" AstLocationImplicit [kItemSort, kSort] kSort

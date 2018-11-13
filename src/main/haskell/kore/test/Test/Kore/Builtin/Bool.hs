@@ -1,8 +1,11 @@
 module Test.Kore.Builtin.Bool where
 
-import Test.QuickCheck
-       ( Property, (===) )
+import           Hedgehog hiding
+                 ( property )
+import qualified Hedgehog.Gen as Gen
+import           Test.Tasty
 
+import qualified Control.Monad.Trans as Trans
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -33,61 +36,72 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import qualified SMT
+import           SMT
+                 ( SMT )
 
 import           Test.Kore
                  ( testId )
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.SMT
 
-prop_or :: Bool -> Bool -> Property
-prop_or = propBinary (||) orSymbol
+test_or :: TestTree
+test_or = testBinary "BOOL.or" (||) orSymbol
 
-prop_and :: Bool -> Bool -> Property
-prop_and = propBinary (&&) andSymbol
+test_and :: TestTree
+test_and = testBinary "BOOL.and" (&&) andSymbol
 
-prop_xor :: Bool -> Bool -> Property
-prop_xor = propBinary xor xorSymbol
+test_xor :: TestTree
+test_xor = testBinary "BOOL.xor" xor xorSymbol
   where
     xor u v = (u && not v) || (not u && v)
 
-prop_ne :: Bool -> Bool -> Property
-prop_ne = propBinary (/=) neSymbol
+test_ne :: TestTree
+test_ne = testBinary "BOOL.ne" (/=) neSymbol
 
-prop_eq :: Bool -> Bool -> Property
-prop_eq = propBinary (==) eqSymbol
+test_eq :: TestTree
+test_eq = testBinary "BOOL.eq" (==) eqSymbol
 
-prop_not :: Bool -> Property
-prop_not = propUnary not notSymbol
+test_not :: TestTree
+test_not = testUnary "BOOL.not" not notSymbol
 
-prop_implies :: Bool -> Bool -> Property
-prop_implies = propBinary implies impliesSymbol
+test_implies :: TestTree
+test_implies = testBinary "BOOL.implies" implies impliesSymbol
   where
     implies u v = not u || v
 
 -- | Test a binary operator hooked to the given symbol.
-propBinary
-    :: (Bool -> Bool -> Bool)
+testBinary
+    :: TestName
+    -> (Bool -> Bool -> Bool)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
-    -> (Bool -> Bool -> Property)
-propBinary impl symb =
-    \a b ->
+    -> TestTree
+testBinary name impl symb =
+    testPropertyWithSolver name property
+  where
+    property = do
+        a <- forAll Gen.bool
+        b <- forAll Gen.bool
         let pat = App_ symb (asPattern <$> [a, b])
-        in asPattern (impl a b) === evaluate pat
+        (===) (asPattern $ impl a b) =<< evaluate pat
 
 -- | Test a unary operator hooked to the given symbol
-propUnary
-    :: (Bool -> Bool)
+testUnary
+    :: TestName
+    -> (Bool -> Bool)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
-    -> (Bool -> Property)
-propUnary impl symb =
-    \a ->
+    -> TestTree
+testUnary name impl symb =
+    testPropertyWithSolver name property
+  where
+    property = do
+        a <- forAll Gen.bool
         let pat = App_ symb (asPattern <$> [a])
-        in asPattern (impl a) === evaluate pat
+        (===) (asPattern $ impl a) =<< evaluate pat
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
 asPattern :: Bool -> CommonPurePattern Object
@@ -179,18 +193,25 @@ boolModule =
             ]
         }
 
-evaluate :: CommonPurePattern Object -> CommonPurePattern Object
-evaluate pat =
-    let (Predicated { term }, _) =
-            SMT.unsafeRunSMT SMT.defaultConfig
-            $ evalSimplifier
-                (Pattern.simplify
-                    tools (Mock.substitutionSimplifier tools) evaluators pat
-                )
-    in term
+evaluate
+    :: CommonPurePattern Object
+    -> PropertyT SMT (CommonPurePattern Object)
+evaluate pat = do
+    (Predicated { term }, _) <-
+        Trans.lift
+        $ evalSimplifier
+        $ Pattern.simplify
+            testTools
+            testSubstitutionSimplifier
+            evaluators
+            pat
+    return term
 
-tools :: MetadataTools Object StepperAttributes
-tools = extractMetadataTools indexedModule
+testTools :: MetadataTools Object StepperAttributes
+testTools = extractMetadataTools indexedModule
+
+testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
+testSubstitutionSimplifier = Mock.substitutionSimplifier testTools
 
 boolDefinition :: KoreDefinition
 boolDefinition =

@@ -29,6 +29,9 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.StepperAttributes
+import           SMT
+                 ( SMT )
+import qualified SMT
 
 import Test.Kore
 
@@ -184,7 +187,7 @@ substitutionSimplifier tools =
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbol
-    :: (CommonPurePattern Object -> CommonExpandedPattern Object)
+    :: (CommonPurePattern Object -> SMT (CommonExpandedPattern Object))
     -- ^ evaluator function for the builtin
     -> String
     -- ^ test name
@@ -196,8 +199,6 @@ testSymbol
     -- ^ expected result
     -> TestTree
 testSymbol evaluate title symbol args expected =
-    testCase title
-        (assertEqual ""
-            expected
-            (evaluate $ App_ symbol args)
-        )
+    testCase title $ do
+        actual <- SMT.runSMT SMT.defaultConfig (evaluate $ App_ symbol args)
+        assertEqual "" expected actual

@@ -3,9 +3,7 @@ module Test.Kore.Step.Simplification.Exists
     ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
 
 import qualified Data.Map as Map
 import           Data.Reflection
@@ -49,201 +47,187 @@ import           Test.Tasty.HUnit.Extensions
 
 test_existsSimplification :: [TestTree]
 test_existsSimplification = give mockSymbolOrAliasSorts
-    [ testCase "Exists - or distribution"
+    [ testCase "Exists - or distribution" $ do
         -- exists(a or b) = exists(a) or exists(b)
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkExists Mock.x something1OfX
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , Predicated
-                    { term = mkExists Mock.x something2OfX
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate mockMetadataTools
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkExists Mock.x something1OfX
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    , Predicated
+                        { term = mkExists Mock.x something2OfX
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    ]
+        actual <-
+            evaluate mockMetadataTools
                 (makeExists
                     Mock.x
                     [something1OfXExpanded, something2OfXExpanded]
                 )
-            )
-        )
-    , testCase "Exists - bool operations"
-        (do
-            -- exists(top) = top
-            assertEqualWithExplanation "exists(top)"
-                (OrOfExpandedPattern.make
-                    [ ExpandedPattern.top ]
-                )
-                (evaluate mockMetadataTools
+        assertEqualWithExplanation "" expect actual
+
+    , testGroup "Exists - Predicates"
+        [ testCase "Top" $ do
+            let expect = OrOfExpandedPattern.make [ ExpandedPattern.top ]
+            actual <-
+                evaluate mockMetadataTools
                     (makeExists
                         Mock.x
                         [ExpandedPattern.top]
                     )
-                )
-            -- exists(bottom) = bottom
-            assertEqualWithExplanation "exists(bottom)"
-                (OrOfExpandedPattern.make
-                    []
-                )
-                (evaluate mockMetadataTools
-                    (makeExists
-                        Mock.x
-                        []
-                    )
-                )
-        )
-    , testCase "expanded Exists - bool operations"
-        (do
-            -- exists(top) = top
-            assertEqualWithExplanation "exists(top)"
-                (OrOfExpandedPattern.make
-                    [ ExpandedPattern.top ]
-                )
-                (makeEvaluate mockMetadataTools
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "Bottom" $ do
+            let expect = OrOfExpandedPattern.make []
+            actual <-evaluate mockMetadataTools (makeExists Mock.x [])
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "Expanded Top" $ do
+            let expect = OrOfExpandedPattern.make [ ExpandedPattern.top ]
+            actual <-
+                makeEvaluate mockMetadataTools
                     Mock.x
                     (ExpandedPattern.top :: CommonExpandedPattern Object)
-                )
-            -- exists(bottom) = bottom
-            assertEqualWithExplanation "exists(bottom)"
-                (OrOfExpandedPattern.make
-                    []
-                )
-                (makeEvaluate mockMetadataTools
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "Expanded Bottom" $ do
+            let expect = OrOfExpandedPattern.make []
+            actual <-
+                makeEvaluate mockMetadataTools
                     Mock.x
                     (ExpandedPattern.bottom :: CommonExpandedPattern Object)
-                )
-        )
-    , testCase "exists applies substitution if possible"
+            assertEqualWithExplanation "" expect actual
+        ]
+
+    , testCase "exists applies substitution if possible" $ do
         -- exists x . (t(x) and p(x) and [x = alpha, others])
         --    = t(alpha) and p(alpha) and [others]
-        (assertEqualWithExplanation "exists with substitution"
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkApp Mock.fSymbol [gOfA]
-                    , predicate = makeCeilPredicate (mkApp Mock.hSymbol [gOfA])
-                    , substitution = [(Mock.y, fOfA)]
-                    }
-                ]
-            )
-            (makeEvaluate mockMetadataTools
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkApp Mock.fSymbol [gOfA]
+                        , predicate =
+                            makeCeilPredicate (mkApp Mock.hSymbol [gOfA])
+                        , substitution = [(Mock.y, fOfA)]
+                        }
+                    ]
+        actual <-
+            makeEvaluate mockMetadataTools
                 Mock.x
                 Predicated
                     { term = mkApp Mock.fSymbol [mkVar Mock.x]
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution = [(Mock.x, gOfA), (Mock.y, fOfA)]
                     }
-            )
-        )
-    , testCase "exists disappears if variable not used"
+        assertEqualWithExplanation "exists with substitution" expect actual
+
+    , testCase "exists disappears if variable not used" $ do
         -- exists x . (t and p and s)
         --    = t and p and s
         --    if t, p, s do not depend on x.
-        (assertEqualWithExplanation "exists with substitution"
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = fOfA
-                    , predicate = makeCeilPredicate gOfA
-                    , substitution = []
-                    }
-                ]
-            )
-            (makeEvaluate mockMetadataTools
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = fOfA
+                        , predicate = makeCeilPredicate gOfA
+                        , substitution = []
+                        }
+                    ]
+        actual <-
+            makeEvaluate mockMetadataTools
                 Mock.x
                 Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
                     , substitution = []
                     }
-            )
-        )
-    , testCase "exists applied on term if not used elsewhere"
+        assertEqualWithExplanation "exists with substitution" expect actual
+
+    , testCase "exists applied on term if not used elsewhere" $ do
         -- exists x . (t(x) and p and s)
         --    = (exists x . t(x)) and p and s
         --    if p, s do not depend on x.
-        (assertEqualWithExplanation "exists on term"
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkExists Mock.x fOfX
-                    , predicate = makeCeilPredicate gOfA
-                    , substitution = []
-                    }
-                ]
-            )
-            (makeEvaluate mockMetadataTools
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkExists Mock.x fOfX
+                        , predicate = makeCeilPredicate gOfA
+                        , substitution = []
+                        }
+                    ]
+        actual <-
+            makeEvaluate mockMetadataTools
                 Mock.x
                 Predicated
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
                     , substitution = []
                     }
-            )
-        )
-    , testCase "exists applied on predicate if not used elsewhere"
+        assertEqualWithExplanation "exists on term" expect actual
+
+    , testCase "exists applied on predicate if not used elsewhere" $ do
         -- exists x . (t and p(x) and s)
         --    = t and (exists x . p(x)) and s
         --    if t, s do not depend on x.
-        (assertEqualWithExplanation "exists on predicate"
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = fOfA
-                    , predicate =
-                        makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
-                    , substitution = []
-                    }
-                ]
-            )
-            (makeEvaluate mockMetadataTools
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = fOfA
+                        , predicate =
+                            makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
+                        , substitution = []
+                        }
+                    ]
+        actual <-
+            makeEvaluate mockMetadataTools
                 Mock.x
                 Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution = []
                     }
-            )
-        )
-    , testCase "exists moves substitution above"
+        assertEqualWithExplanation "exists on predicate" expect actual
+
+    , testCase "exists moves substitution above" $ do
         -- exists x . (t(x) and p(x) and s)
         --    = exists x . (t(x) and p(x)) and Top and s
         --    if s do not depend on x.
-        (assertEqualWithExplanation "exists moves substitution"
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkExists Mock.x (mkAnd fOfX (mkEquals fOfX gOfA))
-                    , predicate = makeTruePredicate
-                    , substitution = [(Mock.y, hOfA)]
-                    }
-                ]
-            )
-            (makeEvaluate mockMetadataTools
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term =
+                            mkExists Mock.x (mkAnd fOfX (mkEquals fOfX gOfA))
+                        , predicate = makeTruePredicate
+                        , substitution = [(Mock.y, hOfA)]
+                        }
+                    ]
+        actual <-
+            makeEvaluate mockMetadataTools
                 Mock.x
                 Predicated
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution = [(Mock.y, hOfA)]
                     }
-            )
-        )
-    , testCase "exists reevaluates"
+        assertEqualWithExplanation "exists moves substitution" expect actual
+
+    , testCase "exists reevaluates" $ do
         -- exists x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
-        (assertEqualWithExplanation "exists reevaluates"
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern.top ]
-            )
-            (makeEvaluate mockMetadataTools
+        let expect = OrOfExpandedPattern.make [ ExpandedPattern.top ]
+        actual <-
+            makeEvaluate mockMetadataTools
                 Mock.x
                 Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
                     , substitution = [(Mock.x, gOfA)]
                     }
-            )
-        )
+        assertEqualWithExplanation "exists reevaluates" expect actual
     ]
   where
     fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
@@ -296,15 +280,16 @@ evaluate
         )
     => MetadataTools level StepperAttributes
     -> Exists level Variable (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    -> IO (CommonOrOfExpandedPattern level)
 evaluate tools exists =
-    fst $ SMT.unsafeRunSMT SMT.defaultConfig
-        $ evalSimplifier
-        $ Exists.simplify
-            tools
-            (Mock.substitutionSimplifier tools)
-            (Simplifier.create tools Map.empty)
-            exists
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ Exists.simplify
+        tools
+        (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools Map.empty)
+        exists
 
 makeEvaluate
     ::  ( MetaOrObject level
@@ -313,13 +298,14 @@ makeEvaluate
     => MetadataTools level StepperAttributes
     -> Variable level
     -> CommonExpandedPattern level
-    -> CommonOrOfExpandedPattern level
+    -> IO (CommonOrOfExpandedPattern level)
 makeEvaluate tools variable child =
-    fst $ SMT.unsafeRunSMT SMT.defaultConfig
-        $ evalSimplifier
-        $ Exists.makeEvaluate
-            tools
-            (Mock.substitutionSimplifier tools)
-            (Simplifier.create tools Map.empty)
-            variable
-            child
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ Exists.makeEvaluate
+        tools
+        (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools Map.empty)
+        variable
+        child

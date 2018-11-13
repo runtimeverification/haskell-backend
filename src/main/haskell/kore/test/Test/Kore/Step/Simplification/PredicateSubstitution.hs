@@ -54,29 +54,31 @@ import           Test.Tasty.HUnit.Extensions
 
 test_predicateSubstitutionSimplification :: [TestTree]
 test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
-    [ testCase "Identity for top and bottom"
-        (do
-            assertEqualWithExplanation ""
-                Predicated.bottomPredicate
-                (runSimplifier Map.empty Predicated.bottomPredicate)
-            assertEqualWithExplanation ""
-                Predicated.topPredicate
-                (runSimplifier Map.empty Predicated.topPredicate)
-        )
-    , testCase "Applies substitution to predicate"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = ()
-                , predicate =
-                    makeEqualsPredicate
-                        (Mock.f Mock.a)
-                        (Mock.g Mock.b)
-                , substitution =
-                    [ (Mock.x, Mock.a)
-                    , (Mock.y, Mock.b)
-                    ]
-                }
-            (runSimplifier Map.empty
+    [ testCase "Identity for top and bottom" $ do
+        actualBottom <- runSimplifier Map.empty Predicated.bottomPredicate
+        assertEqualWithExplanation ""
+            Predicated.bottomPredicate
+            actualBottom
+        actualTop <- runSimplifier Map.empty Predicated.topPredicate
+        assertEqualWithExplanation ""
+            Predicated.topPredicate
+            actualTop
+
+    , testCase "Applies substitution to predicate" $ do
+        let expect =
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.f Mock.a)
+                            (Mock.g Mock.b)
+                    , substitution =
+                        [ (Mock.x, Mock.a)
+                        , (Mock.y, Mock.b)
+                        ]
+                    }
+        actual <-
+            runSimplifier Map.empty
                 Predicated
                     { term = ()
                     , predicate =
@@ -88,22 +90,23 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         , (Mock.y, Mock.b)
                         ]
                     }
-            )
-        )
-    , testCase "Simplifies predicate after substitution"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = ()
-                , predicate =
-                    makeEqualsPredicate
-                        Mock.functional00
-                        Mock.functional01
-                , substitution =
-                    [ (Mock.x, Mock.functional00)
-                    , (Mock.y, Mock.functional01)
-                    ]
-                }
-            (runSimplifier Map.empty
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Simplifies predicate after substitution" $ do
+        let expect =
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeEqualsPredicate
+                            Mock.functional00
+                            Mock.functional01
+                    , substitution =
+                        [ (Mock.x, Mock.functional00)
+                        , (Mock.y, Mock.functional01)
+                        ]
+                    }
+        actual <-
+            runSimplifier Map.empty
                 Predicated
                     { term = ()
                     , predicate =
@@ -115,19 +118,20 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         , (Mock.y, Mock.functional01)
                         ]
                     }
-            )
-        )
-    , testCase "Simplifies predicate after substitution"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = ()
-                , predicate = makeEqualsPredicate Mock.functional00 Mock.a
-                , substitution =
-                    [ (Mock.x, Mock.functional00)
-                    , (Mock.y, Mock.functional01)
-                    ]
-                }
-            (runSimplifier
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Simplifies predicate after substitution" $ do
+        let expect =
+                Predicated
+                    { term = ()
+                    , predicate = makeEqualsPredicate Mock.functional00 Mock.a
+                    , substitution =
+                        [ (Mock.x, Mock.functional00)
+                        , (Mock.y, Mock.functional01)
+                        ]
+                    }
+        actual <-
+            runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
                         ,   [ makeEvaluator
@@ -149,19 +153,20 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         , (Mock.y, Mock.functional01)
                         ]
                     }
-            )
-        )
-    , testCase "Merges substitution from predicate simplification"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = ()
-                , predicate = makeTruePredicate
-                , substitution =
-                    [ (Mock.x, Mock.a)
-                    , (Mock.y, Mock.b)
-                    ]
-                }
-            (runSimplifier
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Merges substitution from predicate simplification" $ do
+        let expect =
+                Predicated
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [ (Mock.x, Mock.a)
+                        , (Mock.y, Mock.b)
+                        ]
+                    }
+        actual <-
+            runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
                         ,   [ makeEvaluator
@@ -181,22 +186,23 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         [ (Mock.y, Mock.b)
                         ]
                     }
-            )
-        )
-    , testCase "Reapplies substitution from predicate simplification"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = ()
-                , predicate =
-                    makeEqualsPredicate
-                        (Mock.f Mock.a)
-                        (Mock.g Mock.a)
-                , substitution =
-                    [ (Mock.x, Mock.a)
-                    , (Mock.y, Mock.b)
-                    ]
-                }
-            (runSimplifier
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Reapplies substitution from predicate simplification" $ do
+        let expect =
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.f Mock.a)
+                            (Mock.g Mock.a)
+                    , substitution =
+                        [ (Mock.x, Mock.a)
+                        , (Mock.y, Mock.b)
+                        ]
+                    }
+        actual <-
+            runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
                         ,   [ makeEvaluator
@@ -222,22 +228,23 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         [ (Mock.y, Mock.b)
                         ]
                     }
-            )
-        )
-    , testCase "Simplifies after reapplying substitution"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = ()
-                , predicate =
-                    makeEqualsPredicate
-                        (Mock.g Mock.b)
-                        (Mock.g Mock.a)
-                , substitution =
-                    [ (Mock.x, Mock.a)
-                    , (Mock.y, Mock.b)
-                    ]
-                }
-            (runSimplifier
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Simplifies after reapplying substitution" $ do
+        let expect =
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.g Mock.b)
+                            (Mock.g Mock.a)
+                    , substitution =
+                        [ (Mock.x, Mock.a)
+                        , (Mock.y, Mock.b)
+                        ]
+                    }
+        actual <-
+            runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
                         ,   [ makeEvaluator
@@ -264,8 +271,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         [ (Mock.y, Mock.b)
                         ]
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
     ]
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
@@ -285,12 +291,12 @@ runSimplifier
         (Id Object)
         [ApplicationFunctionEvaluator Object]
     -> CommonPredicateSubstitution Object
-    -> CommonPredicateSubstitution Object
+    -> IO (CommonPredicateSubstitution Object)
 runSimplifier patternSimplifierMap predicateSubstitution =
     case simplifier of
         (PredicateSubstitutionSimplifier unwrapped) ->
-            fst
-            $ SMT.unsafeRunSMT SMT.defaultConfig
+            (<$>) fst
+            $ SMT.runSMT SMT.defaultConfig
             $ evalSimplifier
             $ unwrapped predicateSubstitution
   where

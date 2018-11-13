@@ -1,11 +1,9 @@
 module Test.Kore.Step.Simplification.And
-    (test_andSimplification
+    ( test_andSimplification
     ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
 
 import Data.Reflection
        ( give )
@@ -47,105 +45,81 @@ import           Test.Tasty.HUnit.Extensions
 
 test_andSimplification :: [TestTree]
 test_andSimplification = give mockSymbolOrAliasSorts
-    [ testCase "And truth table"
-        (do
-            assertEqualWithExplanation "false and false = false"
-                (OrOfExpandedPattern.make [])
-                (evaluate
-                    (makeAnd [] [])
-                )
-            assertEqualWithExplanation "false and true = false"
-                (OrOfExpandedPattern.make [])
-                (evaluate
-                    (makeAnd [] [ExpandedPattern.top])
-                )
-            assertEqualWithExplanation "true and false = false"
-                (OrOfExpandedPattern.make [])
-                (evaluate
-                    (makeAnd [ExpandedPattern.top] [])
-                )
-            assertEqualWithExplanation "true and true = true"
-                (OrOfExpandedPattern.make [ExpandedPattern.top])
-                (evaluate
-                    (makeAnd [ExpandedPattern.top] [ExpandedPattern.top])
-                )
-        )
-    , testCase "And with booleans"
-        (do
-            assertEqualWithExplanation "false and something = false"
-                (OrOfExpandedPattern.make [])
-                (evaluate
-                    (makeAnd [] [fOfXExpanded])
-                )
-            assertEqualWithExplanation "something and false = false"
-                (OrOfExpandedPattern.make [])
-                (evaluate
-                    (makeAnd [fOfXExpanded] [])
-                )
-            assertEqualWithExplanation "true and something = something"
-                (OrOfExpandedPattern.make [fOfXExpanded])
-                (evaluate
-                    (makeAnd [ExpandedPattern.top] [fOfXExpanded])
-                )
-            assertEqualWithExplanation "something and true = something"
-                (OrOfExpandedPattern.make [fOfXExpanded])
-                (evaluate
-                    (makeAnd [fOfXExpanded] [ExpandedPattern.top])
-                )
-        )
-    , testCase "And with partial booleans"
-        (do
-            assertEqualWithExplanation "false term and something = false"
-                ExpandedPattern.bottom
-                (evaluatePatterns
-                    bottomTerm fOfXExpanded
-                )
-            assertEqualWithExplanation "something and false term = false"
-                ExpandedPattern.bottom
-                (evaluatePatterns
-                    fOfXExpanded bottomTerm
-                )
-            assertEqualWithExplanation "false predicate and something = false"
-                ExpandedPattern.bottom
-                (evaluatePatterns
-                    falsePredicate fOfXExpanded
-                )
-            assertEqualWithExplanation "something and false predicate = false"
-                ExpandedPattern.bottom
-                (evaluatePatterns
-                    fOfXExpanded falsePredicate
-                )
-        )
-    , testCase "And with normal patterns"
-        (do
-            assertEqualWithExplanation "And random terms"
-                Predicated
-                    { term = mkAnd plain0OfX plain1OfX
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                (evaluatePatterns
-                    plain0OfXExpanded plain1OfXExpanded
-                )
-            assertEqualWithExplanation "And function terms"
-                Predicated
-                    { term = fOfX
-                    , predicate = makeEqualsPredicate fOfX gOfX
-                    , substitution = []
-                    }
-                (evaluatePatterns
-                    fOfXExpanded gOfXExpanded
-                )
-            assertEqualWithExplanation "And predicates"
-                Predicated
-                    { term = mkTop
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate fOfX)
-                            (makeCeilPredicate gOfX)
-                    , substitution = []
-                    }
-                (evaluatePatterns
+    [ testCase "And truth table" $ do
+        assertEqualWithExplanation "false and false = false"
+            (OrOfExpandedPattern.make [])
+            =<< evaluate (makeAnd [] [])
+        assertEqualWithExplanation "false and true = false"
+            (OrOfExpandedPattern.make [])
+            =<< evaluate (makeAnd [] [ExpandedPattern.top])
+        assertEqualWithExplanation "true and false = false"
+            (OrOfExpandedPattern.make [])
+            =<< evaluate (makeAnd [ExpandedPattern.top] [])
+        assertEqualWithExplanation "true and true = true"
+            (OrOfExpandedPattern.make [ExpandedPattern.top])
+            =<< evaluate (makeAnd [ExpandedPattern.top] [ExpandedPattern.top])
+
+    , testCase "And with booleans" $ do
+        assertEqualWithExplanation "false and something = false"
+            (OrOfExpandedPattern.make [])
+            =<< evaluate (makeAnd [] [fOfXExpanded])
+        assertEqualWithExplanation "something and false = false"
+            (OrOfExpandedPattern.make [])
+            =<< evaluate (makeAnd [fOfXExpanded] [])
+        assertEqualWithExplanation "true and something = something"
+            (OrOfExpandedPattern.make [fOfXExpanded])
+            =<< evaluate (makeAnd [ExpandedPattern.top] [fOfXExpanded])
+        assertEqualWithExplanation "something and true = something"
+            (OrOfExpandedPattern.make [fOfXExpanded])
+            =<< evaluate (makeAnd [fOfXExpanded] [ExpandedPattern.top])
+
+    , testCase "And with partial booleans" $ do
+        assertEqualWithExplanation "false term and something = false"
+            ExpandedPattern.bottom
+            =<< evaluatePatterns bottomTerm fOfXExpanded
+        assertEqualWithExplanation "something and false term = false"
+            ExpandedPattern.bottom
+            =<< evaluatePatterns fOfXExpanded bottomTerm
+        assertEqualWithExplanation "false predicate and something = false"
+            ExpandedPattern.bottom
+            =<< evaluatePatterns falsePredicate fOfXExpanded
+        assertEqualWithExplanation "something and false predicate = false"
+            ExpandedPattern.bottom
+            =<< evaluatePatterns fOfXExpanded falsePredicate
+
+    , testGroup "And with normal patterns"
+        [ testCase "And random terms" $ do
+            let expect =
+                    Predicated
+                        { term = mkAnd plain0OfX plain1OfX
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+            actual <- evaluatePatterns plain0OfXExpanded plain1OfXExpanded
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "And function terms" $ do
+            let expect =
+                    Predicated
+                        { term = fOfX
+                        , predicate = makeEqualsPredicate fOfX gOfX
+                        , substitution = []
+                        }
+            actual <- evaluatePatterns fOfXExpanded gOfXExpanded
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "And predicates" $ do
+            let expect =
+                    Predicated
+                        { term = mkTop
+                        , predicate =
+                            makeAndPredicate
+                                (makeCeilPredicate fOfX)
+                                (makeCeilPredicate gOfX)
+                        , substitution = []
+                        }
+            actual <-
+                evaluatePatterns
                     Predicated
                         { term = mkTop
                         , predicate = makeCeilPredicate fOfX
@@ -156,14 +130,17 @@ test_andSimplification = give mockSymbolOrAliasSorts
                         , predicate = makeCeilPredicate gOfX
                         , substitution = []
                         }
-                )
-            assertEqualWithExplanation "And substitutions - simple"
-                Predicated
-                    { term = mkTop
-                    , predicate = makeTruePredicate
-                    , substitution = [(Mock.y, fOfX), (Mock.z, gOfX)]
-                    }
-                (evaluatePatterns
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "And substitutions - simple" $ do
+            let expect =
+                    Predicated
+                        { term = mkTop
+                        , predicate = makeTruePredicate
+                        , substitution = [(Mock.y, fOfX), (Mock.z, gOfX)]
+                        }
+            actual <-
+                evaluatePatterns
                     Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
@@ -174,7 +151,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                         , predicate = makeTruePredicate
                         , substitution = [(Mock.z, gOfX)]
                         }
-                )
+            assertEqualWithExplanation "" expect actual
             {-
             TODO(virgil): Uncomment this after substitution merge can handle
             function equality.
@@ -201,13 +178,15 @@ test_andSimplification = give mockSymbolOrAliasSorts
                         }
                 )
             -}
-            assertEqualWithExplanation "And substitutions - failure"
-                Predicated
-                    { term = mkTop
-                    , predicate = makeFalsePredicate
-                    , substitution = []
-                    }
-                (evaluatePatterns
+        , testCase "And substitutions - failure" $ do
+            let expect =
+                    Predicated
+                        { term = mkTop
+                        , predicate = makeFalsePredicate
+                        , substitution = []
+                        }
+            actual <-
+                evaluatePatterns
                     Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
@@ -226,7 +205,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                                 )
                             ]
                         }
-                )
+            assertEqualWithExplanation "" expect actual
             {-
             TODO(virgil): Uncomment this after substitution merge can handle
             function equality.
@@ -260,37 +239,39 @@ test_andSimplification = give mockSymbolOrAliasSorts
                         }
                 )
             -}
-        )
-    , testCase "Variable-function and"
-        (do
-            assertEqualWithExplanation "variable-term"
-                Predicated
-                    { term = fOfX
-                    , predicate = makeTruePredicate
-                    , substitution = [(Mock.y, fOfX)]
-                    }
-                (evaluatePatterns
-                    yExpanded fOfXExpanded
-                )
-            assertEqualWithExplanation "term-variable"
-                Predicated
-                    { term = fOfX
-                    , predicate = makeTruePredicate
-                    , substitution = [(Mock.y, fOfX)]
-                    }
-                (evaluatePatterns
-                    fOfXExpanded yExpanded
-                )
-        )
-    , testCase "constructor and"
-        (do
-            assertEqualWithExplanation "same constructors"
-                Predicated
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeEqualsPredicate fOfX gOfX
-                    , substitution = []
-                    }
-                (evaluatePatterns
+        ]
+    , testGroup "Variable-function and"
+        [ testCase "variable-term" $ do
+            let expect =
+                    Predicated
+                        { term = fOfX
+                        , predicate = makeTruePredicate
+                        , substitution = [(Mock.y, fOfX)]
+                        }
+            actual <- evaluatePatterns yExpanded fOfXExpanded
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "term-variable" $ do
+            let expect =
+                    Predicated
+                        { term = fOfX
+                        , predicate = makeTruePredicate
+                        , substitution = [(Mock.y, fOfX)]
+                        }
+            actual <- evaluatePatterns fOfXExpanded yExpanded
+            assertEqualWithExplanation "" expect actual
+        ]
+
+    , testGroup "constructor and"
+        [ testCase "same constructors" $ do
+            let expect =
+                    Predicated
+                        { term = Mock.constr10 fOfX
+                        , predicate = makeEqualsPredicate fOfX gOfX
+                        , substitution = []
+                        }
+            actual <-
+                evaluatePatterns
                     Predicated
                         { term = Mock.constr10 fOfX
                         , predicate = makeTruePredicate
@@ -301,10 +282,12 @@ test_andSimplification = give mockSymbolOrAliasSorts
                         , predicate = makeTruePredicate
                         , substitution = []
                         }
-                )
-            assertEqualWithExplanation "different constructors"
-                ExpandedPattern.bottom
-                (evaluatePatterns
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "different constructors" $ do
+            let expect = ExpandedPattern.bottom
+            actual <-
+                evaluatePatterns
                     Predicated
                         { term = Mock.constr10 fOfX
                         , predicate = makeTruePredicate
@@ -315,38 +298,39 @@ test_andSimplification = give mockSymbolOrAliasSorts
                         , predicate = makeTruePredicate
                         , substitution = []
                         }
-                )
-        )
+            assertEqualWithExplanation "" expect actual
+        ]
+
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
-    , testCase "And-Or distribution"
-        (assertEqualWithExplanation "Distributes or"
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = fOfX
-                    , predicate = makeEqualsPredicate fOfX gOfX
-                    , substitution = []
-                    }
-                , Predicated
-                    { term = fOfX
-                    , predicate = makeCeilPredicate gOfX
-                    , substitution = []
-                    }
-                , Predicated
-                    { term = gOfX
-                    , predicate = makeCeilPredicate fOfX
-                    , substitution = []
-                    }
-                , Predicated
-                    { term = mkTop
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate fOfX)
-                            (makeCeilPredicate gOfX)
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
+    , testCase "And-Or distribution" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = fOfX
+                        , predicate = makeEqualsPredicate fOfX gOfX
+                        , substitution = []
+                        }
+                    , Predicated
+                        { term = fOfX
+                        , predicate = makeCeilPredicate gOfX
+                        , substitution = []
+                        }
+                    , Predicated
+                        { term = gOfX
+                        , predicate = makeCeilPredicate fOfX
+                        , substitution = []
+                        }
+                    , Predicated
+                        { term = mkTop
+                        , predicate =
+                            makeAndPredicate
+                                (makeCeilPredicate fOfX)
+                                (makeCeilPredicate gOfX)
+                        , substitution = []
+                        }
+                    ]
+        actual <-
+            evaluate
                 (makeAnd
                     [ fOfXExpanded
                     , Predicated
@@ -363,8 +347,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                         }
                     ]
                 )
-            )
-        )
+        assertEqualWithExplanation "Distributes or" expect actual
     ]
   where
     yExpanded = Predicated
@@ -427,21 +410,25 @@ findSort
 
 evaluate
     :: And Object (CommonOrOfExpandedPattern Object)
-    -> CommonOrOfExpandedPattern Object
+    -> IO (CommonOrOfExpandedPattern Object)
 evaluate patt =
-    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier $
-        simplify
-            mockMetadataTools
-            (Mock.substitutionSimplifier mockMetadataTools)
-            patt
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ simplify
+        mockMetadataTools
+        (Mock.substitutionSimplifier mockMetadataTools)
+        patt
 
 evaluatePatterns
     :: CommonExpandedPattern Object
     -> CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
+    -> IO (CommonExpandedPattern Object)
 evaluatePatterns first second =
-    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier $
-        makeEvaluate
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ makeEvaluate
             mockMetadataTools
             (Mock.substitutionSimplifier mockMetadataTools)
             first

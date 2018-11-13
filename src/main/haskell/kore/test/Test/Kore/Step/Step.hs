@@ -116,7 +116,7 @@ expectTwoAxioms =
         )
     ]
 
-actualTwoAxioms :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
+actualTwoAxioms :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 actualTwoAxioms =
     runStep
         mockMetadataTools
@@ -145,7 +145,7 @@ initialFailSimple =
 expectFailSimple :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 expectFailSimple = [ (initialFailSimple, mempty) ]
 
-actualFailSimple :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
+actualFailSimple :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 actualFailSimple =
     runStep
         mockMetadataTools
@@ -177,7 +177,7 @@ initialFailCycle =
 expectFailCycle :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 expectFailCycle = [ (initialFailCycle, mempty) ]
 
-actualFailCycle :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
+actualFailCycle :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 actualFailCycle =
     runStep
         mockMetadataTools
@@ -216,7 +216,7 @@ expectIdentity =
         )
     ]
 
-actualIdentity :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
+actualIdentity :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 actualIdentity =
     runStep
         mockMetadataTools
@@ -229,24 +229,24 @@ test_stepStrategy =
         -- Axiom: X1 => X1
         -- Start pattern: V1
         -- Expected: V1
-        (assertEqualWithExplanation "" expectIdentity actualIdentity)
+        (assertEqualWithExplanation "" expectIdentity =<< actualIdentity)
     , testCase "Applies two simple axioms"
         -- Axiom: X1 => X1
         -- Axiom: X1 => implies(X1, X1)
         -- Start pattern: V1
         -- Expected: V1
         -- Expected: implies(V1, V1)
-        (assertEqualWithExplanation "" expectTwoAxioms actualTwoAxioms)
+        (assertEqualWithExplanation "" expectTwoAxioms =<< actualTwoAxioms)
     , testCase "Fails to apply a simple axiom"
         -- Axiom: sigma(X1, X1) => X1
         -- Start pattern: sigma(f(A1), g(B1))
         -- Expected: empty result list
-        (assertEqualWithExplanation "" expectFailSimple actualFailSimple)
+        (assertEqualWithExplanation "" expectFailSimple =<< actualFailSimple)
     , testCase "Fails to apply a simple axiom due to cycle."
         -- Axiom: sigma(f(X1), X1) => X1
         -- Start pattern: sigma(A1, A1)
         -- Expected: empty result list
-        (assertEqualWithExplanation "" expectFailCycle actualFailCycle)
+        (assertEqualWithExplanation "" expectFailCycle =<< actualFailCycle)
     ]
 
 test_simpleStrategy :: [TestTree]
@@ -255,25 +255,26 @@ test_simpleStrategy =
         -- Axiom: f(X1) => g(X1)
         -- Start pattern: f(V1)
         -- Expected: g(V1)
-        (assertEqualWithExplanation "" expectOneStep actualOneStep)
+        (assertEqualWithExplanation "" expectOneStep =<< actualOneStep)
     , testCase "Runs two steps"
         -- Axiom: f(X1) => g(X1)
         -- Axiom: g(X1) => h(X1)
         -- Start pattern: f(V1)
         -- Expected: h(V1)
-        (assertEqualWithExplanation "" expectTwoSteps actualTwoSteps)
+        (assertEqualWithExplanation "" expectTwoSteps =<< actualTwoSteps)
     , testCase "Obeys step limit"
         -- Axiom: f(X1) => g(X1)
         -- Axiom: g(X1) => h(X1)
         -- Start pattern: f(V1)
         -- Expected: g(V1)
-        (assertEqualWithExplanation "" expectStepLimit actualStepLimit)
+        (assertEqualWithExplanation "" expectStepLimit =<< actualStepLimit)
     , testCase "0 step limit"
         -- Axiom: f(X1) => g(X1)
         -- Axiom: g(X1) => h(X1)
         -- Start pattern: f(V1)
         -- Expected: f(V1)
-        (assertEqualWithExplanation "" expectZeroStepLimit actualZeroStepLimit)
+        (assertEqualWithExplanation "" expectZeroStepLimit
+            =<< actualZeroStepLimit)
     ]
 
 axiomsSimpleStrategy :: [AxiomPattern Meta]
@@ -312,7 +313,7 @@ expectOneStep =
         )
     )
 
-actualOneStep :: (CommonExpandedPattern Meta, StepProof Meta Variable)
+actualOneStep :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
 actualOneStep =
     runSteps
         mockMetadataTools
@@ -349,7 +350,7 @@ expectTwoSteps =
         ]
     )
 
-actualTwoSteps :: (CommonExpandedPattern Meta, StepProof Meta Variable)
+actualTwoSteps :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
 actualTwoSteps =
     runSteps
         mockMetadataTools
@@ -372,7 +373,7 @@ expectZeroStepLimit =
         , mempty
         )
 
-actualZeroStepLimit :: (CommonExpandedPattern Meta, StepProof Meta Variable)
+actualZeroStepLimit :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
 actualZeroStepLimit =
     runSteps
         mockMetadataTools
@@ -398,7 +399,7 @@ expectStepLimit =
         ]
     )
 
-actualStepLimit :: (CommonExpandedPattern Meta, StepProof Meta Variable)
+actualStepLimit :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
 actualStepLimit =
     runSteps
         mockMetadataTools
@@ -523,19 +524,19 @@ runStep
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [AxiomPattern level]
-    -> [(CommonExpandedPattern level, StepProof level Variable)]
+    -> IO [(CommonExpandedPattern level, StepProof level Variable)]
 runStep metadataTools configuration axioms =
-    pickFinal
-        $ SMT.unsafeRunSMT SMT.defaultConfig
-        $ evalSimplifier
-        $ runStrategy
-            (transitionRule
-                metadataTools
-                (Mock.substitutionSimplifier metadataTools)
-                simplifier
-            )
-            [allAxioms axioms]
-            (configuration, mempty)
+    (<$>) pickFinal
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ runStrategy
+        (transitionRule
+            metadataTools
+            (Mock.substitutionSimplifier metadataTools)
+            simplifier
+        )
+        [allAxioms axioms]
+        (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty
 
@@ -547,18 +548,18 @@ runSteps
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [AxiomPattern level]
-    -> (CommonExpandedPattern level, StepProof level Variable)
+    -> IO (CommonExpandedPattern level, StepProof level Variable)
 runSteps metadataTools stepLimit configuration axioms =
-    pickLongest
-        $ SMT.unsafeRunSMT SMT.defaultConfig
-        $ evalSimplifier
-        $ runStrategy
-            (transitionRule
-                metadataTools
-                (Mock.substitutionSimplifier metadataTools)
-                simplifier
-            )
-            (Limit.replicate stepLimit $ allAxioms axioms)
-            (configuration, mempty)
+    (<$>) pickLongest
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ runStrategy
+        (transitionRule
+            metadataTools
+            (Mock.substitutionSimplifier metadataTools)
+            simplifier
+        )
+        (Limit.replicate stepLimit $ allAxioms axioms)
+        (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty

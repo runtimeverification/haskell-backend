@@ -3,9 +3,7 @@ module Test.Kore.Step.Simplification.Application
     ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
 
 import qualified Data.Map as Map
 import           Data.Reflection
@@ -63,34 +61,34 @@ import           Test.Tasty.HUnit.Extensions
 
 test_applicationSimplification :: [TestTree]
 test_applicationSimplification = give mockSymbolOrAliasSorts
-    [ testCase "Application - or distribution"
+    [ testCase "Application - or distribution" $ do
         -- sigma(a or b, c or d) =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkApp sigmaSymbol [a, c]
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , Predicated
-                    { term = mkApp sigmaSymbol [a, d]
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , Predicated
-                    { term = mkApp sigmaSymbol [b, c]
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ,  Predicated
-                    { term = mkApp sigmaSymbol [b, d]
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                ]
-            )
-            (evaluate
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkApp sigmaSymbol [a, c]
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    , Predicated
+                        { term = mkApp sigmaSymbol [a, d]
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    , Predicated
+                        { term = mkApp sigmaSymbol [b, c]
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    ,  Predicated
+                        { term = mkApp sigmaSymbol [b, d]
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    ]
+        actual <-
+            evaluate
                 mockMetadataTools
                 (mockSimplifier [])
                 Map.empty
@@ -100,15 +98,13 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                     , [cExpanded, dExpanded]
                     ]
                 )
-            )
-        )
-    , testCase "Application - bottom child makes everything bottom"
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Application - bottom child makes everything bottom" $ do
         -- sigma(a or b, bottom) = bottom
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern.bottom ]
-            )
-            (evaluate
+        let expect = OrOfExpandedPattern.make [ ExpandedPattern.bottom ]
+        actual <-
+            evaluate
                 mockMetadataTools
                 (mockSimplifier [])
                 Map.empty
@@ -118,15 +114,13 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                     , []
                     ]
                 )
-            )
-        )
-    , testCase "Applies functions"
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Applies functions" $ do
         -- f(a) evaluated to g(a).
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ gOfAExpanded ]
-            )
-            (evaluate
+        let expect = OrOfExpandedPattern.make [ gOfAExpanded ]
+        actual <-
+            evaluate
                 mockMetadataTools
                 (mockSimplifier [])
                 (Map.singleton
@@ -144,119 +138,122 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                     fSymbol
                     [[aExpanded]]
                 )
-            )
-        )
-    , testCase
-        "Combines child predicates and substitutions when not aplying functions"
-        -- sigma(a and f(a)=f(b) and [x=f(a)], b and g(a)=g(b) and [y=g(a)])
-        --    = sigma(a, b) and (f(a)=f(b) and g(a)=g(b)) and [x=f(a), y=g(a)]
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkApp sigmaSymbol [a, b]
-                    , predicate =
-                        makeAndPredicate
-                            (makeEqualsPredicate fOfA fOfB)
-                            (makeEqualsPredicate gOfA gOfB)
-                    , substitution =
-                        [ (x, fOfA)
-                        , (y, gOfA)
-                        ]
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                (mockSimplifier [])
-                Map.empty
-                (makeApplication
-                    sigmaSymbol
-                    [   [ Predicated
-                            { term = a
-                            , predicate = makeEqualsPredicate fOfA fOfB
-                            , substitution = [ (x, fOfA) ]
+        assertEqualWithExplanation "" expect actual
+
+    , testGroup "Combines child predicates and substitutions"
+        [ testCase "When not applying functions" $ do
+            -- sigma(a and f(a)=f(b) and [x=f(a)], b and g(a)=g(b) and [y=g(a)])
+            --    = sigma(a, b)
+            --        and (f(a)=f(b) and g(a)=g(b))
+            --        and [x=f(a), y=g(a)]
+            let expect =
+                    OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = mkApp sigmaSymbol [a, b]
+                            , predicate =
+                                makeAndPredicate
+                                    (makeEqualsPredicate fOfA fOfB)
+                                    (makeEqualsPredicate gOfA gOfB)
+                            , substitution =
+                                [ (x, fOfA)
+                                , (y, gOfA)
+                                ]
                             }
                         ]
-                    ,   [ Predicated
-                            { term = b
-                            , predicate = makeEqualsPredicate gOfA gOfB
-                            , substitution = [ (y, gOfA) ]
-                            }
+            actual <-
+                evaluate
+                    mockMetadataTools
+                    (mockSimplifier [])
+                    Map.empty
+                    (makeApplication
+                        sigmaSymbol
+                        [   [ Predicated
+                                { term = a
+                                , predicate = makeEqualsPredicate fOfA fOfB
+                                , substitution = [ (x, fOfA) ]
+                                }
+                            ]
+                        ,   [ Predicated
+                                { term = b
+                                , predicate = makeEqualsPredicate gOfA gOfB
+                                , substitution = [ (y, gOfA) ]
+                                }
+                            ]
                         ]
-                    ]
-                )
-            )
-        )
-    , testCase
-        "Combines child predicates and substitutions when aplying functions"
-        -- sigma(a and f(a)=f(b) and [x=f(a)], b and g(a)=g(b) and [y=g(a)])
-        --    =
-        --        f(a) and
-        --        (f(a)=f(b) and g(a)=g(b) and f(a)=g(a)) and
-        --        [x=f(a), y=g(a), z=f(b)]
-        -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkApp fSymbol [a]
-                    , predicate =
-                        makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
-                            (makeAndPredicate
-                                (makeEqualsPredicate fOfA fOfB)
-                                (makeEqualsPredicate gOfA gOfB)
-                            )
-                    , substitution =
-                        [ (freshVariableFromVariable z 1, gOfB)
-                        , (x, fOfA)
-                        , (y, gOfA)
-                        ]
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                (mockSimplifier [])
-                (Map.singleton
-                    sigmaId
-                    [ ApplicationFunctionEvaluator
-                        (const $ const $ const $ const $ do
-                            let zvar = freshVariableFromVariable z 1
-                            return
-                                ( AttemptedFunction.Applied
-                                    (OrOfExpandedPattern.make
-                                        [ Predicated
-                                            { term = mkApp fSymbol [a]
-                                            , predicate =
-                                                makeEqualsPredicate fOfA gOfA
-                                            , substitution =
-                                                [ (zvar, gOfB) ]
-                                            }
-                                        ]
+                    )
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "When applying functions" $ do
+            -- sigma(a and f(a)=f(b) and [x=f(a)], b and g(a)=g(b) and [y=g(a)])
+            --    =
+            --        f(a) and
+            --        (f(a)=f(b) and g(a)=g(b) and f(a)=g(a)) and
+            --        [x=f(a), y=g(a), z=f(b)]
+            -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
+            let expect =
+                    OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = mkApp fSymbol [a]
+                            , predicate =
+                                makeAndPredicate
+                                    (makeEqualsPredicate fOfA gOfA)
+                                    (makeAndPredicate
+                                        (makeEqualsPredicate fOfA fOfB)
+                                        (makeEqualsPredicate gOfA gOfB)
                                     )
-                                , SimplificationProof
-                                )
-                        )
-                    ]
-                )
-                (makeApplication
-                    sigmaSymbol
-                    [   [ Predicated
-                            { term = a
-                            , predicate = makeEqualsPredicate fOfA fOfB
-                            , substitution = [ (x, fOfA) ]
+                            , substitution =
+                                [ (freshVariableFromVariable z 1, gOfB)
+                                , (x, fOfA)
+                                , (y, gOfA)
+                                ]
                             }
                         ]
-                    ,   [ Predicated
-                            { term = b
-                            , predicate = makeEqualsPredicate gOfA gOfB
-                            , substitution = [ (y, gOfA) ]
-                            }
+            actual <-
+                evaluate
+                    mockMetadataTools
+                    (mockSimplifier [])
+                    (Map.singleton
+                        sigmaId
+                        [ ApplicationFunctionEvaluator
+                            (const $ const $ const $ const $ do
+                                let zvar = freshVariableFromVariable z 1
+                                return
+                                    ( AttemptedFunction.Applied
+                                        (OrOfExpandedPattern.make
+                                            [ Predicated
+                                                { term = mkApp fSymbol [a]
+                                                , predicate =
+                                                    makeEqualsPredicate
+                                                        fOfA
+                                                        gOfA
+                                                , substitution =
+                                                    [ (zvar, gOfB) ]
+                                                }
+                                            ]
+                                        )
+                                    , SimplificationProof
+                                    )
+                            )
                         ]
-                    ]
-                )
-            )
-        )
+                    )
+                    (makeApplication
+                        sigmaSymbol
+                        [   [ Predicated
+                                { term = a
+                                , predicate = makeEqualsPredicate fOfA fOfB
+                                , substitution = [ (x, fOfA) ]
+                                }
+                            ]
+                        ,   [ Predicated
+                                { term = b
+                                , predicate = makeEqualsPredicate gOfA gOfB
+                                , substitution = [ (y, gOfA) ]
+                                }
+                            ]
+                        ]
+                    )
+            assertEqualWithExplanation "" expect actual
+        ]
     ]
   where
     fId = Id "f" AstLocationTest
@@ -452,19 +449,19 @@ evaluate
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from symbol IDs to defined functions
     -> Application level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    -> IO (CommonOrOfExpandedPattern level)
 evaluate
     tools
     simplifier
     symbolIdToEvaluator
     application
   =
-    fst
-        $ SMT.unsafeRunSMT SMT.defaultConfig
-        $ evalSimplifier
-        $ simplify
-            tools
-            (Mock.substitutionSimplifier tools)
-            simplifier
-            symbolIdToEvaluator
-            application
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ simplify
+        tools
+        (Mock.substitutionSimplifier tools)
+        simplifier
+        symbolIdToEvaluator
+        application

@@ -2,11 +2,13 @@
 
 module Test.Kore.Builtin.Int where
 
-import Test.QuickCheck
-       ( Property, (===) )
-import Test.Tasty
-       ( TestTree )
+import           Hedgehog hiding
+                 ( property )
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
+import           Test.Tasty
 
+import qualified Control.Monad.Trans as Trans
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
 import           Data.Map
@@ -45,7 +47,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import qualified SMT
+import           SMT
+                 ( SMT )
 
 import           Test.Kore
                  ( testId )
@@ -54,101 +57,157 @@ import           Test.Kore.Builtin.Bool
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.SMT
+
+genInteger :: Gen Integer
+genInteger = Gen.integral (Range.linear (-1024) 1024)
+
+genIntegerPattern :: Gen (CommonPurePattern Object)
+genIntegerPattern = asPattern <$> genInteger
+
+genConcreteIntegerPattern :: Gen (ConcretePurePattern Object)
+genConcreteIntegerPattern = asConcretePattern <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
-propUnary
-    :: (Integer -> Integer)
+testUnary
+    :: TestName
+    -> (Integer -> Integer)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
-    -> (Integer -> Property)
-propUnary impl symb a =
-    let pat = App_ symb (asPattern <$> [a])
-    in asExpandedPattern (impl a) === evaluate pat
+    -> TestTree
+testUnary name impl symb =
+    testPropertyWithSolver name property
+  where
+    property = do
+        a <- forAll genInteger
+        let pat = App_ symb (asPattern <$> [a])
+        (===) (asExpandedPattern $ impl a) =<< Trans.lift (evaluate pat)
 
 -- | Test a binary operator hooked to the given symbol.
-propBinary
-    :: (Integer -> Integer -> Integer)
+testBinary
+    :: TestName
+    -> (Integer -> Integer -> Integer)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
-    -> (Integer -> Integer -> Property)
-propBinary impl symb a b =
-    let pat = App_ symb (asPattern <$> [a, b])
-    in asExpandedPattern (impl a b) === evaluate pat
+    -> TestTree
+testBinary name impl symb =
+    testPropertyWithSolver name property
+  where
+    property = do
+        a <- forAll genInteger
+        b <- forAll genInteger
+        let pat = App_ symb (asPattern <$> [a, b])
+        (===) (asExpandedPattern $ impl a b) =<< Trans.lift (evaluate pat)
 
 -- | Test a comparison operator hooked to the given symbol
-propComparison
-    :: (Integer -> Integer -> Bool)
+testComparison
+    :: TestName
+    -> (Integer -> Integer -> Bool)
     -- ^ implementation
     -> SymbolOrAlias Object
     -- ^ symbol
-    -> (Integer -> Integer -> Property)
-propComparison impl symb a b =
-    let pat = App_ symb (asPattern <$> [a, b])
-    in Test.Bool.asExpandedPattern (impl a b) === evaluate pat
+    -> TestTree
+testComparison name impl symb =
+    testPropertyWithSolver name property
+  where
+    property = do
+        a <- forAll genInteger
+        b <- forAll genInteger
+        let pat = App_ symb (asPattern <$> [a, b])
+        (===) (Test.Bool.asExpandedPattern $ impl a b)
+            =<< Trans.lift (evaluate pat)
 
 -- | Test a partial unary operator hooked to the given symbol.
-propPartialUnary
-    :: (Integer -> Maybe Integer)
+testPartialUnary
+    :: TestName
+    -> (Integer -> Maybe Integer)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
-    -> (Integer -> Property)
-propPartialUnary impl symb a =
-    let pat = App_ symb (asPattern <$> [a])
-    in asPartialExpandedPattern (impl a) === evaluate pat
+    -> TestTree
+testPartialUnary name impl symb =
+    testPropertyWithSolver name property
+  where
+    property = do
+        a <- forAll genInteger
+        let pat = App_ symb (asPattern <$> [a])
+        (===) (asPartialExpandedPattern $ impl a) =<< Trans.lift (evaluate pat)
 
 -- | Test a partial binary operator hooked to the given symbol.
-propPartialBinary
-    :: (Integer -> Integer -> Maybe Integer)
+testPartialBinary
+    :: TestName
+    -> (Integer -> Integer -> Maybe Integer)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
-    -> (Integer -> Integer -> Property)
-propPartialBinary impl symb a b =
-    let pat = App_ symb (asPattern <$> [a, b])
-    in asPartialExpandedPattern (impl a b) === evaluate pat
+    -> TestTree
+testPartialBinary name impl symb =
+    testPropertyWithSolver name property
+  where
+    property = do
+        a <- forAll genInteger
+        b <- forAll genInteger
+        let pat = App_ symb (asPattern <$> [a, b])
+        (===) (asPartialExpandedPattern $ impl a b)
+            =<< Trans.lift (evaluate pat)
 
 -- | Test a partial binary operator hooked to the given symbol, passing zero as
 -- the second argument.
-propPartialBinaryZero
-    :: (Integer -> Integer -> Maybe Integer)
+testPartialBinaryZero
+    :: TestName
+    -> (Integer -> Integer -> Maybe Integer)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
-    -> (Integer -> Property)
-propPartialBinaryZero impl symb a = propPartialBinary impl symb a 0
+    -> TestTree
+testPartialBinaryZero name impl symb =
+    testPropertyWithSolver name property
+  where
+    property = do
+        a <- forAll genInteger
+        let pat = App_ symb (asPattern <$> [a, 0])
+        (===) (asPartialExpandedPattern $ impl a 0)
+            =<< Trans.lift (evaluate pat)
 
 -- | Test a partial ternary operator hooked to the given symbol.
-propPartialTernary
-    :: (Integer -> Integer -> Integer -> Maybe Integer)
+testPartialTernary
+    :: TestName
+    -> (Integer -> Integer -> Integer -> Maybe Integer)
     -- ^ operator
     -> SymbolOrAlias Object
     -- ^ hooked symbol
-    -> (Integer -> Integer -> Integer -> Property)
-propPartialTernary impl symb a b c =
-    let pat = App_ symb (asPattern <$> [a, b, c])
-    in asPartialExpandedPattern (impl a b c) === evaluate pat
+    -> TestTree
+testPartialTernary name impl symb =
+    testPropertyWithSolver name property
+  where
+    property = do
+        a <- forAll genInteger
+        b <- forAll genInteger
+        c <- forAll genInteger
+        let pat = App_ symb (asPattern <$> [a, b, c])
+        (===) (asPartialExpandedPattern $ impl a b c)
+            =<< Trans.lift (evaluate pat)
 
 -- Comparison operators
-prop_gt :: Integer -> Integer -> Property
-prop_gt = propComparison (>) gtSymbol
+test_gt :: TestTree
+test_gt = testComparison "INT.gt" (>) gtSymbol
 
-prop_ge :: Integer -> Integer -> Property
-prop_ge = propComparison (>=) geSymbol
+test_ge :: TestTree
+test_ge = testComparison "INT.ge" (>=) geSymbol
 
-prop_eq :: Integer -> Integer -> Property
-prop_eq = propComparison (==) eqSymbol
+test_eq :: TestTree
+test_eq = testComparison "INT.eq" (==) eqSymbol
 
-prop_le :: Integer -> Integer -> Property
-prop_le = propComparison (<=) leSymbol
+test_le :: TestTree
+test_le = testComparison "INT.le" (<=) leSymbol
 
-prop_lt :: Integer -> Integer -> Property
-prop_lt = propComparison (<) ltSymbol
+test_lt :: TestTree
+test_lt = testComparison "INT.lt" (<) ltSymbol
 
-prop_ne :: Integer -> Integer -> Property
-prop_ne = propComparison (/=) neSymbol
+test_ne :: TestTree
+test_ne = testComparison "INT.ne" (/=) neSymbol
 
 gtSymbol :: SymbolOrAlias Object
 gtSymbol = builtinSymbol "gtInt"
@@ -169,11 +228,11 @@ neSymbol :: SymbolOrAlias Object
 neSymbol = builtinSymbol "neInt"
 
 -- Ordering operations
-prop_min :: Integer -> Integer -> Property
-prop_min = propBinary min minSymbol
+test_min :: TestTree
+test_min = testBinary "INT.min" min minSymbol
 
-prop_max :: Integer -> Integer -> Property
-prop_max = propBinary max maxSymbol
+test_max :: TestTree
+test_max = testBinary "INT.max" max maxSymbol
 
 minSymbol :: SymbolOrAlias Object
 minSymbol = builtinSymbol "minInt"
@@ -182,17 +241,17 @@ maxSymbol :: SymbolOrAlias Object
 maxSymbol = builtinSymbol "maxInt"
 
 -- Arithmetic operations
-prop_add :: Integer -> Integer -> Property
-prop_add = propBinary (+) addSymbol
+test_add :: TestTree
+test_add = testBinary "INT.add" (+) addSymbol
 
-prop_sub :: Integer -> Integer -> Property
-prop_sub = propBinary (-) subSymbol
+test_sub :: TestTree
+test_sub = testBinary "INT.sub" (-) subSymbol
 
-prop_mul :: Integer -> Integer -> Property
-prop_mul = propBinary (*) mulSymbol
+test_mul :: TestTree
+test_mul = testBinary "INT.mul" (*) mulSymbol
 
-prop_abs :: Integer -> Property
-prop_abs = propUnary abs absSymbol
+test_abs :: TestTree
+test_abs = testUnary "INT.abs" abs absSymbol
 
 addSymbol :: SymbolOrAlias Object
 addSymbol = builtinSymbol "addInt"
@@ -207,16 +266,16 @@ absSymbol :: SymbolOrAlias Object
 absSymbol = builtinSymbol "absInt"
 
 -- Division
-prop_tdiv :: Integer -> Integer -> Property
-prop_tdiv = propPartialBinary tdiv tdivSymbol
+test_tdiv :: TestTree
+test_tdiv = testPartialBinary "INT.tdiv" tdiv tdivSymbol
 
 tdiv :: Integer -> Integer -> Maybe Integer
 tdiv n d
   | d == 0 = Nothing
   | otherwise = Just (quot n d)
 
-prop_tmod :: Integer -> Integer -> Property
-prop_tmod = propPartialBinary tmod tmodSymbol
+test_tmod :: TestTree
+test_tmod = testPartialBinary "INT.tmod" tmod tmodSymbol
 
 tmod :: Integer -> Integer -> Maybe Integer
 tmod n d
@@ -229,31 +288,31 @@ tdivSymbol = builtinSymbol "tdivInt"
 tmodSymbol :: SymbolOrAlias Object
 tmodSymbol = builtinSymbol "tmodInt"
 
-prop_tdivZero :: Integer -> Property
-prop_tdivZero = propPartialBinaryZero tdiv tdivSymbol
+test_tdivZero :: TestTree
+test_tdivZero = testPartialBinaryZero "INT.tdiv by 0" tdiv tdivSymbol
 
-prop_tmodZero :: Integer -> Property
-prop_tmodZero = propPartialBinaryZero tmod tmodSymbol
+test_tmodZero :: TestTree
+test_tmodZero = testPartialBinaryZero "INT.tmod by 0" tmod tmodSymbol
 
 -- Bitwise operations
-prop_and :: Integer -> Integer -> Property
-prop_and = propBinary (.&.) andSymbol
+test_and :: TestTree
+test_and = testBinary "INT.and" (.&.) andSymbol
 
-prop_or :: Integer -> Integer -> Property
-prop_or = propBinary (.|.) orSymbol
+test_or :: TestTree
+test_or = testBinary "INT.or" (.|.) orSymbol
 
-prop_xor :: Integer -> Integer -> Property
-prop_xor = propBinary xor xorSymbol
+test_xor :: TestTree
+test_xor = testBinary "INT.xor" xor xorSymbol
 
-prop_not :: Integer -> Property
-prop_not = propUnary complement notSymbol
+test_not :: TestTree
+test_not = testUnary "INT.not" complement notSymbol
 
-prop_shl :: Integer -> Integer -> Property
-prop_shl = propBinary shl shlSymbol
+test_shl :: TestTree
+test_shl = testBinary "INT.shl" shl shlSymbol
   where shl a = shift a . fromInteger
 
-prop_shr :: Integer -> Integer -> Property
-prop_shr = propBinary shr shrSymbol
+test_shr :: TestTree
+test_shr = testBinary "INT.shr" shr shrSymbol
   where shr a = shift a . fromInteger . negate
 
 andSymbol, orSymbol, xorSymbol, notSymbol, shlSymbol, shrSymbol
@@ -271,8 +330,8 @@ pow b e
     | e < 0 = Nothing
     | otherwise = Just (b ^ e)
 
-prop_pow :: Integer -> Integer -> Property
-prop_pow = propPartialBinary pow powSymbol
+test_pow :: TestTree
+test_pow = testPartialBinary "INT.pow" pow powSymbol
 
 powmod :: Integer -> Integer -> Integer -> Maybe Integer
 powmod b e m
@@ -280,16 +339,16 @@ powmod b e m
     | e < 0 && recipModInteger b m == 0 = Nothing
     | otherwise = Just (powModInteger b e m)
 
-prop_powmod :: Integer -> Integer -> Integer -> Property
-prop_powmod = propPartialTernary powmod powmodSymbol
+test_powmod :: TestTree
+test_powmod = testPartialTernary "INT.powmod" powmod powmodSymbol
 
 log2 :: Integer -> Maybe Integer
 log2 n
     | n > 0 = Just (smallInteger (integerLog2# n))
     | otherwise = Nothing
 
-prop_log2 :: Integer -> Property
-prop_log2 = propPartialUnary log2 log2Symbol
+test_log2 :: TestTree
+test_log2 = testPartialUnary "INT.log2" log2 log2Symbol
 
 powSymbol :: SymbolOrAlias Object
 powSymbol = builtinSymbol "powInt"
@@ -471,12 +530,24 @@ intModule =
             ]
         }
 
-evaluate :: CommonPurePattern Object -> CommonExpandedPattern Object
-evaluate pat =
-    fst $ SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier
-    $ Pattern.simplify tools (Mock.substitutionSimplifier tools) evaluators pat
-  where
-    tools = extractMetadataTools indexedModule
+evaluate
+    :: CommonPurePattern Object
+    -> SMT (CommonExpandedPattern Object)
+evaluate pat = do
+    (expanded, _) <-
+        evalSimplifier
+        $ Pattern.simplify
+            testTools
+            testSubstitutionSimplifier
+            evaluators
+            pat
+    return expanded
+
+testTools :: MetadataTools Object StepperAttributes
+testTools = extractMetadataTools indexedModule
+
+testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
+testSubstitutionSimplifier = Mock.substitutionSimplifier testTools
 
 intDefinition :: KoreDefinition
 intDefinition =

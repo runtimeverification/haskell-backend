@@ -4,16 +4,14 @@ module Test.Kore.Unification.Unifier
     ) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+       ( TestName, TestTree, testGroup )
 import Test.Tasty.HUnit
-       ( assertEqual, assertFailure, testCase )
 import Test.Tasty.HUnit.Extensions
 
 import           Control.Exception
                  ( ErrorCall (ErrorCall), catch, evaluate )
 import           Control.Monad.Except
                  ( runExceptT )
-import           Data.CallStack
 import           Data.Function
                  ( on )
 import           Data.Functor.Foldable
@@ -65,6 +63,8 @@ import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import           Kore.Unification.UnifierImpl
+import           SMT
+                 ( SMT )
 import qualified SMT
 
 import           Test.Kore
@@ -296,64 +296,54 @@ newtype UnificationResultTerm level =
     UnificationResultTerm (CommonPurePatternStub level)
 
 andSimplifySuccess
-    :: (HasCallStack)
-    => String
-    -> UnificationTerm Object
+    :: HasCallStack
+    => UnificationTerm Object
     -> UnificationTerm Object
     -> UnificationResultTerm Object
     -> Substitution Object
     -> Predicate Object Variable
     -> UnificationProof Object Variable
-    -> TestTree
-andSimplifySuccess message term1 term2 resultTerm subst predicate proof =
-    testCase
-        message
-        (assertEqualWithExplanation
-            ""
-            (unificationResult resultTerm subst predicate, proof)
-            (subst'', proof')
-        )
-  where
-    Right (subst', proof') =
-        SMT.unsafeRunSMT SMT.defaultConfig
+    -> Assertion
+andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
+    let expect = (unificationResult resultTerm subst predicate, proof)
+    Right (subst', proof') <-
+        runSMT
         $ evalSimplifier
         $ runExceptT
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
             [(unificationProblem term1 term2)]
-
-    subst'' = subst'
-        { substitution =
-            sortBy (compare `on` fst) (ExpandedPattern.substitution subst')
-        }
-
+    let
+        subst'' =
+            subst'
+                { substitution =
+                    sortBy
+                        (compare `on` fst)
+                        (ExpandedPattern.substitution subst')
+                }
+    assertEqualWithExplanation "" expect (subst'', proof')
 
 andSimplifyFailure
-    :: (HasCallStack)
-    => String
-    -> UnificationTerm Object
+    :: HasCallStack
+    => UnificationTerm Object
     -> UnificationTerm Object
     -> UnificationError
-    -> TestTree
-andSimplifyFailure message term1 term2 err =
-    testCase
-        message
-        (assertEqualWithPrinter
-            show
-            ""
-            (Left (UnificationError err))
-            $ SMT.unsafeRunSMT SMT.defaultConfig
-            $ evalSimplifier
-            $ runExceptT
-            $ simplifyAnds
-                tools
-                (Mock.substitutionSimplifier tools)
-                [(unificationProblem term1 term2)]
-        )
+    -> Assertion
+andSimplifyFailure term1 term2 err = do
+    let expect = Left (UnificationError err)
+    actual <-
+        runSMT
+        $ evalSimplifier
+        $ runExceptT
+        $ simplifyAnds
+            tools
+            (Mock.substitutionSimplifier tools)
+            [(unificationProblem term1 term2)]
+    assertEqualWithPrinter show "" expect actual
 
 andSimplifyException
-    :: (HasCallStack)
+    :: HasCallStack
     => String
     -> UnificationTerm Object
     -> UnificationTerm Object
@@ -366,7 +356,7 @@ andSimplifyException message term1 term2 exceptionMessage =
     where
         test = do
             var <-
-                SMT.runSMT SMT.defaultConfig
+                runSMT
                 $ evalSimplifier
                 $ runExceptT
                 $ simplifyAnds
@@ -381,8 +371,8 @@ andSimplifyException message term1 term2 exceptionMessage =
                 s
 
 unificationProcedureSuccess
-    :: (HasCallStack)
-    => String
+    :: HasCallStack
+    => TestName
     -> UnificationTerm Object
     -> UnificationTerm Object
     -> Substitution Object
@@ -396,108 +386,110 @@ unificationProcedureSuccess
     subst
     predicate'
     proof
-  = testCase
-        message
-        (assertEqualWithExplanation
-            ""
-            (unificationSubstitution subst, predicate', proof)
-            (sortBy (compare `on` fst) substitution, predicate, proof')
-        )
-  where
-    Right ( Predicated
-              { substitution
-              , predicate
-              }
-          , proof'
-          ) =
-        SMT.unsafeRunSMT SMT.defaultConfig $ evalSimplifier $ runExceptT $
-            ( unificationProcedure
+  =
+    testCase message $ do
+        Right result <-
+            runSMT
+            $ evalSimplifier
+            $ runExceptT
+            $ unificationProcedure
                 tools
                 (Mock.substitutionSimplifier tools)
                 (extractPurePattern term1)
                 (extractPurePattern term2)
-            )
+        let (Predicated { substitution, predicate }, proof') = result
+            actual = (sortBy (compare `on` fst) substitution, predicate, proof')
+        assertEqualWithExplanation "" expect actual
+  where
+    expect = (unificationSubstitution subst, predicate', proof)
+
 
 test_unification :: [TestTree]
 test_unification =
-    [ andSimplifySuccess "Constant"
-        (UnificationTerm aA)
-        (UnificationTerm aA)
-        (UnificationResultTerm aA)
-        []
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "Variable"
-        (UnificationTerm x)
-        (UnificationTerm aA)
-        (UnificationResultTerm aA)
-        [("x", aA)]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "one level"
-        (UnificationTerm (applyS f [x]))
-        (UnificationTerm (applyS f [aA]))
-        (UnificationResultTerm (applyS f [aA]))
-        [("x", aA)]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "equal non-constructor patterns"
-        (UnificationTerm a2A)
-        (UnificationTerm a2A)
-        (UnificationResultTerm a2A)
-        []
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "variable + non-constructor pattern"
-        (UnificationTerm a2A)
-        (UnificationTerm x)
-        (UnificationResultTerm a2A)
-        [("x", a2A)]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess
-        "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
-        (UnificationTerm (applyS ef [ex1, applyS eh [ex1], ex2]))
-        (UnificationTerm (applyS ef [applyS eg [ex3], ex4, ex3]))
-        (UnificationResultTerm
-            (applyS ef [applyS eg [ex3], applyS eh [ex1], ex3])
-        )
-        [ ("ex1", applyS eg [ex3])
-        , ("ex2", ex3)
-        , ("ex4", applyS eh [applyS eg [ex3]])
-        ]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess
-        "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms"
-        (UnificationTerm
-            (applyS nonLinF [applyS nonLinG [nonLinX], nonLinX])
-        )
-        (UnificationTerm (applyS nonLinF [nonLinY, nonLinA]))
-        (UnificationResultTerm
-            (applyS nonLinF [applyS nonLinG [nonLinX], nonLinA])
-        )
-        -- [ ("x", nonLinA), ("y", applyS nonLinG [nonLinX])]
-        [ ("x", nonLinA)
-        , ("y", applyS nonLinG [nonLinA])
-        ]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess
-        "times(times(a, y), x) = times(x, times(y, a))"
-        (UnificationTerm (applyS expBin [applyS expBin [expA, expY], expX]))
-        (UnificationTerm (applyS expBin [expX, applyS expBin [expY, expA]]))
-        (UnificationResultTerm (applyS
-            expBin
-            [ applyS expBin [expA, expY]
-            , applyS expBin [expY, expA]
+    [ testCase "Constant" $ do
+        andSimplifySuccess
+            (UnificationTerm aA)
+            (UnificationTerm aA)
+            (UnificationResultTerm aA)
+            []
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "Variable" $ do
+        andSimplifySuccess
+            (UnificationTerm x)
+            (UnificationTerm aA)
+            (UnificationResultTerm aA)
+            [("x", aA)]
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "one level" $ do
+        andSimplifySuccess
+            (UnificationTerm (applyS f [x]))
+            (UnificationTerm (applyS f [aA]))
+            (UnificationResultTerm (applyS f [aA]))
+            [("x", aA)]
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "equal non-constructor patterns" $ do
+        andSimplifySuccess
+            (UnificationTerm a2A)
+            (UnificationTerm a2A)
+            (UnificationResultTerm a2A)
+            []
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "variable + non-constructor pattern" $ do
+        andSimplifySuccess
+            (UnificationTerm a2A)
+            (UnificationTerm x)
+            (UnificationResultTerm a2A)
+            [("x", a2A)]
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3" $ do
+        andSimplifySuccess
+            (UnificationTerm (applyS ef [ex1, applyS eh [ex1], ex2]))
+            (UnificationTerm (applyS ef [applyS eg [ex3], ex4, ex3]))
+            (UnificationResultTerm
+                (applyS ef [applyS eg [ex3], applyS eh [ex1], ex3])
+            )
+            [ ("ex1", applyS eg [ex3])
+            , ("ex2", ex3)
+            , ("ex4", applyS eh [applyS eg [ex3]])
             ]
-        ))
-        [ ("a", expY)
-        , ("x", applyS expBin [expY, expY])
-        ]
-        makeTruePredicate
-        EmptyUnificationProof
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $ do
+        andSimplifySuccess
+
+            (UnificationTerm
+                (applyS nonLinF [applyS nonLinG [nonLinX], nonLinX])
+            )
+            (UnificationTerm (applyS nonLinF [nonLinY, nonLinA]))
+            (UnificationResultTerm
+                (applyS nonLinF [applyS nonLinG [nonLinX], nonLinA])
+            )
+            -- [ ("x", nonLinA), ("y", applyS nonLinG [nonLinX])]
+            [ ("x", nonLinA)
+            , ("y", applyS nonLinG [nonLinA])
+            ]
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "times(times(a, y), x) = times(x, times(y, a))" $ do
+        andSimplifySuccess
+            (UnificationTerm (applyS expBin [applyS expBin [expA, expY], expX]))
+            (UnificationTerm (applyS expBin [expX, applyS expBin [expY, expA]]))
+            (UnificationResultTerm (applyS
+                expBin
+                [ applyS expBin [expA, expY]
+                , applyS expBin [expY, expA]
+                ]
+            ))
+            [ ("a", expY)
+            , ("x", applyS expBin [expY, expY])
+            ]
+            makeTruePredicate
+            EmptyUnificationProof
     , unificationProcedureSuccess
         "times(x, g(x)) = times(a, a) -- cycle bottom"
         (UnificationTerm (applyS expBin [expX, applyS eg [expX]]))
@@ -533,20 +525,22 @@ test_unification =
          )
          EmptyUnificationProof
     , testGroup "inj unification tests" injUnificationTests
-    , andSimplifySuccess "Unmatching constants is bottom"
-        (UnificationTerm aA)
-        (UnificationTerm a1A)
-        (UnificationResultTerm bottomPredicate)
-        []
-        makeFalsePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "Unmatching domain values is bottom"
-        (UnificationTerm dv1)
-        (UnificationTerm dv2)
-        (UnificationResultTerm bottomPredicate)
-        []
-        makeFalsePredicate
-        EmptyUnificationProof
+    , testCase "Unmatching constants is bottom" $ do
+        andSimplifySuccess
+            (UnificationTerm aA)
+            (UnificationTerm a1A)
+            (UnificationResultTerm bottomPredicate)
+            []
+            makeFalsePredicate
+            EmptyUnificationProof
+    , testCase "Unmatching domain values is bottom" $ do
+        andSimplifySuccess
+            (UnificationTerm dv1)
+            (UnificationTerm dv2)
+            (UnificationResultTerm bottomPredicate)
+            []
+            makeFalsePredicate
+            EmptyUnificationProof
     , andSimplifyException "Unmatching constructor constant + domain value"
         (UnificationTerm aA)
         (UnificationTerm dv2)
@@ -555,45 +549,51 @@ test_unification =
         (UnificationTerm dv1)
         (UnificationTerm aA)
         "Cannot handle DomainValue and Constructor"
-    , andSimplifySuccess "Unmatching domain value + nonconstructor constant"
-        (UnificationTerm dv1)
-        (UnificationTerm a2A)
-        (UnificationResultTerm dv1)
-        []
-        (makeEqualsPredicate dv1 a2A)
-        EmptyUnificationProof
-    , andSimplifySuccess "Unmatching nonconstructor constant + domain value"
-        (UnificationTerm a2A)
-        (UnificationTerm dv1)
-        (UnificationResultTerm a2A)
-        []
-        (makeEqualsPredicate a2A dv1)
-        EmptyUnificationProof
-    , andSimplifyFailure "non-functional pattern"
-        (UnificationTerm x)
-        (UnificationTerm a3A)
-        UnsupportedPatterns
-    , andSimplifySuccess "non-constructor symbolHead right"
-        (UnificationTerm aA)
-        (UnificationTerm a2A)
-        (UnificationResultTerm aA)
-        []
-        (makeEqualsPredicate aA a2A)
-        EmptyUnificationProof
-    , andSimplifySuccess "non-constructor symbolHead left"
-        (UnificationTerm a2A)
-        (UnificationTerm aA)
-        (UnificationResultTerm a2A)
-        []
-        (makeEqualsPredicate a2A aA)
-        EmptyUnificationProof
-    , andSimplifySuccess "nested a=a1 is bottom"
-        (UnificationTerm (applyS f [aA]))
-        (UnificationTerm (applyS f [a1A]))
-        (UnificationResultTerm bottomPredicate)
-        []
-        makeFalsePredicate
-        EmptyUnificationProof
+    , testCase "Unmatching domain value + nonconstructor constant" $ do
+        andSimplifySuccess
+            (UnificationTerm dv1)
+            (UnificationTerm a2A)
+            (UnificationResultTerm dv1)
+            []
+            (makeEqualsPredicate dv1 a2A)
+            EmptyUnificationProof
+    , testCase "Unmatching nonconstructor constant + domain value" $ do
+        andSimplifySuccess
+            (UnificationTerm a2A)
+            (UnificationTerm dv1)
+            (UnificationResultTerm a2A)
+            []
+            (makeEqualsPredicate a2A dv1)
+            EmptyUnificationProof
+    , testCase "non-functional pattern" $ do
+        andSimplifyFailure
+            (UnificationTerm x)
+            (UnificationTerm a3A)
+            UnsupportedPatterns
+    , testCase "non-constructor symbolHead right" $ do
+        andSimplifySuccess
+            (UnificationTerm aA)
+            (UnificationTerm a2A)
+            (UnificationResultTerm aA)
+            []
+            (makeEqualsPredicate aA a2A)
+            EmptyUnificationProof
+    , testCase "non-constructor symbolHead left" $ do
+        andSimplifySuccess
+            (UnificationTerm a2A)
+            (UnificationTerm aA)
+            (UnificationResultTerm a2A)
+            []
+            (makeEqualsPredicate a2A aA)
+            EmptyUnificationProof
+    , testCase "nested a=a1 is bottom" $ do
+        andSimplifySuccess
+            (UnificationTerm (applyS f [aA]))
+            (UnificationTerm (applyS f [a1A]))
+            (UnificationResultTerm bottomPredicate)
+            []
+            makeFalsePredicate
+            EmptyUnificationProof
           {- currently this cannot even be built because of builder checkd
     , andSimplifyFailure "Unmatching sorts"
         (UnificationTerm aA)
@@ -611,10 +611,11 @@ test_unification =
 
 test_unsupportedConstructs :: TestTree
 test_unsupportedConstructs =
-    andSimplifyFailure "Unsupported constructs"
-        (UnificationTerm (applyS f [aA]))
-        (UnificationTerm (applyS f [implies_ aA (next_ a1A)]))
-        UnsupportedPatterns
+    testCase "Unsupported constructs" $ do
+        andSimplifyFailure
+            (UnificationTerm (applyS f [aA]))
+            (UnificationTerm (applyS f [implies_ aA (next_ a1A)]))
+            UnsupportedPatterns
 
 newtype V level = V Integer
     deriving (Show, Eq, Ord)
@@ -652,87 +653,110 @@ sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))
 
 injUnificationTests :: [TestTree]
 injUnificationTests =
-    [ andSimplifySuccess "Injected Variable"
-        (UnificationTerm (applyInj s1 s2 x))
-        (UnificationTerm (applyInj s1 s2 aA))
-        (UnificationResultTerm (applyInj s1 s2 aA))
-        [("x", aA)]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "Variable"
-        (UnificationTerm xs2)
-        (UnificationTerm (applyInj s1 s2 aA))
-        (UnificationResultTerm (applyInj s1 s2 aA))
-        [("xs2", applyInj s1 s2 aA)]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "Injected Variable vs doubly injected term"
-        (UnificationTerm (applyInj s1 s2 x))
-        (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
-        (UnificationResultTerm (applyInj s1 s2 aA))
-        [("x", aA)]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "doubly injected variable vs injected term"
-        (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 x))))
-        (UnificationTerm (applyInj s1 s2 aA))
-        (UnificationResultTerm (applyInj s1 s2 aA))
-        [("x", aA)]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "doubly injected variable vs doubly injected term"
-        (simplifyPattern (UnificationTerm (applyInj s4 s2 (applyInj s1 s4 x))))
-        (simplifyPattern (UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))))
-        (UnificationResultTerm (applyInj s1 s2 aA))
-        [("x", aA)]
-        makeTruePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "constant vs injection is bottom"
-        (UnificationTerm aA)
-        (UnificationTerm (applyInj s2 s1 xs2))
-        (UnificationResultTerm bottomPredicate)
-        []
-        makeFalsePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "unmatching nested injections"
-        (simplifyPattern (UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA))))
-        (simplifyPattern (UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA))))
-        (UnificationResultTerm bottomPredicate)
-        []
-        makeFalsePredicate
-        EmptyUnificationProof
-    , andSimplifySuccess "unmatching injections"
-        -- TODO(traiansf): this should succeed if s1 < s2 < s3
-        (UnificationTerm (applyInj s1 s3 aA))
-        (UnificationTerm (applyInj s2 s3 xs2))
-        (UnificationResultTerm bottomPredicate)
-        []
-        makeFalsePredicate
-        EmptyUnificationProof
+    [ testCase "Injected Variable" $ do
+        andSimplifySuccess
+            (UnificationTerm (applyInj s1 s2 x))
+            (UnificationTerm (applyInj s1 s2 aA))
+            (UnificationResultTerm (applyInj s1 s2 aA))
+            [("x", aA)]
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "Variable" $ do
+        andSimplifySuccess
+            (UnificationTerm xs2)
+            (UnificationTerm (applyInj s1 s2 aA))
+            (UnificationResultTerm (applyInj s1 s2 aA))
+            [("xs2", applyInj s1 s2 aA)]
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "Injected Variable vs doubly injected term" $ do
+        term2 <-
+            simplifyPattern
+            $ UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))
+        andSimplifySuccess
+            (UnificationTerm (applyInj s1 s2 x))
+            term2
+            (UnificationResultTerm (applyInj s1 s2 aA))
+            [("x", aA)]
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "doubly injected variable vs injected term" $ do
+        term1 <-
+            simplifyPattern
+            $ UnificationTerm (applyInj s3 s2 (applyInj s1 s3 x))
+        andSimplifySuccess
+            term1
+            (UnificationTerm (applyInj s1 s2 aA))
+            (UnificationResultTerm (applyInj s1 s2 aA))
+            [("x", aA)]
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "doubly injected variable vs doubly injected term" $ do
+        term1 <-
+            simplifyPattern
+            $ UnificationTerm (applyInj s4 s2 (applyInj s1 s4 x))
+        term2 <-
+            simplifyPattern
+            $ UnificationTerm (applyInj s3 s2 (applyInj s1 s3 aA))
+        andSimplifySuccess
+            term1
+            term2
+            (UnificationResultTerm (applyInj s1 s2 aA))
+            [("x", aA)]
+            makeTruePredicate
+            EmptyUnificationProof
+    , testCase "constant vs injection is bottom" $ do
+        andSimplifySuccess
+            (UnificationTerm aA)
+            (UnificationTerm (applyInj s2 s1 xs2))
+            (UnificationResultTerm bottomPredicate)
+            []
+            makeFalsePredicate
+            EmptyUnificationProof
+    , testCase "unmatching nested injections" $ do
+        term1 <-
+            simplifyPattern
+            $ UnificationTerm (applyInj s2 s4 (applyInj s1 s2 aA))
+        term2 <-
+            simplifyPattern
+            $ UnificationTerm (applyInj s3 s4 (applyInj s2 s3 bA))
+        andSimplifySuccess
+            term1
+            term2
+            (UnificationResultTerm bottomPredicate)
+            []
+            makeFalsePredicate
+            EmptyUnificationProof
+    , testCase "unmatching injections" $ do
+        andSimplifySuccess
+            -- TODO(traiansf): this should succeed if s1 < s2 < s3
+            (UnificationTerm (applyInj s1 s3 aA))
+            (UnificationTerm (applyInj s2 s3 xs2))
+            (UnificationResultTerm bottomPredicate)
+            []
+            makeFalsePredicate
+            EmptyUnificationProof
     ]
 
-simplifyPattern :: UnificationTerm Object -> UnificationTerm Object
-simplifyPattern (UnificationTerm pStub) =
-    let pat =
-            project
-            $ ExpandedPattern.term
-            $ SMT.unsafeRunSMT SMT.defaultConfig
-            $ evalSimplifier
-            $ do
-                simplifiedPatterns <-
-                    ExpandedPattern.simplify
-                        tools
-                        (Mock.substitutionSimplifier tools)
-                        (Simplifier.create tools functionRegistry)
-                        expandedPattern
-                case
-                    OrOfExpandedPattern.extractPatterns
-                        (fst simplifiedPatterns) of
-                    [] -> return ExpandedPattern.bottom
-                    (config : _) -> return config
+simplifyPattern :: UnificationTerm Object -> IO (UnificationTerm Object)
+simplifyPattern (UnificationTerm pStub) = do
+    Predicated { term } <- runSMT $ evalSimplifier simplifier
+    let pat = project term
         resultSort = getPatternResultSort mockSymbolOrAliasSorts pat
-    in UnificationTerm (SortedPatternStub (SortedPattern pat resultSort))
+    return $ UnificationTerm $ SortedPatternStub $ SortedPattern pat resultSort
   where
+    simplifier = do
+        simplifiedPatterns <-
+            ExpandedPattern.simplify
+                tools
+                (Mock.substitutionSimplifier tools)
+                (Simplifier.create tools functionRegistry)
+                expandedPattern
+        case
+            OrOfExpandedPattern.extractPatterns
+                (fst simplifiedPatterns) of
+            [] -> return ExpandedPattern.bottom
+            (config : _) -> return config
     functionRegistry = Map.empty
     expandedPattern = Predicated
         { term = extractPurePattern pStub
@@ -748,3 +772,6 @@ makeEqualsPredicate t1 t2 =
         give mockSymbolOrAliasSorts
             $ Predicate.makeEqualsPredicate
                 (extractPurePattern t1) (extractPurePattern t2)
+
+runSMT :: SMT a -> IO a
+runSMT = SMT.runSMT SMT.defaultConfig

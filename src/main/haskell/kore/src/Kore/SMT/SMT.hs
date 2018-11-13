@@ -9,7 +9,7 @@ Portability : portable
 -}
 
 module Kore.SMT.SMT
-    ( unsafeTryRefutePredicate
+    ( refutePredicate
     , translatePredicate
     ) where
 
@@ -42,29 +42,28 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           SMT
-                 ( Result (..), SExpr (..), SMT )
+                 ( MonadSMT, Result (..), SExpr (..), SMT )
 import qualified SMT
 
 {- | Attempt to disprove the given predicate using SMT.
 
  -}
-unsafeTryRefutePredicate
-    :: forall level variable .
+refutePredicate
+    :: forall level variable m.
        ( Given (MetadataTools level StepperAttributes)
        , MetaOrObject level
        , Ord (variable level)
        , Show (variable level)
        , SortedVariable variable
+       , MonadSMT m
        )
     => Kore.Predicate level variable
-    -> Maybe Bool
-unsafeTryRefutePredicate korePredicate =
+    -> m (Maybe Bool)
+refutePredicate korePredicate =
     case isMetaOrObject (Proxy :: Proxy level) of
-        IsMeta   -> Nothing
+        IsMeta   -> return Nothing
         IsObject ->
-            SMT.unsafeRunSMT SMT.defaultConfig $ runMaybeT session
-          where
-            session = do
+            SMT.inNewScope $ runMaybeT $ do
                 smtPredicate <- translatePredicate korePredicate
                 SMT.assert smtPredicate
                 result <- SMT.check

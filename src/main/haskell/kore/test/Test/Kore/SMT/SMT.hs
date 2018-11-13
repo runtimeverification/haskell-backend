@@ -1,21 +1,21 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Test.Kore.SMT.SMT where
 
-import Test.QuickCheck
-       ( Property, (===) )
+import Test.Tasty.HUnit
 
 import Data.Reflection
 import Data.Text
        ( Text )
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
-import Kore.IndexedModule.MetadataTools
-import Kore.Predicate.Predicate
-import Kore.SMT.SMT
-import Kore.Step.StepperAttributes
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.ASTUtils.SmartConstructors
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.IndexedModule.MetadataTools
+import           Kore.Predicate.Predicate
+import           Kore.SMT.SMT
+import           Kore.Step.StepperAttributes
+import qualified SMT
 
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
 import qualified Test.Kore.Builtin.Int as Builtin.Int
@@ -51,148 +51,160 @@ sub a b = App_ Builtin.Int.subSymbol  [a, b]
 mul a b = App_ Builtin.Int.mulSymbol  [a, b]
 div   a b = App_ Builtin.Int.tdivSymbol [a, b]
 
-run :: CommonPredicate Object -> Property
-run prop =
-  (give tools $ unsafeTryRefutePredicate prop)
-  ===
-  Just False
+assertRefuted :: CommonPredicate Object -> Assertion
+assertRefuted prop = give tools $ do
+    let expect = Just False
+    actual <- SMT.runSMT SMT.defaultConfig $ refutePredicate prop
+    assertEqual "" expect actual
 
-prop_1 :: Property
-prop_1 =
-    run $ give testSymbolOrAliasSorts
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern True)
-            (App_ Builtin.Bool.andSymbol
-                [ App_ Builtin.Int.ltSymbol [a, Builtin.Int.intLiteral 0]
-                , App_ Builtin.Int.ltSymbol [Builtin.Int.intLiteral 0, a]
+unit_1 :: Assertion
+unit_1 =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern True)
+        (App_ Builtin.Bool.andSymbol
+            [ App_ Builtin.Int.ltSymbol [a, Builtin.Int.intLiteral 0]
+            , App_ Builtin.Int.ltSymbol [Builtin.Int.intLiteral 0, a]
+            ]
+        )
+
+unit_2 :: Assertion
+unit_2 =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern True)
+        (App_ Builtin.Bool.andSymbol
+            [ App_ Builtin.Int.ltSymbol [a `add` a, a `add` b]
+            , App_ Builtin.Int.ltSymbol [b `add` b, a `add` b]
+            ]
+        )
+
+unit_3 :: Assertion
+unit_3 =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern False)
+        (App_ Builtin.Bool.impliesSymbol
+            [ App_ Builtin.Int.ltSymbol [a, b]
+            , App_ Builtin.Bool.impliesSymbol
+                [ App_ Builtin.Int.ltSymbol [b, c]
+                , App_ Builtin.Int.ltSymbol [a, c]
                 ]
-            )
+            ]
+        )
 
-prop_2 :: Property
-prop_2 =
-    run $ give testSymbolOrAliasSorts
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern True)
-            (App_ Builtin.Bool.andSymbol
-                [ App_ Builtin.Int.ltSymbol [a `add` a, a `add` b]
-                , App_ Builtin.Int.ltSymbol [b `add` b, a `add` b]
+unit_4 :: Assertion
+unit_4 =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern True)
+        (App_ Builtin.Int.eqSymbol
+            [ add
+                (Builtin.Int.intLiteral 1)
+                (Builtin.Int.intLiteral 2 `mul` a)
+            , Builtin.Int.intLiteral 2 `mul` b
+            ]
+        )
+
+unit_5 :: Assertion
+unit_5 =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern False)
+        (App_ Builtin.Bool.impliesSymbol
+            [ App_ Builtin.Int.eqSymbol
+                [ Builtin.Int.intLiteral 0 `sub` (a `mul` a)
+                , b `mul` b
                 ]
-            )
+            , App_ Builtin.Int.eqSymbol [a, Builtin.Int.intLiteral 0]
+            ]
+        )
 
-prop_3 :: Property
-prop_3 =
-    run $ give testSymbolOrAliasSorts
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern False)
-            (App_ Builtin.Bool.impliesSymbol
-                [ App_ Builtin.Int.ltSymbol [a, b]
-                , App_ Builtin.Bool.impliesSymbol
-                    [ App_ Builtin.Int.ltSymbol [b, c]
-                    , App_ Builtin.Int.ltSymbol [a, c]
-                    ]
+
+unit_div :: Assertion
+unit_div =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern False)
+        (App_ Builtin.Bool.impliesSymbol
+            [ App_ Builtin.Int.ltSymbol [Builtin.Int.intLiteral 0, a]
+            , App_ Builtin.Int.ltSymbol
+                [ App_ Builtin.Int.tdivSymbol [a, Builtin.Int.intLiteral 2]
+                , a
                 ]
-            )
+            ]
+        )
 
-prop_4 :: Property
-prop_4 =
-    run $ give testSymbolOrAliasSorts
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern True)
-            (App_ Builtin.Int.eqSymbol
-                [ add
-                    (Builtin.Int.intLiteral 1)
-                    (Builtin.Int.intLiteral 2 `mul` a)
-                , Builtin.Int.intLiteral 2 `mul` b
+unit_mod :: Assertion
+unit_mod =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern False)
+        (App_ Builtin.Int.eqSymbol
+            [ App_ Builtin.Int.tmodSymbol
+                [ a `mul` Builtin.Int.intLiteral 2
+                , Builtin.Int.intLiteral 2
                 ]
-            )
+            , Builtin.Int.intLiteral 0
+            ]
+        )
 
-prop_5 :: Property
-prop_5 =
-    run $ give testSymbolOrAliasSorts
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern False)
-            (App_ Builtin.Bool.impliesSymbol
-                [ App_ Builtin.Int.eqSymbol
-                    [ Builtin.Int.intLiteral 0 `sub` (a `mul` a)
-                    , b `mul` b
-                    ]
-                , App_ Builtin.Int.eqSymbol [a, Builtin.Int.intLiteral 0]
-                ]
-            )
-
-
-prop_div :: Property
-prop_div =
-    run $ give testSymbolOrAliasSorts
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern False)
-            (App_ Builtin.Bool.impliesSymbol
-                [ App_ Builtin.Int.ltSymbol [Builtin.Int.intLiteral 0, a]
-                , App_ Builtin.Int.ltSymbol
-                    [ App_ Builtin.Int.tdivSymbol [a, Builtin.Int.intLiteral 2]
-                    , a
-                    ]
-                ]
-            )
-
-prop_mod :: Property
-prop_mod =
-    run $ give testSymbolOrAliasSorts
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern False)
-            (App_ Builtin.Int.eqSymbol
-                [ App_ Builtin.Int.tmodSymbol
-                    [ a `mul` Builtin.Int.intLiteral 2
-                    , Builtin.Int.intLiteral 2
-                    ]
-                , Builtin.Int.intLiteral 0
-                ]
-            )
-
-prop_pierce :: Property
-prop_pierce =
-    run $ give testSymbolOrAliasSorts
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern False)
-            (App_ Builtin.Bool.impliesSymbol
-                [ App_ Builtin.Bool.impliesSymbol
-                    [ App_ Builtin.Bool.impliesSymbol [ p, q ]
-                    , p
-                    ]
+unit_pierce :: Assertion
+unit_pierce =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern False)
+        (App_ Builtin.Bool.impliesSymbol
+            [ App_ Builtin.Bool.impliesSymbol
+                [ App_ Builtin.Bool.impliesSymbol [ p, q ]
                 , p
                 ]
-            )
+            , p
+            ]
+        )
 
-prop_demorgan :: Property
-prop_demorgan =
-    run $ give testSymbolOrAliasSorts
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern False)
-            (App_ Builtin.Bool.eqSymbol
-                [ App_ Builtin.Bool.notSymbol
-                    [ App_ Builtin.Bool.orSymbol [p, q] ]
-                , App_ Builtin.Bool.andSymbol
-                    [ App_ Builtin.Bool.notSymbol [p]
-                    , App_ Builtin.Bool.notSymbol [q]
-                    ]
-                ]
-            )
-
-prop_true :: Property
-prop_true =
-    run $ give testSymbolOrAliasSorts $ makeNotPredicate $ makeTruePredicate
-
-prop_false :: Property
-prop_false =
-    run $ give testSymbolOrAliasSorts
-        $ makeNotPredicate
-        $ makeEqualsPredicate
-            (Builtin.Bool.asPattern True)
-            (App_ Builtin.Bool.eqSymbol
+unit_demorgan :: Assertion
+unit_demorgan =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern False)
+        (App_ Builtin.Bool.eqSymbol
+            [ App_ Builtin.Bool.notSymbol
+                [ App_ Builtin.Bool.orSymbol [p, q] ]
+            , App_ Builtin.Bool.andSymbol
                 [ App_ Builtin.Bool.notSymbol [p]
-                , App_ Builtin.Bool.impliesSymbol
-                    [ p
-                    , Builtin.Bool.asPattern False
-                    ]
+                , App_ Builtin.Bool.notSymbol [q]
                 ]
-            )
+            ]
+        )
+
+unit_true :: Assertion
+unit_true =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeNotPredicate makeTruePredicate
+
+unit_false :: Assertion
+unit_false =
+    assertRefuted
+    $ give testSymbolOrAliasSorts
+    $ makeNotPredicate
+    $ makeEqualsPredicate
+        (Builtin.Bool.asPattern True)
+        (App_ Builtin.Bool.eqSymbol
+            [ App_ Builtin.Bool.notSymbol [p]
+            , App_ Builtin.Bool.impliesSymbol
+                [ p
+                , Builtin.Bool.asPattern False
+                ]
+            ]
+        )

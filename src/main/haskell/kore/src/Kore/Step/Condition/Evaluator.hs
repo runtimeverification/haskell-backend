@@ -58,14 +58,17 @@ evaluate
   = give tools $ do
     (patt, _proof) <-
         simplifier substitutionSimplifier (unwrapPredicate predicate'')
+    refuted <- refutePredicate predicate''
     let patt' =
-            if not(OrOfExpandedPattern.isTrue patt)
-               && not(OrOfExpandedPattern.isFalse patt)
-               && unsafeTryRefutePredicate predicate'' == Just False
-            then ExpandedPattern.bottom
-            else
-                give symbolOrAliasSorts
-                $ OrOfExpandedPattern.toExpandedPattern patt
+            case refuted of
+                Just False
+                  | not (OrOfExpandedPattern.isTrue patt)
+                    && not (OrOfExpandedPattern.isFalse patt)
+                  ->
+                    ExpandedPattern.bottom
+                _ ->
+                    give symbolOrAliasSorts
+                    $ OrOfExpandedPattern.toExpandedPattern patt
     let
         (subst, _proof) =
             give symbolOrAliasSorts $ asPredicateSubstitution patt'
