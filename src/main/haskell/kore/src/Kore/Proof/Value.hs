@@ -31,6 +31,7 @@ import qualified Kore.AST.Common as Pattern
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.StepperAttributes
+                 ( StepperAttributes, isConstructor_, isSortInjection_ )
 
 {- | Proof (by construction) that a pattern is a normalized value.
 

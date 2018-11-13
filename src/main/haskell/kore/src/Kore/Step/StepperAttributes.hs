@@ -7,225 +7,227 @@ Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Step.StepperAttributes
-  ( StepperAttributes (..)
-  , isFunction_
-  , isFunctional_
-  , isConstructor_
-  , isInjective_
-  , isSortInjection_
-  , isTotal
-  , functionalAttribute
-  , functionAttribute
-  , constructorAttribute
-  , injectiveAttribute
-  , sortInjectionAttribute
-  , hookAttribute
-  ) where
+    ( StepperAttributes (..)
+    , defaultStepperAttributes
+    -- * Function symbols
+    , lensFunction, Function (..)
+    , functionAttribute
+    , isFunction_, isFunction
+    -- * Functional symbols
+    , lensFunctional, Functional (..)
+    , functionalAttribute
+    , isFunctional_, isFunctional
+    -- * Constructor symbols
+    , lensConstructor, Constructor (..)
+    , constructorAttribute
+    , isConstructor_
+    -- * Injective symbols
+    , lensInjective, Injective (..)
+    , injectiveAttribute
+    , isInjective_, isInjective
+    -- * Sort injection symbols
+    , lensSortInjection, SortInjection (..)
+    , sortInjectionAttribute
+    , isSortInjection_
+    -- * Hooked symbols
+    , lensHook, Hook
+    , hookAttribute
+    -- * Total symbols
+    , isTotal_, isTotal
+    ) where
 
-import Data.Default
-import Data.Reflection
-       ( Given, given )
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
+import qualified Control.Lens.TH.Rules as Lens
+import           Control.Monad
+                 ( (>=>) )
+import           Data.Default
+import           Data.Reflection
+                 ( Given, given )
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias )
-import           Kore.AST.Kore
-                 ( CommonKorePattern )
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Attribute
-import           Kore.Builtin.Hook
-import           Kore.Implicit.Attributes
-                 ( keyOnlyAttribute )
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+import Kore.AST.Common
+       ( SymbolOrAlias )
+import Kore.Attribute.Constructor
+import Kore.Attribute.Function
+import Kore.Attribute.Functional
+import Kore.Attribute.Hook
+import Kore.Attribute.Injective
+import Kore.Attribute.Parser
+       ( ParseAttributes (..) )
+import Kore.Attribute.SortInjection
+import Kore.IndexedModule.MetadataTools
+       ( MetadataTools (..) )
 
-{- | @constructorAttribute@ represents a @constructor@ attribute Kore pattern.
+{- | Attributes used during Kore execution.
 
-  Kore syntax:
-  @
-    constructor{}()
-  @
-
- -}
-constructorAttribute :: CommonKorePattern
-constructorAttribute = keyOnlyAttribute "constructor"
-
-{- | @injectiveAttribute@ represents a @injective@ attribute Kore pattern.
-
-  Kore syntax:
-  @
-    injective{}()
-  @
-
- -}
-injectiveAttribute :: CommonKorePattern
-injectiveAttribute = keyOnlyAttribute "injective"
-
-{- | @functionAttribute@ represents a @function@ attribute Kore pattern.
-
-  Kore syntax:
-  @
-    function{}()
-  @
+@StepperAttributes@ records the declared attributes of a Kore sentence, but the
+effective attributes can be different; for example, constructors and sort
+injections are injective, even if their declaration is not given the @injective@
+attribute. To view the effective attributes, use the functions defined in this
+module.
 
  -}
-functionAttribute :: CommonKorePattern
-functionAttribute    = keyOnlyAttribute "function"
-
-{- | @functionalAttribute@ represents a @functional@ attribute Kore pattern.
-
-  Kore syntax:
-  @
-    functional{}()
-  @
-
- -}
-functionalAttribute :: CommonKorePattern
-functionalAttribute  = keyOnlyAttribute "functional"
-
-{- | @sortInjectionAttribute@ represents a @sortInjection@ attribute Kore pattern.
-
-  Kore syntax:
-  @
-    sortInjection{}()
-  @
-
- -}
-sortInjectionAttribute :: CommonKorePattern
-sortInjectionAttribute  = keyOnlyAttribute "sortInjection"
-
--- |Data-structure containing attributes relevant to the Kore Stepper
 data StepperAttributes =
     StepperAttributes
-    { isFunction      :: !Bool
+    { function      :: !Function
       -- ^ Whether a symbol represents a function
-    , isFunctional    :: !Bool
+    , functional    :: !Functional
       -- ^ Whether a symbol is functional
-    , isConstructor   :: !Bool
+    , constructor   :: !Constructor
       -- ^ Whether a symbol represents a constructor
-    , isInjective     :: !Bool
+    , injective     :: !Injective
       -- ^ Whether a symbol represents an injective function
-    , isSortInjection :: !Bool
+    , sortInjection :: !SortInjection
       -- ^ Whether a symbol is a sort injection
-    , hook            :: !Hook
+    , hook          :: !Hook
       -- ^ The builtin sort or symbol hooked to a sort or symbol
     }
   deriving (Eq, Show)
 
-{-| Whether a symbol is total (i.e. can't produce bottom)
--}
-isTotal :: StepperAttributes -> Bool
-isTotal StepperAttributes
-    { isFunctional, isConstructor }
-  =
-    isFunctional || isConstructor
+Lens.makeLenses ''StepperAttributes
+
+instance ParseAttributes StepperAttributes where
+    parseAttribute attr =
+            lensFunction (parseAttribute attr)
+        >=> lensFunctional (parseAttribute attr)
+        >=> lensConstructor (parseAttribute attr)
+        >=> lensSortInjection (parseAttribute attr)
+        >=> lensInjective (parseAttribute attr)
+        >=> lensHook (parseAttribute attr)
 
 defaultStepperAttributes :: StepperAttributes
 defaultStepperAttributes =
     StepperAttributes
-    { isFunction       = False
-    , isFunctional     = False
-    , isConstructor    = False
-    , isInjective      = False
-    , isSortInjection  = False
-    , hook             = def
+    { function       = def
+    , functional     = def
+    , constructor    = def
+    , injective      = def
+    , sortInjection  = def
+    , hook           = def
     }
-
-isFunction_
-    :: (Given (MetadataTools level StepperAttributes))
-    => SymbolOrAlias level
-    -> Bool
-isFunction_ pHead = isFunction (symAttributes given pHead)
-
-isFunctional_
-    :: (Given (MetadataTools level StepperAttributes))
-    => SymbolOrAlias level
-    -> Bool
-isFunctional_ pHead = isFunctional (symAttributes given pHead)
-
-isConstructor_
-    :: (Given (MetadataTools level StepperAttributes))
-    => SymbolOrAlias level
-    -> Bool
-isConstructor_ pHead = isConstructor (symAttributes given pHead)
-
-isInjective_
-    :: (Given (MetadataTools level StepperAttributes))
-    => SymbolOrAlias level
-    -> Bool
-isInjective_ pHead = isInjective (symAttributes given pHead)
-
-isSortInjection_
-    :: (Given (MetadataTools level StepperAttributes))
-    => SymbolOrAlias level
-    -> Bool
-isSortInjection_ pHead = isSortInjection (symAttributes given pHead)
 
 -- | See also: 'defaultStepperAttributes'
 instance Default StepperAttributes where
     def = defaultStepperAttributes
 
-{- | Is the @functional@ Kore attribute present?
+-- | Is a symbol total (non-@\\bottom@)?
+isTotal_
+    :: Given (MetadataTools level StepperAttributes)
+    => SymbolOrAlias level
+    -> Bool
+isTotal_ = isTotal . symAttributes given
 
-  It is a parse error if the @functional@ attribute is given any arguments.
+-- | Is a symbol total (non-@\\bottom@)?
+isTotal :: StepperAttributes -> Bool
+isTotal = do
+    isFunctional' <- isFunctional
+    Constructor isConstructor' <- Lens.view lensConstructor
+    return (isFunctional' || isConstructor')
 
-  See also: 'functionalAttribute'
+{- | Is the symbol a function?
 
- -}
-hasFunctionalAttribute :: Attribute.Parser Bool
-hasFunctionalAttribute = Attribute.hasKeyOnlyAttribute "functional"
+A symbol is a function if it is given the @function@ attribute or if it is
+functional.
 
-{- | Is the @function@ Kore attribute present?
-
-  It is a parse error if the @function@ attribute is given any arguments.
-
-  See also: 'functionAttribute'
-
- -}
-hasFunctionAttribute :: Attribute.Parser Bool
-hasFunctionAttribute = Attribute.hasKeyOnlyAttribute "function"
-
-{- | Is the @constructor@ Kore attribute present?
-
-  It is a parse error if the @constructor@ attribute is given any arguments.
-
-  See also: 'constructorAttribute'
+See also: 'functionAttribute', 'isFunctional'
 
  -}
-hasConstructorAttribute :: Attribute.Parser Bool
-hasConstructorAttribute = Attribute.hasKeyOnlyAttribute "constructor"
+isFunction_
+    :: Given (MetadataTools level StepperAttributes)
+    => SymbolOrAlias level
+    -> Bool
+isFunction_ = isFunction . symAttributes given
 
-{- | Is the @injective@ Kore attribute present?
+{- | Is the symbol a function?
 
-  It is a parse error if the @injective@ attribute is given any arguments.
+A symbol is a function if it is given the @function@ attribute or if it is
+functional.
 
-  See also: 'injectiveAttribute'
-
- -}
-hasInjectiveAttribute :: Attribute.Parser Bool
-hasInjectiveAttribute = Attribute.hasKeyOnlyAttribute "injective"
-
-{- | Is the @sortInjection@ Kore attribute present?
-
-  It is a parse error if the @sortInjection@ attribute is given any arguments.
-
-  See also: 'sortInjectionAttribute'
+See also: 'functionAttribute', 'isFunctional'
 
  -}
-hasSortInjectionAttribute :: Attribute.Parser Bool
-hasSortInjectionAttribute = Attribute.hasKeyOnlyAttribute "sortInjection"
+isFunction :: StepperAttributes -> Bool
+isFunction = do
+    Function isFunction' <- Lens.view lensFunction
+    isFunctional' <- isFunctional
+    return (isFunction' || isFunctional')
 
-instance ParseAttributes StepperAttributes where
-    attributesParser =
-        do
-            isFunctional <- hasFunctionalAttribute
-            isFunction <- hasFunctionAttribute
-            isConstructor <- hasConstructorAttribute
-            isSortInjection <- hasSortInjectionAttribute
-            isInjective <-
-                ((isConstructor || isSortInjection) ||) <$> hasInjectiveAttribute
-            hook <- attributesParser
-            pure StepperAttributes
-                { isFunction, isFunctional, isConstructor
-                , isSortInjection, isInjective, hook }
+{- | Is the symbol functional?
+
+A symbol is functional if it is given the @functional@ attribute or the
+@sortInjection@ attribute.
+
+See also: 'isFunctional', 'functionalAttribute', 'sortInjectionAttribute'
+
+ -}
+isFunctional_
+    :: Given (MetadataTools level StepperAttributes)
+    => SymbolOrAlias level
+    -> Bool
+isFunctional_ = isFunctional . symAttributes given
+
+{- | Is the symbol functional?
+
+A symbol is functional if it is given the @functional@ attribute or the
+@sortInjection@ attribute.
+
+See also: 'functionalAttribute', 'sortInjectionAttribute'
+
+ -}
+isFunctional :: StepperAttributes -> Bool
+isFunctional = do
+    Functional isFunctional' <- functional
+    SortInjection isSortInjection' <- sortInjection
+    return (isFunctional' || isSortInjection')
+
+-- | Is the symbol a constructor?
+isConstructor_
+    :: Given (MetadataTools level StepperAttributes)
+    => SymbolOrAlias level
+    -> Bool
+isConstructor_ = isConstructor . constructor . symAttributes given
+
+{- | Is the symbol injective?
+
+A symbol is injective if it is given the @injective@ attribute, the
+@constructor@ attribute, or the @sortInjection@ attribute.
+
+See also: 'isInjective', 'injectiveAttribute', 'constructorAttribute',
+'sortInjectionAttribute'
+
+ -}
+isInjective_
+    :: Given (MetadataTools level StepperAttributes)
+    => SymbolOrAlias level
+    -> Bool
+isInjective_ = isInjective . symAttributes given
+
+{- | Is the symbol injective?
+
+A symbol is injective if it is given the @injective@ attribute, the
+@constructor@ attribute, or the @sortInjection@ attribute.
+
+See also: 'injectiveAttribute', 'constructorAttribute', 'sortInjectionAttribute'
+
+ -}
+isInjective :: StepperAttributes -> Bool
+isInjective = do
+    Injective isInjective' <- injective
+    Constructor isConstructor' <- constructor
+    SortInjection isSortInjection' <- sortInjection
+    return (isInjective' || isConstructor' || isSortInjection')
+
+{- | Is the symbol a sort injection?
+
+See also: 'isSortInjection'
+
+ -}
+isSortInjection_
+    :: (Given (MetadataTools level StepperAttributes))
+    => SymbolOrAlias level
+    -> Bool
+isSortInjection_ =
+    isSortInjection . sortInjection . symAttributes given

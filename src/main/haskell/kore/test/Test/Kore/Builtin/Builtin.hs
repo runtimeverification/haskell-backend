@@ -19,7 +19,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
-import           Kore.Builtin.Hook
+import           Kore.Attribute.Hook
                  ( hookAttribute )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )

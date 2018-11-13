@@ -14,8 +14,6 @@ import           Control.Exception
 import           Control.Monad.Except
                  ( runExceptT )
 import           Data.CallStack
-import           Data.Default
-                 ( def )
 import           Data.Function
                  ( on )
 import           Data.Functor.Foldable
@@ -40,6 +38,11 @@ import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkSort, mkVar )
+import           Kore.Attribute.Constructor
+import           Kore.Attribute.Function
+import           Kore.Attribute.Functional
+import           Kore.Attribute.Injective
+import           Kore.Attribute.SortInjection
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
@@ -190,24 +193,30 @@ isInjHead :: SymbolOrAlias level -> Bool
 isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
 
 mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
-mockStepperAttributes patternHead = StepperAttributes
-    { isConstructor =
-           patternHead /= getSentenceSymbolOrAliasHead a2 []
-        && patternHead /= getSentenceSymbolOrAliasHead a4 []
-        && patternHead /= getSentenceSymbolOrAliasHead a5 []
-        && not (isInjHead patternHead)
-    , isFunctional =
-           patternHead /= getSentenceSymbolOrAliasHead a3 []
-        && patternHead /= getSentenceSymbolOrAliasHead a5 []
-    , isFunction = patternHead == getSentenceSymbolOrAliasHead a5 []
-    , isInjective =
+mockStepperAttributes patternHead =
+    defaultStepperAttributes
+        { constructor = Constructor { isConstructor }
+        , functional = Functional { isDeclaredFunctional }
+        , function = Function { isDeclaredFunction }
+        , injective = Injective { isDeclaredInjective }
+        , sortInjection = SortInjection { isSortInjection }
+        }
+  where
+    isConstructor =
+            patternHead /= getSentenceSymbolOrAliasHead a2 []
+        &&  patternHead /= getSentenceSymbolOrAliasHead a4 []
+        &&  patternHead /= getSentenceSymbolOrAliasHead a5 []
+        &&  not (isInjHead patternHead)
+    isDeclaredFunctional =
+            patternHead /= getSentenceSymbolOrAliasHead a3 []
+        &&  patternHead /= getSentenceSymbolOrAliasHead a5 []
+    isDeclaredFunction = patternHead == getSentenceSymbolOrAliasHead a5 []
+    isDeclaredInjective =
         (  patternHead /= getSentenceSymbolOrAliasHead a2 []
         && patternHead /= getSentenceSymbolOrAliasHead a5 []
         )
         || isInjHead patternHead
-    , isSortInjection = isInjHead patternHead
-    , hook = def
-    }
+    isSortInjection = isInjHead patternHead
 
 mockGetArgumentSorts :: SymbolOrAlias Object -> [Sort Object]
 mockGetArgumentSorts patternHead

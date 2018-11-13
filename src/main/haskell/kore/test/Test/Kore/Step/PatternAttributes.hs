@@ -173,8 +173,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                 functionalConstant = Mock.functional00
             assertEqualWithExplanation "functional symbols are function-like"
                 (Right
-                    [ FunctionProofFunctional
-                        (FunctionalHead Mock.functional00Symbol)
+                    [ FunctionHead Mock.functional00Symbol
                     ]
                 )
                 (isFunctionPattern
@@ -230,10 +229,8 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                 functionalPatt = Mock.functional10 Mock.a
             assertEqualWithExplanation "functional composition is function-like"
                 (Right
-                    [ FunctionProofFunctional
-                        (FunctionalHead Mock.functional10Symbol)
-                    , FunctionProofFunctional
-                        (FunctionalHead Mock.aSymbol)
+                    [ FunctionHead Mock.functional10Symbol
+                    , FunctionHead Mock.aSymbol
                     ]
                 )
                 (isFunctionPattern

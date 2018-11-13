@@ -18,10 +18,10 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
+import           Kore.Attribute.Hook
+                 ( hookAttribute )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.Builtin.Hook
-                 ( hookAttribute )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools

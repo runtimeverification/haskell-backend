@@ -43,6 +43,8 @@ import           Data.Sequence
                  ( Seq )
 import           Data.Set
                  ( Set )
+import           Data.String
+                 ( IsString (..) )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -135,6 +137,9 @@ instance Eq (Id level) where
 instance Hashable (Id level)
 
 instance NFData (Id level)
+
+instance IsString (Id level) where
+    fromString = noLocationId . fromString
 
 {-| 'noLocationId' creates an Id without a source location. While there are some
 narrow cases where this makes sense, you should really consider other options

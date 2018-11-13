@@ -38,22 +38,17 @@ import           Kore.ASTHelpers
 import           Kore.ASTUtils.SmartConstructors
                  ( mkApp )
 import           Kore.ASTUtils.SmartPatterns
-import           Kore.Builtin.Hook
+import           Kore.Attribute.Hook
                  ( Hook (..) )
 import           Kore.IndexedModule.MetadataTools
                  ( HeadType, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
+
+import           Test.Kore
+                 ( testId )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( constructorAttributes, constructorFunctionalAttributes,
-                 defaultAttributes, functionAttributes, functionalAttributes,
-                 injectiveAttributes, sortInjectionAttributes )
-
-
-import Test.Kore
-       ( testId )
 
 aId :: Id Object
 aId = testId "a"

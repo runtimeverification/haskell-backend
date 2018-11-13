@@ -1,24 +1,36 @@
+{-# LANGUAGE TemplateHaskell #-}
+
+{-|
+Module      : Kore.Step.AxiomPatterns
+Description : Rewriting and function axioms
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : thomas.tuegel@runtimeverification.com
+-}
 module Kore.Step.AxiomPatterns
-    ( AxiomPattern(..)
-    , AxiomPatternAttributes(..)
-    , HeatCool(..)
+    ( AxiomPattern (..)
+    , AxiomPatternAttributes (..)
+    , lensHeatCool, HeatCool (..)
+    , lensProductionID, ProductionID (..)
+    , lensAssoc, Assoc (..)
+    , lensComm, Comm (..)
+    , lensUnit, Unit (..)
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
-    , QualifiedAxiomPattern(..)
-    , AxiomPatternError(..)
+    , QualifiedAxiomPattern (..)
+    , AxiomPatternError (..)
     , koreSentenceToAxiomPattern
     , extractRewriteAxioms
     ) where
 
-import Data.Default
-       ( Default (..) )
-import Data.Either
-       ( rights )
-import Data.Functor
-       ( ($>) )
-import Data.Text
-       ( Text )
+import qualified Control.Lens.TH.Rules as Lens
+import           Control.Monad
+                 ( (>=>) )
+import           Data.Default
+                 ( Default (..) )
+import           Data.Either
+                 ( rights )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -27,71 +39,54 @@ import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
+import           Kore.Attribute.Assoc
+import           Kore.Attribute.Comm
+import           Kore.Attribute.HeatCool
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..), parseAttributes )
-import qualified Kore.Attribute.Parser as Attribute
+import qualified Kore.Attribute.Parser as Attribute.Parser
+import           Kore.Attribute.ProductionID
+import           Kore.Attribute.Unit
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
-
-{- | Denote the heating or cooling phase of execution.
-
-  There is no separate denotation for normal rules because they are executed
-  whenever possible.
-
- -}
-data HeatCool = Heat | Cool
-  deriving (Eq, Ord, Show)
 
 {- | Attributes specific to interpreting axiom patterns.
  -}
 data AxiomPatternAttributes =
     AxiomPatternAttributes
-    { axiomPatternHeatCool :: !(Maybe HeatCool)
+    { heatCool :: !HeatCool
     -- ^ An axiom may be denoted as a heating or cooling rule.
-    , axiomPatternProductionID :: !(Maybe Text)
+    , productionID :: !ProductionID
     -- ^ The identifier from the front-end identifying a rule or group of rules.
-    , axiomPatternAssoc :: !Bool
+    , assoc :: !Assoc
     -- ^ The axiom is an associativity axiom.
-    , axiomPatternComm :: !Bool
+    , comm :: !Comm
     -- ^ The axiom is a commutativity axiom.
-    , axiomPatternUnit :: !Bool
+    , unit :: !Unit
     -- ^ The axiom is a left- or right-unit axiom.
     }
-  deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+
+Lens.makeLenses ''AxiomPatternAttributes
 
 instance Default AxiomPatternAttributes where
     def =
         AxiomPatternAttributes
-        { axiomPatternHeatCool = Nothing
-        , axiomPatternProductionID = Nothing
-        , axiomPatternAssoc = False
-        , axiomPatternComm = False
-        , axiomPatternUnit = False
-        }
+            { heatCool = def
+            , productionID = def
+            , assoc = def
+            , comm = def
+            , unit = def
+            }
 
 instance ParseAttributes AxiomPatternAttributes where
-    attributesParser =
-        AxiomPatternAttributes
-            <$> Attribute.choose (Just <$> getHeatCool) (getNormal $> Nothing)
-            <*> Attribute.optional (Attribute.parseStringAttribute "productionID")
-            <*> Attribute.choose (assertAssoc $> True) (pure False)
-            <*> Attribute.choose (assertComm $> True) (pure False)
-            <*> Attribute.choose (assertUnit $> True) (pure False)
-      where
-        getHeat = do
-            Attribute.assertNoAttribute "cool"
-            Attribute.assertKeyOnlyAttribute "heat" $> Heat
-        getCool = do
-            Attribute.assertNoAttribute "heat"
-            Attribute.assertKeyOnlyAttribute "cool" $> Cool
-        getHeatCool = Attribute.choose getHeat getCool
-        getNormal = do
-            Attribute.assertNoAttribute "heat"
-            Attribute.assertNoAttribute "cool"
-        assertAssoc = Attribute.assertKeyOnlyAttribute "assoc"
-        assertComm = Attribute.assertKeyOnlyAttribute "comm"
-        assertUnit = Attribute.assertKeyOnlyAttribute "unit"
+    parseAttribute attr =
+            lensHeatCool (parseAttribute attr)
+        >=> lensProductionID (parseAttribute attr)
+        >=> lensAssoc (parseAttribute attr)
+        >=> lensComm (parseAttribute attr)
+        >=> lensUnit (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -121,41 +116,26 @@ data QualifiedAxiomPattern level
 {- | Does the axiom pattern represent a heating rule?
  -}
 isHeatingRule :: AxiomPattern level -> Bool
-isHeatingRule
-    AxiomPattern
-    { axiomPatternAttributes =
-        AxiomPatternAttributes
-        { axiomPatternHeatCool = Just Heat }
-    }
-  =
-    True
-isHeatingRule _ = False
+isHeatingRule AxiomPattern { axiomPatternAttributes } =
+    case heatCool axiomPatternAttributes of
+        Heat -> True
+        _ -> False
 
 {- | Does the axiom pattern represent a cooling rule?
  -}
 isCoolingRule :: AxiomPattern level -> Bool
-isCoolingRule
-    AxiomPattern
-    { axiomPatternAttributes =
-        AxiomPatternAttributes
-        { axiomPatternHeatCool = Just Cool }
-    }
-  =
-    True
-isCoolingRule _ = False
+isCoolingRule AxiomPattern { axiomPatternAttributes } =
+    case heatCool axiomPatternAttributes of
+        Cool -> True
+        _ -> False
 
 {- | Does the axiom pattern represent a normal rule?
  -}
 isNormalRule :: AxiomPattern level -> Bool
-isNormalRule
-    AxiomPattern
-    { axiomPatternAttributes =
-        AxiomPatternAttributes
-        { axiomPatternHeatCool = Nothing }
-    }
-  =
-    True
-isNormalRule _ = False
+isNormalRule AxiomPattern { axiomPatternAttributes } =
+    case heatCool axiomPatternAttributes of
+        Normal -> True
+        _ -> False
 
 
 -- | Extracts all 'AxiomPattern' structures matching a given @level@ from
@@ -198,7 +178,7 @@ sentenceToAxiomPattern
     )
   = do
     axiomPatternAttributes <-
-        Kore.Error.castError (parseAttributes sentenceAxiomAttributes)
+        Attribute.Parser.liftParser (parseAttributes sentenceAxiomAttributes)
     case patternKoreToPure level sentenceAxiomPattern of
         Right pat -> patternToAxiomPattern axiomPatternAttributes pat
         Left err  -> Left err

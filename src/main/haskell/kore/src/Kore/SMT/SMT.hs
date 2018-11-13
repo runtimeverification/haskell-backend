@@ -32,9 +32,9 @@ import           Prelude hiding
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
+import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Builtin as Builtin
-import           Kore.Builtin.Hook
 import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Kore

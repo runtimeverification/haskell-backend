@@ -16,6 +16,8 @@ import           Control.Exception
 import           Data.List
                  ( nub, partition )
 import qualified Data.Map as Map
+import           Data.Reflection
+                 ( give )
 
 import           Kore.AST.Common
                  ( Application (..), Id (..), Pattern (..), PureMLPattern,
@@ -46,7 +48,7 @@ import           Kore.Step.Simplification.Data
                  PureMLPatternSimplifier (..), SimplificationProof (..),
                  Simplifier )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
+                 ( StepperAttributes, isSortInjection_ )
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
@@ -90,9 +92,11 @@ evaluateApplication
         }
   =
     case Map.lookup symbolId symbolIdToEvaluator of
-        Nothing -> if isSortInjection (symAttributes tools appHead)
-            then evaluateSortInjection tools unchangedOr app
-            else return unchanged
+        Nothing
+          | give tools isSortInjection_ appHead ->
+            evaluateSortInjection tools unchangedOr app
+          | otherwise ->
+            return unchanged
         Just evaluators -> do
             results <- mapM (applyEvaluator app) evaluators
             mergedResults <-
@@ -171,7 +175,7 @@ evaluateSortInjection
     -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
 evaluateSortInjection tools unchanged ap = case apChild of
     (App_ apHeadChild grandChildren)
-        | isSortInjection (symAttributes tools apHeadChild) ->
+      | give tools isSortInjection_ apHeadChild ->
         let
             [fromSort', toSort'] = symbolOrAliasParams apHeadChild
             apHeadNew = updateSortInjectionSource apHead fromSort'

@@ -45,9 +45,10 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
 import qualified Kore.ASTUtils.SmartPatterns as Kore
+import           Kore.Attribute.Hook
+                 ( Hook (..) )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Hook as Hook
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Builtin.List as List
@@ -154,9 +155,9 @@ evaluators builtins indexedModule =
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
     lookupBuiltins :: StepperAttributes -> Maybe [Builtin.Function]
-    lookupBuiltins StepperAttributes { hook } =
+    lookupBuiltins StepperAttributes { hook = Hook { getHook } } =
         do
-            name <- Hook.getHook hook
+            name <- getHook
             impl <- Map.lookup name builtins
             pure [impl]
 

@@ -59,10 +59,10 @@ import           Kore.AST.MetaOrObject
 import qualified Kore.AST.PureML as Kore
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.ASTUtils.SmartPatterns as Kore
+import           Kore.Attribute.Hook
+                 ( Hook )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
-import           Kore.Builtin.Hook
-                 ( Hook )
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )

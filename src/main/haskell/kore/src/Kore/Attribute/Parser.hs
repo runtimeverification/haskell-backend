@@ -20,375 +20,172 @@ This module is intended to be imported qualified or explicitly:
 -}
 module Kore.Attribute.Parser
     ( -- * Parsing attributes
-      parseAttributes
-    , parseAttributesM
-    , ParseAttributes (..)
-      -- * Parsers
+      ParseAttributes (..)
+    , Attributes (..)
     , Parser
     , ParseError
-    , Occurrence (..)
-    , AttributeMap
-    , runParser
-    , withContext
-    , choose
-    , optional
-      -- ** Parsing idioms
-    , attributesWithName
-    , someAttributesWithName
-    , assertKeyOnlyAttribute
-    , hasKeyOnlyAttribute
-    , parseStringAttribute
-    , assertNoAttribute
+    , parseAttributes
+    , parseAttributesWith
+    , liftParser
+      -- * Parsers
+    , failDuplicate
+    , failConflicting
+    , withApplication
+    , getZeroParams
+    , getTwoParams
+    , getZeroArguments
+    , getOneArgument
+    , getStringLiteral
     ) where
 
-import           Control.Applicative
 import           Control.Monad.Except
                  ( MonadError )
-import qualified Control.Monad.Except as Except
-import           Control.Monad.Reader
-                 ( MonadReader, ReaderT (runReaderT) )
-import qualified Control.Monad.Reader as Monad.Reader
-import qualified Control.Monad.Reader as Reader
+import qualified Control.Monad.Except as Monad.Except
 import           Data.Default
                  ( Default )
+import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import           Data.Functor
-                 ( ($>) )
-import           Data.HashMap.Strict
-                 ( HashMap )
-import qualified Data.HashMap.Strict as HashMap
-import           Data.List.NonEmpty
-                 ( NonEmpty )
-import qualified Data.List.NonEmpty as NonEmpty
-import           Data.Text
-                 ( Text )
-import qualified Data.Text as Text
+import qualified Data.List as List
 
 import           Kore.AST.Common
-                 ( Application (..), Id (..),
-                 Pattern (ApplicationPattern, StringLiteralPattern), Sort,
-                 StringLiteral (..), SymbolOrAlias (..), Variable,
-                 noLocationId )
+                 ( Application (..), Id (..), Pattern (..), Sort,
+                 StringLiteral, SymbolOrAlias (..), getIdForError )
+import qualified Kore.AST.Error as Kore.Error
 import           Kore.AST.Kore
                  ( CommonKorePattern, pattern KoreMetaPattern,
                  pattern KoreObjectPattern )
 import           Kore.AST.MetaOrObject
-                 ( Meta, Object )
+                 ( Object )
 import           Kore.AST.Sentence
                  ( Attributes (Attributes) )
 import           Kore.Error
-                 ( Error, castError, throwError )
+                 ( Error, castError )
 import qualified Kore.Error
-
--- | Run the parser from the @ParseAttributes@ instance.
-parseAttributes
-    :: ParseAttributes atts
-    => Attributes
-    -> Either (Error ParseError) atts
-parseAttributes = runParser attributesParser
-
-{- | Run the parser from the @ParseAttributes@ instance
-     using a @MonadError@ to report errors.
- -}
-parseAttributesM
-    :: ( ParseAttributes att
-       , MonadError (Error e) m)
-    => Attributes
-    -> m att
-parseAttributesM = either throwError return . castError . parseAttributes
-
-class Default atts => ParseAttributes atts where
-    {- | Parse 'Attributes' to produce @atts@.
-
-      See also: 'parseAttributes'
-
-     -}
-    attributesParser :: Parser atts
-
-instance ParseAttributes Attributes where
-    attributesParser = do
-        attrMap <- Monad.Reader.ask
-        let attrs = HashMap.toList attrMap >>= reconstructAttribute
-        return (Attributes attrs)
-      where
-        -- Reconstruct one occurrence of an attribute
-        reconstructAttribute1 sym Occurrence { sortParameters, arguments } =
-            let
-                app =
-                    Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = noLocationId sym
-                                , symbolOrAliasParams = sortParameters
-                                }
-                        , applicationChildren = arguments
-                        }
-            in
-                KoreObjectPattern (ApplicationPattern app)
-
-        -- Reconstruct all occurrences of an attribute
-        reconstructAttribute (sym, occurs) =
-            reconstructAttribute1 sym <$> Foldable.toList occurs
-
--- | One occurrence of an attribute, represented as a list of its arguments.
-data Occurrence = Occurrence
-    { sortParameters :: [Sort Object]
-    , arguments :: [CommonKorePattern]
-    }
-
--- | A map from attribute names to a non-empty list of its 'Occurence's.
-type AttributeMap = HashMap Text (NonEmpty Occurrence)
 
 data ParseError
 
-{- | Parse 'Attributes' to produce @a@.
+type Parser = Either (Error ParseError)
 
-  The parser can read the 'AttributeMap' through the 'MonadReader' instance.
+class Default attrs => ParseAttributes attrs where
+    {- | Parse a 'CommonKorePattern' from 'Attributes' to produce @attrs@.
 
-  The parser throws and catches errors with 'throwError' and 'catchError' from
-  'MonadError'.
+    Attributes are parsed individually and the list of attributes is parsed by
+    folding over the list; @parseAttributes@ takes a second argument which is
+    the partial result obtained by folding over the preceeding attributes of the
+    list.
 
- -}
-newtype Parser a =
-    Parser
-    { getParser :: ReaderT AttributeMap (Either (Error ParseError)) a }
-  deriving (Functor, Applicative, Monad)
+    Ignore unrecognized attributes by 'return'-ing the partial result. Signal
+    errors with 'Control.Monad.Except.throwError' to abort parsing.
 
-instance Alternative Parser where
-    empty = throwError (Kore.Error.koreError "Kore.Attribute.Parser.empty")
-    (<|>) = choose
+    See also: 'parseAttributes', 'withApplication', 'runParser'
 
-deriving instance MonadError (Error ParseError) Parser
+     -}
+    parseAttribute
+        :: CommonKorePattern  -- ^ attribute
+        -> attrs  -- ^ partial parsing result
+        -> Parser attrs
 
-deriving instance MonadReader AttributeMap Parser
+instance ParseAttributes Attributes where
+    parseAttribute attr (Attributes attrs) =
+        return (Attributes $ attr : attrs)
 
-{- | Combine two parsers into a parser which accepts either of them.
+parseAttributesWith
+    :: ParseAttributes attrs
+    => Attributes
+    -> attrs
+    -> Parser attrs
+parseAttributesWith (Attributes attrs) def =
+    Foldable.foldlM (flip parseAttribute) def attrs
 
-  The combined parser returns the result of the *first* successful parser.
-  If both parsers fail, the *first* error is thrown.
+parseAttributes :: ParseAttributes attrs => Attributes -> Parser attrs
+parseAttributes attrs = parseAttributesWith attrs Default.def
 
- -}
-choose :: Parser a -> Parser a -> Parser a
-choose first second =
-    Except.catchError first
-      (\firstError ->
-          Except.catchError second
-              (\_ -> Except.throwError firstError)
-      )
+-- | Run an attribute parser in any 'MonadError' with the given initial state.
+liftParser
+    :: MonadError (Error e) m
+    => Parser a  -- ^ parser
+    -> m a
+liftParser = Monad.Except.liftEither . Kore.Error.castError
 
-{- | Run an attribute 'Parser' with the given list of attributes.
- -}
-runParser :: Parser a -> Attributes -> Either (Error ParseError) a
-runParser Parser { getParser } (Attributes attrs) = do
-    -- attributeMap associates the arguments of an attribute (each time it
-    -- occurs) with the name of the attribute
-    attributeMap <- Foldable.foldlM recordOccurrence HashMap.empty attrs
-    runReaderT getParser attributeMap
-  where
-    -- | Record one occurrence of an attribute.
-    recordOccurrence
-        :: AttributeMap
-        -- ^ the attributes already recorded
-        -> CommonKorePattern
-        -- ^ one attribute, which must be an object-level application pattern
-        -> Either (Error ParseError) AttributeMap
-    recordOccurrence attrMap attr =
-        case attr of
-            KoreObjectPattern (ApplicationPattern app) ->
-                recordApplication attrMap app
-            _ -> Kore.Error.koreFail "Expected object-level application pattern"
+-- | Fail due to a duplicate attribute.
+failDuplicate :: Id level -> Parser a
+failDuplicate ident =
+    Kore.Error.koreFail ("duplicate attribute: " ++ getIdForError ident)
 
-    -- | Insert the application arguments into the attribute map,
-    -- on top of any argument lists already present.
-    recordApplication
-        :: AttributeMap
-        -> Application Object CommonKorePattern
-        -> Either (Error ParseError) AttributeMap
-    recordApplication
-        attrMap
-        Application
-            { applicationSymbolOrAlias =
-                SymbolOrAlias { symbolOrAliasConstructor
-                              , symbolOrAliasParams
-                              }
-            , applicationChildren = args
-            }
-      =
-        let
-            Id { getId = attrId } = symbolOrAliasConstructor
-            insertOrUpdateOccurrences =
-                Just . \case
-                    Just alreadyOccurred ->
-                        -- The attribute has already occurred, so the newest
-                        -- occurrence is added to the list.
-                        -- The latest occurrence is added at the head of the
-                        -- list to avoid traversing the list many times; this
-                        -- is allowed because the order of attributes is not
-                        -- significant (see _The Semantics of K_).
-                        occurrence NonEmpty.:| NonEmpty.toList alreadyOccurred
-                    Nothing ->
-                        -- The attribute has not occurred before.
-                        occurrence NonEmpty.:| []
-              where
-                occurrence = Occurrence symbolOrAliasParams args
-        in
-            pure (HashMap.alter insertOrUpdateOccurrences attrId attrMap)
+-- | Fail due to conflicting attributes.
+failConflicting :: [Id level] -> Parser a
+failConflicting idents =
+    Kore.Error.koreFail
+        ("conflicting attributes: "
+            ++ List.intercalate ", " (getIdForError <$> idents))
 
-{- | Wrap the parser in a context for the named attribute.
-
- -}
-withContext
-    :: Text  -- ^ attribute name
-    -> Parser a  -- ^ attribute parser
-    -> Parser a
-withContext attr =
-    Kore.Error.withContext
-        ("attribute '" ++ Text.unpack attr ++ "'")
-
-{- | Collect the occurrences of the named attribute.
-
-  @attributesWithName@ returns an empty list if the attribute is not present
- -}
-attributesWithName
-    :: Text  -- ^ attribute name
-    -> Parser [Occurrence]
-attributesWithName key =
-    maybe [] NonEmpty.toList . HashMap.lookup key <$> Reader.ask
-
-{- | Collect the occurrences of the named attribute.
-
-  @someAttributesWithName@ signals failure if the attribute is not present or returns a
-  'NonEmpty' list containing the argument lists at each occurrence of the
-  attribute.
- -}
-someAttributesWithName
-    :: Text  -- ^ attribute name
-    -> Parser (NonEmpty Occurrence)
-someAttributesWithName key = do
-    attrMap <- Reader.ask
-    case HashMap.lookup key attrMap of
-        Nothing ->
-            Kore.Error.koreFail
-                ("No attribute found matching: " ++ Text.unpack key)
-        Just occurs -> pure occurs
-
-{- | Parse a key-only attribute.
-
-  A key-only attribute has no arguments. @parseKeyAttribute@ signals failure if
-  the attribute is not present exactly once or if it is present with the wrong
-  number of arguments.
-
-  See also: 'hasKeyAttribute'
-
- -}
-assertKeyOnlyAttribute
-    :: Text  -- ^ attribute name
-    -> Parser ()
-assertKeyOnlyAttribute key = do
-    occurrences <- someAttributesWithName key
-    withContext key
-        (do
-            arguments <- oneOccurrence occurrences
-            assertNoArguments arguments
-        )
-
-{- | Is the key-only attribute present?
-
-  A key-only attribute appears once with no arguments. @hasKeyAttribute@ signals
-  failure if the attribute is present multiple times or with the wrong number of
-  arguments.
-
-  See also: 'parseKeyAttribute'
-
- -}
-hasKeyOnlyAttribute :: Text -> Parser Bool
-hasKeyOnlyAttribute key =
-    choose (present $> True) (missing $> False)
-  where
-    present = assertKeyOnlyAttribute key
-    missing = assertNoAttribute key
-
-{- | Parse an attribute that takes one string argument.
-
-  @parseStringAttribute@ signals failure if:
-
-    * the attribute is not present,
-
-    * the attribute is specified more than once, or
-
-    * the attribute is not given exactly one argument, which must be a string.
-
-  @parseStringAttribute@ returns the lone string argument of the named
-  attribute.
-
- -}
-parseStringAttribute :: Text -> Parser Text
-parseStringAttribute key = do
-    occurrences <- someAttributesWithName key
-    withContext key (expectStringArgument occurrences)
-  where
-    expectStringArgument :: NonEmpty Occurrence -> Parser Text
-    expectStringArgument occurrences =
-        do
-            arguments <- oneOccurrence occurrences
-            onlyArgument <- oneArgument arguments
-            metaPattern <- expectMetaPattern onlyArgument
-            expectLiteralString metaPattern
-
-    expectMetaPattern =
-        \case
-            KoreMetaPattern pat -> pure pat
-            _ -> Kore.Error.koreFail "Expected meta pattern"
-
-    expectLiteralString
-        :: Pattern Meta Variable CommonKorePattern -> Parser Text
-    expectLiteralString =
-        \case
-            StringLiteralPattern (StringLiteral arg) -> pure (Text.pack arg)
-            _ -> Kore.Error.koreFail "Expected literal string argument"
-
-{- | Signal parse failure if the attribute is present.
-
-  Use 'assertNoAttribute' to differentiate the case of a missing attribute from
-  an attribute without its correct arguments. For example, many attributes are
-  optional, but must have a single string argument if present.
-
-  See also: 'hasKeyAttribute'
-
- -}
-assertNoAttribute :: Text -> Parser ()
-assertNoAttribute key =
-    do
-        exists <- choose (someAttributesWithName key $> True) (pure False)
-        Kore.Error.koreFailWhen exists
-            ("Expected no attribute '" ++ Text.unpack key ++ "'")
-
-{- | Fail if the attribute does not occur exactly once.
-
-  @oneOccurrence@ returns the argument list of the attribute's one occurrence.
-
- -}
-oneOccurrence :: NonEmpty a -> Parser a
-oneOccurrence =
+withApplication
+    :: Id Object
+    -> ([Sort Object] -> [CommonKorePattern] -> attrs -> Parser attrs)
+    -> CommonKorePattern
+    -> attrs
+    -> Parser attrs
+withApplication ident go =
     \case
-        args NonEmpty.:| [] -> pure args
-        _ -> Kore.Error.koreFail "Unexpected multiple occurrences"
+        KoreObjectPattern (ApplicationPattern app)
+          | symbolOrAliasConstructor == ident -> \attrs ->
+            Kore.Error.withLocationAndContext
+                symbol
+                ("attribute '" ++ show symbol ++ "'")
+                (go symbolOrAliasParams applicationChildren attrs)
+          where
+            Application { applicationSymbolOrAlias = symbol } = app
+            Application { applicationChildren } = app
+            SymbolOrAlias { symbolOrAliasConstructor } = symbol
+            SymbolOrAlias { symbolOrAliasParams } = symbol
+        _ -> return
 
-{- | Fail if the attribute is given any arguments.
- -}
-assertNoArguments :: Occurrence -> Parser ()
-assertNoArguments (Occurrence _ args) =
-    case args of
-        [] -> pure ()
-        _ -> Kore.Error.koreFail "Unexpected arguments"
+getZeroParams :: [Sort Object] -> Parser ()
+getZeroParams =
+    \case
+        [] -> return ()
+        params ->
+            Kore.Error.koreFailWithLocations params
+                ("expected zero parameters, found " ++ show arity)
+          where
+            arity = length params
 
-{- | Fail if the attribute is not given exactly one argument.
+getTwoParams :: [Sort Object] -> Parser (Sort Object, Sort Object)
+getTwoParams =
+    \case
+        [param1, param2] -> return (param1, param2)
+        params ->
+            Kore.Error.koreFailWithLocations params
+                ("expected two parameters, found " ++ show arity)
+          where
+            arity = length params
 
-  @oneArgument@ returns the attribute's one argument.
+getZeroArguments
+    :: [CommonKorePattern]
+    -> Parser ()
+getZeroArguments =
+    \case
+        [] -> return ()
+        args ->
+            Kore.Error.koreFail
+                ("expected zero arguments, found " ++ show arity)
+          where
+            arity = length args
 
- -}
-oneArgument :: Occurrence -> Parser CommonKorePattern
-oneArgument (Occurrence _ args) =
-    case args of
-        [a] -> pure a
-        _ -> Kore.Error.koreFail "Expected 1 argument"
+getOneArgument
+    :: [CommonKorePattern]
+    -> Parser CommonKorePattern
+getOneArgument =
+    \case
+        [arg] -> return arg
+        args ->
+            Kore.Error.koreFail
+                ("expected one argument, found " ++ show arity)
+          where
+            arity = length args
+
+getStringLiteral :: CommonKorePattern -> Parser (StringLiteral)
+getStringLiteral =
+    \case
+        KoreMetaPattern (StringLiteralPattern lit) -> return lit
+        _ -> Kore.Error.koreFail "expected string literal pattern"

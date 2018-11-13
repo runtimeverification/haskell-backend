@@ -63,7 +63,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
+                 ( SortInjection (..), StepperAttributes (..) )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -662,11 +662,8 @@ equalInjectiveHeadsAndEquals
             , SimplificationProof
             )
   where
-    firstHeadAttributes = MetadataTools.symAttributes tools firstHead
-    secondHeadAttributes = MetadataTools.symAttributes tools secondHead
-
-    isFirstInjective =  StepperAttributes.isInjective firstHeadAttributes
-    isSecondInjective = StepperAttributes.isInjective secondHeadAttributes
+    isFirstInjective = give tools StepperAttributes.isInjective_ firstHead
+    isSecondInjective = give tools StepperAttributes.isInjective_ secondHead
 
 equalInjectiveHeadsAndEquals _ _ _ _ _ = empty
 
@@ -745,8 +742,10 @@ sortInjectionAndEqualsAssumesDifferentHeads
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools secondHead
 
-    isFirstSortInjection = StepperAttributes.isSortInjection firstHeadAttributes
-    isSecondSortInjection = StepperAttributes.isSortInjection secondHeadAttributes
+    StepperAttributes { sortInjection = SortInjection isFirstSortInjection } =
+        firstHeadAttributes
+    StepperAttributes { sortInjection = SortInjection isSecondSortInjection } =
+        secondHeadAttributes
 
     isSubsortOf = MetadataTools.isSubsortOf tools
 
