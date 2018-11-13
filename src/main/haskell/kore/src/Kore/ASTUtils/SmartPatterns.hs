@@ -96,6 +96,7 @@ pattern Forall_
     -> var level
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Iff_
     :: Sort level
     -> PureMLPattern level var

@@ -32,6 +32,8 @@ import Kore.ASTUtils.SmartPatterns
 import Kore.ASTUtils.Substitution
 import Kore.IndexedModule.MetadataTools
 
+import Kore.ASTUtils.AlphaCompare
+
 test_substitutions :: TestTree
 test_substitutions = testGroup "Substitutions"
     [ testCase "subTrivial" $ assertEqual "" subTrivial subTrivialSolution
