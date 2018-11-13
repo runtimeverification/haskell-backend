@@ -17,7 +17,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT, runMaybeT )
-import qualified Control.Lens as Lens
 import           Control.Monad.Except
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Maybe
@@ -132,7 +131,7 @@ translatePredicate predicate = do
             VariablePattern _ -> empty
 
     hookTools :: MetadataTools Object Hook
-    hookTools = Lens.view StepperAttributes.hook <$> given
+    hookTools = StepperAttributes.hook <$> given
 
     translatePredicateAnd And { andFirst, andSecond } =
         (SMT.&&&)
@@ -214,7 +213,7 @@ translateInt pat =
         _ -> empty
   where
     hookTools :: MetadataTools Object Hook
-    hookTools = Lens.view StepperAttributes.hook <$> given
+    hookTools = StepperAttributes.hook <$> given
 
     translateApplication
         Application
@@ -280,7 +279,7 @@ translateBool pat =
         _ -> empty
   where
     hookTools :: MetadataTools Object Hook
-    hookTools = Lens.view StepperAttributes.hook <$> given
+    hookTools = StepperAttributes.hook <$> given
 
     translateApplication
         Application

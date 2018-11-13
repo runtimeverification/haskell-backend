@@ -65,22 +65,22 @@ test_stepperAttributes =
     [ testCase "Parsing a constructor attribute"
         (assertEqual "[constructor{}()]"
             (Right Constructor { isConstructor = True })
-            (Lens.view constructor <$> parse [constructorAttribute])
+            (constructor <$> parse [constructorAttribute])
         )
     , testCase "Parsing a function attribute"
         (assertEqual "[function{}()]"
             (Right Function { isDeclaredFunction = True })
-            (Lens.view function <$> parse [functionAttribute])
+            (function <$> parse [functionAttribute])
         )
     , testCase "Parsing a functional attribute"
         (assertEqual "[functional{}()]"
             (Right Functional { isDeclaredFunctional = True })
-            (Lens.view functional <$> parse [functionalAttribute])
+            (functional <$> parse [functionalAttribute])
         )
     , testCase "Parsing a hook attribute"
         (assertEqual "[function{}(),hook{}(\"builtin\")]"
             (Right Hook { getHook = Just "builtin" })
-            (Lens.view hook <$> parse [ hookAttribute "builtin" ])
+            (hook <$> parse [ hookAttribute "builtin" ])
         )
     , testCase "Parsing an illegal hook attribute"
         (expectError "[hook{}()]"
@@ -99,9 +99,9 @@ test_stepperAttributes =
     , testCase "Testing parseAttributes"
         (assertEqual "[functional{}(),function{}(),hook{}(\"builtin\")]"
             (defaultStepperAttributes
-                & Lens.set function (Function True)
-                & Lens.set functional (Functional True)
-                & Lens.set hook (Hook $ Just "builtin")
+                & Lens.set lensFunction (Function True)
+                & Lens.set lensFunctional (Functional True)
+                & Lens.set lensHook (Hook $ Just "builtin")
                 & Right
             )
             (parse

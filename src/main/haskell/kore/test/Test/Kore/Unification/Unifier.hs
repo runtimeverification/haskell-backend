@@ -11,12 +11,11 @@ import Test.Tasty.HUnit.Extensions
 
 import           Control.Exception
                  ( ErrorCall (ErrorCall), catch, evaluate )
-import qualified Control.Lens as Lens
 import           Control.Monad.Except
                  ( runExceptT )
 import           Data.CallStack
 import           Data.Function
-                 ( on, (&) )
+                 ( on )
 import           Data.Functor.Foldable
 import           Data.List
                  ( sortBy )
@@ -196,11 +195,12 @@ isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
 mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
 mockStepperAttributes patternHead =
     defaultStepperAttributes
-        & Lens.set constructor Constructor { isConstructor }
-        & Lens.set functional Functional { isDeclaredFunctional }
-        & Lens.set function Function { isDeclaredFunction }
-        & Lens.set injective Injective { isDeclaredInjective }
-        & Lens.set sortInjection SortInjection { isSortInjection }
+        { constructor = Constructor { isConstructor }
+        , functional = Functional { isDeclaredFunctional }
+        , function = Function { isDeclaredFunction }
+        , injective = Injective { isDeclaredInjective }
+        , sortInjection = SortInjection { isSortInjection }
+        }
   where
     isConstructor =
             patternHead /= getSentenceSymbolOrAliasHead a2 []

@@ -10,36 +10,38 @@ Portability : portable
 {-# LANGUAGE TemplateHaskell #-}
 
 module Kore.Step.StepperAttributes
-    ( StepperAttributes
+    ( StepperAttributes (..)
     , defaultStepperAttributes
     -- * Function symbols
-    , function, Function (..)
+    , lensFunction, Function (..)
     , functionAttribute
     , isFunction_, isFunction
     -- * Functional symbols
-    , functional, Functional (..)
+    , lensFunctional, Functional (..)
     , functionalAttribute
     , isFunctional_, isFunctional
     -- * Constructor symbols
-    , constructor, Constructor (..)
+    , lensConstructor, Constructor (..)
     , constructorAttribute
     , isConstructor_
     -- * Injective symbols
-    , injective, Injective (..)
+    , lensInjective, Injective (..)
     , injectiveAttribute
     , isInjective_, isInjective
     -- * Sort injection symbols
-    , sortInjection, SortInjection (..)
+    , lensSortInjection, SortInjection (..)
     , sortInjectionAttribute
     , isSortInjection_
     -- * Hooked symbols
-    , hook, Hook
+    , lensHook, Hook
     , hookAttribute
     -- * Total symbols
     , isTotal_, isTotal
     ) where
 
-import qualified Control.Lens as Lens
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
+import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( (>=>) )
 import           Data.Default
@@ -70,17 +72,17 @@ module.
  -}
 data StepperAttributes =
     StepperAttributes
-    { _function      :: !Function
+    { function      :: !Function
       -- ^ Whether a symbol represents a function
-    , _functional    :: !Functional
+    , functional    :: !Functional
       -- ^ Whether a symbol is functional
-    , _constructor   :: !Constructor
+    , constructor   :: !Constructor
       -- ^ Whether a symbol represents a constructor
-    , _injective     :: !Injective
+    , injective     :: !Injective
       -- ^ Whether a symbol represents an injective function
-    , _sortInjection :: !SortInjection
+    , sortInjection :: !SortInjection
       -- ^ Whether a symbol is a sort injection
-    , _hook          :: !Hook
+    , hook          :: !Hook
       -- ^ The builtin sort or symbol hooked to a sort or symbol
     }
   deriving (Eq, Show)
@@ -89,22 +91,22 @@ Lens.makeLenses ''StepperAttributes
 
 instance ParseAttributes StepperAttributes where
     parseAttribute attr =
-            function (parseAttribute attr)
-        >=> functional (parseAttribute attr)
-        >=> constructor (parseAttribute attr)
-        >=> sortInjection (parseAttribute attr)
-        >=> injective (parseAttribute attr)
-        >=> hook (parseAttribute attr)
+            lensFunction (parseAttribute attr)
+        >=> lensFunctional (parseAttribute attr)
+        >=> lensConstructor (parseAttribute attr)
+        >=> lensSortInjection (parseAttribute attr)
+        >=> lensInjective (parseAttribute attr)
+        >=> lensHook (parseAttribute attr)
 
 defaultStepperAttributes :: StepperAttributes
 defaultStepperAttributes =
     StepperAttributes
-    { _function       = def
-    , _functional     = def
-    , _constructor    = def
-    , _injective      = def
-    , _sortInjection  = def
-    , _hook           = def
+    { function       = def
+    , functional     = def
+    , constructor    = def
+    , injective      = def
+    , sortInjection  = def
+    , hook           = def
     }
 
 -- | See also: 'defaultStepperAttributes'
@@ -122,7 +124,7 @@ isTotal_ = isTotal . symAttributes given
 isTotal :: StepperAttributes -> Bool
 isTotal = do
     isFunctional' <- isFunctional
-    Constructor isConstructor' <- Lens.view constructor
+    Constructor isConstructor' <- Lens.view lensConstructor
     return (isFunctional' || isConstructor')
 
 {- | Is the symbol a function?
@@ -149,7 +151,7 @@ See also: 'functionAttribute', 'isFunctional'
  -}
 isFunction :: StepperAttributes -> Bool
 isFunction = do
-    Function isFunction' <- Lens.view function
+    Function isFunction' <- Lens.view lensFunction
     isFunctional' <- isFunctional
     return (isFunction' || isFunctional')
 
@@ -177,8 +179,8 @@ See also: 'functionalAttribute', 'sortInjectionAttribute'
  -}
 isFunctional :: StepperAttributes -> Bool
 isFunctional = do
-    Functional isFunctional' <- Lens.view functional
-    SortInjection isSortInjection' <- Lens.view sortInjection
+    Functional isFunctional' <- functional
+    SortInjection isSortInjection' <- sortInjection
     return (isFunctional' || isSortInjection')
 
 -- | Is the symbol a constructor?
@@ -186,7 +188,7 @@ isConstructor_
     :: Given (MetadataTools level StepperAttributes)
     => SymbolOrAlias level
     -> Bool
-isConstructor_ = isConstructor . Lens.view constructor . symAttributes given
+isConstructor_ = isConstructor . constructor . symAttributes given
 
 {- | Is the symbol injective?
 
@@ -213,9 +215,9 @@ See also: 'injectiveAttribute', 'constructorAttribute', 'sortInjectionAttribute'
  -}
 isInjective :: StepperAttributes -> Bool
 isInjective = do
-    Injective isInjective' <- Lens.view injective
-    Constructor isConstructor' <- Lens.view constructor
-    SortInjection isSortInjection' <- Lens.view sortInjection
+    Injective isInjective' <- injective
+    Constructor isConstructor' <- constructor
+    SortInjection isSortInjection' <- sortInjection
     return (isInjective' || isConstructor' || isSortInjection')
 
 {- | Is the symbol a sort injection?
@@ -228,4 +230,4 @@ isSortInjection_
     => SymbolOrAlias level
     -> Bool
 isSortInjection_ =
-    isSortInjection . Lens.view sortInjection . symAttributes given
+    isSortInjection . sortInjection . symAttributes given

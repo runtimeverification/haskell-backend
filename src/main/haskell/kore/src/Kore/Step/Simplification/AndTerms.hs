@@ -22,7 +22,6 @@ import           Control.Error
 import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
-import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Bifunctor as Bifunctor
@@ -64,7 +63,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
-                 ( SortInjection (..), StepperAttributes )
+                 ( SortInjection (..), StepperAttributes (..) )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -743,10 +742,10 @@ sortInjectionAndEqualsAssumesDifferentHeads
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools secondHead
 
-    SortInjection isFirstSortInjection =
-        Lens.view StepperAttributes.sortInjection firstHeadAttributes
-    SortInjection isSecondSortInjection =
-        Lens.view StepperAttributes.sortInjection secondHeadAttributes
+    StepperAttributes { sortInjection = SortInjection isFirstSortInjection } =
+        firstHeadAttributes
+    StepperAttributes { sortInjection = SortInjection isSecondSortInjection } =
+        secondHeadAttributes
 
     isSubsortOf = MetadataTools.isSubsortOf tools
 

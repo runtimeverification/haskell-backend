@@ -5,13 +5,10 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import qualified Control.Lens as Lens
 import           Control.Monad.Except
                  ( runExceptT )
 import           Data.Default
                  ( def )
-import           Data.Function
-                 ( (&) )
 import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
@@ -984,10 +981,11 @@ test_baseStep =
 mockStepperAttributes :: SymbolOrAlias Meta -> StepperAttributes
 mockStepperAttributes patternHead =
     defaultStepperAttributes
-        & Lens.set constructor Constructor { isConstructor }
-        & Lens.set functional Functional { isDeclaredFunctional }
-        & Lens.set function Function { isDeclaredFunction }
-        & Lens.set injective Injective { isDeclaredInjective }
+        { constructor = Constructor { isConstructor }
+        , functional = Functional { isDeclaredFunctional }
+        , function = Function { isDeclaredFunction }
+        , injective = Injective { isDeclaredInjective }
+        }
   where
     isConstructor = patternHead /= hSymbol && patternHead /= iSymbol
     isDeclaredFunctional = patternHead /= iSymbol

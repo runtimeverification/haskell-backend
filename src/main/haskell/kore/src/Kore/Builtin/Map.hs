@@ -39,7 +39,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
-import qualified Control.Lens as Lens
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -540,7 +539,7 @@ unify
   =
     unify0
   where
-    hookTools = Lens.view StepperAttributes.hook <$> tools
+    hookTools = StepperAttributes.hook <$> tools
 
     -- | Discard the proofs in a collection of proven expanded patterns.
     discardProofs :: Map k (expanded, proof) -> Map k expanded

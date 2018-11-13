@@ -5,7 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertBool, assertEqual, testCase )
 
-import qualified Control.Lens as Lens
 import           Data.Functor.Foldable
                  ( Fix (..) )
 import qualified Data.Map as Map
@@ -135,7 +134,7 @@ test_metadataTools =
     [ testCase "constructor object"
         (assertEqual ""
             (Constructor True)
-            (Lens.view constructor
+            (constructor
                 $ symAttributes metadataTools
                 $ symbolHead objectA
             )
@@ -143,7 +142,7 @@ test_metadataTools =
     , testCase "constructor meta"
         (assertEqual ""
             (Constructor False)
-            (Lens.view constructor
+            (constructor
                 $ symAttributes metadataTools
                 $ symbolHead metaA
             )
@@ -151,7 +150,7 @@ test_metadataTools =
     , testCase "functional object"
         (assertEqual ""
             (Functional False)
-            (Lens.view functional
+            (functional
                 $ symAttributes metadataTools
                 $ symbolHead objectA
             )
@@ -159,7 +158,7 @@ test_metadataTools =
     , testCase "functional meta"
         (assertEqual ""
             (Functional False)
-            (Lens.view functional
+            (functional
                 $ symAttributes metadataTools
                 $ symbolHead metaA
             )

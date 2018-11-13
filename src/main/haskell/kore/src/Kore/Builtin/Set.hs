@@ -38,7 +38,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
-import qualified Control.Lens as Lens
 import           Control.Monad.Counter
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
@@ -460,7 +459,7 @@ unify
   =
     unify0
   where
-    hookTools = Lens.view StepperAttributes.hook <$> tools
+    hookTools = StepperAttributes.hook <$> tools
 
     -- | Given a collection 't' of 'Predicated' values, propagate all the
     -- predicates to the top level, returning a 'Predicated' collection.

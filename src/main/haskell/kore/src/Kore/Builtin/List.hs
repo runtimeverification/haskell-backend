@@ -36,7 +36,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
-import qualified Control.Lens as Lens
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -381,7 +380,7 @@ unify
   =
     unify0
   where
-    hookTools = Lens.view StepperAttributes.hook <$> tools
+    hookTools = StepperAttributes.hook <$> tools
 
     propagatePredicates
         :: Traversable t

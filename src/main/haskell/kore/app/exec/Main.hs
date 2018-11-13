@@ -610,10 +610,10 @@ constructorFunctions ixm =
   where
     constructorFunctions1 ident (atts, defn) =
         ( atts
-            & constructor Lens.<>~ Constructor isCons
-            & functional Lens.<>~ Functional (isCons || isInj)
-            & injective Lens.<>~ Injective (isCons || isInj)
-            & sortInjection Lens.<>~ SortInjection isInj
+            & lensConstructor Lens.<>~ Constructor isCons
+            & lensFunctional Lens.<>~ Functional (isCons || isInj)
+            & lensInjective Lens.<>~ Injective (isCons || isInj)
+            & lensSortInjection Lens.<>~ SortInjection isInj
         , defn
         )
       where

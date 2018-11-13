@@ -10,9 +10,6 @@ module Test.Kore.IndexedModule.MockMetadataTools
     , sortInjectionAttributes
     ) where
 
-import qualified Control.Lens as Lens
-import           Data.Function
-                 ( (&) )
 import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Set as Set
@@ -79,36 +76,31 @@ caseBasedFunction cases arg =
         (lookup arg cases)
 
 functionAttributes :: StepperAttributes
-functionAttributes =
-    defaultAttributes
-        & Lens.set function (Function True)
+functionAttributes = defaultAttributes { function = Function True }
 
 functionalAttributes :: StepperAttributes
-functionalAttributes =
-    defaultAttributes
-        & Lens.set functional (Functional True)
+functionalAttributes = defaultAttributes { functional = Functional True }
 
 constructorAttributes :: StepperAttributes
 constructorAttributes =
     defaultStepperAttributes
-        & Lens.set constructor (Constructor True)
-        & Lens.set injective (Injective True)
+        { constructor = Constructor True
+        , injective = Injective True
+        }
 
 constructorFunctionalAttributes :: StepperAttributes
 constructorFunctionalAttributes =
-    constructorAttributes
-        & Lens.set functional (Functional True)
+    constructorAttributes { functional = Functional True }
 
 injectiveAttributes :: StepperAttributes
-injectiveAttributes =
-    defaultAttributes
-        & Lens.set injective (Injective True)
+injectiveAttributes = defaultAttributes { injective = Injective True }
 
 sortInjectionAttributes :: StepperAttributes
 sortInjectionAttributes =
     defaultAttributes
-        & Lens.set injective (Injective True)
-        & Lens.set sortInjection (SortInjection True)
+        { injective = Injective True
+        , sortInjection = SortInjection True
+        }
 
 defaultAttributes :: StepperAttributes
 defaultAttributes = defaultStepperAttributes

@@ -21,9 +21,6 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
-import qualified Control.Lens as Lens
-import           Data.Function
-                 ( (&) )
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given )
@@ -1211,19 +1208,19 @@ attributesMapping =
         , Mock.sortInjectionAttributes
         )
     ,   ( unitMapSymbol
-        , Mock.defaultAttributes & Lens.set hook (Hook $ Just "MAP.unit")
+        , Mock.defaultAttributes { hook = Hook (Just "MAP.unit") }
         )
     ,   ( elementMapSymbol
-        , Mock.defaultAttributes & Lens.set hook (Hook $ Just "MAP.element")
+        , Mock.defaultAttributes { hook = Hook (Just "MAP.element") }
         )
     ,   ( concatMapSymbol
-        , Mock.defaultAttributes & Lens.set hook (Hook $ Just "MAP.concat")
+        , Mock.defaultAttributes { hook = Hook (Just "MAP.concat") }
         )
     ,   ( elemListSymbol
-        , Mock.defaultAttributes & Lens.set hook (Hook $ Just "LIST.elem")
+        , Mock.defaultAttributes { hook = Hook (Just "LIST.elem") }
         )
     ,   ( concatListSymbol
-        , Mock.defaultAttributes & Lens.set hook (Hook $ Just "LIST.concat")
+        , Mock.defaultAttributes { hook = Hook (Just "LIST.concat") }
         )
     ]
 
