@@ -29,7 +29,7 @@ data Limit a
     -- ^ No limit
     | Limit !a
     -- ^ Limit @a@ by the given (inclusive) upper bound
-    deriving (Eq, Show)
+    deriving (Eq, Read, Show)
 
 instance Ord a => Ord (Limit a) where
     compare =
