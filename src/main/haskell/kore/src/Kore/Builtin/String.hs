@@ -345,16 +345,17 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
             _str  <- expectBuiltinDomainString string2BaseKey _str
             _base <- Int.expectBuiltinDomainInt string2BaseKey _base
             readN <- case _base of
-                8  -> pure . readSigned $ readOct
+                8  -> pure readOct
                 10 -> pure . readSigned $ readDec
-                16 -> pure . readSigned $ readHex
+                16 -> pure readHex
                 _  -> pure $ const empty
-            case fmap fst . listToMaybe $ readN _str of
-                Nothing     -> Builtin.appliedFunction ExpandedPattern.bottom
-                Just result ->
+            case readN _str of
+                [(result, "")] ->
                     Builtin.appliedFunction
                         . Int.asExpandedPattern resultSort
                         $ result
+                _                 ->
+                    Builtin.appliedFunction ExpandedPattern.bottom
 
 evalString2Int :: Builtin.Function
 evalString2Int = Builtin.functionEvaluator evalString2Int0

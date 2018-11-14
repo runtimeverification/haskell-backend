@@ -209,10 +209,10 @@ test_string2Base =
         [asPattern "42", Test.Int.asPattern 8]
         (Test.Int.asExpandedPattern 34)
     , testString
-        "string2Base octal negative"
+        "string2Base octal negative is bottom"
         string2BaseSymbol
         [asPattern "-42", Test.Int.asPattern 8]
-        (Test.Int.asExpandedPattern (-34))
+        bottom
     , testString
         "string2Base octal is bottom"
         string2BaseSymbol
@@ -241,10 +241,10 @@ test_string2Base =
         [asPattern "42", Test.Int.asPattern 16]
         (Test.Int.asExpandedPattern 66)
     , testString
-        "string2Base hex negative"
+        "string2Base hex negative is bottom"
         string2BaseSymbol
         [asPattern "-42", Test.Int.asPattern 16]
-        (Test.Int.asExpandedPattern (-66))
+        bottom
     , testString
         "string2Base hex is bottom"
         string2BaseSymbol
