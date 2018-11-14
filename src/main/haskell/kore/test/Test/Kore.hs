@@ -125,13 +125,13 @@ moduleNameGen :: Gen ModuleName
 moduleNameGen = ModuleName <$>
     genericIdGen idFirstChars (idFirstChars ++ idOtherChars)
 
-variableGen 
-    :: MetaOrObject level 
+variableGen
+    :: MetaOrObject level
     => [Variable level]
-    -> level 
+    -> level
     -> Gen (Variable level)
-variableGen vars x = oneof (newVar : if null vars then [] else [elements vars])
-  where 
+variableGen vars x = oneof (newVar : map (elements . pure) vars)
+  where
     newVar = pure Variable
         <*> scale (`div` 2) (idGen x)
         <*> scale (`div` 2) (sortGen x)
@@ -209,14 +209,14 @@ topBottomGen
     -> level
     -> (Sort level -> t level child)
     -> Gen (t level child)
-topBottomGen vars x constructor = pure constructor
+topBottomGen _vars x constructor = pure constructor
     <*> sortGen x
 
-andGen 
-    :: MetaOrObject level 
-    => [Variable level] 
+andGen
+    :: MetaOrObject level
+    => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (And level child)
 andGen vars childGen x = binaryOperatorGen vars childGen x And
 
@@ -230,18 +230,18 @@ applicationGen vars childGen x = pure Application
     <*> scale (`div` 2) (symbolOrAliasGen x)
     <*> couple (scale (`div` 4) (childGen vars))
 
-bottomGen 
-    :: MetaOrObject level 
+bottomGen
+    :: MetaOrObject level
     => [Variable level]
-    -> level 
+    -> level
     -> Gen (Bottom level child)
 bottomGen vars x = topBottomGen vars x Bottom
 
-ceilGen 
-    :: MetaOrObject level 
+ceilGen
+    :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (Ceil level child)
 ceilGen vars childGen x = ceilFloorGen vars childGen x Ceil
 
@@ -249,7 +249,7 @@ equalsGen
     :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (Equals level child)
 equalsGen vars childGen x = equalsInGen vars childGen x Equals
 
@@ -259,7 +259,7 @@ domainValueGen
     -> ([Variable level] -> Gen child)
     -> level
     -> Gen (DomainValue level (BuiltinDomain child))
-domainValueGen vars _ x =
+domainValueGen _vars _ x =
     DomainValue
         <$> scale (`div` 2) (sortGen x)
         <*> builtinPatternGen
@@ -276,11 +276,11 @@ existsGen
     -> Gen (Exists level Variable child)
 existsGen vars childGen x = existsForallGen vars childGen x Exists
 
-floorGen 
-    :: MetaOrObject level 
+floorGen
+    :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (Floor level child)
 floorGen vars childGen x = ceilFloorGen vars childGen x Floor
 
@@ -288,70 +288,70 @@ forallGen
     :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (Forall level Variable child)
 forallGen vars childGen x = existsForallGen vars childGen x Forall
 
-iffGen 
-    :: MetaOrObject level 
+iffGen
+    :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (Iff level child)
 iffGen vars childGen x = binaryOperatorGen vars childGen x Iff
 
 impliesGen
-    :: MetaOrObject level 
+    :: MetaOrObject level
     => [Variable level]
-    -> ([Variable level] -> Gen child) 
-    -> level 
+    -> ([Variable level] -> Gen child)
+    -> level
     -> Gen (Implies level child)
 impliesGen vars childGen x = binaryOperatorGen vars childGen x Implies
 
-inGen 
-    :: MetaOrObject level 
+inGen
+    :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (In level child)
 inGen vars childGen x = equalsInGen vars childGen x In
 
-nextGen 
-    :: MetaOrObject level 
+nextGen
+    :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (Next level child)
 nextGen vars childGen x = unaryOperatorGen vars childGen x Next
 
-notGen 
-    :: MetaOrObject level 
+notGen
+    :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (Not level child)
 notGen vars childGen x = unaryOperatorGen vars childGen x Not
 
-orGen 
-    :: MetaOrObject level 
+orGen
+    :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (Or level child)
 orGen vars childGen x = binaryOperatorGen vars childGen x Or
 
 rewritesGen
-    :: MetaOrObject level 
+    :: MetaOrObject level
     => [Variable level]
     -> ([Variable level] -> Gen child)
-    -> level 
+    -> level
     -> Gen (Rewrites level child)
 rewritesGen vars childGen x = binaryOperatorGen vars childGen x Rewrites
 
-topGen 
-    :: MetaOrObject level 
+topGen
+    :: MetaOrObject level
     => [Variable level]
-    -> level 
+    -> level
     -> Gen (Top level child)
 topGen vars  x = topBottomGen vars x Top
 
