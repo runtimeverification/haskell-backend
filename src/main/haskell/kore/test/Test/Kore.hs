@@ -125,108 +125,141 @@ moduleNameGen :: Gen ModuleName
 moduleNameGen = ModuleName <$>
     genericIdGen idFirstChars (idFirstChars ++ idOtherChars)
 
-variableGen :: MetaOrObject level => level -> Gen (Variable level)
-variableGen x = pure Variable
-    <*> scale (`div` 2) (idGen x)
-    <*> scale (`div` 2) (sortGen x)
+variableGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> level
+    -> Gen (Variable level)
+variableGen vars x = oneof (newVar : map (elements . pure) vars)
+  where
+    newVar = pure Variable
+        <*> scale (`div` 2) (idGen x)
+        <*> scale (`div` 2) (sortGen x)
 
 unifiedVariableGen :: Gen (Unified Variable)
 unifiedVariableGen = scale (`div` 2) $ oneof
-    [ UnifiedObject <$> variableGen Object
-    , UnifiedMeta <$> variableGen Meta
+    [ UnifiedObject <$> variableGen [] Object
+    , UnifiedMeta <$> variableGen [] Meta
     ]
 
 unaryOperatorGen
     :: MetaOrObject level
-    => Gen child
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
     -> level
     -> (Sort level -> child -> b level child)
     -> Gen (b level child)
-unaryOperatorGen childGen x constructor = pure constructor
+unaryOperatorGen vars childGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) childGen
+    <*> scale (`div` 2) (childGen vars)
 
 binaryOperatorGen
     :: MetaOrObject level
-    => Gen child
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
     -> level
     -> (Sort level -> child -> child -> b level child)
     -> Gen (b level child)
-binaryOperatorGen childGen x constructor = pure constructor
+binaryOperatorGen vars childGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) childGen
-    <*> scale (`div` 2) childGen
+    <*> scale (`div` 2) (childGen vars)
+    <*> scale (`div` 2) (childGen vars)
 
 ceilFloorGen
     :: MetaOrObject level
-    => Gen child
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
     -> level
     -> (Sort level -> Sort level -> child -> c level child)
     -> Gen (c level child)
-ceilFloorGen childGen x constructor = pure constructor
+ceilFloorGen vars childGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) childGen
+    <*> scale (`div` 2) (childGen vars)
 
 equalsInGen
     :: MetaOrObject level
-    => Gen child
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
     -> level
     -> (Sort level -> Sort level -> child -> child -> c level child)
     -> Gen (c level child)
-equalsInGen childGen x constructor = pure constructor
+equalsInGen vars childGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) childGen
-    <*> scale (`div` 2) childGen
+    <*> scale (`div` 2) (childGen vars)
+    <*> scale (`div` 2) (childGen vars)
 
 existsForallGen
     :: MetaOrObject level
-    => Gen child
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
     -> level
     -> (Sort level -> Variable level -> child -> q level Variable child)
     -> Gen (q level Variable child)
-existsForallGen childGen x constructor = pure constructor
-    <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) (variableGen x)
-    <*> scale (`div` 2) childGen
+existsForallGen vars childGen x constructor = do
+    sort <- scale (`div` 2) (sortGen x)
+    var <- scale (`div` 2) (variableGen vars x)
+    child <- scale (`div` 2) (childGen (var : vars))
+    pure $ constructor sort var child
 
 topBottomGen
     :: MetaOrObject level
-    => level
+    => [Variable level]
+    -> level
     -> (Sort level -> t level child)
     -> Gen (t level child)
-topBottomGen x constructor = pure constructor
+topBottomGen _vars x constructor = pure constructor
     <*> sortGen x
 
-andGen :: MetaOrObject level => Gen child -> level -> Gen (And level child)
-andGen childGen x = binaryOperatorGen childGen x And
+andGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (And level child)
+andGen vars childGen x = binaryOperatorGen vars childGen x And
 
 applicationGen
     :: MetaOrObject level
-    => Gen child
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
     -> level
     -> Gen (Application level child)
-applicationGen childGen x = pure Application
+applicationGen vars childGen x = pure Application
     <*> scale (`div` 2) (symbolOrAliasGen x)
-    <*> couple (scale (`div` 4) childGen)
+    <*> couple (scale (`div` 4) (childGen vars))
 
-bottomGen :: MetaOrObject level => level -> Gen (Bottom level child)
-bottomGen x = topBottomGen x Bottom
+bottomGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> level
+    -> Gen (Bottom level child)
+bottomGen vars x = topBottomGen vars x Bottom
 
-ceilGen :: MetaOrObject level => Gen child -> level -> Gen (Ceil level child)
-ceilGen childGen x = ceilFloorGen childGen x Ceil
+ceilGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Ceil level child)
+ceilGen vars childGen x = ceilFloorGen vars childGen x Ceil
 
 equalsGen
-    :: MetaOrObject level => Gen child -> level -> Gen (Equals level child)
-equalsGen childGen x = equalsInGen childGen x Equals
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Equals level child)
+equalsGen vars childGen x = equalsInGen vars childGen x Equals
 
 domainValueGen
     :: MetaOrObject level
-    => Gen child
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
     -> level
     -> Gen (DomainValue level (BuiltinDomain child))
-domainValueGen _ x =
+domainValueGen _vars _ x =
     DomainValue
         <$> scale (`div` 2) (sortGen x)
         <*> builtinPatternGen
@@ -237,67 +270,114 @@ domainValueGen _ x =
 
 existsGen
     :: MetaOrObject level
-    => Gen child
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
     -> level
     -> Gen (Exists level Variable child)
-existsGen childGen x = existsForallGen childGen x Exists
+existsGen vars childGen x = existsForallGen vars childGen x Exists
 
-floorGen :: MetaOrObject level => Gen child -> level -> Gen (Floor level child)
-floorGen childGen x = ceilFloorGen childGen x Floor
+floorGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Floor level child)
+floorGen vars childGen x = ceilFloorGen vars childGen x Floor
 
 forallGen
     :: MetaOrObject level
-    => Gen child -> level -> Gen (Forall level Variable child)
-forallGen childGen x = existsForallGen childGen x Forall
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Forall level Variable child)
+forallGen vars childGen x = existsForallGen vars childGen x Forall
 
-iffGen :: MetaOrObject level => Gen child -> level -> Gen (Iff level child)
-iffGen childGen x = binaryOperatorGen childGen x Iff
+iffGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Iff level child)
+iffGen vars childGen x = binaryOperatorGen vars childGen x Iff
 
 impliesGen
-    :: MetaOrObject level => Gen child -> level -> Gen (Implies level child)
-impliesGen childGen x = binaryOperatorGen childGen x Implies
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Implies level child)
+impliesGen vars childGen x = binaryOperatorGen vars childGen x Implies
 
-inGen :: MetaOrObject level => Gen child -> level -> Gen (In level child)
-inGen childGen x = equalsInGen childGen x In
+inGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (In level child)
+inGen vars childGen x = equalsInGen vars childGen x In
 
-nextGen :: MetaOrObject level => Gen child -> level -> Gen (Next level child)
-nextGen childGen x = unaryOperatorGen childGen x Next
+nextGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Next level child)
+nextGen vars childGen x = unaryOperatorGen vars childGen x Next
 
-notGen :: MetaOrObject level => Gen child -> level -> Gen (Not level child)
-notGen childGen x = unaryOperatorGen childGen x Not
+notGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Not level child)
+notGen vars childGen x = unaryOperatorGen vars childGen x Not
 
-orGen :: MetaOrObject level => Gen child -> level -> Gen (Or level child)
-orGen childGen x = binaryOperatorGen childGen x Or
+orGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Or level child)
+orGen vars childGen x = binaryOperatorGen vars childGen x Or
 
 rewritesGen
-    :: MetaOrObject level => Gen child -> level -> Gen (Rewrites level child)
-rewritesGen childGen x = binaryOperatorGen childGen x Rewrites
+    :: MetaOrObject level
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
+    -> level
+    -> Gen (Rewrites level child)
+rewritesGen vars childGen x = binaryOperatorGen vars childGen x Rewrites
 
-topGen :: MetaOrObject level => level -> Gen (Top level child)
-topGen x = topBottomGen x Top
+topGen
+    :: MetaOrObject level
+    => [Variable level]
+    -> level
+    -> Gen (Top level child)
+topGen vars  x = topBottomGen vars x Top
 
 patternGen
     :: MetaOrObject level
-    => Gen child
+    => [Variable level]
+    -> ([Variable level] -> Gen child)
     -> level
     -> Gen (Pattern level Variable child)
-patternGen childGen x =
-    oneof
-        [ AndPattern <$> andGen childGen x
-        , ApplicationPattern <$> applicationGen childGen x
-        , BottomPattern <$> bottomGen x
-        , CeilPattern <$> ceilGen childGen x
-        , EqualsPattern <$> equalsGen childGen x
-        , ExistsPattern <$> existsGen childGen x
-        , FloorPattern <$> floorGen childGen x
-        , ForallPattern <$> forallGen childGen x
-        , IffPattern <$> iffGen childGen x
-        , ImpliesPattern <$> impliesGen childGen x
-        , InPattern <$> inGen childGen x
-        , NotPattern <$> notGen childGen x
-        , OrPattern <$> orGen childGen x
-        , TopPattern <$> topGen x
-        , VariablePattern <$> variableGen x
+patternGen vars childGen x =
+    frequency
+        [ (1, AndPattern <$> andGen vars childGen x)
+        , (1, ApplicationPattern <$> applicationGen vars childGen x)
+        , (1, BottomPattern <$> bottomGen vars x)
+        , (1, CeilPattern <$> ceilGen vars childGen x)
+        , (1, EqualsPattern <$> equalsGen vars childGen x)
+        , (1, ExistsPattern <$> existsGen vars childGen x)
+        , (1, FloorPattern <$> floorGen vars childGen x)
+        , (1, ForallPattern <$> forallGen vars childGen x)
+        , (1, IffPattern <$> iffGen vars childGen x)
+        , (1, ImpliesPattern <$> impliesGen vars childGen x)
+        , (1, InPattern <$> inGen vars childGen x)
+        , (1, NotPattern <$> notGen vars childGen x)
+        , (1, OrPattern <$> orGen vars childGen x)
+        , (1, TopPattern <$> topGen vars x)
+        , (5, VariablePattern <$> variableGen vars x)
         ]
 
 purePatternGen
@@ -305,10 +385,10 @@ purePatternGen
     => level
     -> Gen (CommonPurePattern level)
 purePatternGen level =
-    childGen
+    childGen []
   where
-    childGen = embed <$> sized purePatternGenWorker
-    purePatternGenWorker n
+    childGen vars = embed <$> sized (purePatternGenWorker vars)
+    purePatternGenWorker vars n
       | n <= 0 =
         case isMetaOrObject (Proxy :: Proxy level) of
             IsMeta ->
@@ -318,9 +398,9 @@ purePatternGen level =
                     ]
             IsObject ->
                 oneof
-                    [ DomainValuePattern <$> domainValueGen childGen level
+                    [ DomainValuePattern <$> domainValueGen vars childGen level
                     ]
-      | otherwise = patternGen childGen level
+      | otherwise = patternGen vars childGen level
 
 korePatternGen :: Gen CommonKorePattern
 korePatternGen = sized (\n ->
@@ -330,16 +410,16 @@ korePatternGen = sized (\n ->
             , asKorePattern . CharLiteralPattern <$> charLiteralGen
             ]
         else frequency
-            [ (15, asKorePattern <$> patternGen korePatternGen Meta)
-            , (15, asKorePattern <$> patternGen korePatternGen Object)
+            [ (15, asKorePattern <$> patternGen [] (const korePatternGen) Meta)
+            , (15, asKorePattern <$> patternGen [] (const korePatternGen) Object)
             , (1, asKorePattern . StringLiteralPattern <$> stringLiteralGen)
             , (1, asKorePattern . CharLiteralPattern <$> charLiteralGen)
             , (1, asKorePattern . DomainValuePattern
-                <$> domainValueGen korePatternGen Object)
+                <$> domainValueGen [] (const korePatternGen) Object)
             , (1, asKorePattern . NextPattern
-                <$> nextGen korePatternGen Object)
+                <$> nextGen [] (const korePatternGen) Object)
             , (1, asKorePattern . RewritesPattern
-                <$> rewritesGen korePatternGen Object)
+                <$> rewritesGen [] (const korePatternGen) Object)
             ]
     )
 
@@ -354,8 +434,8 @@ predicateGen level =
         [ makeAndPredicate <$> predicateGen level <*> predicateGen level
         , makeCeilPredicate <$> purePatternGen level
         , makeEqualsPredicate <$> purePatternGen level <*> purePatternGen level
-        , makeExistsPredicate <$> variableGen level <*> predicateGen level
-        , makeForallPredicate <$> variableGen level <*> predicateGen level
+        , makeExistsPredicate <$> variableGen [] level <*> predicateGen level
+        , makeForallPredicate <$> variableGen [] level <*> predicateGen level
         , pure makeFalsePredicate
         , makeFloorPredicate <$> purePatternGen level
         , makeIffPredicate <$> predicateGen level <*> predicateGen level
@@ -375,8 +455,8 @@ sentenceAliasGen x patGen = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) (patternGen patGen x)
-    <*> scale (`div` 2) (patternGen patGen x)
+    <*> scale (`div` 2) (patternGen [] (const patGen) x)
+    <*> scale (`div` 2) (patternGen [] (const patGen) x)
     <*> scale (`div` 2) attributesGen
 
 sentenceSymbolGen
@@ -466,7 +546,7 @@ metaMLPatternGen = Fix <$> sized (\n ->
             , CharLiteralPattern <$> charLiteralGen
             ]
         else frequency
-            [ (15, patternGen metaMLPatternGen Meta)
+            [ (15, patternGen [] (const metaMLPatternGen) Meta)
             , (1, StringLiteralPattern <$> stringLiteralGen)
             , (1, CharLiteralPattern <$> charLiteralGen)
             ]
