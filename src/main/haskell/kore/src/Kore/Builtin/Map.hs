@@ -32,7 +32,10 @@ module Kore.Builtin.Map
     , lookupSymbolKeys
     , isSymbolConcat
     -- * Unification
-    , unify
+    , unifyEquals
+    -- * Raw evaluators
+    , evalConcat
+    , evalElement
     ) where
 
 import           Control.Applicative
@@ -74,7 +77,7 @@ import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
-                 SimplificationProof (..), Simplifier )
+                 SimplificationProof (..), SimplificationType, Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -208,6 +211,7 @@ evalLookup =
         )
     maybeBottom = maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
 
+-- | evaluates the map element builtin.
 evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
@@ -223,6 +227,7 @@ evalElement =
             returnMap resultSort (Map.singleton _key _value)
         )
 
+-- | evaluates the map concat builtin.
 evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
@@ -488,7 +493,10 @@ isSymbolElement
     -> Bool
 isSymbolElement = Builtin.isSymbol "MAP.element"
 
-{- | Simplify the conjunction of two concrete Map domain values.
+{- | Simplify the conjunction or equality of two concrete Map domain values.
+
+When it is used for simplifying equality, one should separately solve the
+case ⊥ = ⊥. One should also throw away the term in the returned pattern.
 
 The maps are assumed to have the same sort, but this is not checked. If
 multiple sorts are hooked to the same builtin domain, the verifier should
@@ -516,7 +524,7 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
 @x₂@ is missing.
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
-unify
+unifyEquals
     :: forall level variable m p expanded proof .
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
@@ -528,16 +536,18 @@ unify
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
         )
-    => MetadataTools level StepperAttributes
+    => SimplificationType
+    -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> (p -> p -> m (expanded, proof))
     -> (p -> p -> MaybeT m (expanded, proof))
-unify
+unifyEquals
+    simplificationType
     tools@MetadataTools { symbolOrAliasSorts }
     substitutionSimplifier
-    unifyChildren
+    unifyEqualsChildren
   =
-    unify0
+    unifyEquals0
   where
     hookTools = StepperAttributes.hook <$> tools
 
@@ -554,17 +564,18 @@ unify
     propagatePredicates = give symbolOrAliasSorts sequenceA
 
     -- | Unify the two argument patterns.
-    unify0
+    unifyEquals0
         :: PureMLPattern level variable
         -> PureMLPattern level variable
         -> MaybeT m (expanded, proof)
 
-    unify0 dv1@(DV_ resultSort (BuiltinDomainMap map1)) =
+    unifyEquals0 dv1@(DV_ resultSort (BuiltinDomainMap map1)) =
         \case
             dv2@(DV_ _ builtin2) ->
                 case builtin2 of
                     BuiltinDomainMap map2 ->
-                        Monad.Trans.lift $ unifyConcrete resultSort map1 map2
+                        Monad.Trans.lift
+                            $ unifyEqualsConcrete resultSort map1 map2
                     _ ->
                         (error . unlines)
                             [ "Cannot unify a builtin Map domain value:"
@@ -578,12 +589,14 @@ unify
                     -- Accept the arguments of MAP.concat in either order.
                     Monad.Trans.lift $ case args2 of
                         [ DV_ _ (BuiltinDomainMap map2), x@(Var_ _) ] ->
-                            unifyFramed1 resultSort dv1 map2 x
+                            unifyEqualsFramed1 resultSort dv1 map2 x
                         [ x@(Var_ _), DV_ _ (BuiltinDomainMap map2) ] ->
-                            unifyFramed1 resultSort dv1 map2 x
+                            unifyEqualsFramed1 resultSort dv1 map2 x
                         [ _, _ ] ->
                             give symbolOrAliasSorts
-                                (Builtin.unifyUnsolved dv1 app)
+                                (Builtin.unifyEqualsUnsolved
+                                    simplificationType dv1 app
+                                )
                         _ ->
                             Builtin.wrongArity "MAP.concat"
                 | isSymbolElement hookTools symbol2 ->
@@ -591,7 +604,7 @@ unify
                         [ key2, value2 ] ->
                             -- The key is not concrete yet, or MAP.element would
                             -- have evaluated to a domain value.
-                            unifyElement map1 symbol2 key2 value2
+                            unifyEqualsElement map1 symbol2 key2 value2
                         _ ->
                             Builtin.wrongArity "MAP.element"
                 | otherwise ->
@@ -599,21 +612,22 @@ unify
             _ ->
                 empty
 
-    unify0 pat1 =
+    unifyEquals0 pat1 =
         \case
-            dv@(DV_ _ (BuiltinDomainMap _)) -> unify0 dv pat1
+            dv@(DV_ _ (BuiltinDomainMap _)) -> unifyEquals0 dv pat1
             _ -> empty
 
     -- | Unify two concrete maps.
-    unifyConcrete
+    unifyEqualsConcrete
         ::  forall k.
             (level ~ Object, k ~ ConcretePurePattern Object)
         => Sort level  -- ^ result sort
         -> Map k (PureMLPattern level variable)
         -> Map k (PureMLPattern level variable)
         -> m (expanded, proof)
-    unifyConcrete resultSort map1 map2 = do
-        intersect <- sequence (Map.intersectionWith unifyChildren map1 map2)
+    unifyEqualsConcrete resultSort map1 map2 = do
+        intersect <-
+            sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
         let
             result
               | not (Map.null remainder1) =
@@ -637,23 +651,24 @@ unify
         asBuiltinMap = asBuiltinDomainValue resultSort
 
     -- | Unify one concrete map with one framed concrete map.
-    unifyFramed1
+    unifyEqualsFramed1
         :: forall k . (level ~ Object, k ~ ConcretePurePattern Object)
         => Sort level  -- ^ Sort of result
         -> p  -- ^ concrete map
         -> Map k p  -- ^ framed concrete map
         -> p  -- ^ framing variable
         -> m (expanded, proof)
-    unifyFramed1
+    unifyEqualsFramed1
         resultSort
         dv1@(DV_ _ (BuiltinDomainMap map1))
         map2
         x = do
-        intersect <- sequence (Map.intersectionWith unifyChildren map1 map2)
+        intersect <-
+            sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
         -- The framing variable unifies with the remainder of map1.
         let remainder1 = Map.difference map1 map2
         -- The framing part of the unification result.
-        (frame, _) <- unifyChildren x (asBuiltinMap remainder1)
+        (frame, _) <- unifyEqualsChildren x (asBuiltinMap remainder1)
         let
             -- The concrete part of the unification result.
             concrete :: ExpandedPattern level variable
@@ -677,22 +692,22 @@ unify
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
 
-    unifyFramed1 _ _ _ _ = error "The impossible happened"
+    unifyEqualsFramed1 _ _ _ _ = error "The impossible happened"
 
 
-    unifyElement
+    unifyEqualsElement
         :: forall k . (level ~ Object, k ~ ConcretePurePattern Object)
         => Map k p  -- ^ concrete map
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
         -> p  -- ^ value
         -> m (expanded, proof)
-    unifyElement map1 element' key2 value2 =
+    unifyEqualsElement map1 element' key2 value2 =
         case Map.toList map1 of
             [(Kore.fromConcretePurePattern -> key1, value1)] ->
                 give symbolOrAliasSorts $ do
-                    (key, _) <- unifyChildren key1 key2
-                    (value, _) <- unifyChildren value1 value2
+                    (key, _) <- unifyEqualsChildren key1 key2
+                    (value, _) <- unifyEqualsChildren value1 value2
                     let result =
                             App_ element' <$> args
                           where

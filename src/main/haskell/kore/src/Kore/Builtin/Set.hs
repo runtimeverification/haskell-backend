@@ -31,7 +31,7 @@ module Kore.Builtin.Set
     , lookupSymbolIn
     , lookupSymbolDifference
       -- * Unification
-    , unify
+    , unifyEquals
     ) where
 
 import           Control.Applicative
@@ -78,7 +78,7 @@ import           Kore.Step.Function.Data
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  PureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 SimplificationType, Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -430,13 +430,16 @@ isSymbolElement
     -> Bool
 isSymbolElement = Builtin.isSymbol "SET.element"
 
-{- | Simplify the conjunction of two concrete Set domain values.
+{- | Simplify the conjunction or equality of two concrete Set domain values.
+
+    When it is used for simplifying equality, one should separately solve the
+    case ⊥ = ⊥. One should also throw away the term in the returned pattern.
 
     The sets are assumed to have the same sort, but this is not checked. If
     multiple sorts are hooked to the same builtin domain, the verifier should
     reject the definition.
  -}
-unify
+unifyEquals
     :: forall level variable m p expanded proof.
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , Kore.SortedVariable variable
@@ -448,16 +451,18 @@ unify
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
         )
-    => MetadataTools level StepperAttributes
+    => SimplificationType
+    -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> (p -> p -> m (expanded, proof))
     -> (p -> p -> MaybeT m (expanded, proof))
-unify
+unifyEquals
+    simplificationType
     tools@(MetadataTools.MetadataTools { symbolOrAliasSorts })
     substitutionSimplifier
-    unifyChildren
+    unifyEqualsChildren
   =
-    unify0
+    unifyEquals0
   where
     hookTools = StepperAttributes.hook <$> tools
 
@@ -470,28 +475,31 @@ unify
     propagatePredicates = give symbolOrAliasSorts sequenceA
 
     -- | Unify the two argument patterns.
-    unify0
+    unifyEquals0
         :: Kore.PureMLPattern level variable
         -> Kore.PureMLPattern level variable
         -> MaybeT m (expanded, proof)
-    unify0
+    unifyEquals0
         (DV_ resultSort (Kore.BuiltinDomainSet set1))
         (DV_ _    (Kore.BuiltinDomainSet set2))
       =
-        Monad.Trans.lift (unifyConcrete resultSort set1 set2)
+        Monad.Trans.lift (unifyEqualsConcrete resultSort set1 set2)
 
-    unify0
+    unifyEquals0
         dv1@(DV_ resultSort (Kore.BuiltinDomainSet set1))
         app2@(App_ symbol2 args2)
       | isSymbolConcat hookTools symbol2 =
         Monad.Trans.lift
            (case args2 of
                 [DV_ _ (Kore.BuiltinDomainSet set2), x@(Var_ _)] ->
-                    unifyFramed resultSort set1 set2 x
+                    unifyEqualsFramed resultSort set1 set2 x
                 [x@(Var_ _), DV_ _ (Kore.BuiltinDomainSet set2)] ->
-                    unifyFramed resultSort set1 set2 x
+                    unifyEqualsFramed resultSort set1 set2 x
                 _ ->
-                    give symbolOrAliasSorts Builtin.unifyUnsolved dv1 app2
+                    give symbolOrAliasSorts
+                        (Builtin.unifyEqualsUnsolved
+                            simplificationType dv1 app2
+                        )
            )
       | isSymbolElement hookTools symbol2 =
         Monad.Trans.lift
@@ -499,25 +507,25 @@ unify
                 [ key2 ] ->
                     -- The key is not concrete yet, or SET.element would
                     -- have evaluated to a domain value.
-                    unifyElement set1 symbol2 key2
+                    unifyEqualsElement set1 symbol2 key2
                 _ ->
                     Builtin.wrongArity "SET.element"
             )
       | otherwise =
         empty
 
-    unify0 app_@(App_ _ _) dv_@(DV_ _ _) = unify0 dv_ app_
+    unifyEquals0 app_@(App_ _ _) dv_@(DV_ _ _) = unifyEquals0 dv_ app_
 
-    unify0 _ _ = empty
+    unifyEquals0 _ _ = empty
 
     -- | Unify two concrete sets
-    unifyConcrete
+    unifyEqualsConcrete
         :: (level ~ Object, k ~ Kore.ConcretePurePattern Object)
         => Kore.Sort level -- ^ Sort of result
         -> Set.Set k
         -> Set.Set k
         -> m (expanded, proof)
-    unifyConcrete resultSort set1 set2
+    unifyEqualsConcrete resultSort set1 set2
       | set1 == set2 =
         return (unified, SimplificationProof)
       | otherwise =
@@ -529,17 +537,17 @@ unify
                 (give symbolOrAliasSorts pure set1)
 
     -- | Unify one concrete set with one framed concrete set.
-    unifyFramed
+    unifyEqualsFramed
         :: (level ~ Object, k ~ Kore.ConcretePurePattern Object)
         => Kore.Sort level  -- ^ Sort of result
         -> Set.Set k  -- ^ concrete set
         -> Set.Set k -- ^ framed concrete set
         -> Kore.PureMLPattern level variable  -- ^ framing variable
         -> m (expanded, proof)
-    unifyFramed resultSort set1 set2 var
+    unifyEqualsFramed resultSort set1 set2 var
       | Set.isSubsetOf set2 set1 = do
         (remainder, _) <-
-            unifyChildren var
+            unifyEqualsChildren var
             $ asBuiltinDomainSet
             $ Set.difference set1 set2
         let result =
@@ -554,17 +562,17 @@ unify
       where
         asBuiltinDomainSet = DV_ resultSort . Kore.BuiltinDomainSet
 
-    unifyElement
+    unifyEqualsElement
         :: forall k . (level ~ Object, k ~ Kore.ConcretePurePattern Object)
         => Set k  -- ^ concrete set
         -> Kore.SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
         -> m (expanded, proof)
-    unifyElement set1 element' key2 =
+    unifyEqualsElement set1 element' key2 =
         case Set.toList set1 of
             [Kore.fromConcretePurePattern -> key1] ->
                 give symbolOrAliasSorts $ do
-                    (key, _) <- unifyChildren key1 key2
+                    (key, _) <- unifyEqualsChildren key1 key2
                     let result = App_ element' <$> propagatePredicates [key]
                     return (result, SimplificationProof)
             _ ->

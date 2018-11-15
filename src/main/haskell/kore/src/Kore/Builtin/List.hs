@@ -29,7 +29,7 @@ module Kore.Builtin.List
     , lookupSymbolGet
     , isSymbolConcat
     , isSymbolElement
-    , unify
+    , unifyEquals
     ) where
 
 import           Control.Applicative
@@ -354,7 +354,16 @@ isSymbolElement
     -> Bool
 isSymbolElement = Builtin.isSymbol "LIST.element"
 
-unify
+{- | Simplify the conjunction or equality of two concrete List domain values.
+
+    When it is used for simplifying equality, one should separately solve the
+    case ⊥ = ⊥. One should also throw away the term in the returned pattern.
+
+    The lists are assumed to have the same sort, but this is not checked. If
+    multiple lists are hooked to the same builtin domain, the verifier should
+    reject the definition.
+ -}
+unifyEquals
     :: forall level variable m p expanded proof.
         ( OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -369,16 +378,18 @@ unify
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
         )
-    => MetadataTools level StepperAttributes
+    => SimplificationType
+    -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> (p -> p -> m (expanded, proof))
     -> (p -> p -> MaybeT m (expanded, proof))
-unify
+unifyEquals
+    simplificationType
     tools@MetadataTools { symbolOrAliasSorts }
     _
     simplifyChild
   =
-    unify0
+    unifyEquals0
   where
     hookTools = StepperAttributes.hook <$> tools
 
@@ -391,17 +402,18 @@ unify
     discardProofs :: Seq (expanded, proof) -> Seq expanded
     discardProofs = (<$>) fst
 
-    unify0
+    unifyEquals0
         :: PureMLPattern level variable
         -> PureMLPattern level variable
         -> MaybeT m (expanded, proof)
 
-    unify0 dv1@(DV_ resultSort (BuiltinDomainList list1)) =
+    unifyEquals0 dv1@(DV_ resultSort (BuiltinDomainList list1)) =
         \case
             dv2@(DV_ _ builtin2) ->
                 case builtin2 of
                     BuiltinDomainList list2 ->
-                        Monad.Trans.lift $ unifyConcrete resultSort list1 list2
+                        Monad.Trans.lift
+                            $ unifyEqualsConcrete resultSort list1 list2
                     _ ->
                         (error . unlines)
                             [ "Cannot unify a builtin List domain value:"
@@ -414,27 +426,30 @@ unify
               | isSymbolConcat hookTools symbol2 ->
                 Monad.Trans.lift $ case args2 of
                     [ DV_ _ (BuiltinDomainList list2), x@(Var_ _) ] ->
-                        unifyFramedRight resultSort dv1 list2 x
+                        unifyEqualsFramedRight resultSort dv1 list2 x
                     [ x@(Var_ _), DV_ _ (BuiltinDomainList list2) ] ->
-                        unifyFramedLeft resultSort dv1 x list2
+                        unifyEqualsFramedLeft resultSort dv1 x list2
                     [ _, _ ] ->
-                        give symbolOrAliasSorts Builtin.unifyUnsolved dv1 app
+                        give symbolOrAliasSorts
+                            (Builtin.unifyEqualsUnsolved
+                                simplificationType dv1 app
+                            )
                     _ -> Builtin.wrongArity "LIST.concat"
               | otherwise -> empty
             _ -> empty
 
-    unify0 pat1 =
+    unifyEquals0 pat1 =
         \case
-            dv@(DV_ _ (BuiltinDomainList _)) -> unify0 dv pat1
+            dv@(DV_ _ (BuiltinDomainList _)) -> unifyEquals0 dv pat1
             _ -> empty
 
-    unifyConcrete
+    unifyEqualsConcrete
         :: (level ~ Object)
         => Sort level
         -> Seq p
         -> Seq p
         -> m (expanded, proof)
-    unifyConcrete dvSort list1 list2
+    unifyEqualsConcrete dvSort list1 list2
       | Seq.length list1 /= Seq.length list2 =
         return (ExpandedPattern.bottom, SimplificationProof)
       | otherwise =
@@ -449,14 +464,14 @@ unify
       where
         asBuiltinDomainList = DV_ dvSort . BuiltinDomainList
 
-    unifyFramedRight
+    unifyEqualsFramedRight
         :: (level ~ Object)
         => Sort level
         -> p
         -> Seq p
         -> p
         -> m (expanded, proof)
-    unifyFramedRight
+    unifyEqualsFramedRight
         resultSort
         dv1@(DV_ _ (BuiltinDomainList list1))
         prefix2
@@ -465,7 +480,7 @@ unify
         return (ExpandedPattern.bottom, SimplificationProof)
       | otherwise =
         do
-            (prefixUnified, _) <- unifyConcrete resultSort prefix1 prefix2
+            (prefixUnified, _) <- unifyEqualsConcrete resultSort prefix1 prefix2
             (suffixUnified, _) <- simplifyChild frame2 listSuffix1
             let result = give symbolOrAliasSorts $
                     pure dv1
@@ -478,16 +493,16 @@ unify
           where
             prefixLength = Seq.length prefix2
         listSuffix1 = asBuiltinDomainList suffix1
-    unifyFramedRight _ _ _ _ = error "The impossible happened."
+    unifyEqualsFramedRight _ _ _ _ = error "The impossible happened."
 
-    unifyFramedLeft
+    unifyEqualsFramedLeft
         :: level ~ Object
         => Sort level
         -> p
         -> p
         -> Seq p
         -> m (expanded, proof)
-    unifyFramedLeft
+    unifyEqualsFramedLeft
         resultSort
         dv1@(DV_ _ (BuiltinDomainList list1))
         frame2
@@ -497,7 +512,7 @@ unify
       | otherwise =
         do
             (prefixUnified, _) <- simplifyChild frame2 listPrefix1
-            (suffixUnified, _) <- unifyConcrete resultSort suffix1 suffix2
+            (suffixUnified, _) <- unifyEqualsConcrete resultSort suffix1 suffix2
             let result = give symbolOrAliasSorts $
                     pure dv1
                     <* prefixUnified
@@ -509,4 +524,4 @@ unify
           where
             prefixLength = Seq.length list1 - Seq.length suffix2
         listPrefix1 = asBuiltinDomainList prefix1
-    unifyFramedLeft _ _ _ _ = error "The impossible happened."
+    unifyEqualsFramedLeft _ _ _ _ = error "The impossible happened."

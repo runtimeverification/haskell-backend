@@ -50,7 +50,7 @@ module Kore.Builtin.Builtin
     , expectNormalConcreteTerm
     , getAttemptedFunction
       -- * Implementing builtin unification
-    , unifyUnsolved
+    , unifyEqualsUnsolved
     ) where
 
 import           Control.Error
@@ -106,17 +106,21 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate )
+                 ( makeCeilPredicate, makeEqualsPredicate )
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( top )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
                  AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
-                 SimplificationProof (..), Simplifier )
+                 SimplificationProof (..), SimplificationType, Simplifier )
+import qualified Kore.Step.Simplification.Data as SimplificationType
+                 ( SimplificationType (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -727,7 +731,7 @@ getAttemptedFunction attempt =
     fromMaybe NotApplicable <$> runMaybeT attempt
 
 -- | Return an unsolved unification problem.
-unifyUnsolved
+unifyEqualsUnsolved
     ::  ( Given (SymbolOrAliasSorts level)
         , Monad m
         , Ord (variable level)
@@ -738,13 +742,19 @@ unifyUnsolved
         , patt ~ PureMLPattern level variable
         , proof ~ SimplificationProof level
         )
-    => patt
+    => SimplificationType
+    -> patt
     -> patt
     -> m (expanded, proof)
-unifyUnsolved a b =
+unifyEqualsUnsolved SimplificationType.And a b =
     let
         unified = mkAnd a b
         predicate = makeCeilPredicate unified
         expanded = (pure unified) { predicate }
     in
         return (expanded, SimplificationProof)
+unifyEqualsUnsolved SimplificationType.Equals a b =
+    return
+        ( ExpandedPattern.top {predicate = makeEqualsPredicate a b}
+        , SimplificationProof
+        )

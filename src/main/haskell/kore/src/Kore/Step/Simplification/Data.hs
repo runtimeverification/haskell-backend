@@ -18,6 +18,7 @@ module Kore.Step.Simplification.Data
     , PureMLPatternSimplifier (..)
     , CommonPureMLPatternSimplifier
     , SimplificationProof (..)
+    , SimplificationType (..)
     ) where
 
 import           Control.Monad.Reader
@@ -35,6 +36,12 @@ import Kore.Step.OrOfExpandedPattern
 import Kore.Substitution.Class
        ( Hashable )
 import Kore.Variables.Fresh
+
+{-| 'And' simplification is very similar to 'Equals' simplification.
+This type is used to distinguish between the two in the common code.
+-}
+data SimplificationType = And | Equals
+
 {-| 'SimplificationProof' is a placeholder for proofs showing that the
 simplification of a MetaMLPattern was correct.
 -}
