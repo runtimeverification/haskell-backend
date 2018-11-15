@@ -29,6 +29,7 @@ import qualified Control.Monad.State.Strict as Monad.State
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import qualified Data.Text as Text
 import           Prelude hiding
                  ( and, not, or )
 
@@ -54,7 +55,7 @@ translateUninterpreted t pat =
         maybe empty return result
     freeVariable = do
         n <- Monad.Counter.increment
-        var <- liftSMT $ SMT.declare ("<" ++ show n ++ ">") t
+        var <- liftSMT $ SMT.declare ("<" <> Text.pack (show n) <> ">") t
         Monad.State.modify' (Map.insert pat var)
         return var
 

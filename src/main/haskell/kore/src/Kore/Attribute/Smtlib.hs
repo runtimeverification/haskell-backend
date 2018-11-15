@@ -9,6 +9,7 @@ import qualified Control.Monad as Monad
 import           Data.Default
 import           Data.Maybe
                  ( fromMaybe, isNothing )
+import qualified Data.Text as Text
 import           SimpleSMT
 
 import           Kore.AST.Common
@@ -79,9 +80,9 @@ parseSExpr
     :: String  -- ^ text representing an 'SExpr'
     -> Parser SExpr
 parseSExpr syntax =
-    case readSExpr syntax of
-        Nothing -> noParse
-        Just (sExpr, rest) ->
+    case readSExprs (Text.pack syntax) of
+        [] -> noParse
+        sExpr : rest ->
             case rest of
                 [] -> return sExpr
                 _ -> incompleteParse
@@ -115,7 +116,7 @@ applySExpr =
     fillAtom symb = fromMaybe (\_ -> Atom symb) (fillPlace symb)
 
     -- Fill one placeholder
-    fillPlace ('#' : num) = do
+    fillPlace (Text.unpack -> ('#' : num)) = do
         (n :: Int, remainder) <- Error.headMay (reads num)
         -- A placeholder is a symbol: # followed by a decimal numeral.
         -- Abort if any characters remain after parsing the numeral.

@@ -9,8 +9,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 A module for interacting with an external SMT solver, using SMT-LIB 2 format.
 -}
 
-{-# LANGUAGE PatternGuards   #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE PatternGuards #-}
 
 module SimpleSMT
     (
@@ -24,7 +23,7 @@ module SimpleSMT
 
     -- ** S-Expressions
     , SExpr(..)
-    , showsSExpr, ppSExpr, readSExpr
+    , showSExpr, readSExprs
 
     -- ** Logging and Debugging
     , Logger(..)
@@ -137,33 +136,52 @@ module SimpleSMT
     , store
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import           Control.Concurrent
                  ( forkIO )
 import qualified Control.Exception as X
 import           Control.Monad
                  ( forever, when )
+import           Control.Monad.Fail
+                 ( MonadFail )
 import           Data.Bits
                  ( testBit )
 import           Data.Char
                  ( isSpace )
 import           Data.IORef
-                 ( atomicModifyIORef, modifyIORef', newIORef, readIORef,
-                 writeIORef )
-import           Data.List
-                 ( intersperse, unfoldr )
+                 ( modifyIORef', newIORef, readIORef, writeIORef )
 import           Data.Ratio
                  ( denominator, numerator, (%) )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
+import           Data.Text.Internal.Builder
+                 ( Builder )
+import qualified Data.Text.Internal.Builder as Text.Builder
+import qualified Data.Text.IO as Text
+import qualified Data.Text.Lazy as Lazy
+                 ( Text )
+import qualified Data.Text.Lazy as Text.Lazy
+import qualified Data.Text.Lazy.IO as Text.Lazy
+import           Data.Void
+                 ( Void )
 import           Numeric
                  ( readHex, showFFloat, showHex )
 import           Prelude hiding
                  ( abs, and, concat, const, div, mod, not, or )
-import qualified Prelude as P
+import qualified Prelude
 import           System.Exit
                  ( ExitCode )
 import           System.IO
-                 ( hClose, hFlush, hGetContents, hGetLine, hPutStrLn, stdout )
+                 ( Handle, hClose, hFlush, hPutChar, stdout )
 import           System.Process
                  ( runInteractiveProcess, waitForProcess )
+import           Text.Megaparsec
+                 ( Parsec )
+import qualified Text.Megaparsec as Parser
+import qualified Text.Megaparsec.Char as Parser
+import qualified Text.Megaparsec.Char.Lexer as Lexer
 import           Text.Read
                  ( readMaybe )
 
@@ -180,71 +198,95 @@ data Value =  Bool  !Bool           -- ^ Boolean value
             | Real  !Rational       -- ^ Rational value
             | Bits  !Int !Integer   -- ^ Bit vector: width, value
             | Other !SExpr          -- ^ Some other value
-              deriving (Eq,Show)
+              deriving (Eq, Show)
 
--- | S-expressions. These are the basic format for SmtLib-2.
-data SExpr  = Atom String
-            | List [SExpr]
-              deriving (Eq, Ord, Show)
+-- | S-expressions, the basic format for SMT-LIB 2.
+data SExpr
+    = Atom !Text
+    | List ![SExpr]
+    deriving (Eq, Ord, Show)
 
--- | Show an s-expression.
-showsSExpr :: SExpr -> ShowS
-showsSExpr ex =
-  case ex of
-    Atom x  -> showString x
-    List es -> showChar '(' .
-                foldr (\e m -> showsSExpr e . showChar ' ' . m)
-                (showChar ')') es
+-- | Stream an S-expression into 'Builder'.
+buildSExpr :: SExpr -> Builder
+buildSExpr =
+    \case
+        Atom x  -> Text.Builder.fromText x
+        List es ->
+            Text.Builder.singleton '('
+            <> foldMap (\e -> buildSExpr e <> Text.Builder.singleton ' ') es
+            <> Text.Builder.singleton ')'
 
+-- | Show an S-expression.
+showSExpr :: SExpr -> String
+showSExpr = Text.Lazy.unpack . Text.Builder.toLazyText . buildSExpr
 
--- | Show an S-expression in a somewhat readbale fashion.
-ppSExpr :: SExpr -> ShowS
-ppSExpr = go 0
+{- | Send an S-expression directly to a 'Handle'.
+
+@sendSExpr@ performs slightly better than @buildSExpr@ by avoiding almost all
+intermediate allocation.
+
+@sendSExpr@ sends only the S-expression; it does not send the trailing newline
+which signals the end of a command.
+
+ -}
+sendSExpr :: Handle -> SExpr -> IO ()
+sendSExpr h = sendSExprWorker
   where
-  tab n = showString (replicate n ' ')
-  many  = foldr (.) id
+    sendSExprWorker =
+        \case
+            Atom atom -> Text.hPutStr h atom
+            List atoms -> do
+                hPutChar h '('
+                mapM_ sendListElement atoms
+                hPutChar h ')'
+    sendListElement sExpr = do
+        sendSExprWorker sExpr
+        hPutChar h ' '
 
-  new n e = showChar '\n' . tab n . go n e
+type Parser = Parsec Void Text
 
-  small :: Int -> [SExpr] -> Maybe [ShowS]
-  small n es =
-    case es of
-      [] -> Just []
-      e : more
-        | n <= 0 -> Nothing
-        | otherwise -> case e of
-                         Atom x -> (showString x :) <$> small (n-1) more
-                         _      -> Nothing
-
-  go :: Int -> SExpr -> ShowS
-  go n ex =
-    case ex of
-      Atom x        -> showString x
-      List es
-        | Just fs <- small 5 es ->
-          showChar '(' . many (intersperse (showChar ' ') fs) . showChar ')'
-
-      List (Atom x : es) -> showString "(" . showString x .
-                                many (map (new (n+3)) es) . showString ")"
-
-      List es -> showString "(" . many (map (new (n+2)) es) . showString ")"
-
--- | Parse an s-expression.
-readSExpr :: String -> Maybe (SExpr, String)
-readSExpr (c : more) | isSpace c = readSExpr more
-readSExpr (';' : more) = readSExpr $ drop 1 $ dropWhile (/= '\n') more
-readSExpr ('(' : more) = do (xs,more1) <- list more
-                            return (List xs, more1)
+-- | Basic S-expression parser.
+parseSExpr :: Parser SExpr
+parseSExpr = parseAtom <|> parseList
   where
-  list (c : txt) | isSpace c = list txt
-  list (')' : txt) = return ([], txt)
-  list txt         = do (v,txt1) <- readSExpr txt
-                        (vs,txt2) <- list txt1
-                        return (v:vs, txt2)
-readSExpr txt     = case break end txt of
-                       (as,bs) | P.not (null as) -> Just (Atom as, bs)
-                       _ -> Nothing
-  where end x = x == ')' || isSpace x
+    parseAtom :: Parser SExpr
+    parseAtom = lexeme (Atom <$> Parser.takeWhile1P Nothing notSpecial)
+
+    parseList :: Parser SExpr
+    parseList =
+        List <$> (lparen *> Parser.many parseSExpr <* rparen)
+
+    special :: Char -> Bool
+    special c = isSpace c || c == '(' || c == ')' || c == ';'
+
+    notSpecial :: Char -> Bool
+    notSpecial = Prelude.not . special
+
+    lparen :: Parser Char
+    lparen = lexeme (Parser.char '(')
+
+    rparen :: Parser Char
+    rparen = lexeme (Parser.char ')')
+
+    skipLineComment = Lexer.skipLineComment ";"
+    space = Lexer.space Parser.space1 skipLineComment empty
+
+    lexeme :: Parser a -> Parser a
+    lexeme = Lexer.lexeme space
+
+-- | Parse one S-expression.
+readSExpr :: MonadFail m => Text -> m SExpr
+readSExpr txt =
+    case Parser.parse parseSExpr "<unknown>" txt of
+        Left err -> fail (Parser.parseErrorPretty err)
+        Right sExpr -> return sExpr
+
+-- | Parse many S-expressions.
+readSExprs :: Text -> [SExpr]
+readSExprs txt =
+    case Parser.parseMaybe (Parser.some parseSExpr) txt of
+        Nothing -> []
+        Just exprs -> exprs
 
 
 --------------------------------------------------------------------------------
@@ -260,83 +302,67 @@ data Solver = Solver
 
 
 -- | Start a new solver process.
-newSolver :: String       {- ^ Executable -}            ->
-             [String]     {- ^ Arguments -}             ->
-             Maybe Logger {- ^ Optional logging here -} ->
-             IO Solver
-newSolver exe opts mbLog =
-  do (hIn, hOut, hErr, h) <- runInteractiveProcess exe opts Nothing Nothing
+newSolver
+    :: FilePath  -- ^ Executable
+    -> [String]  -- ^ Arguments
+    -> Maybe Logger  -- ^ Optional logger
+    -> IO Solver
+newSolver exe opts mbLog = do
+    (hIn, hOut, hErr, h) <- runInteractiveProcess exe opts Nothing Nothing
 
-     let info a = case mbLog of
-                    Nothing -> return ()
-                    Just l  -> logMessage l a
+    let info a =
+            case mbLog of
+                Nothing -> return ()
+                Just l  -> logMessage l a
 
-     _ <- forkIO $ forever (do errs <- hGetLine hErr
-                               info ("[stderr] " ++ errs))
-                    `X.catch` \X.SomeException {} -> return ()
+    _ <- forkIO $ do
+        let handler X.SomeException {} = return ()
+        X.handle handler $ forever $ do
+            errs <- Text.Lazy.hGetLine hErr
+            info ("[stderr] " <> errs)
 
-     getResponse <-
-       do txt <- hGetContents hOut                  -- Read *all* output
-          ref <- newIORef (unfoldr readSExpr txt)  -- Parse, and store result
-          return $ atomicModifyIORef ref $ \xs ->
-                      case xs of
-                        []     -> (xs, Nothing)
-                        y : ys -> (ys, Just y)
+    let send c = do
+            (info . Text.Builder.toLazyText) ("[send] " <> buildSExpr c)
+            sendSExpr hIn c
+            hPutChar hIn '\n'
+            hFlush hIn
 
-     let cmd c = do let txt = showsSExpr c ""
-                    info ("[send->] " ++ txt)
-                    hPutStrLn hIn txt
-                    hFlush hIn
+        recv = do
+            resp <- Text.hGetLine hOut
+            info ("[recv] " <> Text.Lazy.fromStrict resp)
+            readSExpr resp
 
-         command c =
-           do cmd c
-              mb <- getResponse
-              case mb of
-                Just res -> do info ("[<-recv] " ++ showsSExpr res "")
-                               return res
-                Nothing  -> fail "Missing response from solver"
+        command c = do
+            send c
+            recv
 
-         stop =
-           do cmd (List [Atom "exit"])
-              ec <- waitForProcess h
-              X.catch (do hClose hIn
-                          hClose hOut
-                          hClose hErr)
-                      (\ex -> info (show (ex::X.IOException)))
-              return ec
+        stop = do
+            send (List [Atom "exit"])
+            ec <- waitForProcess h
+            let handler :: X.IOException -> IO ()
+                handler ex = (info . Text.Lazy.pack) (show ex)
+            X.handle handler $ do
+                hClose hIn
+                hClose hOut
+                hClose hErr
+            return ec
 
-         solver = Solver { .. }
+        solver = Solver { command, stop }
 
-     setOption solver ":print-success" "true"
-     setOption solver ":produce-models" "true"
+    setOption solver ":print-success" "true"
+    setOption solver ":produce-models" "true"
 
-     return solver
+    return solver
 
 
 -- | Load the contents of a file.
 loadFile :: Solver -> FilePath -> IO ()
-loadFile s file = loadString s =<< readFile file
-
--- | Load a raw SMT string.
-loadString :: Solver -> String -> IO ()
-loadString s str = go (dropComments str)
-  where
-  go txt
-    | all isSpace txt = return ()
-    | otherwise =
-      case readSExpr txt of
-        Just (e,rest) -> command s e >> go rest
-        Nothing       -> fail $ unlines [ "Failed to parse SMT file."
-                                        , txt
-                                        ]
-
-  dropComments = unlines . map dropComment . lines
-  dropComment xs = case break (== ';') xs of
-                     (as,_:_) -> as
-                     _ -> xs
-
-
-
+loadFile s file = do
+    txt <- Text.readFile file
+    case Parser.runParser (Parser.some parseSExpr) file txt of
+        Left err -> fail (show err)
+        Right exprs ->
+            mapM_ (command s) exprs
 
 -- | A command with no interesting result.
 ackCommand :: Solver -> SExpr -> IO ()
@@ -347,17 +373,17 @@ ackCommand proc c =
        _  -> fail $ unlines
                       [ "Unexpected result from the SMT solver:"
                       , "  Expected: success"
-                      , "  Result: " ++ showsSExpr res ""
+                      , "  Result: " ++ showSExpr res
                       ]
 
 -- | A command entirely made out of atoms, with no interesting result.
-simpleCommand :: Solver -> [String] -> IO ()
+simpleCommand :: Solver -> [Text] -> IO ()
 simpleCommand proc = ackCommand proc . List . map Atom
 
 -- | Run a command and return True if successful, and False if unsupported.
 -- This is useful for setting options that unsupported by some solvers, but used
 -- by others.
-simpleCommandMaybe :: Solver -> [String] -> IO Bool
+simpleCommandMaybe :: Solver -> [Text] -> IO Bool
 simpleCommandMaybe proc c =
   do res <- command proc (List (map Atom c))
      case res of
@@ -366,25 +392,25 @@ simpleCommandMaybe proc c =
        _                  -> fail $ unlines
                                       [ "Unexpected result from the SMT solver:"
                                       , "  Expected: success or unsupported"
-                                      , "  Result: " ++ showsSExpr res ""
+                                      , "  Result: " ++ showSExpr res
                                       ]
 
 
 -- | Set a solver option.
-setOption :: Solver -> String -> String -> IO ()
+setOption :: Solver -> Text -> Text -> IO ()
 setOption s x y = simpleCommand s [ "set-option", x, y ]
 
 -- | Set a solver option, returning False if the option is unsupported.
-setOptionMaybe :: Solver -> String -> String -> IO Bool
+setOptionMaybe :: Solver -> Text -> Text -> IO Bool
 setOptionMaybe s x y = simpleCommandMaybe s [ "set-option", x, y ]
 
 -- | Set the solver's logic.  Usually, this should be done first.
-setLogic :: Solver -> String -> IO ()
+setLogic :: Solver -> Text -> IO ()
 setLogic s x = simpleCommand s [ "set-logic", x ]
 
 
 -- | Set the solver's logic, returning False if the logic is unsupported.
-setLogicMaybe :: Solver -> String -> IO Bool
+setLogicMaybe :: Solver -> Text -> IO Bool
 setLogicMaybe s x = simpleCommandMaybe s [ "set-logic", x ]
 
 -- | Request unsat cores.  Returns if the solver supports them.
@@ -401,11 +427,11 @@ pop proc = popMany proc 1
 
 -- | Push multiple scopes.
 pushMany :: Solver -> Integer -> IO ()
-pushMany proc n = simpleCommand proc [ "push", show n ]
+pushMany proc n = simpleCommand proc [ "push", Text.pack (show n) ]
 
 -- | Pop multiple scopes.
 popMany :: Solver -> Integer -> IO ()
-popMany proc n = simpleCommand proc [ "pop", show n ]
+popMany proc n = simpleCommand proc [ "pop", Text.pack (show n) ]
 
 -- | Execute the IO action in a new solver scope (push before, pop after)
 inNewScope :: Solver -> IO a -> IO a
@@ -417,12 +443,12 @@ inNewScope s m =
 
 -- | Declare a constant.  A common abbreviation for 'declareFun'.
 -- For convenience, returns an the declared name as a constant expression.
-declare :: Solver -> String -> SExpr -> IO SExpr
+declare :: Solver -> Text -> SExpr -> IO SExpr
 declare proc f t = declareFun proc f [] t
 
 -- | Declare a function or a constant.
 -- For convenience, returns an the declared name as a constant expression.
-declareFun :: Solver -> String -> [SExpr] -> SExpr -> IO SExpr
+declareFun :: Solver -> Text -> [SExpr] -> SExpr -> IO SExpr
 declareFun proc f as r =
   do ackCommand proc $ fun "declare-fun" [ Atom f, List as, r ]
      return (const f)
@@ -430,9 +456,9 @@ declareFun proc f as r =
 -- | Declare an ADT using the format introduced in SmtLib 2.6.
 declareDatatype ::
   Solver ->
-  String {- ^ datatype name -} ->
-  [String] {- ^ sort parameters -} ->
-  [(String, [(String, SExpr)])] {- ^ constructors -} ->
+  Text {- ^ datatype name -} ->
+  [Text] {- ^ sort parameters -} ->
+  [(Text, [(Text, SExpr)])] {- ^ constructors -} ->
   IO ()
 declareDatatype proc t [] cs =
   ackCommand proc $
@@ -454,7 +480,7 @@ declareDatatype proc t ps cs =
 -- | Declare a constant.  A common abbreviation for 'declareFun'.
 -- For convenience, returns the defined name as a constant expression.
 define :: Solver ->
-          String {- ^ New symbol -} ->
+          Text {- ^ New symbol -} ->
           SExpr  {- ^ Symbol type -} ->
           SExpr  {- ^ Symbol definition -} ->
           IO SExpr
@@ -463,8 +489,8 @@ define proc f t e = defineFun proc f [] t e
 -- | Define a function or a constant.
 -- For convenience, returns an the defined name as a constant expression.
 defineFun :: Solver ->
-             String           {- ^ New symbol -} ->
-             [(String,SExpr)] {- ^ Parameters, with types -} ->
+             Text           {- ^ New symbol -} ->
+             [(Text,SExpr)] {- ^ Parameters, with types -} ->
              SExpr            {- ^ Type of result -} ->
              SExpr            {- ^ Definition -} ->
              IO SExpr
@@ -490,7 +516,7 @@ check proc =
        _ -> fail $ unlines
               [ "Unexpected result from the SMT solver:"
               , "  Expected: unsat, unknown, or sat"
-              , "  Result: " ++ showsSExpr res ""
+              , "  Result: " ++ showSExpr res
               ]
 
 -- | Convert an s-expression to a value.
@@ -499,11 +525,11 @@ sexprToVal expr =
   case expr of
     Atom "true"                    -> Bool True
     Atom "false"                   -> Bool False
-    Atom ('#' : 'b' : ds)
+    Atom (Text.unpack -> ('#' : 'b' : ds))
       | Just n <- binLit ds         -> Bits (length ds) n
-    Atom ('#' : 'x' : ds)
+    Atom (Text.unpack -> ('#' : 'x' : ds))
       | [(n,[])] <- readHex ds      -> Bits (4 * length ds) n
-    Atom txt
+    Atom (Text.unpack -> txt)
       | Just n <- readMaybe txt     -> Int n
     List [ Atom "-", x ]
       | Int a <- sexprToVal x    -> Int (negate a)
@@ -530,7 +556,7 @@ getExprs proc vals =
        _ -> fail $ unlines
                  [ "Unexpected response from the SMT solver:"
                  , "  Exptected: a list"
-                 , "  Result: " ++ showsSExpr res ""
+                 , "  Result: " ++ showSExpr res
                  ]
   where
   getAns expr =
@@ -539,13 +565,13 @@ getExprs proc vals =
       _             -> fail $ unlines
                             [ "Unexpected response from the SMT solver:"
                             , "  Expected: (expr val)"
-                            , "  Result: " ++ showsSExpr expr ""
+                            , "  Result: " ++ showSExpr expr
                             ]
 
 -- | Get the values of some constants in the current model.
 -- A special case of 'getExprs'.
 -- Only valid after a 'Sat' result.
-getConsts :: Solver -> [String] -> IO [(String, Value)]
+getConsts :: Solver -> [Text] -> IO [(Text, Value)]
 getConsts proc xs =
   do ans <- getExprs proc (map Atom xs)
      return [ (x,e) | (Atom x, e) <- ans ]
@@ -558,11 +584,11 @@ getExpr proc x =
      return v
 
 -- | Get the value of a single constant.
-getConst :: Solver -> String -> IO Value
+getConst :: Solver -> Text -> IO Value
 getConst proc x = getExpr proc (Atom x)
 
 -- | Returns the names of the (named) formulas involved in a contradiction.
-getUnsatCore :: Solver -> IO [String]
+getUnsatCore :: Solver -> IO [Text]
 getUnsatCore s =
   do res <- command s $ List [ Atom "get-unsat-core" ]
      case res of
@@ -577,23 +603,23 @@ getUnsatCore s =
   unexpected x e =
     fail $ unlines [ "Unexpected response from the SMT Solver:"
                    , "  Expected: " ++ x
-                   , "  Result: " ++ showsSExpr e ""
+                   , "  Result: " ++ showSExpr e
                    ]
 
 --------------------------------------------------------------------------------
 
 
 -- | A constant, corresponding to a family indexed by some integers.
-fam :: String -> [Integer] -> SExpr
-fam f is = List (Atom "_" : Atom f : map (Atom . show) is)
+fam :: Text -> [Integer] -> SExpr
+fam f is = List (Atom "_" : Atom f : map (Atom . Text.pack . show) is)
 
 -- | An SMT function.
-fun :: String -> [SExpr] -> SExpr
+fun :: Text -> [SExpr] -> SExpr
 fun f [] = Atom f
 fun f as = List (Atom f : as)
 
 -- | An SMT constant.  A special case of 'fun'.
-const :: String -> SExpr
+const :: Text -> SExpr
 const f = fun f []
 
 
@@ -634,12 +660,12 @@ bool b = const (if b then "true" else "false")
 -- | Integer literals.
 int :: Integer -> SExpr
 int x | x < 0     = neg (int (negate x))
-      | otherwise = Atom (show x)
+      | otherwise = Atom (Text.pack $ show x)
 
 -- | Real (well, rational) literals.
 real :: Rational -> SExpr
 real x
-  | toRational y == x = Atom (showFFloat Nothing y "")
+  | toRational y == x = Atom (Text.pack $ showFFloat Nothing y "")
   | otherwise = realDiv (int (numerator x)) (int (denominator x))
   where y = fromRational x :: Double
 
@@ -648,9 +674,11 @@ real x
 --     * If the value does not fit in the bits, then the bits will be increased.
 --     * The width should be strictly positive.
 bvBin :: Int {- ^ Width, in bits -} -> Integer {- ^ Value -} -> SExpr
-bvBin w v = const ("#b" ++ bits)
+bvBin w v = const ("#b" <> bits)
   where
-  bits = reverse [ if testBit v n then '1' else '0' | n <- [ 0 .. w - 1 ] ]
+  bits =
+      (Text.pack . reverse)
+      [ if testBit v n then '1' else '0' | n <- [ 0 .. w - 1 ] ]
 
 -- | A bit vector represented in hex.
 --
@@ -661,11 +689,11 @@ bvBin w v = const ("#b" ++ bits)
 --    * The width should be strictly positive.
 bvHex :: Int {- ^ Width, in bits -} -> Integer {- ^ Value -} -> SExpr
 bvHex w v
-  | v >= 0    = const ("#x" ++ padding ++ hex)
+  | v >= 0    = const (Text.pack $ "#x" ++ padding ++ hex)
   | otherwise = bvHex w (2^w + v)
   where
   hex     = showHex v ""
-  padding = replicate (P.div (w + 3) 4 - length hex) '0'
+  padding = replicate (Prelude.div (w + 3) 4 - length hex) '0'
 
 
 -- | Render a value as an expression.  Bit-vectors are rendered in hex,
@@ -676,8 +704,9 @@ value val =
     Bool b    -> bool b
     Int n     -> int n
     Real r    -> real r
-    Bits w v | P.mod w 4 == 0 -> bvHex w v
-             | otherwise      -> bvBin w v
+    Bits w v
+      | Prelude.mod w 4 == 0 -> bvHex w v
+      | otherwise      -> bvBin w v
     Other o   -> o
 
 -- Connectives -----------------------------------------------------------------
@@ -901,7 +930,7 @@ store x y z = fun "store" [x,y,z]
 --------------------------------------------------------------------------------
 -- Attributes
 
-named :: String -> SExpr -> SExpr
+named :: Text -> SExpr -> SExpr
 named x e = fun "!" [e, Atom ":named", Atom x ]
 
 
@@ -909,7 +938,7 @@ named x e = fun "!" [e, Atom ":named", Atom x ]
 
 -- | Log messages with minimal formatting. Mostly for debugging.
 data Logger = Logger
-  { logMessage :: String -> IO ()
+  { logMessage :: Lazy.Text -> IO ()
     -- ^ Log a message.
 
   , logLevel   :: IO Int
@@ -926,22 +955,22 @@ data Logger = Logger
 -- | Run an IO action with the logger set to a specific level, restoring it when
 -- done.
 withLogLevel :: Logger -> Int -> IO a -> IO a
-withLogLevel Logger { .. } l m =
+withLogLevel Logger { logLevel, logSetLevel } l m =
   do l0 <- logLevel
      X.bracket_ (logSetLevel l) (logSetLevel l0) m
 
 logIndented :: Logger -> IO a -> IO a
-logIndented Logger { .. } = X.bracket_ logTab logUntab
+logIndented Logger { logTab, logUntab } = X.bracket_ logTab logUntab
 
 -- | Log a message at a specific log level.
-logMessageAt :: Logger -> Int -> String -> IO ()
+logMessageAt :: Logger -> Int -> Lazy.Text -> IO ()
 logMessageAt logger l msg = withLogLevel logger l (logMessage logger msg)
 
 -- | A simple stdout logger.  Shows only messages logged at a level that is
 -- greater than or equal to the passed level.
 newLogger :: Int -> IO Logger
-newLogger l =
-  do tab <- newIORef 0
+newLogger l = do
+     tab <- newIORef 0
      lev <- newIORef 0
      let logLevel    = readIORef lev
          logSetLevel = writeIORef lev
@@ -950,11 +979,20 @@ newLogger l =
            do cl <- logLevel
               when (cl >= l) m
 
-         logMessage x = shouldLog $
-           do t <- readIORef tab
-              putStr $ unlines [ replicate t ' ' ++ line | line <- lines x ]
-              hFlush stdout
+         logMessage x = shouldLog $ do
+             t <- readIORef tab
+             Text.Lazy.putStr $ Text.Lazy.unlines
+                [ Text.Lazy.replicate t " " <> line
+                | line <- Text.Lazy.lines x
+                ]
+             hFlush stdout
 
          logTab   = shouldLog (modifyIORef' tab (+ 2))
          logUntab = shouldLog (modifyIORef' tab (subtract 2))
-     return Logger { .. }
+     return Logger
+         { logLevel
+         , logSetLevel
+         , logMessage
+         , logTab
+         , logUntab
+         }

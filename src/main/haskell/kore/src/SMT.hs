@@ -50,6 +50,8 @@ import qualified Control.Monad.Trans.Maybe as Maybe
 import qualified Control.Monad.Writer.Lazy as Writer.Lazy
 import qualified Control.Monad.Writer.Strict as Writer.Strict
 import           Data.Limit
+import           Data.Text
+                 ( Text )
 import           SimpleSMT
                  ( Result (..), SExpr (..), Solver )
 import qualified SimpleSMT
@@ -65,7 +67,7 @@ data Config =
         -- ^ solver executable file name
         , arguments :: [String]
         -- ^ default command-line arguments to solver
-        , logic :: String
+        , logic :: Text
         -- ^ SMT-LIB2 logic
         , preludeFile :: Maybe FilePath
         -- ^ prelude of definitions to initialize solver
@@ -189,7 +191,7 @@ runSMT config SMT { getSMT } = do
 The declared name is returned as an expression for convenience.
 
  -}
-declare :: MonadSMT m => String -> SExpr -> m SExpr
+declare :: MonadSMT m => Text -> SExpr -> m SExpr
 declare name typ =
     liftSMT $ withSolver $ \solver ->
         SimpleSMT.declare solver name typ
@@ -209,15 +211,9 @@ check :: MonadSMT m => m Result
 check = liftSMT $ withSolver SimpleSMT.check
 
 -- | SMT-LIB @set-info@ command.
-setInfo :: MonadSMT m => String -> SExpr -> m ()
+setInfo :: MonadSMT m => Text -> SExpr -> m ()
 setInfo infoFlag expr =
-    ackCommand $ case expr of
-        Atom _ ->
-            List (command : Atom infoFlag : [expr])
-        List exprs ->
-            List (command : Atom infoFlag : exprs)
-  where
-    command = Atom "set-info"
+    ackCommand $ List (Atom "set-info" : Atom infoFlag : [expr])
 
 {- | Run a query in a new solver scope.
 
@@ -262,7 +258,7 @@ setTimeOut TimeOut { getTimeOut } =
             return ()
 
 -- | Set the logic used by the solver.
-setLogic :: MonadSMT m => String -> m ()
+setLogic :: MonadSMT m => Text -> m ()
 setLogic logic =
     liftSMT $ withSolver $ \solver ->
         SimpleSMT.setLogic solver logic
