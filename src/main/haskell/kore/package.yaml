@@ -44,9 +44,9 @@ dependencies:
   - optparse-applicative
   - parser-combinators
   - prettyprinter
+  - process
   - recursion-schemes
   - reflection
-  - simple-smt
   - template-haskell
   - text
   - time
