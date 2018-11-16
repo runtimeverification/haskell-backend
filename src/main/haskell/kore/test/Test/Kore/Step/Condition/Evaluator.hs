@@ -25,8 +25,6 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Simplification.Data
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -34,16 +32,14 @@ import qualified SMT
 import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
+import           Test.Kore.Builtin.Builtin
+                 ( testMetadataTools, testSubstitutionSimplifier,
+                 testSymbolOrAliasSorts )
+import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Builtin.Int
 import           Test.Kore.Predicate.Predicate ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.Simplifier
 import           Test.SMT
-
-testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-tools :: MetadataTools Object StepperAttributes
-tools@MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts } =
-    Builtin.Int.testTools
 
 genId :: forall level. MetaOrObject level => Gen (Id level)
 genId =
@@ -91,7 +87,7 @@ genPredicate =
         , genOrPredicate
         ]
   where
-    genVariable = genSortedVariable Builtin.Bool.boolSort
+    genVariable = genSortedVariable Builtin.boolSort
     genAndPredicate = makeAndPredicate <$> genPredicate <*> genPredicate
     genCeilPredicate = makeCeilPredicate . mkVar <$> genVariable
     genEqualsPredicate =
@@ -142,11 +138,11 @@ evaluate
     -> PropertyT SMT (PredicateSubstitution Object Variable)
 evaluate predicate =
     (<$>) fst
-    $ give tools $ give testSymbolOrAliasSorts
+    $ give testMetadataTools $ give testSymbolOrAliasSorts
     $ Trans.lift
     $ evalSimplifier
     $ Evaluator.evaluate
-        (Mock.substitutionSimplifier tools)
+        testSubstitutionSimplifier
         (mockSimplifier [])
         predicate
 
@@ -154,7 +150,7 @@ evaluate predicate =
 -- Refute Int predicates
 
 vInt :: Text -> CommonPurePattern Object
-vInt s = V (varS s Builtin.Int.intSort)
+vInt s = V (varS s Builtin.intSort)
 
 a, b, c :: CommonPurePattern Object
 a = vInt "a"
@@ -162,7 +158,7 @@ b = vInt "b"
 c = vInt "c"
 
 vBool :: Text -> CommonPurePattern Object
-vBool s = V (varS s Builtin.Bool.boolSort)
+vBool s = V (varS s Builtin.boolSort)
 
 p, q :: CommonPurePattern Object
 p = vBool "p"
@@ -172,13 +168,13 @@ add, sub, mul, div
     :: CommonPurePattern Object
     -> CommonPurePattern Object
     -> CommonPurePattern Object
-add i j = App_ Builtin.Int.addSymbol  [i, j]
-sub i j = App_ Builtin.Int.subSymbol  [i, j]
-mul i j = App_ Builtin.Int.mulSymbol  [i, j]
-div i j = App_ Builtin.Int.tdivSymbol [i, j]
+add i j = App_ Builtin.addIntSymbol  [i, j]
+sub i j = App_ Builtin.subIntSymbol  [i, j]
+mul i j = App_ Builtin.mulIntSymbol  [i, j]
+div i j = App_ Builtin.tdivIntSymbol [i, j]
 
 assertRefuted :: CommonPredicate Object -> Assertion
-assertRefuted prop = give tools $ do
+assertRefuted prop = give testMetadataTools $ do
     let expect = Just False
     actual <- SMT.runSMT SMT.defaultConfig $ Evaluator.refutePredicate prop
     assertEqual "" expect actual
@@ -189,9 +185,9 @@ unit_1 =
     $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern True)
-        (App_ Builtin.Bool.andSymbol
-            [ App_ Builtin.Int.ltSymbol [a, Builtin.Int.intLiteral 0]
-            , App_ Builtin.Int.ltSymbol [Builtin.Int.intLiteral 0, a]
+        (App_ Builtin.andBoolSymbol
+            [ App_ Builtin.ltIntSymbol [a, Builtin.Int.intLiteral 0]
+            , App_ Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
             ]
         )
 
@@ -201,9 +197,9 @@ unit_2 =
     $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern True)
-        (App_ Builtin.Bool.andSymbol
-            [ App_ Builtin.Int.ltSymbol [a `add` a, a `add` b]
-            , App_ Builtin.Int.ltSymbol [b `add` b, a `add` b]
+        (App_ Builtin.andBoolSymbol
+            [ App_ Builtin.ltIntSymbol [a `add` a, a `add` b]
+            , App_ Builtin.ltIntSymbol [b `add` b, a `add` b]
             ]
         )
 
@@ -213,11 +209,11 @@ unit_3 =
     $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.Bool.impliesSymbol
-            [ App_ Builtin.Int.ltSymbol [a, b]
-            , App_ Builtin.Bool.impliesSymbol
-                [ App_ Builtin.Int.ltSymbol [b, c]
-                , App_ Builtin.Int.ltSymbol [a, c]
+        (App_ Builtin.impliesBoolSymbol
+            [ App_ Builtin.ltIntSymbol [a, b]
+            , App_ Builtin.impliesBoolSymbol
+                [ App_ Builtin.ltIntSymbol [b, c]
+                , App_ Builtin.ltIntSymbol [a, c]
                 ]
             ]
         )
@@ -228,7 +224,7 @@ unit_4 =
     $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern True)
-        (App_ Builtin.Int.eqSymbol
+        (App_ Builtin.eqIntSymbol
             [ add
                 (Builtin.Int.intLiteral 1)
                 (Builtin.Int.intLiteral 2 `mul` a)
@@ -242,12 +238,12 @@ unit_5 =
     $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.Bool.impliesSymbol
-            [ App_ Builtin.Int.eqSymbol
+        (App_ Builtin.impliesBoolSymbol
+            [ App_ Builtin.eqIntSymbol
                 [ Builtin.Int.intLiteral 0 `sub` (a `mul` a)
                 , b `mul` b
                 ]
-            , App_ Builtin.Int.eqSymbol [a, Builtin.Int.intLiteral 0]
+            , App_ Builtin.eqIntSymbol [a, Builtin.Int.intLiteral 0]
             ]
         )
 
@@ -258,10 +254,10 @@ unit_div =
     $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.Bool.impliesSymbol
-            [ App_ Builtin.Int.ltSymbol [Builtin.Int.intLiteral 0, a]
-            , App_ Builtin.Int.ltSymbol
-                [ App_ Builtin.Int.tdivSymbol [a, Builtin.Int.intLiteral 2]
+        (App_ Builtin.impliesBoolSymbol
+            [ App_ Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
+            , App_ Builtin.ltIntSymbol
+                [ App_ Builtin.tdivIntSymbol [a, Builtin.Int.intLiteral 2]
                 , a
                 ]
             ]
@@ -273,8 +269,8 @@ unit_mod =
     $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.Int.eqSymbol
-            [ App_ Builtin.Int.tmodSymbol
+        (App_ Builtin.eqIntSymbol
+            [ App_ Builtin.tmodIntSymbol
                 [ a `mul` Builtin.Int.intLiteral 2
                 , Builtin.Int.intLiteral 2
                 ]
@@ -288,9 +284,9 @@ unit_pierce =
     $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.Bool.impliesSymbol
-            [ App_ Builtin.Bool.impliesSymbol
-                [ App_ Builtin.Bool.impliesSymbol [ p, q ]
+        (App_ Builtin.impliesBoolSymbol
+            [ App_ Builtin.impliesBoolSymbol
+                [ App_ Builtin.impliesBoolSymbol [ p, q ]
                 , p
                 ]
             , p
@@ -303,12 +299,12 @@ unit_demorgan =
     $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.Bool.eqSymbol
-            [ App_ Builtin.Bool.notSymbol
-                [ App_ Builtin.Bool.orSymbol [p, q] ]
-            , App_ Builtin.Bool.andSymbol
-                [ App_ Builtin.Bool.notSymbol [p]
-                , App_ Builtin.Bool.notSymbol [q]
+        (App_ Builtin.eqBoolSymbol
+            [ App_ Builtin.notBoolSymbol
+                [ App_ Builtin.orBoolSymbol [p, q] ]
+            , App_ Builtin.andBoolSymbol
+                [ App_ Builtin.notBoolSymbol [p]
+                , App_ Builtin.notBoolSymbol [q]
                 ]
             ]
         )
@@ -326,9 +322,9 @@ unit_false =
     $ makeNotPredicate
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern True)
-        (App_ Builtin.Bool.eqSymbol
-            [ App_ Builtin.Bool.notSymbol [p]
-            , App_ Builtin.Bool.impliesSymbol
+        (App_ Builtin.eqBoolSymbol
+            [ App_ Builtin.notBoolSymbol [p]
+            , App_ Builtin.impliesBoolSymbol
                 [ p
                 , Builtin.Bool.asPattern False
                 ]

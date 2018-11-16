@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Test.SMT where
 
 import Hedgehog
@@ -11,12 +13,16 @@ import           Control.Monad.IO.Class
 import qualified Control.Monad.Morph as Morph
 import           Control.Monad.Reader
                  ( runReaderT )
+import qualified Control.Monad.Trans as Trans
 import           GHC.Stack
                  ( HasCallStack )
 
 import           SMT
-                 ( SMT, Solver )
+                 ( MonadSMT, SMT, Solver )
 import qualified SMT
+
+instance MonadSMT (PropertyT SMT) where
+    liftSMT = Trans.lift
 
 propertyWithSolver
     :: HasCallStack

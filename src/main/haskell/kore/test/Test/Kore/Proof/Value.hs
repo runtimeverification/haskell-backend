@@ -22,7 +22,7 @@ import qualified Kore.Proof.Value as Value
 import           Kore.Step.StepperAttributes
 
 import           Test.Kore
-import           Test.Kore.Builtin.Int
+import           Test.Kore.Builtin.Definition
                  ( intSort )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
