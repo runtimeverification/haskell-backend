@@ -35,8 +35,6 @@ import Data.Text
 import Kore.AST.Builders
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( PureSentenceSymbol )
 import Kore.AST.Sentence
 import Kore.Implicit.ImplicitSorts
 import Kore.Implicit.ImplicitVarsInternal

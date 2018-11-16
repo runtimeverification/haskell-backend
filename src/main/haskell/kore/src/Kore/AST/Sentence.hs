@@ -446,3 +446,38 @@ instance
 
 instance AsSentence KoreSentence KoreSentenceHook where
     asSentence = constructUnifiedSentence SentenceHookSentence
+
+-- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
+type PureSentenceAxiom level =
+    SentenceAxiom (SortVariable level) (Pattern level) Variable
+
+-- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
+type PureSentenceAlias level =
+    SentenceAlias level (Pattern level) Variable
+
+-- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
+type PureSentenceSymbol level =
+    SentenceSymbol level (Pattern level) Variable
+
+-- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
+type PureSentenceImport level =
+    SentenceImport (Pattern level) Variable
+
+-- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
+type PureSentence level =
+    Sentence level (SortVariable level) (Pattern level) Variable
+
+instance AsSentence (PureSentence level) (PureSentenceAlias level) where
+    asSentence = SentenceAliasSentence
+
+instance AsSentence (PureSentence level) (PureSentenceSymbol level) where
+    asSentence = SentenceSymbolSentence
+
+-- |'PureModule' is the pure (fixed-@level@) version of 'Module'
+type PureModule level =
+    Module (Sentence level) (SortVariable level) (Pattern level) Variable
+
+-- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
+type PureDefinition level =
+    Definition
+        (Sentence level) (SortVariable level) (Pattern level) Variable

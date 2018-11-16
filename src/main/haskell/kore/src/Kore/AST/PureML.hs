@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-|
 Module      : Kore.AST.PureML
 Description : Specifies the "pure" version of patterns, sentences, modules, and
@@ -19,14 +18,15 @@ import           Data.Text
                  ( Text )
 
 import Kore.AST.Common
-import Kore.AST.Sentence
 
 asPurePattern
-    :: Pattern level var (PureMLPattern level var) -> PureMLPattern level var
+    :: Pattern level var (PureMLPattern level var)
+    -> PureMLPattern level var
 asPurePattern = embed
 
 fromPurePattern
-    :: PureMLPattern level var -> Pattern level var (PureMLPattern level var)
+    :: PureMLPattern level var
+    -> Pattern level var (PureMLPattern level var)
 fromPurePattern = project
 
 {- | Construct a 'ConcretePurePattern' from a 'PureMLPattern'.
@@ -36,7 +36,9 @@ fromPurePattern = project
     contains any variables, the result is @Nothing@.
 
  -}
-asConcretePurePattern :: PureMLPattern level var -> Maybe (ConcretePurePattern level)
+asConcretePurePattern
+    :: PureMLPattern level var
+    -> Maybe (ConcretePurePattern level)
 asConcretePurePattern =
     Functor.Foldable.fold asConcretePurePattern0
   where
@@ -115,38 +117,6 @@ fromConcretePurePattern =
                     -- unreachable.
                     case varP of {}
             )
-
--- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
-type PureSentenceAxiom level =
-    SentenceAxiom (SortVariable level) (Pattern level) Variable
--- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
-type PureSentenceAlias level =
-    SentenceAlias level (Pattern level) Variable
--- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
-type PureSentenceSymbol level =
-    SentenceSymbol level (Pattern level) Variable
--- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
-type PureSentenceImport level =
-    SentenceImport (Pattern level) Variable
-
--- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
-type PureSentence level =
-    Sentence level (SortVariable level) (Pattern level) Variable
-
-instance AsSentence (PureSentence level) (PureSentenceAlias level) where
-    asSentence = SentenceAliasSentence
-
-instance AsSentence (PureSentence level) (PureSentenceSymbol level) where
-    asSentence = SentenceSymbolSentence
-
--- |'PureModule' is the pure (fixed-@level@) version of 'Module'
-type PureModule level =
-    Module (Sentence level) (SortVariable level) (Pattern level) Variable
-
--- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
-type PureDefinition level =
-    Definition
-        (Sentence level) (SortVariable level) (Pattern level) Variable
 
 -- |Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.
