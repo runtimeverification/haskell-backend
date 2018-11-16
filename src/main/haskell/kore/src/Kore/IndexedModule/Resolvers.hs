@@ -23,10 +23,10 @@ module Kore.IndexedModule.Resolvers
 
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -47,7 +47,7 @@ import Kore.Error
        ( Error, koreFail, printError )
 import Kore.IndexedModule.IndexedModule
        ( IndexedModule (..), KoreIndexedModule, SortDescription,
-       getIndexedSentence )
+       getIndexedSentence, indexedModulesInScope )
 
 symbolSentencesMap
     :: MetaOrObject level
@@ -276,11 +276,12 @@ resolveHook
     -> Sort Object
     -> Either (Error e) (Id Object)
 resolveHook indexedModule builtinName builtinSort =
-    resolveHookHandler builtinName $
-    filter (\name ->
+    resolveHookHandler builtinName
+    $ Set.filter relevant
+    $ resolveHooks indexedModule builtinName
+  where
+    relevant name =
         involvesSort indexedModule builtinSort (SymbolOrAlias name [])
-    ) $
-    resolveHooks indexedModule builtinName
 
 involvesSort
     :: KoreIndexedModule atts
@@ -294,37 +295,34 @@ involvesSort indexedModule builtinSort sym =
 
 resolveHookHandler
     :: Text
-    -> [Id Object]
+    -> Set (Id Object)
     -> Either (Error e) (Id Object)
-resolveHookHandler builtinName lookupResults =
-    case lookupResults of
-    [hookId] -> return hookId
-    [] ->
-        koreFail
-            ("Builtin '" ++ Text.unpack builtinName ++ "' is not hooked.")
-    hookIds ->
-        koreFail
-            ("Builtin '" ++ Text.unpack builtinName
-                ++ "' is hooked to multiple identifiers: "
-                ++ List.intercalate ", " (squotes . getIdForError <$> hookIds)
-            )
+resolveHookHandler builtinName results =
+    case Set.toList results of
+        [hookId] -> return hookId
+        [] ->
+            koreFail
+                ("Builtin '" ++ Text.unpack builtinName ++ "' is not hooked.")
+        hookIds ->
+            koreFail
+                ("Builtin '" ++ Text.unpack builtinName
+                    ++ "' is hooked to multiple identifiers: "
+                    ++ List.intercalate ", "
+                        (squotes . getIdForError <$> hookIds)
+                )
       where
         squotes str = "'" ++ str ++ "'"
 
 resolveHooks
     :: KoreIndexedModule atts
     -> Text
-    -> [Id Object]
+    -> Set (Id Object)
 resolveHooks indexedModule builtinName =
     foldMap resolveHooks1 allHooks
   where
-    allHooks = allHooksOf indexedModule
-    allHooksOf _module =
-        let _imports =
-                (\(_, _, _import) -> _import) <$> indexedModuleImports _module
-        in
-            indexedModuleHooks _module : mconcat (allHooksOf <$> _imports)
-    resolveHooks1 hooks = fromMaybe [] (Map.lookup builtinName hooks)
+    allHooks = indexedModuleHooks <$> indexedModulesInScope indexedModule
+    resolveHooks1 hooks =
+        maybe Set.empty Set.fromList (Map.lookup builtinName hooks)
 
 {- | Find a sort by name in an indexed module and its imports.
 

@@ -37,7 +37,7 @@ data ApplicationSorts level = ApplicationSorts
     { applicationSortsOperands :: ![Sort level]
     , applicationSortsResult   :: !(Sort level)
     }
-    deriving (Show, Eq)
+    deriving (Eq, Ord, Show)
 
 {-|'symbolOrAliasSorts' builds the return and operand sorts for an application
 pattern from the given sort parameters.
