@@ -53,9 +53,10 @@ import Kore.AST.MetaOrObject
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
 allow using toghether both 'Meta' and 'Object' patterns.
 -}
-newtype UnifiedPattern variable child = UnifiedPattern
-    { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
-  deriving ( Generic )
+newtype UnifiedPattern variable child =
+    UnifiedPattern
+        { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
+    deriving (Generic)
 
 pattern UnifiedMetaPattern :: Pattern Meta var child -> UnifiedPattern var child
 pattern UnifiedMetaPattern pat = UnifiedPattern (UnifiedMeta (Rotate31 pat))
