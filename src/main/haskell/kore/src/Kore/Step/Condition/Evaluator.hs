@@ -18,8 +18,6 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, unwrapPredicate,
-                 wrapPredicate )
 import           Kore.SMT.SMT
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
@@ -32,7 +30,12 @@ import           Kore.Step.Simplification.Data
                  SimplificationProof (SimplificationProof), Simplifier )
 import           Kore.Step.StepperAttributes
 
-{-| 'evaluate' attempts to evaluate a Kore predicate. -}
+{- | 'evaluate' attempts to evaluate a Kore predicate.
+
+If the predicate is non-trivial (not @\\top{_}()@ or @\\bottom{_}()@),
+@evaluate@ attempts to refute the predicate using an external SMT solver.
+
+ -}
 evaluate
     ::  forall level variable .
         ( MetaOrObject level
@@ -54,28 +57,24 @@ evaluate
 evaluate
     substitutionSimplifier
     (PureMLPatternSimplifier simplifier)
-    predicate''
-  = give tools $ do
-    (patt, _proof) <-
-        simplifier substitutionSimplifier (unwrapPredicate predicate'')
-    refuted <- refutePredicate predicate''
-    let patt' =
-            case refuted of
-                Just False
-                  | not (OrOfExpandedPattern.isTrue patt)
-                    && not (OrOfExpandedPattern.isFalse patt)
-                  ->
-                    ExpandedPattern.bottom
-                _ ->
-                    give symbolOrAliasSorts
-                    $ OrOfExpandedPattern.toExpandedPattern patt
-    let
-        (subst, _proof) =
-            give symbolOrAliasSorts $ asPredicateSubstitution patt'
-    return ( subst, SimplificationProof)
+    predicate
+  = give symbolOrAliasSorts $ do
+    (simplified, _proof) <-
+        simplifier substitutionSimplifier (unwrapPredicate predicate)
+    refute <-
+        case () of
+            _ | OrOfExpandedPattern.isTrue simplified -> return (Just True)
+              | OrOfExpandedPattern.isFalse simplified -> return (Just False)
+              | otherwise -> refutePredicate predicate
+    let simplified' =
+            case refute of
+                Just False -> ExpandedPattern.bottom
+                _ -> OrOfExpandedPattern.toExpandedPattern simplified
+        (subst, _proof) = asPredicateSubstitution simplified'
+    return (subst, SimplificationProof)
   where
-    tools :: MetadataTools level StepperAttributes
-    tools@MetadataTools { symbolOrAliasSorts } = given
+    MetadataTools { symbolOrAliasSorts } =
+        given :: MetadataTools level StepperAttributes
 
 asPredicateSubstitution
     ::  ( MetaOrObject level

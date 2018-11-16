@@ -47,6 +47,8 @@ import qualified SMT
 
 {- | Attempt to disprove the given predicate using SMT.
 
+The predicate is always sent to the SMT (if possible), even if it is trivial.
+
  -}
 refutePredicate
     :: forall level variable m.
