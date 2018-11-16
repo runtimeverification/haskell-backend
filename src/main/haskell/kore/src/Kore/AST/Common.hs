@@ -1018,13 +1018,18 @@ instance NFData child => NFData (BuiltinDomain child)
 $(return [])
 {- dummy top-level splice to make ''Pattern available for lifting -}
 
-instance (Ord level, Ord (variable level)) => Ord1 (Pattern level variable) where
-    liftCompare liftedCompare a b = $(makeLiftCompare ''Pattern) liftedCompare a b
+instance
+    (Ord level, Ord (variable level)) => Ord1 (Pattern level variable)
+  where
+    liftCompare liftedCompare a b =
+        $(makeLiftCompare ''Pattern) liftedCompare a b
 
 instance (Eq level, Eq (variable level)) => Eq1 (Pattern level variable) where
     liftEq liftedEq a b = $(makeLiftEq ''Pattern) liftedEq a b
 
-instance (Show level, Show (variable level)) => Show1 (Pattern level variable) where
+instance
+    (Show level, Show (variable level)) => Show1 (Pattern level variable)
+  where
     liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
 
 deriving instance Eq child => Eq (BuiltinDomain child)
@@ -1033,36 +1038,35 @@ deriving instance Ord child => Ord (BuiltinDomain child)
 
 deriving instance Show child => Show (BuiltinDomain child)
 
--- instance Generic child => Generic (Pattern level variable child)
+instance
+    (Hashable child, Hashable (variable level)) =>
+    Hashable (Pattern level variable child)
+  where
+    hashWithSalt s = \case
+        AndPattern           p -> s `hashWithSalt` (0::Int) `hashWithSalt` p
+        ApplicationPattern   p -> s `hashWithSalt` (1::Int) `hashWithSalt` p
+        BottomPattern        p -> s `hashWithSalt` (2::Int) `hashWithSalt` p
+        CeilPattern          p -> s `hashWithSalt` (3::Int) `hashWithSalt` p
+        DomainValuePattern   p -> s `hashWithSalt` (4::Int) `hashWithSalt` p
+        EqualsPattern        p -> s `hashWithSalt` (5::Int) `hashWithSalt` p
+        ExistsPattern        p -> s `hashWithSalt` (6::Int) `hashWithSalt` p
+        FloorPattern         p -> s `hashWithSalt` (7::Int) `hashWithSalt` p
+        ForallPattern        p -> s `hashWithSalt` (8::Int) `hashWithSalt` p
+        IffPattern           p -> s `hashWithSalt` (9::Int) `hashWithSalt` p
+        ImpliesPattern       p -> s `hashWithSalt` (10::Int) `hashWithSalt` p
+        InPattern            p -> s `hashWithSalt` (11::Int) `hashWithSalt` p
+        NextPattern          p -> s `hashWithSalt` (12::Int) `hashWithSalt` p
+        NotPattern           p -> s `hashWithSalt` (13::Int) `hashWithSalt` p
+        OrPattern            p -> s `hashWithSalt` (14::Int) `hashWithSalt` p
+        RewritesPattern      p -> s `hashWithSalt` (15::Int) `hashWithSalt` p
+        StringLiteralPattern p -> s `hashWithSalt` (16::Int) `hashWithSalt` p
+        CharLiteralPattern   p -> s `hashWithSalt` (17::Int) `hashWithSalt` p
+        TopPattern           p -> s `hashWithSalt` (18::Int) `hashWithSalt` p
+        VariablePattern      p -> s `hashWithSalt` (19::Int) `hashWithSalt` p
 
--- instance (Hashable child, Generic child, Hashable (variable level))
--- => Hashable (Pattern level variable child)
-
-instance (Hashable child, Hashable (variable level))
- => Hashable (Pattern level variable child) where
-  hashWithSalt s = \case
-    AndPattern           p -> s `hashWithSalt` (0::Int) `hashWithSalt` p
-    ApplicationPattern   p -> s `hashWithSalt` (1::Int) `hashWithSalt` p
-    BottomPattern        p -> s `hashWithSalt` (2::Int) `hashWithSalt` p
-    CeilPattern          p -> s `hashWithSalt` (3::Int) `hashWithSalt` p
-    DomainValuePattern   p -> s `hashWithSalt` (4::Int) `hashWithSalt` p
-    EqualsPattern        p -> s `hashWithSalt` (5::Int) `hashWithSalt` p
-    ExistsPattern        p -> s `hashWithSalt` (6::Int) `hashWithSalt` p
-    FloorPattern         p -> s `hashWithSalt` (7::Int) `hashWithSalt` p
-    ForallPattern        p -> s `hashWithSalt` (8::Int) `hashWithSalt` p
-    IffPattern           p -> s `hashWithSalt` (9::Int) `hashWithSalt` p
-    ImpliesPattern       p -> s `hashWithSalt` (10::Int) `hashWithSalt` p
-    InPattern            p -> s `hashWithSalt` (11::Int) `hashWithSalt` p
-    NextPattern          p -> s `hashWithSalt` (12::Int) `hashWithSalt` p
-    NotPattern           p -> s `hashWithSalt` (13::Int) `hashWithSalt` p
-    OrPattern            p -> s `hashWithSalt` (14::Int) `hashWithSalt` p
-    RewritesPattern      p -> s `hashWithSalt` (15::Int) `hashWithSalt` p
-    StringLiteralPattern p -> s `hashWithSalt` (16::Int) `hashWithSalt` p
-    CharLiteralPattern   p -> s `hashWithSalt` (17::Int) `hashWithSalt` p
-    TopPattern           p -> s `hashWithSalt` (18::Int) `hashWithSalt` p
-    VariablePattern      p -> s `hashWithSalt` (19::Int) `hashWithSalt` p
-
-instance (NFData child, NFData (var level)) => NFData (Pattern level var child) where
+instance
+    (NFData child, NFData (var level)) => NFData (Pattern level var child)
+  where
     rnf =
         \case
             AndPattern p -> rnf p
