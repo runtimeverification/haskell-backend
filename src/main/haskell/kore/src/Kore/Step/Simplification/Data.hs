@@ -13,8 +13,8 @@ module Kore.Step.Simplification.Data
     , evalSimplifier
     , PredicateSubstitutionSimplifier (..)
     , liftPredicateSubstitutionSimplifier
-    , PureMLPatternSimplifier (..)
-    , CommonPureMLPatternSimplifier
+    , StepPatternSimplifier (..)
+    , CommonStepPatternSimplifier
     , SimplificationProof (..)
     , SimplificationType (..)
     ) where
@@ -23,13 +23,14 @@ import           Control.Monad.Reader
 import qualified Control.Monad.Trans as Monad.Trans
 
 import Kore.AST.Common
-       ( PureMLPattern, SortedVariable, Variable )
+       ( SortedVariable, Variable )
 import Kore.AST.MetaOrObject
        ( Meta, MetaOrObject, Object )
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
+import Kore.Step.Pattern
 import Kore.Substitution.Class
        ( Hashable )
 import Kore.Variables.Fresh
@@ -77,13 +78,13 @@ evalSimplifier simplifier = do
     (result, _) <- runSimplifier simplifier 0
     return result
 
-{-| 'PureMLPatternSimplifier' wraps a function that evaluates
-Kore functions on PureMLPatterns.
+{-| 'StepPatternSimplifier' wraps a function that evaluates
+Kore functions on StepPatterns.
 -}
-newtype PureMLPatternSimplifier level variable =
-    PureMLPatternSimplifier
+newtype StepPatternSimplifier level variable =
+    StepPatternSimplifier
         ( PredicateSubstitutionSimplifier level Simplifier
-        -> PureMLPattern level variable
+        -> StepPattern level variable
         -> Simplifier
             ( OrOfExpandedPattern level variable
             , SimplificationProof level
@@ -93,8 +94,8 @@ newtype PureMLPatternSimplifier level variable =
 {-| 'CommonPurePatternFunctionEvaluator' wraps a function that evaluates
 Kore functions on CommonPurePatterns.
 -}
-type CommonPureMLPatternSimplifier level =
-    PureMLPatternSimplifier level Variable
+type CommonStepPatternSimplifier level =
+    StepPatternSimplifier level Variable
 
 
 {-| 'PredicateSubstitutionSimplifier' wraps a function that simplifies

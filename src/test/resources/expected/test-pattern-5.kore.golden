@@ -9,16 +9,16 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (NotPattern Not
+                        Fix (UnifiedPattern (UnifiedObjectPattern (NotPattern Not
                             { notSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , notChild =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                    }))))
-                            }))))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

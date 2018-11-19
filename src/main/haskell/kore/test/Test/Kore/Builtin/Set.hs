@@ -22,12 +22,14 @@ import           Kore.AST.PureML
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Set as Set
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
                  ( AxiomPattern (..) )
 import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Unification.Data
 
 import           Test.Kore
@@ -45,11 +47,11 @@ import           Test.SMT
 genSetInteger :: Gen (Set Integer)
 genSetInteger = Gen.set (Range.linear 0 32) genInteger
 
-genSetConcreteIntegerPattern :: Gen (Set (ConcretePurePattern Object))
+genSetConcreteIntegerPattern :: Gen (Set (ConcreteStepPattern Object))
 genSetConcreteIntegerPattern =
     Set.map Test.Int.asConcretePattern <$> genSetInteger
 
-genSetPattern :: Gen (CommonPurePattern Object)
+genSetPattern :: Gen (CommonStepPattern Object)
 genSetPattern = asPattern <$> genSetConcreteIntegerPattern
 
 test_getUnit :: TestTree
@@ -174,15 +176,15 @@ test_symbolic =
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
-    :: Set (CommonPurePattern Object)
-    -> CommonPurePattern Object
+    :: Set (CommonStepPattern Object)
+    -> CommonStepPattern Object
 asSymbolicPattern result
     | Set.null result =
         applyUnit
     | otherwise =
         foldr1 applyConcat (applyElement <$> Set.toAscList result)
   where
-    applyUnit = mkDomainValue setSort $ BuiltinDomainSet Set.empty
+    applyUnit = mkDomainValue setSort $ Domain.BuiltinSet Set.empty
     applyElement key = App_ elementSetSymbol [key]
     applyConcat set1 set2 = App_ concatSetSymbol [set1, set2]
 
@@ -345,7 +347,7 @@ test_concretizeKeysAxiom =
             )
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
-asPattern :: Set.Builtin -> CommonPurePattern Object
+asPattern :: Set.Builtin -> CommonStepPattern Object
 Right asPattern = Set.asPattern indexedModule setSort
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
@@ -354,42 +356,42 @@ Right asExpandedPattern = Set.asExpandedPattern indexedModule setSort
 
 -- * Constructors
 
-mkBottom :: CommonPurePattern Object
+mkBottom :: CommonStepPattern Object
 mkBottom = Kore.mkBottom
 
 mkEquals
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkEquals = give testSymbolOrAliasSorts Kore.mkEquals
 
 mkAnd
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkAnd = give testSymbolOrAliasSorts Kore.mkAnd
 
-mkTop :: CommonPurePattern Object
+mkTop :: CommonStepPattern Object
 mkTop = Kore.mkTop
 
-mkVar :: Variable Object -> CommonPurePattern Object
+mkVar :: Variable Object -> CommonStepPattern Object
 mkVar = give testSymbolOrAliasSorts Kore.mkVar
 
 mkDomainValue
     :: Sort Object
-    -> BuiltinDomain (CommonPurePattern Object)
-    -> CommonPurePattern Object
+    -> Domain.Builtin (CommonStepPattern Object)
+    -> CommonStepPattern Object
 mkDomainValue = give testSymbolOrAliasSorts Kore.mkDomainValue
 
 mkImplies
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkImplies = give testSymbolOrAliasSorts Kore.mkImplies
 
-mkNot :: CommonPurePattern Object -> CommonPurePattern Object
+mkNot :: CommonStepPattern Object -> CommonStepPattern Object
 mkNot = give testSymbolOrAliasSorts Kore.mkNot
 
-mkIntVar :: Id Object -> CommonPurePattern Object
+mkIntVar :: Id Object -> CommonStepPattern Object
 mkIntVar variableName =
     mkVar Variable { variableName, variableSort = intSort }

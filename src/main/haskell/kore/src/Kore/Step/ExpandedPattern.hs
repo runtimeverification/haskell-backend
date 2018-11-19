@@ -44,7 +44,7 @@ import           GHC.Generics
                  ( Generic )
 
 import           Kore.AST.Common
-                 ( PureMLPattern, SortedVariable, Variable )
+                 ( SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( mapPatternVariables )
@@ -59,6 +59,7 @@ import           Kore.Predicate.Predicate
                  makeAndPredicate, makeFalsePredicate, makeTruePredicate,
                  substitutionToPredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Pattern
 import           Kore.Unification.Data
 import           Kore.Variables.Free
                  ( pureAllVariables )
@@ -113,7 +114,7 @@ The form of @ExpandedPattern@ is intended to be convenient for Kore execution.
 
  -}
 type ExpandedPattern level variable =
-    Predicated level variable (PureMLPattern level variable)
+    Predicated level variable (StepPattern level variable)
 
 {- | 'CommonExpandedPattern' particularizes 'ExpandedPattern' to 'Variable'.
 -}
@@ -172,7 +173,7 @@ erasePredicatedTerm
     -> PredicateSubstitution level variable
 erasePredicatedTerm = (<$) ()
 
-{-|'toMLPattern' converts an ExpandedPattern to a PureMLPattern.
+{-|'toMLPattern' converts an ExpandedPattern to a StepPattern.
 -}
 toMLPattern
     ::  ( MetaOrObject level
@@ -180,7 +181,7 @@ toMLPattern
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
-    => ExpandedPattern level variable -> PureMLPattern level variable
+    => ExpandedPattern level variable -> StepPattern level variable
 toMLPattern
     Predicated { term, predicate, substitution }
   =
@@ -194,9 +195,9 @@ toMLPattern
             , Given (SymbolOrAliasSorts level)
             , SortedVariable variable
             , Show (variable level))
-        => PureMLPattern level variable
+        => StepPattern level variable
         -> Predicate level variable
-        -> PureMLPattern level variable
+        -> StepPattern level variable
     simpleAnd (Top_ _)      predicate'     = unwrapPredicate predicate'
     simpleAnd patt          PredicateTrue  = patt
     simpleAnd b@(Bottom_ _) _              = b
@@ -247,7 +248,7 @@ isBottom
   = True
 isBottom _ = False
 
-{- | Construct an 'ExpandedPattern' from a 'PureMLPattern'.
+{- | Construct an 'ExpandedPattern' from a 'StepPattern'.
 
   The resulting @ExpandedPattern@ has a true predicate and an empty
   substitution.
@@ -257,7 +258,7 @@ isBottom _ = False
  -}
 fromPurePattern
     :: MetaOrObject level
-    => PureMLPattern level variable
+    => StepPattern level variable
     -> ExpandedPattern level variable
 fromPurePattern term =
     case term of

@@ -17,7 +17,7 @@ import Data.Reflection
        ( Given )
 
 import           Kore.AST.Common
-                 ( Not (..), PureMLPattern, SortedVariable )
+                 ( Not (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkNot, mkTop )
@@ -35,6 +35,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, isFalse, isTrue, make, toExpandedPattern )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
@@ -140,8 +141,8 @@ makeTermNot
         , Show (variable level)
         , Ord (variable level)
         )
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
+    => StepPattern level variable
+    -> StepPattern level variable
 makeTermNot (Bottom_ _) = mkTop
 makeTermNot (Top_ _) = mkBottom
 -- TODO: maybe other simplifications like

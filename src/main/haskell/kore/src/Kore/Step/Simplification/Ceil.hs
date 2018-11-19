@@ -20,14 +20,14 @@ import           Data.Reflection
                  ( give )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain (..), Ceil (..), PureMLPattern,
-                 SortedVariable )
+                 ( Ceil (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern App_, pattern Bottom_, pattern DV_,
                  pattern StringLiteral_, pattern Top_ )
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -43,6 +43,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fmapFlattenWithPairs, make )
+import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import           Kore.Step.Simplification.Data
@@ -153,7 +154,7 @@ makeEvaluateNonBoolCeil
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
-{-| Evaluates the ceil of a PureMLPattern, see 'simplify' for details.
+{-| Evaluates the ceil of a StepPattern, see 'simplify' for details.
 -}
 makeEvaluateTerm
     ::  ( MetaOrObject level
@@ -162,7 +163,7 @@ makeEvaluateTerm
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> (Predicate level variable, SimplificationProof level)
 makeEvaluateTerm
     _
@@ -197,7 +198,7 @@ makeEvaluateTerm
     tools
     (DV_ _ child)
   =
-    makeEvaluateBuiltinDomain tools child
+    makeEvaluateBuiltin tools child
 makeEvaluateTerm
     tools term
   =
@@ -207,7 +208,7 @@ makeEvaluateTerm
 
 {-| Evaluates the ceil of a domain value.
 -}
-makeEvaluateBuiltinDomain
+makeEvaluateBuiltin
     :: forall level variable .
         ( level ~ Object
         , SortedVariable variable
@@ -215,40 +216,40 @@ makeEvaluateBuiltinDomain
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> BuiltinDomain (PureMLPattern level variable)
+    -> Domain.Builtin (StepPattern level variable)
     -> (Predicate level variable, SimplificationProof level)
-makeEvaluateBuiltinDomain
+makeEvaluateBuiltin
     _tools
-    (BuiltinDomainPattern (StringLiteral_ _))
+    (Domain.BuiltinPattern (StringLiteral_ _))
   =
-    -- This should be the only kind of BuiltinDomainPattern, and it should
+    -- This should be the only kind of Domain.BuiltinPattern, and it should
     -- be valid and functional if this has passed verification.
     (makeTruePredicate, SimplificationProof)
-makeEvaluateBuiltinDomain
+makeEvaluateBuiltin
     _tools
-    (BuiltinDomainPattern p)
+    (Domain.BuiltinPattern p)
   =
         error
             ( "Ceil not implemented: non-string pattern."
             ++ show p
             )
-makeEvaluateBuiltinDomain
+makeEvaluateBuiltin
     tools
-    (BuiltinDomainMap m)
+    (Domain.BuiltinMap m)
   =
     ( give symbolOrAliasSorts $ makeMultipleAndPredicate ceils
     , SimplificationProof
     )
   where
     symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
-    values :: [PureMLPattern level variable]
+    values :: [StepPattern level variable]
     -- Maps assume that their keys are relatively functional.
     values = map snd (Map.toList m)
     ceils :: [Predicate level variable]
     (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) values)
-makeEvaluateBuiltinDomain
+makeEvaluateBuiltin
     tools
-    (BuiltinDomainList l)
+    (Domain.BuiltinList l)
   =
     ( give symbolOrAliasSorts $ makeMultipleAndPredicate ceils
     , SimplificationProof
@@ -257,9 +258,9 @@ makeEvaluateBuiltinDomain
     symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     ceils :: [Predicate level variable]
     (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) (Foldable.toList l))
-makeEvaluateBuiltinDomain
+makeEvaluateBuiltin
     _
-    (BuiltinDomainSet _)
+    (Domain.BuiltinSet _)
   =
     -- Sets assume that their elements are relatively functional.
     (makeTruePredicate, SimplificationProof)

@@ -31,8 +31,6 @@ import           Kore.AST.Common
                  Pattern (ApplicationPattern, StringLiteralPattern),
                  StringLiteral (..), SymbolOrAlias (..) )
 import           Kore.AST.Kore
-                 ( CommonKorePattern, pattern KoreMetaPattern,
-                 pattern KoreObjectPattern )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence

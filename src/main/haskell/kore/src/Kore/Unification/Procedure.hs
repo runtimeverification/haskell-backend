@@ -20,7 +20,7 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( PureMLPattern, SortedVariable )
+                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.MLPatterns
                  ( getPatternResultSort )
@@ -33,6 +33,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -70,9 +71,9 @@ unificationProcedure
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> PredicateSubstitutionSimplifier level m
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -- ^left-hand-side of unification
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> ExceptT
         -- TODO: Consider using a false predicate instead of a Left error
         (UnificationOrSubstitutionError level variable)

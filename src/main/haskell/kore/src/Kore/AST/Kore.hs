@@ -19,6 +19,9 @@ an AST term in a single data type (e.g. 'UnifiedSort' that can be either
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
+
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.AST.Kore
     ( CommonKorePattern
     , KorePattern
@@ -31,129 +34,140 @@ module Kore.AST.Kore
     , UnifiedSortVariable
     , UnifiedSort
     , UnifiedPattern (..)
-    , pattern UnifiedMetaPattern
-    , pattern UnifiedObjectPattern
     , asUnifiedPattern
     , transformUnifiedPattern
     ) where
 
 import Control.DeepSeq
-       ( NFData )
+       ( NFData (..) )
+import Data.Deriving
+       ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
 import Data.Functor.Classes
 import Data.Functor.Foldable
-import GHC.Generics
-       ( Generic )
 
-import Data.Functor.Impredicative
-       ( Rotate31 (..) )
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import qualified Kore.Domain.Builtin as Domain
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
 allow using toghether both 'Meta' and 'Object' patterns.
 -}
-newtype UnifiedPattern variable child =
-    UnifiedPattern
-        { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
-    deriving (Generic)
+data UnifiedPattern domain variable child where
+    UnifiedMetaPattern
+        :: !(Pattern Meta domain variable child)
+        -> UnifiedPattern domain variable child
 
-pattern UnifiedMetaPattern :: Pattern Meta var child -> UnifiedPattern var child
-pattern UnifiedMetaPattern pat = UnifiedPattern (UnifiedMeta (Rotate31 pat))
+    UnifiedObjectPattern
+        :: !(Pattern Object domain variable child)
+        -> UnifiedPattern domain variable child
 
-pattern UnifiedObjectPattern :: Pattern Object var child -> UnifiedPattern var child
-pattern UnifiedObjectPattern pat = UnifiedPattern (UnifiedObject (Rotate31 pat))
-
-{-# COMPLETE UnifiedMetaPattern, UnifiedObjectPattern #-}
+$(return [])  -- Begin a new definition group where UnifiedPattern is in scope.
 
 instance
-    ( NFData child
-    , NFData (variable Meta), NFData (variable Object)
+    ( NFData (Pattern Meta domain variable child)
+    , NFData (Pattern Object domain variable child)
     ) =>
-    NFData (UnifiedPattern variable child)
+    NFData (UnifiedPattern domain variable child)
+  where
+    rnf =
+        \case
+            UnifiedMetaPattern metaP -> rnf metaP
+            UnifiedObjectPattern objectP -> rnf objectP
 
-instance (EqMetaOrObject variable) => Eq1 (UnifiedPattern variable) where
-    liftEq liftedEq (UnifiedPattern a) (UnifiedPattern b) =
-       case (a, b) of
-          (UnifiedMeta a', UnifiedMeta b') ->
-              liftEq liftedEq (unRotate31 a') (unRotate31 b')
-          (UnifiedObject a', UnifiedObject b') ->
-              liftEq liftedEq (unRotate31 a') (unRotate31 b')
-          _ -> False
+instance
+    ( Eq1 (Pattern Meta domain variable)
+    , Eq1 (Pattern Object domain variable)
+    ) =>
+    Eq1 (UnifiedPattern domain variable)
+  where
+    liftEq = $(makeLiftEq ''UnifiedPattern)
 
-instance (ShowMetaOrObject variable) => Show1 (UnifiedPattern variable) where
-    liftShowsPrec :: forall a.
-                     (Int -> a -> ShowS) -> ([a] -> ShowS)
-                  -> Int -> UnifiedPattern variable a
-                  -> ShowS
-    liftShowsPrec showsPrec_ showList_ _ up =
-        showString "UnifiedPattern { getUnifiedPattern = "
-        . applyUnified
-            (\t -> showString "UnifiedMeta " . liftShowsPrecRotate31 t)
-            (\t -> showString "UnifiedObject " . liftShowsPrecRotate31 t)
-            (getUnifiedPattern up)
-        . showString " }"
-      where
-        liftShowsPrecRotate31 :: (Show level, Show (variable level))
-                              => Rotate31 Pattern variable a level
-                              -> ShowS
-        liftShowsPrecRotate31 r =
-            showString "Rotate31 { unRotate31 = "
-            . liftShowsPrec showsPrec_ showList_ 0 (unRotate31 r)
-            . showString " }"
+instance
+    ( Ord1 (Pattern Meta domain variable)
+    , Ord1 (Pattern Object domain variable)
+    ) =>
+    Ord1 (UnifiedPattern domain variable)
+  where
+    liftCompare = $(makeLiftCompare ''UnifiedPattern)
+
+instance
+    ( Show1 (Pattern Meta domain variable)
+    , Show1 (Pattern Object domain variable)
+    ) =>
+    Show1 (UnifiedPattern domain variable)
+  where
+    liftShowsPrec = $(makeLiftShowsPrec ''UnifiedPattern)
 
 -- |View a 'Meta' or an 'Object' 'Pattern' as an 'UnifiedPattern'
 asUnifiedPattern
-    :: (MetaOrObject level)
-    => Pattern level variable child -> UnifiedPattern variable child
-asUnifiedPattern = UnifiedPattern . asUnified . Rotate31
+    :: MetaOrObject level
+    => Pattern level domain variable child
+    -> UnifiedPattern domain variable child
+asUnifiedPattern ph =
+    case getMetaOrObjectPatternType ph of
+        IsMeta -> UnifiedMetaPattern ph
+        IsObject -> UnifiedObjectPattern ph
 
 -- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
 -- apply it on an 'UnifiedPattern'.
 transformUnifiedPattern
-    :: (forall level . MetaOrObject level => Pattern level variable a -> b)
-    -> (UnifiedPattern variable a -> b)
+    ::  (forall level.
+            MetaOrObject level =>
+            Pattern level domain variable a -> b
+        )
+    -> (UnifiedPattern domain variable a -> b)
 transformUnifiedPattern f =
-    transformUnified (f . unRotate31) . getUnifiedPattern
+    \case
+        UnifiedMetaPattern metaP -> f metaP
+        UnifiedObjectPattern objectP -> f objectP
 
 deriving instance
-    ( Eq child
-    , EqMetaOrObject variable
-    ) => Eq (UnifiedPattern variable child)
+    ( Eq (Pattern Meta domain variable child)
+    , Eq (Pattern Object domain variable child)
+    ) => Eq (UnifiedPattern domain variable child)
 
 deriving instance
-    ( Show child
-    , ShowMetaOrObject variable
-    ) => Show (UnifiedPattern variable child)
+    ( Ord (Pattern Meta domain variable child)
+    , Ord (Pattern Object domain variable child)
+    ) => Ord (UnifiedPattern domain variable child)
 
-instance Functor (UnifiedPattern variable) where
-    fmap f =
-        UnifiedPattern
-        . mapUnified (Rotate31 . fmap f . unRotate31)
-        . getUnifiedPattern
-instance Foldable (UnifiedPattern variable) where
-    foldMap f =
-        transformUnified (foldMap f . unRotate31)
-        . getUnifiedPattern
-instance Traversable (UnifiedPattern variable) where
-    sequenceA =
-        fmap UnifiedPattern
-        . sequenceUnified
-            (fmap Rotate31 . sequenceA . unRotate31)
-        . getUnifiedPattern
+deriving instance
+    ( Show (Pattern Meta domain variable child)
+    , Show (Pattern Object domain variable child)
+    ) => Show (UnifiedPattern domain variable child)
+
+deriving instance
+    ( Functor (Pattern Meta domain variable)
+    , Functor (Pattern Object domain variable)
+    ) =>
+    Functor (UnifiedPattern domain variable)
+
+deriving instance
+    ( Foldable (Pattern Meta domain variable)
+    , Foldable (Pattern Object domain variable)
+    ) =>
+    Foldable (UnifiedPattern domain variable)
+
+deriving instance
+    ( Traversable (Pattern Meta domain variable)
+    , Traversable (Pattern Object domain variable)
+    ) =>
+    Traversable (UnifiedPattern domain variable)
 
 -- |'KorePattern' is a 'Fix' point of 'Pattern' comprising both
 -- 'Meta' and 'Object' 'Pattern's
 -- 'KorePattern' corresponds to the @pattern@ syntactic category from
 -- the Semantics of K, Section 9.1.4 (Patterns).
-type KorePattern variable = (Fix (UnifiedPattern variable))
+type KorePattern domain variable = (Fix (UnifiedPattern domain variable))
 
 pattern KoreMetaPattern
-    :: Pattern Meta var (KorePattern var) -> KorePattern var
+    :: Pattern Meta domain var (KorePattern domain var)
+    -> KorePattern domain var
 pattern KoreMetaPattern pat = Fix (UnifiedMetaPattern pat)
 
 pattern KoreObjectPattern
-    :: Pattern Object var (KorePattern var) -> KorePattern var
+    :: Pattern Object domain var (KorePattern domain var)
+    -> KorePattern domain var
 pattern KoreObjectPattern pat = Fix (UnifiedObjectPattern pat)
 
 {-# COMPLETE KoreMetaPattern, KoreObjectPattern #-}
@@ -161,42 +175,41 @@ pattern KoreObjectPattern pat = Fix (UnifiedObjectPattern pat)
 -- |View a 'Meta' or an 'Object' 'Pattern' as a 'KorePattern'
 asKorePattern
     :: (MetaOrObject level)
-    => Pattern level variable (KorePattern variable)
-    -> KorePattern variable
+    => Pattern level domain variable (KorePattern domain variable)
+    -> KorePattern domain variable
 asKorePattern = Fix . asUnifiedPattern
 
 -- |View a 'Meta' 'Pattern' as a 'KorePattern'
 asMetaKorePattern
-    :: Pattern Meta variable (KorePattern variable)
-    -> KorePattern variable
+    :: Pattern Meta domain variable (KorePattern domain variable)
+    -> KorePattern domain variable
 asMetaKorePattern = asKorePattern
 
 -- |View a 'Object' 'Pattern' as a 'KorePattern'
 asObjectKorePattern
-    :: Pattern Object variable (KorePattern variable)
-    -> KorePattern variable
+    :: Pattern Object domain variable (KorePattern domain variable)
+    -> KorePattern domain variable
 asObjectKorePattern = asKorePattern
 
-instance
-    UnifiedPatternInterface UnifiedPattern
-  where
+instance UnifiedPatternInterface UnifiedPattern where
     unifyPattern = asUnifiedPattern
     unifiedPatternApply = transformUnifiedPattern
 
 -- |'CommonKorePattern' is the instantiation of 'KorePattern' with common
 -- 'Variable's.
-type CommonKorePattern = KorePattern Variable
+type CommonKorePattern = KorePattern Domain.Builtin Variable
 
 -- |Given functions appliable to 'Meta' 'Pattern's and 'Object' 'Pattern's,
 -- builds a combined function which can be applied on an 'KorePattern'.
 applyKorePattern
-    :: (Pattern Meta variable (KorePattern variable) -> b)
-    -> (Pattern Object variable (KorePattern variable) -> b)
-    -> (KorePattern variable -> b)
+    :: Functor domain
+    => (Pattern Meta domain variable (KorePattern domain variable) -> b)
+    -> (Pattern Object domain variable (KorePattern domain variable) -> b)
+    -> (KorePattern domain variable -> b)
 applyKorePattern metaT objectT korePattern =
-    case getUnifiedPattern (project korePattern) of
-        UnifiedMeta rp   -> metaT (unRotate31 rp)
-        UnifiedObject rp -> objectT (unRotate31 rp)
+    case project korePattern of
+        UnifiedMetaPattern rp   -> metaT rp
+        UnifiedObjectPattern rp -> objectT rp
 
 type UnifiedSortVariable = Unified SortVariable
 type UnifiedSort = Unified Sort

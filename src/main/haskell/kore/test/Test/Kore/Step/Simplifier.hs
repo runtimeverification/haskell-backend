@@ -3,8 +3,6 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.AST.Common
-                 ( PureMLPattern )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
@@ -16,20 +14,20 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier (..) )
 
 mockSimplifier
     :: (MetaOrObject level, Eq level, Ord (variable level))
-    =>  [   ( PureMLPattern level variable
+    =>  [   ( StepPattern level variable
             , ([ExpandedPattern level variable], SimplificationProof level)
             )
         ]
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
 mockSimplifier values =
-    PureMLPatternSimplifier
+    StepPatternSimplifier
         ( mockSimplifierHelper
             (\patt -> Predicated
                 {term = patt, predicate = makeTruePredicate, substitution = []}
@@ -39,13 +37,13 @@ mockSimplifier values =
 
 mockPredicateSimplifier
     :: (MetaOrObject level, Eq level, Ord (variable level))
-    =>  [   ( PureMLPattern level variable
+    =>  [   ( StepPattern level variable
             , ([ExpandedPattern level variable], SimplificationProof level)
             )
         ]
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
 mockPredicateSimplifier values =
-    PureMLPatternSimplifier
+    StepPatternSimplifier
         (mockSimplifierHelper
             (\patt -> Predicated
                 { term = mkTop
@@ -58,13 +56,13 @@ mockPredicateSimplifier values =
 
 mockSimplifierHelper
     ::  (MetaOrObject level, Eq level, Ord (variable level))
-    =>  (PureMLPattern level variable -> ExpandedPattern level variable)
-    ->  [   ( PureMLPattern level variable
+    =>  (StepPattern level variable -> ExpandedPattern level variable)
+    ->  [   ( StepPattern level variable
             , ([ExpandedPattern level variable], SimplificationProof level)
             )
         ]
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 mockSimplifierHelper unevaluatedConverter [] _ patt =

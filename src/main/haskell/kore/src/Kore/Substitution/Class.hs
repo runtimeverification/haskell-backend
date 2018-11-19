@@ -11,8 +11,8 @@ Portability : portable
 -}
 module Kore.Substitution.Class
     ( SubstitutionClass (..)
-    , PatternSubstitutionClass (..)
     , Hashable (..)
+    , substitute
     ) where
 
 import           Data.Functor.Foldable
@@ -47,7 +47,7 @@ variables than its terms can.  'freeVars' is used to track the free
 variables in a substitution context.
 -}
 data SubstitutionAndQuantifiedVars s var pat = SubstitutionAndQuantifiedVars
-    { substitution   :: s var pat
+    { substitution :: s var pat
     , freeVars :: Set.Set var
     }
 
@@ -85,51 +85,57 @@ class Hashable var where
 instance Hashable Variable where
     getVariableHash = hash . getId . variableName
 
-{-|'PatternSubstitutionClass' defines a generic 'substitute' function
-which given a @p@ of the 'UnifiedPatternInterface' class
-and an @s@ of 'SubstitutionClass', applies @s@ on @p@ in a monadic state
-used for generating fresh variables.
--}
-class ( UnifiedPatternInterface pat
-      , Traversable (pat var)
-      , SubstitutionClass s (Unified var) (Fix (pat var))
-      , FreshVariable var
-      , Ord (var Meta)
-      , Ord (var Object)
-      , Hashable var
-      )
-    => PatternSubstitutionClass s var pat
-  where
-    substitute
-        :: MonadCounter m
-        => Fix (pat var)
-        -> s (Unified var) (Fix (pat var))
-        -> m (Fix (pat var))
-    substitute p s = substituteM (SubstitutionAndQuantifiedVars
-        { substitution = s
-        , freeVars = freeVariables p
-        }) p
+-- | Apply a substitution @s@ to a pattern @pat@.
+substitute
+    ::  ( UnifiedPatternInterface pat
+        , SubstitutionClass subst (Unified var) (Fix (pat dom var))
+        , MonadCounter m
+        , Traversable dom
+        , Traversable (pat dom var)
+        , OrdMetaOrObject var
+        , FreshVariable var
+        , Hashable var
+        )
+    => Fix (pat dom var)
+    -> subst (Unified var) (Fix (pat dom var))
+    -> m (Fix (pat dom var))
+substitute p s =
+    substituteM
+        SubstitutionAndQuantifiedVars
+            { substitution = s
+            , freeVars = freeVariables p
+            }
+        p
 
 substituteM
-    :: forall s var pat m .
-       (MonadCounter m, PatternSubstitutionClass s var pat)
-    => SubstitutionAndQuantifiedVars s (Unified var) (Fix (pat var))
-    -> Fix (pat var)
-    -> m (Fix (pat var))
+    ::  forall subst pat (dom :: * -> *) var m.
+        ( MonadCounter m
+        , SubstitutionClass subst (Unified var) (Fix (pat dom var))
+        , UnifiedPatternInterface pat
+        , Functor (pat dom var)
+        , Traversable dom
+        , FreshVariable var
+        , OrdMetaOrObject var
+        )
+    => SubstitutionAndQuantifiedVars subst (Unified var) (Fix (pat dom var))
+    -> Fix (pat dom var)
+    -> m (Fix (pat dom var))
 substituteM subst p
     | isEmpty subst = return p
-    | otherwise = unifiedPatternApply @pat substPattern  (project p)
+    | otherwise = unifiedPatternApply substPattern (project p)
   where
-    substPattern :: (MetaOrObject level')
-                 => Pattern level' var (Fix (pat var))
-                 -> m (Fix (pat var))
-    substPattern (ExistsPattern e)  = binderPatternSubstitutePreprocess subst e
+    substPattern
+        :: MetaOrObject level'
+        => Pattern level' dom var (Fix (pat dom var))
+        -> m (Fix (pat dom var))
+    substPattern (ExistsPattern e) = binderPatternSubstitutePreprocess subst e
     substPattern (ForallPattern f) = binderPatternSubstitutePreprocess subst f
     substPattern varPat@(VariablePattern v) = do
         return $ case lookup (asUnified v) subst of
                      Just up -> up
                      Nothing -> Fix (unifyPattern varPat)
-    substPattern otherPat = fmap (Fix . unifyPattern) (mapM (substituteM subst) otherPat)
+    substPattern otherPat =
+        fmap (Fix . unifyPattern) (mapM (substituteM subst) otherPat)
 
 {-
 * if the quantified variable is among the encountered free variables
@@ -140,14 +146,20 @@ substituteM subst p
   context, the quantified variable is free).
 -}
 binderPatternSubstitutePreprocess
-    :: ( MLBinderPatternClass q
-       , MetaOrObject level
-       , MonadCounter m
-       , PatternSubstitutionClass s var pat
-       )
-    => FixedSubstitutionAndQuantifiedVars s var pat
-    -> q level var (Fix (pat var))
-    -> m (Fix (pat var))
+    ::  forall subst level binder pat (dom :: * -> *) (var :: * -> *) m.
+        ( MLBinderPatternClass binder
+        , MetaOrObject level
+        , MonadCounter m
+        , SubstitutionClass subst (Unified var) (Fix (pat dom var))
+        , FreshVariable var
+        , UnifiedPatternInterface pat
+        , Traversable dom
+        , Functor (pat dom var)
+        , OrdMetaOrObject var
+        )
+    => FixedSubstitutionAndQuantifiedVars subst var (pat dom)
+    -> binder level var (Fix (pat dom var))
+    -> m (Fix (pat dom var))
 binderPatternSubstitutePreprocess s q
     | unifiedVar `Set.member` substitutionFreeVars
       = do

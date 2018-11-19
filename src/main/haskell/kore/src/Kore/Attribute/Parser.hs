@@ -52,8 +52,6 @@ import           Kore.AST.Common
                  StringLiteral, SymbolOrAlias (..), getIdForError )
 import qualified Kore.AST.Error as Kore.Error
 import           Kore.AST.Kore
-                 ( CommonKorePattern, pattern KoreMetaPattern,
-                 pattern KoreObjectPattern )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence

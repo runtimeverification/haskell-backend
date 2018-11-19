@@ -5,7 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( HasCallStack, assertEqual, assertFailure, testCase )
 
-import Data.Functor.Foldable
 import Data.Proxy
        ( Proxy (..) )
 import Data.Text
@@ -20,6 +19,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.Unparser
@@ -181,8 +181,8 @@ simpleObjectAliasSentence alias sort =
 simpleAliasSentence
     :: AliasName
     -> SortName
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
     -> KoreSentenceAlias level
 simpleAliasSentence (AliasName name) (SortName sort) l r =
     SentenceAlias
@@ -296,8 +296,8 @@ aliasSentenceWithSortParameters
     :: AliasName
     -> SortName
     -> [SortVariable level]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
     -> KoreSentenceAlias level
 aliasSentenceWithSortParameters
     (AliasName name) (SortName sort) parameters l r
@@ -323,8 +323,8 @@ sentenceAliasWithSortArgument
     -> Sort level
     -> Sort level
     -> [SortVariable level]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
     -> KoreSentenceAlias level
 sentenceAliasWithSortArgument
     (AliasName name) sortArgument resultSort parameters l r
@@ -346,8 +346,8 @@ sentenceAliasWithAttributes
     -> [SortVariable level]
     -> Sort level
     -> [CommonKorePattern]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
     -> KoreSentenceAlias level
 sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
     SentenceAlias
@@ -447,8 +447,8 @@ sentenceAliasWithResultSort
     :: AliasName
     -> Sort level
     -> [SortVariable level]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
     -> KoreSentenceAlias level
 sentenceAliasWithResultSort
     (AliasName name) sort parameters l r
@@ -518,8 +518,8 @@ aliasSentenceWithArguments
     => AliasName
     -> Sort level
     -> [Sort level]
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
-    -> Pattern level Variable (Fix (UnifiedPattern Variable))
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
     -> KoreSentence
 aliasSentenceWithArguments
     (AliasName name) sort operandSorts l r
@@ -574,7 +574,7 @@ unifiedVariable
 unifiedVariable name sort =
     asUnified (variable name sort)
 
-variablePattern :: VariableName -> Sort level -> Pattern level Variable p
+variablePattern :: VariableName -> Sort level -> Pattern level domain Variable p
 variablePattern name sort =
     VariablePattern (variable name sort)
 
@@ -585,7 +585,9 @@ unifiedVariablePattern name sort =
 
 simpleExistsPattern
     :: MetaOrObject level
-    => Variable level -> Sort level -> Pattern level Variable CommonKorePattern
+    => Variable level
+    -> Sort level
+    -> Pattern level domain Variable CommonKorePattern
 simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
         { existsSort = resultSort
@@ -644,10 +646,12 @@ applicationObjectUnifiedPatternWithChildren
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
     asKorePattern
         ( applicationPatternWithChildren name unifiedPatterns
-        :: Pattern Meta Variable CommonKorePattern)
+        :: Pattern Meta Domain.Builtin Variable CommonKorePattern)
 
 applicationPatternWithChildren
-    :: SymbolName -> [CommonKorePattern] -> Pattern level v CommonKorePattern
+    :: SymbolName
+    -> [CommonKorePattern]
+    -> Pattern level dom v CommonKorePattern
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
     ApplicationPattern Application
         { applicationSymbolOrAlias = SymbolOrAlias

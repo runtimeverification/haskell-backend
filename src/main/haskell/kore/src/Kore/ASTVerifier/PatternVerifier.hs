@@ -34,6 +34,7 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
@@ -55,7 +56,10 @@ emptyDeclaredVariables = DeclaredVariables
 
 data VerifyHelpers level = VerifyHelpers
     { verifyHelpersFindSort
-        :: !(Id level -> Either (Error VerifyError) (SortDescription level))
+        :: !(Id level ->
+                Either (Error VerifyError)
+                    (SortDescription level Domain.Builtin)
+            )
     , verifyHelpersLookupAliasDeclaration
         :: !(Id level -> Either (Error VerifyError) (KoreSentenceAlias level))
     , verifyHelpersLookupSymbolDeclaration
@@ -199,7 +203,7 @@ internalVerifyMetaPattern
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Maybe UnifiedSort
-    -> Pattern Meta Variable CommonKorePattern
+    -> Pattern Meta Domain.Builtin Variable CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyMetaPattern
     builtinVerifier
@@ -233,7 +237,7 @@ internalVerifyObjectPattern
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Maybe UnifiedSort
-    -> Pattern Object Variable CommonKorePattern
+    -> Pattern Object Domain.Builtin Variable CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyObjectPattern
     builtinVerifier
@@ -268,7 +272,7 @@ newtype SortOrError level =
 
 verifyParameterizedPattern
     :: MetaOrObject level
-    => Pattern level Variable CommonKorePattern
+    => Pattern level Domain.Builtin Variable CommonKorePattern
     -> Builtin.PatternVerifier
     -> KoreIndexedModule atts
     -> VerifyHelpers level
@@ -456,7 +460,7 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
 
 verifyDomainValue
     :: (MetaOrObject level)
-    => DomainValue Object (BuiltinDomain CommonKorePattern)
+    => DomainValue Object Domain.Builtin CommonKorePattern
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (Sort Object)
@@ -476,7 +480,7 @@ verifyDomainValue
                 declaredSortVariables
                 domainValueSort
             case domainValueChild of
-                BuiltinDomainPattern (StringLiteral_ _) -> return ()
+                Domain.BuiltinPattern (StringLiteral_ _) -> return ()
                 _ -> koreFail "Domain value argument must be a literal string."
             return domainValueSort
 
@@ -502,7 +506,9 @@ verifyVariableDeclaration
 verifyVariableDeclarationUsing
     :: MetaOrObject level
     => Set.Set UnifiedSortVariable
-    -> (Id level -> Either (Error VerifyError) (SortDescription level))
+    ->  (Id level ->
+            Either (Error VerifyError) (SortDescription level Domain.Builtin)
+        )
     -> Variable level
     -> Either (Error VerifyError) VerifySuccess
 verifyVariableDeclarationUsing declaredSortVariables f v =
@@ -558,7 +564,7 @@ verifySymbolOrAlias symbolOrAlias verifyHelpers declaredSortVariables =
 applicationSortsFromSymbolOrAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias sa)
     => SymbolOrAlias level
-    -> sa level pat variable
+    -> sa level pat dom variable
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (ApplicationSorts level)
@@ -672,7 +678,7 @@ checkVariable var vars =
                   )
                 )
 
-patternNameForContext :: Pattern level Variable p -> String
+patternNameForContext :: Pattern level dom Variable p -> String
 patternNameForContext (AndPattern _) = "\\and"
 patternNameForContext (ApplicationPattern application) =
     "symbol or alias '"

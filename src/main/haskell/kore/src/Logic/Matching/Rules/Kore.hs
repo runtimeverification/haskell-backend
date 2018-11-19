@@ -30,7 +30,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.MetaML.AST
                  ( CommonMetaPattern, metaFreeVariables )
 import           Kore.Substitution.Class
-                 ( PatternSubstitutionClass (..) )
+                 ( substitute )
 import qualified Kore.Substitution.List as Substitution
 import           Kore.Unparser
                  ( Unparse, unparseToString )

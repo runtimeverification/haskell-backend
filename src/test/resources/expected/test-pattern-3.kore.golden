@@ -9,22 +9,22 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (AndPattern And
+                        Fix (UnifiedPattern (UnifiedObjectPattern (AndPattern And
                             { andSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , andFirst =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                    }))))
+                                    })))
                             , andSecond =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                    }))))
-                            }))))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

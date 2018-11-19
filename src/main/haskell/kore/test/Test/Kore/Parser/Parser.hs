@@ -7,17 +7,18 @@ import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Text
                  ( Text )
 
-import Kore.AST.Builders
-       ( sort_ )
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.PureToKore
-       ( patternPureToKore )
-import Kore.AST.Sentence
-import Kore.ASTUtils.SmartPatterns
-import Kore.Implicit.ImplicitSorts
-import Kore.Parser.ParserImpl
+import           Kore.AST.Builders
+                 ( sort_ )
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureToKore
+                 ( patternPureToKore )
+import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Implicit.ImplicitSorts
+import           Kore.Parser.ParserImpl
 
 import Test.Kore hiding
        ( sortVariable, sortVariableSort )
@@ -467,7 +468,7 @@ domainValuePatternParserTests =
         [ success "\\dv{s1}(\"a\")"
             $ patternPureToKore
             $ DV_ (sortVariableSort "s1")
-            $ BuiltinDomainPattern (StringLiteral_ "a")
+            $ Domain.BuiltinPattern (StringLiteral_ "a")
         , FailureWithoutMessage
             [ ""
             , "\\dv{s1, s2}(\"a\")"
@@ -949,7 +950,7 @@ sentenceAliasParserTests =
                     , sentenceAliasRightPattern =
                         (fmap patternPureToKore . Functor.Foldable.project)
                         (DV_ resultSort
-                            (BuiltinDomainPattern (StringLiteral_ "f")))
+                            (Domain.BuiltinPattern (StringLiteral_ "f")))
                     , sentenceAliasAttributes = Attributes []
                     }
                 )
@@ -1240,7 +1241,8 @@ sentenceHookedSortParserTests =
                             Attributes
                                 [asKorePattern $ StringLiteralPattern (StringLiteral "a")]
                         }
-                :: KoreSentenceHook)
+                    :: KoreSentenceHook
+                )
             )
         , FailureWithoutMessage
             [ ""
@@ -1271,7 +1273,8 @@ sentenceHookedSymbolParserTests =
                                 [asKorePattern $
                                     StringLiteralPattern (StringLiteral "a")]
                         }
-                :: KoreSentenceHook)
+                    :: KoreSentenceHook
+                )
             )
         , success "hooked-symbol sy1 {} () : s1 [] "
             ( constructUnifiedSentence SentenceHookSentence $
@@ -1285,7 +1288,8 @@ sentenceHookedSymbolParserTests =
                         , sentenceSymbolResultSort = sortVariableSort "s1"
                         , sentenceSymbolAttributes = Attributes []
                         }
-                :: KoreSentenceHook)
+                    :: KoreSentenceHook
+                )
             )
         , FailureWithoutMessage
             [ ""

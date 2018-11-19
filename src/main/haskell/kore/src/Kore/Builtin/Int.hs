@@ -24,7 +24,7 @@ module Kore.Builtin.Int
     , symbolVerifiers
     , patternVerifier
     , builtinFunctions
-    , expectBuiltinDomainInt
+    , expectBuiltinInt
     , asMetaPattern
     , asPattern
     , asConcretePattern
@@ -56,17 +56,19 @@ import           GHC.Integer.Logarithms
                  ( integerLog2# )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
-import qualified Kore.AST.Common as Kore
+import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
 import           Kore.AST.PureML
                  ( fromConcretePurePattern )
-import qualified Kore.ASTUtils.SmartPatterns as Kore
+import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -167,16 +169,16 @@ parse = Parsec.signed noSpace Parsec.decimal
     by a 'BuiltinDomainMap', it is a bug.
 
  -}
-expectBuiltinDomainInt
+expectBuiltinInt
     :: Monad m
     => String  -- ^ Context for error message
-    -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
+    -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m Integer
-expectBuiltinDomainInt ctx =
+expectBuiltinInt ctx =
     \case
-        Kore.DV_ _ domain ->
+        DV_ _ domain ->
             case domain of
-                Kore.BuiltinDomainPattern (Kore.StringLiteral_ lit) ->
+                Domain.BuiltinPattern (StringLiteral_ lit) ->
                     (return . Builtin.runParser ctx)
                         (Builtin.parseString parse lit)
                 _ ->
@@ -194,9 +196,9 @@ expectBuiltinDomainInt ctx =
 
  -}
 asPattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> Kore.PureMLPattern Object variable
+    -> StepPattern Object variable
 asPattern resultSort result =
     fromConcretePurePattern (asConcretePattern resultSort result)
 
@@ -209,29 +211,28 @@ asPattern resultSort result =
 
  -}
 asConcretePattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> Kore.ConcretePurePattern Object
+    -> ConcreteStepPattern Object
 asConcretePattern domainValueSort result =
-    (Functor.Foldable.embed . Kore.DomainValuePattern)
-        Kore.DomainValue
+    (Functor.Foldable.embed . DomainValuePattern)
+        DomainValue
             { domainValueSort
-            , domainValueChild =
-                Kore.BuiltinDomainPattern $ asMetaPattern result
+            , domainValueChild = Domain.BuiltinPattern $ asMetaPattern result
             }
 
-asMetaPattern :: Integer -> Kore.CommonPurePattern Meta
-asMetaPattern result = Kore.StringLiteral_ $ show result
+asMetaPattern :: Integer -> CommonPurePattern Meta dom
+asMetaPattern result = StringLiteral_ $ show result
 
 asExpandedPattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asPattern resultSort
 
 asPartialExpandedPattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asPartialExpandedPattern resultSort =

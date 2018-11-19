@@ -97,6 +97,7 @@ import           Kore.ASTVerifier.Error
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import           Kore.Builtin.Error
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
                  ( Error )
 import qualified Kore.Error
@@ -117,9 +118,10 @@ import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
                  AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
-                 SimplificationProof (..), SimplificationType, Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 SimplificationType, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.StepperAttributes
@@ -129,6 +131,8 @@ type Parser = Parsec Void String
 
 type Function = ApplicationFunctionEvaluator Object
 
+type HookedSortDescription = SortDescription Object Domain.Builtin
+
 -- | Verify a sort declaration.
 type SortDeclVerifier =
        KoreSentenceSort Object
@@ -136,17 +140,17 @@ type SortDeclVerifier =
     -> Either (Error VerifyError) ()
 
 type SortVerifier =
-       (Id Object -> Either (Error VerifyError) (SortDescription Object))
+        (Id Object -> Either (Error VerifyError) HookedSortDescription)
     -- ^ Find a sort declaration
     -> Sort Object
     -- ^ Sort to verify
     -> Either (Error VerifyError) ()
 
--- | @SortDeclVerifiers@ associates a @SortDeclVerifier@ with its builtin sort name.
+-- | @SortDeclVerifiers@ associates a sort verifier with its builtin sort name.
 type SortDeclVerifiers = HashMap Text SortDeclVerifier
 
 type SymbolVerifier =
-       (Id Object -> Either (Error VerifyError) (SortDescription Object))
+        (Id Object -> Either (Error VerifyError) HookedSortDescription)
     -- ^ Find a sort declaration
     -> KoreSentenceSymbol Object
     -- ^ Symbol declaration to verify
@@ -170,8 +174,8 @@ newtype PatternVerifier =
         See also: 'verifyDomainValue'
       -}
       runPatternVerifier
-          :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
-          -> Pattern Object Variable CommonKorePattern
+          :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
+          -> StepPatternHead Object Variable CommonKorePattern
           -> Either (Error VerifyError) ()
     }
 
@@ -195,7 +199,7 @@ instance Monoid PatternVerifier where
     mappend = (<>)
 
 type DomainValueVerifier =
-    DomainValue Object (BuiltinDomain CommonKorePattern)
+    DomainValue Object Domain.Builtin CommonKorePattern
     -> Either (Error VerifyError) ()
 
 {- | Verify builtin sorts, symbols, and patterns.
@@ -286,7 +290,7 @@ verifySortDecl SentenceSort { sentenceSortParameters } =
 
  -}
 verifySort
-    :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
+    :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
     -> Text
     -> Sort Object
     -> Either (Error VerifyError) ()
@@ -369,9 +373,9 @@ verifyDomainValue builtinSort validate =
     PatternVerifier { runPatternVerifier }
   where
     runPatternVerifier
-        :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
+        :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
         -- ^ Function to lookup sorts by identifier
-        -> Pattern Object Variable CommonKorePattern
+        -> StepPatternHead Object Variable CommonKorePattern
         -- ^ Pattern to verify
         -> Either (Error VerifyError) ()
     runPatternVerifier findSort =
@@ -413,7 +417,7 @@ verifyStringLiteral
     -> DomainValueVerifier
 verifyStringLiteral validate DomainValue { domainValueChild } =
     case domainValueChild of
-        BuiltinDomainPattern (StringLiteral_ lit) -> validate lit
+        Domain.BuiltinPattern (StringLiteral_ lit) -> validate lit
         _ -> return ()
 
 {- | Run a parser in a domain value pattern.
@@ -424,7 +428,7 @@ verifyStringLiteral validate DomainValue { domainValueChild } =
  -}
 parseDomainValue
     :: Parser a
-    -> DomainValue Object (BuiltinDomain child)
+    -> DomainValue Object Domain.Builtin child
     -> Either (Error VerifyError) a
 parseDomainValue
     parser
@@ -432,7 +436,7 @@ parseDomainValue
   =
     Kore.Error.withContext "While parsing domain value"
         (case domainValueChild of
-            BuiltinDomainPattern (StringLiteral_ lit) ->
+            Domain.BuiltinPattern (StringLiteral_ lit) ->
                 parseString parser lit
             _ -> Kore.Error.koreFail "Expected literal string"
         )
@@ -492,14 +496,14 @@ unaryOperator
   =
     functionEvaluator unaryOperator0
   where
-    get :: DomainValue Object (BuiltinDomain child) -> a
+    get :: DomainValue Object Domain.Builtin child -> a
     get = runParser (Text.unpack ctx) . parseDomainValue parser
     unaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
-        -> PureMLPatternSimplifier level variable
+        -> StepPatternSimplifier level variable
         -> Sort level
-        -> [PureMLPattern level variable]
+        -> [StepPattern level variable]
         -> Simplifier (AttemptedFunction level variable)
     unaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
@@ -539,14 +543,14 @@ binaryOperator
   =
     functionEvaluator binaryOperator0
   where
-    get :: DomainValue Object (BuiltinDomain child) -> a
+    get :: DomainValue Object Domain.Builtin child -> a
     get = runParser (Text.unpack ctx) . parseDomainValue parser
     binaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
-        -> PureMLPatternSimplifier level variable
+        -> StepPatternSimplifier level variable
         -> Sort level
-        -> [PureMLPattern level variable]
+        -> [StepPattern level variable]
         -> Simplifier (AttemptedFunction level variable)
     binaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
@@ -586,14 +590,14 @@ ternaryOperator
   =
     functionEvaluator ternaryOperator0
   where
-    get :: DomainValue Object (BuiltinDomain child) -> a
+    get :: DomainValue Object Domain.Builtin child -> a
     get = runParser (Text.unpack ctx) . parseDomainValue parser
     ternaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
-        -> PureMLPatternSimplifier level variable
+        -> StepPatternSimplifier level variable
         -> Sort level
-        -> [PureMLPattern level variable]
+        -> [StepPattern level variable]
         -> Simplifier (AttemptedFunction level variable)
     ternaryOperator0 _ _ resultSort children =
         case Functor.Foldable.project <$> children of
@@ -608,9 +612,9 @@ functionEvaluator
     ::  (forall variable
         .  Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
+        -> StepPatternSimplifier Object variable
         -> Sort Object
-        -> [PureMLPattern Object variable]
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
         )
     -- ^ Builtin function implementation
@@ -622,8 +626,8 @@ functionEvaluator impl =
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
         -> PredicateSubstitutionSimplifier level Simplifier
-        -> PureMLPatternSimplifier Object variable
-        -> Application Object (PureMLPattern Object variable)
+        -> StepPatternSimplifier Object variable
+        -> Application Object (StepPattern Object variable)
         -> Simplifier
             ( AttemptedFunction Object variable
             , SimplificationProof Object
@@ -684,7 +688,7 @@ isSymbol builtinName MetadataTools { symAttributes } sym =
         Just hook -> hook == builtinName
         Nothing -> False
 
-{- | Ensure that a 'PureMLPattern' is a concrete, normalized term.
+{- | Ensure that a 'StepPattern' is a concrete, normalized term.
 
     If the pattern is not concrete and normalized, the function is
     'NotApplicable'.
@@ -693,8 +697,8 @@ isSymbol builtinName MetadataTools { symAttributes } sym =
 expectNormalConcreteTerm
     :: Monad m
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> MaybeT m (ConcretePurePattern level)
+    -> StepPattern level variable
+    -> MaybeT m (ConcreteStepPattern level)
 expectNormalConcreteTerm tools purePattern =
     MaybeT $ return $ do
         p <- asConcretePurePattern purePattern
@@ -721,7 +725,7 @@ unifyEqualsUnsolved
         , Show (variable level)
         , level ~ Object
         , expanded ~ ExpandedPattern level variable
-        , patt ~ PureMLPattern level variable
+        , patt ~ StepPattern level variable
         , proof ~ SimplificationProof level
         )
     => SimplificationType

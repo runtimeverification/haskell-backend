@@ -14,22 +14,31 @@ for all MetaML constructs up to patterns.
 module Kore.MetaML.Unlift ( UnliftableFromMetaML (..) ) where
 
 import           Control.Applicative
+import           Data.Functor.Const
+                 ( Const )
 import           Data.Functor.Foldable
 import           Data.Maybe
 import qualified Data.Text as Text
+import           Data.Void
+                 ( Void )
 
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.Sentence
-       ( SentenceSymbolOrAlias (..) )
-import Kore.ASTUtils.SmartPatterns
-import Kore.Implicit.ImplicitKore
-       ( mlPatternP, variable )
-import Kore.Implicit.ImplicitSorts
-import Kore.MetaML.AST
-import Kore.Parser.LexemeImpl
-import Kore.Parser.ParserUtils as Parser
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+                 ( SentenceSymbolOrAlias (..) )
+import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Implicit.ImplicitKore
+                 ( mlPatternP, variable )
+import           Kore.Implicit.ImplicitSorts
+import           Kore.MetaML.AST
+import           Kore.Parser.LexemeImpl
+import           Kore.Parser.ParserUtils as Parser
+
+type LiftedPatternHead = Pattern Meta (Const Void) Variable
+type PatternHead = Pattern Object Domain.Builtin Variable
 
 -- |'UnliftableFromMetaML' specifies common functionality for constructs
 -- which can be "unlifted" from 'Meta'-only to full 'Kore' representations.
@@ -38,7 +47,7 @@ class UnliftableFromMetaML mixed where
 
 isImplicitHead
     :: SentenceSymbolOrAlias s
-    => s level (Pattern level) Variable
+    => s level (Pattern level) domain Variable
     -> SymbolOrAlias level
     -> Bool
 isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])
@@ -158,14 +167,14 @@ unliftPattern = cata reducer
     reducer p = UnliftResult
         { unliftResultOriginal = Fix $ fmap unliftResultOriginal p
         , unliftResultFinal =
-            case  unliftPatternReducer p of
+            case unliftPatternReducer (castMetaDomainValue p) of
                 Just pat -> asKorePattern pat
-                _        -> asKorePattern (fmap unliftResultFinal p)
+                _ -> asKorePattern (fmap unliftResultFinal p)
         }
 
 unliftPatternReducer
-    :: Pattern Meta Variable UnliftResult
-    -> Maybe (Pattern Object Variable CommonKorePattern)
+    :: LiftedPatternHead UnliftResult
+    -> Maybe (PatternHead CommonKorePattern)
 unliftPatternReducer (ApplicationPattern a)
     | isImplicitHead (mlPatternP AndPatternType) apHead
     = unliftBinaryOpPattern AndPattern And apChildren
@@ -211,7 +220,7 @@ unliftPatternReducer _ = Nothing
 
 unliftApplicationPattern
     :: Id Object
-    -> ([UnliftResult] -> Maybe  (Pattern Object Variable CommonKorePattern))
+    -> ([UnliftResult] -> Maybe (PatternHead CommonKorePattern))
 unliftApplicationPattern objectHeadId results =
     Just $ ApplicationPattern Application
         { applicationSymbolOrAlias = objectHead
@@ -233,10 +242,9 @@ unliftApplicationPattern objectHeadId results =
 
 
 unliftBinaryOpPattern
-    :: (p Object CommonKorePattern -> Pattern Object Variable CommonKorePattern)
-    -> (Sort Object -> CommonKorePattern -> CommonKorePattern
-        -> p Object CommonKorePattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
+    :: (p -> PatternHead CommonKorePattern)
+    -> (Sort Object -> CommonKorePattern -> CommonKorePattern -> p)
+    -> ([UnliftResult] -> Maybe (PatternHead CommonKorePattern))
 unliftBinaryOpPattern unifiedCtor ctor [rSort, rFirst, rSecond] =
     unifiedCtor <$> (pure ctor
         <*> unliftFromMeta (unliftResultOriginal rSort)
@@ -245,9 +253,9 @@ unliftBinaryOpPattern unifiedCtor ctor [rSort, rFirst, rSecond] =
 unliftBinaryOpPattern _ _ _ = Nothing
 
 unliftUnaryOpPattern
-    :: (p Object CommonKorePattern -> Pattern Object Variable CommonKorePattern)
+    :: (p Object CommonKorePattern -> PatternHead CommonKorePattern)
     -> (Sort Object -> CommonKorePattern -> p Object CommonKorePattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
+    -> ([UnliftResult] -> Maybe (PatternHead CommonKorePattern))
 unliftUnaryOpPattern unifiedCtor ctor [rSort, rChild] =
     unifiedCtor <$> (pure ctor
         <*> unliftFromMeta (unliftResultOriginal rSort)
@@ -255,14 +263,14 @@ unliftUnaryOpPattern unifiedCtor ctor [rSort, rChild] =
 unliftUnaryOpPattern _ _ _ = Nothing
 
 unliftDomainValuePattern
-    :: [UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern)
+    :: [UnliftResult] -> Maybe (PatternHead CommonKorePattern)
 unliftDomainValuePattern [rSort, rChild] =
     do
         domainValueSort <- unliftFromMeta (unliftResultOriginal rSort)
         domainValueChild <-
             case project (unliftResultOriginal rChild) of
                 StringLiteralPattern (StringLiteral str) ->
-                    pure (BuiltinDomainPattern (StringLiteral_ str))
+                    pure (Domain.BuiltinPattern (StringLiteral_ str))
                 _ ->
                     Nothing
         pure
@@ -274,16 +282,16 @@ unliftDomainValuePattern [rSort, rChild] =
 unliftDomainValuePattern _ = Nothing
 
 unliftTopBottomPattern
-    :: (Sort Object -> Pattern Object Variable CommonKorePattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
+    :: (Sort Object -> PatternHead CommonKorePattern)
+    -> ([UnliftResult] -> Maybe (PatternHead CommonKorePattern))
 unliftTopBottomPattern unifiedCtor [rSort] =
     unifiedCtor <$> unliftFromMeta (unliftResultOriginal rSort)
 unliftTopBottomPattern _ _ = Nothing
 
 unliftCeilFloorPattern
-    :: (p Object CommonKorePattern -> Pattern Object Variable CommonKorePattern)
-    -> (Sort Object -> Sort Object -> CommonKorePattern -> p Object CommonKorePattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
+    :: (p -> PatternHead CommonKorePattern)
+    -> (Sort Object -> Sort Object -> CommonKorePattern -> p)
+    -> ([UnliftResult] -> Maybe (PatternHead CommonKorePattern))
 unliftCeilFloorPattern unifiedCtor ctor [rOperandSort, rResultSort, rChild] =
     unifiedCtor <$> (pure ctor
         <*> unliftFromMeta (unliftResultOriginal rOperandSort)
@@ -292,10 +300,10 @@ unliftCeilFloorPattern unifiedCtor ctor [rOperandSort, rResultSort, rChild] =
 unliftCeilFloorPattern _ _ _ = Nothing
 
 unliftEqualsInPattern
-    :: (p Object CommonKorePattern -> Pattern Object Variable CommonKorePattern)
+    :: (p -> PatternHead CommonKorePattern)
     -> (Sort Object -> Sort Object -> CommonKorePattern -> CommonKorePattern
-        -> p Object CommonKorePattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
+        -> p)
+    -> ([UnliftResult] -> Maybe (PatternHead CommonKorePattern))
 unliftEqualsInPattern unifiedCtor ctor
     [rOperandSort, rResultSort, rFirst, rSecond] =
         unifiedCtor <$> (pure ctor
@@ -306,11 +314,9 @@ unliftEqualsInPattern unifiedCtor ctor
 unliftEqualsInPattern _ _ _ = Nothing
 
 unliftQuantifiedPattern
-    :: (p Object Variable CommonKorePattern
-        -> Pattern Object Variable CommonKorePattern)
-    -> (Sort Object -> Variable Object -> CommonKorePattern
-        -> p Object Variable CommonKorePattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
+    :: (p -> PatternHead CommonKorePattern)
+    -> (Sort Object -> Variable Object -> CommonKorePattern -> p)
+    -> ([UnliftResult] -> Maybe (PatternHead CommonKorePattern))
 unliftQuantifiedPattern unifiedCtor ctor
     [rSort, rVariable, rChild] =
         unifiedCtor <$> (pure ctor

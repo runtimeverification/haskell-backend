@@ -13,16 +13,18 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.Sentence
-import Kore.ASTUtils.SmartPatterns
-import Kore.IndexedModule.MetadataTools
-       ( SymbolOrAliasSorts )
-import Kore.MetaML.AST
-import Kore.Parser.LexemeImpl
-import Kore.Predicate.Predicate
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.IndexedModule.MetadataTools
+                 ( SymbolOrAliasSorts )
+import           Kore.MetaML.AST
+import           Kore.Parser.LexemeImpl
+import           Kore.Predicate.Predicate
+import           Kore.Step.Pattern
 
 couple :: Gen a -> Gen [a]
 couple gen = do
@@ -256,17 +258,26 @@ equalsGen vars childGen x = equalsInGen vars childGen x Equals
 domainValueGen
     :: MetaOrObject level
     => [Variable level]
-    -> ([Variable level] -> Gen child)
+    -> ([Variable level] -> Gen (dom child))
     -> level
-    -> Gen (DomainValue level (BuiltinDomain child))
-domainValueGen _vars _ x =
+    -> Gen (DomainValue level dom child)
+domainValueGen vars childGen lvl =
     DomainValue
-        <$> scale (`div` 2) (sortGen x)
-        <*> builtinPatternGen
-  where
-    builtinPatternGen =
-        BuiltinDomainPattern . StringLiteral_ . getStringLiteral
-            <$> stringLiteralGen
+        <$> scale (`div` 2) (sortGen lvl)
+        <*> childGen vars
+
+externalDomainGen :: [Variable level] -> Gen (Domain.Builtin child)
+externalDomainGen _ =
+    Domain.BuiltinPattern . StringLiteral_ . getStringLiteral
+        <$> stringLiteralGen
+
+builtinDomainGen
+    :: ([Variable level] -> Gen child)
+    -> [Variable level]
+    -> Gen (Domain.Builtin child)
+builtinDomainGen _ _ =
+    Domain.BuiltinPattern . StringLiteral_ . getStringLiteral
+        <$> stringLiteralGen
 
 existsGen
     :: MetaOrObject level
@@ -360,7 +371,7 @@ patternGen
     => [Variable level]
     -> ([Variable level] -> Gen child)
     -> level
-    -> Gen (Pattern level Variable child)
+    -> Gen (Pattern level dom Variable child)
 patternGen vars childGen x =
     frequency
         [ (1, AndPattern <$> andGen vars childGen x)
@@ -383,7 +394,7 @@ patternGen vars childGen x =
 purePatternGen
     :: forall level. MetaOrObject level
     => level
-    -> Gen (CommonPurePattern level)
+    -> Gen (CommonPurePattern level Domain.Builtin)
 purePatternGen level =
     childGen []
   where
@@ -398,7 +409,33 @@ purePatternGen level =
                     ]
             IsObject ->
                 oneof
-                    [ DomainValuePattern <$> domainValueGen vars childGen level
+                    [ DomainValuePattern
+                        <$> domainValueGen vars externalDomainGen level
+                    ]
+      | otherwise = patternGen vars childGen level
+
+stepPatternGen
+    :: forall level. MetaOrObject level
+    => level
+    -> Gen (CommonStepPattern level)
+stepPatternGen level =
+    childGen []
+  where
+    childGen vars = embed <$> sized (stepPatternGenWorker vars)
+    stepPatternGenWorker vars n
+      | n <= 0 =
+        case isMetaOrObject (Proxy :: Proxy level) of
+            IsMeta ->
+                oneof
+                    [ StringLiteralPattern <$> stringLiteralGen
+                    , CharLiteralPattern <$> charLiteralGen
+                    ]
+            IsObject ->
+                oneof
+                    [ DomainValuePattern <$> domainValueGen
+                        vars
+                        (builtinDomainGen childGen)
+                        level
                     ]
       | otherwise = patternGen vars childGen level
 
@@ -415,7 +452,7 @@ korePatternGen = sized (\n ->
             , (1, asKorePattern . StringLiteralPattern <$> stringLiteralGen)
             , (1, asKorePattern . CharLiteralPattern <$> charLiteralGen)
             , (1, asKorePattern . DomainValuePattern
-                <$> domainValueGen [] (const korePatternGen) Object)
+                <$> domainValueGen [] externalDomainGen Object)
             , (1, asKorePattern . NextPattern
                 <$> nextGen [] (const korePatternGen) Object)
             , (1, asKorePattern . RewritesPattern
@@ -432,15 +469,15 @@ predicateGen
 predicateGen level =
     oneof
         [ makeAndPredicate <$> predicateGen level <*> predicateGen level
-        , makeCeilPredicate <$> purePatternGen level
-        , makeEqualsPredicate <$> purePatternGen level <*> purePatternGen level
+        , makeCeilPredicate <$> stepPatternGen level
+        , makeEqualsPredicate <$> stepPatternGen level <*> stepPatternGen level
         , makeExistsPredicate <$> variableGen [] level <*> predicateGen level
         , makeForallPredicate <$> variableGen [] level <*> predicateGen level
         , pure makeFalsePredicate
-        , makeFloorPredicate <$> purePatternGen level
+        , makeFloorPredicate <$> stepPatternGen level
         , makeIffPredicate <$> predicateGen level <*> predicateGen level
         , makeImpliesPredicate <$> predicateGen level <*> predicateGen level
-        , makeInPredicate <$> purePatternGen level <*> purePatternGen level
+        , makeInPredicate <$> stepPatternGen level <*> stepPatternGen level
         , makeNotPredicate <$> predicateGen level
         , makeOrPredicate <$> predicateGen level <*> predicateGen level
         , pure makeTruePredicate
@@ -449,8 +486,8 @@ predicateGen level =
 sentenceAliasGen
     :: MetaOrObject level
     => level
-    -> Gen (Fix (pat Variable))
-    -> Gen (SentenceAlias level pat Variable)
+    -> Gen (Fix (pat dom Variable))
+    -> Gen (SentenceAlias level pat dom Variable)
 sentenceAliasGen x patGen = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
     <*> couple (scale (`div` 2) (sortGen x))
@@ -462,7 +499,7 @@ sentenceAliasGen x patGen = pure SentenceAlias
 sentenceSymbolGen
     :: MetaOrObject level
     => level
-    -> Gen (SentenceSymbol level pat variable)
+    -> Gen (SentenceSymbol level pat dom variable)
 sentenceSymbolGen x = pure SentenceSymbol
     <*> scale (`div` 2) (symbolGen x)
     <*> couple (scale (`div` 2) (sortGen x))
@@ -470,15 +507,15 @@ sentenceSymbolGen x = pure SentenceSymbol
     <*> scale (`div` 2) attributesGen
 
 sentenceImportGen
-    :: Gen (SentenceImport pat variable)
+    :: Gen (SentenceImport pat dom variable)
 sentenceImportGen = pure SentenceImport
     <*> scale (`div` 2) moduleNameGen
     <*> scale (`div` 2) attributesGen
 
 sentenceAxiomGen
    :: Gen sortParam
-   -> Gen (Fix (pat var))
-   -> Gen (SentenceAxiom sortParam pat var)
+   -> Gen (Fix (pat dom var))
+   -> Gen (SentenceAxiom sortParam pat dom var)
 sentenceAxiomGen sortParamGen patGen =
     pure SentenceAxiom
         <*> couple (scale (`div` 2) sortParamGen)
@@ -487,7 +524,7 @@ sentenceAxiomGen sortParamGen patGen =
 
 sentenceSortGen
     :: MetaOrObject level
-    => level -> Gen (SentenceSort level pat var)
+    => level -> Gen (SentenceSort level pat dom var)
 sentenceSortGen level =
     pure SentenceSort
         <*> scale (`div` 2) (idGen level)
@@ -519,21 +556,21 @@ koreSentenceGen = oneof
     ]
 
 moduleGen
-    :: Gen (sentence sortParam pat variable)
-    -> Gen (Module sentence sortParam pat variable)
+    :: Gen (sentence sortParam pat dom variable)
+    -> Gen (Module sentence sortParam pat dom variable)
 moduleGen senGen = pure Module
     <*> scale (`div` 2) moduleNameGen
     <*> couple (scale (`div` 2) senGen)
     <*> scale (`div` 2) attributesGen
 
 modulesGen
-    :: Gen (sentence sortParam pat variable)
-    -> Gen [Module sentence sortParam pat variable]
+    :: Gen (sentence sortParam pat dom variable)
+    -> Gen [Module sentence sortParam pat dom variable]
 modulesGen senGen = couple1 (scale (`div` 2) (moduleGen senGen))
 
 definitionGen
-    :: Gen (sentence sortParam pat variable)
-    -> Gen (Definition sentence sortParam pat variable)
+    :: Gen (sentence sortParam pat dom variable)
+    -> Gen (Definition sentence sortParam pat dom variable)
 definitionGen senGen = pure Definition
     <*> scale (`div` 2) attributesGen
     <*> scale (`div` 2) (modulesGen senGen)

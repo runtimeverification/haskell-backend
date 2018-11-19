@@ -59,8 +59,8 @@ type SymbolOrAliasSorts level = SymbolOrAlias level -> ApplicationSorts level
 -- its argument and result sorts.
 --
 extractMetadataTools
-    :: forall level atts
-    .  MetaOrObject level
+    ::  forall level atts.
+        MetaOrObject level
     => KoreIndexedModule atts
     -> MetadataTools level atts
 extractMetadataTools m =

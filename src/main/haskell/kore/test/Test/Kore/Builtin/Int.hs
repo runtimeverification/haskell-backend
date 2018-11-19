@@ -24,6 +24,7 @@ import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -34,10 +35,10 @@ import           Test.SMT
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
 
-genIntegerPattern :: Gen (CommonPurePattern Object)
+genIntegerPattern :: Gen (CommonStepPattern Object)
 genIntegerPattern = asPattern <$> genInteger
 
-genConcreteIntegerPattern :: Gen (ConcretePurePattern Object)
+genConcreteIntegerPattern :: Gen (ConcreteStepPattern Object)
 genConcreteIntegerPattern = asConcretePattern <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
@@ -304,15 +305,15 @@ test_emod =
     ]
 
 -- | Another name for asPattern.
-intLiteral :: Integer -> CommonPurePattern Object
+intLiteral :: Integer -> CommonStepPattern Object
 intLiteral = asPattern
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asPattern :: Integer -> CommonPurePattern Object
+asPattern :: Integer -> CommonStepPattern Object
 asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asConcretePattern' to the builtin sort 'intSort'.
-asConcretePattern :: Integer -> ConcretePurePattern Object
+asConcretePattern :: Integer -> ConcreteStepPattern Object
 asConcretePattern = Int.asConcretePattern intSort
 
 -- | Specialize 'Int.asExpandedPattern' to the builtin sort 'intSort'.
@@ -326,7 +327,7 @@ asPartialExpandedPattern = Int.asPartialExpandedPattern intSort
 testInt
     :: String
     -> SymbolOrAlias Object
-    -> [CommonPurePattern Object]
+    -> [CommonStepPattern Object]
     -> CommonExpandedPattern Object
     -> TestTree
 testInt = testSymbolWithSolver evaluate

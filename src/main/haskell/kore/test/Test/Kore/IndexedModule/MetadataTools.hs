@@ -26,6 +26,7 @@ import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
@@ -39,7 +40,7 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: PureSentenceSymbol Object
+objectA :: PureSentenceSymbol Object Domain.Builtin
 objectA = SentenceSymbol
     { sentenceSymbolSymbol =
         Symbol
@@ -51,7 +52,7 @@ objectA = SentenceSymbol
     , sentenceSymbolAttributes = Attributes [ constructorAttribute ]
     }
 
-metaA :: PureSentenceSymbol Meta
+metaA :: PureSentenceSymbol Meta Domain.Builtin
 metaA = symbol_ "#a" AstLocationTest [] charListMetaSort
 
 testObjectModuleName :: ModuleName
@@ -63,7 +64,7 @@ testMetaModuleName = ModuleName "TEST-META-MODULE"
 testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
-testObjectModule :: PureModule Object
+testObjectModule :: PureModule Object Domain.Builtin
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
@@ -80,7 +81,7 @@ testObjectModule =
         , moduleAttributes = Attributes []
         }
 
-testMetaModule :: PureModule Meta
+testMetaModule :: PureModule Meta Domain.Builtin
 testMetaModule =
     Module
         { moduleName = testMetaModuleName
@@ -261,11 +262,16 @@ testSubsortModule =
               , sentenceAxiomAttributes = Attributes
                   [subsortAttribute subSort superSort]
               })
-    subsortAttribute :: Sort Object -> Sort Object -> KorePattern Variable
+
+    subsortAttribute
+        :: Sort Object
+        -> Sort Object
+        -> KorePattern Domain.Builtin Variable
     subsortAttribute subSort superSort = Fix . asUnifiedPattern $
         (ApplicationPattern (Application
             (SymbolOrAlias (testId "subsort") [subSort,superSort])
             []))
+
     sortDecl :: Sort Object -> KoreSentence
     sortDecl (SortActualSort (SortActual name [])) =
         constructUnifiedSentence SentenceSortSentence $

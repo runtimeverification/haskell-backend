@@ -30,7 +30,7 @@ import           Data.Reflection
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
-                 ( PureMLPattern, SortedVariable )
+                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern And_, pattern App_, pattern Bottom_, pattern Ceil_,
@@ -46,6 +46,7 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -99,8 +100,8 @@ matchAsUnification
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> ExceptT
         (UnificationOrSubstitutionError level variable)
         m
@@ -131,8 +132,8 @@ match
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> Map.Map (variable level) (variable level)
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -- TODO: Use Result here.
     -> MaybeT
         (ExceptT
@@ -162,8 +163,8 @@ matchEqualHeadPatterns
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> Map.Map (variable level) (variable level)
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT
         (ExceptT
             (UnificationOrSubstitutionError level variable)
@@ -371,7 +372,7 @@ matchJoin
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> Map.Map (variable level) (variable level)
-    -> [(PureMLPattern level variable, PureMLPattern level variable)]
+    -> [(StepPattern level variable, StepPattern level variable)]
     -> MaybeT
         (ExceptT
             (UnificationOrSubstitutionError level variable)
@@ -414,8 +415,8 @@ matchVariableFunction
        )
     => MetadataTools level StepperAttributes
     -> Map.Map (variable level) (variable level)
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m (PredicateSubstitution level variable)
 matchVariableFunction
     tools
@@ -449,8 +450,8 @@ matchNonVarToPattern
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT
         (ExceptT
             (UnificationOrSubstitutionError level variable)

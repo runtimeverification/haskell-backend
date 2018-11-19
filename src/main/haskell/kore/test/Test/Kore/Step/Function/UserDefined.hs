@@ -7,6 +7,7 @@ import Test.Tasty.HUnit
 
 import           Data.Default
                  ( def )
+import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.List
                  ( sort )
 import qualified Data.Set as Set
@@ -14,27 +15,17 @@ import qualified Data.Set as Set
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
 import           Kore.AST.Common
-                 ( Application (..), AstLocation (..), CommonPurePattern,
-                 Id (..), Pattern (..), SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( fromPurePattern )
-import           Kore.AST.PureToKore
-                 ( patternKoreToPure )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
-import           Kore.Building.AsAst
-import           Kore.Building.Patterns
-import           Kore.Building.Sorts
-import           Kore.Error
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import           Kore.MetaML.AST
-                 ( CommonMetaPattern )
 import           Kore.Predicate.Predicate
                  ( makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.BaseStep
@@ -49,12 +40,14 @@ import           Kore.Step.Function.UserDefined
                  ( axiomFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 ( CommonStepPatternSimplifier, SimplificationProof (..),
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.Simplifier
@@ -67,7 +60,8 @@ test_userDefinedFunction =
         let expect =
                 AttemptedFunction.Applied $ OrOfExpandedPattern.make
                     [ Predicated
-                        { term = asPureMetaPattern (metaG (x PatternSort))
+                        { term =
+                            asApplication $ metaG (Var_ $ x patternMetaSort)
                         , predicate = makeTruePredicate
                         , substitution = []
                         }
@@ -76,15 +70,15 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 AxiomPattern
-                    { axiomPatternLeft  =
-                        asPureMetaPattern (metaF (x PatternSort))
+                    { axiomPatternLeft =
+                        asApplication $ metaF (Var_ $ x patternMetaSort)
                     , axiomPatternRight =
-                        asPureMetaPattern (metaG (x PatternSort))
+                        asApplication $ metaG (Var_ $ x patternMetaSort)
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
                 (mockSimplifier [])
-                (asApplication (metaF (x PatternSort)))
+                (metaF (Var_ $ x patternMetaSort))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
 
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
@@ -94,15 +88,15 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 AxiomPattern
-                    { axiomPatternLeft  =
-                        asPureMetaPattern (metaF (x PatternSort))
+                    { axiomPatternLeft =
+                        asApplication $ metaF (Var_ $ x patternMetaSort)
                     , axiomPatternRight =
-                        asPureMetaPattern (metaG (x PatternSort))
+                        asApplication $ metaG (Var_ $ x patternMetaSort)
                     , axiomPatternRequires = makeFalsePredicate
                     , axiomPatternAttributes = def
                     }
                 (mockSimplifier [])
-                (asApplication (metaF (x PatternSort)))
+                (metaF (Var_ $ x patternMetaSort))
         assertEqualWithExplanation "f(x) => g(x) requires false" expect actual
 
     , testCase "Cannot apply step with unsat condition" $ do
@@ -113,10 +107,10 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 AxiomPattern
-                    { axiomPatternLeft  =
-                        asPureMetaPattern (metaF (x PatternSort))
+                    { axiomPatternLeft =
+                        asApplication $ metaF (Var_ $ x patternMetaSort)
                     , axiomPatternRight =
-                        asPureMetaPattern (metaG (x PatternSort))
+                        asApplication $ metaG (Var_ $ x patternMetaSort)
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
@@ -124,14 +118,15 @@ test_userDefinedFunction =
                     -- Evaluate Top to Bottom.
                     [ (mkTop, ([], SimplificationProof)) ]
                 )
-                (asApplication (metaF (x PatternSort)))
+                (metaF (Var_ $ x patternMetaSort))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Reevaluates the step application" $ do
         let expect =
                 AttemptedFunction.Applied $ OrOfExpandedPattern.make
                     [ Predicated
-                        { term = asPureMetaPattern (metaH (x PatternSort))
+                        { term =
+                            asApplication $ metaH (Var_ $ x patternMetaSort)
                         , predicate = makeTruePredicate
                         , substitution = []
                         }
@@ -140,19 +135,19 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 AxiomPattern
-                    { axiomPatternLeft  =
-                        asPureMetaPattern (metaF (x PatternSort))
+                    { axiomPatternLeft =
+                        asApplication $ metaF (Var_ $ x patternMetaSort)
                     , axiomPatternRight =
-                        asPureMetaPattern (metaG (x PatternSort))
+                        asApplication $ metaG (Var_ $ x patternMetaSort)
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
                 (mockSimplifier
-                    [   ( asPureMetaPattern (metaG (x PatternSort))
+                    [   (   asApplication $ metaG (Var_ $ x patternMetaSort)
                         ,   (   [ Predicated
                                     { term =
-                                        asPureMetaPattern
-                                        $ metaH (x PatternSort)
+                                        asApplication
+                                        $ metaH (Var_ $ x patternMetaSort)
                                     , predicate = makeTruePredicate
                                     , substitution = []
                                     }
@@ -162,7 +157,7 @@ test_userDefinedFunction =
                         )
                     ]
                 )
-                (asApplication (metaF (x PatternSort)))
+                (metaF (Var_ $ x patternMetaSort))
         assertEqualWithExplanation "f(x) => g(x) and g(x) => h(x)" expect actual
 
     , testCase "Does not reevaluate the step application with incompatible condition" $ do
@@ -173,19 +168,19 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 AxiomPattern
-                    { axiomPatternLeft  =
-                        asPureMetaPattern (metaF (x PatternSort))
+                    { axiomPatternLeft =
+                        asApplication $ metaF (Var_ $ x patternMetaSort)
                     , axiomPatternRight =
-                        asPureMetaPattern (metaG (x PatternSort))
+                        asApplication $ metaG (Var_ $ x patternMetaSort)
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
                 (mockSimplifier
-                    [   ( asPureMetaPattern (metaG (x PatternSort))
+                    [   (   asApplication $ metaG (Var_ $ x patternMetaSort)
                         ,   (   [ Predicated
                                     { term =
-                                        asPureMetaPattern
-                                        $ metaH (x PatternSort)
+                                        asApplication
+                                        $ metaH (Var_ $ x patternMetaSort)
                                     , predicate = makeFalsePredicate
                                     , substitution = []
                                     }
@@ -195,7 +190,7 @@ test_userDefinedFunction =
                         )
                     ]
                 )
-                (asApplication (metaF (x PatternSort)))
+                (metaF (Var_ $ x patternMetaSort))
         assertEqualWithExplanation
             "f(x) => g(x) and g(x) => h(x) + false"
             expect
@@ -205,13 +200,11 @@ test_userDefinedFunction =
         let expect =
                 AttemptedFunction.Applied $ OrOfExpandedPattern.make
                     [ Predicated
-                        { term = asPureMetaPattern (metaG (b PatternSort))
+                        { term =
+                            asApplication $ metaG (Var_ $ b patternMetaSort)
                         , predicate = makeTruePredicate
                         , substitution =
-                            [   ( asVariable (a PatternSort)
-                                , asPureMetaPattern (b PatternSort)
-                                )
-                            ]
+                            [(a patternMetaSort, Var_ $ b patternMetaSort)]
                         }
                     ]
         actual <-
@@ -219,30 +212,35 @@ test_userDefinedFunction =
                 mockMetadataTools
                 AxiomPattern
                     { axiomPatternLeft  =
-                        asPureMetaPattern
-                            (metaSigma (x PatternSort) (x PatternSort))
+                        asApplication $ metaSigma
+                            (Var_ $ x patternMetaSort)
+                            (Var_ $ x patternMetaSort)
                     , axiomPatternRight =
-                        asPureMetaPattern (metaG (x PatternSort))
+                        asApplication $ metaG (Var_ $ x patternMetaSort)
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
                 (mockSimplifier [])
-                (asApplication (metaSigma (a PatternSort) (b PatternSort)))
+                (metaSigma
+                    (Var_ $ a patternMetaSort)
+                    (Var_ $ b patternMetaSort)
+                )
         assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)" expect actual
 
     , testCase "Merges the step substitution with the reevaluation one" $ do
         let expect =
                 AttemptedFunction.Applied $ OrOfExpandedPattern.make
                     [ Predicated
-                        { term = asPureMetaPattern (metaH (c PatternSort))
+                        { term =
+                            asApplication $ metaH (Var_ $ c patternMetaSort)
                         , predicate = makeTruePredicate
                         , substitution =
-                            [   ( asVariable (a PatternSort)
+                            [   ( a patternMetaSort
                                 -- TODO(virgil): Do we want normalization here?
-                                , asPureMetaPattern (c PatternSort)
+                                , Var_ $ c patternMetaSort
                                 )
-                            ,   ( asVariable (b PatternSort)
-                                , asPureMetaPattern (c PatternSort)
+                            ,   ( b patternMetaSort
+                                , Var_ $ c patternMetaSort
                                 )
                             ]
                         }
@@ -252,23 +250,24 @@ test_userDefinedFunction =
                 mockMetadataTools
                 AxiomPattern
                     { axiomPatternLeft  =
-                        asPureMetaPattern
-                            (metaSigma (x PatternSort) (x PatternSort))
+                        asApplication $ metaSigma
+                            (Var_ $ x patternMetaSort)
+                            (Var_ $ x patternMetaSort)
                     , axiomPatternRight =
-                        asPureMetaPattern (metaG (x PatternSort))
+                        asApplication $ metaG (Var_ $ x patternMetaSort)
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
                 (mockSimplifier
-                    [   ( asPureMetaPattern (metaG (b PatternSort))
+                    [   (   asApplication $ metaG (Var_ $ b patternMetaSort)
                         ,   (   [ Predicated
                                     { term =
-                                        asPureMetaPattern
-                                        $ metaH (c PatternSort)
+                                        asApplication
+                                        $ metaH (Var_ $ c patternMetaSort)
                                     , predicate = makeTruePredicate
                                     , substitution =
-                                        [   ( asVariable (b PatternSort)
-                                            , asPureMetaPattern (c PatternSort)
+                                        [   ( b patternMetaSort
+                                            , Var_ $ c patternMetaSort
                                             )
                                         ]
                                     }
@@ -278,7 +277,10 @@ test_userDefinedFunction =
                         )
                     ]
                 )
-                (asApplication (metaSigma (a PatternSort) (b PatternSort)))
+                (metaSigma
+                    (Var_ $ a patternMetaSort)
+                    (Var_ $ b patternMetaSort)
+                )
         assertEqualWithExplanation
             "sigma(x,x) => g(x) vs sigma(a, b) and g(b) => h(c) + a=c,b=c"
             expect
@@ -289,8 +291,8 @@ test_userDefinedFunction =
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
 mockSymbolOrAliasSorts = const ApplicationSorts
-    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
-    , applicationSortsResult = asAst PatternSort
+    { applicationSortsOperands = [patternMetaSort, patternMetaSort]
+    , applicationSortsResult = patternMetaSort
     }
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes
@@ -303,122 +305,71 @@ mockMetadataTools = MetadataTools
     , subsorts = Set.singleton
     }
 
-x :: MetaSort sort => sort -> MetaVariable sort
-x = metaVariable "#x" AstLocationTest
-
-a :: MetaSort sort => sort -> MetaVariable sort
-a = metaVariable "#a" AstLocationTest
-
-b :: MetaSort sort => sort -> MetaVariable sort
-b = metaVariable "#b" AstLocationTest
-
-c :: MetaSort sort => sort -> MetaVariable sort
-c = metaVariable "#c" AstLocationTest
+x, a, b, c :: Sort Meta -> Variable Meta
+x = Variable (testId "#x")
+a = Variable (testId "#a")
+b = Variable (testId "#b")
+c = Variable (testId "#c")
 
 fSymbol :: SymbolOrAlias Meta
 fSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#f" AstLocationTest
+    { symbolOrAliasConstructor = testId "#f"
     , symbolOrAliasParams = []
     }
 
-newtype MetaF p1 = MetaF p1
-instance (MetaPattern PatternSort p1)
-    => ProperPattern Meta PatternSort (MetaF p1)
-  where
-    asProperPattern (MetaF p1) =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = fSymbol
-            , applicationChildren = [asAst p1]
-            }
 metaF
-    :: (MetaPattern PatternSort p1)
-    => p1 -> MetaF p1
-metaF = MetaF
+    :: CommonPurePattern Meta dom
+    -> Application Meta (CommonPurePattern Meta dom)
+metaF p = Application fSymbol [p]
 
 
 gSymbol :: SymbolOrAlias Meta
 gSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#g" AstLocationTest
+    { symbolOrAliasConstructor = testId "#g"
     , symbolOrAliasParams = []
     }
 
-newtype MetaG p1 = MetaG p1
-instance (MetaPattern PatternSort p1)
-    => ProperPattern Meta PatternSort (MetaG p1)
-  where
-    asProperPattern (MetaG p1) =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = gSymbol
-            , applicationChildren = [asAst p1]
-            }
 metaG
-    :: (MetaPattern PatternSort p1)
-    => p1 -> MetaG p1
-metaG = MetaG
-
+    :: CommonPurePattern Meta dom
+    -> Application Meta (CommonPurePattern Meta dom)
+metaG p = Application gSymbol [p]
 
 hSymbol :: SymbolOrAlias Meta
 hSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#h" AstLocationTest
+    { symbolOrAliasConstructor = testId "#h"
     , symbolOrAliasParams = []
     }
 
-newtype MetaH p1 = MetaH p1
-instance (MetaPattern PatternSort p1)
-    => ProperPattern Meta PatternSort (MetaH p1)
-  where
-    asProperPattern (MetaH p1) =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = hSymbol
-            , applicationChildren = [asAst p1]
-            }
 metaH
-    :: (MetaPattern PatternSort p1)
-    => p1 -> MetaH p1
-metaH = MetaH
+    :: CommonPurePattern Meta dom
+    -> Application Meta (CommonPurePattern Meta dom)
+metaH p = Application hSymbol [p]
 
 
 sigmaSymbol :: SymbolOrAlias Meta
 sigmaSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#sigma" AstLocationTest
+    { symbolOrAliasConstructor = testId "#sigma"
     , symbolOrAliasParams = []
     }
 
-data MetaSigma p1 p2 = MetaSigma p1 p2
-instance (MetaPattern PatternSort p1, MetaPattern PatternSort p2)
-    => ProperPattern Meta PatternSort (MetaSigma p1 p2)
-  where
-    asProperPattern (MetaSigma p1 p2) =
-        ApplicationPattern Application
-            { applicationSymbolOrAlias = sigmaSymbol
-            , applicationChildren = [asAst p1, asAst p2]
-            }
 metaSigma
-    :: (MetaPattern PatternSort p1, MetaPattern PatternSort p2)
-    => p1 -> p2 -> MetaSigma p1 p2
-metaSigma = MetaSigma
-
-asPureMetaPattern
-    :: ProperPattern Meta sort patt => patt -> CommonMetaPattern
-asPureMetaPattern patt =
-    case patternKoreToPure Meta (asAst patt) of
-        Left err  -> error (printError err)
-        Right pat -> pat
+    :: CommonPurePattern Meta dom
+    -> CommonPurePattern Meta dom
+    -> Application Meta (CommonPurePattern Meta dom)
+metaSigma p1 p2 = Application sigmaSymbol [p1, p2]
 
 asApplication
-    :: ProperPattern Meta sort patt => patt
-    -> Application Meta (CommonPurePattern Meta)
-asApplication patt =
-    case fromPurePattern (asPureMetaPattern patt) of
-        ApplicationPattern app -> app
-        _                      -> error "Expected an Application pattern."
+    :: Functor dom
+    => Application Meta (CommonPurePattern Meta dom)
+    -> CommonPurePattern Meta dom
+asApplication = Functor.Foldable.embed . ApplicationPattern
 
 evaluateWithAxiom
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -> AxiomPattern level
-    -> CommonPureMLPatternSimplifier level
-    -> Application level (CommonPurePattern level)
+    -> CommonStepPatternSimplifier level
+    -> Application level (CommonStepPattern level)
     -> IO (CommonAttemptedFunction level)
 evaluateWithAxiom
     metadataTools

@@ -13,12 +13,11 @@ import qualified Control.Error as Error
 import           Data.Reflection
                  ( give )
 
-import           Kore.AST.Common
-                 ( BuiltinDomain (..), CommonPurePattern )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkBottom, mkCharLiteral, mkDomainValue,
                  mkStringLiteral, mkTop, mkVar )
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
@@ -27,6 +26,7 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termUnification )
 import           Kore.Step.Simplification.Data
@@ -738,25 +738,25 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
     -- TODO: Add tests for set unification.
     ]
 
-fOfA :: CommonPurePattern Object
+fOfA :: CommonStepPattern Object
 fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
 
-fOfB :: CommonPurePattern Object
+fOfB :: CommonStepPattern Object
 fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
 
-gOfA :: CommonPurePattern Object
+gOfA :: CommonStepPattern Object
 gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
 
-plain0OfA :: CommonPurePattern Object
+plain0OfA :: CommonStepPattern Object
 plain0OfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
 
-plain1OfA :: CommonPurePattern Object
+plain1OfA :: CommonStepPattern Object
 plain1OfA = give mockSymbolOrAliasSorts $ Mock.plain11 Mock.a
 
-plain0OfB :: CommonPurePattern Object
+plain0OfB :: CommonStepPattern Object
 plain0OfB = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.b
 
-plain1OfB :: CommonPurePattern Object
+plain1OfB :: CommonStepPattern Object
 plain1OfB = give mockSymbolOrAliasSorts $ Mock.plain11 Mock.b
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
@@ -778,23 +778,23 @@ mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools =
     Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] []
 
-aDomainValue :: CommonPurePattern Object
+aDomainValue :: CommonStepPattern Object
 aDomainValue =
     give mockSymbolOrAliasSorts
         $ mkDomainValue  Mock.testSort
-        $ BuiltinDomainPattern (mkStringLiteral "a")
+        $ Domain.BuiltinPattern (mkStringLiteral "a")
 
-bDomainValue :: CommonPurePattern Object
+bDomainValue :: CommonStepPattern Object
 bDomainValue =
     give mockSymbolOrAliasSorts
         $ mkDomainValue Mock.testSort
-        $ BuiltinDomainPattern (mkStringLiteral "b")
+        $ Domain.BuiltinPattern (mkStringLiteral "b")
 
 simplifyUnify
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    -> CommonStepPattern level
+    -> CommonStepPattern level
     -> IO (CommonExpandedPattern level, Maybe (CommonExpandedPattern level))
 simplifyUnify tools first second =
     (,)
@@ -805,8 +805,8 @@ simplifyUnify tools first second =
 unify
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    -> CommonStepPattern level
+    -> CommonStepPattern level
     -> IO (Maybe (CommonExpandedPattern level))
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
@@ -824,8 +824,8 @@ unify tools first second =
 simplify
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    -> CommonStepPattern level
+    -> CommonStepPattern level
     -> IO (CommonExpandedPattern level)
 simplify tools first second =
     (<$>) fst

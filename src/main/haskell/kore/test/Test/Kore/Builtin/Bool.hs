@@ -14,6 +14,7 @@ import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
 
 import Test.Kore.Builtin.Builtin
@@ -81,7 +82,7 @@ testUnary symb impl =
         symAttributes testMetadataTools symb
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> CommonPurePattern Object
+asPattern :: Bool -> CommonStepPattern Object
 asPattern = Bool.asPattern boolSort
 
 -- | Specialize 'Bool.asExpandedPattern' to the builtin sort 'boolSort'.

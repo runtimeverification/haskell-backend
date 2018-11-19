@@ -14,14 +14,16 @@ import Kore.AST.Common
 import Kore.AST.PureML
 import Kore.Proof.Functional
        ( FunctionalProof (..) )
+import Kore.Step.Pattern
 
-type UnificationSubstitution level variable
-    = [(variable level, PureMLPattern level variable)]
+type UnificationSubstitution level variable =
+    [(variable level, StepPattern level variable)]
 
 -- |'mapSubstitutionVariables' changes all the variables in the substitution
 -- with the given function.
 mapSubstitutionVariables
-    :: (variableFrom level -> variableTo level)
+    ::  forall level variableFrom variableTo.
+        (variableFrom level -> variableTo level)
     -> UnificationSubstitution level variableFrom
     -> UnificationSubstitution level variableTo
 mapSubstitutionVariables variableMapper =
@@ -29,8 +31,8 @@ mapSubstitutionVariables variableMapper =
   where
     mapVariable
         :: (variableFrom level -> variableTo level)
-        -> (variableFrom level, PureMLPattern level variableFrom)
-        -> (variableTo level, PureMLPattern level variableTo)
+        -> (variableFrom level, StepPattern level variableFrom)
+        -> (variableTo level, StepPattern level variableTo)
     mapVariable
         mapper
         (variable, patt)
@@ -46,12 +48,12 @@ data UnificationProof level variable
     -- ^Empty proof (nothing to prove)
     | CombinedUnificationProof [UnificationProof level variable]
     -- ^Putting multiple proofs together
-    | ConjunctionIdempotency (PureMLPattern level variable)
+    | ConjunctionIdempotency (StepPattern level variable)
     -- ^Used to specify the reduction a/\a <-> a
     | Proposition_5_24_3
         [FunctionalProof level variable]
         (variable level)
-        (PureMLPattern level variable)
+        (StepPattern level variable)
     -- ^Used to specify the application of Proposition 5.24 (3)
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- if ϕ and ϕ' are functional patterns, then
@@ -67,8 +69,8 @@ data UnificationProof level variable
     -- |= c(ϕ1, ..., ϕi /\ ϕ, ..., ϕn) = c(ϕ1, ..., ϕi, ..., ϕn) /\ ϕ
     | SubstitutionMerge
         (variable level)
-        (PureMLPattern level variable)
-        (PureMLPattern level variable)
+        (StepPattern level variable)
+        (StepPattern level variable)
     -- ^Specifies the merging of (x = t1) /\ (x = t2) into x = (t1 /\ t2)
     -- Semantics of K, 7.7.1:
     -- (Equality Elimination). |- (ϕ1 = ϕ2) → (ψ[ϕ1/v] → ψ[ϕ2/v])

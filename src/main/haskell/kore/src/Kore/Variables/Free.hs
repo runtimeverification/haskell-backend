@@ -32,8 +32,8 @@ import Kore.AST.MetaOrObject
 {- | The free variables of a pure pattern.
  -}
 freePureVariables
-    :: (Ord (variable level))
-    => PureMLPattern level variable
+    :: (Foldable domain, Functor domain, Ord (variable level))
+    => PureMLPattern level domain variable
     -> Set (variable level)
 freePureVariables root =
     let (free, ()) =
@@ -67,11 +67,13 @@ freePureVariables root =
 
 {-| 'freeVariables' extracts the set of free variables of a pattern. -}
 freeVariables
-    :: ( UnifiedPatternInterface pat
-       , Functor (pat var)
-       , Ord (var Object)
-       , Ord (var Meta))
-    => Fix (pat var) -> Set.Set (Unified var)
+    ::  ( UnifiedPatternInterface pat
+        , Functor (pat dom var)
+        , Foldable dom
+        , Ord (var Object)
+        , Ord (var Meta)
+        )
+    => Fix (pat dom var) -> Set.Set (Unified var)
 freeVariables = patternBottomUpVisitor freeVarsVisitor
     where
     freeVarsVisitor (VariablePattern v) = Set.singleton (asUnified v)
@@ -85,11 +87,13 @@ freeVariables = patternBottomUpVisitor freeVarsVisitor
 whether they are quantified or not.
 -}
 allVariables
-    :: ( UnifiedPatternInterface pat
-       , Functor (pat var)
-       , Ord (var Object)
-       , Ord (var Meta))
-    => Fix (pat var) -> Set.Set (Unified var)
+    ::  ( UnifiedPatternInterface pat
+        , Functor (pat dom var)
+        , Foldable dom
+        , Ord (var Object)
+        , Ord (var Meta)
+        )
+    => Fix (pat dom var) -> Set.Set (Unified var)
 allVariables = patternBottomUpVisitor allVarsVisitor
   where
     allVarsVisitor (VariablePattern v) = Set.singleton (asUnified v)
@@ -100,8 +104,8 @@ allVariables = patternBottomUpVisitor allVarsVisitor
     allVarsVisitor p = fold p  -- default rule
 
 pureMergeVariables
-    :: Ord (var level)
-    => Pattern level var (Set.Set (var level)) -> Set.Set (var level)
+    :: (Foldable dom, Ord (var level))
+    => Pattern level dom var (Set.Set (var level)) -> Set.Set (var level)
 pureMergeVariables (VariablePattern v) = Set.singleton v
 pureMergeVariables (ExistsPattern e) =
     Set.insert (existsVariable e) (existsChild e)
@@ -113,6 +117,6 @@ pureMergeVariables p = fold p  -- default rule
 set, regardless of whether they are quantified or not.
 -}
 pureAllVariables
-    :: Ord (var level)
-    => PureMLPattern level var -> Set.Set (var level)
+    :: (Foldable dom, Functor dom, Ord (var level))
+    => PureMLPattern level dom var -> Set.Set (var level)
 pureAllVariables = cata pureMergeVariables

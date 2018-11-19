@@ -23,16 +23,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "F.f")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "F.f"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -49,16 +49,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "F.f")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "F.f"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 ]

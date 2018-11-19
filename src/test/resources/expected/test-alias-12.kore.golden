@@ -27,11 +27,11 @@ Definition
                                         ]
                                     }
                             , applicationChildren =
-                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "a" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    }))))
+                                    })))
                                 ]
                             }
                     , sentenceAliasRightPattern =
@@ -39,11 +39,11 @@ Definition
                             { nextSort =
                                 SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                             , nextChild =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "a" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    }))))
+                                    })))
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

@@ -12,7 +12,8 @@ module Kore.Proof.Functional
     , TotalProof (..)
     ) where
 
-import Kore.AST.Common
+import           Kore.AST.Common
+import qualified Kore.Domain.Builtin as Domain
 
 -- |'FunctionalProof' is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
@@ -25,7 +26,7 @@ data FunctionalProof level variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
-    | FunctionalDomainValue (DomainValue level (BuiltinDomain ()))
+    | FunctionalDomainValue (DomainValue level Domain.Builtin ())
     -- ^ Domain value pattern without children are functional: they represent
     -- one value in the model.
     | FunctionalHead (SymbolOrAlias level)

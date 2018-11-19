@@ -60,6 +60,8 @@ module Kore.ASTUtils.SmartConstructors
 import Control.Lens
 import Control.Monad.State
 import Data.Foldable
+import Data.Functor.Classes
+       ( Show1 )
 import Data.Functor.Foldable
 import Data.Reflection
 import Data.Text
@@ -77,8 +79,12 @@ import Kore.IndexedModule.MetadataTools
 -- The smart constructors `mkAnd`, etc also require this context.
 -- Usage: give metadatatools (... computation with Given Metadatatools ..)
 getSort
-    :: (MetaOrObject level, Given (SymbolOrAliasSorts level), SortedVariable var)
-    => PureMLPattern level var
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable var
+        , Functor dom
+        )
+    => PureMLPattern level dom var
     -> Sort level
 getSort x = getPatternResultSort given $ project x
 
@@ -92,12 +98,12 @@ predicateSort
 predicateSort = mkSort "PREDICATE"
 
 patternLens
-    :: (Applicative f, MetaOrObject level)
+    :: (Applicative f, MetaOrObject level, Traversable dom)
     => (Sort level -> f (Sort level))
     -> (Sort level -> f (Sort level))
     -> (var level -> f (var1 level))
-    -> (PureMLPattern level var -> f (PureMLPattern level var1))
-    -> (PureMLPattern level var -> f (PureMLPattern level var1))
+    -> (PureMLPattern level dom var -> f (PureMLPattern level dom var1))
+    -> (PureMLPattern level dom var -> f (PureMLPattern level dom var1))
 patternLens
   i   -- input sort
   o   -- result sort
@@ -131,8 +137,8 @@ patternLens
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc.
 inputSort
-    :: MetaOrObject level
-    => Traversal' (PureMLPattern level var) (Sort level)
+    :: (MetaOrObject level, Traversable dom)
+    => Traversal' (PureMLPattern level dom var) (Sort level)
 inputSort        f = patternLens f    pure pure pure
 -- | The sort returned by a top level constructor.
 -- NOTE ABOUT NOTATION:
@@ -147,36 +153,36 @@ inputSort        f = patternLens f    pure pure pure
 -- Note that a few constructors like App and StringLiteral
 -- lack a result sort in the AST.
 resultSort
-    :: MetaOrObject level
-    => Traversal' (PureMLPattern level var) (Sort level)
+    :: (MetaOrObject level, Traversable dom)
+    => Traversal' (PureMLPattern level dom var) (Sort level)
 resultSort       f = patternLens pure f    pure pure
 -- | Points to the bound variable in Forall/Exists,
 -- and also the Variable in VariablePattern
 variable
-    :: MetaOrObject level
-    => Traversal' (PureMLPattern level var) (var level)
+    :: (MetaOrObject level, Traversable dom)
+    => Traversal' (PureMLPattern level dom var) (var level)
 variable         f = patternLens pure pure f    pure
 -- All sub-expressions which are Patterns.
 -- use partsOf allChildren to get a lens to a List.
 allChildren
-    :: MetaOrObject level
-    => Traversal' (PureMLPattern level var) (PureMLPattern level var)
+    :: (MetaOrObject level, Traversable dom)
+    => Traversal' (PureMLPattern level dom var) (PureMLPattern level dom var)
 allChildren      f = patternLens pure pure pure f
 
 changeVar
-    :: (MetaOrObject level, Applicative f)
+    :: (MetaOrObject level, Applicative f, Traversable dom)
     => (var level -> f (var1 level))
-    -> (PureMLPattern level var -> f (PureMLPattern level var1))
-    -> (PureMLPattern level var -> f (PureMLPattern level var1))
+    -> (PureMLPattern level dom var -> f (PureMLPattern level dom var1))
+    -> (PureMLPattern level dom var -> f (PureMLPattern level dom var1))
 changeVar v f = patternLens pure pure v f
 
 -- | Applies a function at an `[Int]` path.
 localInPattern
-    :: MetaOrObject level
+    :: (MetaOrObject level, Traversable dom)
     => [Int]
-    -> (PureMLPattern level var -> PureMLPattern level var)
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> (PureMLPattern level dom var -> PureMLPattern level dom var)
+    -> PureMLPattern level dom var
+    -> PureMLPattern level dom var
 localInPattern path f pat = pat & inPath path %~ f
 
 
@@ -184,10 +190,10 @@ localInPattern path f pat = pat & inPath path %~ f
 -- The ints represent subpatterns in the obvious way:
 -- [0,1] points to b in \ceil(a /\ b), etc.
 inPath
-    :: (MetaOrObject level, Applicative f)
+    :: (MetaOrObject level, Applicative f, Traversable dom)
     => [Int]
-    -> (PureMLPattern level var -> f (PureMLPattern level var))
-    -> (PureMLPattern level var -> f (PureMLPattern level var))
+    -> (PureMLPattern level dom var -> f (PureMLPattern level dom var))
+    -> (PureMLPattern level dom var -> f (PureMLPattern level dom var))
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 
@@ -195,8 +201,8 @@ inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 -- single uniquely determined sort,
 -- which we can't change.
 hasRigidHead
-    :: MetaOrObject level
-    => PureMLPattern level var
+    :: (MetaOrObject level, Functor dom)
+    => PureMLPattern level dom var
     -> Bool
 hasRigidHead p = case project p of
     ApplicationPattern   _ -> True
@@ -214,8 +220,8 @@ hasRigidHead p = case project p of
 -- must match the sort of of its subexpressions:
 -- \and, \or, \implies, etc.
 hasFlexibleHead
-    :: MetaOrObject level
-    => PureMLPattern level var
+    :: (MetaOrObject level, Functor dom)
+    => PureMLPattern level dom var
     -> Bool
 hasFlexibleHead p = case project p of
     BottomPattern _ -> True
@@ -228,10 +234,14 @@ hasFlexibleHead p = case project p of
 
 -- | Attempts to modify p to have sort s.
 forceSort
-    :: (MetaOrObject level, Given (SymbolOrAliasSorts level), SortedVariable var)
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable var
+        , Traversable dom
+        )
     => Sort level
-    -> PureMLPattern level var
-    -> Maybe (PureMLPattern level var)
+    -> PureMLPattern level dom var
+    -> Maybe (PureMLPattern level dom var)
 forceSort s p
   | getSort p == s = Just p
   | hasRigidHead    p   = Nothing
@@ -240,9 +250,13 @@ forceSort s p
 
 -- | Modify all patterns in a list to have the same sort.
 makeSortsAgree
-    :: (MetaOrObject level, Given (SymbolOrAliasSorts level), SortedVariable var)
-    => [PureMLPattern level var]
-    -> Maybe [PureMLPattern level var]
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable var
+        , Traversable dom
+        )
+    => [PureMLPattern level dom var]
+    -> Maybe [PureMLPattern level dom var]
 makeSortsAgree ps =
     forM ps $ forceSort $
         case asum $ getRigidSort <$> ps of
@@ -250,8 +264,12 @@ makeSortsAgree ps =
           Just a  -> a
 
 getRigidSort
-    :: (MetaOrObject level, Given (SymbolOrAliasSorts level), SortedVariable var)
-    => PureMLPattern level var
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable var
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
     -> Maybe (Sort level)
 getRigidSort p =
     case forceSort predicateSort p of
@@ -266,9 +284,12 @@ ensureSortAgreement
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
 ensureSortAgreement p =
   case makeSortsAgree $ p ^. partsOf allChildren of
     Just []    -> p & resultSort .~ predicateSort
@@ -294,7 +315,7 @@ ensureSortAgreement p =
 -- Also, in practice, having a flexible sort and being a predicate
 -- are synonymous. But don't quote me on this.
 isObviouslyPredicate
-    :: PureMLPattern level var
+    :: PureMLPattern level dom var
     -> Bool
 isObviouslyPredicate = \case
   And_ _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
@@ -316,160 +337,201 @@ mkAnd
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkAnd a b = ensureSortAgreement $ And_ fixmeSort a b
 
 -- TODO: Should this check for sort agreement?
 mkApp
     :: (MetaOrObject level, Given (SymbolOrAliasSorts level))
     => SymbolOrAlias level
-    -> [PureMLPattern level var]
-    -> PureMLPattern level var
+    -> [PureMLPattern level dom var]
+    -> PureMLPattern level dom var
 mkApp = App_
 
 mkBottom
     :: MetaOrObject level
-    => PureMLPattern level var
+    => PureMLPattern level dom var
 mkBottom = Bottom_ predicateSort
 
 mkCeil
-    :: (MetaOrObject level, Given (SymbolOrAliasSorts level), SortedVariable var)
-    => PureMLPattern level var
-    -> PureMLPattern level var
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable var
+        , Show1 dom
+        , Functor dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkCeil a = Ceil_ (getSort a) predicateSort a
 
 mkDomainValue
     :: (MetaOrObject Object, Given (SymbolOrAliasSorts Object))
     => Sort Object
-    -> BuiltinDomain (PureMLPattern Object var)
-    -> PureMLPattern Object var
+    -> dom (PureMLPattern Object dom var)
+    -> PureMLPattern Object dom var
 mkDomainValue = DV_
 
 mkEquals
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkEquals a b = ensureSortAgreement $ Equals_ fixmeSort fixmeSort a b
 
 mkExists
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
     => var level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkExists v a = ensureSortAgreement $ Exists_ fixmeSort v a
 
 mkFloor
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkFloor a = ensureSortAgreement $ Floor_ fixmeSort fixmeSort a
 
 mkForall
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
     => var level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkForall v a = ensureSortAgreement $ Forall_ fixmeSort v a
 
 mkIff
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkIff a b = ensureSortAgreement $ Iff_ fixmeSort a b
 
 mkImplies
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkImplies a b = ensureSortAgreement $ Implies_ fixmeSort a b
 
 mkIn
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkIn a b = ensureSortAgreement $ In_ fixmeSort fixmeSort a b
 
 mkNext
     ::  ( MetaOrObject Object
         , Given (SymbolOrAliasSorts Object)
         , SortedVariable var
-        , Show (var Object))
-    => PureMLPattern Object var
-    -> PureMLPattern Object var
+        , Show (var Object)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern Object dom var
+    -> PureMLPattern Object dom var
 mkNext a = ensureSortAgreement $ Next_ fixmeSort a
 
 mkNot
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkNot a = ensureSortAgreement $ Not_ fixmeSort a
 
 mkOr
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable var
-        , Show (var level))
-    => PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+        , Show (var level)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern level dom var
+    -> PureMLPattern level dom var
+    -> PureMLPattern level dom var
 mkOr a b = ensureSortAgreement $ Or_ fixmeSort a b
 
 mkRewrites
     ::  ( MetaOrObject Object
         , Given (SymbolOrAliasSorts Object)
         , SortedVariable var
-        , Show (var Object))
-    => PureMLPattern Object var
-    -> PureMLPattern Object var
-    -> PureMLPattern Object var
+        , Show (var Object)
+        , Show1 dom
+        , Traversable dom
+        )
+    => PureMLPattern Object dom var
+    -> PureMLPattern Object dom var
+    -> PureMLPattern Object dom var
 mkRewrites a b = ensureSortAgreement $ Rewrites_ fixmeSort a b
 
 mkTop
     :: MetaOrObject level
-    => PureMLPattern level var
+    => PureMLPattern level dom var
 mkTop = Top_ predicateSort
 
 mkVar
     :: (MetaOrObject level, Given (SymbolOrAliasSorts level))
     => var level
-    -> PureMLPattern level var
+    -> PureMLPattern level dom var
 mkVar = Var_
 
-mkStringLiteral :: String -> PureMLPattern Meta var
+mkStringLiteral :: String -> PureMLPattern Meta dom var
 mkStringLiteral = StringLiteral_
 
-mkCharLiteral :: Char -> PureMLPattern Meta var
+mkCharLiteral :: Char -> PureMLPattern Meta dom var
 mkCharLiteral = CharLiteral_
 
 mkSort

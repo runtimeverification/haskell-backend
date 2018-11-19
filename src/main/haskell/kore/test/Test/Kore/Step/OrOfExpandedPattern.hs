@@ -14,7 +14,7 @@ expandedPatternGen
     => level
     -> Gen (CommonExpandedPattern level)
 expandedPatternGen level = do
-    term <- purePatternGen level
+    term <- stepPatternGen level
     return Predicated { term, predicate = makeTruePredicate, substitution = [] }
 
 orOfExpandedPatternGen

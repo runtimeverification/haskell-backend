@@ -32,7 +32,6 @@ import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
-
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  makeTruePredicate, unwrapPredicate )
@@ -49,13 +48,13 @@ import           Kore.Step.Function.Registry
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Search
                  ( searchTree )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 PureMLPatternSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 SimplificationProof (..), Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -75,22 +74,22 @@ import           Kore.Variables.Fresh
 exec
     :: KoreIndexedModule StepperAttributes
     -- ^ The main module
-    -> CommonPurePattern Object
+    -> CommonStepPattern Object
     -- ^ The input pattern
     -> Limit Natural
     -- ^ The step limit
     -> ([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> Simplifier (CommonPurePattern Object)
+    -> Simplifier (CommonStepPattern Object)
 exec indexedModule purePattern stepLimit strategy =
     setUpConcreteExecution indexedModule purePattern stepLimit strategy execute
   where
     execute
         :: MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object Variable
+        -> StepPatternSimplifier Object Variable
         -> PredicateSubstitutionSimplifier Object Simplifier
         -> Tree (CommonExpandedPattern Object, StepProof Object Variable)
-        -> Simplifier (CommonPurePattern Object)
+        -> Simplifier (CommonStepPattern Object)
     execute metadataTools _ _ executionTree =
         give (symbolOrAliasSorts metadataTools) $ do
             let (finalConfig, _) = pickLongest executionTree
@@ -100,7 +99,7 @@ exec indexedModule purePattern stepLimit strategy =
 search
     :: KoreIndexedModule StepperAttributes
     -- ^ The main module
-    -> CommonPurePattern Object
+    -> CommonStepPattern Object
     -- ^ The input pattern
     -> Limit Natural
     -- ^ The step limit
@@ -110,7 +109,7 @@ search
     -- ^ The pattern to match during execution
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
-    -> Simplifier (CommonPurePattern Object)
+    -> Simplifier (CommonStepPattern Object)
 search
     indexedModule
     purePattern
@@ -143,14 +142,14 @@ search
 setUpConcreteExecution
     :: KoreIndexedModule StepperAttributes
     -- ^ The main module
-    -> CommonPurePattern Object
+    -> CommonStepPattern Object
     -- ^ The input pattern
     -> Limit Natural
     -- ^ The step limit
     -> ([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> (MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object Variable
+        -> StepPatternSimplifier Object Variable
         -> PredicateSubstitutionSimplifier Object Simplifier
         -> Tree (CommonExpandedPattern Object, StepProof Object Variable)
         -> Simplifier a)
@@ -182,7 +181,7 @@ setUpConcreteExecution indexedModule purePattern stepLimit strategy execute = do
     execute metadataTools simplifier substitutionSimplifier executionTree
 
 makeExpandedPattern
-    :: CommonPurePattern Object
+    :: CommonStepPattern Object
     -> CommonExpandedPattern Object
 makeExpandedPattern pat =
     Predicated
@@ -192,7 +191,7 @@ makeExpandedPattern pat =
     }
 
 preSimplify
-    ::  (  CommonPurePattern Object
+    ::  (  CommonStepPattern Object
         -> Simplifier
             (OrOfExpandedPattern Object Variable, SimplificationProof Object)
         )
@@ -228,7 +227,7 @@ makeAxiomsAndSimplifiers
     -> MetadataTools Object StepperAttributes
     -> Simplifier
         ( [AxiomPattern Object]
-        , PureMLPatternSimplifier Object Variable
+        , StepPatternSimplifier Object Variable
         , PredicateSubstitutionSimplifier Object Simplifier
         )
 makeAxiomsAndSimplifiers indexedModule tools =
@@ -260,7 +259,7 @@ makeAxiomsAndSimplifiers indexedModule tools =
                     , FreshVariable variable
                     , Hashable variable
                     )
-                => PureMLPatternSimplifier Object variable
+                => StepPatternSimplifier Object variable
             simplifier = Simplifier.create tools functionRegistry
             substitutionSimplifier
                 :: PredicateSubstitutionSimplifier Object Simplifier
@@ -279,7 +278,7 @@ makeAxiomsAndSimplifiers indexedModule tools =
             , FreshVariable variable
             , Hashable variable
             )
-        => PureMLPatternSimplifier Object variable
+        => StepPatternSimplifier Object variable
     emptySimplifier = Simplifier.create tools Map.empty
     emptySubstitutionSimplifier =
         PredicateSubstitution.create tools emptySimplifier

@@ -11,8 +11,7 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain (..), Ceil (..), PureMLPattern, Sort (..),
-                 Variable )
+                 ( Ceil (..), Sort (..), Variable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( asConcretePurePattern )
@@ -20,6 +19,7 @@ import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkDomainValue, mkStringLiteral, mkTop )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -33,6 +33,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.StepperAttributes
@@ -323,7 +324,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                     { term =
                         mkDomainValue
                             testSort
-                            (BuiltinDomainPattern (mkStringLiteral "a"))
+                            (Domain.BuiltinPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -395,9 +396,9 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         )
     ]
   where
-    fOfA :: PureMLPattern Object Variable
+    fOfA :: StepPattern Object Variable
     fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
-    fOfB :: PureMLPattern Object Variable
+    fOfB :: StepPattern Object Variable
     fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
     gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
     gOfB = give mockSymbolOrAliasSorts $ Mock.g Mock.b

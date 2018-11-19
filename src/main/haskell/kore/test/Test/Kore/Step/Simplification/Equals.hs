@@ -11,14 +11,15 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( AstLocation (..), BuiltinDomain (..), CommonPurePattern,
-                 Equals (..), Id (..), Sort (..), SortActual (..) )
+                 ( AstLocation (..), Equals (..), Id (..), Sort (..),
+                 SortActual (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkCharLiteral, mkDomainValue, mkStringLiteral,
                  mkStringLiteral, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -35,6 +36,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
@@ -240,11 +242,11 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
             Predicated.topPredicate
             (mkDomainValue
                 testSort
-                (BuiltinDomainPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern (mkStringLiteral "a"))
             )
             (mkDomainValue
                 testSort
-                (BuiltinDomainPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern (mkStringLiteral "a"))
             )
         )
     , testCase "domain-value != domain-value"
@@ -253,11 +255,11 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
             Predicated.bottomPredicate
             (mkDomainValue
                 testSort
-                (BuiltinDomainPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern (mkStringLiteral "a"))
             )
             (mkDomainValue
                 testSort
-                (BuiltinDomainPattern (mkStringLiteral "b"))
+                (Domain.BuiltinPattern (mkStringLiteral "b"))
             )
         )
     , testCase "domain-value != domain-value because of sorts"
@@ -266,11 +268,11 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
             Predicated.bottomPredicate
             (mkDomainValue
                 testSort
-                (BuiltinDomainPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern (mkStringLiteral "a"))
             )
             (mkDomainValue
                 testSort2
-                (BuiltinDomainPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern (mkStringLiteral "a"))
             )
         )
     , testCase "\"a\" == \"a\""
@@ -670,8 +672,8 @@ assertTermEquals
     :: HasCallStack
     => MetadataTools Object StepperAttributes
     -> CommonPredicateSubstitution Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
     -> IO ()
 assertTermEquals = assertTermEqualsGeneric
 
@@ -679,8 +681,8 @@ assertTermEqualsGeneric
     :: (MetaOrObject level, HasCallStack)
     => MetadataTools level StepperAttributes
     -> CommonPredicateSubstitution level
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    -> CommonStepPattern level
+    -> CommonStepPattern level
     -> Assertion
 assertTermEqualsGeneric tools expectPure first second =
     give (MetadataTools.symbolOrAliasSorts tools) $ do
@@ -704,7 +706,7 @@ assertTermEqualsGeneric tools expectPure first second =
   where
     termToExpandedPattern
         :: MetaOrObject level
-        => CommonPurePattern level
+        => CommonStepPattern level
         -> CommonExpandedPattern level
     termToExpandedPattern (Bottom_ _) =
         Predicated.bottom
@@ -731,42 +733,42 @@ assertTermEqualsGeneric tools expectPure first second =
             , substitution = substitution
             }
 
-fOfA :: CommonPurePattern Object
+fOfA :: CommonStepPattern Object
 fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
 
-fOfB :: CommonPurePattern Object
+fOfB :: CommonStepPattern Object
 fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
 
-gOfA :: CommonPurePattern Object
+gOfA :: CommonStepPattern Object
 gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
 
-gOfB :: CommonPurePattern Object
+gOfB :: CommonStepPattern Object
 gOfB = give mockSymbolOrAliasSorts $ Mock.g Mock.b
 
-hOfA :: CommonPurePattern Object
+hOfA :: CommonStepPattern Object
 hOfA = give mockSymbolOrAliasSorts $ Mock.h Mock.a
 
-hOfB :: CommonPurePattern Object
+hOfB :: CommonStepPattern Object
 hOfB = give mockSymbolOrAliasSorts $ Mock.h Mock.b
 
-functionalOfA :: CommonPurePattern Object
+functionalOfA :: CommonStepPattern Object
 functionalOfA = give mockSymbolOrAliasSorts $ Mock.functional10 Mock.a
 
-constructor1OfA :: CommonPurePattern Object
+constructor1OfA :: CommonStepPattern Object
 constructor1OfA = give mockSymbolOrAliasSorts $ Mock.constr10 Mock.a
 
-constructor2OfA :: CommonPurePattern Object
+constructor2OfA :: CommonStepPattern Object
 constructor2OfA = give mockSymbolOrAliasSorts $ Mock.constr11 Mock.a
 
-functionalConstructor1OfA :: CommonPurePattern Object
+functionalConstructor1OfA :: CommonStepPattern Object
 functionalConstructor1OfA =
     give mockSymbolOrAliasSorts $ Mock.functionalConstr10 Mock.a
 
-functionalConstructor2OfA :: CommonPurePattern Object
+functionalConstructor2OfA :: CommonStepPattern Object
 functionalConstructor2OfA =
     give mockSymbolOrAliasSorts $ Mock.functionalConstr11 Mock.a
 
-plain1OfA :: CommonPurePattern Object
+plain1OfA :: CommonStepPattern Object
 plain1OfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
@@ -832,8 +834,8 @@ evaluateGeneric tools first second =
 evaluateTermsGeneric
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    -> CommonStepPattern level
+    -> CommonStepPattern level
     -> IO (CommonPredicateSubstitution level)
 evaluateTermsGeneric tools first second =
     (<$>) fst

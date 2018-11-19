@@ -52,9 +52,8 @@ import           Data.Set
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
+
 import           Kore.AST.Common
-                 ( Sort (..) )
-import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
 import qualified Kore.AST.PureML as Kore
 import           Kore.ASTUtils.SmartPatterns
@@ -63,6 +62,7 @@ import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
@@ -75,10 +75,11 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 PureMLPatternSimplifier, SimplificationProof (..),
-                 SimplificationType, Simplifier )
+                 SimplificationProof (..), SimplificationType, Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -138,7 +139,7 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin = Set (Kore.ConcretePurePattern Object)
+type Builtin = Set (ConcreteStepPattern Object)
 
 {- | Abort function evaluation if the argument is not a @Set@ domain value.
 
@@ -147,19 +148,19 @@ type Builtin = Set (Kore.ConcretePurePattern Object)
     'BuiltinDomainSet', it is a bug.
 
  -}
-expectBuiltinDomainSet
+expectBuiltinSet
     :: Monad m
     => String  -- ^ Context for error message
     -> MetadataTools Object StepperAttributes
-    -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
+    -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m Builtin
-expectBuiltinDomainSet ctx tools _set =
+expectBuiltinSet ctx tools _set =
     do
         _set <- Builtin.expectNormalConcreteTerm tools _set
         case _set of
             Kore.DV_ _ domain ->
                 case domain of
-                    Kore.BuiltinDomainSet set -> return set
+                    Domain.BuiltinSet set -> return set
                     _ ->
                         Builtin.verifierBug
                             (ctx ++ ": Domain value is not a set")
@@ -168,14 +169,14 @@ expectBuiltinDomainSet ctx tools _set =
 
 returnSet
     :: (Monad m, Ord (variable Object))
-    => Kore.Sort Object
+    => Sort Object
     -> Builtin
     -> m (AttemptedFunction Object variable)
 returnSet resultSort set =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
-        $ Kore.DV_ resultSort
-        $ Kore.BuiltinDomainSet set
+        $ DV_ resultSort
+        $ Domain.BuiltinSet set
 
 evalElement :: Builtin.Function
 evalElement =
@@ -197,9 +198,9 @@ evalIn =
     evalIn0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalIn0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
@@ -209,7 +210,7 @@ evalIn =
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity "SET.in"
             _elem <- Builtin.expectNormalConcreteTerm tools _elem
-            _set <- expectBuiltinDomainSet "SET.in" tools _set
+            _set <- expectBuiltinSet "SET.in" tools _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Set.member _elem _set)
         )
@@ -233,9 +234,9 @@ evalConcat =
     evalConcat0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalConcat0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
@@ -245,22 +246,22 @@ evalConcat =
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity ctx
                 leftIdentity = do
-                    _set1 <- expectBuiltinDomainSet ctx tools _set1
+                    _set1 <- expectBuiltinSet ctx tools _set1
                     if Set.null _set1
                         then
                             Builtin.appliedFunction
                             $ ExpandedPattern.fromPurePattern _set2
                         else empty
                 rightIdentity = do
-                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    _set2 <- expectBuiltinSet ctx tools _set2
                     if Set.null _set2
                         then
                             Builtin.appliedFunction
                             $ ExpandedPattern.fromPurePattern _set1
                         else empty
                 bothConcrete = do
-                    _set1 <- expectBuiltinDomainSet ctx tools _set1
-                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    _set1 <- expectBuiltinSet ctx tools _set1
+                    _set2 <- expectBuiltinSet ctx tools _set2
                     returnSet resultSort (_set1 <> _set2)
             leftIdentity <|> rightIdentity <|> bothConcrete
         )
@@ -273,9 +274,9 @@ evalDifference =
     evalDifference0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalDifference0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
@@ -285,15 +286,15 @@ evalDifference =
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity ctx
                 rightIdentity = do
-                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    _set2 <- expectBuiltinSet ctx tools _set2
                     if Set.null _set2
                         then
                             Builtin.appliedFunction
                             $ ExpandedPattern.fromPurePattern _set1
                         else empty
                 bothConcrete = do
-                    _set1 <- expectBuiltinDomainSet ctx tools _set1
-                    _set2 <- expectBuiltinDomainSet ctx tools _set2
+                    _set1 <- expectBuiltinSet ctx tools _set1
+                    _set2 <- expectBuiltinSet ctx tools _set2
                     returnSet resultSort (Set.difference _set1 _set2)
             rightIdentity <|> bothConcrete
         )
@@ -325,32 +326,32 @@ builtinFunctions =
 asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
-    -> Kore.Sort Object
+    -> Sort Object
     -> Either
         (Kore.Error e)
-        (Builtin -> Kore.PureMLPattern Object variable)
+        (Builtin -> StepPattern Object variable)
 asPattern indexedModule dvSort = do
     symbolUnit <- lookupSymbolUnit dvSort indexedModule
     let
-        applyUnit :: Kore.PureMLPattern Object variable
-        applyUnit = Kore.App_ symbolUnit []
+        applyUnit :: StepPattern Object variable
+        applyUnit = App_ symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
     let
         applyElement
-            :: Kore.ConcretePurePattern Object
-            -> Kore.PureMLPattern Object variable
+            :: ConcreteStepPattern Object
+            -> StepPattern Object variable
         applyElement elem' =
-            Kore.App_ symbolElement [Kore.fromConcretePurePattern elem']
+            App_ symbolElement [Kore.fromConcretePurePattern elem']
     symbolConcat <- lookupSymbolConcat dvSort indexedModule
     let
         applyConcat
-            :: Kore.PureMLPattern Object variable
-            -> Kore.PureMLPattern Object variable
-            -> Kore.PureMLPattern Object variable
+            :: StepPattern Object variable
+            -> StepPattern Object variable
+            -> StepPattern Object variable
         applyConcat set1 set2 = Kore.App_ symbolConcat [set1, set2]
     let
         asPattern0
-            :: Builtin -> Kore.PureMLPattern Object variable
+            :: Builtin -> StepPattern Object variable
         asPattern0 set =
             foldr applyConcat applyUnit
                 (applyElement <$> Foldable.toList set)
@@ -364,7 +365,7 @@ asPattern indexedModule dvSort = do
 asExpandedPattern
     :: KoreIndexedModule attrs
     -- ^ dictionary of Map constructor symbols
-    -> Kore.Sort Object
+    -> Sort Object
     -> Either
         (Kore.Error e)
         (Builtin -> ExpandedPattern Object variable)
@@ -379,7 +380,7 @@ asExpandedPattern symbols resultSort =
 lookupSymbolUnit
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolUnit = Builtin.lookupSymbol "SET.unit"
 
 {- | Find the symbol hooked to @SET.element@ in an indexed module.
@@ -387,7 +388,7 @@ lookupSymbolUnit = Builtin.lookupSymbol "SET.unit"
 lookupSymbolElement
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolElement = Builtin.lookupSymbol "SET.element"
 
 {- | Find the symbol hooked to @SET.concat@ in an indexed module.
@@ -395,7 +396,7 @@ lookupSymbolElement = Builtin.lookupSymbol "SET.element"
 lookupSymbolConcat
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolConcat = Builtin.lookupSymbol "SET.concat"
 
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
@@ -403,7 +404,7 @@ lookupSymbolConcat = Builtin.lookupSymbol "SET.concat"
 lookupSymbolIn
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolIn = Builtin.lookupSymbol "SET.in"
 
 {- | Find the symbol hooked to @SET.difference@ in an indexed module.
@@ -411,14 +412,14 @@ lookupSymbolIn = Builtin.lookupSymbol "SET.in"
 lookupSymbolDifference
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolDifference = Builtin.lookupSymbol "SET.difference"
 
 {- | Check if the given symbol is hooked to @SET.concat@.
  -}
 isSymbolConcat
     :: MetadataTools Object Hook
-    -> Kore.SymbolOrAlias Object
+    -> SymbolOrAlias Object
     -> Bool
 isSymbolConcat = Builtin.isSymbol "SET.concat"
 
@@ -426,7 +427,7 @@ isSymbolConcat = Builtin.isSymbol "SET.concat"
  -}
 isSymbolElement
     :: MetadataTools Object Hook
-    -> Kore.SymbolOrAlias Object
+    -> SymbolOrAlias Object
     -> Bool
 isSymbolElement = Builtin.isSymbol "SET.element"
 
@@ -442,12 +443,12 @@ isSymbolElement = Builtin.isSymbol "SET.element"
 unifyEquals
     :: forall level variable m p expanded proof.
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
-        , Kore.SortedVariable variable
+        , SortedVariable variable
         , MonadCounter m
         , MetaOrObject level
         , Hashable variable
         , FreshVariable variable
-        , p ~ Kore.PureMLPattern level variable
+        , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
         )
@@ -476,24 +477,24 @@ unifyEquals
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: Kore.PureMLPattern level variable
-        -> Kore.PureMLPattern level variable
+        :: StepPattern level variable
+        -> StepPattern level variable
         -> MaybeT m (expanded, proof)
     unifyEquals0
-        (DV_ resultSort (Kore.BuiltinDomainSet set1))
-        (DV_ _    (Kore.BuiltinDomainSet set2))
+        (DV_ resultSort (Domain.BuiltinSet set1))
+        (DV_ _    (Domain.BuiltinSet set2))
       =
         Monad.Trans.lift (unifyEqualsConcrete resultSort set1 set2)
 
     unifyEquals0
-        dv1@(DV_ resultSort (Kore.BuiltinDomainSet set1))
+        dv1@(DV_ resultSort (Domain.BuiltinSet set1))
         app2@(App_ symbol2 args2)
       | isSymbolConcat hookTools symbol2 =
         Monad.Trans.lift
            (case args2 of
-                [DV_ _ (Kore.BuiltinDomainSet set2), x@(Var_ _)] ->
+                [DV_ _ (Domain.BuiltinSet set2), x@(Var_ _)] ->
                     unifyEqualsFramed resultSort set1 set2 x
-                [x@(Var_ _), DV_ _ (Kore.BuiltinDomainSet set2)] ->
+                [x@(Var_ _), DV_ _ (Domain.BuiltinSet set2)] ->
                     unifyEqualsFramed resultSort set1 set2 x
                 _ ->
                     give symbolOrAliasSorts
@@ -520,8 +521,8 @@ unifyEquals
 
     -- | Unify two concrete sets
     unifyEqualsConcrete
-        :: (level ~ Object, k ~ Kore.ConcretePurePattern Object)
-        => Kore.Sort level -- ^ Sort of result
+        :: (level ~ Object, k ~ ConcreteStepPattern Object)
+        => Sort level -- ^ Sort of result
         -> Set.Set k
         -> Set.Set k
         -> m (expanded, proof)
@@ -533,16 +534,16 @@ unifyEquals
       where
         unified =
             (<$>)
-                (DV_ resultSort . Kore.BuiltinDomainSet)
+                (DV_ resultSort . Domain.BuiltinSet)
                 (give symbolOrAliasSorts pure set1)
 
     -- | Unify one concrete set with one framed concrete set.
     unifyEqualsFramed
-        :: (level ~ Object, k ~ Kore.ConcretePurePattern Object)
-        => Kore.Sort level  -- ^ Sort of result
+        :: (level ~ Object, k ~ ConcreteStepPattern Object)
+        => Sort level  -- ^ Sort of result
         -> Set.Set k  -- ^ concrete set
         -> Set.Set k -- ^ framed concrete set
-        -> Kore.PureMLPattern level variable  -- ^ framing variable
+        -> StepPattern level variable  -- ^ framing variable
         -> m (expanded, proof)
     unifyEqualsFramed resultSort set1 set2 var
       | Set.isSubsetOf set2 set1 = do
@@ -560,12 +561,12 @@ unifyEquals
       | otherwise =
         return (ExpandedPattern.bottom, SimplificationProof)
       where
-        asBuiltinDomainSet = DV_ resultSort . Kore.BuiltinDomainSet
+        asBuiltinDomainSet = DV_ resultSort . Domain.BuiltinSet
 
     unifyEqualsElement
-        :: forall k . (level ~ Object, k ~ Kore.ConcretePurePattern Object)
+        :: forall k . (level ~ Object, k ~ ConcreteStepPattern Object)
         => Set k  -- ^ concrete set
-        -> Kore.SymbolOrAlias level  -- ^ 'element' symbol
+        -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
         -> m (expanded, proof)
     unifyEqualsElement set1 element' key2 =

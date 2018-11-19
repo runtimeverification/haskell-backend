@@ -18,13 +18,13 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain (..), CommonPurePattern, Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkBottom, mkCeil, mkCharLiteral, mkDomainValue,
                  mkEquals, mkExists, mkFloor, mkForall, mkIff, mkImplies, mkIn,
                  mkNext, mkNot, mkOr, mkRewrites, mkStringLiteral, mkTop,
                  mkVar )
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
@@ -36,6 +36,7 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -158,10 +159,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         actual <-
             match mockMetadataTools
                 (mkDomainValue Mock.testSort1
-                    (BuiltinDomainPattern  (mkStringLiteral "10"))
+                    (Domain.BuiltinPattern  (mkStringLiteral "10"))
                 )
                 (mkDomainValue Mock.testSort1
-                    (BuiltinDomainPattern (mkStringLiteral "10"))
+                    (Domain.BuiltinPattern (mkStringLiteral "10"))
                 )
         assertEqualWithExplanation "" expect actual
 
@@ -755,8 +756,8 @@ match
         , NFData (CommonPredicateSubstitution level)
         )
     => MetadataTools level StepperAttributes
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    -> CommonStepPattern level
+    -> CommonStepPattern level
     -> IO (Maybe (CommonPredicateSubstitution level))
 match tools first second =
     matchAsEither >>= return . \case

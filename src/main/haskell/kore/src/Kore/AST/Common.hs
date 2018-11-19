@@ -30,19 +30,11 @@ import           Control.DeepSeq
 import           Data.Deriving
                  ( deriveEq1, deriveOrd1, deriveShow1, makeLiftCompare,
                  makeLiftEq, makeLiftShowsPrec )
-import qualified Data.Foldable as Foldable
 import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix (..), cata )
 import           Data.Hashable
-import           Data.Map.Strict
-                 ( Map )
-import qualified Data.Map.Strict as Map
 import           Data.Proxy
-import           Data.Sequence
-                 ( Seq )
-import           Data.Set
-                 ( Set )
 import           Data.String
                  ( IsString (..) )
 import           Data.Text
@@ -554,9 +546,9 @@ This represents the encoding of an object constant, e.g. we may use
 \dv{Int{}}{"123"} instead of a representation based on constructors,
 e.g. succesor(succesor(...succesor(0)...))
 -}
-data DomainValue level child = DomainValue
+data DomainValue level domain child = DomainValue
     { domainValueSort  :: !(Sort level)
-    , domainValueChild :: !child
+    , domainValueChild :: !(domain child)
     }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
@@ -564,9 +556,9 @@ deriveEq1 ''DomainValue
 deriveOrd1 ''DomainValue
 deriveShow1 ''DomainValue
 
-instance Hashable child => Hashable (DomainValue level child)
+instance Hashable (domain child) => Hashable (DomainValue level domain child)
 
-instance NFData child => NFData (DomainValue level child)
+instance NFData (domain child) => NFData (DomainValue level domain child)
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -932,115 +924,100 @@ be members only of 'Pattern Meta'.
 -- NOTE: If you are adding a case to Pattern, you should add cases in:
 -- ASTUtils/SmartConstructors.hs
 -- as well as a ton of other places, probably.
-data Pattern level variable child where
+data Pattern level domain variable child where
     AndPattern
-        :: !(And level child) -> Pattern level variable child
+        :: !(And level child) -> Pattern level domain variable child
     ApplicationPattern
-        :: !(Application level child) -> Pattern level variable child
+        :: !(Application level child) -> Pattern level domain variable child
     BottomPattern
-        :: !(Bottom level child) -> Pattern level variable child
+        :: !(Bottom level child) -> Pattern level domain variable child
     CeilPattern
-        :: !(Ceil level child) -> Pattern level variable child
+        :: !(Ceil level child) -> Pattern level domain variable child
     DomainValuePattern
-        :: !(DomainValue Object (BuiltinDomain child))
-        -> Pattern Object variable child
+        :: !(DomainValue Object domain child)
+        -> Pattern Object domain variable child
     EqualsPattern
-        :: !(Equals level child) -> Pattern level variable child
+        :: !(Equals level child) -> Pattern level domain variable child
     ExistsPattern
-        :: !(Exists level variable child) -> Pattern level variable child
+        :: !(Exists level variable child) -> Pattern level domain variable child
     FloorPattern
-        :: !(Floor level child) -> Pattern level variable child
+        :: !(Floor level child) -> Pattern level domain variable child
     ForallPattern
-        :: !(Forall level variable child) -> Pattern level variable child
+        :: !(Forall level variable child) -> Pattern level domain variable child
     IffPattern
-        :: !(Iff level child) -> Pattern level variable child
+        :: !(Iff level child) -> Pattern level domain variable child
     ImpliesPattern
-        :: !(Implies level child) -> Pattern level variable child
+        :: !(Implies level child) -> Pattern level domain variable child
     InPattern
-        :: !(In level child) -> Pattern level variable child
+        :: !(In level child) -> Pattern level domain variable child
     NextPattern
-        :: !(Next Object child) -> Pattern Object variable child
+        :: !(Next Object child) -> Pattern Object domain variable child
     NotPattern
-        :: !(Not level child) -> Pattern level variable child
+        :: !(Not level child) -> Pattern level domain variable child
     OrPattern
-        :: !(Or level child) -> Pattern level variable child
+        :: !(Or level child) -> Pattern level domain variable child
     RewritesPattern
-        :: !(Rewrites Object child) -> Pattern Object variable child
+        :: !(Rewrites Object child) -> Pattern Object domain variable child
     StringLiteralPattern
-        :: !StringLiteral -> Pattern Meta variable child
+        :: !StringLiteral -> Pattern Meta domain variable child
     CharLiteralPattern
-        :: !CharLiteral -> Pattern Meta variable child
+        :: !CharLiteral -> Pattern Meta domain variable child
     TopPattern
-        :: !(Top level child) -> Pattern level variable child
+        :: !(Top level child) -> Pattern level domain variable child
     VariablePattern
-        :: !(variable level) -> Pattern level variable child
+        :: !(variable level) -> Pattern level domain variable child
 
 {-|'PureMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to a given @level@.
 
 @var@ is the type of variables.
 -}
-type PureMLPattern level var = Fix (Pattern level var)
+type PureMLPattern level dom var = Fix (Pattern level dom var)
 
 -- |'CommonPurePattern' is the instantiation of 'PureMLPattern' with common
 -- 'Variable's.
-type CommonPurePattern level = PureMLPattern level Variable
+type CommonPurePattern level domain = PureMLPattern level domain Variable
 
 {- | @ConcretePurePattern level@ is a concrete pattern at level @level@.
  -}
-type ConcretePurePattern level = PureMLPattern level Concrete
-
-data BuiltinDomain child
-    = BuiltinDomainPattern !(CommonPurePattern Meta)
-    | BuiltinDomainMap !(Map (ConcretePurePattern Object) child)
-    | BuiltinDomainList !(Seq child)
-    | BuiltinDomainSet !(Set (ConcretePurePattern Object))
-    deriving (Foldable, Functor, Generic, Traversable)
-
-deriveEq1 ''BuiltinDomain
-deriveOrd1 ''BuiltinDomain
-deriveShow1 ''BuiltinDomain
-
-instance Hashable child => Hashable (BuiltinDomain child) where
-    hashWithSalt salt =
-        \case
-            BuiltinDomainPattern pat ->
-                salt `hashWithSalt` (0::Int) `hashWithSalt` pat
-            BuiltinDomainMap (Map.toAscList -> map') ->
-                salt `hashWithSalt` (1::Int) `hashWithSalt` map'
-            BuiltinDomainList (Foldable.toList -> list) ->
-                salt `hashWithSalt` (2::Int) `hashWithSalt` list
-            BuiltinDomainSet (Foldable.toList -> set) ->
-                salt `hashWithSalt` (3::Int) `hashWithSalt` set
-
-instance NFData child => NFData (BuiltinDomain child)
+type ConcretePurePattern level domain = PureMLPattern level domain Concrete
 
 $(return [])
 {- dummy top-level splice to make ''Pattern available for lifting -}
 
 instance
-    (Ord level, Ord (variable level)) => Ord1 (Pattern level variable)
+    ( Ord level
+    , Ord (variable level)
+    , Ord1 domain
+    ) =>
+    Ord1 (Pattern level domain variable)
   where
-    liftCompare liftedCompare a b =
-        $(makeLiftCompare ''Pattern) liftedCompare a b
-
-instance (Eq level, Eq (variable level)) => Eq1 (Pattern level variable) where
-    liftEq liftedEq a b = $(makeLiftEq ''Pattern) liftedEq a b
+    liftCompare = $(makeLiftCompare ''Pattern)
 
 instance
-    (Show level, Show (variable level)) => Show1 (Pattern level variable)
+    ( Eq level
+    , Eq (variable level)
+    , Eq1 domain
+    ) =>
+    Eq1 (Pattern level domain variable)
+  where
+    liftEq = $(makeLiftEq ''Pattern)
+
+instance
+    ( Show level
+    , Show (variable level)
+    , Show1 domain
+    ) =>
+    Show1 (Pattern level domain variable)
   where
     liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
 
-deriving instance Eq child => Eq (BuiltinDomain child)
-
-deriving instance Ord child => Ord (BuiltinDomain child)
-
-deriving instance Show child => Show (BuiltinDomain child)
-
 instance
-    (Hashable child, Hashable (variable level)) =>
-    Hashable (Pattern level variable child)
+    ( Hashable child
+    , Hashable (variable level)
+    , Hashable (domain child)
+    ) =>
+    Hashable (Pattern level domain variable child)
   where
     hashWithSalt s = \case
         AndPattern           p -> s `hashWithSalt` (0::Int) `hashWithSalt` p
@@ -1065,7 +1042,11 @@ instance
         VariablePattern      p -> s `hashWithSalt` (19::Int) `hashWithSalt` p
 
 instance
-    (NFData child, NFData (var level)) => NFData (Pattern level var child)
+    ( NFData child
+    , NFData (var level)
+    , NFData (domain child)
+    ) =>
+    NFData (Pattern level domain var child)
   where
     rnf =
         \case
@@ -1093,39 +1074,47 @@ instance
 deriving instance
     ( Eq child
     , Eq (variable level)
-    ) => Eq (Pattern level variable child)
+    , Eq (domain child)
+    ) => Eq (Pattern level domain variable child)
 
 deriving instance
     ( Show child
     , Show (variable level)
-    ) => Show (Pattern level variable child)
+    , Show (domain child)
+    ) => Show (Pattern level domain variable child)
 
 deriving instance
     ( Ord child
     , Ord (variable level)
-    ) => Ord (Pattern level variable child)
+    , Ord (domain child)
+    ) => Ord (Pattern level domain variable child)
 
-deriving instance Functor (Pattern level variable)
+deriving instance Functor domain => Functor (Pattern level domain variable)
 
-deriving instance Foldable (Pattern level variable)
+deriving instance Foldable domain => Foldable (Pattern level domain variable)
 
-deriving instance Traversable (Pattern level variable)
+deriving instance
+    Traversable domain => Traversable (Pattern level domain variable)
 
-data SortedPattern level variable child = SortedPattern
-    { sortedPatternPattern :: !(Pattern level variable child)
+data SortedPattern level domain variable child = SortedPattern
+    { sortedPatternPattern :: !(Pattern level domain variable child)
     , sortedPatternSort    :: !(Sort level)
     }
     deriving (Eq, Show, Generic)
 
-instance (Hashable child, Hashable (variable level))
-  => Hashable (SortedPattern level variable child)
+instance
+    ( Hashable child
+    , Hashable (variable level)
+    , Hashable (domain child)
+    ) =>
+    Hashable (SortedPattern level domain variable child)
 
 {-|'PatternStub' is either a pattern with a known sort, or a function that
 builds a pattern from a sort.
 -}
-data PatternStub level variable child
-    = SortedPatternStub !(SortedPattern level variable child)
-    | UnsortedPatternStub (Sort level -> Pattern level variable child)
+data PatternStub level domain variable child
+    = SortedPatternStub !(SortedPattern level domain variable child)
+    | UnsortedPatternStub (Sort level -> Pattern level domain variable child)
     deriving(Generic)
 
 -- cannot hash.
@@ -1134,8 +1123,8 @@ data PatternStub level variable child
 -}
 withSort
     :: Sort level
-    -> PatternStub level variable child
-    -> PatternStub level variable child
+    -> PatternStub level domain variable child
+    -> PatternStub level domain variable child
 withSort s (UnsortedPatternStub p) =
     SortedPatternStub SortedPattern
         { sortedPatternPattern = p s
@@ -1176,7 +1165,7 @@ whether a 'Pattern' is 'Object' or 'Meta'.
 -}
 getMetaOrObjectPatternType
     :: MetaOrObject level
-    => Pattern level variable child -> IsMetaOrObject level
+    => Pattern level domain variable child -> IsMetaOrObject level
 getMetaOrObjectPatternType _ = isMetaOrObject (Proxy :: Proxy level)
 
 {-|The 'UnifiedPatternInterface' class provides a common interface for
@@ -1184,30 +1173,38 @@ algorithms providing common functionality for 'KorePattern' and 'PurePattern'.
 -}
 class UnifiedPatternInterface pat where
     -- |View a 'Meta' 'Pattern' as the parameter @pat@ of the class.
-    unifyMetaPattern :: Pattern Meta variable child -> pat variable child
+    unifyMetaPattern
+        :: Pattern Meta domain variable child
+        -> pat domain variable child
     unifyMetaPattern = unifyPattern
+
     -- |View an 'Object' 'Pattern' as the parameter @pat@ of the class.
-    unifyObjectPattern :: Pattern Object variable child -> pat variable child
+    unifyObjectPattern
+        :: Pattern Object domain variable child
+        -> pat domain variable child
     unifyObjectPattern = unifyPattern
+
     -- |View a 'Meta' or an 'Object' 'Pattern' as the parameter of the class.
     unifyPattern
         :: MetaOrObject level
-        => Pattern level variable child -> pat variable child
+        => Pattern level domain variable child
+        -> pat domain variable child
     unifyPattern p =
         case getMetaOrObjectPatternType p of
             IsMeta   -> unifyMetaPattern p
             IsObject -> unifyObjectPattern p
+
     -- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
     -- apply it on an object of the parameter @pat@ of the class.
     unifiedPatternApply
-        :: (forall level . MetaOrObject level
-            => Pattern level variable child -> result
-           )
-        -> (pat variable child -> result)
+        ::  (forall level . MetaOrObject level =>
+                Pattern level domain variable child -> result
+            )
+        -> (pat domain variable child -> result)
 
 instance
-    forall level . MetaOrObject level
-    => UnifiedPatternInterface (Pattern level)
+    forall level . MetaOrObject level =>
+    UnifiedPatternInterface (Pattern level)
   where
     unifyMetaPattern p =
         case isMetaOrObject (Proxy :: Proxy level) of
@@ -1221,8 +1218,8 @@ instance
 
 -- |'patternBottomUpVisitor' is @cata . unifiedPatternApply@
 patternBottomUpVisitor
-    :: (UnifiedPatternInterface pat, Functor (pat variable))
-    => (forall level . MetaOrObject level
-        => Pattern level variable result -> result)
-    -> (Fix (pat variable) -> result)
+    :: (UnifiedPatternInterface pat, Functor (pat domain variable))
+    =>  (forall level . MetaOrObject level =>
+            Pattern level domain variable result -> result)
+    -> (Fix (pat domain variable) -> result)
 patternBottomUpVisitor reduce = cata (unifiedPatternApply reduce)

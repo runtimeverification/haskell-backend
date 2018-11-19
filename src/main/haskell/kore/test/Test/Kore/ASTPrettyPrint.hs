@@ -8,13 +8,14 @@ import Test.Tasty.HUnit
 import Data.Functor.Foldable
        ( Fix (..) )
 
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.ASTPrettyPrint
-import Kore.Implicit.ImplicitSorts
-       ( charMetaSort )
-import Kore.MetaML.AST
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.ASTPrettyPrint
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Implicit.ImplicitSorts
+                 ( charMetaSort )
+import           Kore.MetaML.AST
 
 import Test.Kore
 
@@ -87,5 +88,7 @@ test_astPrettyPrint =
     ]
 
 prettyPrintPattern
-    :: MetaOrObject level => Pattern level Variable CommonKorePattern -> String
+    :: MetaOrObject level
+    => Pattern level Domain.Builtin Variable CommonKorePattern
+    -> String
 prettyPrintPattern = prettyPrintToString

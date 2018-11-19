@@ -10,20 +10,22 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
-import Kore.AST.Common
-       ( BuiltinDomain (..), CharLiteral (..), CommonPurePattern,
-       DomainValue (..), Sort (..), SortActual (..), StringLiteral (..) )
-import Kore.AST.MetaOrObject
-import Kore.ASTUtils.SmartConstructors
-       ( mkCharLiteral, mkOr, mkStringLiteral, mkVar )
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools, SymbolOrAliasSorts )
-import Kore.Proof.Functional
-import Kore.Step.PatternAttributes
-import Kore.Step.PatternAttributesError
-       ( FunctionError (..), FunctionalError (..) )
-import Kore.Step.StepperAttributes
-       ( StepperAttributes )
+import           Kore.AST.Common
+                 ( CharLiteral (..), DomainValue (..), Sort (..),
+                 SortActual (..), StringLiteral (..) )
+import           Kore.AST.MetaOrObject
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkCharLiteral, mkOr, mkStringLiteral, mkVar )
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools, SymbolOrAliasSorts )
+import           Kore.Proof.Functional
+import           Kore.Step.Pattern
+import           Kore.Step.PatternAttributes
+import           Kore.Step.PatternAttributesError
+                 ( FunctionError (..), FunctionalError (..) )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 
 
 import           Test.Kore
@@ -56,7 +58,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                 dv = DomainValue
                     { domainValueSort = testSort
                     , domainValueChild =
-                        BuiltinDomainPattern (mkStringLiteral "10")
+                        Domain.BuiltinPattern (mkStringLiteral "10")
                     }
             assertEqualWithExplanation "FunctionalDomainValue"
                 (FunctionalDomainValue dv)
@@ -92,7 +94,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     (mkVar Mock.x)
                 )
             let
-                functionalConstant :: CommonPurePattern Object
+                functionalConstant :: CommonStepPattern Object
                 functionalConstant = Mock.functional00
             assertEqualWithExplanation "functional symbols are functional"
                 (Right [FunctionalHead Mock.functional00Symbol])
@@ -101,7 +103,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     functionalConstant
                 )
             let
-                str :: CommonPurePattern Meta
+                str :: CommonStepPattern Meta
                 str = mkStringLiteral "10"
             assertEqualWithExplanation "string literals are functional"
                 (Right [FunctionalStringLiteral (StringLiteral "10")])
@@ -110,7 +112,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     str
                 )
             let
-                chr :: CommonPurePattern Meta
+                chr :: CommonStepPattern Meta
                 chr = mkCharLiteral 'a'
             assertEqualWithExplanation "char literals are functional"
                 (Right [FunctionalCharLiteral (CharLiteral 'a')])
@@ -119,7 +121,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     chr
                 )
             let
-                functionConstant :: CommonPurePattern Object
+                functionConstant :: CommonStepPattern Object
                 functionConstant = Mock.cf
             assertEqualWithExplanation "function symbols are not functional"
                 (Left (NonFunctionalHead Mock.cfSymbol))
@@ -128,7 +130,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     functionConstant
                 )
             let
-                plainConstant :: CommonPurePattern Object
+                plainConstant :: CommonStepPattern Object
                 plainConstant = Mock.plain00
             assertEqualWithExplanation "plain symbols are not functional"
                 (Left (NonFunctionalHead Mock.plain00Symbol))
@@ -137,7 +139,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     plainConstant
                 )
             let
-                functionalPatt :: CommonPurePattern Object
+                functionalPatt :: CommonStepPattern Object
                 functionalPatt = Mock.functional10 Mock.a
             assertEqualWithExplanation "functional composition is functional"
                 (Right
@@ -150,7 +152,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     functionalPatt
                 )
             let
-                nonFunctionalPatt :: CommonPurePattern Object
+                nonFunctionalPatt :: CommonStepPattern Object
                 nonFunctionalPatt =
                     mkOr Mock.a Mock.b
             assertEqualWithExplanation "or is not functional"
@@ -169,7 +171,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     (mkVar Mock.x)
                 )
             let
-                functionalConstant :: CommonPurePattern Object
+                functionalConstant :: CommonStepPattern Object
                 functionalConstant = Mock.functional00
             assertEqualWithExplanation "functional symbols are function-like"
                 (Right
@@ -181,7 +183,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     functionalConstant
                 )
             let
-                str :: CommonPurePattern Meta
+                str :: CommonStepPattern Meta
                 str = mkStringLiteral "10"
             assertEqualWithExplanation "string literals are function-like"
                 (Right
@@ -194,7 +196,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     str
                 )
             let
-                chr :: CommonPurePattern Meta
+                chr :: CommonStepPattern Meta
                 chr = mkCharLiteral 'a'
             assertEqualWithExplanation "char literals are function-like"
                 (Right
@@ -207,7 +209,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     chr
                 )
             let
-                functionConstant :: CommonPurePattern Object
+                functionConstant :: CommonStepPattern Object
                 functionConstant = Mock.cf
             assertEqualWithExplanation "function symbols are function-like"
                 (Right [FunctionHead Mock.cfSymbol])
@@ -216,7 +218,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     functionConstant
                 )
             let
-                plainConstant :: CommonPurePattern Object
+                plainConstant :: CommonStepPattern Object
                 plainConstant = Mock.plain00
             assertEqualWithExplanation "plain symbols are not function-like"
                 (Left (NonFunctionHead Mock.plain00Symbol))
@@ -225,7 +227,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     plainConstant
                 )
             let
-                functionalPatt :: CommonPurePattern Object
+                functionalPatt :: CommonStepPattern Object
                 functionalPatt = Mock.functional10 Mock.a
             assertEqualWithExplanation "functional composition is function-like"
                 (Right
@@ -238,7 +240,7 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                     functionalPatt
                 )
             let
-                nonFunctionPatt :: CommonPurePattern Object
+                nonFunctionPatt :: CommonStepPattern Object
                 nonFunctionPatt =
                     mkOr Mock.a Mock.a
             assertEqualWithExplanation "or is not function-like"

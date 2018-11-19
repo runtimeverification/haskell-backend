@@ -14,11 +14,13 @@ import           Kore.AST.PureML
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import qualified Kore.ASTUtils.SmartConstructors as Kore
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( HeadType, MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.Proof.Value as Value
+import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
 
 import           Test.Kore
@@ -54,11 +56,11 @@ unit_fun = assertNotValue (mkApp funSymbol [onePattern])
 
 mkApp
     :: SymbolOrAlias Object
-    -> [PureMLPattern Object var]
-    -> PureMLPattern Object var
+    -> [StepPattern Object var]
+    -> StepPattern Object var
 mkApp = give symbolOrAliasSorts Kore.mkApp
 
-mkInj :: CommonPurePattern Object -> CommonPurePattern Object
+mkInj :: CommonStepPattern Object -> CommonStepPattern Object
 mkInj input = mkApp (injSymbol inputSort supSort) [input]
   where
     inputSort =
@@ -67,9 +69,9 @@ mkInj input = mkApp (injSymbol inputSort supSort) [input]
             (Functor.Foldable.project input)
 
 mkPair
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkPair a b = mkApp (pairSymbol inputSort) [a, b]
   where
     inputSort =
@@ -79,21 +81,21 @@ mkPair a b = mkApp (pairSymbol inputSort) [a, b]
 
 mkDomainValue
     :: Sort Object
-    -> BuiltinDomain (PureMLPattern Object var)
-    -> PureMLPattern Object var
+    -> Domain.Builtin (StepPattern Object var)
+    -> StepPattern Object var
 mkDomainValue = give symbolOrAliasSorts Kore.mkDomainValue
 
-unitPattern :: CommonPurePattern Object
+unitPattern :: CommonStepPattern Object
 unitPattern = mkApp unitSymbol []
 
-onePattern :: CommonPurePattern Object
+onePattern :: CommonStepPattern Object
 onePattern =
-    (mkDomainValue intSort . BuiltinDomainPattern)
+    (mkDomainValue intSort . Domain.BuiltinPattern)
         (Kore.mkStringLiteral "1")
 
-zeroPattern :: CommonPurePattern Object
+zeroPattern :: CommonStepPattern Object
 zeroPattern =
-    (mkDomainValue intSort . BuiltinDomainPattern)
+    (mkDomainValue intSort . Domain.BuiltinPattern)
         (Kore.mkStringLiteral "1")
 
 unitSort :: Sort Object
@@ -190,7 +192,7 @@ tools =
         symbolOrAliasType
         []
 
-assertValue :: CommonPurePattern Object -> Assertion
+assertValue :: CommonStepPattern Object -> Assertion
 assertValue purePattern =
     assertEqual "Expected normalized pattern"
         concretePattern
@@ -201,10 +203,10 @@ assertValue purePattern =
         value <- Value.fromConcretePurePattern tools patt
         return (Value.asConcretePurePattern value)
 
-testValue :: TestName -> CommonPurePattern Object -> TestTree
+testValue :: TestName -> CommonStepPattern Object -> TestTree
 testValue name = testCase name . assertValue
 
-assertNotValue :: CommonPurePattern Object -> Assertion
+assertNotValue :: CommonStepPattern Object -> Assertion
 assertNotValue purePattern =
     assertEqual "Unexpected normalized pattern"
         Nothing

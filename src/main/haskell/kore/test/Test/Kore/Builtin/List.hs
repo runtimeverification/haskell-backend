@@ -17,8 +17,10 @@ import           Kore.AST.MetaOrObject
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.List as List
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
 
 import           Test.Kore
                  ( testId )
@@ -149,15 +151,15 @@ test_simplify =
                     }
             original =
                 mkDomainValue listSort
-                $ BuiltinDomainList (Seq.fromList [mkAnd x mkTop])
+                $ Domain.BuiltinList (Seq.fromList [mkAnd x mkTop])
             expected =
                 ExpandedPattern.fromPurePattern
                 $ mkDomainValue listSort
-                $ BuiltinDomainList (Seq.fromList [x])
+                $ Domain.BuiltinList (Seq.fromList [x])
         (===) expected =<< evaluate original
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
-asPattern :: List.Builtin Variable -> CommonPurePattern Object
+asPattern :: List.Builtin Variable -> CommonStepPattern Object
 Right asPattern = List.asPattern indexedModule listSort
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
@@ -166,29 +168,29 @@ Right asExpandedPattern = List.asExpandedPattern indexedModule listSort
 
 -- * Constructors
 
-mkBottom :: CommonPurePattern Object
+mkBottom :: CommonStepPattern Object
 mkBottom = Kore.mkBottom
 
 mkEquals
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkEquals = give testSymbolOrAliasSorts Kore.mkEquals
 
 mkAnd
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkAnd = give testSymbolOrAliasSorts Kore.mkAnd
 
-mkTop :: CommonPurePattern Object
+mkTop :: CommonStepPattern Object
 mkTop = Kore.mkTop
 
-mkVar :: Variable Object -> CommonPurePattern Object
+mkVar :: Variable Object -> CommonStepPattern Object
 mkVar = give testSymbolOrAliasSorts Kore.mkVar
 
 mkDomainValue
     :: Sort Object
-    -> BuiltinDomain (CommonPurePattern Object)
-    -> CommonPurePattern Object
+    -> Domain.Builtin (CommonStepPattern Object)
+    -> CommonStepPattern Object
 mkDomainValue = give testSymbolOrAliasSorts Kore.mkDomainValue

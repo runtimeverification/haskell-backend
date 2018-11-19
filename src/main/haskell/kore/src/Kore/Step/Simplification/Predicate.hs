@@ -22,9 +22,8 @@ import qualified Kore.Step.ExpandedPattern as Predicated
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (PureMLPatternSimplifier),
-                 SimplificationProof (..), Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier (StepPatternSimplifier) )
 
 {-| Simplifies a predicate, producing another predicate and a substitution,
 without trying to reapply the substitution on the predicate.
@@ -36,7 +35,7 @@ simplifyPartial
         , Show (variable level)
         )
     => PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -> Predicate level variable
     -> Simplifier
         ( PredicateSubstitution level variable
@@ -44,7 +43,7 @@ simplifyPartial
         )
 simplifyPartial
     substitutionSimplifier
-    (PureMLPatternSimplifier simplifier)
+    (StepPatternSimplifier simplifier)
     predicate
   = do
     (patternOr, _proof) <-

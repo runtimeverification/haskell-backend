@@ -14,8 +14,6 @@ import           Data.These
                  ( These (..) )
 
 import           Kore.AST.Common
-                 ( Application (..), CommonPurePattern, PureMLPattern,
-                 SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkOr, mkVar )
@@ -38,9 +36,10 @@ import           Kore.Step.Function.UserDefined
                  ( axiomFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 PureMLPatternSimplifier, SimplificationProof (..), Simplifier,
+                 SimplificationProof (..), Simplifier, StepPatternSimplifier,
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
@@ -370,8 +369,8 @@ test_functionIntegration = give mockSymbolOrAliasSorts
     ]
 
 axiomEvaluator
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
     -> ApplicationFunctionEvaluator Object
 axiomEvaluator left right =
     ApplicationFunctionEvaluator
@@ -407,8 +406,8 @@ mockEvaluator
     :: AttemptedFunction level variable
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
-    -> Application level (PureMLPattern level variable)
+    -> StepPatternSimplifier level variable
+    -> Application level (StepPattern level variable)
     -> Simplifier
         (AttemptedFunction level variable, SimplificationProof level)
 mockEvaluator evaluation _ _ _ _ =
@@ -418,7 +417,7 @@ evaluate
     :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
-    -> CommonPurePattern level
+    -> CommonStepPattern level
     -> IO (CommonExpandedPattern level)
 evaluate metadataTools functionIdToEvaluator patt =
     (<$>) fst
@@ -442,7 +441,7 @@ evaluate metadataTools functionIdToEvaluator patt =
             , FreshVariable variable
             , Hashable variable
             )
-        => PureMLPatternSimplifier level variable
+        => StepPatternSimplifier level variable
     patternSimplifier =
         Simplifier.create metadataTools functionIdToEvaluator
 

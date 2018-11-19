@@ -17,9 +17,11 @@ import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Domain.Builtin as Domain
 
 -- alphaEq compares terms modulo renaming of bound variables
 -- bound variables are variables in the first position of a
@@ -34,22 +36,22 @@ import Kore.ASTUtils.SmartPatterns
 -- lowest index if there are multiple occurences of `elem`.
 
 alphaEq
-    :: forall var level .
-            ( MetaOrObject level
-            , Eq (var level)
-            , Ord (var level)
-            , Eq (var Meta)
-            , Ord (var Meta)
-            , Eq (var Object)
-            , Ord (var Object)
-            )
-    => PureMLPattern level var
-    -> PureMLPattern level var
+    ::  forall level var.
+        ( MetaOrObject level
+        , Eq (var level)
+        , Ord (var level)
+        , Eq (var Meta)
+        , Ord (var Meta)
+        , Eq (var Object)
+        , Ord (var Object)
+        )
+    => PureMLPattern level Domain.Builtin var
+    -> PureMLPattern level Domain.Builtin var
     -> Bool
 alphaEq e1' e2' = go [] [] e1' e2'
 
 go
-    :: forall var level .
+    ::  forall level var.
         ( MetaOrObject level
         , Eq (var level)
         , Ord (var level)
@@ -60,8 +62,8 @@ go
         )
     => [var level]
     -> [var level]
-    -> PureMLPattern level var
-    -> PureMLPattern level var
+    -> PureMLPattern level Domain.Builtin var
+    -> PureMLPattern level Domain.Builtin var
     -> Bool
 go ctx1 ctx2 e1 e2 = case (e1, e2) of
     (And_ s1 a1 b1, And_ s2 a2 b2) ->
@@ -135,7 +137,7 @@ go ctx1 ctx2 e1 e2 = case (e1, e2) of
     _ -> False
 
 compareDV
-    :: forall var level .
+    ::  forall level var.
         ( MetaOrObject level
         , Eq (var level)
         , Ord (var level)
@@ -146,22 +148,21 @@ compareDV
         )
     => [var level]
     -> [var level]
-    -> BuiltinDomain (PureMLPattern level var)
-    -> BuiltinDomain (PureMLPattern level var)
+    -> Domain.Builtin (PureMLPattern level Domain.Builtin var)
+    -> Domain.Builtin (PureMLPattern level Domain.Builtin var)
     -> Bool
 compareDV ctx1 ctx2 dv1 dv2 = case (dv1, dv2) of
-    (BuiltinDomainList l1, BuiltinDomainList l2) ->
+    (Domain.BuiltinList l1, Domain.BuiltinList l2) ->
         and $ Seq.zipWith (go ctx1 ctx2) l1 l2
-    (BuiltinDomainSet s1, BuiltinDomainSet s2) ->
+    (Domain.BuiltinSet s1, Domain.BuiltinSet s2) ->
         and $ zipWith
             (go [] [])
             (sort $ Set.toList s1)
             (sort $ Set.toList s2)
-    (BuiltinDomainMap m1, BuiltinDomainMap m2) ->
+    (Domain.BuiltinMap m1, Domain.BuiltinMap m2) ->
         and $ zipWith (go ctx1 ctx2)
             (map snd $ sort $ Map.toList m1)
             (map snd $ sort $ Map.toList m2)
-    (BuiltinDomainPattern p1, BuiltinDomainPattern p2) ->
-        go [] [] p1 p2
+    (Domain.BuiltinPattern p1, Domain.BuiltinPattern p2) ->
+        go [] [] (castVoidDomainValues p1) (castVoidDomainValues p2)
     _ -> False
-

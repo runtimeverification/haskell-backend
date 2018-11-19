@@ -9,7 +9,7 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ExistsPattern Exists
+                        Fix (UnifiedPattern (UnifiedObjectPattern (ExistsPattern Exists
                             { existsSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , existsVariable =
@@ -19,12 +19,12 @@ Definition
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     }
                             , existsChild =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                    }))))
-                            }))))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

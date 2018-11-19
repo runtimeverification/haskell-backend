@@ -18,7 +18,7 @@ import           Data.Reflection
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
-                 ( Exists (..), PureMLPattern, SortedVariable )
+                 ( Exists (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkExists )
@@ -35,16 +35,16 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, make, traverseFlattenWithPairs )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
-                 ( Hashable (..), PatternSubstitutionClass (..) )
+                 ( Hashable (..), substitute )
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Unifier
                  ( UnificationSubstitution )
@@ -87,7 +87,7 @@ simplify
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Simplifies patterns.
     -> Exists level variable (OrOfExpandedPattern level variable)
     -> Simplifier
@@ -117,7 +117,7 @@ simplifyEvaluated
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Simplifies patterns.
     -> variable level
     -> OrOfExpandedPattern level variable
@@ -154,7 +154,7 @@ makeEvaluate
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Simplifies patterns.
     -> variable level
     -> ExpandedPattern level variable
@@ -257,9 +257,9 @@ substituteTermPredicate
         , Hashable variable
         , FreshVariable variable
         )
-    => PureMLPattern level variable
+    => StepPattern level variable
     -> Predicate level variable
-    -> ListSubstitution.Substitution (Unified variable) (PureMLPattern level variable)
+    -> ListSubstitution.Substitution (Unified variable) (StepPattern level variable)
     -> UnificationSubstitution level variable
     -> Simplifier
         (ExpandedPattern level variable, SimplificationProof level)

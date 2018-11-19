@@ -10,8 +10,8 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import Kore.AST.Common
-       ( AstLocation (..), Id (..), PureMLPattern, Sort (..),
-       SortVariable (..), SortedVariable (..) )
+       ( AstLocation (..), Id (..), Sort (..), SortVariable (..),
+       SortedVariable (..) )
 import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
@@ -19,12 +19,12 @@ import Kore.ASTUtils.SmartConstructors
        ( mkAnd, mkBottom, mkEquals, mkTop, mkVar )
 import Kore.IndexedModule.MetadataTools
        ( SymbolOrAliasSorts )
-
 import Kore.Predicate.Predicate
        ( Predicate, makeEqualsPredicate, makeFalsePredicate,
        makeTruePredicate )
 import Kore.Step.ExpandedPattern as ExpandedPattern
        ( Predicated (..), allVariables, mapVariables, toMLPattern )
+import Kore.Step.Pattern
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -162,31 +162,31 @@ instance EqualWithExplanation (W level)
 showVar :: V level -> W level
 showVar (V i) = W (show i)
 
-var :: Integer -> PureMLPattern Meta V
+var :: Integer -> StepPattern Meta V
 var i = give mockSymbolOrAliasSorts (mkVar (V i))
 
-war :: String -> PureMLPattern Meta W
+war :: String -> StepPattern Meta W
 war s = give mockSymbolOrAliasSorts (mkVar (W s))
 
 makeEq
     :: (SortedVariable var, Show (var Meta))
-    => PureMLPattern Meta var
-    -> PureMLPattern Meta var
-    -> PureMLPattern Meta var
+    => StepPattern Meta var
+    -> StepPattern Meta var
+    -> StepPattern Meta var
 makeEq p1 p2 =
     give mockSymbolOrAliasSorts (mkEquals p1 p2)
 
 makeAnd
     :: (SortedVariable var, Show (var Meta))
-    => PureMLPattern Meta var
-    -> PureMLPattern Meta var
-    -> PureMLPattern Meta var
+    => StepPattern Meta var
+    -> StepPattern Meta var
+    -> StepPattern Meta var
 makeAnd p1 p2 =
     give mockSymbolOrAliasSorts (mkAnd p1 p2)
 
 makeEquals
     :: (SortedVariable var, Show (var Meta))
-    => PureMLPattern Meta var -> PureMLPattern Meta var -> Predicate Meta var
+    => StepPattern Meta var -> StepPattern Meta var -> Predicate Meta var
 makeEquals p1 p2 =
     give mockSymbolOrAliasSorts (makeEqualsPredicate p1 p2)
 

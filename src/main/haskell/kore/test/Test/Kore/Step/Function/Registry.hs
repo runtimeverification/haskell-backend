@@ -26,6 +26,7 @@ import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
@@ -42,6 +43,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
 import           Kore.Step.Function.Registry
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -59,7 +61,12 @@ updateAttributes attrs = applyUnifiedSentence updateAttrs updateAttrs
   where
     updateAttrs
         :: MetaOrObject level
-        => Sentence level UnifiedSortVariable UnifiedPattern Variable
+        => Sentence
+            level
+            UnifiedSortVariable
+            UnifiedPattern
+            Domain.Builtin
+            Variable
         -> KoreSentence
     updateAttrs (SentenceSymbolSentence ss) =
         constructUnifiedSentence SentenceSymbolSentence
@@ -108,7 +115,7 @@ testDef = simpleDefinitionFromSentences
                                     )
                                     (Top_ sortVarS)
                                 )
-                            :: CommonPurePattern Object)
+                            :: CommonStepPattern Object)
                         )
                     }
                 ::KoreSentenceAxiom)
@@ -127,7 +134,7 @@ testDef = simpleDefinitionFromSentences
                                     )
                                     (Top_ sortVarS)
                                 )
-                            :: CommonPurePattern Object)
+                            :: CommonStepPattern Object)
                         )
                     }
                 ::KoreSentenceAxiom)
@@ -146,7 +153,7 @@ testDef = simpleDefinitionFromSentences
                                     )
                                     (Top_ sortVarS)
                                 )
-                            :: CommonPurePattern Object)
+                            :: CommonStepPattern Object)
                         )
                     }
                 ::KoreSentenceAxiom)
@@ -165,7 +172,7 @@ testDef = simpleDefinitionFromSentences
                                     )
                                     (Top_ sortVarS)
                                 )
-                            :: CommonPurePattern Object)
+                            :: CommonStepPattern Object)
                         )
                     }
                 ::KoreSentenceAxiom)
@@ -176,7 +183,7 @@ testDef = simpleDefinitionFromSentences
                     , sentenceAxiomPattern =
                         (patternPureToKore
                             (Top_ sortS
-                            :: CommonPurePattern Object)
+                            :: CommonStepPattern Object)
                         )
                     }
                 ::KoreSentenceAxiom)
@@ -193,7 +200,7 @@ testDef = simpleDefinitionFromSentences
                                         (App_ tHead [])
                                     )
                                 )
-                            :: CommonPurePattern Object)
+                            :: CommonStepPattern Object)
                         )
                     }
                 ::KoreSentenceAxiom)
@@ -269,7 +276,7 @@ test_functionRegistry =
     ]
   where
     makeExpandedPattern
-        :: CommonPurePattern Object
+        :: CommonStepPattern Object
         -> CommonExpandedPattern Object
     makeExpandedPattern pat =
         Predicated

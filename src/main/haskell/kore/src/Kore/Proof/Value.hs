@@ -26,10 +26,12 @@ import           Data.Reflection
                  ( give )
 
 import           Kore.AST.Common
-                 ( Concrete, ConcretePurePattern, Pattern (..) )
+                 ( Concrete, DomainValue, Pattern (..) )
 import qualified Kore.AST.Common as Pattern
 import           Kore.AST.MetaOrObject
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
 
@@ -42,7 +44,7 @@ data ValueF level child where
     Constructor :: !(Pattern.Application level child) -> ValueF level child
     SortInjection :: !(Pattern.Application level child) -> ValueF level child
     DomainValue
-        :: !(Pattern.DomainValue Object (Pattern.BuiltinDomain child))
+        :: !(DomainValue Object Domain.Builtin child)
         -> ValueF Object child
 
 deriving instance Eq child => Eq (ValueF level child)
@@ -79,7 +81,7 @@ eraseSortInjection val =
  -}
 fromPattern
     :: MetadataTools level StepperAttributes
-    -> Pattern level Concrete (Maybe (Value level))
+    -> StepPatternHead level Concrete (Maybe (Value level))
     -> Maybe (Value level)
 fromPattern tools =
     \case
@@ -100,9 +102,9 @@ fromPattern tools =
             -- perspective of normalization.
             -- TODO (thomas.tuegel): Builtin domain parsers may violate the
             -- assumption that domain values are concrete. We should remove
-            -- BuiltinDomainPattern and always run the stepper with internal
+            -- BuiltinPattern and always run the stepper with internal
             -- representations only.
-            Fix . DomainValue <$> traverse sequence dvP
+            Fix . DomainValue <$> sequence dvP
         _ -> Nothing
   where
     isConstructor = give tools isConstructor_
@@ -118,14 +120,14 @@ fromPattern tools =
  -}
 fromConcretePurePattern
     :: MetadataTools level StepperAttributes
-    -> ConcretePurePattern level
+    -> ConcreteStepPattern level
     -> Maybe (Value level)
 fromConcretePurePattern tools =
     Functor.Foldable.fold (fromPattern tools)
 
 {- | Project a 'Value' to a concrete 'Pattern' head.
  -}
-asPattern :: Value level -> Pattern level Concrete (Value level)
+asPattern :: Value level -> StepPatternHead level Concrete (Value level)
 asPattern val =
     case Functor.Foldable.project val of
         Constructor appP -> ApplicationPattern appP
@@ -134,5 +136,5 @@ asPattern val =
 
 {- | View a normalized value as a 'ConcretePurePattern'.
  -}
-asConcretePurePattern :: Value level -> ConcretePurePattern level
+asConcretePurePattern :: Value level -> ConcreteStepPattern level
 asConcretePurePattern = Functor.Foldable.unfold asPattern

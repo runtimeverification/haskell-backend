@@ -23,6 +23,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
 import qualified Kore.Builtin.Map as Map
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
@@ -40,7 +41,7 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, evalSimplifier )
+                 ( StepPatternSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
@@ -278,11 +279,11 @@ test_substituteMap =
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
-                                (mkBuiltinDomainMap [(Mock.a, mkVar Mock.x)])
+                                (mkDomainBuiltinMap [(Mock.a, mkVar Mock.x)])
                         , predicate = makeTruePredicate
                         , substitution =
                             [ (Mock.x, Mock.a)
-                            , (Mock.y, mkBuiltinDomainMap [(Mock.a, Mock.a)])
+                            , (Mock.y, mkDomainBuiltinMap [(Mock.a, Mock.a)])
                             ]
                         }
                     ]
@@ -293,7 +294,7 @@ test_substituteMap =
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
-                            (mkBuiltinDomainMap [(Mock.a, mkVar Mock.x)])
+                            (mkDomainBuiltinMap [(Mock.a, mkVar Mock.x)])
                         )
                         (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
                     )
@@ -304,9 +305,9 @@ test_substituteMap =
             actual
     ]
   where
-    mkBuiltinDomainMap =
+    mkDomainBuiltinMap =
         give mockSymbolOrAliasSorts
-            mkDomainValue Mock.testSort . BuiltinDomainMap . Map.fromList
+            mkDomainValue Mock.testSort . Domain.BuiltinMap . Map.fromList
 
 test_substituteList :: [TestTree]
 test_substituteList =
@@ -318,11 +319,11 @@ test_substituteList =
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
-                                (mkBuiltinDomainList [Mock.a, mkVar Mock.x])
+                                (mkDomainBuiltinList [Mock.a, mkVar Mock.x])
                         , predicate = makeTruePredicate
                         , substitution =
                             [ (Mock.x, Mock.a)
-                            , (Mock.y, mkBuiltinDomainList [Mock.a, Mock.a])
+                            , (Mock.y, mkDomainBuiltinList [Mock.a, Mock.a])
                             ]
                         }
                     ]
@@ -333,7 +334,7 @@ test_substituteList =
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
-                            (mkBuiltinDomainList [Mock.a, mkVar Mock.x])
+                            (mkDomainBuiltinList [Mock.a, mkVar Mock.x])
                         )
                         (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
                     )
@@ -344,9 +345,9 @@ test_substituteList =
             actual
     ]
   where
-    mkBuiltinDomainList =
+    mkDomainBuiltinList =
         give mockSymbolOrAliasSorts
-            mkDomainValue Mock.testSort . BuiltinDomainList . Seq.fromList
+            mkDomainValue Mock.testSort . Domain.BuiltinList . Seq.fromList
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
 mockSymbolOrAliasSorts =
@@ -389,7 +390,7 @@ evaluateWithAxioms tools axioms patt =
             , Show (variable Object)
             , SortedVariable variable
             )
-        => PureMLPatternSimplifier Object variable
+        => StepPatternSimplifier Object variable
     simplifier =
         Simplifier.create
             tools

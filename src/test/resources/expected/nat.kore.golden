@@ -70,7 +70,7 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ExistsPattern Exists
+                        Fix (UnifiedPattern (UnifiedObjectPattern (ExistsPattern Exists
                             { existsSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , existsVariable =
@@ -83,7 +83,7 @@ Definition
                                             }
                                     }
                             , existsChild =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (EqualsPattern Equals
+                                Fix (UnifiedPattern (UnifiedObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
@@ -92,25 +92,25 @@ Definition
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                        Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                             { variableName = (Id "T" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
                                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                     , sortActualSorts = []
                                                     }
-                                            }))))
+                                            })))
                                     , equalsSecond =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "zero" AstLocationNone) :: Id Object
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren = []
-                                            }))))
-                                    }))))
-                            }))))
+                                            })))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -118,7 +118,7 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ExistsPattern Exists
+                        Fix (UnifiedPattern (UnifiedObjectPattern (ExistsPattern Exists
                             { existsSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , existsVariable =
@@ -131,7 +131,7 @@ Definition
                                             }
                                     }
                             , existsChild =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (EqualsPattern Equals
+                                Fix (UnifiedPattern (UnifiedObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
@@ -140,34 +140,34 @@ Definition
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                        Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                             { variableName = (Id "T" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
                                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                     , sortActualSorts = []
                                                     }
-                                            }))))
+                                            })))
                                     , equalsSecond =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "succ" AstLocationNone) :: Id Object
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
                                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                             , sortActualSorts = []
                                                             }
-                                                    }))))
+                                                    })))
                                                 ]
-                                            }))))
-                                    }))))
-                            }))))
+                                            })))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -175,7 +175,7 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ExistsPattern Exists
+                        Fix (UnifiedPattern (UnifiedObjectPattern (ExistsPattern Exists
                             { existsSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , existsVariable =
@@ -188,7 +188,7 @@ Definition
                                             }
                                     }
                             , existsChild =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (EqualsPattern Equals
+                                Fix (UnifiedPattern (UnifiedObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
@@ -197,64 +197,64 @@ Definition
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                     , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                        Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                             { variableName = (Id "T" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
                                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                     , sortActualSorts = []
                                                     }
-                                            }))))
+                                            })))
                                     , equalsSecond =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "plus" AstLocationNone) :: Id Object
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
                                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                             , sortActualSorts = []
                                                             }
-                                                    }))))
-                                                , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                                    })))
+                                                , Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                                     { variableName = (Id "Y" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
                                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                             , sortActualSorts = []
                                                             }
-                                                    }))))
+                                                    })))
                                                 ]
-                                            }))))
-                                    }))))
-                            }))))
+                                            })))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (OrPattern Or
+                        Fix (UnifiedPattern (UnifiedObjectPattern (OrPattern Or
                             { orSort =
                                 SortActualSort SortActual
                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                     , sortActualSorts = []
                                     }
                             , orFirst =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
                                             { symbolOrAliasConstructor = (Id "zero" AstLocationNone) :: Id Object
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationChildren = []
-                                    }))))
+                                    })))
                             , orSecond =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (ExistsPattern Exists
+                                Fix (UnifiedPattern (UnifiedObjectPattern (ExistsPattern Exists
                                     { existsSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
@@ -270,54 +270,54 @@ Definition
                                                     }
                                             }
                                     , existsChild =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "succ" AstLocationNone) :: Id Object
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
                                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                             , sortActualSorts = []
                                                             }
-                                                    }))))
+                                                    })))
                                                 ]
-                                            }))))
-                                    }))))
-                            }))))
+                                            })))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (NotPattern Not
+                        Fix (UnifiedPattern (UnifiedObjectPattern (NotPattern Not
                             { notSort =
                                 SortActualSort SortActual
                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                     , sortActualSorts = []
                                     }
                             , notChild =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (AndPattern And
+                                Fix (UnifiedPattern (UnifiedObjectPattern (AndPattern And
                                     { andSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                             , sortActualSorts = []
                                             }
                                     , andFirst =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "zero" AstLocationNone) :: Id Object
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren = []
-                                            }))))
+                                            })))
                                     , andSecond =
-                                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (ExistsPattern Exists
+                                        Fix (UnifiedPattern (UnifiedObjectPattern (ExistsPattern Exists
                                             { existsSort =
                                                 SortActualSort SortActual
                                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
@@ -333,26 +333,26 @@ Definition
                                                             }
                                                     }
                                             , existsChild =
-                                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                                Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
                                                         SymbolOrAlias
                                                             { symbolOrAliasConstructor = (Id "succ" AstLocationNone) :: Id Object
                                                             , symbolOrAliasParams = []
                                                             }
                                                     , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                                             { variableName = (Id "X" AstLocationNone) :: Id Object
                                                             , variableSort =
                                                                 SortActualSort SortActual
                                                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                                     , sortActualSorts = []
                                                                     }
-                                                            }))))
+                                                            })))
                                                         ]
-                                                    }))))
-                                            }))))
-                                    }))))
-                            }))))
+                                                    })))
+                                            })))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -360,7 +360,7 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (EqualsPattern Equals
+                        Fix (UnifiedPattern (UnifiedObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
                                 SortActualSort SortActual
                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
@@ -369,41 +369,41 @@ Definition
                             , equalsResultSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , equalsFirst =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
                                             { symbolOrAliasConstructor = (Id "plus" AstLocationNone) :: Id Object
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                             { variableName = (Id "X" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
                                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                     , sortActualSorts = []
                                                     }
-                                            }))))
-                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                            })))
+                                        , Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "zero" AstLocationNone) :: Id Object
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren = []
-                                            }))))
+                                            })))
                                         ]
-                                    }))))
+                                    })))
                             , equalsSecond =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                             , sortActualSorts = []
                                             }
-                                    }))))
-                            }))))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -411,7 +411,7 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (EqualsPattern Equals
+                        Fix (UnifiedPattern (UnifiedObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
                                 SortActualSort SortActual
                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
@@ -420,76 +420,76 @@ Definition
                             , equalsResultSort =
                                 SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , equalsFirst =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
                                             { symbolOrAliasConstructor = (Id "plus" AstLocationNone) :: Id Object
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                             { variableName = (Id "X" AstLocationNone) :: Id Object
                                             , variableSort =
                                                 SortActualSort SortActual
                                                     { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                     , sortActualSorts = []
                                                     }
-                                            }))))
-                                        , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                            })))
+                                        , Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "succ" AstLocationNone) :: Id Object
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                                     { variableName = (Id "Y" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
                                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                             , sortActualSorts = []
                                                             }
-                                                    }))))
+                                                    })))
                                                 ]
-                                            }))))
+                                            })))
                                         ]
-                                    }))))
+                                    })))
                             , equalsSecond =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
                                             { symbolOrAliasConstructor = (Id "succ" AstLocationNone) :: Id Object
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "plus" AstLocationNone) :: Id Object
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
                                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                             , sortActualSorts = []
                                                             }
-                                                    }))))
-                                                , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                                    })))
+                                                , Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                                     { variableName = (Id "Y" AstLocationNone) :: Id Object
                                                     , variableSort =
                                                         SortActualSort SortActual
                                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                                             , sortActualSorts = []
                                                             }
-                                                    }))))
+                                                    })))
                                                 ]
-                                            }))))
+                                            })))
                                         ]
-                                    }))))
-                            }))))
+                                    })))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

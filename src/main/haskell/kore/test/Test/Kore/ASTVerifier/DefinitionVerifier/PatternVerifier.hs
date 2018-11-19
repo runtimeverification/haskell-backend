@@ -18,6 +18,7 @@ import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Attribute.Hook as Attribute.Hook
 import           Kore.Building.Implicit
 import           Kore.Building.Patterns as Patterns
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 
@@ -29,7 +30,8 @@ data PatternRestrict
     | NeedsSortedParent
 
 data TestPattern level = TestPattern
-    { testPatternPattern    :: !(Pattern level Variable CommonKorePattern)
+    { testPatternPattern
+        :: !(Pattern level Domain.Builtin Variable CommonKorePattern)
     , testPatternSort       :: !(Sort level)
     , testPatternErrorStack :: !ErrorStack
     }
@@ -487,7 +489,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                BuiltinDomainPattern
+                Domain.BuiltinPattern
                     (StringLiteral_ "abcd")  -- Not a decimal integer
             }
         )
@@ -501,7 +503,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                BuiltinDomainPattern (StringLiteral_ "-256")
+                Domain.BuiltinPattern (StringLiteral_ "-256")
             }
         )
         (NamePrefix "dummy")
@@ -514,7 +516,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                BuiltinDomainPattern (StringLiteral_ "1024")
+                Domain.BuiltinPattern (StringLiteral_ "1024")
             }
         )
         (NamePrefix "dummy")
@@ -527,7 +529,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                BuiltinDomainPattern (StringLiteral_ "+128")
+                Domain.BuiltinPattern (StringLiteral_ "+128")
             }
         )
         (NamePrefix "dummy")
@@ -550,7 +552,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                BuiltinDomainPattern
+                Domain.BuiltinPattern
                     (StringLiteral_ "untrue")  -- Not a BOOL.Bool
             }
         )
@@ -564,7 +566,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                BuiltinDomainPattern (StringLiteral_ "true")
+                Domain.BuiltinPattern (StringLiteral_ "true")
             }
         )
         (NamePrefix "dummy")
@@ -577,7 +579,7 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                BuiltinDomainPattern (StringLiteral_ "false")
+                Domain.BuiltinPattern (StringLiteral_ "false")
             }
         )
         (NamePrefix "dummy")
@@ -682,7 +684,7 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> Pattern Object Variable CommonKorePattern
+    -> Pattern Object Domain.Builtin Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -727,7 +729,7 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> Pattern Meta Variable CommonKorePattern
+    -> Pattern Meta Domain.Builtin Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -769,7 +771,7 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Object Variable CommonKorePattern
+    -> Pattern Object Domain.Builtin Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -826,7 +828,7 @@ failureTestsForMetaPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Meta Variable CommonKorePattern
+    -> Pattern Meta Domain.Builtin Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -872,7 +874,7 @@ failureTestsForMetaPattern
 genericPatternInAllContexts
     :: MetaOrObject level
     => level
-    -> Pattern level Variable CommonKorePattern
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort level
     -> SortVariablesThatMustBeDeclared level
@@ -939,7 +941,7 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: Pattern Object Variable CommonKorePattern
+    :: Pattern Object Domain.Builtin Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -1050,8 +1052,8 @@ patternsInAllContexts
 
 genericPatternInPatterns
     :: MetaOrObject level
-    => Pattern level Variable CommonKorePattern
-    -> Pattern level Variable CommonKorePattern
+    => Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
     -> OperandSort level
     -> Helpers.ResultSort level
     -> VariableOfDeclaredSort level
@@ -1111,15 +1113,15 @@ genericPatternInPatterns
         ]
 
 objectPatternInPatterns
-    :: Pattern Object Variable CommonKorePattern
-    -> Pattern Object Variable CommonKorePattern
+    :: Pattern Object Domain.Builtin Variable CommonKorePattern
+    -> Pattern Object Domain.Builtin Variable CommonKorePattern
     -> OperandSort Object
     -> [TestPattern Object]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
     :: MetaOrObject level
-    => Pattern level Variable CommonKorePattern
+    => Pattern level Domain.Builtin Variable CommonKorePattern
     -> Sort level
     -> Variable level
     -> [TestPattern level]
@@ -1156,8 +1158,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
 
 patternInUnquantifiedGenericPatterns
     :: MetaOrObject level
-    => Pattern level Variable CommonKorePattern
-    -> Pattern level Variable CommonKorePattern
+    => Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Pattern level Domain.Builtin Variable CommonKorePattern
     -> OperandSort level
     -> Helpers.ResultSort level
     -> [TestPattern level]
@@ -1311,8 +1313,8 @@ patternInUnquantifiedGenericPatterns
     testedUnifiedPattern = asKorePattern testedPattern
 
 patternInUnquantifiedObjectPatterns
-    :: Pattern Object Variable CommonKorePattern
-    -> Pattern Object Variable CommonKorePattern
+    :: Pattern Object Domain.Builtin Variable CommonKorePattern
+    -> Pattern Object Domain.Builtin Variable CommonKorePattern
     -> OperandSort Object
     -> [TestPattern Object]
 patternInUnquantifiedObjectPatterns

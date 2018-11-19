@@ -50,14 +50,13 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec.Char as Parser
                  ( char )
 
-import           Data.Function.Compose
-                 ( (<....>) )
-import           Data.Functor.Impredicative
-                 ( Rotate31 (..) )
 import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( castMetaDomainValues )
 import           Kore.AST.Sentence
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.MetaML.AST
 import           Kore.Parser.Lexeme
 import           Kore.Parser.ParserUtils
@@ -396,7 +395,7 @@ symbolOrAliasPatternRemainderParser
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Id level  -- ^ The already parsed prefix.
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level Domain.Builtin Variable child)
 symbolOrAliasPatternRemainderParser childParser x identifier =
     ApplicationPattern
     <$> (   Application
@@ -489,7 +488,7 @@ variableOrTermPatternParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level Domain.Builtin Variable child)
 variableOrTermPatternParser childParser x = do
     identifier <- idParser x
     c <- ParserUtils.peekChar'
@@ -633,7 +632,7 @@ leveledMLConstructorParser
     :: MetaOrObject level
     => Parser child
     -> level
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level Domain.Builtin Variable child)
 leveledMLConstructorParser childParser level = do
     void (Parser.char '\\')
     keywordBasedParsers
@@ -671,7 +670,7 @@ mlConstructorRemainderParser
     => Parser child
     -> level
     -> MLPatternType
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level Domain.Builtin Variable child)
 mlConstructorRemainderParser childParser x patternType =
     case patternType of
         AndPatternType -> AndPattern <$>
@@ -708,7 +707,8 @@ mlConstructorRemainderParser childParser x patternType =
                     (   DomainValue
                     <$> inCurlyBracesRemainderParser (sortParser Object)
                     <*> inParenthesesParser
-                        (BuiltinDomainPattern <$> purePatternParser Meta)
+                        (Domain.BuiltinPattern . castMetaDomainValues
+                            <$> purePatternParser Meta)
                     )
         NextPatternType ->
             case isMetaOrObject (toProxy x) of
@@ -831,12 +831,12 @@ koreDefinitionParser :: Parser KoreDefinition
 koreDefinitionParser = definitionParser koreSentenceParser
 
 definitionParser
-    :: Parser (sentence sortParam pat variable)
-    -> Parser (Definition sentence sortParam pat variable)
+    :: Parser (sentence sortParam pat dom var)
+    -> Parser (Definition sentence sortParam pat dom var)
 definitionParser sentenceParser =
-  Definition
-  <$> attributesParser
-  <*> some (moduleParser sentenceParser)
+    Definition
+        <$> attributesParser
+        <*> some (moduleParser sentenceParser)
 
 {-|'moduleParser' parses the module part of a Kore @definition@
 
@@ -846,8 +846,8 @@ BNF definition fragment:
 @
 -}
 moduleParser
-    :: Parser (sentence sortParam pat variable)
-    -> Parser (Module sentence sortParam pat variable)
+    :: Parser (sentence sortParam pat dom var)
+    -> Parser (Module sentence sortParam pat dom var)
 moduleParser sentenceParser = do
     mlLexemeParser "module"
     name <- moduleNameParser
@@ -901,33 +901,35 @@ koreSentenceParser = keywordBasedParsers
     , ( "hooked-symbol", hookedSymbolSentenceRemainderParser )
     ]
 
-sentenceConstructorRemainderParser :: SentenceType -> Parser KoreSentence
+sentenceConstructorRemainderParser
+    :: SentenceType
+    -> Parser KoreSentence
 sentenceConstructorRemainderParser sentenceType
       = do
         c <- ParserUtils.peekChar'
         case (c, sentenceType) of
             ('#', AliasSentenceType) ->
-                constructUnifiedSentence SentenceAliasSentence . unRotate31
+                constructUnifiedSentence SentenceAliasSentence
                 <$>
                 aliasSentenceRemainderParser Meta
             ('#', SymbolSentenceType) ->
-                constructUnifiedSentence SentenceSymbolSentence . unRotate31
+                constructUnifiedSentence SentenceSymbolSentence
                 <$>
                 symbolSentenceRemainderParser
                     Meta
                     (symbolParser Meta)
-                    (Rotate31 <....> SentenceSymbol)
+                    SentenceSymbol
             (_, AliasSentenceType) ->
-                constructUnifiedSentence SentenceAliasSentence . unRotate31
+                constructUnifiedSentence SentenceAliasSentence
                 <$>
                 aliasSentenceRemainderParser Object
             (_, SymbolSentenceType) ->
-                constructUnifiedSentence SentenceSymbolSentence . unRotate31
+                constructUnifiedSentence SentenceSymbolSentence
                 <$>
                 symbolSentenceRemainderParser
                     Object
                     (symbolParser Object)
-                    (Rotate31 <....> SentenceSymbol)
+                    SentenceSymbol
 
 sentenceSortRemainderParser :: Parser KoreSentence
 sentenceSortRemainderParser = do
@@ -954,15 +956,15 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 symbolSentenceRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (m level)  -- Head parser.
-    -> (m level
+    -> Parser m  -- Head parser.
+    -> (m
         -> [Sort level]
         -> Sort level
         -> Attributes
-        -> as level
+        -> as
        )
     -- ^ Element constructor.
-    -> Parser (as level)
+    -> Parser as
 symbolSentenceRemainderParser  x aliasSymbolParser constructor
   = do
     aliasSymbol <- aliasSymbolParser
@@ -988,7 +990,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 aliasSentenceRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser ((Rotate31 SentenceAlias UnifiedPattern Variable) level)
+    -> Parser (SentenceAlias level UnifiedPattern Domain.Builtin Variable)
 aliasSentenceRemainderParser x
   = do
     aliasSymbol <- (aliasParser x)
@@ -1001,7 +1003,7 @@ aliasSentenceRemainderParser x
     mlLexemeParser ":="
     rightPattern <- leveledPatternParser korePatternParser x
     attributes <- attributesParser
-    return (Rotate31 (SentenceAlias aliasSymbol sorts resultSort leftPattern rightPattern attributes))
+    return (SentenceAlias aliasSymbol sorts resultSort leftPattern rightPattern attributes)
 
 {-|'importSentenceRemainderParser' parses the part after the starting
 'import' keyword of an import-declaration and constructs it.
@@ -1067,11 +1069,13 @@ constructs the corresponding 'SentenceHook'.
 -}
 hookedSymbolSentenceRemainderParser :: Parser KoreSentence
 hookedSymbolSentenceRemainderParser =
-    constructUnifiedSentence SentenceHookSentence . SentenceHookedSymbol . unRotate31
-    <$> symbolSentenceRemainderParser
-    Object
-    (symbolParser Object)
-    (Rotate31 <....> SentenceSymbol)
+    (<$>)
+        (constructUnifiedSentence SentenceHookSentence . SentenceHookedSymbol)
+        (symbolSentenceRemainderParser
+            Object
+            (symbolParser Object)
+            SentenceSymbol
+        )
 
 {-|'hookedSortSentenceRemainderParser' parses the part after the starting
 'hooked-sort@ keyword of a sort-declaration as a 'SentenceSort' and constructs
@@ -1085,7 +1089,7 @@ leveledPatternParser
     :: MetaOrObject level
     => Parser child
     -> level
-    -> Parser (Pattern level Variable child)
+    -> Parser (Pattern level Domain.Builtin Variable child)
 leveledPatternParser patternParser level = do
     c <- ParserUtils.peekChar'
     case c of
@@ -1100,9 +1104,9 @@ leveledPatternParser patternParser level = do
 purePatternParser
     :: MetaOrObject level
     => level
-    -> Parser (CommonPurePattern level)
+    -> Parser (CommonPurePattern level Domain.Builtin)
 purePatternParser level =
     Fix <$> leveledPatternParser (purePatternParser level) level
 
 metaPatternParser :: Parser CommonMetaPattern
-metaPatternParser = purePatternParser Meta
+metaPatternParser = castMetaDomainValues <$> purePatternParser Meta

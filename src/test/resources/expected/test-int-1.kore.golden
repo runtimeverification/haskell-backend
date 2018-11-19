@@ -20,16 +20,16 @@ Definition
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "BOOL.Bool")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "BOOL.Bool"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 ]
@@ -53,16 +53,16 @@ Definition
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.Int")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.Int"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -92,16 +92,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.bitRange")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.bitRange"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -127,16 +127,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.ge")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.ge"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -162,16 +162,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.xor")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.xor"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -197,16 +197,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.add")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.add"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -232,16 +232,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.ne")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.ne"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -263,16 +263,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.rand")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.rand"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -298,16 +298,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.le")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.le"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -329,16 +329,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.log2")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.log2"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -364,16 +364,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.and")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.and"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -395,16 +395,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.srand")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.srand"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -430,16 +430,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.ediv")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.ediv"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -469,16 +469,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.powmod")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.powmod"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -504,16 +504,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.eq")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.eq"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -539,16 +539,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.tmod")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.tmod"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -570,16 +570,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.abs")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.abs"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -601,16 +601,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.not")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.not"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -636,16 +636,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.shl")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.shl"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -675,16 +675,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.signExtendBitRange")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.signExtendBitRange"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -710,16 +710,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.emod")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.emod"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -745,16 +745,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.or")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.or"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -780,16 +780,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.shr")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.shr"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -815,16 +815,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.mul")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.mul"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -850,16 +850,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.gt")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.gt"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -885,16 +885,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.tdiv")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.tdiv"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -920,16 +920,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.min")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.min"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -955,16 +955,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.lt")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.lt"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -990,16 +990,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.sub")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.sub"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -1025,16 +1025,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.max")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.max"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -1060,16 +1060,16 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.pow")))))
+                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.pow"))))
                                     ]
-                                }))))
+                                })))
                             ]
                     }))
                 , ObjectSentence (SentenceAliasSentence SentenceAlias
@@ -1101,7 +1101,7 @@ Definition
                                     , sortActualSorts = []
                                     }
                             , domainValueChild =
-                                BuiltinDomainString (Fix (StringLiteralPattern (StringLiteral "0")))
+                                Domain.BuiltinString (Fix (StringLiteralPattern (StringLiteral "0")))
                             }
                     , sentenceAliasAttributes = Attributes []
                     })
@@ -1134,7 +1134,7 @@ Definition
                                     , sortActualSorts = []
                                     }
                             , domainValueChild =
-                                BuiltinDomainString (Fix (StringLiteralPattern (StringLiteral "1")))
+                                Domain.BuiltinString (Fix (StringLiteralPattern (StringLiteral "1")))
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

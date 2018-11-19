@@ -22,10 +22,12 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import           Kore.Step.Pattern
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -33,22 +35,22 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-topPatMeta :: Pattern Meta variable (Fix (pat variable))
+topPatMeta :: Pattern Meta dom var (Fix (pat dom var))
 topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
 
-topPatObj :: Pattern Object variable (Fix (pat variable))
+topPatObj :: Pattern Object dom var (Fix (pat dom var))
 topPatObj  = TopPattern $ Top { topSort = objectS1 }
 
-objectA :: PureSentenceSymbol Object
+objectA :: PureSentenceSymbol Object Domain.Builtin
 objectA = symbol_ "a" AstLocationTest [] objectS1
 
-objectB :: PureSentenceAlias Object
+objectB :: PureSentenceAlias Object Domain.Builtin
 objectB = alias_ "b" AstLocationTest [] objectS1 topPatObj topPatObj
 
-metaA :: PureSentenceSymbol Meta
+metaA :: PureSentenceSymbol Meta Domain.Builtin
 metaA = symbol_ "#a" AstLocationTest [] charListMetaSort
 
-metaB :: PureSentenceAlias Meta
+metaB :: PureSentenceAlias Meta Domain.Builtin
 metaB = alias_ "#b" AstLocationTest [] charListMetaSort topPatMeta topPatMeta
 
 testObjectModuleName :: ModuleName
@@ -63,7 +65,7 @@ testSubMainModuleName = ModuleName "TEST-SUB-MAIN-MODULE"
 testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
-testObjectModule :: PureModule Object
+testObjectModule :: PureModule Object Domain.Builtin
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
@@ -77,7 +79,7 @@ testObjectModule =
                             [patternPureToKore
                                 (App_ (groundHead "strict" AstLocationTest)
                                     []
-                                ::CommonPurePattern Object)
+                                ::CommonStepPattern Object)
                             ]
                     }
             , asSentence objectA
@@ -88,11 +90,11 @@ testObjectModule =
                 [patternPureToKore
                     (App_ (groundHead "strict" AstLocationTest)
                         []
-                    ::CommonPurePattern Object)
+                    ::CommonStepPattern Object)
                 ]
         }
 
-testMetaModule :: PureModule Meta
+testMetaModule :: PureModule Meta Domain.Builtin
 testMetaModule =
     Module
         { moduleName = testMetaModuleName
@@ -116,7 +118,7 @@ subMainModule =
                 [patternPureToKore
                     (App_ (groundHead "strict" AstLocationTest)
                         []
-                    ::CommonPurePattern Object)
+                    ::CommonStepPattern Object)
                 ]
         }
 
@@ -140,7 +142,7 @@ testDefinition =
             [patternPureToKore
                 (App_ (groundHead "strict" AstLocationTest)
                     []
-                ::CommonPurePattern Object)
+                ::CommonStepPattern Object)
             ]
         , definitionModules =
             [ modulePureToKore testObjectModule
@@ -176,7 +178,7 @@ test_resolvers =
                         [patternPureToKore
                             (App_ (groundHead "strict" AstLocationTest)
                                 []
-                            ::CommonPurePattern Object)
+                            ::CommonStepPattern Object)
                         ]
                 })
             )

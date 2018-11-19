@@ -9,12 +9,12 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                        Fix (UnifiedPattern (UnifiedObjectPattern (DomainValuePattern DomainValue
                             { domainValueSort =
                                 SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                             , domainValueChild =
-                                BuiltinDomainString (Fix (StringLiteralPattern (StringLiteral "0")))
-                            }))))
+                                Domain.BuiltinString (Fix (StringLiteralPattern (StringLiteral "0")))
+                            })))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

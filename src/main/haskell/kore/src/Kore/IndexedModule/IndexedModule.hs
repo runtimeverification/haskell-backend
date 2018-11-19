@@ -68,10 +68,11 @@ import           Kore.Attribute.Parser
                  ( ParseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.Subsort
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 
-type SortDescription level = SentenceSort level UnifiedPattern Variable
+type SortDescription level dom = SentenceSort level UnifiedPattern dom Variable
 
 data IndexModuleError
 
@@ -89,28 +90,28 @@ All 'IndexedModule' instances should either be returned by
 'indexedModuleWithMetaSorts' or they should start from an instance created by
 'indexedModuleWithDefaultImports'.
 -}
-data IndexedModule sortParam pat variable atts =
+data IndexedModule sortParam pat dom var atts =
     IndexedModule
     { indexedModuleName          :: !ModuleName
     , indexedModuleMetaAliasSentences
-        :: !(Map.Map (Id Meta) (atts, SentenceAlias Meta pat variable))
+        :: !(Map.Map (Id Meta) (atts, SentenceAlias Meta pat dom var))
     , indexedModuleObjectAliasSentences
-        :: !(Map.Map (Id Object) (atts, SentenceAlias Object pat variable))
+        :: !(Map.Map (Id Object) (atts, SentenceAlias Object pat dom var))
     , indexedModuleMetaSymbolSentences
-        :: !(Map.Map (Id Meta) (atts, SentenceSymbol Meta pat variable))
+        :: !(Map.Map (Id Meta) (atts, SentenceSymbol Meta pat dom var))
     , indexedModuleObjectSymbolSentences
-        :: !(Map.Map (Id Object) (atts, SentenceSymbol Object pat variable))
+        :: !(Map.Map (Id Object) (atts, SentenceSymbol Object pat dom var))
     , indexedModuleObjectSortDescriptions
-        :: !(Map.Map (Id Object) (atts, SentenceSort Object pat variable))
+        :: !(Map.Map (Id Object) (atts, SentenceSort Object pat dom var))
     , indexedModuleMetaSortDescriptions
-        :: !(Map.Map (Id Meta) (atts, SentenceSort Meta pat variable))
+        :: !(Map.Map (Id Meta) (atts, SentenceSort Meta pat dom var))
     , indexedModuleAxioms
-        :: ![(atts, SentenceAxiom sortParam pat variable)]
+        :: ![(atts, SentenceAxiom sortParam pat dom var)]
     , indexedModuleAttributes :: !(atts, Attributes)
     , indexedModuleImports
         :: ![( atts
              , Attributes
-             , IndexedModule sortParam pat variable atts
+             , IndexedModule sortParam pat dom var atts
              )
             ]
     , indexedModuleHookedIdentifiers
@@ -133,19 +134,21 @@ getIndexedSentence :: (atts, sentence) -> sentence
 getIndexedSentence = snd
 
 deriving instance
-    ( Show1 (pat variable), Show (pat variable (Fix (pat variable)))
+    ( Show1 (pat dom var)
+    , Show (dom child)
+    , Show (pat dom var child)
     , Show sortParam
-    , Show (variable Meta)
-    , Show (variable Object)
+    , ShowMetaOrObject var
     , Show parsedAttributes
-    ) => Show (IndexedModule sortParam pat variable parsedAttributes)
+    , child ~ Fix (pat dom var)
+    ) => Show (IndexedModule sortParam pat dom var parsedAttributes)
 
 type KoreIndexedModule =
-    IndexedModule UnifiedSortVariable UnifiedPattern Variable
+    IndexedModule UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
 
 instance NFData a => NFData (KoreIndexedModule a)
 
-indexedModuleRawSentences  :: KoreIndexedModule atts -> [KoreSentence]
+indexedModuleRawSentences :: KoreIndexedModule atts -> [KoreSentence]
 indexedModuleRawSentences im =
     map (asSentence . getIndexedSentence)
         (Map.elems (indexedModuleMetaAliasSentences im))
@@ -175,13 +178,15 @@ indexedModuleRawSentences im =
     hookedIds :: Set.Set (Id Object)
     hookedIds = indexedModuleHookedIdentifiers im
     hookSortIfNeeded
-        :: (Id Object, (atts, SortDescription Object)) -> KoreSentence
+        :: (Id Object, (atts, SortDescription Object Domain.Builtin))
+        -> KoreSentence
     hookSortIfNeeded (x, (_, sortDescription))
         | x `Set.member` hookedIds =
             asSentence (SentenceHookedSort sortDescription)
         | otherwise = asSentence sortDescription
     hookSymbolIfNeeded
-        :: (Id Object, (atts, KoreSentenceSymbol Object)) -> KoreSentence
+        :: (Id Object, (atts, KoreSentenceSymbol Object))
+        -> KoreSentence
     hookSymbolIfNeeded (x, (_, symbolSentence))
         | x `Set.member` hookedIds =
             asSentence (SentenceHookedSymbol symbolSentence)
@@ -190,16 +195,20 @@ indexedModuleRawSentences im =
 {-|'ImplicitIndexedModule' is the type for the 'IndexedModule' containing
 things that are implicitly defined.
 -}
-newtype ImplicitIndexedModule sortParam pat variable atts =
-    ImplicitIndexedModule
-        (IndexedModule sortParam pat variable atts)
+newtype ImplicitIndexedModule sortParam pat dom var atts =
+    ImplicitIndexedModule (IndexedModule sortParam pat dom var atts)
 
 type KoreImplicitIndexedModule =
-    ImplicitIndexedModule UnifiedSortVariable UnifiedPattern Variable
+    ImplicitIndexedModule
+        UnifiedSortVariable
+        UnifiedPattern
+        Domain.Builtin
+        Variable
 
 emptyIndexedModule
     :: Default parsedAttributes
-    => ModuleName -> IndexedModule sortParam pat variable parsedAttributes
+    => ModuleName
+    -> IndexedModule sortParam pat dom var parsedAttributes
 emptyIndexedModule name =
     IndexedModule
     { indexedModuleName = name
@@ -222,8 +231,8 @@ name and containing the implicit definitions module.
 indexedModuleWithDefaultImports
     :: Default atts
     => ModuleName
-    -> ImplicitIndexedModule sortParam pat variable atts
-    -> IndexedModule sortParam pat variable atts
+    -> ImplicitIndexedModule sortParam pat dom var atts
+    -> IndexedModule sortParam pat dom var atts
 indexedModuleWithDefaultImports name (ImplicitIndexedModule implicitModule) =
     (emptyIndexedModule name)
         { indexedModuleImports = [(def, Attributes [], implicitModule)] }
@@ -234,7 +243,7 @@ Kore definitions.
 indexedModuleWithMetaSorts
     :: Default atts
     => ModuleName
-    ->  ( ImplicitIndexedModule sortParam pat variable atts
+    ->  ( ImplicitIndexedModule sortParam pat dom var atts
         , Map.Map Text AstLocation
         )
 indexedModuleWithMetaSorts name =
@@ -254,12 +263,12 @@ indexedModuleWithMetaSorts name =
     msd = metaSortDescriptions
 
 metaSortDescriptions
-    :: Default atts => Map.Map (Id Meta) (atts, SentenceSort Meta pat variable)
+    :: Default atts => Map.Map (Id Meta) (atts, SentenceSort Meta pat dom var)
 metaSortDescriptions = Map.fromList (map metaSortDescription metaSortsList)
 
 metaSortDescription
     :: Default atts
-    => MetaSortType -> (Id Meta, (atts, SentenceSort Meta pat variable))
+    => MetaSortType -> (Id Meta, (atts, SentenceSort Meta pat dom var))
 metaSortDescription sortType =
     ( sortId
     , ( def
@@ -315,18 +324,20 @@ indexImplicitModule (indexedModules, lastIndexedModule) rawModule = do
 the module is already in the 'IndexedModule' map.
 -}
 indexModuleIfNeeded
-    :: ParseAttributes atts
+    ::  ( ParseAttributes atts
+        , indexed ~ KoreIndexedModule atts
+        )
     => KoreImplicitIndexedModule atts
     -- ^ Module containing the implicit Kore definitions
     -> Map.Map ModuleName KoreModule
     -- ^ Map containing all defined modules, used for resolving imports.
-    -> Map.Map ModuleName (KoreIndexedModule atts)
+    -> Map.Map ModuleName indexed
     -- ^ Map containing all modules that were already indexed.
     -> KoreModule
     -- ^ Module to be indexed
     -> Either
         (Error IndexModuleError)
-        (Map.Map ModuleName (KoreIndexedModule atts))
+        (Map.Map ModuleName indexed)
     -- ^ If the module was indexed succesfully, the map returned on 'Right'
     -- contains everything that the provided 'IndexedModule' map contained,
     -- plus the current module, plus all the modules that were indexed when
@@ -339,15 +350,15 @@ indexModuleIfNeeded
             implicitModule Set.empty nameToModule indexedModules koreModule
 
 internalIndexModuleIfNeeded
-    :: ParseAttributes atts
+    ::  ( ParseAttributes atts
+        , indexed ~ KoreIndexedModule atts
+        )
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
-    -> Map.Map ModuleName (KoreIndexedModule atts)
+    -> Map.Map ModuleName indexed
     -> KoreModule
-    -> Either
-        (Error IndexModuleError)
-        (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
+    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
 internalIndexModuleIfNeeded
     implicitModule importingModules nameToModule indexedModules koreModule
   =
@@ -392,30 +403,30 @@ internalIndexModuleIfNeeded
     importingModulesWithCurrentOne = Set.insert koreModuleName importingModules
 
 indexModuleKoreSentence
-    :: ParseAttributes atts
+    ::  ( ParseAttributes atts
+        , indexed ~ KoreIndexedModule atts
+        )
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
-    -> (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
+    -> (Map.Map ModuleName indexed, indexed)
     -> KoreSentence
-    -> Either
-        (Error IndexModuleError)
-        (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
+    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
 indexModuleKoreSentence a b c d =
     applyUnifiedSentence
         (indexModuleMetaSentence a b c d)
         (indexModuleObjectSentence a b c d)
 
 indexModuleMetaSentence
-    :: ParseAttributes atts
+    ::  ( ParseAttributes atts
+        , indexed ~ KoreIndexedModule atts
+        )
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
-    -> (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
-    -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
-    -> Either
-        (Error IndexModuleError)
-        (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
+    -> (Map.Map ModuleName indexed, indexed)
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
 indexModuleMetaSentence
     implicitModule
     importingModules
@@ -527,15 +538,20 @@ indexModuleMetaSentence
             )
 
 indexModuleObjectSentence
-    :: ParseAttributes atts
+    ::  ( ParseAttributes atts
+        , indexed ~ KoreIndexedModule atts
+        )
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
-    -> (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
-    -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
-    -> Either
-        (Error IndexModuleError)
-        (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
+    -> (Map.Map ModuleName indexed, indexed)
+    -> Sentence
+        Object
+        UnifiedSortVariable
+        UnifiedPattern
+        Domain.Builtin
+        Variable
+    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
 indexModuleObjectSentence
     implicitModule
     importingModules
@@ -688,15 +704,15 @@ indexModuleObjectSentence
             )
 
 indexImportedModule
-    :: ParseAttributes atts
+    ::  ( ParseAttributes atts
+        , indexed ~ KoreIndexedModule atts
+        )
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
-    -> Map.Map ModuleName (KoreIndexedModule atts)
+    -> Map.Map ModuleName indexed
     -> ModuleName
-    -> Either
-        (Error IndexModuleError)
-        (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
+    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
 indexImportedModule
     implicitModule
     importingModules
@@ -740,8 +756,8 @@ parseAttributes =
 
  -}
 hookedObjectSymbolSentences
-    :: IndexedModule sorts pat variable atts
-    -> Map.Map (Id Object) (atts, SentenceSymbol Object pat variable)
+    :: IndexedModule sorts pat dom var atts
+    -> Map.Map (Id Object) (atts, SentenceSymbol Object pat dom var)
 hookedObjectSymbolSentences
     IndexedModule
         { indexedModuleObjectSymbolSentences
@@ -753,7 +769,7 @@ hookedObjectSymbolSentences
         indexedModuleHookedIdentifiers
 
 indexedModuleSubsorts
-    :: IndexedModule sortParam pat variables atts
+    :: IndexedModule sortParam pat dom var atts
     -> [Subsort]
 indexedModuleSubsorts imod =
     case internalIndexedModuleSubsorts imod of
@@ -763,7 +779,7 @@ indexedModuleSubsorts imod =
             ++ show err
 
 internalIndexedModuleSubsorts
-    :: IndexedModule sortParam pat variables atts
+    :: IndexedModule sortParam pat dom var atts
     -> Either (Error IndexModuleError) [Subsort]
 internalIndexedModuleSubsorts imod = do
     let
@@ -785,8 +801,8 @@ modules once.
 
  -}
 indexedModulesInScope
-    :: IndexedModule sortParam pat var attrs
-    -> Map ModuleName (IndexedModule sortParam pat var attrs)
+    :: IndexedModule sortParam pat dom var attrs
+    -> Map ModuleName (IndexedModule sortParam pat dom var attrs)
 indexedModulesInScope =
     \imod -> execState (resolveModule imod) Map.empty
   where

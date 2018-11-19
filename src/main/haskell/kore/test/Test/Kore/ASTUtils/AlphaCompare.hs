@@ -19,6 +19,8 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.AlphaCompare
 import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Step.Pattern
 
 import Test.Kore
 
@@ -38,8 +40,8 @@ alphaComparePositives :: TestTree
 alphaComparePositives =
     QC.testProperty
     "alphaCompare x x == True" $
-    forAll (purePatternGen Object) $
-    (\(x :: CommonPurePattern Object) -> alphaEq x x)
+    forAll (stepPatternGen Object) $
+    (\(x :: CommonStepPattern Object) -> alphaEq x x)
 
 alphaCompareNegatives :: TestTree
 alphaCompareNegatives =
@@ -48,10 +50,7 @@ alphaCompareNegatives =
     forAll pairs $
     (\(x, y) -> (x /= y) ==> not (alphaEq x y))
       where
-       pairs = do
-            a <- purePatternGen Object
-            b <- purePatternGen Object
-            return (a, b)
+       pairs = (,) <$> stepPatternGen Object <*> stepPatternGen Object
 
 alphaEq1 :: TestTree
 alphaEq1 =
@@ -64,8 +63,10 @@ alphaEqList =
     QC.testProperty
     "forall a. [a, x] = forall b. [b, x]" $
     alphaEq
-        (Forall_ s v1 (DV_ s $ BuiltinDomainList $ Seq.fromList [Var_ v1, Var_ v3]))
-        (Forall_ s v2 (DV_ s $ BuiltinDomainList $ Seq.fromList [Var_ v2, Var_ v3]))
+        (Forall_ s v1
+            (DV_ s $ Domain.BuiltinList $ Seq.fromList [Var_ v1, Var_ v3]))
+        (Forall_ s v2
+            (DV_ s $ Domain.BuiltinList $ Seq.fromList [Var_ v2, Var_ v3]))
 
 
 alphaEqMap :: TestTree
@@ -73,8 +74,10 @@ alphaEqMap =
     QC.testProperty
     "(forall a. x |-> a) = (forall b. x |-> b)" $
     alphaEq
-        (Forall_ s v1 (DV_ s $ BuiltinDomainMap $ Map.fromList [(Top_ s, Var_ v1)]))
-        (Forall_ s v2 (DV_ s $ BuiltinDomainMap $ Map.fromList [(Top_ s, Var_ v2)]))
+        (Forall_ s v1
+            (DV_ s $ Domain.BuiltinMap $ Map.fromList [(Top_ s, Var_ v1)]))
+        (Forall_ s v2
+            (DV_ s $ Domain.BuiltinMap $ Map.fromList [(Top_ s, Var_ v2)]))
 
 s :: Sort Object
 s = mkSort "S"

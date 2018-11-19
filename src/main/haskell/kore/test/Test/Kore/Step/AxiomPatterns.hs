@@ -28,6 +28,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (..), verifyAndIndexDefinition )
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
@@ -36,6 +37,7 @@ import           Kore.Parser.ParserUtils
 import           Kore.Predicate.Predicate
                  ( wrapPredicate )
 import           Kore.Step.AxiomPatterns
+import           Kore.Step.Pattern
 
 import Test.Kore
        ( sortVariableSort, testId )
@@ -70,7 +72,7 @@ axiomPatternsUnitTests =
                                 (rewrites_ varI1 varI2)
                             )
                         )
-                    :: PureSentenceAxiom Object)
+                    :: PureSentenceAxiom Object Domain.Builtin)
                 )
             )
         , testCase "definition containing I1:AInt => I2:AInt"
@@ -100,7 +102,7 @@ axiomPatternsUnitTests =
                                                         (rewrites_ varI1 varI2)
                                                     )
                                                 )
-                                            :: PureSentenceAxiom Object)
+                                            :: PureSentenceAxiom Object Domain.Builtin)
                                         , asSentence $ axiomSentencePureToKore
                                             (axiom_
                                                 (and_ top_
@@ -116,7 +118,7 @@ axiomPatternsUnitTests =
                                                         )
                                                     )
                                                 )
-                                            :: PureSentenceAxiom Object)
+                                            :: PureSentenceAxiom Object Domain.Builtin)
                                         , asSentence
                                             (SentenceSort
                                                 { sentenceSortName =
@@ -181,7 +183,7 @@ axiomPatternsUnitTests =
                                 )
                             )
                         )
-                    :: PureSentenceAxiom Object)
+                    :: PureSentenceAxiom Object Domain.Builtin)
                 )
             )
         ]
@@ -289,7 +291,7 @@ sortParam name = sortParameter Proxy name AstLocationTest
 sortParamSort :: Text -> Sort Object
 sortParamSort = SortVariableSort . sortParam
 
-symbolTCell, symbolKCell :: PureSentenceSymbol Object
+symbolTCell, symbolKCell :: PureSentenceSymbol Object Domain.Builtin
 symbolTCell =
     symbol_ "T" AstLocationTest
         [sortKCell, sortStateCell] sortTCell
@@ -297,7 +299,7 @@ symbolTCell =
 symbolKCell =
     symbol_ "k" AstLocationTest [sortK] sortKCell
 
-symbolKSeq, symbolInj :: PureSentenceSymbol Object
+symbolKSeq, symbolInj :: PureSentenceSymbol Object Domain.Builtin
 symbolKSeq =
     symbol_ "kseq" AstLocationTest [sortKItem, sortK] sortK
 symbolInj =
@@ -307,17 +309,17 @@ symbolInj =
         (sortParamSort "To")
 -- symbol inj{From,To}(From) : To []
 
-symbolLeqAExp :: PureSentenceSymbol Object
+symbolLeqAExp :: PureSentenceSymbol Object Domain.Builtin
 symbolLeqAExp =
     symbol_ "leqAExp"
         AstLocationTest [sortAExp, sortAExp] sortBExp
 
-symbolLeqAInt :: PureSentenceSymbol Object
+symbolLeqAInt :: PureSentenceSymbol Object Domain.Builtin
 symbolLeqAInt =
     symbol_ "leqAInt"
         AstLocationTest [sortAInt, sortAInt] sortABool
 
-varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object
+varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object Domain.Builtin
 varI1 = parameterizedVariable_ sortAInt "VarI1" AstLocationTest
 varI2 = parameterizedVariable_ sortAInt "VarI2" AstLocationTest
 varKRemainder = parameterizedVariable_ sortK "VarDotVar1" AstLocationTest
@@ -340,8 +342,8 @@ extractIndexedModule name eModules =
             (error ("Module " ++ Text.unpack name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
 
-topAInt :: CommonPurePattern Object
+topAInt :: CommonStepPattern Object
 topAInt = Top_ sortAInt
 
-topTCell :: CommonPurePattern Object
+topTCell :: CommonStepPattern Object
 topTCell = Top_ sortTCell

@@ -12,8 +12,6 @@ import           Data.These
                  ( These (That) )
 
 import           Kore.AST.Common
-                 ( Application (..), AstLocation (..), Id (..), PureMLPattern,
-                 Sort (..), SymbolOrAlias (..), Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
@@ -38,10 +36,11 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Application
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier, SimplificationProof (..),
+                 ( CommonStepPatternSimplifier, SimplificationProof (..),
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -300,12 +299,12 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
     b = give mockSymbolOrAliasSorts $ mkApp bSymbol []
     c = give mockSymbolOrAliasSorts $ mkApp cSymbol []
     d = give mockSymbolOrAliasSorts $ mkApp dSymbol []
-    fOfA :: PureMLPattern Object variable
+    fOfA :: StepPattern Object variable
     fOfA = give mockSymbolOrAliasSorts $ mkApp fSymbol [a]
     fOfB = give mockSymbolOrAliasSorts $ mkApp fSymbol [b]
-    gOfA :: PureMLPattern Object variable
+    gOfA :: StepPattern Object variable
     gOfA = give mockSymbolOrAliasSorts $ mkApp gSymbol [a]
-    gOfB :: PureMLPattern Object variable
+    gOfB :: StepPattern Object variable
     gOfB = give mockSymbolOrAliasSorts $ mkApp gSymbol [b]
     aExpanded = Predicated
         { term = a
@@ -449,7 +448,7 @@ testSort =
 evaluate
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> CommonPureMLPatternSimplifier level
+    -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions

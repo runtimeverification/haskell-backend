@@ -12,25 +12,22 @@ import           Data.Reflection
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
-                 ( AstLocation (..), CommonPurePattern )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureToKore
-                 ( patternKoreToPure )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkBottom, mkCeil, mkEquals, mkExists, mkFloor,
                  mkForall, mkIff, mkImplies, mkIn, mkNot, mkOr, mkTop )
-import           Kore.Building.AsAst
-import           Kore.Building.Patterns
-import           Kore.Building.Sorts
-import           Kore.Error
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
                  ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
+import           Kore.Step.Pattern
 
+import Test.Kore
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
@@ -290,8 +287,8 @@ test_predicate = give mockSymbolOrAliasSorts
                 (freeVariables (makeTruePredicate :: CommonPredicate Meta))
             assertEqual "equals predicate has two variables"
                 (Set.fromList
-                    [ asVariable $ a PatternSort
-                    , asVariable $ b PatternSort
+                    [ a patternMetaSort
+                    , b patternMetaSort
                     ]
                 )
                 (freeVariables pr1)
@@ -299,7 +296,7 @@ test_predicate = give mockSymbolOrAliasSorts
                 Set.empty
                 (freeVariables
                     (makeExistsPredicate
-                        (asVariable $ a PatternSort)
+                        (a patternMetaSort)
                         makeTruePredicate
                     )
                 )
@@ -312,15 +309,12 @@ test_predicate = give mockSymbolOrAliasSorts
             assertEqual "a = b"
                 (makeAndPredicate pr1 makeTruePredicate)
                 (substitutionToPredicate
-                    [    ( asVariable (a PatternSort)
-                         , asPureMetaPattern (b PatternSort)
-                         )
-                    ]
+                    [(a patternMetaSort, Var_ $ b patternMetaSort)]
                 )
         )
     , let
         makeExists :: CommonPredicate Meta -> CommonPredicate Meta
-        makeExists p = makeExistsPredicate (asVariable (a PatternSort)) p
+        makeExists p = makeExistsPredicate (a patternMetaSort) p
       in
         testCase "Exists truth table"
             (do
@@ -333,7 +327,7 @@ test_predicate = give mockSymbolOrAliasSorts
             )
     , let
         makeForall :: CommonPredicate Meta -> CommonPredicate Meta
-        makeForall p = makeForallPredicate (asVariable (a PatternSort)) p
+        makeForall p = makeForallPredicate (a patternMetaSort) p
       in
         testCase "Forall truth table"
             (do
@@ -354,9 +348,8 @@ test_predicate = give mockSymbolOrAliasSorts
                 , ("Iff", mkIff pa1 pa2)
                 , ("Implies", mkImplies pa1 pa2)
                 , ("Not", mkNot pa1)
-                , ("Exists", mkExists (asVariable (a PatternSort)) pa1)
-                , ("Forall", mkForall (asVariable (a PatternSort)) pa1)
-
+                , ("Exists", mkExists (a patternMetaSort) pa1)
+                , ("Forall", mkForall (a patternMetaSort) pa1)
                 , ("Equals", pa1)
                 , ("Ceil", ceilA)
                 , ("Floor", floorA)
@@ -371,7 +364,7 @@ makePredicateYieldsWrapPredicate
         , Eq level
         , Show level
         , MetaOrObject level)
-    => String -> CommonPurePattern level -> IO ()
+    => String -> CommonStepPattern level -> IO ()
 makePredicateYieldsWrapPredicate msg p =
     assertEqual msg
         (Right (wrapPredicate p))
@@ -379,47 +372,44 @@ makePredicateYieldsWrapPredicate msg p =
 
 
 pr1 :: CommonPredicate Meta
-pr1 = makeEquals (a PatternSort) (b PatternSort)
+pr1 =
+    give mockSymbolOrAliasSorts makeEqualsPredicate
+        (Var_ $ a patternMetaSort)
+        (Var_ $ b patternMetaSort)
+
 pr2 :: CommonPredicate Meta
-pr2 = makeEquals (c PatternSort) (d PatternSort)
-pa1 :: CommonPurePattern Meta
-pa1 = give mockSymbolOrAliasSorts $ mkEquals
-    (asPureMetaPattern $ a PatternSort)
-    (asPureMetaPattern $ b PatternSort)
-pa2 :: CommonPurePattern Meta
-pa2 = give mockSymbolOrAliasSorts $ mkEquals
-    (asPureMetaPattern $ c PatternSort)
-    (asPureMetaPattern $ d PatternSort)
+pr2 =
+    give mockSymbolOrAliasSorts makeEqualsPredicate
+        (Var_ $ c patternMetaSort)
+        (Var_ $ d patternMetaSort)
 
-ceilA :: CommonPurePattern Meta
-ceilA = give mockSymbolOrAliasSorts $ mkCeil
-    (asPureMetaPattern $ a PatternSort)
+pa1 :: CommonStepPattern Meta
+pa1 =
+    give mockSymbolOrAliasSorts mkEquals
+        (Var_ $ a patternMetaSort)
+        (Var_ $ b patternMetaSort)
 
-inA :: CommonPurePattern Meta
-inA = give mockSymbolOrAliasSorts $ mkIn
-    (asPureMetaPattern $ a PatternSort)
-    (asPureMetaPattern $ b PatternSort)
+pa2 :: CommonStepPattern Meta
+pa2 =
+    give mockSymbolOrAliasSorts mkEquals
+        (Var_ $ c patternMetaSort)
+        (Var_ $ d patternMetaSort)
 
-floorA :: CommonPurePattern Meta
-floorA = give mockSymbolOrAliasSorts $ mkFloor
-    (asPureMetaPattern $ a PatternSort)
+ceilA :: CommonStepPattern Meta
+ceilA =
+    give mockSymbolOrAliasSorts mkCeil
+        (Var_ $ a patternMetaSort)
 
-asPureMetaPattern
-    :: ProperPattern Meta sort patt => patt -> CommonPurePattern Meta
-asPureMetaPattern patt =
-    case patternKoreToPure Meta (asAst patt) of
-        Left err  -> error (printError err)
-        Right pat -> pat
+inA :: CommonStepPattern Meta
+inA =
+    give mockSymbolOrAliasSorts mkIn
+        (Var_ $ a patternMetaSort)
+        (Var_ $ b patternMetaSort)
 
-makeEquals
-    :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
-    => patt1 -> patt2 -> CommonPredicate Meta
-makeEquals patt1 patt2 =
-    give mockSymbolOrAliasSorts
-        (makeEqualsPredicate
-            (asPureMetaPattern patt1)
-            (asPureMetaPattern patt2)
-        )
+floorA :: CommonStepPattern Meta
+floorA =
+    give mockSymbolOrAliasSorts $ mkFloor
+        (Var_ $ a patternMetaSort)
 
 makeAnd
     :: CommonPredicate Meta
@@ -428,21 +418,15 @@ makeAnd
 makeAnd p1 p2 =
     give mockSymbolOrAliasSorts (makeAndPredicate p1 p2)
 
-a :: MetaSort sort => sort -> MetaVariable sort
-a = metaVariable "#a" AstLocationTest
-
-b :: MetaSort sort => sort -> MetaVariable sort
-b = metaVariable "#b" AstLocationTest
-
-c :: MetaSort sort => sort -> MetaVariable sort
-c = metaVariable "#c" AstLocationTest
-
-d :: MetaSort sort => sort -> MetaVariable sort
-d = metaVariable "#d" AstLocationTest
+a, b, c, d :: Sort level -> Variable level
+a = Variable (testId "#a")
+b = Variable (testId "#b")
+c = Variable (testId "#c")
+d = Variable (testId "#d")
 
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
 mockSymbolOrAliasSorts = const ApplicationSorts
-    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
-    , applicationSortsResult = asAst PatternSort
+    { applicationSortsOperands = [patternMetaSort, patternMetaSort]
+    , applicationSortsResult = patternMetaSort
     }

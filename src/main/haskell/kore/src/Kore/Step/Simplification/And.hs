@@ -14,7 +14,7 @@ module Kore.Step.Simplification.And
     ) where
 
 import           Kore.AST.Common
-                 ( And (..), PureMLPattern, SortedVariable )
+                 ( And (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -26,6 +26,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( crossProductGenericF, filterOr, isFalse, isTrue, make )
+import           Kore.Step.Pattern
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
 import           Kore.Step.Simplification.Data
@@ -242,7 +243,7 @@ makeTermAnd
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 makeTermAnd = AndTerms.termAnd

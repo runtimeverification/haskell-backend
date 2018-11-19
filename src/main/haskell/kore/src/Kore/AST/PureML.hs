@@ -12,21 +12,28 @@ Portability : portable
 -}
 module Kore.AST.PureML where
 
+import           Data.Functor.Const
+                 ( Const )
 import           Data.Functor.Foldable
 import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.Text
                  ( Text )
+import           Data.Void
+                 ( Void )
 
 import Kore.AST.Common
+import Kore.AST.MetaOrObject
 
 asPurePattern
-    :: Pattern level var (PureMLPattern level var)
-    -> PureMLPattern level var
+    :: Functor dom
+    => Pattern level dom var (PureMLPattern level dom var)
+    -> PureMLPattern level dom var
 asPurePattern = embed
 
 fromPurePattern
-    :: PureMLPattern level var
-    -> Pattern level var (PureMLPattern level var)
+    :: Functor dom
+    => PureMLPattern level dom var
+    -> Pattern level dom var (PureMLPattern level dom var)
 fromPurePattern = project
 
 {- | Construct a 'ConcretePurePattern' from a 'PureMLPattern'.
@@ -37,11 +44,16 @@ fromPurePattern = project
 
  -}
 asConcretePurePattern
-    :: PureMLPattern level var
-    -> Maybe (ConcretePurePattern level)
+    ::  forall level dom var.
+        Traversable dom
+    => PureMLPattern level dom var
+    -> Maybe (ConcretePurePattern level dom)
 asConcretePurePattern =
     Functor.Foldable.fold asConcretePurePattern0
   where
+    asConcretePurePattern0
+        :: Pattern level dom var (Maybe (ConcretePurePattern level dom))
+        -> Maybe (ConcretePurePattern level dom)
     asConcretePurePattern0 pat =
         fmap Functor.Foldable.embed
             (case pat of
@@ -49,8 +61,7 @@ asConcretePurePattern =
                 ApplicationPattern appP -> ApplicationPattern <$> sequence appP
                 BottomPattern botP -> BottomPattern <$> sequence botP
                 CeilPattern ceilP -> CeilPattern <$> sequence ceilP
-                DomainValuePattern dvP ->
-                    DomainValuePattern <$> traverse sequence dvP
+                DomainValuePattern dvP -> DomainValuePattern <$> sequence dvP
                 EqualsPattern eqP -> EqualsPattern <$> sequence eqP
                 ExistsPattern _ -> Nothing
                 FloorPattern flrP -> FloorPattern <$> sequence flrP
@@ -74,13 +85,17 @@ asConcretePurePattern =
     polymorphic in the variable type.
 
  -}
-fromConcretePurePattern :: ConcretePurePattern level -> PureMLPattern level var
+fromConcretePurePattern
+    ::  forall level domain variable.
+        Functor domain
+    => ConcretePurePattern level domain
+    -> PureMLPattern level domain variable
 fromConcretePurePattern =
     Functor.Foldable.fold fromConcretePurePattern0
   where
     fromConcretePurePattern0
-        :: Pattern level Concrete (PureMLPattern level variable)
-        -> PureMLPattern level variable
+        :: Pattern level domain Concrete (PureMLPattern level domain variable)
+        -> PureMLPattern level domain variable
     fromConcretePurePattern0 pat =
         Functor.Foldable.embed
             (case pat of
@@ -139,7 +154,7 @@ groundSymbol ctor = Symbol
 
 -- |Given a head and a list of children, produces an 'ApplicationPattern'
 --  applying the given head to the children
-apply :: SymbolOrAlias level -> [child] -> Pattern level variable child
+apply :: SymbolOrAlias level -> [child] -> Pattern level domain variable child
 apply patternHead patterns = ApplicationPattern Application
     { applicationSymbolOrAlias = patternHead
     , applicationChildren = patterns
@@ -148,26 +163,28 @@ apply patternHead patterns = ApplicationPattern Application
 -- |Applies the given head to the empty list of children to obtain a
 -- constant 'ApplicationPattern'
 constant
-    :: SymbolOrAlias level -> Pattern level variable child
+    :: SymbolOrAlias level -> Pattern level domain variable child
 constant patternHead = apply patternHead []
 
-type UnFixedPureMLPattern level variable =
-    Pattern level variable (PureMLPattern level variable)
-type UnfixedCommonPurePattern level = UnFixedPureMLPattern level Variable
+type UnFixedPureMLPattern level domain variable =
+    Pattern level domain variable (PureMLPattern level domain variable)
+type UnfixedCommonPurePattern level domain =
+    UnFixedPureMLPattern level domain Variable
 
-type PurePatternStub level variable =
-    PatternStub level variable (PureMLPattern level variable)
+type PurePatternStub level domain variable =
+    PatternStub level domain variable (PureMLPattern level domain variable)
 
-type CommonPurePatternStub level =
-    PurePatternStub level Variable
+type CommonPurePatternStub level domain =
+    PurePatternStub level domain Variable
 
 {-| 'mapPatternVariables' replaces all variables in a 'PureMLPattern'
 using the provided mapping.
 -}
 mapPatternVariables
-    :: (variableFrom level -> variableTo level)
-    -> PureMLPattern level variableFrom
-    -> PureMLPattern level variableTo
+    :: Functor domain
+    => (variableFrom level -> variableTo level)
+    -> PureMLPattern level domain variableFrom
+    -> PureMLPattern level domain variableTo
 mapPatternVariables mapper = cata (Fix . mapPatternVariable mapper)
 
 {-| 'mapPatternVariables' replaces the variables occurring directly
@@ -175,8 +192,8 @@ mapPatternVariables mapper = cata (Fix . mapPatternVariable mapper)
 -}
 mapPatternVariable
     :: (variableFrom level -> variableTo level)
-    -> Pattern level variableFrom child
-    -> Pattern level variableTo child
+    -> Pattern level domain variableFrom child
+    -> Pattern level domain variableTo child
 mapPatternVariable _ (AndPattern (And a b c)) =
     AndPattern (And a b c)
 mapPatternVariable _ (ApplicationPattern (Application a b)) =
@@ -220,3 +237,104 @@ mapPatternVariable _ (TopPattern (Top a)) =
     TopPattern (Top a)
 mapPatternVariable wrapper (VariablePattern variable) =
     VariablePattern (wrapper variable)
+
+{- | Cast a pure pattern with @'Const' 'Void'@ domain values into any domain.
+
+The @Const Void@ domain excludes domain values; the pattern head be cast
+trivially because it must contain no domain values.
+
+ -}
+castVoidDomainValues
+    :: PureMLPattern level (Const Void) variable
+    -> PureMLPattern level domain variable
+castVoidDomainValues = mapPatternDomainValues (\case {})
+
+{- | Cast a pattern head with @'Const' 'Void'@ domain values into any domain.
+
+The @Const Void@ domain excludes domain values; the pattern head can be cast
+trivially because it must contain no domain values.
+
+ -}
+castVoidDomainValue
+    :: Pattern level (Const Void) variable child
+    -> Pattern level domain variable child
+castVoidDomainValue = mapPatternDomainValue (\case {})
+
+mapPatternDomainValues
+    :: Functor domain
+    => (forall child'. domain child' -> domain' child')
+    -> PureMLPattern level domain variable
+    -> PureMLPattern level domain' variable
+mapPatternDomainValues mapping = cata (Fix . mapPatternDomainValue mapping)
+
+mapPatternDomainValue
+    :: (forall child'. domain child' -> domain' child')
+    -> Pattern level domain variable child
+    -> Pattern level domain' variable child
+mapPatternDomainValue mapping =
+    \case
+        DomainValuePattern dvP ->
+            DomainValuePattern dvP
+                { domainValueChild = mapping domainValueChild }
+          where
+            DomainValue { domainValueChild } = dvP
+        AndPattern andP -> AndPattern andP
+        ApplicationPattern appP -> ApplicationPattern appP
+        BottomPattern botP -> BottomPattern botP
+        CeilPattern ceilP -> CeilPattern ceilP
+        EqualsPattern eqP -> EqualsPattern eqP
+        ExistsPattern existsP -> ExistsPattern existsP
+        FloorPattern flrP -> FloorPattern flrP
+        ForallPattern forallP -> ForallPattern forallP
+        IffPattern iffP -> IffPattern iffP
+        ImpliesPattern impP -> ImpliesPattern impP
+        InPattern inP -> InPattern inP
+        NextPattern nextP -> NextPattern nextP
+        NotPattern notP -> NotPattern notP
+        OrPattern orP -> OrPattern orP
+        RewritesPattern rewP -> RewritesPattern rewP
+        StringLiteralPattern strP -> StringLiteralPattern strP
+        CharLiteralPattern charP -> CharLiteralPattern charP
+        TopPattern topP -> TopPattern topP
+        VariablePattern varP -> VariablePattern varP
+
+{- | Cast a 'Meta'-pure-pattern into any domain.
+
+The pattern can be cast trivially because it meta-patterns contain no
+domain values.
+
+ -}
+castMetaDomainValues
+    :: (Functor domain, Functor domain')
+    => PureMLPattern Meta domain variable
+    -> PureMLPattern Meta domain' variable
+castMetaDomainValues = cata (Functor.Foldable.embed . castMetaDomainValue)
+
+{- | Cast a 'Meta'-pattern head into any domain.
+
+The pattern head can be cast trivially because it meta-patterns contain no
+domain values.
+
+ -}
+castMetaDomainValue
+    :: Pattern Meta domain variable child
+    -> Pattern Meta domain' variable child
+castMetaDomainValue =
+    \case
+        AndPattern andP -> AndPattern andP
+        ApplicationPattern appP -> ApplicationPattern appP
+        BottomPattern botP -> BottomPattern botP
+        CeilPattern ceilP -> CeilPattern ceilP
+        EqualsPattern eqP -> EqualsPattern eqP
+        ExistsPattern existsP -> ExistsPattern existsP
+        FloorPattern flrP -> FloorPattern flrP
+        ForallPattern forallP -> ForallPattern forallP
+        IffPattern iffP -> IffPattern iffP
+        ImpliesPattern impP -> ImpliesPattern impP
+        InPattern inP -> InPattern inP
+        NotPattern notP -> NotPattern notP
+        OrPattern orP -> OrPattern orP
+        StringLiteralPattern strP -> StringLiteralPattern strP
+        CharLiteralPattern charP -> CharLiteralPattern charP
+        TopPattern topP -> TopPattern topP
+        VariablePattern varP -> VariablePattern varP

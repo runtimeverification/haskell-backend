@@ -32,22 +32,23 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import Kore.AST.Common
-       ( Id, Sort (..), SortActual (..), SymbolOrAlias (..), Variable,
-       getIdForError )
-import Kore.AST.Error
-       ( koreFailWithLocations )
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-       ( IsMetaOrObject (..), MetaOrObject, Object, isMetaOrObject )
-import Kore.AST.Sentence
-import Kore.ASTHelpers
-       ( ApplicationSorts (..), symbolOrAliasSorts )
-import Kore.Error
-       ( Error, koreFail, printError )
-import Kore.IndexedModule.IndexedModule
-       ( IndexedModule (..), KoreIndexedModule, SortDescription,
-       getIndexedSentence, indexedModulesInScope )
+import           Kore.AST.Common
+                 ( Id, Sort (..), SortActual (..), SymbolOrAlias (..),
+                 Variable, getIdForError )
+import           Kore.AST.Error
+                 ( koreFailWithLocations )
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+                 ( IsMetaOrObject (..), MetaOrObject, Object, isMetaOrObject )
+import           Kore.AST.Sentence
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..), symbolOrAliasSorts )
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Error
+                 ( Error, koreFail, printError )
+import           Kore.IndexedModule.IndexedModule
+                 ( IndexedModule (..), KoreIndexedModule, SortDescription,
+                 getIndexedSentence, indexedModulesInScope )
 
 symbolSentencesMap
     :: MetaOrObject level
@@ -55,7 +56,7 @@ symbolSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceSymbol level UnifiedPattern Variable)
+        (atts, SentenceSymbol level UnifiedPattern Domain.Builtin Variable)
 symbolSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSymbolSentences m
@@ -67,7 +68,7 @@ aliasSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceAlias level UnifiedPattern Variable)
+        (atts, SentenceAlias level UnifiedPattern Domain.Builtin Variable)
 aliasSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaAliasSentences m
@@ -79,7 +80,7 @@ sortSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SortDescription level)
+        (atts, SortDescription level Domain.Builtin)
 sortSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSortDescriptions m
@@ -172,12 +173,12 @@ getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
 imported modules.
 -}
 resolveThing
-    :: (IndexedModule sortParam pat variable atts
-        -> Map.Map (Id level) (atts, thing level pat variable))
+    :: (IndexedModule sortParam pat dom var atts
+        -> Map.Map (Id level) (atts, thing level pat dom var))
     -- ^ extracts the map into which to look up the id
-    -> IndexedModule sortParam pat variable atts
+    -> IndexedModule sortParam pat dom var atts
     -> Id level
-    -> Maybe (atts, thing level pat variable)
+    -> Maybe (atts, thing level pat dom var)
 resolveThing
     mapExtractor
     indexedModule
@@ -189,12 +190,12 @@ resolveThing
         )
 
 resolveThingInternal
-    :: (Maybe (atts, thing level pat variable), Set.Set ModuleName)
-    -> (IndexedModule sortParam pat variable atts
-        -> Map.Map (Id level) (atts, thing level pat variable))
-    -> IndexedModule sortParam pat variable atts
+    :: (Maybe (atts, thing level pat dom var), Set.Set ModuleName)
+    -> (IndexedModule sortParam pat dom var atts
+        -> Map.Map (Id level) (atts, thing level pat dom var))
+    -> IndexedModule sortParam pat dom var atts
     -> Id level
-    -> (Maybe (atts, thing level pat variable), Set.Set ModuleName)
+    -> (Maybe (atts, thing level pat dom var), Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
 resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
     | indexedModuleName indexedModule `Set.member` searchedModules = x
@@ -261,7 +262,7 @@ resolveSort
     :: MetaOrObject level
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error e) (atts, SortDescription level)
+    -> Either (Error e) (atts, SortDescription level Domain.Builtin)
 resolveSort m sortId =
     case resolveThing (sortSentencesMap (Proxy :: Proxy level)) m sortId of
         Nothing ->
@@ -335,6 +336,6 @@ findIndexedSort
     -- ^ indexed module
     -> Id level
     -- ^ sort identifier
-    -> Either (Error e) (SortDescription level)
+    -> Either (Error e) (SortDescription level Domain.Builtin)
 findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)

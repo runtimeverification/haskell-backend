@@ -22,7 +22,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Function.Data
                  ( BuiltinAndAxiomsFunctionEvaluator )
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier (..) )
+                 ( StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
 import           Kore.Step.StepperAttributes
@@ -46,10 +46,10 @@ create
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
 create
     tools
     symbolIdToEvaluator
   =
-    PureMLPatternSimplifier
+    StepPatternSimplifier
         (Pattern.simplifyToOr tools symbolIdToEvaluator)

@@ -15,18 +15,19 @@ import Data.Proxy
 import Data.Text
        ( Text )
 
-import Kore.AST.Builders
-import Kore.AST.BuildersImpl
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.Sentence
-import Kore.ASTPrettyPrint
-import Kore.Implicit.ImplicitSorts
-import Kore.MetaML.AST
-import Kore.MetaML.Lift
-import Kore.MetaML.Unlift
+import           Kore.AST.Builders
+import           Kore.AST.BuildersImpl
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+import           Kore.ASTPrettyPrint
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Implicit.ImplicitSorts
+import           Kore.MetaML.AST
+import           Kore.MetaML.Lift
+import           Kore.MetaML.Unlift
 
 import Test.Kore
 import Test.Tasty.HUnit.Extensions
@@ -149,7 +150,7 @@ test_lift =
                 }
             )
         )
-    , testLiftUnlift "Forall"
+    , testLiftUnlift @CommonKorePattern "Forall"
         (Fix
             (apply (metaMLPatternHead ForallPatternType AstLocationTest)
                 [ variablePattern "#a" sortMetaSort
@@ -195,7 +196,7 @@ test_lift =
                 }
             )
         )
-    , testLiftUnlift "Exists"
+    , testLiftUnlift @CommonKorePattern "Exists"
         (Fix
             (apply (metaMLPatternHead ExistsPatternType AstLocationTest)
                 [ variablePattern "#a" sortMetaSort
@@ -241,7 +242,7 @@ test_lift =
                 }
             )
         )
-    , testLiftUnlift "Variable Pattern"
+    , testLiftUnlift @CommonKorePattern "Variable Pattern"
         (Fix
             (apply variableAsPatternHead
                 [ Fix
@@ -449,7 +450,9 @@ test_lift =
             (DomainValuePattern DomainValue
                 { domainValueSort =
                     SortVariableSort (SortVariable (testId "Int"))
-                , domainValueChild = BuiltinDomainPattern metaStringPattern
+                , domainValueChild =
+                    Domain.BuiltinPattern
+                        (castMetaDomainValues metaStringPattern)
                 }
             )
         :: CommonKorePattern)
@@ -1028,7 +1031,7 @@ prettyAssertEqual
     -> IO ()
 prettyAssertEqual = assertEqualWithPrinter prettyPrintToString
 
-stringPattern :: Pattern Meta Variable child
+stringPattern :: Pattern Meta dom Variable child
 stringPattern = StringLiteralPattern (StringLiteral "a")
 
 unifiedStringPattern :: CommonKorePattern
@@ -1037,7 +1040,7 @@ unifiedStringPattern = asKorePattern stringPattern
 metaStringPattern :: CommonMetaPattern
 metaStringPattern = Fix stringPattern
 
-sentenceImport :: SentenceImport pat variable
+sentenceImport :: SentenceImport pat dom var
 sentenceImport =
     SentenceImport
         { sentenceImportModuleName = ModuleName "MODULE"

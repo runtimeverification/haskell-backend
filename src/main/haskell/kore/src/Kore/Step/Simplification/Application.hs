@@ -12,8 +12,7 @@ module Kore.Step.Simplification.Application
     ) where
 
 import           Kore.AST.Common
-                 ( Application (..), PureMLPattern, SortedVariable,
-                 SymbolOrAlias )
+                 ( Application (..), SortedVariable, SymbolOrAlias )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -33,10 +32,10 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -46,14 +45,14 @@ import           Kore.Substitution.Class
 import           Kore.Variables.Fresh
 
 -- data ExpandedApplication level variable = ExpandedApplication
---     { term         :: !(Application level (PureMLPattern level variable))
+--     { term         :: !(Application level (StepPattern level variable))
 --     , predicate    :: !(Predicate level variable)
 --     , substitution :: !(UnificationSubstitution level variable)
 --     }
 --     deriving (Eq, Show)
 
 type ExpandedApplication level variable =
-    Predicated level variable (Application level (PureMLPattern level variable))
+    Predicated level variable (Application level (StepPattern level variable))
 
 {-|'simplify' simplifies an 'Application' of 'OrOfExpandedPattern'.
 
@@ -79,7 +78,7 @@ simplify
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
@@ -128,7 +127,7 @@ makeAndEvaluateApplications
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
@@ -169,7 +168,7 @@ makeAndEvaluateSymbolApplications
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
@@ -207,7 +206,7 @@ evaluateApplicationFunction
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions

@@ -35,6 +35,7 @@ import Data.Text
 import Kore.AST.Builders
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
+import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.Implicit.ImplicitSorts
 import Kore.Implicit.ImplicitVarsInternal
@@ -76,7 +77,7 @@ implicitSymbol
     :: Text
     -> [Sort level]
     -> Sort level
-    -> PureSentenceSymbol level
+    -> PureSentenceSymbol level domain
 implicitSymbol name = symbol_ name AstLocationImplicit
 
 implicitParameterizedSymbol
@@ -84,7 +85,7 @@ implicitParameterizedSymbol
     -> [SortVariable level]
     -> [Sort level]
     -> Sort level
-    -> PureSentenceSymbol level
+    -> PureSentenceSymbol level domain
 implicitParameterizedSymbol name = parameterizedSymbol_ name AstLocationImplicit
 
 epsilon = implicitSymbol "#epsilon" [] stringMetaSort
@@ -92,6 +93,13 @@ epsilonA = applyS epsilon []
 epsilonAxiom = equalsAxiom epsilonA nilCharListA
 
 sort = implicitSymbol "#sort" [stringMetaSort, sortListMetaSort] sortMetaSort
+
+sortA
+    ::  ( Show (Pattern Meta domain Variable child)
+        , child ~ CommonPurePattern Meta domain
+        )
+    => [CommonPurePatternStub Meta domain]
+    -> CommonPurePatternStub Meta domain
 sortA = applyS sort
 
 symbol =
