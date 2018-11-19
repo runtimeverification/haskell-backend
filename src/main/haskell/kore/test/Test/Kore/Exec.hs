@@ -6,6 +6,7 @@ module Test.Kore.Exec
 import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
+       ( testCase )
 
 import           Control.Applicative
                  ( liftA2 )
@@ -28,6 +29,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
 import qualified Kore.Builtin as Builtin
+import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.Predicate.Predicate
@@ -43,13 +45,15 @@ import           Kore.Step.Step
                  ( allAxioms, anyAxiom )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
+import qualified SMT
 
-import Kore.Exec
+import Test.Kore.Comparators ()
+import Test.Tasty.HUnit.Extensions
 
 test_exec :: TestTree
-test_exec = testCase "exec" $ actual @=? expected
+test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
   where
-    actual = evalSimplifier $ exec
+    actual = SMT.runSMT SMT.defaultConfig $ evalSimplifier $ exec
         indexedModule
         inputPattern
         Unlimited
@@ -82,10 +86,10 @@ test_search =
         [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
   where
     makeTestCase searchType =
-        testCase
-            (show searchType)
-            (actual searchType @=? expected searchType)
-    actual searchType =
+        testCase (show searchType) (assertion searchType)
+    assertion searchType = actual searchType
+        >>= assertEqualWithExplanation "" (expected searchType)
+    actual searchType = do
         let
             simplifier = search
                 indexedModule
@@ -94,8 +98,9 @@ test_search =
                 allAxioms
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
-            Just results = extractSearchResults $ evalSimplifier simplifier
-        in  results
+        finalPattern <- SMT.runSMT SMT.defaultConfig $ evalSimplifier simplifier
+        let Just results = extractSearchResults finalPattern
+        return results
     indexedModule = indexedMyModule $ Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =

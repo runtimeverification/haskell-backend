@@ -349,12 +349,12 @@ mainWithOptions
         searchParameters <-
             case koreSearchOptions of
                 Nothing -> return Nothing
-                Just KoreSearchOptions { searchFileName , bound, searchType } ->
+                Just KoreSearchOptions { searchFileName, bound, searchType } ->
                     do
                         searchPattern <-
                             mainParseSearchPattern indexedModule searchFileName
                         let searchConfig = Search.Config { bound, searchType }
-                        (return . Just) (searchPattern , searchConfig)
+                        (return . Just) (searchPattern, searchConfig)
         finalPattern <-
             clockSomethingIO "Executing"
             $ SMT.runSMT smtConfig
