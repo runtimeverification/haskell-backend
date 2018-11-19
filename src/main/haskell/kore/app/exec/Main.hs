@@ -10,7 +10,8 @@ import           Data.Functor.Foldable
                  ( Fix (..), cata )
 import           Data.List
                  ( intercalate )
-import qualified Data.Map as Map
+import qualified Data.Map.Merge.Strict as Map
+import qualified Data.Map.Strict as Map
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
@@ -23,6 +24,8 @@ import           Data.Text
 import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc.Render.Text
                  ( hPutDoc, putDoc )
+import           Data.These
+                 ( These (..) )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
                  long, metavar, option, progDesc, readerError, str, strOption,
@@ -680,11 +683,14 @@ makeAxiomsAndSimplifiers indexedModule tools =
             functionEvaluators =
                 axiomPatternsToEvaluators functionAxioms
             functionRegistry =
-                Map.unionWith (++)
-                    -- user-defined functions
-                    functionEvaluators
+                Map.merge
+                    (Map.mapMissing (const This))
+                    (Map.mapMissing (const That))
+                    (Map.zipWithMatched (const These))
                     -- builtin functions
                     (Builtin.koreEvaluators indexedModule)
+                    -- user-defined functions
+                    functionEvaluators
             simplifier
                 ::  ( SortedVariable variable
                     , Ord (variable Meta)

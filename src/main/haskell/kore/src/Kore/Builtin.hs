@@ -107,7 +107,7 @@ koreVerifiers =
 koreEvaluators
     :: KoreIndexedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map (Kore.Id Object) [Builtin.Function]
+    -> Map (Kore.Id Object) Builtin.Function
 koreEvaluators = evaluators builtins
   where
     builtins :: Map Text Builtin.Function
@@ -135,7 +135,7 @@ evaluators
     -- ^ Builtin functions indexed by name
     -> KoreIndexedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map (Kore.Id Object) [Builtin.Function]
+    -> Map (Kore.Id Object) Builtin.Function
 evaluators builtins indexedModule =
     Map.mapMaybe lookupBuiltins (hookedSymbolAttributes indexedModule)
   where
@@ -154,12 +154,12 @@ evaluators builtins indexedModule =
         -> Map (Kore.Id Object) StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
-    lookupBuiltins :: StepperAttributes -> Maybe [Builtin.Function]
+    lookupBuiltins :: StepperAttributes -> Maybe Builtin.Function
     lookupBuiltins StepperAttributes { hook = Hook { getHook } } =
         do
             name <- getHook
             impl <- Map.lookup name builtins
-            pure [impl]
+            pure impl
 
 {- | Represent a 'Builtin' domain value as an object-level pattern.
 

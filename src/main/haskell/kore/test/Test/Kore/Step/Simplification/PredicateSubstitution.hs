@@ -12,10 +12,11 @@ import           Data.Functor.Foldable
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
+import           Data.These
+                 ( These (That) )
 
 import           Kore.AST.Common
-                 ( Application, Id (..), Pattern (..), PureMLPattern,
-                 SortedVariable )
+                 ( Application, Pattern (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkVar )
@@ -27,7 +28,6 @@ import           Kore.Step.ExpandedPattern
                  ( CommonPredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..), AttemptedFunction (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
@@ -134,8 +134,9 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        ,   [ makeEvaluator
-                                [ (Mock.f Mock.functional00, Mock.functional00)
+                        , That
+                            [ makeEvaluator
+                                    [ (Mock.f Mock.functional00, Mock.functional00)
                                 , (Mock.f Mock.functional01, Mock.a)
                                 ]
                             ]
@@ -169,7 +170,8 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        ,   [ makeEvaluator
+                        , That
+                            [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 ]
                             ]
@@ -205,7 +207,8 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        ,   [ makeEvaluator
+                        , That
+                            [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 ]
                             ]
@@ -247,7 +250,8 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        ,   [ makeEvaluator
+                        , That
+                            [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 , (Mock.f Mock.a, Mock.g Mock.b)
                                 ]
@@ -287,9 +291,7 @@ mockMetadataTools =
         Mock.subsorts
 
 runSimplifier
-    :: Map.Map
-        (Id Object)
-        [ApplicationFunctionEvaluator Object]
+    :: BuiltinAndAxiomsFunctionEvaluatorMap Object
     -> CommonPredicateSubstitution Object
     -> IO (CommonPredicateSubstitution Object)
 runSimplifier patternSimplifierMap predicateSubstitution =

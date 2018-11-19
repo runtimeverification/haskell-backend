@@ -11,10 +11,8 @@ module Kore.Step.Simplification.Application
     ( simplify
     ) where
 
-import qualified Data.Map as Map
-
 import           Kore.AST.Common
-                 ( Application (..), Id, PureMLPattern, SortedVariable,
+                 ( Application (..), PureMLPattern, SortedVariable,
                  SymbolOrAlias )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
@@ -28,7 +26,7 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..) )
+                 ( BuiltinAndAxiomsFunctionEvaluatorMap )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
 import           Kore.Step.OrOfExpandedPattern
@@ -83,7 +81,7 @@ simplify
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> Application level (OrOfExpandedPattern level variable)
     -> Simplifier
@@ -132,7 +130,7 @@ makeAndEvaluateApplications
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
@@ -173,7 +171,7 @@ makeAndEvaluateSymbolApplications
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
@@ -211,7 +209,7 @@ evaluateApplicationFunction
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated

@@ -20,7 +20,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator )
+                 ( BuiltinAndAxiomsFunctionEvaluator )
 import           Kore.Step.Simplification.Data
                  ( PureMLPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -44,7 +44,7 @@ create
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPatternSimplifier level variable
 create

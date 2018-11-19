@@ -18,6 +18,8 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
+import           Data.These
+                 ( These (This) )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -43,6 +45,7 @@ import           Kore.Step.Error
                  ( StepError )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
+import           Kore.Step.Function.Data
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -170,8 +173,8 @@ MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts} = testMetadataTools
 testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
-evaluators :: Map (Id Object) [Builtin.Function]
-evaluators = Builtin.koreEvaluators indexedModule
+evaluators :: BuiltinAndAxiomsFunctionEvaluatorMap Object
+evaluators = Map.map This $ Builtin.koreEvaluators indexedModule
 
 evaluate
     :: MonadSMT m

@@ -18,10 +18,12 @@ import           Data.List
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
+import           Data.These
+                 ( these )
 
 import           Kore.AST.Common
-                 ( Application (..), Id (..), Pattern (..), PureMLPattern,
-                 Sort, SortedVariable, SymbolOrAlias (..) )
+                 ( Application (..), Pattern (..), PureMLPattern, Sort,
+                 SortedVariable, SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( asPurePattern )
@@ -34,7 +36,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..) )
+                 ( ApplicationFunctionEvaluator (..),
+                 BuiltinAndAxiomsFunctionEvaluatorMap )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
@@ -73,7 +76,7 @@ evaluateApplication
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
@@ -97,39 +100,19 @@ evaluateApplication
             evaluateSortInjection tools unchangedOr app
           | otherwise ->
             return unchanged
-        Just evaluators -> do
-            results <- mapM (applyEvaluator app) evaluators
-            mergedResults <-
-                mapM
-                    (mergeWithConditionAndSubstitution
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        childrenPredicateSubstitution
-                    )
-                    results
-            let
-                -- Separate into NotApplied and Applied results.
-                (notApplied, applied) =
-                    partition
-                        notApplicable
-                        -- TODO(virgil): nub is O(n^2), should do better than
-                        -- that.
-                        (nub (filter notBottom mergedResults))
-                -- All NotApplied results are equivalent, so we just check if
-                -- we have at least one.
-                notAppliedTerm = case notApplied of
-                    [] -> OrOfExpandedPattern.make []
-                    _ -> OrOfExpandedPattern.make [unchangedPatt]
-                    -- TODO(virgil): attach a predicate identifying the
-                    -- rule which didn't apply; returning the pattern unchanged
-                    -- is not really correct as we doesn't explain how we got
-                    -- here.
-                appliedTerms = map unwrapApplied applied
-            return
-                ( foldr OrOfExpandedPattern.merge notAppliedTerm appliedTerms
-                , SimplificationProof
+        Just builtinOrAxiomEvaluators ->
+            these
+                (evaluateWithFunctionAxioms . pure)
+                evaluateWithFunctionAxioms
+                (\builtinEvaluator axiomEvaluators ->
+                    do
+                    (result, proof) <- applyEvaluator app builtinEvaluator
+                    case result of
+                        AttemptedFunction.NotApplicable ->
+                            evaluateWithFunctionAxioms axiomEvaluators
+                        AttemptedFunction.Applied pat -> return (pat, proof)
                 )
+                builtinOrAxiomEvaluators
   where
     notApplicable :: (AttemptedFunction level variable, x) -> Bool
     notApplicable (AttemptedFunction.NotApplicable, _) = True
@@ -151,18 +134,52 @@ evaluateApplication
                     }
     unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
+
     applyEvaluator app' (ApplicationFunctionEvaluator evaluator) =
         evaluator
             tools
             substitutionSimplifier
             simplifier
             app'
+        >>=
+        mergeWithConditionAndSubstitution
+           tools
+           substitutionSimplifier
+           simplifier
+           childrenPredicateSubstitution
+
     notBottom =
         \case
             (AttemptedFunction.NotApplicable, _) ->
                 True
             (AttemptedFunction.Applied thing, _) ->
                 not (OrOfExpandedPattern.isFalse thing)
+
+    evaluateWithFunctionAxioms evaluators = do
+        results <- mapM (applyEvaluator app) evaluators
+        let
+            -- Separate into NotApplied and Applied results.
+            (notApplied, applied) =
+                partition
+                    notApplicable
+                    -- TODO(virgil): nub is O(n^2), should do better than
+                    -- that.
+                    (nub (filter notBottom results))
+            -- All NotApplied results are equivalent, so we just check if
+            -- we have at least one.
+            notAppliedTerm = case notApplied of
+                [] -> OrOfExpandedPattern.make []
+                _ -> OrOfExpandedPattern.make [unchangedPatt]
+                -- TODO(virgil): attach a predicate identifying the
+                -- rule which didn't apply; returning the pattern unchanged
+                -- is not really correct as we doesn't explain how we got
+                -- here.
+            appliedTerms = map unwrapApplied applied
+        return
+            ( foldr OrOfExpandedPattern.merge notAppliedTerm appliedTerms
+            , SimplificationProof
+            )
+
 -- TODO(virgil): Builtins are not expected to recursively simplify until the
 -- result stabilizes. Find out if that is indeed the case, then, if needed,
 -- move the recursive simplification call from UserDefined.hs here.

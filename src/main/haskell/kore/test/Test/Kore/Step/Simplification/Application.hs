@@ -8,6 +8,8 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
+import           Data.These
+                 ( These (That) )
 
 import           Kore.AST.Common
                  ( Application (..), AstLocation (..), Id (..), PureMLPattern,
@@ -30,7 +32,6 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator) )
 import qualified Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.OrOfExpandedPattern
@@ -125,14 +126,16 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                 (mockSimplifier [])
                 (Map.singleton
                     fId
-                    [ ApplicationFunctionEvaluator
-                        (const $ const $ const $ const $ return
-                            ( AttemptedFunction.Applied
-                                (OrOfExpandedPattern.make [gOfAExpanded])
-                            , SimplificationProof
+                    (That
+                        [ ApplicationFunctionEvaluator
+                            (const $ const $ const $ const $ return
+                                ( AttemptedFunction.Applied
+                                    (OrOfExpandedPattern.make [gOfAExpanded])
+                                , SimplificationProof
+                                )
                             )
-                        )
-                    ]
+                        ]
+                    )
                 )
                 (makeApplication
                     fSymbol
@@ -214,27 +217,29 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                     (mockSimplifier [])
                     (Map.singleton
                         sigmaId
-                        [ ApplicationFunctionEvaluator
-                            (const $ const $ const $ const $ do
-                                let zvar = freshVariableFromVariable z 1
-                                return
-                                    ( AttemptedFunction.Applied
-                                        (OrOfExpandedPattern.make
-                                            [ Predicated
-                                                { term = mkApp fSymbol [a]
-                                                , predicate =
-                                                    makeEqualsPredicate
-                                                        fOfA
-                                                        gOfA
-                                                , substitution =
-                                                    [ (zvar, gOfB) ]
-                                                }
-                                            ]
+                        (That
+                            [ ApplicationFunctionEvaluator
+                                (const $ const $ const $ const $ do
+                                    let zvar = freshVariableFromVariable z 1
+                                    return
+                                        ( AttemptedFunction.Applied
+                                            (OrOfExpandedPattern.make
+                                                [ Predicated
+                                                    { term = mkApp fSymbol [a]
+                                                    , predicate =
+                                                        makeEqualsPredicate
+                                                            fOfA
+                                                            gOfA
+                                                    , substitution =
+                                                        [ (zvar, gOfB) ]
+                                                    }
+                                                ]
+                                            )
+                                        , SimplificationProof
                                         )
-                                    , SimplificationProof
-                                    )
-                            )
-                        ]
+                                )
+                            ]
+                        )
                     )
                     (makeApplication
                         sigmaSymbol
@@ -446,7 +451,7 @@ evaluate
     => MetadataTools level StepperAttributes
     -> CommonPureMLPatternSimplifier level
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> Application level (CommonOrOfExpandedPattern level)
     -> IO (CommonOrOfExpandedPattern level)

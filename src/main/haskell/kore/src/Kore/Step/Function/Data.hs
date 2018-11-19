@@ -9,14 +9,20 @@ Portability : portable
 -}
 module Kore.Step.Function.Data
     ( ApplicationFunctionEvaluator (..)
+    , BuiltinAndAxiomsFunctionEvaluatorMap
     , AttemptedFunction (..)
+    , BuiltinAndAxiomsFunctionEvaluator
     , CommonAttemptedFunction
     , notApplicableFunctionEvaluator
     , purePatternFunctionEvaluator
     ) where
 
+import qualified Data.Map.Strict as Map
+import           Data.These
+                 ( These )
+
 import Kore.AST.Common
-       ( Application, PureMLPattern, SortedVariable, Variable )
+       ( Application, Id, PureMLPattern, SortedVariable, Variable )
 import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
@@ -71,6 +77,26 @@ newtype ApplicationFunctionEvaluator level =
             , SimplificationProof level
             )
         )
+
+{-|Datastructure to combine both a builtin evaluator and axiom-based
+function evaluators for the same symbol.
+
+The backend implementation allows symbols to both be hooked to a builtin
+implementation and to be defined through axioms;  however, we don't want to
+use both methods to evaluate the function at the same time.  That is because
+(1) we expect to get the same results; (2) when one of them fails while the
+other succeeds, using both results would introduce a split in the search space.
+-}
+type BuiltinAndAxiomsFunctionEvaluator level =
+    These
+        (ApplicationFunctionEvaluator level)
+        [ApplicationFunctionEvaluator level]
+
+{-|A type to abstract away the mapping from symbol identifiers to
+their corresponding evaluators.
+-}
+type BuiltinAndAxiomsFunctionEvaluatorMap level =
+    Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
 
 {-| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
 cases where the function can't be fully evaluated.

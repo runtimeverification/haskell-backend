@@ -10,9 +10,11 @@ import           Data.Default
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( give )
+import           Data.These
+                 ( These (..) )
 
 import           Kore.AST.Common
-                 ( Application (..), CommonPurePattern, Id (..), PureMLPattern,
+                 ( Application (..), CommonPurePattern, PureMLPattern,
                  SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
@@ -30,7 +32,6 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), mapVariables )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.Function.UserDefined
@@ -73,10 +74,83 @@ test_functionIntegration = give mockSymbolOrAliasSorts
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    [ axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.g (mkVar Mock.x))
-                    ]
+                    (That $
+                        [ axiomEvaluator
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (Mock.g (mkVar Mock.x))
+                        ]
+                    )
+                )
+                (Mock.functionalConstr10 Mock.c)
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Simple evaluation (builtin branch)" $ do
+        let expect =
+                Predicated
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
+                mockMetadataTools
+                (Map.singleton Mock.functionalConstr10Id
+                    (This $
+                        axiomEvaluator
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (Mock.g (mkVar Mock.x))
+                    )
+                )
+                (Mock.functionalConstr10 Mock.c)
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)"
+      $ do
+        let expect =
+                Predicated
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
+                mockMetadataTools
+                (Map.singleton Mock.functionalConstr10Id
+                    (These
+                        (axiomEvaluator
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (Mock.g (mkVar Mock.x))
+                        )
+                        [ axiomEvaluator
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (mkVar Mock.x)
+                        ]
+                    )
+                )
+                (Mock.functionalConstr10 Mock.c)
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)"
+      $ do
+        let expect =
+                Predicated
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
+                mockMetadataTools
+                (Map.singleton Mock.functionalConstr10Id
+                    (These
+                        (ApplicationFunctionEvaluator
+                            (\_ _ _ _ -> notApplicableFunctionEvaluator)
+                        )
+                        [ axiomEvaluator
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (Mock.g (mkVar Mock.x))
+                        ]
+                    )
                 )
                 (Mock.functionalConstr10 Mock.c)
         assertEqualWithExplanation "" expect actual
@@ -92,10 +166,12 @@ test_functionIntegration = give mockSymbolOrAliasSorts
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    [ axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.functional10 (mkVar Mock.x))
-                    ]
+                    (That
+                        [ axiomEvaluator
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (Mock.functional10 (mkVar Mock.x))
+                        ]
+                    )
                 )
                 (Mock.functionalConstr10 (Mock.functionalConstr10 Mock.c))
         assertEqualWithExplanation "" expect actual
@@ -114,10 +190,12 @@ test_functionIntegration = give mockSymbolOrAliasSorts
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    [ axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.functional10 (mkVar Mock.x))
-                    ]
+                    (That
+                        [ axiomEvaluator
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (Mock.functional10 (mkVar Mock.x))
+                        ]
+                    )
                 )
                 (Mock.functionalConstr10
                     (mkOr
@@ -143,10 +221,12 @@ test_functionIntegration = give mockSymbolOrAliasSorts
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    [ axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.functional10 (mkVar Mock.x))
-                    ]
+                    (That
+                        [ axiomEvaluator
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (Mock.functional10 (mkVar Mock.x))
+                        ]
+                    )
                 )
                 (Mock.functionalConstr10
                     (Mock.functional20
@@ -166,7 +246,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.singleton Mock.cId
+                (Map.map That $ Map.singleton Mock.cId
                     [ appliedMockEvaluator Predicated
                         { term   = Mock.d
                         , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
@@ -190,7 +270,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.fromList
+                (Map.map That $ Map.fromList
                     [   ( Mock.cId
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.e
@@ -228,7 +308,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.fromList
+                (Map.map That $ Map.fromList
                     [   ( Mock.cId
                         ,   [ axiomEvaluator Mock.c Mock.d ]
                         )
@@ -263,7 +343,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.fromList
+                (Map.map That $ Map.fromList
                     [   ( Mock.fId
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.a
@@ -337,7 +417,7 @@ mockEvaluator evaluation _ _ _ _ =
 evaluate
     :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -> CommonPurePattern level
     -> IO (CommonExpandedPattern level)
 evaluate metadataTools functionIdToEvaluator patt =

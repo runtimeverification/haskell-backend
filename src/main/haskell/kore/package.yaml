@@ -49,6 +49,7 @@ dependencies:
   - reflection
   - template-haskell
   - text
+  - these
   - time
   - transformers
   - unordered-containers
