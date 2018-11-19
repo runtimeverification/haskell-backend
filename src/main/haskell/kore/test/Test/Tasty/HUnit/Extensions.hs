@@ -14,6 +14,9 @@ import           Data.List
                  ( intercalate, isInfixOf )
 import           Data.Sequence
                  ( Seq )
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 
 assertEqualWithPrinter
     :: (Eq a, HasCallStack)
@@ -266,6 +269,12 @@ instance EqualWithExplanation a => EqualWithExplanation (Seq a) where
         compareWithExplanation (Foldable.toList expected) (Foldable.toList actual)
 
     printWithExplanation = printWithExplanation . Foldable.toList
+
+instance EqualWithExplanation a => EqualWithExplanation (Set a) where
+    compareWithExplanation expected actual =
+        compareWithExplanation (Set.toList expected) (Set.toList actual)
+
+    printWithExplanation = printWithExplanation . Set.toList
 
 instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
     => WrapperEqualWithExplanation (Fix thing)

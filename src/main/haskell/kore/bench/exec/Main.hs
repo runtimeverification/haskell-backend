@@ -19,6 +19,8 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
 import qualified Kore.Builtin as Builtin
+import           Kore.Error
+                 ( printError )
 import           Kore.Exec
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
@@ -54,12 +56,13 @@ main = defaultMain groups
     groups = group <$> definitions
 
 group :: Definition -> Benchmark
-group Definition
-    { root
-    , kFile
-    , definitionFile
-    , mainModuleName
-    , testFiles }
+group
+    Definition
+        { root
+        , kFile
+        , definitionFile
+        , mainModuleName
+        , testFiles }
   =
     bgroup (takeFileName root) tests
   where
@@ -126,18 +129,22 @@ execBenchmark root kFile definitionFile mainModuleName test =
         kompile
         definition <- readFile $ root </> definitionFile
         let
-            Right parsedDefinition = fromKore "" definition
-            Right indexedModules =
-                verifyAndIndexDefinition
-                    DoNotVerifyAttributes
-                    Builtin.koreVerifiers
-                    parsedDefinition
+            parsedDefinition = either error id $ fromKore "" definition
+            indexedModules =
+                either (error . printError) id
+                    $ verifyAndIndexDefinition
+                        DoNotVerifyAttributes
+                        Builtin.koreVerifiers
+                        parsedDefinition
             Just indexedModule =
-                constructorFunctions <$> Map.lookup mainModuleName indexedModules
+                fmap constructorFunctions
+                    $ Map.lookup mainModuleName indexedModules
         pat <- parseProgram
         let
-            Right parsedPattern = fromKorePattern "" pat
-            Right purePattern = patternKoreToPure Object parsedPattern
+            parsedPattern = either error id $ fromKorePattern "" pat
+            purePattern =
+                either (error . printError) id
+                    $ patternKoreToPure Object parsedPattern
         return (indexedModule, purePattern)
     execution (indexedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig
