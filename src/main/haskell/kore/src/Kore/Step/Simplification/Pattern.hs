@@ -12,12 +12,11 @@ module Kore.Step.Simplification.Pattern
     , simplifyToOr
     ) where
 
-import qualified Data.Map as Map
-import           Data.Reflection
-                 ( Given, give )
+import Data.Reflection
+       ( Given, give )
 
 import           Kore.AST.Common
-                 ( Id, Pattern (..), PureMLPattern, SortedVariable )
+                 ( Pattern (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( fromPurePattern )
@@ -28,7 +27,7 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator )
+                 ( BuiltinAndAxiomsFunctionEvaluatorMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -103,7 +102,7 @@ simplify
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> PureMLPattern level variable
     -> Simplifier
@@ -135,7 +134,7 @@ simplifyToOr
         , Hashable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPattern level variable
@@ -173,7 +172,7 @@ simplifyInternal
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> PureMLPatternSimplifier level variable
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> Pattern level variable (PureMLPattern level variable)
     -> Simplifier

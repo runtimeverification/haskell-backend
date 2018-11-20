@@ -12,6 +12,8 @@ import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Text
                  ( Text )
+import           Data.These
+                 ( These (That) )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -38,7 +40,6 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator )
 import           Kore.Step.Function.Registry
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
@@ -222,9 +223,11 @@ testId name =
         }
 
 testEvaluators
-    :: Map.Map (Id Object) [ApplicationFunctionEvaluator Object]
+    :: BuiltinAndAxiomsFunctionEvaluatorMap Object
 testEvaluators =
-    axiomPatternsToEvaluators $ extractFunctionAxioms Object testIndexedModule
+    Map.map That
+    $ axiomPatternsToEvaluators
+    $ extractFunctionAxioms Object testIndexedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools testIndexedModule
@@ -234,9 +237,9 @@ test_functionRegistry =
     [ testCase "Checking that two axioms are found for f"
         (assertEqual ""
             2
-            (length $ fromMaybe
-                (error "Should find precisely two axioms for f")
-                (Map.lookup (testId "f") testEvaluators)
+            (case Map.lookup (testId "f") testEvaluators of
+                Just (That axioms) -> length axioms
+                _ -> error "Should find precisely two axioms for f"
             )
         )
      , testCase "Checking that evaluator map has size 2"

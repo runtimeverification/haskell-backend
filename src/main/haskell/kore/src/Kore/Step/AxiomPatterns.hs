@@ -15,6 +15,7 @@ module Kore.Step.AxiomPatterns
     , lensAssoc, Assoc (..)
     , lensComm, Comm (..)
     , lensUnit, Unit (..)
+    , lensIdem, Idem (..)
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
@@ -42,6 +43,7 @@ import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Assoc
 import           Kore.Attribute.Comm
 import           Kore.Attribute.HeatCool
+import           Kore.Attribute.Idem
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..), parseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
@@ -65,6 +67,8 @@ data AxiomPatternAttributes =
     -- ^ The axiom is a commutativity axiom.
     , unit :: !Unit
     -- ^ The axiom is a left- or right-unit axiom.
+    , idem :: !Idem
+    -- ^ The axiom is an idempotency axiom.
     }
     deriving (Eq, Ord, Show)
 
@@ -78,6 +82,7 @@ instance Default AxiomPatternAttributes where
             , assoc = def
             , comm = def
             , unit = def
+            , idem = def
             }
 
 instance ParseAttributes AxiomPatternAttributes where
@@ -87,6 +92,7 @@ instance ParseAttributes AxiomPatternAttributes where
         >=> lensAssoc (parseAttribute attr)
         >=> lensComm (parseAttribute attr)
         >=> lensUnit (parseAttribute attr)
+        >=> lensIdem (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 

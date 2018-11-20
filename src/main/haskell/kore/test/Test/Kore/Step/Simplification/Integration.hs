@@ -12,10 +12,12 @@ import Test.Tasty.HUnit
 
 import           Data.Default
                  ( Default (..) )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( give )
 import qualified Data.Sequence as Seq
+import           Data.These
+                 ( These (..) )
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -31,7 +33,6 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator )
 import           Kore.Step.Function.Registry
                  ( axiomPatternsToEvaluators )
 import           Kore.Step.OrOfExpandedPattern
@@ -392,9 +393,14 @@ evaluateWithAxioms tools axioms patt =
     simplifier =
         Simplifier.create
             tools
-            (Map.unionWith (++) axioms builtinAxioms)
+            (Map.unionWith
+                (\(This x) (That y) -> These x y)
+                builtinAxioms
+                (Map.map That axioms)
+            )
+    builtinAxioms :: BuiltinAndAxiomsFunctionEvaluatorMap Object
     builtinAxioms =
         Map.fromList
-            [ (Mock.concatMapId, [Map.evalConcat])
-            , (Mock.elementMapId, [Map.evalElement])
+            [ (Mock.concatMapId, This Map.evalConcat)
+            , (Mock.elementMapId, This Map.evalElement)
             ]

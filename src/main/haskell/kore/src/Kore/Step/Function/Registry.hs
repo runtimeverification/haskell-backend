@@ -140,9 +140,11 @@ axiomPatternEvaluator axiomPat@AxiomPattern { axiomPatternAttributes }
     -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
     -- extraction of their axioms.
     | isUnit = Nothing
+    | isIdem = Nothing
     | otherwise =
         Just (ApplicationFunctionEvaluator $ axiomFunctionEvaluator axiomPat)
   where
     Assoc { isAssoc } = assoc axiomPatternAttributes
     Comm { isComm } = comm axiomPatternAttributes
     Unit { isUnit } = unit axiomPatternAttributes
+    Idem { isIdem } = idem axiomPatternAttributes
