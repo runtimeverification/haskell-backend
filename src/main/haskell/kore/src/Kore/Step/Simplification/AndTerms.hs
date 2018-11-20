@@ -12,7 +12,7 @@ module Kore.Step.Simplification.AndTerms
     , termEquals
     , termUnification
     , TermSimplifier
-    , TermTransformation
+    , TermTransformationOld
     ) where
 
 import           Control.Applicative
@@ -61,7 +61,10 @@ import           Kore.Step.RecursiveAttributes
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..) )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 SimplificationType )
+import qualified Kore.Step.Simplification.Data as SimplificationType
+                 ( SimplificationType (..) )
 import           Kore.Step.StepperAttributes
                  ( SortInjection (..), StepperAttributes (..) )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -73,7 +76,7 @@ import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import           Kore.Variables.Fresh
 
-data SimplificationType = SimplifyAnd | SimplifyEquals
+data SimplificationTarget = AndT | EqualsT | BothT
 
 type TermSimplifier level variable m =
     (  PureMLPattern level variable
@@ -173,26 +176,7 @@ maybeTermEquals
     -> PureMLPattern level variable
     -> MaybeT m
         (ExpandedPattern level variable, SimplificationProof level)
-maybeTermEquals =
-    maybeTransformTerm
-        [ liftET equalAndEquals
-        , lift   bottomTermEquals
-        , lift   termBottomEquals
-        , lift   (variableFunctionAndEquals SimplifyEquals)
-        , lift   (functionVariableAndEquals SimplifyEquals)
-        ,        equalInjectiveHeadsAndEquals
-        , addS   sortInjectionAndEqualsAssumesDifferentHeads
-        , liftE  constructorSortInjectionAndEquals
-        , liftE  constructorAndEqualsAssumesDifferentHeads
-        , liftET domainValueAndEqualsAssumesDifferent
-        , liftET stringLiteralAndEqualsAssumesDifferent
-        , liftET charLiteralAndEqualsAssumesDifferent
-        ]
-  where
-    lift = transformerLift
-    liftE = lift . toExpanded
-    liftET = liftE . addToolsArg
-    addS f tools _substitutionSimplifier = f tools
+maybeTermEquals = maybeTransformTerm equalsFunctions
 
 {- | Unify two terms without discarding the terms.
 
@@ -305,45 +289,142 @@ maybeTermAnd
     -> PureMLPattern level variable
     -> PureMLPattern level variable
     -> MaybeT m (ExpandedPattern level variable, SimplificationProof level)
-maybeTermAnd =
-    maybeTransformTerm
-        [ liftET boolAnd
-        , liftET equalAndEquals
-        , lift (variableFunctionAndEquals SimplifyAnd)
-        , lift (functionVariableAndEquals SimplifyAnd)
-        , equalInjectiveHeadsAndEquals
-        , addS sortInjectionAndEqualsAssumesDifferentHeads
-        , liftE constructorSortInjectionAndEquals
-        , liftE constructorAndEqualsAssumesDifferentHeads
-        , Builtin.Map.unify
-        , Builtin.Set.unify
-        , Builtin.List.unify
-        , liftE domainValueAndConstructorErrors
-        , liftET domainValueAndEqualsAssumesDifferent
-        , liftET stringLiteralAndEqualsAssumesDifferent
-        , liftET charLiteralAndEqualsAssumesDifferent
-        , lift functionAnd
-        ]
+maybeTermAnd = maybeTransformTerm andFunctions
+
+andFunctions
+    ::  ( Eq (variable level)
+        , Eq (variable Meta)
+        , FreshVariable variable
+        , Hashable variable
+        , MetaOrObject level
+        , MonadCounter m
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable level)
+        , Show (variable Meta)
+        , Show (variable Object)
+        , SortedVariable variable
+        )
+    => [TermTransformationOld level variable m]
+andFunctions =
+    map (forAnd . snd) (filter appliesToAnd andEqualsFunctions)
   where
-    lift = transformerLift
+    appliesToAnd :: (SimplificationTarget, a) -> Bool
+    appliesToAnd (AndT, _) = True
+    appliesToAnd (EqualsT, _) = False
+    appliesToAnd (BothT, _) = True
+
+    forAnd
+        :: TermTransformation level variable m
+        -> TermTransformationOld level variable m
+    forAnd f = f SimplificationType.And
+
+equalsFunctions
+    ::  ( Eq (variable level)
+        , Eq (variable Meta)
+        , FreshVariable variable
+        , Hashable variable
+        , MetaOrObject level
+        , MonadCounter m
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable level)
+        , Show (variable Meta)
+        , Show (variable Object)
+        , SortedVariable variable
+        )
+    => [TermTransformationOld level variable m]
+equalsFunctions =
+    map (forEquals . snd) (filter appliesToEquals andEqualsFunctions)
+  where
+    appliesToEquals :: (SimplificationTarget, a) -> Bool
+    appliesToEquals (AndT, _) = False
+    appliesToEquals (EqualsT, _) = True
+    appliesToEquals (BothT, _) = True
+
+    forEquals
+        :: TermTransformation level variable m
+        -> TermTransformationOld level variable m
+    forEquals f = f SimplificationType.Equals
+
+andEqualsFunctions
+    ::  ( Eq (variable level)
+        , Eq (variable Meta)
+        , FreshVariable variable
+        , Hashable variable
+        , MetaOrObject level
+        , MonadCounter m
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable level)
+        , Show (variable Meta)
+        , Show (variable Object)
+        , SortedVariable variable
+        )
+    => [(SimplificationTarget, TermTransformation level variable m)]
+andEqualsFunctions =
+    [ (AndT,    liftET boolAnd)
+    , (BothT,   liftET equalAndEquals)
+    , (EqualsT, lift   bottomTermEquals)
+    , (EqualsT, lift   termBottomEquals)
+    , (BothT,   liftP  variableFunctionAndEquals)
+    , (BothT,   liftP  functionVariableAndEquals)
+    , (BothT,   addT   equalInjectiveHeadsAndEquals)
+    , (BothT,   addS   sortInjectionAndEqualsAssumesDifferentHeads)
+    , (BothT,   liftE  constructorSortInjectionAndEquals)
+    , (BothT,   liftE  constructorAndEqualsAssumesDifferentHeads)
+    , (BothT,          Builtin.Map.unifyEquals)
+    , (BothT,          Builtin.Set.unifyEquals)
+    , (BothT,          Builtin.List.unifyEquals)
+    , (BothT,    liftE  domainValueAndConstructorErrors)
+    , (BothT,   liftET domainValueAndEqualsAssumesDifferent)
+    , (BothT,   liftET stringLiteralAndEqualsAssumesDifferent)
+    , (BothT,   liftET charLiteralAndEqualsAssumesDifferent)
+    , (AndT,    lift   functionAnd)
+    ]
+  where
+    liftP = transformerLift
+    lift = addT . transformerLiftOld
     liftE = lift . toExpanded
     liftET = liftE . addToolsArg
-    addS f tools _substitutionSimplifier = f tools
+    addS f _simplificationType tools _substitutionSimplifier = f tools
+    addT
+        ::  (  MetadataTools level StepperAttributes
+            -> PredicateSubstitutionSimplifier level m
+            -> TermSimplifier level variable m
+            -> PureMLPattern level variable
+            -> PureMLPattern level variable
+            -> MaybeT m
+                (ExpandedPattern level variable , SimplificationProof level)
+            )
+        -> TermTransformation level variable m
+    addT = pure
 
 {- | Construct the conjunction or unification of two terms.
 
-Each @TermTransformation@ should represent one unification case and each
-unification case should be handled by only one @TermTransformation@. If the
+Each @TermTransformationOld@ should represent one unification case and each
+unification case should be handled by only one @TermTransformationOld@. If the
 pattern heads do not match the case under consideration, call 'empty' to allow
 another case to handle the patterns. If the pattern heads do match the
 unification case, then use 'Control.Monad.Trans.lift' to wrap the implementation
 of that case.
 
-All the @TermTransformation@s and similar functions defined in this module call
+All the @TermTransformationOld@s and similar functions defined in this module call
 'empty' unless given patterns matching their unification case.
 
  -}
 type TermTransformation level variable m =
+       SimplificationType
+    -> MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
+    -> TermSimplifier level variable m
+    -> PureMLPattern level variable
+    -> PureMLPattern level variable
+    -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
+type TermTransformationOld level variable m =
        MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> TermSimplifier level variable m
@@ -362,7 +443,7 @@ maybeTransformTerm
         , SortedVariable variable
         , MonadCounter m
         )
-    => [TermTransformation level variable m]
+    => [TermTransformationOld level variable m]
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> TermSimplifier level variable m
@@ -426,13 +507,32 @@ toExpanded transformer tools first second =
 
 transformerLift
     :: MonadCounter m
-    =>  (  MetadataTools level StepperAttributes
+    =>  (  SimplificationType
+        -> MetadataTools level StepperAttributes
         -> PureMLPattern level variable
         -> PureMLPattern level variable
         -> Maybe (ExpandedPattern level variable, SimplificationProof level)
         )
     -> TermTransformation level variable m
 transformerLift
+    transformation
+    simplificationType
+    tools
+    _
+    _childSimplifier
+    first
+    second
+  = liftExpandedPattern (transformation simplificationType tools first second)
+
+transformerLiftOld
+  :: MonadCounter m
+  =>  (  MetadataTools level StepperAttributes
+      -> PureMLPattern level variable
+      -> PureMLPattern level variable
+      -> Maybe (ExpandedPattern level variable, SimplificationProof level)
+      )
+  -> TermTransformationOld level variable m
+transformerLiftOld
     transformation
     tools
     _
@@ -539,7 +639,7 @@ variableFunctionAndEquals
     -> PureMLPattern level variable
     -> Maybe (ExpandedPattern level variable, SimplificationProof level)
 variableFunctionAndEquals
-    SimplifyAnd
+    SimplificationType.And
     _
     first@(Var_ v1)
     second@(Var_ v2)
@@ -569,9 +669,9 @@ variableFunctionAndEquals
                     -- Ceil predicate not needed since 'second' being bottom
                     -- will make the entire term bottom. However, one must
                     -- be careful to not just drop the term.
-                    SimplifyAnd ->
+                    SimplificationType.And ->
                         makeTruePredicate
-                    SimplifyEquals ->
+                    SimplificationType.Equals ->
                         case Ceil.makeEvaluateTerm tools second of
                             (pred', _proof) -> pred'
             , substitution = [(v, second)]
@@ -876,7 +976,8 @@ constructorAndEqualsAssumesDifferentHeads
     isConstructor = give tools StepperAttributes.isConstructor_
 constructorAndEqualsAssumesDifferentHeads _ _ _ = empty
 
-{- | Unify a domain value pattern with a constructor application.
+{- | Unifcation or equality for a domain value pattern vs a constructor
+application.
 
 This unification case throws an error because domain values may not occur in a
 sort with constructors.

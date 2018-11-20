@@ -5,7 +5,7 @@ module Test.Kore.Step.Simplification.Equals
     ) where
 
 import Test.Tasty
-       ( TestTree )
+       ( TestTree, testGroup )
 import Test.Tasty.HUnit
        ( HasCallStack, testCase )
 
@@ -487,6 +487,186 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
                 (Mock.f Mock.a)
                 Mock.a
         )
+    , testGroup "builtin Map domain"
+        [ testCase "concrete Map, same keys"
+            (assertTermEquals
+                mockMetadataTools
+                Predicated
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = [(Mock.x, Mock.b)]
+                    }
+                (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
+                (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+            )
+        , testCase "concrete Map, different keys"
+            (assertTermEquals
+                mockMetadataTools
+                Predicated.bottomPredicate
+                (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
+                (Mock.builtinMap [(Mock.bConcrete, mkVar Mock.x)])
+            )
+        , testCase "concrete Map with framed Map"
+            (assertTermEquals
+                mockMetadataTools
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate fOfA)
+                            (makeCeilPredicate fOfB)
+                    , substitution =
+                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (Mock.x, fOfA)
+                        ]
+                    }
+                (Mock.builtinMap
+                    [ (Mock.aConcrete, fOfA)
+                    , (Mock.bConcrete, fOfB)
+                    ]
+                )
+                (Mock.concatMap
+                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                    (mkVar Mock.m)
+                )
+            )
+        , testCase "concrete Map with framed Map"
+            (assertTermEquals
+                mockMetadataTools
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate fOfA)
+                            (makeCeilPredicate fOfB)
+                    , substitution =
+                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (Mock.x, fOfA)
+                        ]
+                    }
+                (Mock.builtinMap
+                    [ (Mock.aConcrete, fOfA)
+                    , (Mock.bConcrete, fOfB)
+                    ]
+                )
+                (Mock.concatMap
+                    (mkVar Mock.m)
+                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                )
+            )
+        , testCase "framed Map with concrete Map"
+            (assertTermEquals
+                mockMetadataTools
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate fOfA)
+                            (makeCeilPredicate fOfB)
+                    , substitution =
+                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (Mock.x, fOfA)
+                        ]
+                    }
+                (Mock.concatMap
+                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                    (mkVar Mock.m)
+                )
+                (Mock.builtinMap
+                    [ (Mock.aConcrete, fOfA)
+                    , (Mock.bConcrete, fOfB)
+                    ]
+                )
+            )
+        , testCase "framed Map with concrete Map"
+            (assertTermEquals
+                mockMetadataTools
+                Predicated
+                    { term = ()
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate fOfA)
+                            (makeCeilPredicate fOfB)
+                    , substitution =
+                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (Mock.x, fOfA)
+                        ]
+                    }
+                (Mock.concatMap
+                    (mkVar Mock.m)
+                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                )
+                (Mock.builtinMap
+                    [ (Mock.aConcrete, fOfA)
+                    , (Mock.bConcrete, fOfB)
+                    ]
+                )
+            )
+        -- TODO: Add tests with non-trivial predicates.
+        ]
+    , testGroup "builtin List domain"
+        [
+            let term1 =
+                    Mock.builtinList
+                        [ Mock.constr10 Mock.cf
+                        , Mock.constr11 Mock.cf
+                        ]
+            in
+                testCase "[same head, same head]"
+                    (assertTermEquals
+                        mockMetadataTools
+                        Predicated
+                            { term = ()
+                            , predicate = makeTruePredicate
+                            , substitution = []
+                            }
+                        term1
+                        term1
+                    )
+        ,
+            let term3 = Mock.builtinList [Mock.a, Mock.a]
+                term4 = Mock.builtinList [Mock.a, Mock.b]
+                unified34 = Predicated.bottomPredicate
+            in
+                testCase "[same head, different head]"
+                    (assertTermEquals
+                        mockMetadataTools
+                        unified34
+                        term3
+                        term4
+                    )
+        ,
+            let term5 = Mock.concatList
+                        (Mock.builtinList [Mock.a])
+                        (mkVar Mock.x)
+                term6 = Mock.builtinList $ [Mock.a, Mock.b]
+            in
+                testCase "[a] `concat` x /\\ [a, b] "
+                    (assertTermEquals
+                        mockMetadataTools
+                        Predicated
+                            { term = ()
+                            , predicate = makeTruePredicate
+                            , substitution =
+                                [(Mock.x, Mock.builtinList [Mock.b])]
+                            }
+                        term5
+                        term6
+                    )
+        ,
+            let term7 = Mock.builtinList [Mock.a, Mock.a]
+                term8 = Mock.builtinList [Mock.a]
+            in
+                testCase "different lengths"
+                    (assertTermEquals
+                        mockMetadataTools
+                        Predicated.bottomPredicate
+                        term7
+                        term8
+                    )
+        -- TODO: Add tests with non-trivial unifications and predicates.
+        ]
+    -- TODO: Add tests for set equality.
     ]
 
 assertTermEquals

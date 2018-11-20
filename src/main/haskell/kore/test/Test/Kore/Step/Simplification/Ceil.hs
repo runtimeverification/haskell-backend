@@ -11,10 +11,13 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( Ceil (..), Sort (..) )
+                 ( BuiltinDomain (..), Ceil (..), PureMLPattern, Sort (..),
+                 Variable )
 import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( asConcretePurePattern )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkBottom, mkTop )
+                 ( mkBottom, mkDomainValue, mkStringLiteral, mkTop )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
 import           Kore.IndexedModule.MetadataTools
@@ -303,11 +306,101 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                     }
             )
         )
+    , testCase "ceil with normal domain value"
+        -- ceil(1) = top
+        (assertEqualWithExplanation
+            "ceil(1)"
+            (OrOfExpandedPattern.make
+                [ Predicated
+                    { term = mkTop
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                ]
+            )
+            (makeEvaluate mockMetadataTools
+                Predicated
+                    { term =
+                        mkDomainValue
+                            testSort
+                            (BuiltinDomainPattern (mkStringLiteral "a"))
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "ceil with map domain value"
+        -- maps assume that their keys are relatively functional, so
+        -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
+        (assertEqualWithExplanation
+            "ceil(map)"
+            (OrOfExpandedPattern.make
+                [ Predicated
+                    { term = mkTop
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate fOfB)
+                            (makeCeilPredicate gOfB)
+                    , substitution = []
+                    }
+                ]
+            )
+            (makeEvaluate mockMetadataTools
+                Predicated
+                    { term =
+                        Mock.builtinMap
+                            [(asConcrete fOfA, fOfB), (asConcrete gOfA, gOfB)]
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "ceil with list domain value"
+        -- ceil([a, b]) = ceil(a) and ceil(b)
+        (assertEqualWithExplanation
+            "ceil(list)"
+            (OrOfExpandedPattern.make
+                [ Predicated
+                    { term = mkTop
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate fOfA)
+                            (makeCeilPredicate fOfB)
+                    , substitution = []
+                    }
+                ]
+            )
+            (makeEvaluate mockMetadataTools
+                Predicated
+                    { term = Mock.builtinList [fOfA, fOfB]
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
+    , testCase "ceil with set domain value"
+        -- sets assume that their elements are relatively functional,
+        -- so ceil({a, b}) = top
+        (assertEqualWithExplanation
+            "ceil(set)"
+            (OrOfExpandedPattern.make [ ExpandedPattern.top ]
+            )
+            (makeEvaluate mockMetadataTools
+                Predicated
+                    { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+            )
+        )
     ]
   where
+    fOfA :: PureMLPattern Object Variable
     fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
+    fOfB :: PureMLPattern Object Variable
     fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
     gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
+    gOfB = give mockSymbolOrAliasSorts $ Mock.g Mock.b
     somethingOfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
     somethingOfB = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.b
     somethingOfAExpanded = Predicated
@@ -328,6 +421,8 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
             Mock.subsorts
+    asConcrete p =
+        let Just r = asConcretePurePattern p in r
 
 makeCeil
     :: Ord (variable Object)

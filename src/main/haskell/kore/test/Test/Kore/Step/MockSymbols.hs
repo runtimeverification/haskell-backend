@@ -25,6 +25,7 @@ import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given )
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( BuiltinDomain (..), ConcretePurePattern, Id (..),
@@ -110,6 +111,8 @@ constr11Id :: Id Object
 constr11Id = testId "constr11"
 constr20Id :: Id Object
 constr20Id = testId "constr20"
+function20MapTestId :: Id Object
+function20MapTestId = testId "function20MapTest"
 functional00Id :: Id Object
 functional00Id = testId "functional00"
 functional01Id :: Id Object
@@ -298,6 +301,11 @@ constr11Symbol = SymbolOrAlias
 constr20Symbol :: SymbolOrAlias Object
 constr20Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = constr20Id
+    , symbolOrAliasParams      = []
+    }
+function20MapTestSymbol :: SymbolOrAlias Object
+function20MapTestSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = function20MapTestId
     , symbolOrAliasParams      = []
     }
 functional00Symbol :: SymbolOrAlias Object
@@ -592,6 +600,13 @@ constr20
     -> PureMLPattern Object variable
 constr20 arg1 arg2 = mkApp constr20Symbol [arg1, arg2]
 
+function20MapTest
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+    -> PureMLPattern Object variable
+function20MapTest arg1 arg2 = mkApp function20MapTestSymbol [arg1, arg2]
+
 functional00
     :: Given (SymbolOrAliasSorts Object)
     => PureMLPattern Object variable
@@ -719,6 +734,13 @@ concatMap
     -> PureMLPattern Object variable
     -> PureMLPattern Object variable
 concatMap m1 m2 = mkApp concatMapSymbol [m1, m2]
+
+elementMap
+    :: Given (SymbolOrAliasSorts Object)
+    => PureMLPattern Object variable
+    -> PureMLPattern Object variable
+    -> PureMLPattern Object variable
+elementMap m1 m2 = mkApp elementMapSymbol [m1, m2]
 
 concatList
     :: Given (SymbolOrAliasSorts Object)
@@ -912,6 +934,12 @@ symbolOrAliasSortsMapping =
     ,   ( constr20Symbol
         , ApplicationSorts
             { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult = testSort
+            }
+        )
+    ,   ( function20MapTestSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [mapSort, testSort]
             , applicationSortsResult = testSort
             }
         )
@@ -1147,6 +1175,9 @@ attributesMapping =
     ,   ( constr20Symbol
         , Mock.constructorAttributes
         )
+    ,   ( function20MapTestSymbol
+        , Mock.functionAttributes
+        )
     ,   ( functional00Symbol
         , Mock.functionalAttributes
         )
@@ -1208,19 +1239,19 @@ attributesMapping =
         , Mock.sortInjectionAttributes
         )
     ,   ( unitMapSymbol
-        , Mock.defaultAttributes { hook = Hook (Just "MAP.unit") }
+        , Mock.functionalAttributes { hook = Hook (Just "MAP.unit") }
         )
     ,   ( elementMapSymbol
         , Mock.defaultAttributes { hook = Hook (Just "MAP.element") }
         )
     ,   ( concatMapSymbol
-        , Mock.defaultAttributes { hook = Hook (Just "MAP.concat") }
+        , Mock.functionalAttributes { hook = Hook (Just "MAP.concat") }
         )
     ,   ( elemListSymbol
         , Mock.defaultAttributes { hook = Hook (Just "LIST.elem") }
         )
     ,   ( concatListSymbol
-        , Mock.defaultAttributes { hook = Hook (Just "LIST.concat") }
+        , Mock.functionalAttributes { hook = Hook (Just "LIST.concat") }
         )
     ]
 
@@ -1314,6 +1345,9 @@ headTypeMapping =
         , HeadType.Symbol
         )
     ,   ( constr20Symbol
+        , HeadType.Symbol
+        )
+    ,   ( function20MapTestSymbol
         , HeadType.Symbol
         )
     ,   ( functional00Symbol
@@ -1474,3 +1508,8 @@ builtinList
     :: [PureMLPattern Object variable]
     -> PureMLPattern Object variable
 builtinList = DV_ listSort . BuiltinDomainList . Seq.fromList
+
+builtinSet
+    :: [ConcretePurePattern Object]
+    -> PureMLPattern Object variable
+builtinSet = DV_ listSort . BuiltinDomainSet . Set.fromList

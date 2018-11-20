@@ -639,6 +639,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         ]
                     )
                 )
+        -- TODO: Add tests with non-trivial predicates.
         ]
     , testGroup "builtin List domain"
         [
@@ -700,7 +701,9 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     (Just ExpandedPattern.bottom)
                     (unify mockMetadataTools term7 term8)
 
+        -- TODO: Add tests with non-trivial unifications and predicates.
         ]
+    -- TODO: Add tests for set unification.
     ]
 
 fOfA :: CommonPurePattern Object
