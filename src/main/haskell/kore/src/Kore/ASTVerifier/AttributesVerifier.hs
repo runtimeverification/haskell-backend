@@ -98,11 +98,10 @@ verifySortHookAttribute _indexedModule =
 
  -}
 verifySymbolHookAttribute
-    :: KoreIndexedModule atts
-    -> AttributesVerification atts
+    :: AttributesVerification atts
     -> Attributes
     -> Either (Error VerifyError) Hook
-verifySymbolHookAttribute _ =
+verifySymbolHookAttribute =
     \case
         DoNotVerifyAttributes ->
             -- Do not attempt to parse, verify, or return the hook attribute.
