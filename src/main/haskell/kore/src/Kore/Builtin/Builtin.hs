@@ -96,6 +96,7 @@ import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import           Kore.Builtin.Error
 import           Kore.Error
                  ( Error )
 import qualified Kore.Error
@@ -640,25 +641,6 @@ functionEvaluator impl =
         do
             attempt <- impl tools simplifier resultSort applicationChildren
             return (attempt, SimplificationProof)
-
-{- | Abort due to an internal error that should be prevented by the verifier.
-
-    Such an error is a bug in Kore that we would like the user to report.
-
- -}
-verifierBug :: HasCallStack => String -> a
-verifierBug msg =
-    (error . unlines)
-        [ "Internal error: " ++ msg
-        , "This error should be prevented by the verifier."
-        , "Please report this as a bug."
-        ]
-
-{- | Evaluation failure due to a builtin call with the wrong arity.
-
- -}
-wrongArity :: HasCallStack => String -> a
-wrongArity ctx = verifierBug (ctx ++ ": Wrong number of arguments")
 
 {- | Run a parser on a verified domain value.
 

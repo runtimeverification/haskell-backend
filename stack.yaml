@@ -47,6 +47,7 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
   - sbv-7.10
+  - simple-smt-0.9.3
   - crackNum-2.2
   - FloatingHex-0.4
 

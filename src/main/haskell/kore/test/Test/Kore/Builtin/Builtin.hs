@@ -1,17 +1,23 @@
-module Test.Kore.Builtin.Builtin
-    ( hookedSymbolDecl
-    , pairModule
-    , pairModuleName
-    , mkPair
-    , importKoreModule
-    , substitutionSimplifier
-    , testSymbol
-    ) where
+module Test.Kore.Builtin.Builtin where
 
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+       ( assertEqual )
+
+import           Control.Concurrent.MVar
+                 ( MVar )
+import qualified Control.Lens as Lens
+import           Control.Monad.Except
+                 ( runExceptT )
+import           Control.Monad.Reader
+                 ( runReaderT )
+import           Data.Function
+                 ( (&) )
+import           Data.Map
+                 ( Map )
+import qualified Data.Map as Map
+import           Data.Proxy
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -19,131 +25,36 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
-import           Kore.Attribute.Hook
-                 ( hookAttribute )
+import           Kore.ASTVerifier.DefinitionVerifier
+import           Kore.ASTVerifier.Error
+                 ( VerifyError )
+import qualified Kore.Builtin as Builtin
+import qualified Kore.Error
+import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( MetadataTools (..), SymbolOrAliasSorts,
+                 extractMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.AxiomPatterns
+                 ( AxiomPattern )
+import           Kore.Step.BaseStep
+                 ( StepProof, stepWithAxiom )
+import           Kore.Step.Error
+                 ( StepError )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.StepperAttributes
+import           SMT
+                 ( MonadSMT (..), SMT, Solver )
+import qualified SMT
 
-import Test.Kore
-
--- | Declare a symbol hooked to the given builtin name.
-hookedSymbolDecl
-    :: String
-    -- ^ builtin name
-    -> SymbolOrAlias Object
-    -- ^ symbol
-    -> Sort Object
-    -- ^ result sort
-    -> [Sort Object]
-    -- ^ argument sorts
-    -> KoreSentence
-hookedSymbolDecl
-    builtinName
-    SymbolOrAlias { symbolOrAliasConstructor }
-    sentenceSymbolResultSort
-    sentenceSymbolSorts
-  =
-    (asSentence . SentenceHookedSymbol)
-        (SentenceSymbol
-            { sentenceSymbolSymbol
-            , sentenceSymbolSorts
-            , sentenceSymbolResultSort
-            , sentenceSymbolAttributes
-            }
-            :: KoreSentenceSymbol Object
-        )
-  where
-    sentenceSymbolSymbol =
-        Symbol
-            { symbolConstructor = symbolOrAliasConstructor
-            , symbolParams = []
-            }
-    sentenceSymbolAttributes = Attributes [ hookAttribute builtinName ]
-
-pairModuleName :: ModuleName
-pairModuleName = ModuleName "PAIR"
-
-{- | Declare the @Pair@ sort and constructors.
- -}
-pairModule :: KoreModule
-pairModule =
-    Module
-        { moduleName = pairModuleName
-        , moduleAttributes = Attributes []
-        , moduleSentences =
-            [ pairSortDecl
-            , pairSymbolDecl
-            ]
-        }
-
-pairSort :: Sort Object -> Sort Object -> Sort Object
-pairSort lSort rSort =
-    SortActualSort SortActual
-        { sortActualName = testId "Pair"
-        , sortActualSorts = [lSort, rSort]
-        }
-
--- | Declare 'Pair' in a Kore module.
-pairSortDecl :: KoreSentence
-pairSortDecl =
-    asSentence decl
-  where
-    lSortVariable = SortVariable (testId "l")
-    rSortVariable = SortVariable (testId "r")
-    lSort = SortVariableSort lSortVariable
-    rSort = SortVariableSort rSortVariable
-    decl :: KoreSentenceSort Object
-    decl =
-        SentenceSort
-            { sentenceSortName =
-                let SortActualSort SortActual { sortActualName } =
-                        pairSort lSort rSort
-                in sortActualName
-            , sentenceSortParameters = [lSortVariable, rSortVariable]
-            , sentenceSortAttributes = Attributes []
-            }
-
-pairId :: Id level
-pairId = testId "pair"
-
-symbolPair :: Sort Object -> Sort Object -> SymbolOrAlias Object
-symbolPair lSort rSort =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = pairId
-        , symbolOrAliasParams = [lSort, rSort]
-        }
-
-pairSymbolDecl :: KoreSentence
-pairSymbolDecl =
-    asSentence decl
-  where
-    decl :: KoreSentenceSymbol Object
-    decl =
-        SentenceSymbol
-            { sentenceSymbolSymbol =
-                Symbol
-                    { symbolConstructor = pairId
-                    , symbolParams = [lSortVariable, rSortVariable]
-                    }
-            , sentenceSymbolSorts = [lSort, rSort]
-            , sentenceSymbolResultSort = pairSort lSort rSort
-            , sentenceSymbolAttributes =
-                Attributes
-                    [ constructorAttribute
-                    , injectiveAttribute
-                    ]
-            }
-    lSortVariable = SortVariable (testId "l")
-    rSortVariable = SortVariable (testId "r")
-    lSort = SortVariableSort lSortVariable
-    rSort = SortVariableSort rSortVariable
+import           Test.Kore.Builtin.Definition
+import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.SMT
 
 mkPair
     :: Sort Object
@@ -151,17 +62,7 @@ mkPair
     -> CommonPurePattern Object
     -> CommonPurePattern Object
     -> CommonPurePattern Object
-mkPair lSort rSort l r = App_ (symbolPair lSort rSort) [l, r]
-
-importKoreModule :: ModuleName -> KoreSentence
-importKoreModule moduleName =
-    asSentence
-        (SentenceImport
-            { sentenceImportModuleName = moduleName
-            , sentenceImportAttributes = Attributes []
-            }
-            :: KoreSentenceImport
-        )
+mkPair lSort rSort l r = App_ (pairSymbol lSort rSort) [l, r]
 
 substitutionSimplifier
     :: MetadataTools level StepperAttributes
@@ -185,21 +86,153 @@ substitutionSimplifier tools =
         )
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
-testSymbol
-    :: (CommonPurePattern Object -> CommonExpandedPattern Object)
+testSymbolWithSolver
+    ::  ( p ~ CommonPurePattern Object
+        , expanded ~ CommonExpandedPattern Object
+        )
+    => (p -> SMT expanded)
     -- ^ evaluator function for the builtin
     -> String
     -- ^ test name
     -> SymbolOrAlias Object
     -- ^ symbol being tested
-    -> [CommonPurePattern Object]
+    -> [p]
     -- ^ arguments for symbol
-    -> CommonExpandedPattern Object
+    -> expanded
     -- ^ expected result
     -> TestTree
-testSymbol evaluate title symbol args expected =
-    testCase title
-        (assertEqual ""
-            expected
-            (evaluate $ App_ symbol args)
+testSymbolWithSolver eval title symbol args expected =
+    testCaseWithSolver title $ \solver -> do
+        actual <- runReaderT (SMT.getSMT $ eval $ App_ symbol args) solver
+        assertEqual "" expected actual
+
+-- -------------------------------------------------------------
+-- * Evaluation
+
+verify
+    :: KoreDefinition
+    -> Either
+        (Kore.Error.Error VerifyError)
+        (Map ModuleName (KoreIndexedModule StepperAttributes))
+verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
+  where
+    attrVerify = defaultAttributesVerification Proxy
+
+-- TODO (traiansf): Get rid of this.
+-- The function below works around several limitations of
+-- the current tool by tricking the tool into believing that
+-- functions are constructors (so that function patterns can match)
+-- and that @kseq@ and @dotk@ are both functional and constructor.
+constructorFunctions
+    :: KoreIndexedModule StepperAttributes
+    -> KoreIndexedModule StepperAttributes
+constructorFunctions ixm =
+    ixm
+        { indexedModuleObjectSymbolSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectSymbolSentences ixm)
+        , indexedModuleObjectAliasSentences =
+            Map.mapWithKey
+                constructorFunctions1
+                (indexedModuleObjectAliasSentences ixm)
+        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
+        }
+  where
+    constructorFunctions1 ident (atts, defn) =
+        ( atts
+            & lensConstructor Lens.<>~ Constructor isCons
+            & lensFunctional Lens.<>~ Functional (isCons || isInj)
+            & lensInjective Lens.<>~ Injective (isCons || isInj)
+            & lensSortInjection Lens.<>~ SortInjection isInj
+        , defn
         )
+      where
+        isInj = getId ident == "inj"
+        isCons = elem (getId ident) ["kseq", "dotk"]
+
+    recurseIntoImports (attrs, attributes, importedModule) =
+        (attrs, attributes, constructorFunctions importedModule)
+
+indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
+indexedModules =
+    either (error . Kore.Error.printError) id (verify testDefinition)
+
+indexedModule :: KoreIndexedModule StepperAttributes
+Just indexedModule = Map.lookup testModuleName indexedModules
+
+testMetadataTools :: MetadataTools Object StepperAttributes
+testMetadataTools = extractMetadataTools (constructorFunctions indexedModule)
+
+testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
+MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts} = testMetadataTools
+
+testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
+testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
+
+evaluators :: Map (Id Object) [Builtin.Function]
+evaluators = Builtin.koreEvaluators indexedModule
+
+evaluate
+    :: MonadSMT m
+    => CommonPurePattern Object
+    -> m (CommonExpandedPattern Object)
+evaluate =
+    (<$>) fst
+    . liftSMT
+    . evalSimplifier
+    . Pattern.simplify
+        testMetadataTools
+        testSubstitutionSimplifier
+        evaluators
+
+evaluateWith
+    :: MVar Solver
+    -> CommonPurePattern Object
+    -> IO (CommonExpandedPattern Object)
+evaluateWith solver patt =
+    runReaderT (SMT.getSMT $ evaluate patt) solver
+
+runStep
+    :: CommonExpandedPattern Object
+    -- ^ configuration
+    -> AxiomPattern Object
+    -- ^ axiom
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (CommonExpandedPattern Object, StepProof Object Variable)
+        )
+runStep configuration axiom =
+    (runSMT . evalSimplifier . runExceptT)
+        (stepWithAxiom
+            testMetadataTools
+            testSubstitutionSimplifier
+            configuration
+            axiom
+        )
+
+runSMT :: SMT a -> IO a
+runSMT = SMT.runSMT SMT.defaultConfig
+
+runStepWith
+    :: MVar Solver
+    -> CommonExpandedPattern Object
+    -- ^ configuration
+    -> AxiomPattern Object
+    -- ^ axiom
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (CommonExpandedPattern Object, StepProof Object Variable)
+        )
+runStepWith solver configuration axiom =
+    let smt =
+            (evalSimplifier . runExceptT)
+                (stepWithAxiom
+                    testMetadataTools
+                    testSubstitutionSimplifier
+                    configuration
+                    axiom
+                )
+    in runReaderT (SMT.getSMT smt) solver

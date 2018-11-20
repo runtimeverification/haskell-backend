@@ -16,11 +16,8 @@ module Kore.ASTVerifier.AttributesVerifier
     , parseAttributes
     ) where
 
-import Data.List
 import Data.Proxy
        ( Proxy )
-import Data.Text
-       ( Text )
 
 import           Kore.AST.Common
 import           Kore.AST.Kore
@@ -34,7 +31,6 @@ import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
-import           Kore.IndexedModule.Resolvers
 
 {-| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. -}
@@ -102,42 +98,16 @@ verifySortHookAttribute _indexedModule =
 
  -}
 verifySymbolHookAttribute
-    :: KoreIndexedModule atts
-    -> AttributesVerification atts
+    :: AttributesVerification atts
     -> Attributes
     -> Either (Error VerifyError) Hook
-verifySymbolHookAttribute indexedModule =
+verifySymbolHookAttribute =
     \case
         DoNotVerifyAttributes ->
             -- Do not attempt to parse, verify, or return the hook attribute.
             \_ -> return emptyHook
-        VerifyAttributes _ -> \attributes -> do
-            hook@Hook { getHook } <- parseAttributes attributes
-            case getHook of
-                Nothing ->
-                    -- The hook attribute is absent; nothing more to verify.
-                    return ()
-                Just hookName -> do
-                    -- Verify that the the pair (sort signature, hook)
-                    -- is unique for all symbols with this hook.
-                    checkNoDuplicateHookedSymbols indexedModule hookName
-                    return ()
-            return hook
-
-checkNoDuplicateHookedSymbols
-    :: KoreIndexedModule atts
-    -> Text
-    -> Either (Error e) ()
-checkNoDuplicateHookedSymbols indexedModule builtinName =
-    (\l -> if length (nub l) < length l then err l else return ()) $
-    map (\name -> getHeadApplicationSorts indexedModule (SymbolOrAlias name [])) $
-    resolveHooks indexedModule builtinName
-      where
-        err l =
-            koreFail $
-            "Found symbols with identical hooks and identical sorts: "
-            ++
-            show l
+        VerifyAttributes _ ->
+            \attributes -> parseAttributes attributes
 
 {- | Verify that the @hook{}()@ attribute is not present.
 

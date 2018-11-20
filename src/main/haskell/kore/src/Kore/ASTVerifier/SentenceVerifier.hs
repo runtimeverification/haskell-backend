@@ -283,7 +283,6 @@ verifyHookSentence
         verifySymbolSentence indexedModule sentence
         hook <-
             verifySymbolHookAttribute
-                indexedModule
                 attributesVerification
                 sentenceSymbolAttributes
         Builtin.symbolVerifier builtinVerifiers hook findSort sentence

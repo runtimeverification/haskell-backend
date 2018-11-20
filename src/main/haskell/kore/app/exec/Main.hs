@@ -61,7 +61,6 @@ import           Kore.Parser.Parser
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  makePredicate, makeTruePredicate, unwrapPredicate )
-import           Kore.SMT.Config
 import           Kore.Step.AxiomPatterns
                  ( AxiomPattern (..), extractRewriteAxioms )
 import           Kore.Step.ExpandedPattern
@@ -79,7 +78,7 @@ import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  PureMLPatternSimplifier, SimplificationProof (..), Simplifier,
-                 defaultSMTTimeOut, evalSimplifierWithTimeout )
+                 evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -95,6 +94,7 @@ import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
                  ( FreshVariable, freshVariablePrefix )
+import qualified SMT
 
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, mainGlobal )
@@ -196,7 +196,7 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for file to contain the output pattern
     , mainModuleName      :: !ModuleName
     -- ^ The name of the main module in the definition
-    , smtTimeOut          :: !SMTTimeOut
+    , smtTimeOut          :: !SMT.TimeOut
     , stepLimit           :: !(Limit Natural)
     , strategy
         :: !([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
@@ -232,16 +232,17 @@ parseKoreExecOptions =
             ( metavar "SMT_TIMEOUT"
             <> long "smt-timeout"
             <> help "Timeout for calls to the SMT solver, in milliseconds"
-            <> value defaultSMTTimeOut
+            <> value defaultTimeOut
             )
         <*> parseStepLimit
         <*> parseStrategy
         <*> pure Nothing
+    SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     readSMTTimeOut = do
         i <- auto
         if i <= 0
             then readerError "smt-timeout must be a positive integer."
-            else return $ SMTTimeOut i
+            else return $ SMT.TimeOut $ Limit i
     parseStepLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
         option readStrategy
@@ -354,6 +355,9 @@ mainWithOptions
         , koreSearchOptions
         }
   = do
+        let smtConfig =
+                SMT.defaultConfig
+                    { SMT.timeOut = smtTimeOut }
         parsedDefinition <- parseDefinition definitionFileName
         indexedModules <- verifyDefinition True parsedDefinition
         indexedModule <-
@@ -375,8 +379,9 @@ mainWithOptions
                                 searchFileName
                         (return . Just) (searchPattern, searchOptions)
         finalPattern <-
-            clockSomething "Executing"
-            $ evalSimplifierWithTimeout smtTimeOut
+            clockSomethingIO "Executing"
+            $ SMT.runSMT smtConfig
+            $ evalSimplifier
             $ do
                 axiomsAndSimplifiers <-
                     makeAxiomsAndSimplifiers indexedModule metadataTools

@@ -39,13 +39,14 @@ dependencies:
   - integer-gmp
   - lens
   - megaparsec >= 6.4.0
+  - mmorph
   - mtl
   - optparse-applicative
   - parser-combinators
   - prettyprinter
+  - process
   - recursion-schemes
   - reflection
-  - sbv
   - template-haskell
   - text
   - time
@@ -151,10 +152,12 @@ tests:
       - call-stack
       - directory >= 1.2.2
       - filepath
+      - hedgehog
       - QuickCheck
       - quickcheck-instances
       - tasty
       - tasty-ant-xml
+      - tasty-hedgehog
       - tasty-hunit
       - tasty-golden
       - tasty-quickcheck

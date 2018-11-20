@@ -9,19 +9,40 @@ Portability : portable
 -}
 module Kore.Step.Condition.Evaluator
     ( evaluate
+    , refutePredicate
     ) where
 
-import Control.Monad.Reader
-import Data.Reflection
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Error
+                 ( MaybeT, runMaybeT )
+import           Control.Monad.Counter
+                 ( CounterT, evalCounterT )
+import qualified Control.Monad.Counter as Counter
+import           Control.Monad.Except
+import           Control.Monad.Morph as Morph
+import           Control.Monad.State.Strict
+                 ( StateT, evalStateT )
+import qualified Control.Monad.State.Strict as State
+import qualified Data.Functor.Foldable as Functor.Foldable
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
+import           Data.Proxy
+import           Data.Reflection
+import qualified Data.Text as Text
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (applicationSortsOperands) )
+import           Kore.Attribute.Hook
+import           Kore.Attribute.Smtlib
+import qualified Kore.Builtin.Bool as Builtin.Bool
+import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, unwrapPredicate,
-                 wrapPredicate )
-import           Kore.SMT.SMT
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -32,8 +53,17 @@ import           Kore.Step.Simplification.Data
                  PureMLPatternSimplifier (..),
                  SimplificationProof (SimplificationProof), Simplifier )
 import           Kore.Step.StepperAttributes
+import qualified Kore.Step.StepperAttributes as StepperAttributes
+import           SMT
+                 ( MonadSMT, Result (..), SExpr (..), SMT )
+import qualified SMT
 
-{-| 'evaluate' attempts to evaluate a Kore predicate. -}
+{- | Attempt to evaluate a predicate.
+
+If the predicate is non-trivial (not @\\top{_}()@ or @\\bottom{_}()@),
+@evaluate@ attempts to refute the predicate using an external SMT solver.
+
+ -}
 evaluate
     ::  forall level variable .
         ( MetaOrObject level
@@ -55,26 +85,24 @@ evaluate
 evaluate
     substitutionSimplifier
     (PureMLPatternSimplifier simplifier)
-    predicate''
-  = give tools $ do
-    smtTimeOut <- ask
-    (patt, _proof) <-
-        simplifier substitutionSimplifier (unwrapPredicate predicate'')
-    let patt' =
-            if not(OrOfExpandedPattern.isTrue patt)
-               && not(OrOfExpandedPattern.isFalse patt)
-               && unsafeTryRefutePredicate smtTimeOut predicate'' == Just False
-            then ExpandedPattern.bottom
-            else
-                give symbolOrAliasSorts
-                $ OrOfExpandedPattern.toExpandedPattern patt
-    let
-        (subst, _proof) =
-            give symbolOrAliasSorts $ asPredicateSubstitution patt'
-    return ( subst, SimplificationProof)
+    predicate
+  = give symbolOrAliasSorts $ do
+    (simplified, _proof) <-
+        simplifier substitutionSimplifier (unwrapPredicate predicate)
+    refute <-
+        case () of
+            _ | OrOfExpandedPattern.isTrue simplified -> return (Just True)
+              | OrOfExpandedPattern.isFalse simplified -> return (Just False)
+              | otherwise -> refutePredicate predicate
+    let simplified' =
+            case refute of
+                Just False -> ExpandedPattern.bottom
+                _ -> OrOfExpandedPattern.toExpandedPattern simplified
+        (subst, _proof) = asPredicateSubstitution simplified'
+    return (subst, SimplificationProof)
   where
-    tools :: MetadataTools level StepperAttributes
-    tools@MetadataTools { symbolOrAliasSorts } = given
+    MetadataTools { symbolOrAliasSorts } =
+        given :: MetadataTools level StepperAttributes
 
 asPredicateSubstitution
     ::  ( MetaOrObject level
@@ -98,3 +126,261 @@ asPredicateSubstitution
             }
         , SimplificationProof
         )
+
+{- | Attempt to refute a predicate using an external SMT solver.
+
+The predicate is always sent to the external solver, even if it is trivial.
+
+ -}
+refutePredicate
+    :: forall level variable m.
+       ( Given (MetadataTools level StepperAttributes)
+       , MetaOrObject level
+       , Ord (variable level)
+       , Show (variable level)
+       , SortedVariable variable
+       , MonadSMT m
+       )
+    => Predicate level variable
+    -> m (Maybe Bool)
+refutePredicate korePredicate =
+    case isMetaOrObject (Proxy :: Proxy level) of
+        IsMeta   -> return Nothing
+        IsObject ->
+            SMT.inNewScope $ runMaybeT $ do
+                smtPredicate <- translatePredicate korePredicate
+                SMT.assert smtPredicate
+                result <- SMT.check
+                case result of
+                    Unsat -> return False
+                    _ -> empty
+
+-- ----------------------------------------------------------------
+-- Predicate translation
+
+{- | Translate a predicate for SMT.
+
+The predicate may inhabit an arbitrary sort. Logical connectives are translated
+to their SMT counterparts. Quantifiers, @\\ceil@, @\\floor@, and @\\in@ are
+uninterpreted (translated as variables) as is @\\equals@ if its arguments are
+not builtins or predicates. All other patterns are not translated and prevent
+the predicate from being sent to SMT.
+
+ -}
+translatePredicate
+    :: forall variable.
+        (Ord (variable Object), Given (MetadataTools Object StepperAttributes))
+    => Predicate Object variable
+    -> MaybeT SMT SExpr
+translatePredicate predicate = do
+    let translator = translatePredicatePattern $ unwrapPredicate predicate
+    runTranslator translator
+  where
+    translatePredicatePattern
+        :: PureMLPattern Object variable
+        -> Translator (PureMLPattern Object variable) SExpr
+    translatePredicatePattern pat =
+        case Functor.Foldable.project pat of
+            -- Logical connectives: translate as connectives
+            AndPattern and' -> translatePredicateAnd and'
+            BottomPattern _ -> return (SMT.bool False)
+            EqualsPattern eq ->
+                -- Equality of predicates and builtins can be translated to
+                -- equality in the SMT solver, but other patterns must remain
+                -- uninterpreted.
+                translatePredicateEquals eq <|> translateUninterpretedBool pat
+            IffPattern iff -> translatePredicateIff iff
+            ImpliesPattern implies -> translatePredicateImplies implies
+            NotPattern not' -> translatePredicateNot not'
+            OrPattern or' -> translatePredicateOr or'
+            TopPattern _ -> return (SMT.bool True)
+
+            -- Uninterpreted: translate as variables
+            CeilPattern _ -> translateUninterpretedBool pat
+            ExistsPattern _ -> translateUninterpretedBool pat
+            FloorPattern _ -> translateUninterpretedBool pat
+            ForallPattern _ -> translateUninterpretedBool pat
+            InPattern _ -> translateUninterpretedBool pat
+
+            -- Invalid: no translation, should not occur in predicates
+            ApplicationPattern _ -> empty
+            DomainValuePattern _ -> empty
+            NextPattern _ -> empty
+            RewritesPattern _ -> empty
+            VariablePattern _ -> empty
+
+    translatePredicateAnd And { andFirst, andSecond } =
+        SMT.and
+            <$> translatePredicatePattern andFirst
+            <*> translatePredicatePattern andSecond
+
+    translatePredicateEquals
+        Equals
+            { equalsOperandSort
+            , equalsResultSort
+            , equalsFirst
+            , equalsSecond
+            }
+      =
+        SMT.eq
+            <$> translatePredicateEqualsChild equalsFirst
+            <*> translatePredicateEqualsChild equalsSecond
+      where
+        translatePredicateEqualsChild
+          | equalsOperandSort == equalsResultSort =
+            -- Child patterns are predicates.
+            translatePredicatePattern
+          | otherwise =
+            translatePattern equalsOperandSort
+
+    translatePredicateIff Iff { iffFirst, iffSecond } =
+        iff
+            <$> translatePredicatePattern iffFirst
+            <*> translatePredicatePattern iffSecond
+      where
+        iff a b = SMT.and (SMT.implies a b) (SMT.implies b a)
+
+    translatePredicateImplies Implies { impliesFirst, impliesSecond } =
+        SMT.implies
+            <$> translatePredicatePattern impliesFirst
+            <*> translatePredicatePattern impliesSecond
+
+    translatePredicateNot Not { notChild } =
+        SMT.not <$> translatePredicatePattern notChild
+
+    translatePredicateOr Or { orFirst, orSecond } =
+        SMT.or
+            <$> translatePredicatePattern orFirst
+            <*> translatePredicatePattern orSecond
+
+-- | Translate a functional pattern in the builtin Int sort for SMT.
+translateInt
+    :: forall p variable.
+        ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        )
+    => p
+    -> Translator p SExpr
+translateInt pat =
+    case Functor.Foldable.project pat of
+        VariablePattern _ -> translateUninterpretedInt pat
+        DomainValuePattern dv ->
+            (return . SMT.int . Builtin.runParser ctx)
+                (Builtin.parseDomainValue Builtin.Int.parse dv)
+          where
+            ctx = Text.unpack Builtin.Int.sort
+        ApplicationPattern app ->
+            translateApplication app
+        _ -> empty
+
+-- | Translate a functional pattern in the builtin Bool sort for SMT.
+translateBool
+    :: forall p variable.
+        ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        )
+    => p
+    -> Translator p SExpr
+translateBool pat =
+    case Functor.Foldable.project pat of
+        VariablePattern _ -> translateUninterpretedBool pat
+        DomainValuePattern dv ->
+            (return . SMT.bool . Builtin.runParser ctx)
+            (Builtin.parseDomainValue Builtin.Bool.parse dv)
+            where
+            ctx = Text.unpack Builtin.Bool.sort
+        NotPattern Not { notChild } ->
+            -- \not is equivalent to BOOL.not for functional patterns.
+            -- The following is safe because non-functional patterns will fail
+            -- to translate.
+            SMT.not <$> translateBool notChild
+        ApplicationPattern app ->
+            translateApplication app
+        _ -> empty
+
+translateApplication
+    :: forall p variable.
+        ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        )
+    => Application Object p
+    -> Translator p SExpr
+translateApplication
+    Application
+        { applicationSymbolOrAlias
+        , applicationChildren
+        }
+    =
+    case getSmtlib (symAttributes smtTools applicationSymbolOrAlias) of
+        Nothing -> empty
+        Just sExpr ->
+            applySExpr sExpr
+                <$> zipWithM translatePattern
+                    applicationChildrenSorts
+                    applicationChildren
+    where
+    smtTools :: MetadataTools Object Smtlib
+    smtTools = StepperAttributes.smtlib <$> given
+
+    applicationChildrenSorts =
+        applicationSortsOperands
+        $ symbolOrAliasSorts smtTools applicationSymbolOrAlias
+
+translatePattern
+    :: forall p variable.
+        ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        , p ~ PureMLPattern Object variable
+        )
+    => Sort Object
+    -> p
+    -> Translator p SExpr
+translatePattern sort =
+    case getHook (sortAttributes hookTools sort) of
+        Just builtinSort
+          | builtinSort == Builtin.Bool.sort -> translateBool
+          | builtinSort == Builtin.Int.sort -> translateInt
+        _ -> const empty
+  where
+    hookTools :: MetadataTools Object Hook
+    hookTools = StepperAttributes.hook <$> given
+
+-- ----------------------------------------------------------------
+-- Translator
+
+type Translator p = MaybeT (StateT (Map p SExpr) (CounterT SMT))
+
+runTranslator :: Ord p => Translator p a -> MaybeT SMT a
+runTranslator = Morph.hoist (evalCounterT . flip evalStateT Map.empty)
+
+translateUninterpreted
+    :: Ord p
+    => SExpr  -- ^ type name
+    -> p  -- ^ uninterpreted pattern
+    -> Translator p SExpr
+translateUninterpreted t pat =
+    lookupPattern <|> freeVariable
+  where
+    lookupPattern = do
+        result <- State.gets $ Map.lookup pat
+        maybe empty return result
+    freeVariable = do
+        n <- Counter.increment
+        var <- SMT.declare ("<" <> Text.pack (show n) <> ">") t
+        State.modify' (Map.insert pat var)
+        return var
+
+translateUninterpretedBool
+    :: Ord p
+    => p  -- ^ uninterpreted pattern
+    -> Translator p SExpr
+translateUninterpretedBool = translateUninterpreted SMT.tBool
+
+translateUninterpretedInt
+    :: Ord p
+    => p  -- ^ uninterpreted pattern
+    -> Translator p SExpr
+translateUninterpretedInt = translateUninterpreted SMT.tInt

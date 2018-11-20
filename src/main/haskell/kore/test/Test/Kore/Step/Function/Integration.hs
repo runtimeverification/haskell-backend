@@ -52,7 +52,7 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
                  ( FreshVariable, freshVariableFromVariable )
-
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -62,14 +62,15 @@ import           Test.Tasty.HUnit.Extensions
 
 test_functionIntegration :: [TestTree]
 test_functionIntegration = give mockSymbolOrAliasSorts
-    [ testCase "Simple evaluation"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = Mock.g Mock.c
-                , predicate = makeTruePredicate
-                , substitution = []
-                }
-            (evaluate
+    [ testCase "Simple evaluation" $ do
+        let expect =
+                Predicated
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
                     [ axiomEvaluator
@@ -78,16 +79,17 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                     ]
                 )
                 (Mock.functionalConstr10 Mock.c)
-            )
-        )
-    , testCase "Evaluates inside functions"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = Mock.functional10 (Mock.functional10 Mock.c)
-                , predicate = makeTruePredicate
-                , substitution = []
-                }
-            (evaluate
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Evaluates inside functions" $ do
+        let expect =
+                Predicated
+                    { term = Mock.functional10 (Mock.functional10 Mock.c)
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
                     [ axiomEvaluator
@@ -96,19 +98,20 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                     ]
                 )
                 (Mock.functionalConstr10 (Mock.functionalConstr10 Mock.c))
-            )
-        )
-    , testCase "Evaluates 'or'"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term =
-                    mkOr
-                        (Mock.functional10 (Mock.functional10 Mock.c))
-                        (Mock.functional10 (Mock.functional10 Mock.d))
-                , predicate = makeTruePredicate
-                , substitution = []
-                }
-            (evaluate
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Evaluates 'or'" $ do
+        let expect =
+                Predicated
+                    { term =
+                        mkOr
+                            (Mock.functional10 (Mock.functional10 Mock.c))
+                            (Mock.functional10 (Mock.functional10 Mock.d))
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
                     [ axiomEvaluator
@@ -122,21 +125,22 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                         (Mock.functionalConstr10 Mock.d)
                     )
                 )
-            )
-        )
-    , testCase "Evaluates on multiple branches"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term =
-                    Mock.functional10
-                        (Mock.functional20
-                            (Mock.functional10 Mock.c)
-                            (Mock.functional10 Mock.c)
-                        )
-                , predicate = makeTruePredicate
-                , substitution = []
-                }
-            (evaluate
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Evaluates on multiple branches" $ do
+        let expect =
+                Predicated
+                    { term =
+                        Mock.functional10
+                            (Mock.functional20
+                                (Mock.functional10 Mock.c)
+                                (Mock.functional10 Mock.c)
+                            )
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
                     [ axiomEvaluator
@@ -150,16 +154,17 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                         (Mock.functionalConstr10 Mock.c)
                     )
                 )
-            )
-        )
-    , testCase "Returns conditions"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = Mock.f Mock.d
-                , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
-                , substitution = []
-                }
-            (evaluate
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Returns conditions" $ do
+        let expect =
+                Predicated
+                    { term = Mock.f Mock.d
+                    , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
                 mockMetadataTools
                 (Map.singleton Mock.cId
                     [ appliedMockEvaluator Predicated
@@ -170,19 +175,20 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                     ]
                 )
                 (Mock.f Mock.c)
-            )
-        )
-    , testCase "Merges conditions"
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
-                , predicate =
-                    makeAndPredicate
-                        (makeCeilPredicate Mock.cg)
-                        (makeCeilPredicate Mock.cf)
-                , substitution = []
-                }
-            (evaluate
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Merges conditions" $ do
+        let expect =
+                Predicated
+                    { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate Mock.cg)
+                            (makeCeilPredicate Mock.cf)
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
                 mockMetadataTools
                 (Map.fromList
                     [   ( Mock.cId
@@ -210,16 +216,17 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                     ]
                 )
                 (Mock.functionalConstr10 (Mock.functional20 Mock.c Mock.d))
-            )
-        )
-    , testCase "Reevaluates user-defined function results."
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = Mock.f Mock.e
-                , predicate = makeEqualsPredicate (Mock.f Mock.e) Mock.e
-                , substitution = []
-                }
-            (evaluate
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Reevaluates user-defined function results." $ do
+        let expect =
+                Predicated
+                    { term = Mock.f Mock.e
+                    , predicate = makeEqualsPredicate (Mock.f Mock.e) Mock.e
+                    , substitution = []
+                    }
+        actual <-
+            evaluate
                 mockMetadataTools
                 (Map.fromList
                     [   ( Mock.cId
@@ -237,23 +244,24 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                     ]
                 )
                 (Mock.f Mock.c)
-            )
-        )
-    , testCase "Simplifies substitution-predicate."
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Simplifies substitution-predicate." $ do
         -- Mock.plain10 below prevents:
         -- 1. unification without substitution.
         -- 2. Transforming the 'and' in an equals predicate,
         --    as it would happen for functions.
-        (assertEqualWithExplanation ""
-            Predicated
-                { term = Mock.a
-                , predicate =
-                    makeCeilPredicate
-                        (Mock.plain10 Mock.cf)
-                , substitution =
-                    [ (Mock.var_x_1, Mock.cf), (Mock.var_y_1, Mock.b) ]
-                }
-            (evaluate
+        let expect =
+                Predicated
+                    { term = Mock.a
+                    , predicate =
+                        makeCeilPredicate
+                            (Mock.plain10 Mock.cf)
+                    , substitution =
+                        [ (Mock.var_x_1, Mock.cf), (Mock.var_y_1, Mock.b) ]
+                    }
+        actual <-
+            evaluate
                 mockMetadataTools
                 (Map.fromList
                     [   ( Mock.fId
@@ -278,8 +286,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                     ]
                 )
                 (Mock.f (mkVar Mock.x))
-            )
-        )
+        assertEqualWithExplanation "" expect actual
     ]
 
 axiomEvaluator
@@ -332,12 +339,13 @@ evaluate
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -> CommonPurePattern level
-    -> CommonExpandedPattern level
+    -> IO (CommonExpandedPattern level)
 evaluate metadataTools functionIdToEvaluator patt =
-    fst
-        $ evalSimplifier
-        $ Pattern.simplify
-            metadataTools substitutionSimplifier functionIdToEvaluator patt
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ Pattern.simplify
+        metadataTools substitutionSimplifier functionIdToEvaluator patt
   where
     substitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
     substitutionSimplifier =

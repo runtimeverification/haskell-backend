@@ -7,6 +7,7 @@ import Test.Tasty.HUnit
 
 import           Control.Monad.Except
                  ( runExceptT )
+import qualified Data.Bifunctor as Bifunctor
 import           Data.Default
                  ( def )
 import           Data.Reflection
@@ -48,6 +49,7 @@ import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import           Kore.Unification.Unifier
                  ( UnificationError (..), UnificationProof (..) )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
@@ -55,23 +57,23 @@ import           Test.Tasty.HUnit.Extensions
 
 test_baseStep :: [TestTree]
 test_baseStep =
-    [ testCase "Substituting a variable."
-        (assertEqualWithExplanation ""
-            (Right
-                ( Predicated
-                    { term = asPureMetaPattern (v1 PatternSort)
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+    [ testCase "Substituting a variable." $ do
+        let expect =
+                Right
+                    ( Predicated
+                        { term = asPureMetaPattern (v1 PatternSort)
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
-            )
-            (runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term = asPureMetaPattern (v1 PatternSort)
@@ -84,25 +86,25 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
-    , testCase "Substituting a variable with a larger one."
-        (assertEqualWithExplanation ""
-            (Right
-                ( Predicated
-                    { term = asPureMetaPattern (y1 PatternSort)
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Substituting a variable with a larger one." $ do
+        let expect =
+                Right
+                    ( Predicated
+                        { term = asPureMetaPattern (y1 PatternSort)
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
-            )
-            (runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term = asPureMetaPattern (y1 PatternSort)
@@ -115,25 +117,25 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
-    , testCase "Substituting a variable with itself."
-        (assertEqualWithExplanation ""
-            (Right
-                ( Predicated
-                    { term = asPureMetaPattern (v1 PatternSort)
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Substituting a variable with itself." $ do
+        let expect =
+                Right
+                    ( Predicated
+                        { term = asPureMetaPattern (v1 PatternSort)
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
-            )
-            (runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -150,33 +152,33 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
+
     -- sigma(x, x) => x   vs   sigma(a, f(b))
     -- Expected: sigma(f(b), f(b)) and a=f(b)
-    , testCase "Merging configuration patterns."
-        (assertEqualWithExplanation ""
-            (Right
-                ( Predicated
-                    { term =
-                        asPureMetaPattern
-                            (metaF (b1 PatternSort))
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        [   ( asVariable (a1 PatternSort)
-                            , asPureMetaPattern (metaF (b1 PatternSort))
-                            )
-                        ]
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+    , testCase "Merging configuration patterns." $ do
+        let expect =
+                Right
+                    ( Predicated
+                        { term =
+                            asPureMetaPattern
+                                (metaF (b1 PatternSort))
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [   ( asVariable (a1 PatternSort)
+                                , asPureMetaPattern (metaF (b1 PatternSort))
+                                )
+                            ]
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
-            )
-            (runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -196,31 +198,31 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
+
     -- sigma(x, x) => x   vs   sigma(f(a), f(b))
     -- Expected: f(b) and a=b
-    , testCase "Substitution with symbol matching."
-        (assertEqualWithExplanation ""
-            (Right
-                ( Predicated
-                    { term = asPureMetaPattern (metaF (b1 PatternSort))
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        [   ( asVariable (a1 PatternSort)
-                            , asPureMetaPattern (b1 PatternSort)
-                            )
-                        ]
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+    , testCase "Substitution with symbol matching." $ do
+        let expect =
+                Right
+                    ( Predicated
+                        { term = asPureMetaPattern (metaF (b1 PatternSort))
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [   ( asVariable (a1 PatternSort)
+                                , asPureMetaPattern (b1 PatternSort)
+                                )
+                            ]
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
-            )
-            (runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -240,12 +242,13 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
+
     -- sigma(x, x) => x   vs   sigma(y, y)
     -- Expected: y
     , testCase "Identical variables have no condition, alphabetical larger."
         (identicalVariablesAssertion y1)
+
     -- sigma(x, x) => x   vs   sigma(a, a)
     -- Expected: a
     , testCase "Identical variables have no condition, alphabetical lower."
@@ -255,29 +258,29 @@ test_baseStep =
     -- vs
     -- sigma(sigma(a, b), sigma(b, a))
     -- Expected: sigma(b, b) and a=b
-    , testCase "Merge multiple variables."
-        (assertEqualWithExplanation ""
-            (Right
-                ( Predicated
-                    { term =
-                        asPureMetaPattern
-                            (metaSigma (b1 PatternSort) (b1 PatternSort))
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        [   ( asVariable (a1 PatternSort)
-                            , asPureMetaPattern (b1 PatternSort)
-                            )
-                        ]
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+    , testCase "Merge multiple variables." $ do
+        let expect =
+                Right
+                    ( Predicated
+                        { term =
+                            asPureMetaPattern
+                                (metaSigma (b1 PatternSort) (b1 PatternSort))
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [   ( asVariable (a1 PatternSort)
+                                , asPureMetaPattern (b1 PatternSort)
+                                )
+                            ]
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
-            )
-            (runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -312,36 +315,36 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
+
     -- x => exists a . x    vs    a
     -- Expected: exists <newvar> . a
-    , testCase "Rename quantified rhs variables."
-        (assertEqualWithExplanation ""
-            (Right
-                ( Predicated
-                    { term =
-                        asPureMetaPattern
-                            (metaExists
-                                PatternSort
-                                (var_a1_0 PatternSort)
-                                (a1 PatternSort)
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings
-                            [ variableRenaming
-                                (a1 PatternSort) (var_a1_0 PatternSort)
+    , testCase "Rename quantified rhs variables." $ do
+        let expect =
+                Right
+                    ( Predicated
+                        { term =
+                            asPureMetaPattern
+                                (metaExists
+                                    PatternSort
+                                    (var_a1_0 PatternSort)
+                                    (a1 PatternSort)
+                                )
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings
+                                [ variableRenaming
+                                    (a1 PatternSort) (var_a1_0 PatternSort)
+                                ]
+                            , StepProofUnification EmptyUnificationProof
                             ]
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+                        )
                     )
-                )
-            )
-            (runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term = asPureMetaPattern (a1 PatternSort)
@@ -361,14 +364,14 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
+
     -- sigma(x, x) -> x   vs   sigma(g(a), f(b))
     -- Expected: error because g(a) != f(b)
-    , testCase "Symbol clashes."
-        (assertEqualWithExplanation ""
-            (Right ExpandedPattern.bottom)
-            (fst <$> runStep
+    , testCase "Symbol clashes." $ do
+        let expect = Right ExpandedPattern.bottom
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -389,15 +392,15 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+
     -- sigma(sigma(x, x), sigma(y, y)) -> sigma(x, y)
     -- vs
     -- sigma(sigma(a, f(b)), sigma(a, b))
-    , testCase "Impossible substitution."
-        (assertEqualWithExplanation ""
-            (Right ExpandedPattern.bottom)
-            (fst <$> runStep
+    , testCase "Impossible substitution." $ do
+        let expect = Right ExpandedPattern.bottom
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -433,15 +436,15 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, f(b)) with substitution b=a
-    , testCase "Impossible substitution (ctor)."
-        (assertEqualWithExplanation ""
-            (Right ExpandedPattern.bottom)
-            (fst <$> runStep
+    , testCase "Impossible substitution (ctor)." $ do
+        let expect = Right ExpandedPattern.bottom
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -470,23 +473,23 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, h(b)) with substitution b=a
-    , testCase "Substitution (non-ctor)."
-        (assertEqualWithExplanation ""
-            -- TODO(virgil): This should probably be a normal result with
-            -- b=h(b) in the predicate.
-            (Left
-                (StepErrorSubstitution
-                    (NonCtorCircularVariableDependency
-                        [(asMetaVariable (b1 PatternSort))]
+    , testCase "Substitution (non-ctor)." $ do
+        let expect =
+                -- TODO(virgil): This should probably be a normal result with
+                -- b=h(b) in the predicate.
+                Left
+                    (StepErrorSubstitution
+                        (NonCtorCircularVariableDependency
+                            [(asMetaVariable (b1 PatternSort))]
+                        )
                     )
-                )
-            )
-            (fst <$> runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -515,15 +518,15 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
+
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, i(b)) with substitution b=a
-    , testCase "Substitution error (non-function)"
-        (assertEqualWithExplanation ""
-            (Left $ StepErrorUnification UnsupportedPatterns)
-            (fst <$> runStep
+    , testCase "Substitution error (non-function)" $ do
+        let expect = Left $ StepErrorUnification UnsupportedPatterns
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -547,32 +550,32 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
+
     -- sigma(x, x) -> x
     -- vs
     -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
-    , testCase "Unification is applied repeatedly"
-        (assertEqualWithExplanation ""
-            (Right Predicated
-                { term = asPureMetaPattern
-                    (metaSigma
-                        (metaSigma (c1 PatternSort) (c1 PatternSort))
-                        (metaSigma (c1 PatternSort) (c1 PatternSort))
-                    )
-                , predicate = makeTruePredicate
-                , substitution =
-                    [   ( asMetaVariable (a1 PatternSort)
-                        , asPureMetaPattern
+    , testCase "Unification is applied repeatedly" $ do
+        let expect =
+                Right Predicated
+                    { term = asPureMetaPattern
+                        (metaSigma
+                            (metaSigma (c1 PatternSort) (c1 PatternSort))
                             (metaSigma (c1 PatternSort) (c1 PatternSort))
                         )
-                    ,   ( asMetaVariable (b1 PatternSort)
-                        , asPureMetaPattern (c1 PatternSort)
-                        )
-                    ]
-                }
-            )
-            (fst <$> runStep
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [   ( asMetaVariable (a1 PatternSort)
+                            , asPureMetaPattern
+                                (metaSigma (c1 PatternSort) (c1 PatternSort))
+                            )
+                        ,   ( asMetaVariable (b1 PatternSort)
+                            , asPureMetaPattern (c1 PatternSort)
+                            )
+                        ]
+                    }
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term = asPureMetaPattern
@@ -598,18 +601,17 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+
     -- sigma(sigma(x, x), y) => sigma(x, y)
     -- vs
     -- sigma(sigma(a, f(b)), a)
     -- Expected: sigma(f(b), f(b)) and a=f(b)
-    , let
-        fOfB = metaF (b1 PatternSort)
-      in
-        testCase "Substitution normalization."
-            (assertEqualWithExplanation ""
-                (Right
+    , testCase "Substitution normalization." $ do
+        let
+            fOfB = metaF (b1 PatternSort)
+            expect =
+                Right
                     ( Predicated
                         { term = asPureMetaPattern (metaSigma fOfB fOfB)
                         , predicate = makeTruePredicate
@@ -626,50 +628,49 @@ test_baseStep =
                             ]
                         )
                     )
-                )
-                (runStep
-                    mockMetadataTools
-                    Predicated
-                        { term =
-                            asPureMetaPattern
+        actual <-
+            runStep
+                mockMetadataTools
+                Predicated
+                    { term =
+                        asPureMetaPattern
+                            (metaSigma
                                 (metaSigma
-                                    (metaSigma
-                                        (a1 PatternSort)
-                                        fOfB
-                                    )
                                     (a1 PatternSort)
+                                    fOfB
                                 )
-                        , predicate = makeTruePredicate
-                        , substitution = []
-                        }
-                    AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern
+                                (a1 PatternSort)
+                            )
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                AxiomPattern
+                    { axiomPatternLeft =
+                        asPureMetaPattern
+                            (metaSigma
                                 (metaSigma
-                                    (metaSigma
-                                        (x1 PatternSort) (x1 PatternSort)
-                                    )
-                                    (y1 PatternSort)
+                                    (x1 PatternSort) (x1 PatternSort)
                                 )
-                        , axiomPatternRight =
-                            asPureMetaPattern
-                                (metaSigma (x1 PatternSort) (y1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomPatternAttributes = def
-                        }
-                )
-            )
+                                (y1 PatternSort)
+                            )
+                    , axiomPatternRight =
+                        asPureMetaPattern
+                            (metaSigma (x1 PatternSort) (y1 PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
+                    , axiomPatternAttributes = def
+                    }
+        assertEqualWithExplanation "" expect actual
+
     -- sigma(sigma(x, x), y) => sigma(x, y)
     -- vs
     -- sigma(sigma(a, f(b)), a) and a=f(c)
     -- Expected: sigma(f(b), f(b)) and a=f(b), b=c
-    , let
-        fOfB = metaF (b1 PatternSort)
-        fOfC= metaF (c1 PatternSort)
-      in
-        testCase "Merging substitution with existing one."
-            (assertEqualWithExplanation ""
-                (Right
+    , testCase "Merging substitution with existing one." $ do
+        let
+            fOfB = metaF (b1 PatternSort)
+            fOfC= metaF (c1 PatternSort)
+            expect =
+                Right
                     ( Predicated
                         { term = asPureMetaPattern (metaSigma fOfC fOfC)
                         , predicate = makeTruePredicate
@@ -689,51 +690,51 @@ test_baseStep =
                             ]
                         )
                     )
-                )
-                (runStep
-                    mockMetadataTools
-                    Predicated
-                        { term =
-                            asPureMetaPattern
+        actual <-
+            runStep
+                mockMetadataTools
+                Predicated
+                    { term =
+                        asPureMetaPattern
+                            (metaSigma
                                 (metaSigma
-                                    (metaSigma
-                                        (a1 PatternSort)
-                                        fOfB
-                                    )
                                     (a1 PatternSort)
+                                    fOfB
                                 )
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            [   ( asVariable (a1 PatternSort)
-                                , asPureMetaPattern fOfC
-                                )
-                            ]
-                        }
-                    AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern
+                                (a1 PatternSort)
+                            )
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [   ( asVariable (a1 PatternSort)
+                            , asPureMetaPattern fOfC
+                            )
+                        ]
+                    }
+                AxiomPattern
+                    { axiomPatternLeft =
+                        asPureMetaPattern
+                            (metaSigma
                                 (metaSigma
-                                    (metaSigma
-                                        (x1 PatternSort) (x1 PatternSort)
-                                    )
-                                    (y1 PatternSort)
+                                    (x1 PatternSort) (x1 PatternSort)
                                 )
-                        , axiomPatternRight =
-                            asPureMetaPattern
-                                (metaSigma (x1 PatternSort) (y1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomPatternAttributes = def
-                        }
-                )
-            )
+                                (y1 PatternSort)
+                            )
+                    , axiomPatternRight =
+                        asPureMetaPattern
+                            (metaSigma (x1 PatternSort) (y1 PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
+                    , axiomPatternAttributes = def
+                    }
+        assertEqualWithExplanation "" expect actual
+
     -- "sl1" => x
     -- vs
     -- "sl2"
     -- Expected: bottom
-    , testCase "Matching different string literals is bottom"
-        (assertEqualWithExplanation ""
-            (Right ExpandedPattern.bottom)
-            (fst <$> runStep
+    , testCase "Matching different string literals is bottom" $ do
+        let expect = Right ExpandedPattern.bottom
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term = asPurePattern
@@ -752,32 +753,32 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+
     -- x => x
     -- vs
     -- a and g(a)=f(a)
     -- Expected: y1 and g(a)=f(a)
-    , testCase "Preserving initial condition."
-        (assertEqualWithExplanation ""
-            (Right
-                ( Predicated
-                    { term = asPureMetaPattern (a1 PatternSort)
-                    , predicate =
-                        makeEquals
-                            (metaG (a1 PatternSort))
-                            (metaF (a1 PatternSort))
-                    , substitution = []
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+    , testCase "Preserving initial condition." $ do
+        let expect =
+                Right
+                    ( Predicated
+                        { term = asPureMetaPattern (a1 PatternSort)
+                        , predicate =
+                            makeEquals
+                                (metaG (a1 PatternSort))
+                                (metaF (a1 PatternSort))
+                        , substitution = []
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
-            )
-            (runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term = asPureMetaPattern (a1 PatternSort)
@@ -793,18 +794,17 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
+
     -- sigma(sigma(x, x), y) => sigma(x, y)
     -- vs
     -- sigma(sigma(a, f(b)), a) and g(a)=f(a)
     -- Expected: sigma(f(b), f(b)) and a=f(b) and and g(f(b))=f(f(b))
-    , let
-        fOfB = metaF (b1 PatternSort)
-      in
-        testCase "Substitution_normalization."
-            (assertEqualWithExplanation ""
-                (Right
+    , testCase "Substitution_normalization." $ do
+        let
+            fOfB = metaF (b1 PatternSort)
+            expect =
+                Right
                     ( Predicated
                         { term = asPureMetaPattern (metaSigma fOfB fOfB)
                         , predicate =
@@ -824,55 +824,54 @@ test_baseStep =
                             ]
                         )
                     )
-                )
-                (runStep
-                    mockMetadataTools
-                    Predicated
-                        { term =
-                            asPureMetaPattern
+        actual <-
+            runStep
+                mockMetadataTools
+                Predicated
+                    { term =
+                        asPureMetaPattern
+                            (metaSigma
                                 (metaSigma
-                                    (metaSigma
-                                        (a1 PatternSort)
-                                        fOfB
-                                    )
                                     (a1 PatternSort)
+                                    fOfB
                                 )
-                        , predicate =
-                            makeEquals
-                                (metaG (a1 PatternSort))
-                                (metaF (a1 PatternSort))
-                        , substitution = []
-                        }
-                    AxiomPattern
-                        { axiomPatternLeft =
-                            asPureMetaPattern
+                                (a1 PatternSort)
+                            )
+                    , predicate =
+                        makeEquals
+                            (metaG (a1 PatternSort))
+                            (metaF (a1 PatternSort))
+                    , substitution = []
+                    }
+                AxiomPattern
+                    { axiomPatternLeft =
+                        asPureMetaPattern
+                            (metaSigma
                                 (metaSigma
-                                    (metaSigma
-                                        (x1 PatternSort) (x1 PatternSort)
-                                    )
-                                    (y1 PatternSort)
+                                    (x1 PatternSort) (x1 PatternSort)
                                 )
-                        , axiomPatternRight =
-                            asPureMetaPattern
-                                (metaSigma (x1 PatternSort) (y1 PatternSort))
-                        , axiomPatternRequires = makeTruePredicate
-                        , axiomPatternAttributes = def
-                        }
-                )
-            )
+                                (y1 PatternSort)
+                            )
+                    , axiomPatternRight =
+                        asPureMetaPattern
+                            (metaSigma (x1 PatternSort) (y1 PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
+                    , axiomPatternAttributes = def
+                    }
+        assertEqualWithExplanation "" expect actual
+
     -- x => x requires g(x)=f(x)
     -- vs
     -- a
     -- Expected: y1 and g(a)=f(a)
-    , let
-          preCondition var =
-              makeEquals
-                  (metaG (var PatternSort))
-                  (metaF (var PatternSort))
-      in
-        testCase "Conjoins axiom pre-condition"
-          (assertEqualWithExplanation ""
-              (Right
+    , testCase "Conjoins axiom pre-condition" $ do
+        let
+            preCondition var =
+                makeEquals
+                    (metaG (var PatternSort))
+                    (metaF (var PatternSort))
+            expect =
+              Right
                   ( Predicated
                       { term = asPureMetaPattern (a1 PatternSort)
                       , predicate = preCondition a1
@@ -885,22 +884,21 @@ test_baseStep =
                           ]
                       )
                   )
-              )
-              (runStep
-                  mockMetadataTools
-                  Predicated
-                      { term = asPureMetaPattern (a1 PatternSort)
-                      , predicate = makeTruePredicate
-                      , substitution = []
-                      }
-                  AxiomPattern
-                      { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
-                      , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
-                      , axiomPatternRequires = preCondition x1
-                      , axiomPatternAttributes = def
-                      }
-              )
-          )
+        actual <-
+            runStep
+                mockMetadataTools
+                Predicated
+                    { term = asPureMetaPattern (a1 PatternSort)
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                AxiomPattern
+                    { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = preCondition x1
+                    , axiomPatternAttributes = def
+                    }
+        assertEqualWithExplanation "" expect actual
 
     -- TODO(virgil): add tests for these after we implement
     -- a => sigma(x, y) substitutions where a is a configuration variable
@@ -939,24 +937,24 @@ test_baseStep =
             , variableRenamingRenamed =
                 ConfigurationVariable (asMetaVariable to)
             }
-    identicalVariablesAssertion var =
-        assertEqualWithExplanation ""
-            (Right
-                ( Predicated
-                    { term =
-                        asPureMetaPattern (var PatternSort)
-                    , predicate = makeTruePredicate
-                    , substitution = []
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+    identicalVariablesAssertion var = do
+        let expect =
+                Right
+                    ( Predicated
+                        { term =
+                            asPureMetaPattern (var PatternSort)
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
-            )
-            (runStep
+        actual <-
+            runStep
                 mockMetadataTools
                 Predicated
                     { term =
@@ -976,7 +974,7 @@ test_baseStep =
                     , axiomPatternRequires = makeTruePredicate
                     , axiomPatternAttributes = def
                     }
-            )
+        assertEqualWithExplanation "" expect actual
 
 mockStepperAttributes :: SymbolOrAlias Meta -> StepperAttributes
 mockStepperAttributes patternHead =
@@ -1134,12 +1132,15 @@ runStep
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> AxiomPattern level
-    -> Either
-        (StepError level Variable)
-        (CommonExpandedPattern level, StepProof level Variable)
+    -> IO
+        (Either
+            (StepError level Variable)
+            (CommonExpandedPattern level, StepProof level Variable)
+        )
 runStep metadataTools configuration axiom =
-    evalSimplifier
-    . runExceptT
+    SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier
+    $ runExceptT
     $ stepWithAxiom
         metadataTools
         (Mock.substitutionSimplifier metadataTools)

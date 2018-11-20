@@ -51,6 +51,7 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -60,10 +61,10 @@ import           Test.Tasty.HUnit.Extensions
 
 test_simplificationIntegration :: [TestTree]
 test_simplificationIntegration = give mockSymbolOrAliasSorts
-    [ testCase "owise condition - main case"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [])
-            (evaluate
+    [ testCase "owise condition - main case" $ do
+        let expect = OrOfExpandedPattern.make []
+        actual <-
+            evaluate
                 mockMetadataTools
                 Predicated
                     { term =
@@ -96,12 +97,12 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
-            )
-        )
-    , testCase "owise condition - owise case"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ExpandedPattern.top])
-            (evaluate
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "owise condition - owise case" $ do
+        let expect = OrOfExpandedPattern.make [ExpandedPattern.top]
+        actual <-
+            evaluate
                 mockMetadataTools
                 Predicated
                     { term =
@@ -134,22 +135,23 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
-            )
-        )
-    , testCase "map-like simplification"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkTop
-                    , predicate = makeCeilPredicate
-                        (mkAnd
-                            (Mock.plain10 Mock.cf)
-                            (Mock.plain10 (mkVar Mock.x))
-                        )
-                    , substitution = [(Mock.y, Mock.b)]
-                    }
-                ])
-            (evaluate
+        assertEqualWithExplanation "" expect actual
+
+     , testCase "map-like simplification" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkTop
+                        , predicate = makeCeilPredicate
+                            (mkAnd
+                                (Mock.plain10 Mock.cf)
+                                (Mock.plain10 (mkVar Mock.x))
+                            )
+                        , substitution = [(Mock.y, Mock.b)]
+                        }
+                    ]
+        actual <-
+            evaluate
                 mockMetadataTools
                 Predicated
                     { term = mkCeil
@@ -166,12 +168,11 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
-            )
-        )
-    , testCase "zzzmap function"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [])
-            (evaluateWithAxioms
+        assertEqualWithExplanation "" expect actual
+    , testCase "zzzmap function" $ do
+        let expect = OrOfExpandedPattern.make []
+        actual <-
+            evaluateWithAxioms
                 mockMetadataTools
                 (axiomPatternsToEvaluators
                     (Map.fromList
@@ -201,58 +202,58 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
-            )
-        )
+        assertEqualWithExplanation "" expect actual
     ]
 
 test_substitute :: [TestTree]
 test_substitute =
     give mockSymbolOrAliasSorts
-    [ testCase "Substitution under unary functional constructor"
-        (assertEqualWithExplanation
+    [ testCase "Substitution under unary functional constructor" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ ExpandedPattern.Predicated
+                        { term =
+                            Mock.functionalConstr20
+                                Mock.a
+                                (Mock.functionalConstr10 (mkVar Mock.x))
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [ (Mock.x, Mock.a)
+                            , (Mock.y, Mock.functionalConstr10 Mock.a)
+                            ]
+                        }
+                    ]
+        actual <-
+            evaluate
+                mockMetadataTools
+                (ExpandedPattern.fromPurePattern
+                    (mkAnd
+                        (Mock.functionalConstr20
+                            (mkVar Mock.x)
+                            (Mock.functionalConstr10 (mkVar Mock.x))
+                        )
+                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                    )
+                )
+        assertEqualWithExplanation
             "Expected substitution under unary functional constructor"
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern.Predicated
-                    { term =
-                        Mock.functionalConstr20
-                            Mock.a
-                            (Mock.functionalConstr10 (mkVar Mock.x))
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        [ (Mock.x, Mock.a)
-                        , (Mock.y, Mock.functionalConstr10 Mock.a)
-                        ]
-                    }
-                ]
-            )
-            (evaluate
-                mockMetadataTools
-                (ExpandedPattern.fromPurePattern
-                    (mkAnd
-                        (Mock.functionalConstr20
-                            (mkVar Mock.x)
-                            (Mock.functionalConstr10 (mkVar Mock.x))
-                        )
-                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
-                    )
-                )
-            )
-        )
-    , testCase "Substitution"
-        (assertEqualWithExplanation
-            "Expected substitution"
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern.Predicated
-                    { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        [ (Mock.x, Mock.a)
-                        , (Mock.y, Mock.a)
-                        ]
-                    }
-                ]
-            )
-            (evaluate
+            expect
+            actual
+
+    , testCase "Substitution" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ ExpandedPattern.Predicated
+                        { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [ (Mock.x, Mock.a)
+                            , (Mock.y, Mock.a)
+                            ]
+                        }
+                    ]
+        actual <-
+            evaluate
                 mockMetadataTools
                 (ExpandedPattern.fromPurePattern
                     (mkAnd
@@ -263,31 +264,29 @@ test_substitute =
                         (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
                     )
                 )
-            )
-        )
+        assertEqualWithExplanation "Expected substitution" expect actual
     ]
 
 test_substituteMap :: [TestTree]
 test_substituteMap =
     give mockSymbolOrAliasSorts
-    [ testCase "Substitution applied to Map elements"
-        (assertEqualWithExplanation
-            "Expected substitution applied to Map elements"
-            (OrOfExpandedPattern.make
-                [ ExpandedPattern.Predicated
-                    { term =
-                        Mock.functionalConstr20
-                            Mock.a
-                            (mkBuiltinDomainMap [(Mock.a, mkVar Mock.x)])
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        [ (Mock.x, Mock.a)
-                        , (Mock.y, mkBuiltinDomainMap [(Mock.a, Mock.a)])
-                        ]
-                    }
-                ]
-            )
-            (evaluate
+    [ testCase "Substitution applied to Map elements" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ ExpandedPattern.Predicated
+                        { term =
+                            Mock.functionalConstr20
+                                Mock.a
+                                (mkBuiltinDomainMap [(Mock.a, mkVar Mock.x)])
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [ (Mock.x, Mock.a)
+                            , (Mock.y, mkBuiltinDomainMap [(Mock.a, Mock.a)])
+                            ]
+                        }
+                    ]
+        actual <-
+            evaluate
                 mockMetadataTools
                 (ExpandedPattern.fromPurePattern
                     (mkAnd
@@ -298,8 +297,10 @@ test_substituteMap =
                         (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
                     )
                 )
-            )
-        )
+        assertEqualWithExplanation
+            "Expected substitution applied to Map elements"
+            expect
+            actual
     ]
   where
     mkBuiltinDomainMap =
@@ -309,21 +310,23 @@ test_substituteMap =
 test_substituteList :: [TestTree]
 test_substituteList =
     give mockSymbolOrAliasSorts
-    [ testCase "Substitution applied to List elements"
-        (assertEqualWithExplanation
-            "Expected substitution applied to List elements"
-            ( OrOfExpandedPattern.make
-                [ ExpandedPattern.Predicated
-                    { term =
-                        Mock.functionalConstr20
-                            Mock.a
-                            (mkBuiltinDomainList [Mock.a, mkVar Mock.x])
-                    , predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.a), (Mock.y, mkBuiltinDomainList [Mock.a, Mock.a])]
-                    }
-                ]
-            )
-            (evaluate
+    [ testCase "Substitution applied to List elements" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ ExpandedPattern.Predicated
+                        { term =
+                            Mock.functionalConstr20
+                                Mock.a
+                                (mkBuiltinDomainList [Mock.a, mkVar Mock.x])
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [ (Mock.x, Mock.a)
+                            , (Mock.y, mkBuiltinDomainList [Mock.a, Mock.a])
+                            ]
+                        }
+                    ]
+        actual <-
+            evaluate
                 mockMetadataTools
                 ( ExpandedPattern.fromPurePattern
                     (mkAnd
@@ -334,8 +337,10 @@ test_substituteList =
                         (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
                     )
                 )
-            )
-        )
+        assertEqualWithExplanation
+            "Expected substitution applied to List elements"
+            expect
+            actual
     ]
   where
     mkBuiltinDomainList =
@@ -357,7 +362,7 @@ mockMetadataTools =
 evaluate
     :: MetadataTools Object StepperAttributes
     -> CommonExpandedPattern Object
-    -> CommonOrOfExpandedPattern Object
+    -> IO (CommonOrOfExpandedPattern Object)
 evaluate tools patt =
     evaluateWithAxioms tools Map.empty patt
 
@@ -365,9 +370,9 @@ evaluateWithAxioms
     :: MetadataTools Object StepperAttributes
     -> Map.Map (Id Object) [ApplicationFunctionEvaluator Object]
     -> CommonExpandedPattern Object
-    -> CommonOrOfExpandedPattern Object
+    -> IO (CommonOrOfExpandedPattern Object)
 evaluateWithAxioms tools axioms patt =
-    fst $ evalSimplifier $
+    (<$>) fst $ SMT.runSMT SMT.defaultConfig $ evalSimplifier $
         ExpandedPattern.simplify
             tools
             (PredicateSubstitution.create tools simplifier)
@@ -393,4 +398,3 @@ evaluateWithAxioms tools axioms patt =
             [ (Mock.concatMapId, [Map.evalConcat])
             , (Mock.elementMapId, [Map.evalElement])
             ]
-

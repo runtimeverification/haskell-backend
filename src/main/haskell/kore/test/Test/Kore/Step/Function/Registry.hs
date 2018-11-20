@@ -47,6 +47,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
+import qualified SMT
 
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
@@ -248,19 +249,20 @@ test_functionRegistry =
             (1::Int)
             (length (extractRewriteAxioms Object testIndexedModule))
         )
-    , testCase "Checking that evaluator simplifies correctly"
-        (assertEqual ""
-            (App_ sHead [])
-            ( ExpandedPattern.term
-            $ head $ OrOfExpandedPattern.extractPatterns $ fst
+    , testCase "Checking that evaluator simplifies correctly" $ do
+        let expect = App_ sHead []
+        (simplified, _) <-
+            SMT.runSMT SMT.defaultConfig
             $ evalSimplifier
             $ ExpandedPattern.simplify
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)
                 (Simplifier.create testMetadataTools testEvaluators)
                 (makeExpandedPattern (App_ gHead []))
-            )
-        )
+        let actual =
+                ExpandedPattern.term $ head
+                $ OrOfExpandedPattern.extractPatterns simplified
+        assertEqual "" expect actual
     ]
   where
     makeExpandedPattern
