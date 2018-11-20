@@ -1,3 +1,14 @@
+{- |
+Module      : Kore.Builtin.Error
+Description : Errors related to builtin domain verification
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : thomas.tuegel@runtimeverification.com
+
+This module defines reusable error conditions to be triggered when a bug in the
+pattern verifier has admitted an invalid builtin domain expression.
+
+ -}
 module Kore.Builtin.Error
     ( verifierBug
     , wrongArity
