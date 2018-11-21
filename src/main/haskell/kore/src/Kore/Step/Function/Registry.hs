@@ -19,23 +19,25 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 
-import Kore.AST.Common
-import Kore.AST.Kore
-       ( UnifiedPattern, UnifiedSortVariable )
-import Kore.AST.MetaOrObject
-       ( MetaOrObject )
-import Kore.AST.PureML
-       ( fromPurePattern )
-import Kore.AST.Sentence
-       ( AsSentence (..), KoreSentenceAxiom, SentenceAxiom (..) )
-import Kore.IndexedModule.IndexedModule
-       ( IndexedModule (..), KoreIndexedModule, indexedModulesInScope )
-import Kore.Step.AxiomPatterns
-import Kore.Step.Function.Data
-       ( ApplicationFunctionEvaluator (..) )
-import Kore.Step.Function.UserDefined
-       ( axiomFunctionEvaluator )
-import Kore.Step.StepperAttributes
+import           Kore.AST.Common
+import           Kore.AST.Kore
+                 ( UnifiedPattern, UnifiedSortVariable )
+import           Kore.AST.MetaOrObject
+                 ( MetaOrObject )
+import           Kore.AST.PureML
+                 ( fromPurePattern )
+import           Kore.AST.Sentence
+                 ( AsSentence (..), KoreSentenceAxiom, SentenceAxiom (..) )
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.IndexedModule.IndexedModule
+                 ( IndexedModule (..), KoreIndexedModule,
+                 indexedModulesInScope )
+import           Kore.Step.AxiomPatterns
+import           Kore.Step.Function.Data
+                 ( ApplicationFunctionEvaluator (..) )
+import           Kore.Step.Function.UserDefined
+                 ( axiomFunctionEvaluator )
+import           Kore.Step.StepperAttributes
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
@@ -87,7 +89,7 @@ extractFunctionAxioms level =
 axiomToIdAxiomPatternPair
     ::  ( MetaOrObject level )
     => level
-    -> SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
+    -> SentenceAxiom UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
     -> Maybe (Id level, AxiomPattern level)
 axiomToIdAxiomPatternPair
     level

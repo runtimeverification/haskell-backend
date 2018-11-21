@@ -6,13 +6,15 @@ import Control.Error
 import Control.Monad.Counter
        ( MonadCounter )
 import Kore.AST.Common
-       ( PureMLPattern, SortedVariable )
+       ( SortedVariable )
 import Kore.AST.MetaOrObject
        ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.ExpandedPattern
        ( ExpandedPattern )
+import Kore.Step.Pattern
+       ( StepPattern )
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof )
 import Kore.Step.StepperAttributes
@@ -37,8 +39,8 @@ termAnd
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
 
 termUnification
@@ -55,7 +57,7 @@ termUnification
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level (unifier m)
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> unifier m
         (ExpandedPattern level variable, SimplificationProof level)

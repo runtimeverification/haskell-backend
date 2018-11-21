@@ -25,20 +25,19 @@ module Kore.AST.Sentence where
 import           Control.DeepSeq
                  ( NFData (..) )
 import           Data.Default
-import           Data.Functor.Classes
 import           Data.Functor.Foldable
+import           Data.Proxy
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
-import Data.Functor.Foldable.Orphans ()
-import Data.Functor.Impredicative
-       ( Rotate41 (..) )
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
+import           Data.Functor.Foldable.Orphans ()
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import qualified Kore.Domain.Builtin as Domain
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
 It is parameterized by the types of Patterns, @pat@.
@@ -46,7 +45,7 @@ It is parameterized by the types of Patterns, @pat@.
 
 newtype Attributes =
     Attributes { getAttributes :: [CommonKorePattern] }
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Ord, Generic, Show)
 
 instance NFData Attributes
 
@@ -60,21 +59,46 @@ Section 9.1.6 (Declaration and Definitions).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SentenceAlias level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+data SentenceAlias
+    (level :: *)
+    (pat :: (* -> *) -> (* -> *) -> * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
   = SentenceAlias
     { sentenceAliasAlias        :: !(Alias level)
     , sentenceAliasSorts        :: ![Sort level]
     , sentenceAliasResultSort   :: !(Sort level)
-    , sentenceAliasLeftPattern  :: !(Pattern level variable (Fix (pat variable)))
-    , sentenceAliasRightPattern :: !(Pattern level variable (Fix (pat variable)))
+    , sentenceAliasLeftPattern
+        :: !(Pattern level domain variable (Fix (pat domain variable)))
+    , sentenceAliasRightPattern
+        :: !(Pattern level domain variable (Fix (pat domain variable)))
     , sentenceAliasAttributes   :: !Attributes
     }
-  deriving (Eq, Generic, Show)
+  deriving (Generic)
+
+deriving instance
+    ( Eq (Pattern level domain variable child)
+    , child ~ Fix (pat domain variable)
+    ) =>
+    Eq (SentenceAlias level pat domain variable)
+
+deriving instance
+    ( Ord (Pattern level domain variable child)
+    , child ~ Fix (pat domain variable)
+    ) =>
+    Ord (SentenceAlias level pat domain variable)
+
+deriving instance
+    ( Show (Pattern level domain variable child)
+    , child ~ Fix (pat domain variable)
+    ) =>
+    Show (SentenceAlias level pat domain variable)
 
 instance
-    ( NFData (Fix (pat variable))
+    ( NFData (Pattern level domain variable child)
     , NFData (variable level)
-    ) => NFData (SentenceAlias level pat variable)
+    , child ~ Fix (pat domain variable)
+    ) => NFData (SentenceAlias level pat domain variable)
 
 {-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
 @meta-symbol-declaration@ syntactic categories from the Semantics of K,
@@ -83,7 +107,11 @@ Section 9.1.6 (Declaration and Definitions).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SentenceSymbol level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+data SentenceSymbol
+    (level :: *)
+    (pat :: (* -> *) -> (* -> *) -> * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
   = SentenceSymbol
     { sentenceSymbolSymbol     :: !(Symbol level)
     , sentenceSymbolSorts      :: ![Sort level]
@@ -92,7 +120,7 @@ data SentenceSymbol level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     }
   deriving (Eq, Generic, Show)
 
-instance NFData (SentenceSymbol level pat variable)
+instance NFData (SentenceSymbol level pat domain variable)
 
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -108,19 +136,31 @@ getModuleNameForError = Text.unpack . getModuleName
 {-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceImport (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+-- TODO (thomas.tuegel): Even though the parameters are unused, they must stay
+-- to satisfy the functional dependencies on 'AsSentence' below. Because they
+-- are phantom, every use of 'asSentence' for a 'SentenceImport' will require a
+-- type ascription. We should refactor the class so this is not necessary and
+-- remove the parameters.
+data SentenceImport
+    (pat :: (* -> *) -> (* -> *) -> * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
   = SentenceImport
     { sentenceImportModuleName :: !ModuleName
     , sentenceImportAttributes :: !Attributes
     }
   deriving (Eq, Generic, Show)
 
-instance NFData (SentenceImport pat variable)
+instance NFData (SentenceImport pat domain variable)
 
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceSort level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+data SentenceSort
+    (level :: *)
+    (pat :: (* -> *) -> (* -> *) -> * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
   = SentenceSort
     { sentenceSortName       :: !(Id level)
     , sentenceSortParameters :: ![SortVariable level]
@@ -128,36 +168,44 @@ data SentenceSort level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     }
   deriving (Eq, Generic, Show)
 
-instance NFData (SentenceSort level pat variable)
+instance NFData (SentenceSort level pat domain variable)
 
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceAxiom sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+data SentenceAxiom
+    (param :: *)
+    (pat :: (* -> *) -> (* -> *) -> * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
   = SentenceAxiom
-    { sentenceAxiomParameters :: ![sortParam]
-    , sentenceAxiomPattern    :: !(Fix (pat variable))
+    { sentenceAxiomParameters :: ![param]
+    , sentenceAxiomPattern    :: !(Fix (pat domain variable))
     , sentenceAxiomAttributes :: !Attributes
     }
   deriving (Eq, Generic, Show)
 
 instance
-    ( NFData sortParam
-    , NFData (Fix (pat variable))
+    ( NFData param
+    , NFData (Fix (pat domain variable))
     ) =>
-    NFData (SentenceAxiom sortParam pat variable)
+    NFData (SentenceAxiom param pat domain variable)
 
 {-|@SentenceHook@ corresponds to @hook-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 Note that we are reusing the 'SentenceSort' and 'SentenceSymbol' structures to
 represent hooked sorts and hooked symbols.
 -}
-data SentenceHook level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
-    = SentenceHookedSort !(SentenceSort level pat variable)
-    | SentenceHookedSymbol !(SentenceSymbol level pat variable)
-  deriving (Eq, Generic, Show)
+data SentenceHook
+    (level :: *)
+    (pat :: (* -> *) -> (* -> *) -> * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
+  = SentenceHookedSort !(SentenceSort level pat domain variable)
+  | SentenceHookedSymbol !(SentenceSymbol level pat domain variable)
+    deriving (Eq, Generic, Show)
 
-instance NFData (SentenceHook level pat variable)
+instance NFData (SentenceHook level pat domain variable)
 
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -169,38 +217,68 @@ Since axioms and imports exist at both meta and kore levels, we use 'Meta'
 to qualify them. In contrast, since sort declarations are not available
 at the meta level, we qualify them with 'Object'.
 -}
-data Sentence level sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *) where
+data Sentence
+    (level :: *)
+    (param :: *)
+    (pat :: (* -> *) -> (* -> *) -> * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
+  where
     SentenceAliasSentence
-        :: !(SentenceAlias level pat variable)
-        -> Sentence level sortParam pat variable
+        :: !(SentenceAlias level pat domain variable)
+        -> Sentence level param pat domain variable
     SentenceSymbolSentence
-        :: !(SentenceSymbol level pat variable)
-        -> Sentence level sortParam pat variable
+        :: !(SentenceSymbol level pat domain variable)
+        -> Sentence level param pat domain variable
     SentenceImportSentence
-        :: !(SentenceImport pat variable)
-        -> Sentence Meta sortParam pat variable
+        :: !(SentenceImport pat domain variable)
+        -> Sentence Meta param pat domain variable
     SentenceAxiomSentence
-        :: !(SentenceAxiom sortParam pat variable)
-        -> Sentence Meta sortParam pat variable
+        :: !(SentenceAxiom param pat domain variable)
+        -> Sentence Meta param pat domain variable
     SentenceSortSentence
-        :: !(SentenceSort level pat variable)
-        -> Sentence level sortParam pat variable
+        :: !(SentenceSort level pat domain variable)
+        -> Sentence level param pat domain variable
     SentenceHookSentence
-        :: !(SentenceHook Object pat variable)
-        -> Sentence Object sortParam pat variable
+        :: !(SentenceHook Object pat domain variable)
+        -> Sentence Object param pat domain variable
 
 deriving instance
-    ( Eq1 (pat variable), Eq (pat variable (Fix (pat variable)))
-    , Eq sortParam
-    , Eq (variable level)
-    ) => Eq (Sentence level sortParam pat variable)
+    ( Eq (SentenceAlias level pat domain variable)
+    , Eq (SentenceSymbol level pat domain variable)
+    , Eq (SentenceImport pat domain variable)
+    , Eq (SentenceAxiom param pat domain variable)
+    , Eq (SentenceSort level pat domain variable)
+    , Eq (SentenceHook level pat domain variable)
+    ) => Eq (Sentence level param pat domain variable)
+
+deriving instance
+    ( Ord (SentenceAlias level pat domain variable)
+    , Ord (SentenceSymbol level pat domain variable)
+    , Ord (SentenceImport pat domain variable)
+    , Ord (SentenceAxiom param pat domain variable)
+    , Ord (SentenceSort level pat domain variable)
+    , Ord (SentenceHook level pat domain variable)
+    ) => Ord (Sentence level param pat domain variable)
+
+deriving instance
+    ( Show (SentenceAlias level pat domain variable)
+    , Show (SentenceSymbol level pat domain variable)
+    , Show (SentenceImport pat domain variable)
+    , Show (SentenceAxiom param pat domain variable)
+    , Show (SentenceSort level pat domain variable)
+    , Show (SentenceHook level pat domain variable)
+    ) => Show (Sentence level param pat domain variable)
 
 instance
-    ( NFData sortParam
-    , NFData (variable level)
-    , NFData (Fix (pat variable))
+    ( NFData (SentenceAlias level pat domain variable)
+    , NFData (SentenceSymbol level pat domain variable)
+    , NFData (SentenceImport pat domain variable)
+    , NFData (SentenceAxiom param pat domain variable)
+    , NFData (SentenceSort level pat domain variable)
+    , NFData (SentenceHook level pat domain variable)
     ) =>
-    NFData (Sentence level sortParam pat variable)
+    NFData (Sentence level param pat domain variable)
   where
     rnf =
         \case
@@ -211,18 +289,12 @@ instance
             SentenceSortSentence p -> rnf p
             SentenceHookSentence p -> rnf p
 
-deriving instance
-    ( Show1 (pat variable), Show (pat variable (Fix (pat variable)))
-    , Show sortParam
-    , Show (variable level)
-    ) => Show (Sentence level sortParam pat variable)
-
 {- | The attributes associated with a sentence.
 
     Every sentence type has attributes, so this operation is total.
 
  -}
-sentenceAttributes :: Sentence level sortParam pat variable -> Attributes
+sentenceAttributes :: Sentence level param pat domain variable -> Attributes
 sentenceAttributes =
     \case
         SentenceAliasSentence
@@ -256,17 +328,22 @@ They correspond to the second, third and forth non-terminals of the @definition@
 syntactic category from the Semantics of K, Section 9.1.6
 (Declaration and Definitions).
 -}
-data Module sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+data Module
+    sentence
+    param
+    (pat :: (* -> *) -> (* -> *) -> * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
   = Module
     { moduleName       :: !ModuleName
-    , moduleSentences  :: ![sentence sortParam pat variable]
+    , moduleSentences  :: ![sentence param pat domain variable]
     , moduleAttributes :: !Attributes
     }
   deriving (Eq, Generic, Show)
 
 instance
-    NFData (sentence sortParam pat variable) =>
-    NFData (Module sentence sortParam pat variable)
+    NFData (sentence param pat domain variable) =>
+    NFData (Module sentence param pat domain variable)
 
 {-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
@@ -277,32 +354,47 @@ syntactic category from the Semantics of K, Section 9.1.6
 'definitionAttributes' corresponds to the first non-terminal of @definition@,
 while the remaining three are grouped into 'definitionModules'.
 -}
-data Definition sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+data Definition
+    sentence
+    param
+    (pat :: (* -> *) -> (* -> *) -> * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
   = Definition
     { definitionAttributes :: !Attributes
-    , definitionModules    :: ![Module sentence sortParam pat variable]
+    , definitionModules    :: ![Module sentence param pat domain variable]
     }
   deriving (Eq, Generic, Show)
 
 instance
-    NFData (sentence sortParam pat variable) =>
-    NFData (Definition sentence sortParam pat variable)
+    NFData (sentence param pat domain variable) =>
+    NFData (Definition sentence param pat domain variable)
 
-class SentenceSymbolOrAlias (sentence :: * -> ((* -> *) -> * -> *) -> (* -> *) -> *) where
+class SentenceSymbolOrAlias
+    (sentence
+        :: *  -- sort parameter
+        -> ((* -> *) -> (* -> *) -> * -> *)  -- pattern head
+        -> (* -> *)  -- domain
+        -> (* -> *)  -- variable
+        -> *
+    )
+  where
     getSentenceSymbolOrAliasConstructor
-        :: sentence level pat variable -> Id level
+        :: sentence level pat domain variable -> Id level
     getSentenceSymbolOrAliasSortParams
-        :: sentence level pat variable -> [SortVariable level]
+        :: sentence level pat domain variable -> [SortVariable level]
     getSentenceSymbolOrAliasArgumentSorts
-        :: sentence level pat variable -> [Sort level]
+        :: sentence level pat domain variable -> [Sort level]
     getSentenceSymbolOrAliasResultSort
-        :: sentence level pat variable -> Sort level
+        :: sentence level pat domain variable -> Sort level
     getSentenceSymbolOrAliasAttributes
-        :: sentence level pat variable -> Attributes
+        :: sentence level pat domain variable -> Attributes
     getSentenceSymbolOrAliasSentenceName
-        :: sentence level pat variable -> String
+        :: sentence level pat domain variable -> String
     getSentenceSymbolOrAliasHead
-        :: sentence level pat variable -> [Sort level] -> SymbolOrAlias level
+        :: sentence level pat domain variable
+        -> [Sort level]
+        -> SymbolOrAlias level
     getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
         { symbolOrAliasConstructor =
             getSentenceSymbolOrAliasConstructor sentence
@@ -331,118 +423,244 @@ class AsSentence sentenceType s | s -> sentenceType where
 
 -- |'KoreSentenceAlias' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceAlias'
-type KoreSentenceAlias level = SentenceAlias level UnifiedPattern Variable
+type KoreSentenceAlias level =
+    SentenceAlias level UnifiedPattern Domain.Builtin Variable
+
 -- |'KoreSentenceSymbol' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceSymbol'
-type KoreSentenceSymbol level = SentenceSymbol level UnifiedPattern Variable
+type KoreSentenceSymbol level =
+    SentenceSymbol level UnifiedPattern Domain.Builtin Variable
+
 -- |'KoreSentenceImport' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceImport'
-type KoreSentenceImport = SentenceImport UnifiedPattern Variable
+type KoreSentenceImport =
+    SentenceImport UnifiedPattern Domain.Builtin Variable
+
 -- |'KoreSentenceAxiom' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceAxiom'
-type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
+type KoreSentenceAxiom =
+    SentenceAxiom UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+
 -- |'KoreSentenceSort' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceSort'
-type KoreSentenceSort level = SentenceSort level UnifiedPattern Variable
+type KoreSentenceSort level =
+    SentenceSort level UnifiedPattern Domain.Builtin Variable
+
 -- |'KoreSentenceHook' Kore ('Meta' and 'Object') version of
 -- 'SentenceHook'
-type KoreSentenceHook = SentenceHook Object UnifiedPattern Variable
+type KoreSentenceHook =
+    SentenceHook Object UnifiedPattern Domain.Builtin Variable
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Sentence',
 to allow using toghether both 'Meta' and 'Object' sentences.
 -}
-newtype UnifiedSentence sortParam pat variable = UnifiedSentence
-    { getUnifiedSentence :: Unified (Rotate41 Sentence sortParam pat variable) }
-  deriving (Generic)
+data UnifiedSentence param pat domain variable where
+    UnifiedMetaSentence
+        :: !(Sentence Meta param pat domain var)
+        -> UnifiedSentence param pat domain var
 
-pattern UnifiedMetaSentence
-    :: Sentence Meta sortParam pat var
-    -> UnifiedSentence sortParam pat var
-pattern UnifiedMetaSentence sentence =
-    UnifiedSentence (UnifiedMeta (Rotate41 sentence))
-
-pattern UnifiedObjectSentence
-    :: Sentence Object sortParam pat var
-    -> UnifiedSentence sortParam pat var
-pattern UnifiedObjectSentence sentence =
-    UnifiedSentence (UnifiedObject (Rotate41 sentence))
-
-{-# COMPLETE UnifiedMetaSentence, UnifiedObjectSentence #-}
+    UnifiedObjectSentence
+        :: !(Sentence Object param pat domain var)
+        -> UnifiedSentence param pat domain var
 
 deriving instance
-    ( Eq1 (pat variable), Eq (pat variable (Fix (pat variable)))
-    , Eq sortParam
-    , EqMetaOrObject variable
-    ) => Eq (UnifiedSentence sortParam pat variable)
+    ( Eq (Sentence Meta param pat domain variable)
+    , Eq (Sentence Object param pat domain variable)
+    ) => Eq (UnifiedSentence param pat domain variable)
+
+deriving instance
+    ( Ord (Sentence Meta param pat domain variable)
+    , Ord (Sentence Object param pat domain variable)
+    ) => Ord (UnifiedSentence param pat domain variable)
+
+deriving instance
+    ( Show (Sentence Meta param pat domain variable)
+    , Show (Sentence Object param pat domain variable)
+    ) => Show (UnifiedSentence param pat domain variable)
 
 instance
-    ( NFData sortParam
-    , NFData (variable Meta), NFData (variable Object)
-    , NFData (Fix (pat variable))
-    ) =>
-    NFData (UnifiedSentence sortParam pat variable)
-
-deriving instance
-    ( Show1 (pat variable), Show (pat variable (Fix (pat variable)))
-    , Show sortParam
-    , ShowMetaOrObject variable
-    ) => Show (UnifiedSentence sortParam pat variable)
-
+    ( NFData (Sentence Meta param pat domain variable)
+    , NFData (Sentence Object param pat domain variable)
+    ) => NFData (UnifiedSentence param pat domain variable)
+  where
+    rnf =
+        \case
+            UnifiedMetaSentence metaS -> rnf metaS
+            UnifiedObjectSentence objectS -> rnf objectS
 
 -- |'KoreSentence' instantiates 'UnifiedSentence' to describe sentences fully
 -- corresponding to the @declaration@ syntactic category
 -- from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-type KoreSentence = UnifiedSentence UnifiedSortVariable UnifiedPattern Variable
+type KoreSentence =
+    UnifiedSentence UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
 
 constructUnifiedSentence
-    :: (MetaOrObject level)
-    => (a -> Sentence level sortParam pat variable)
-    -> (a -> UnifiedSentence sortParam pat variable)
-constructUnifiedSentence ctor = UnifiedSentence . asUnified . Rotate41 . ctor
+    ::  forall a level param pat domain variable.
+        MetaOrObject level
+    => (a -> Sentence level param pat domain variable)
+    -> (a -> UnifiedSentence param pat domain variable)
+constructUnifiedSentence ctor =
+    case isMetaOrObject (Proxy :: Proxy level) of
+        IsMeta -> UnifiedMetaSentence . ctor
+        IsObject -> UnifiedObjectSentence . ctor
 
 -- |Given functions appliable to 'Meta' 'Sentence's and 'Object' 'Sentences's,
 -- builds a combined function which can be applied on 'UnifiedSentence's.
 applyUnifiedSentence
-    :: (Sentence Meta sortParam pat variable -> b)
-    -> (Sentence Object sortParam pat variable -> b)
-    -> (UnifiedSentence sortParam pat variable -> b)
-applyUnifiedSentence metaT _ (UnifiedSentence (UnifiedMeta rs)) =
-    metaT (unRotate41 rs)
-applyUnifiedSentence _ objectT (UnifiedSentence (UnifiedObject rs)) =
-    objectT (unRotate41 rs)
-
+    :: (Sentence Meta param pat domain variable -> b)
+    -> (Sentence Object param pat domain variable -> b)
+    -> (UnifiedSentence param pat domain variable -> b)
+applyUnifiedSentence metaT objectT =
+    \case
+        UnifiedMetaSentence metaS -> metaT metaS
+        UnifiedObjectSentence objectS -> objectT objectS
 
 -- |'KoreModule' fully instantiates 'Module' to correspond to the second, third,
 -- and forth non-terminals of the @definition@ syntactic category from the
 -- Semantics of K, Section 9.1.6 (Declaration and Definitions).
 type KoreModule =
-    Module UnifiedSentence UnifiedSortVariable UnifiedPattern Variable
+    Module
+        UnifiedSentence
+        UnifiedSortVariable
+        UnifiedPattern
+        Domain.Builtin
+        Variable
 
 type KoreDefinition =
-    Definition UnifiedSentence UnifiedSortVariable UnifiedPattern Variable
+    Definition
+        UnifiedSentence
+        UnifiedSortVariable
+        UnifiedPattern
+        Domain.Builtin
+        Variable
 
 instance
     ( MetaOrObject level
-    ) => AsSentence KoreSentence (KoreSentenceAlias level)
+    , param ~ UnifiedSortVariable
+    ) =>
+    AsSentence
+        (UnifiedSentence param UnifiedPattern domain variable)
+        (SentenceAlias level UnifiedPattern domain variable)
   where
     asSentence = constructUnifiedSentence SentenceAliasSentence
 
 instance
     ( MetaOrObject level
-    ) => AsSentence KoreSentence (KoreSentenceSymbol level)
+    , param ~ UnifiedSortVariable
+    ) =>
+    AsSentence
+        (UnifiedSentence param UnifiedPattern domain variable)
+        (SentenceSymbol level UnifiedPattern domain variable)
   where
     asSentence = constructUnifiedSentence SentenceSymbolSentence
 
-instance AsSentence KoreSentence KoreSentenceImport where
+instance
+    (param ~ UnifiedSortVariable) =>
+    AsSentence
+        (UnifiedSentence param UnifiedPattern domain variable)
+        (SentenceImport UnifiedPattern domain variable)
+  where
     asSentence = constructUnifiedSentence SentenceImportSentence
 
-instance AsSentence KoreSentence KoreSentenceAxiom where
+instance
+    (param ~ UnifiedSortVariable) =>
+    AsSentence
+        (UnifiedSentence param UnifiedPattern domain variable)
+        (SentenceAxiom param UnifiedPattern domain variable)
+  where
     asSentence = constructUnifiedSentence SentenceAxiomSentence
 
 instance
-  ( MetaOrObject level
-  ) => AsSentence KoreSentence (KoreSentenceSort level) where
+    ( MetaOrObject level
+    , param ~ UnifiedSortVariable
+    ) =>
+    AsSentence
+        (UnifiedSentence param UnifiedPattern domain variable)
+        (SentenceSort level UnifiedPattern domain variable)
+  where
     asSentence = constructUnifiedSentence SentenceSortSentence
 
-instance AsSentence KoreSentence KoreSentenceHook where
+
+instance
+    (param ~ UnifiedSortVariable) =>
+    AsSentence
+        (UnifiedSentence param UnifiedPattern domain variable)
+        (SentenceHook Object UnifiedPattern domain variable)
+  where
     asSentence = constructUnifiedSentence SentenceHookSentence
+
+-- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
+type PureSentenceAxiom level domain =
+    SentenceAxiom (SortVariable level) (Pattern level) domain Variable
+
+-- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
+type PureSentenceAlias level domain =
+    SentenceAlias level (Pattern level) domain Variable
+
+-- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
+type PureSentenceSymbol level domain =
+    SentenceSymbol level (Pattern level) domain Variable
+
+-- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
+type PureSentenceImport level domain =
+    SentenceImport (Pattern level) domain Variable
+
+-- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
+type PureSentence level domain =
+    Sentence level (SortVariable level) (Pattern level) domain Variable
+
+instance
+    ( MetaOrObject level
+    ) =>
+    AsSentence
+        (Sentence level (SortVariable level) (Pattern level) domain variable)
+        (SentenceAlias level (Pattern level) domain variable)
+  where
+    asSentence = SentenceAliasSentence
+
+instance
+    MetaOrObject level =>
+    AsSentence
+        (Sentence level (SortVariable level) (Pattern level) domain variable)
+        (SentenceSymbol level (Pattern level) domain variable)
+  where
+    asSentence = SentenceSymbolSentence
+
+instance
+    AsSentence
+        (Sentence Meta (SortVariable Meta) (Pattern Meta) domain variable)
+        (SentenceImport (Pattern Meta) domain variable)
+  where
+    asSentence = SentenceImportSentence
+
+instance
+    AsSentence
+        (Sentence Meta (SortVariable Meta) (Pattern Meta) domain variable)
+        (SentenceAxiom (SortVariable Meta) (Pattern Meta) domain variable)
+  where
+    asSentence = SentenceAxiomSentence
+
+instance
+    MetaOrObject level =>
+    AsSentence
+        (Sentence level (SortVariable level) (Pattern level) domain variable)
+        (SentenceSort level (Pattern level) domain variable)
+  where
+    asSentence = SentenceSortSentence
+
+
+instance
+    AsSentence
+        (Sentence Object (SortVariable Object) (Pattern Object) domain variable)
+        (SentenceHook Object (Pattern Object) domain variable)
+  where
+    asSentence = SentenceHookSentence
+
+-- |'PureModule' is the pure (fixed-@level@) version of 'Module'
+type PureModule level domain =
+    Module (Sentence level) (SortVariable level) (Pattern level) domain Variable
+
+-- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
+type PureDefinition level domain =
+    Definition
+        (Sentence level) (SortVariable level) (Pattern level) domain Variable

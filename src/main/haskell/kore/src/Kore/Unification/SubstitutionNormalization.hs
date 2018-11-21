@@ -41,6 +41,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isConstructor_ )
 import           Kore.Substitution.Class
@@ -83,7 +84,7 @@ normalizeSubstitution tools substitution =
     interestingVariables :: Set (variable level)
     interestingVariables = extractVariables substitution
 
-    variableToPattern :: Map (variable level) (PureMLPattern level variable)
+    variableToPattern :: Map (variable level) (StepPattern level variable)
     variableToPattern = Map.fromList substitution
 
     dependencies :: Map (variable level) (Set (variable level))
@@ -108,7 +109,7 @@ normalizeSubstitution tools substitution =
 
     sortedSubstitution
         :: [variable level]
-        -> [(variable level, PureMLPattern level variable)]
+        -> [(variable level, StepPattern level variable)]
     sortedSubstitution = fmap (variableToSubstitution variableToPattern)
 
     normalizeSortedSubstitution'
@@ -142,7 +143,7 @@ checkThatApplicationUsesConstructors
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> checkError
-    -> Maybe (PureMLPattern level variable)
+    -> Maybe (StepPattern level variable)
     -> Either checkError ()
 checkThatApplicationUsesConstructors tools err (Just t) =
     cataM (checkApplicationConstructor tools err) t
@@ -156,7 +157,7 @@ checkApplicationConstructor
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> checkError
-    -> Pattern level variable ()
+    -> StepPatternHead level variable ()
     -> Either checkError ()
 checkApplicationConstructor tools err (ApplicationPattern (Application h _))
     | give tools isConstructor_ h = return ()
@@ -165,9 +166,9 @@ checkApplicationConstructor _ _ _ = return ()
 
 variableToSubstitution
     :: (Ord (variable level), Show (variable level))
-    => Map (variable level) (PureMLPattern level variable)
+    => Map (variable level) (StepPattern level variable)
     -> variable level
-    -> (variable level, PureMLPattern level variable)
+    -> (variable level, StepPattern level variable)
 variableToSubstitution varToPattern var =
     case Map.lookup var varToPattern of
         Just patt -> (var, patt)
@@ -184,7 +185,7 @@ normalizeSortedSubstitution
         )
     => UnificationSubstitution level variable
     -> UnificationSubstitution level variable
-    -> [(Unified variable, PureMLPattern level variable)]
+    -> [(Unified variable, StepPattern level variable)]
     -> m (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
     return Predicated
@@ -233,7 +234,7 @@ getDependencies
         )
     => Set (variable level)  -- ^ interesting variables
     -> variable level  -- ^ substitution variable
-    -> PureMLPattern level variable  -- ^ substitution pattern
+    -> StepPattern level variable  -- ^ substitution pattern
     -> Set (variable level)
 getDependencies interesting var =
     \case

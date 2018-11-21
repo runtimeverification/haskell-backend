@@ -51,14 +51,13 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Common
-import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
-import qualified Kore.ASTUtils.SmartPatterns as Kore
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
@@ -68,6 +67,7 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -122,7 +122,7 @@ symbolVerifiers =
     anySort :: Builtin.SortVerifier
     anySort = const $ const $ Right ()
 
-type Builtin variable = Seq (Kore.PureMLPattern Object variable)
+type Builtin variable = Seq (StepPattern Object variable)
 
 {- | Abort function evaluation if the argument is not a List domain value.
 
@@ -131,30 +131,30 @@ type Builtin variable = Seq (Kore.PureMLPattern Object variable)
     by a 'BuiltinDomainList', it is a bug.
 
  -}
-expectBuiltinDomainList
+expectBuiltinList
     :: Monad m
     => String  -- ^ Context for error message
-    -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
+    -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
-expectBuiltinDomainList ctx =
+expectBuiltinList ctx =
     \case
-        Kore.DV_ _ domain ->
+        DV_ _ domain ->
             case domain of
-                Kore.BuiltinDomainList list -> return list
+                Domain.BuiltinList list -> return list
                 _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a list")
         _ ->
             empty
 
 returnList
     :: (Monad m, Ord (variable Object))
-    => Kore.Sort Object
+    => Sort Object
     -> (Builtin variable)
     -> m (AttemptedFunction Object variable)
 returnList resultSort list =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
-        $ Kore.DV_ resultSort
-        $ Kore.BuiltinDomainList list
+        $ DV_ resultSort
+        $ Domain.BuiltinList list
 
 evalElement :: Builtin.Function
 evalElement =
@@ -173,9 +173,9 @@ evalGet =
     evalGet0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalGet0 _ _ _ = \arguments ->
         Builtin.getAttemptedFunction
@@ -185,13 +185,13 @@ evalGet =
                         [_list, _ix] -> (_list, _ix)
                         _ -> Builtin.wrongArity ctx
                 emptyList = do
-                    _list <- expectBuiltinDomainList ctx _list
+                    _list <- expectBuiltinList ctx _list
                     if Seq.null _list
                         then Builtin.appliedFunction ExpandedPattern.bottom
                         else empty
                 bothConcrete = do
-                    _list <- expectBuiltinDomainList ctx _list
-                    _ix <- fromInteger <$> Int.expectBuiltinDomainInt ctx _ix
+                    _list <- expectBuiltinList ctx _list
+                    _ix <- fromInteger <$> Int.expectBuiltinInt ctx _ix
                     let ix
                             | _ix < 0 =
                                 -- negative indices count from end of list
@@ -221,9 +221,9 @@ evalConcat =
     evalConcat0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalConcat0 _ _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
@@ -233,7 +233,7 @@ evalConcat =
                         [_list1, _list2] -> (_list1, _list2)
                         _ -> Builtin.wrongArity ctx
                 leftIdentity = do
-                    _list1 <- expectBuiltinDomainList ctx _list1
+                    _list1 <- expectBuiltinList ctx _list1
                     if Seq.null _list1
                         then
                             Builtin.appliedFunction
@@ -241,7 +241,7 @@ evalConcat =
                         else
                             empty
                 rightIdentity = do
-                    _list2 <- expectBuiltinDomainList ctx _list2
+                    _list2 <- expectBuiltinList ctx _list2
                     if Seq.null _list2
                         then
                             Builtin.appliedFunction
@@ -249,8 +249,8 @@ evalConcat =
                         else
                             empty
                 bothConcrete = do
-                    _list1 <- expectBuiltinDomainList ctx _list1
-                    _list2 <- expectBuiltinDomainList ctx _list2
+                    _list1 <- expectBuiltinList ctx _list1
+                    _list2 <- expectBuiltinList ctx _list2
                     returnList resultSort (_list1 <> _list2)
             leftIdentity <|> rightIdentity <|> bothConcrete
         )
@@ -281,16 +281,16 @@ builtinFunctions =
 asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
-    -> Kore.Sort Object
+    -> Sort Object
     -> Either (Kore.Error e)
-        (Builtin variable -> Kore.PureMLPattern Object variable)
+        (Builtin variable -> StepPattern Object variable)
 asPattern indexedModule dvSort = do
     symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let applyUnit = Kore.App_ symbolUnit []
+    let applyUnit = App_ symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
-    let applyElement elem' = Kore.App_ symbolElement [elem']
+    let applyElement elem' = App_ symbolElement [elem']
     symbolConcat <- lookupSymbolConcat dvSort indexedModule
-    let applyConcat list1 list2 = Kore.App_ symbolConcat [list1, list2]
+    let applyConcat list1 list2 = App_ symbolConcat [list1, list2]
     let asPattern0 list =
             foldr applyConcat applyUnit
             $ Foldable.toList (applyElement <$> list)
@@ -304,7 +304,7 @@ asPattern indexedModule dvSort = do
 asExpandedPattern
     :: KoreIndexedModule attrs
     -- ^ dictionary of Map constructor symbols
-    -> Kore.Sort Object
+    -> Sort Object
     -> Either (Kore.Error e)
         (Builtin variable -> ExpandedPattern Object variable)
 asExpandedPattern symbols resultSort =
@@ -315,7 +315,7 @@ asExpandedPattern symbols resultSort =
 lookupSymbolUnit
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolUnit = Builtin.lookupSymbol "LIST.unit"
 
 {- | Find the symbol hooked to @LIST.element@ in an indexed module.
@@ -323,7 +323,7 @@ lookupSymbolUnit = Builtin.lookupSymbol "LIST.unit"
 lookupSymbolElement
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolElement = Builtin.lookupSymbol "LIST.element"
 
 {- | Find the symbol hooked to @LIST.concat@ in an indexed module.
@@ -331,7 +331,7 @@ lookupSymbolElement = Builtin.lookupSymbol "LIST.element"
 lookupSymbolConcat
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolConcat = Builtin.lookupSymbol "LIST.concat"
 
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
@@ -339,18 +339,18 @@ lookupSymbolConcat = Builtin.lookupSymbol "LIST.concat"
 lookupSymbolGet
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolGet = Builtin.lookupSymbol "LIST.get"
 
 isSymbolConcat
     :: MetadataTools Object Hook
-    -> Kore.SymbolOrAlias Object
+    -> SymbolOrAlias Object
     -> Bool
 isSymbolConcat = Builtin.isSymbol "LIST.concat"
 
 isSymbolElement
     :: MetadataTools Object Hook
-    -> Kore.SymbolOrAlias Object
+    -> SymbolOrAlias Object
     -> Bool
 isSymbolElement = Builtin.isSymbol "LIST.element"
 
@@ -374,7 +374,7 @@ unifyEquals
         , MetaOrObject level
         , Hashable variable
         , FreshVariable variable
-        , p ~ PureMLPattern level variable
+        , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
         )
@@ -403,17 +403,17 @@ unifyEquals
     discardProofs = (<$>) fst
 
     unifyEquals0
-        :: PureMLPattern level variable
-        -> PureMLPattern level variable
+        :: StepPattern level variable
+        -> StepPattern level variable
         -> MaybeT m (expanded, proof)
 
-    unifyEquals0 dv1@(DV_ resultSort (BuiltinDomainList list1)) =
+    unifyEquals0 dv1@(DV_ resultSort (Domain.BuiltinList list1)) =
         \case
             dv2@(DV_ _ builtin2) ->
                 case builtin2 of
-                    BuiltinDomainList list2 ->
+                    Domain.BuiltinList list2 ->
                         Monad.Trans.lift
-                            $ unifyEqualsConcrete resultSort list1 list2
+                        $ unifyEqualsConcrete resultSort list1 list2
                     _ ->
                         (error . unlines)
                             [ "Cannot unify a builtin List domain value:"
@@ -425,9 +425,9 @@ unifyEquals
             app@(App_ symbol2 args2)
               | isSymbolConcat hookTools symbol2 ->
                 Monad.Trans.lift $ case args2 of
-                    [ DV_ _ (BuiltinDomainList list2), x@(Var_ _) ] ->
+                    [ DV_ _ (Domain.BuiltinList list2), x@(Var_ _) ] ->
                         unifyEqualsFramedRight resultSort dv1 list2 x
-                    [ x@(Var_ _), DV_ _ (BuiltinDomainList list2) ] ->
+                    [ x@(Var_ _), DV_ _ (Domain.BuiltinList list2) ] ->
                         unifyEqualsFramedLeft resultSort dv1 x list2
                     [ _, _ ] ->
                         give symbolOrAliasSorts
@@ -440,7 +440,7 @@ unifyEquals
 
     unifyEquals0 pat1 =
         \case
-            dv@(DV_ _ (BuiltinDomainList _)) -> unifyEquals0 dv pat1
+            dv@(DV_ _ (Domain.BuiltinList _)) -> unifyEquals0 dv pat1
             _ -> empty
 
     unifyEqualsConcrete
@@ -462,7 +462,7 @@ unifyEquals
                 result = asBuiltinDomainList <$> propagatedUnified
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = DV_ dvSort . BuiltinDomainList
+        asBuiltinDomainList = DV_ dvSort . Domain.BuiltinList
 
     unifyEqualsFramedRight
         :: (level ~ Object)
@@ -473,7 +473,7 @@ unifyEquals
         -> m (expanded, proof)
     unifyEqualsFramedRight
         resultSort
-        dv1@(DV_ _ (BuiltinDomainList list1))
+        dv1@(DV_ _ (Domain.BuiltinList list1))
         prefix2
         frame2
       | Seq.length prefix2 > Seq.length list1 =
@@ -488,7 +488,7 @@ unifyEquals
                     <* suffixUnified
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = DV_ resultSort . BuiltinDomainList
+        asBuiltinDomainList = DV_ resultSort . Domain.BuiltinList
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length prefix2
@@ -504,7 +504,7 @@ unifyEquals
         -> m (expanded, proof)
     unifyEqualsFramedLeft
         resultSort
-        dv1@(DV_ _ (BuiltinDomainList list1))
+        dv1@(DV_ _ (Domain.BuiltinList list1))
         frame2
         suffix2
       | Seq.length suffix2 > Seq.length list1 =
@@ -519,7 +519,7 @@ unifyEquals
                     <* suffixUnified
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = DV_ resultSort . BuiltinDomainList
+        asBuiltinDomainList = DV_ resultSort . Domain.BuiltinList
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length list1 - Seq.length suffix2

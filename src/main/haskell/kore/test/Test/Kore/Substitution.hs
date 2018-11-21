@@ -1,8 +1,9 @@
 module Test.Kore.Substitution where
 
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import qualified Kore.Domain.Builtin as Domain
 
 import Test.Kore
 
@@ -18,7 +19,8 @@ objectVariable = Variable
 unifiedObjectVariable :: Unified Variable
 unifiedObjectVariable = UnifiedObject objectVariable
 
-objectVariablePattern :: Pattern Object Variable CommonKorePattern
+objectVariablePattern
+    :: Pattern Object Domain.Builtin Variable CommonKorePattern
 objectVariablePattern = VariablePattern objectVariable
 
 objectVariableUnifiedPattern :: CommonKorePattern
@@ -36,7 +38,7 @@ metaVariable = Variable
 unifiedMetaVariable :: Unified Variable
 unifiedMetaVariable = UnifiedMeta metaVariable
 
-metaVariablePattern :: Pattern Meta Variable CommonKorePattern
+metaVariablePattern :: Pattern Meta Domain.Builtin Variable CommonKorePattern
 metaVariablePattern = VariablePattern metaVariable
 
 metaVariableUnifiedPattern :: CommonKorePattern

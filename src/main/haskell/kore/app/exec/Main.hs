@@ -6,7 +6,7 @@ import qualified Control.Lens as Lens
 import           Data.Function
                  ( (&) )
 import           Data.Functor.Foldable
-                 ( Fix (..), cata )
+                 ( Base, Fix (..), cata )
 import           Data.List
                  ( intercalate )
 import qualified Data.Map as Map
@@ -35,9 +35,6 @@ import           Kore.AST.Common
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
-                 ( Object (..) )
-import           Kore.AST.PureML
-                 ( UnfixedCommonPurePattern )
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
@@ -63,6 +60,7 @@ import           Kore.Step.AxiomPatterns
                  ( AxiomPattern (..) )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
+import           Kore.Step.Pattern
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
@@ -278,7 +276,7 @@ parserInfoModifiers =
                 \in PATTERN_FILE."
     <> header "kore-exec - an interpreter for Kore definitions"
 
-externalizeFreshVars :: CommonPurePattern level -> CommonPurePattern level
+externalizeFreshVars :: CommonStepPattern level -> CommonStepPattern level
 externalizeFreshVars pat = cata renameFreshLocal pat
   where
     allVarsIds :: Set.Set Text
@@ -299,7 +297,9 @@ externalizeFreshVars pat = cata renameFreshLocal pat
     freshPrefix =
         computeFreshPrefix "var"
             (Set.filter (not . (Text.isPrefixOf freshVariablePrefix)) allVarsIds)
-    renameFreshLocal :: UnfixedCommonPurePattern level -> CommonPurePattern level
+    renameFreshLocal
+        :: Base (CommonStepPattern level) (CommonStepPattern level)
+        -> CommonStepPattern level
     renameFreshLocal (VariablePattern v@(Variable {variableName}))
       | name `Set.member` freshVarsIds =
         Var_ v {
@@ -413,7 +413,7 @@ mainPatternParse = mainParse fromKorePattern
 mainPatternParseAndVerify
     :: KoreIndexedModule StepperAttributes
     -> String
-    -> IO (CommonPurePattern Object)
+    -> IO (CommonStepPattern Object)
 mainPatternParseAndVerify indexedModule patternFileName
   = do
     parsedPattern <- mainPatternParse patternFileName
@@ -504,7 +504,7 @@ mainPatternVerify indexedModule patt =
 
 makePurePattern
     :: CommonKorePattern
-    -> CommonPurePattern Object
+    -> CommonStepPattern Object
 makePurePattern pat =
     case patternKoreToPure Object pat of
         Left err -> error (printError err)

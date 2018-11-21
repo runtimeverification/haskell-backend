@@ -25,8 +25,9 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
-                 SimplificationProof (SimplificationProof), Simplifier )
+                 ( PredicateSubstitutionSimplifier,
+                 SimplificationProof (SimplificationProof), Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -52,7 +53,7 @@ mergeWithPredicateSubstitution
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
     -- ^ Condition and substitution to add.

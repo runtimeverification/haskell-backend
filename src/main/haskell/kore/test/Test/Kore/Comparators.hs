@@ -14,10 +14,10 @@ module Test.Kore.Comparators where
 import Numeric.Natural
        ( Natural )
 
-import           Data.Functor.Impredicative
 import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.BaseStep
@@ -39,15 +39,24 @@ instance EqualWithExplanation () where
     compareWithExplanation () () = Nothing
     printWithExplanation = show
 
+instance EqualWithExplanation Natural where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 
 instance
     ( EqualWithExplanation child
-    , Eq child, Eq level, Eq (variable level)
+    , Eq child
+    , Eq level
     , Show child
+    , Eq (domain child)
+    , Show (domain child)
     , EqualWithExplanation (variable level)
-    , Show (variable level))
-    => SumEqualWithExplanation (Pattern level variable child)
+    , Eq (variable level)
+    , Show (variable level)
+    )
+    => SumEqualWithExplanation (Pattern level domain variable child)
   where
     sumConstructorPair (AndPattern a1) (AndPattern a2) =
         SumConstructorSameWithArguments (EqWrap "AndPattern" a1 a2)
@@ -175,7 +184,9 @@ instance
     , Show child
     , EqualWithExplanation (variable level)
     , Show (variable level)
-    ) => EqualWithExplanation (Pattern level variable child)
+    , Show (domain child)
+    , Eq (domain child)
+    ) => EqualWithExplanation (Pattern level domain variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -324,8 +335,8 @@ instance (EqualWithExplanation child, Show child)
     printWithExplanation = show
 
 instance
-    (Eq child, Show child) =>
-    EqualWithExplanation (DomainValue level (BuiltinDomain child))
+    (Eq child, Show child, Eq (domain child), Show (domain child)) =>
+    EqualWithExplanation (DomainValue level domain child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -875,7 +886,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( EqualWithExplanation (PureMLPattern level variable)
+    ( EqualWithExplanation (PureMLPattern level Domain.Builtin variable)
     , Show level, Show (variable level)
     )
     => EqualWithExplanation (Predicate level variable)
@@ -981,81 +992,45 @@ instance
 instance
     ( Show (variable Object), Show (variable Meta), Show child
     , Eq (variable Meta), Eq (variable Object), Eq child
-    , EqualWithExplanation (variable Object)
     , EqualWithExplanation (variable Meta)
+    , EqualWithExplanation (variable Object)
     , EqualWithExplanation child
+    , Show (domain child)
+    , Eq (domain child)
     )
-    => SumEqualWithExplanation (UnifiedPattern variable child)
+    => EqualWithExplanation (UnifiedPattern domain variable child)
   where
-    sumConstructorPair (UnifiedPattern a1) (UnifiedPattern a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "UnifiedPattern" a1 a2)
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
 
 instance
     ( Show (variable Object), Show (variable Meta), Show child
     , Eq (variable Meta), Eq (variable Object), Eq child
-    , EqualWithExplanation (variable Meta)
     , EqualWithExplanation (variable Object)
+    , EqualWithExplanation (variable Meta)
     , EqualWithExplanation child
+    , Show (domain child)
+    , Eq (domain child)
     )
-    => EqualWithExplanation (UnifiedPattern variable child)
+    => SumEqualWithExplanation (UnifiedPattern domain variable child)
   where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
+    sumConstructorPair (UnifiedMetaPattern p1) (UnifiedMetaPattern p2) =
+        SumConstructorSameWithArguments (EqWrap "UnifiedMetaPattern" p1 p2)
+    sumConstructorPair (UnifiedObjectPattern p1) (UnifiedObjectPattern p2) =
+        SumConstructorSameWithArguments (EqWrap "UnifiedObjectPattern" p1 p2)
+    sumConstructorPair p1 p2 =
+        SumConstructorDifferent
+            (printWithExplanation p1)
+            (printWithExplanation p2)
 
 instance
     ( EqualWithExplanation (a Meta)
     , EqualWithExplanation (a Object)
     , Show (a Meta)
     , Show (a Object)
-    )
-    => SumEqualWithExplanation (Unified a)
-  where
-    sumConstructorPair (UnifiedObject a1) (UnifiedObject a2) =
-        SumConstructorSameWithArguments (EqWrap "UnifiedObject" a1 a2)
-    sumConstructorPair a1@(UnifiedObject _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (UnifiedMeta a1) (UnifiedMeta a2) =
-        SumConstructorSameWithArguments (EqWrap "UnifiedMeta" a1 a2)
-    sumConstructorPair a1@(UnifiedMeta _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance
-    ( EqualWithExplanation (a Meta)
-    , EqualWithExplanation (a Object)
-    , Show (a Meta)
-    , Show (a Object)
+    , SumEqualWithExplanation (Unified a)
     )
     => EqualWithExplanation (Unified a)
   where
     compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( EqualWithExplanation (Pattern level variable child)
-    , Show (Pattern level variable child)
-    )
-    => SumEqualWithExplanation (Rotate31 Pattern variable child level)
-  where
-    sumConstructorPair (Rotate31 a1) (Rotate31 a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "Rotate31" a1 a2)
-
-instance
-    ( EqualWithExplanation (Pattern level variable child)
-    , Show (Pattern level variable child)
-    )
-    => EqualWithExplanation (Rotate31 Pattern variable child level)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance EqualWithExplanation Natural
-  where
-    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

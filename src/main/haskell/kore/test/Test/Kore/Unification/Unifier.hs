@@ -41,6 +41,7 @@ import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Injective
 import           Kore.Attribute.SortInjection
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
@@ -54,6 +55,7 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -74,13 +76,14 @@ import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
-bottomPredicate :: CommonPurePatternStub Object
+bottomPredicate :: CommonPurePatternStub Object Domain.Builtin
 bottomPredicate = withSort (mkSort "PREDICATE") bottom_
 
 applyInj
     :: Sort Object
     -> Sort Object
-    -> CommonPurePatternStub Object -> CommonPurePatternStub Object
+    -> CommonPurePatternStub Object Domain.Builtin
+    -> CommonPurePatternStub Object Domain.Builtin
 applyInj sortFrom sortTo pat = applyPS symbolInj [sortFrom, sortTo] [pat]
 
 s1, s2, s3, s4 :: Sort Object
@@ -89,7 +92,7 @@ s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
 s4 = simpleSort (SortName "s4")
 
-a, a1, a2, a3, a4, a5, b, c, f, g, h :: PureSentenceSymbol Object
+a, a1, a2, a3, a4, a5, b, c, f, g, h :: PureSentenceSymbol Object Domain.Builtin
 a = symbol_ "a" AstLocationTest [] s1
 a1 = symbol_ "a1" AstLocationTest [] s1
 a2 = symbol_ "a2" AstLocationTest [] s1
@@ -102,69 +105,69 @@ f = symbol_ "f" AstLocationTest [s1] s2
 g = symbol_ "g" AstLocationTest [s1, s2] s3
 h = symbol_ "h" AstLocationTest [s1, s2, s3] s1
 
-ef, eg, eh :: PureSentenceSymbol Object
+ef, eg, eh :: PureSentenceSymbol Object Domain.Builtin
 ef = symbol_ "ef" AstLocationTest [s1, s1, s1] s1
 eg = symbol_ "eg" AstLocationTest [s1] s1
 eh = symbol_ "eh" AstLocationTest [s1] s1
 
-nonLinF, nonLinG, nonLinAS :: PureSentenceSymbol Object
+nonLinF, nonLinG, nonLinAS :: PureSentenceSymbol Object Domain.Builtin
 nonLinF = symbol_ "nonLinF" AstLocationTest [s1, s1] s1
 nonLinG = symbol_ "nonLinG" AstLocationTest [s1] s1
 nonLinAS = symbol_ "nonLinA" AstLocationTest [] s1
 
-nonLinA, nonLinX, nonLinY :: CommonPurePatternStub Object
+nonLinA, nonLinX, nonLinY :: CommonPurePatternStub Object Domain.Builtin
 nonLinX = parameterizedVariable_ s1 "x" AstLocationTest
 nonLinY = parameterizedVariable_ s1 "y" AstLocationTest
 
 nonLinA = applyS nonLinAS []
 
-expBin :: PureSentenceSymbol Object
+expBin :: PureSentenceSymbol Object Domain.Builtin
 expBin = symbol_ "times" AstLocationTest [s1, s1] s1
 
-expA, expX, expY :: CommonPurePatternStub Object
+expA, expX, expY :: CommonPurePatternStub Object Domain.Builtin
 expA = parameterizedVariable_ s1 "a" AstLocationTest
 expX = parameterizedVariable_ s1 "x" AstLocationTest
 expY = parameterizedVariable_ s1 "y" AstLocationTest
 
-ex1, ex2, ex3, ex4 :: CommonPurePatternStub Object
+ex1, ex2, ex3, ex4 :: CommonPurePatternStub Object Domain.Builtin
 ex1 = parameterizedVariable_ s1 "ex1" AstLocationTest
 ex2 = parameterizedVariable_ s1 "ex2" AstLocationTest
 ex3 = parameterizedVariable_ s1 "ex3" AstLocationTest
 ex4 = parameterizedVariable_ s1 "ex4" AstLocationTest
 
 
-dv1, dv2 :: CommonPurePatternStub Object
+dv1, dv2 :: CommonPurePatternStub Object Domain.Builtin
 dv1 = parameterizedDomainValue_ s1 "dv1"
 dv2 = parameterizedDomainValue_ s1 "dv2"
 
-aA :: CommonPurePatternStub Object
+aA :: CommonPurePatternStub Object Domain.Builtin
 aA = applyS a []
 
-a1A :: CommonPurePatternStub Object
+a1A :: CommonPurePatternStub Object Domain.Builtin
 a1A = applyS a1 []
 
-a2A :: CommonPurePatternStub Object
+a2A :: CommonPurePatternStub Object Domain.Builtin
 a2A = applyS a2 []
 
-a3A :: CommonPurePatternStub Object
+a3A :: CommonPurePatternStub Object Domain.Builtin
 a3A = applyS a3 []
 
-a4A :: CommonPurePatternStub Object
+a4A :: CommonPurePatternStub Object Domain.Builtin
 a4A = applyS a4 []
 
-a5A :: CommonPurePatternStub Object
+a5A :: CommonPurePatternStub Object Domain.Builtin
 a5A = applyS a5 []
 
-bA :: CommonPurePatternStub Object
+bA :: CommonPurePatternStub Object Domain.Builtin
 bA = applyS b []
 
-x :: CommonPurePatternStub Object
+x :: CommonPurePatternStub Object Domain.Builtin
 x = parameterizedVariable_ s1 "x" AstLocationTest
 
-xs2 :: CommonPurePatternStub Object
+xs2 :: CommonPurePatternStub Object Domain.Builtin
 xs2 = parameterizedVariable_ s2 "xs2" AstLocationTest
 
-symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object)]
+symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object Domain.Builtin)]
 symbols =
     map
         (\s -> (getSentenceSymbolOrAliasHead s [], s))
@@ -183,7 +186,7 @@ sortParamSort = SortVariableSort . sortParam
 injName :: Text
 injName = "inj"
 
-symbolInj :: PureSentenceSymbol level
+symbolInj :: PureSentenceSymbol level Domain.Builtin
 symbolInj =
     parameterizedSymbol_ injName AstLocationImplicit
         [sortParam "From", sortParam "To"]
@@ -257,15 +260,15 @@ unificationProblem
     :: MetaOrObject level
     => UnificationTerm level
     -> UnificationTerm level
-    -> CommonPurePattern level
+    -> CommonStepPattern level
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     extractPurePattern (and_ term1 term2)
 
-type Substitution level =  [(Text, CommonPurePatternStub level)]
+type Substitution level =  [(Text, CommonPurePatternStub level Domain.Builtin)]
 
 unificationSubstitution
     :: Substitution Object
-    -> [ (Variable Object, CommonPurePattern Object) ]
+    -> [ (Variable Object, CommonStepPattern Object) ]
 unificationSubstitution = map trans
   where
     trans (v, p) =
@@ -291,9 +294,9 @@ unificationResult (UnificationResultTerm pat) sub predicate =
         }
 
 newtype UnificationTerm level =
-    UnificationTerm (CommonPurePatternStub level)
+    UnificationTerm (CommonPurePatternStub level Domain.Builtin)
 newtype UnificationResultTerm level =
-    UnificationResultTerm (CommonPurePatternStub level)
+    UnificationResultTerm (CommonPurePatternStub level Domain.Builtin)
 
 andSimplifySuccess
     :: HasCallStack
@@ -636,10 +639,10 @@ instance EqualWithExplanation (W level)
 showVar :: V level -> W level
 showVar (V i) = W (show i)
 
-var' :: Integer -> PureMLPattern Meta V
+var' :: Integer -> StepPattern Meta V
 var' i = give mockSymbolOrAliasSorts' (mkVar (V i))
 
-war' :: String -> PureMLPattern Meta W
+war' :: String -> StepPattern Meta W
 war' s = give mockSymbolOrAliasSorts' (mkVar (W s))
 
 mockSymbolOrAliasSorts' :: SymbolOrAliasSorts Meta
@@ -765,8 +768,8 @@ simplifyPattern (UnificationTerm pStub) = do
         }
 
 makeEqualsPredicate
-    :: CommonPurePatternStub Object
-    -> CommonPurePatternStub Object
+    :: CommonPurePatternStub Object Domain.Builtin
+    -> CommonPurePatternStub Object Domain.Builtin
     -> Predicate Object Variable
 makeEqualsPredicate t1 t2 =
         give mockSymbolOrAliasSorts

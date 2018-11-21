@@ -36,6 +36,7 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
+import           Kore.Step.Pattern
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
@@ -137,7 +138,7 @@ test_search =
                 FINAL -> Set.fromList [b, d]
 
 -- | V:MySort{}
-searchVar :: CommonPurePattern Object
+searchVar :: CommonStepPattern Object
 searchVar = Fix $ VariablePattern Variable
     { variableName = Id "V" AstLocationTest
     , variableSort = mySort
@@ -157,7 +158,7 @@ searchPattern = Predicated
 -- | Turn a disjunction of "v = ???" into Just a set of the ???. If the input is
 -- not a disjunction of "v = ???", return Nothing.
 extractSearchResults
-    :: CommonPurePattern Object -> Maybe (Set (CommonPurePattern Object))
+    :: CommonStepPattern Object -> Maybe (Set (CommonStepPattern Object))
 extractSearchResults =
     \case
         Fix (EqualsPattern equals)
@@ -286,7 +287,7 @@ rewritesAxiom lhsName rhsName = SentenceAxiom
     , sentenceAxiomAttributes = Attributes []
     }
 
-applyToNoArgs :: Text -> Pattern level variable child
+applyToNoArgs :: Text -> Pattern level domain variable child
 applyToNoArgs name = ApplicationPattern Application
     { applicationSymbolOrAlias = SymbolOrAlias
         { symbolOrAliasConstructor = Id name AstLocationTest

@@ -17,7 +17,6 @@ import           Kore.AST.Common
                  ( Application (..), Id (..), Pattern (ApplicationPattern),
                  Sort, SymbolOrAlias (..) )
 import           Kore.AST.Kore
-                 ( CommonKorePattern, pattern KoreObjectPattern )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.Attribute.Parser

@@ -22,15 +22,16 @@ import           Data.These
                  ( These )
 
 import Kore.AST.Common
-       ( Application, Id, PureMLPattern, SortedVariable, Variable )
+       ( Application, Id, SortedVariable, Variable )
 import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern, makeFromSinglePurePattern )
+import Kore.Step.Pattern
 import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
-       SimplificationProof (..), Simplifier )
+       ( PredicateSubstitutionSimplifier, SimplificationProof (..), Simplifier,
+       StepPatternSimplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Substitution.Class
@@ -46,7 +47,7 @@ Arguments:
 * 'MetadataTools' are tools for finding additional information about
 patterns such as their sorts, whether they are constructors or hooked.
 
-* 'PureMLPatternSimplifier' is a Function for simplifying patterns, used for
+* 'StepPatternSimplifier' is a Function for simplifying patterns, used for
 the post-processing of the function application results.
 
 * 'Application' is the pattern to be evaluated.
@@ -70,8 +71,8 @@ newtype ApplicationFunctionEvaluator level =
             )
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level Simplifier
-        -> PureMLPatternSimplifier level variable
-        -> Application level (PureMLPattern level variable)
+        -> StepPatternSimplifier level variable
+        -> Application level (StepPattern level variable)
         -> Simplifier
             ( AttemptedFunction level variable
             , SimplificationProof level
@@ -117,10 +118,10 @@ notApplicableFunctionEvaluator
          (AttemptedFunction level1 variable, SimplificationProof level2)
 notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
 
--- |Yields a pure 'Simplifier' which produces a given 'PureMLPattern'
+-- |Yields a pure 'Simplifier' which produces a given 'StepPattern'
 purePatternFunctionEvaluator
     :: (MetaOrObject level, Ord (variable level))
-    => PureMLPattern level variable
+    => StepPattern level variable
     -> Simplifier (AttemptedFunction level variable, SimplificationProof level')
 purePatternFunctionEvaluator p =
     pure

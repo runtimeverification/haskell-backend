@@ -28,13 +28,12 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Common
-                 ( Application (..), BuiltinDomain (..), DomainValue (..),
-                 Pattern (..), PureMLPattern, SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
                  ( SentenceSymbol (..) )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -42,9 +41,10 @@ import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..), AttemptedFunction (..),
                  notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
-                 SimplificationProof (..), Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate )
 import           Kore.Step.StepperAttributes
@@ -128,8 +128,8 @@ evalKEq
     -> Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
-    -> PureMLPatternSimplifier Object variable
-    -> Application Object (PureMLPattern Object variable)
+    -> StepPatternSimplifier Object variable
+    -> Application Object (StepPattern Object variable)
     -> Simplifier
         ( AttemptedFunction Object variable
         , SimplificationProof Object
@@ -164,24 +164,25 @@ evalKIte
         )
     => MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
-    -> PureMLPatternSimplifier Object variable
-    -> Application Object (PureMLPattern Object variable)
+    -> StepPatternSimplifier Object variable
+    -> Application Object (StepPattern Object variable)
     -> Simplifier
         ( AttemptedFunction Object variable
         , SimplificationProof Object
         )
 evalKIte _ _ _ pat =
     case pat of
-        Application
-            {  applicationChildren = [expr, t1, t2] } ->
+        Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2
         _ -> Builtin.wrongArity "KEQUAL.ite"
   where
-    evaluate :: Functor.Foldable.Fix (Pattern Object variable) -> Maybe Bool
-    evaluate (Functor.Foldable.Fix  (DomainValuePattern a)) = Just (get a)
+    evaluate
+        :: Functor.Foldable.Fix (Pattern Object Domain.Builtin variable)
+        -> Maybe Bool
+    evaluate (Functor.Foldable.Fix (DomainValuePattern a)) = Just (get a)
     evaluate _ = Nothing
 
-    get :: DomainValue Object (BuiltinDomain child) -> Bool
+    get :: DomainValue Object Domain.Builtin child -> Bool
     get =
         Builtin.runParser "KEQUAL.ite"
         . Builtin.parseDomainValue Bool.parse

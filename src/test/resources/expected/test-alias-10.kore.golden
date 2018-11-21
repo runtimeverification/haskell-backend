@@ -31,7 +31,7 @@ Definition
                             { domainValueSort =
                                 SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                             , domainValueChild =
-                                BuiltinDomainString (Fix (StringLiteralPattern (StringLiteral "f")))
+                                Domain.BuiltinString (Fix (StringLiteralPattern (StringLiteral "f")))
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

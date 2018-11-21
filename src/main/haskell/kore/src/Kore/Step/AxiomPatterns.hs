@@ -49,9 +49,11 @@ import           Kore.Attribute.Parser
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.ProductionID
 import           Kore.Attribute.Unit
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
+import           Kore.Step.Pattern
 
 {- | Attributes specific to interpreting axiom patterns.
  -}
@@ -104,8 +106,8 @@ Currently @AxiomPattern@ can only represent axioms of the form
 @
 --}
 data AxiomPattern level = AxiomPattern
-    { axiomPatternLeft  :: !(CommonPurePattern level)
-    , axiomPatternRight :: !(CommonPurePattern level)
+    { axiomPatternLeft  :: !(CommonStepPattern level)
+    , axiomPatternRight :: !(CommonStepPattern level)
     , axiomPatternRequires :: !(CommonPredicate level)
     , axiomPatternAttributes :: !AxiomPatternAttributes
     }
@@ -149,7 +151,8 @@ isNormalRule AxiomPattern { axiomPatternAttributes } =
 extractRewriteAxioms
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
-    -> KoreIndexedModule atts -- ^'IndexedModule' containing the definition
+    -> KoreIndexedModule atts
+    -- ^'IndexedModule' containing the definition
     -> [AxiomPattern level]
 extractRewriteAxioms level idxMod =
     [ axiomPat | RewriteAxiomPattern axiomPat <-
@@ -173,7 +176,7 @@ koreSentenceToAxiomPattern level =
 sentenceToAxiomPattern
     :: MetaOrObject level
     => level
-    -> Sentence level' UnifiedSortVariable UnifiedPattern Variable
+    -> Sentence level' UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 sentenceToAxiomPattern
     level
@@ -199,7 +202,7 @@ not encode a normal rewrite or function axiom.
 patternToAxiomPattern
     :: MetaOrObject level
     => AxiomPatternAttributes
-    -> CommonPurePattern level
+    -> CommonStepPattern level
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 patternToAxiomPattern axiomPatternAttributes pat =
     case pat of

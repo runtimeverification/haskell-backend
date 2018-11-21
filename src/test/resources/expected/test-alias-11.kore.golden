@@ -28,16 +28,16 @@ Definition
                                         ]
                                     }
                             , applicationChildren =
-                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "a" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    }))))
-                                , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                    })))
+                                , Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "b" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    }))))
+                                    })))
                                 ]
                             }
                     , sentenceAliasRightPattern =
@@ -45,17 +45,17 @@ Definition
                             { rewritesSort =
                                 SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                             , rewritesFirst =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "a" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    }))))
+                                    })))
                             , rewritesSecond =
-                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "b" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    }))))
+                                    })))
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

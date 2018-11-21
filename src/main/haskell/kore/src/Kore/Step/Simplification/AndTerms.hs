@@ -34,8 +34,7 @@ import           Prelude hiding
                  ( concat )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain (..), PureMLPattern, Sort, SortedVariable,
-                 SymbolOrAlias (..) )
+                 ( Sort, SortedVariable, SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkBottom, mkTop )
@@ -43,6 +42,7 @@ import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
@@ -54,6 +54,7 @@ import           Kore.Step.ExpandedPattern
                  erasePredicatedTerm )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom, fromPurePattern, isBottom )
+import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
 import           Kore.Step.RecursiveAttributes
@@ -79,8 +80,8 @@ import           Kore.Variables.Fresh
 data SimplificationTarget = AndT | EqualsT | BothT
 
 type TermSimplifier level variable m =
-    (  PureMLPattern level variable
-    -> PureMLPattern level variable
+    (  StepPattern level variable
+    -> StepPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
     )
 
@@ -108,8 +109,8 @@ termEquals
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m
         (PredicateSubstitution level variable, SimplificationProof level)
 termEquals tools substitutionSimplifier first second
@@ -130,8 +131,8 @@ termEqualsAnd
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m
         (ExpandedPattern level variable, SimplificationProof level)
 termEqualsAnd tools substitutionSimplifier =
@@ -172,8 +173,8 @@ maybeTermEquals
     -> PredicateSubstitutionSimplifier level m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m
         (ExpandedPattern level variable, SimplificationProof level)
 maybeTermEquals = maybeTransformTerm equalsFunctions
@@ -206,8 +207,8 @@ termUnification
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level (unifier m)
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> unifier m
         (ExpandedPattern level variable, SimplificationProof level)
 termUnification tools substitutionSimplifier =
@@ -249,8 +250,8 @@ termAnd
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
 termAnd tools substitutionSimplifier =
     termAndWorker
@@ -286,8 +287,8 @@ maybeTermAnd
     -> PredicateSubstitutionSimplifier level m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m (ExpandedPattern level variable, SimplificationProof level)
 maybeTermAnd = maybeTransformTerm andFunctions
 
@@ -395,8 +396,8 @@ andEqualsFunctions =
         ::  (  MetadataTools level StepperAttributes
             -> PredicateSubstitutionSimplifier level m
             -> TermSimplifier level variable m
-            -> PureMLPattern level variable
-            -> PureMLPattern level variable
+            -> StepPattern level variable
+            -> StepPattern level variable
             -> MaybeT m
                 (ExpandedPattern level variable , SimplificationProof level)
             )
@@ -421,15 +422,15 @@ type TermTransformation level variable m =
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> TermSimplifier level variable m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
 type TermTransformationOld level variable m =
        MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> TermSimplifier level variable m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
 
 maybeTransformTerm
@@ -448,8 +449,8 @@ maybeTransformTerm
     -> PredicateSubstitutionSimplifier level m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm pairs.
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
 maybeTransformTerm
     topTransformers tools substitutionSimplifier childTransformers first second
@@ -463,14 +464,14 @@ maybeTransformTerm
         )
 
 addToolsArg
-    ::  (  PureMLPattern level variable
-        -> PureMLPattern level variable
-        -> Maybe (PureMLPattern level variable, SimplificationProof level)
+    ::  (  StepPattern level variable
+        -> StepPattern level variable
+        -> Maybe (StepPattern level variable, SimplificationProof level)
         )
     ->  (  MetadataTools level StepperAttributes
-        -> PureMLPattern level variable
-        -> PureMLPattern level variable
-        -> Maybe (PureMLPattern level variable, SimplificationProof level)
+        -> StepPattern level variable
+        -> StepPattern level variable
+        -> Maybe (StepPattern level variable, SimplificationProof level)
         )
 addToolsArg = pure
 
@@ -482,13 +483,13 @@ toExpanded
     , Eq (variable level)
     )
     =>   (  MetadataTools level StepperAttributes
-        -> PureMLPattern level variable
-        -> PureMLPattern level variable
-        -> Maybe (PureMLPattern level variable, SimplificationProof level)
+        -> StepPattern level variable
+        -> StepPattern level variable
+        -> Maybe (StepPattern level variable, SimplificationProof level)
         )
     ->  (  MetadataTools level StepperAttributes
-        -> PureMLPattern level variable
-        -> PureMLPattern level variable
+        -> StepPattern level variable
+        -> StepPattern level variable
         -> Maybe (ExpandedPattern level variable, SimplificationProof level)
         )
 toExpanded transformer tools first second =
@@ -509,8 +510,8 @@ transformerLift
     :: MonadCounter m
     =>  (  SimplificationType
         -> MetadataTools level StepperAttributes
-        -> PureMLPattern level variable
-        -> PureMLPattern level variable
+        -> StepPattern level variable
+        -> StepPattern level variable
         -> Maybe (ExpandedPattern level variable, SimplificationProof level)
         )
     -> TermTransformation level variable m
@@ -527,8 +528,8 @@ transformerLift
 transformerLiftOld
   :: MonadCounter m
   =>  (  MetadataTools level StepperAttributes
-      -> PureMLPattern level variable
-      -> PureMLPattern level variable
+      -> StepPattern level variable
+      -> StepPattern level variable
       -> Maybe (ExpandedPattern level variable, SimplificationProof level)
       )
   -> TermTransformationOld level variable m
@@ -549,9 +550,9 @@ liftExpandedPattern = MaybeT . return
 
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
-    :: PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe (PureMLPattern level variable, SimplificationProof level)
+    :: StepPattern level variable
+    -> StepPattern level variable
+    -> Maybe (StepPattern level variable, SimplificationProof level)
 boolAnd first second =
     case first of
         Bottom_ _ -> return (first, SimplificationProof)
@@ -567,9 +568,9 @@ equalAndEquals
         , Eq (variable Object)
         , MetaOrObject level
         )
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe (PureMLPattern level variable, SimplificationProof level)
+    => StepPattern level variable
+    -> StepPattern level variable
+    -> Maybe (StepPattern level variable, SimplificationProof level)
 equalAndEquals first second
   | first == second =
     return (first, SimplificationProof)
@@ -583,8 +584,8 @@ bottomTermEquals
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> Maybe (ExpandedPattern level variable, SimplificationProof level)
 bottomTermEquals
     tools
@@ -617,8 +618,8 @@ termBottomEquals
         , Ord (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> Maybe (ExpandedPattern level variable, SimplificationProof level)
 termBottomEquals tools first second = bottomTermEquals tools second first
 
@@ -635,8 +636,8 @@ variableFunctionAndEquals
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> Maybe (ExpandedPattern level variable, SimplificationProof level)
 variableFunctionAndEquals
     SimplificationType.And
@@ -693,8 +694,8 @@ functionVariableAndEquals
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> Maybe (ExpandedPattern level variable, SimplificationProof level)
 functionVariableAndEquals
     simplificationType
@@ -726,8 +727,8 @@ equalInjectiveHeadsAndEquals
     -> PredicateSubstitutionSimplifier level m
     -> TermSimplifier level variable m
     -- ^ Used to simplify subterm "and".
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m (ExpandedPattern level variable, SimplificationProof level)
 equalInjectiveHeadsAndEquals
     tools
@@ -792,8 +793,8 @@ sortInjectionAndEqualsAssumesDifferentHeads
         )
     => MetadataTools level StepperAttributes
     -> TermSimplifier level variable m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
 sortInjectionAndEqualsAssumesDifferentHeads
     tools
@@ -902,8 +903,8 @@ sortInjectionAndEqualsAssumesDifferentHeads
     sortInjection
         :: Sort level
         -> Sort level
-        -> PureMLPattern level variable
-        -> PureMLPattern level variable
+        -> StepPattern level variable
+        -> StepPattern level variable
     sortInjection originSort destinationSort term =
         give (MetadataTools.symbolOrAliasSorts tools)
             $ mkApp
@@ -931,9 +932,9 @@ constructorSortInjectionAndEquals
         , MetaOrObject level
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe (PureMLPattern level variable, SimplificationProof level)
+    -> StepPattern level variable
+    -> StepPattern level variable
+    -> Maybe (StepPattern level variable, SimplificationProof level)
 constructorSortInjectionAndEquals
     tools
     (App_ firstHead _)
@@ -962,9 +963,9 @@ constructorAndEqualsAssumesDifferentHeads
         , MetaOrObject level
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe (PureMLPattern level variable, SimplificationProof level)
+    -> StepPattern level variable
+    -> StepPattern level variable
+    -> Maybe (StepPattern level variable, SimplificationProof level)
 constructorAndEqualsAssumesDifferentHeads
     tools
     (App_ firstHead _)
@@ -988,9 +989,9 @@ domainValueAndConstructorErrors
        , MetaOrObject level
        )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe (PureMLPattern level variable, SimplificationProof level)
+    -> StepPattern level variable
+    -> StepPattern level variable
+    -> Maybe (StepPattern level variable, SimplificationProof level)
 domainValueAndConstructorErrors
     tools
     (DV_ _ _)
@@ -1017,12 +1018,12 @@ See also: 'equalAndEquals'
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
     :: Eq (variable Object)
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe (PureMLPattern level variable, SimplificationProof level)
+    => StepPattern level variable
+    -> StepPattern level variable
+    -> Maybe (StepPattern level variable, SimplificationProof level)
 domainValueAndEqualsAssumesDifferent
-    first@(DV_ _ (BuiltinDomainPattern _))
-    second@(DV_ _ (BuiltinDomainPattern _))
+    first@(DV_ _ (Domain.BuiltinPattern _))
+    second@(DV_ _ (Domain.BuiltinPattern _))
   =
     assert (first /= second) $
         return (mkBottom, SimplificationProof)
@@ -1038,9 +1039,9 @@ See also: 'equalAndEquals'
  -}
 stringLiteralAndEqualsAssumesDifferent
     :: Eq (variable Meta)
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe (PureMLPattern level variable, SimplificationProof level)
+    => StepPattern level variable
+    -> StepPattern level variable
+    -> Maybe (StepPattern level variable, SimplificationProof level)
 stringLiteralAndEqualsAssumesDifferent
     first@(StringLiteral_ _)
     second@(StringLiteral_ _)
@@ -1059,9 +1060,9 @@ See also: 'equalAndEquals'
  -}
 charLiteralAndEqualsAssumesDifferent
     :: Eq (variable Meta)
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
-    -> Maybe (PureMLPattern level variable, SimplificationProof level)
+    => StepPattern level variable
+    -> StepPattern level variable
+    -> Maybe (StepPattern level variable, SimplificationProof level)
 charLiteralAndEqualsAssumesDifferent
     first@(CharLiteral_ _)
     second@(CharLiteral_ _)
@@ -1081,8 +1082,8 @@ functionAnd
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> Maybe (ExpandedPattern level variable, SimplificationProof level)
 functionAnd
     tools

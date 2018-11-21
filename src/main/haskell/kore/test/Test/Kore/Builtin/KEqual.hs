@@ -14,6 +14,7 @@ import           Test.Tasty.HUnit
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
@@ -82,9 +83,9 @@ test_KEqual =
             original =
                 App_ keqBoolSymbol
                     [ DV_ idSort
-                        (BuiltinDomainPattern (StringLiteral_ "t"))
+                        (Domain.BuiltinPattern (StringLiteral_ "t"))
                     , DV_ idSort
-                        (BuiltinDomainPattern (StringLiteral_ "x"))
+                        (Domain.BuiltinPattern (StringLiteral_ "x"))
                     ]
         actual <- evaluateWith solver original
         assertEqual "" expect actual
@@ -97,11 +98,11 @@ test_KEqual =
                 App_ keqBoolSymbol
                     [ App_ (injSymbol idSort kItemSort)
                         [ DV_ idSort
-                            (BuiltinDomainPattern (StringLiteral_ "t"))
+                            (Domain.BuiltinPattern (StringLiteral_ "t"))
                         ]
                     , App_ (injSymbol idSort kItemSort)
                         [ DV_ idSort
-                            (BuiltinDomainPattern (StringLiteral_ "x"))
+                            (Domain.BuiltinPattern (StringLiteral_ "x"))
                         ]
                     ]
         actual <- evaluateWith solver original
@@ -116,14 +117,14 @@ test_KEqual =
                     [ App_ kseqSymbol
                         [ App_ (injSymbol idSort kItemSort)
                             [ DV_ idSort
-                                (BuiltinDomainPattern (StringLiteral_ "t"))
+                                (Domain.BuiltinPattern (StringLiteral_ "t"))
                             ]
                         , App_ dotkSymbol []
                         ]
                     , App_ kseqSymbol
                         [ App_ (injSymbol idSort kItemSort)
                             [ DV_ idSort
-                                (BuiltinDomainPattern (StringLiteral_ "x"))
+                                (Domain.BuiltinPattern (StringLiteral_ "x"))
                             ]
                         , App_ dotkSymbol []
                         ]

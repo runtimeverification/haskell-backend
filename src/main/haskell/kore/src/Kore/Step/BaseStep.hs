@@ -52,6 +52,7 @@ import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), Simplifier )
@@ -60,7 +61,6 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import           Kore.Substitution.Class
-                 ( Hashable (..), PatternSubstitutionClass (..) )
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Data
                  ( UnificationProof (..), UnificationSubstitution,
@@ -80,10 +80,10 @@ A configuration consists of a pattern and a condition predicate, and would be
 represented as pattern /\ condition-predicate in Kore.
 --}
 data StepperConfiguration level = StepperConfiguration
-    { stepperConfigurationPattern       :: !(CommonPurePattern level)
+    { stepperConfigurationPattern       :: !(CommonStepPattern level)
     -- ^ The pattern being rewritten.
 
-    , stepperConfigurationCondition     :: !(CommonPurePattern level)
+    , stepperConfigurationCondition     :: !(CommonStepPattern level)
     -- ^ The condition predicate.
     -- TODO(virgil): Make this an EvaluatedCondition.
     }
@@ -194,8 +194,8 @@ newtype UnificationProcedure level =
             )
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level m
-        -> PureMLPattern level variable
-        -> PureMLPattern level variable
+        -> StepPattern level variable
+        -> StepPattern level variable
         -> ExceptT
             (UnificationOrSubstitutionError level variable)
             m
@@ -698,12 +698,12 @@ patternStepVariablesToCommon
         )
     => Set.Set (StepperVariable variable level)
     -> Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> PureMLPattern level (StepperVariable variable)
+    -> StepPattern level (StepperVariable variable)
     -> Simplifier
         ( Map.Map
             (StepperVariable variable level)
             (StepperVariable variable level)
-        , PureMLPattern level variable
+        , StepPattern level variable
         )
 patternStepVariablesToCommon existingVars mapped patt = do
     let axiomVars = pureAllVariables patt
@@ -728,8 +728,8 @@ replacePatternVariables
         , Ord (variable level)
         )
     => Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> PureMLPattern level (StepperVariable variable)
-    -> PureMLPattern level (StepperVariable variable)
+    -> StepPattern level (StepperVariable variable)
+    -> StepPattern level (StepperVariable variable)
 replacePatternVariables mapping =
     mapPatternVariables
         (\var -> fromMaybe var (Map.lookup var mapping))
@@ -786,10 +786,10 @@ removeAxiomVariables =
 makeUnifiedSubstitution
     :: MetaOrObject level
     => [( StepperVariable variable level
-        , PureMLPattern level (StepperVariable variable)
+        , StepPattern level (StepperVariable variable)
         )]
     -> [(Unified (StepperVariable variable)
-        , PureMLPattern level (StepperVariable variable)
+        , StepPattern level (StepperVariable variable)
         )]
 makeUnifiedSubstitution =
     map (Arrow.first asUnified)

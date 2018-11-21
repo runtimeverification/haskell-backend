@@ -42,8 +42,8 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
@@ -130,7 +130,7 @@ matchWith
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> MaybeT Simplifier (PredicateSubstitution level variable)

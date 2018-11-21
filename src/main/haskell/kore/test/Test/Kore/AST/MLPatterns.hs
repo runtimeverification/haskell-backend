@@ -10,27 +10,29 @@ import Test.Tasty.HUnit
 
 import Data.Functor.Foldable
 
-import Kore.AST.AstWithLocation
-import Kore.AST.Builders
-import Kore.AST.Common
-import Kore.AST.Kore
-       ( CommonKorePattern )
-import Kore.AST.MetaOrObject
-import Kore.AST.MLPatterns
-import Kore.AST.PureML
-import Kore.AST.Sentence
-import Kore.ASTHelpers
-       ( ApplicationSorts (..) )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts as Sorts
-import Kore.Implicit.ImplicitSorts
+import           Kore.AST.AstWithLocation
+import           Kore.AST.Builders
+import           Kore.AST.Common
+import           Kore.AST.Kore
+                 ( CommonKorePattern )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.MLPatterns
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.Building.AsAst
+import           Kore.Building.Patterns
+import           Kore.Building.Sorts as Sorts
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Implicit.ImplicitSorts
 
 import Test.Kore
 
 extractPurePattern
     :: MetaOrObject level
-    => CommonPurePatternStub level -> CommonPurePattern level
+    => CommonPurePatternStub level Domain.Builtin
+    -> CommonPurePattern level Domain.Builtin
 extractPurePattern (SortedPatternStub sp) =
     asPurePattern $ sortedPatternPattern sp
 extractPurePattern (UnsortedPatternStub ups) =
@@ -88,7 +90,7 @@ test_mlPattern =
                 (getPatternResultSort
                     undefinedHeadSort
                     (StringLiteralPattern (StringLiteral "Hello!")
-                    :: UnFixedPureMLPattern Meta Variable
+                    :: UnFixedPureMLPattern Meta Domain.Builtin Variable
                     )
                 )
             )
@@ -98,7 +100,7 @@ test_mlPattern =
                 (getPatternResultSort
                     undefinedHeadSort
                     (CharLiteralPattern (CharLiteral 'h')
-                    :: UnFixedPureMLPattern Meta Variable
+                    :: UnFixedPureMLPattern Meta Domain.Builtin Variable
                     )
                 )
             )
@@ -311,7 +313,9 @@ applyPatternFunctionTests =
     mVariable = metaVariable "#x" AstLocationTest sort
     oVariable = objectVariable "x" AstLocationTest objectSort
 
-metaLeveledFunctionApplier :: Pattern level Variable CommonKorePattern -> Sort level
+metaLeveledFunctionApplier
+    :: Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Sort level
 metaLeveledFunctionApplier =
     applyPatternLeveledFunction
         PatternLeveledFunction
@@ -332,5 +336,3 @@ instance AsAst (Sort Object) SomeObjectSort where
             { sortActualName = testId "SomeObjectSort"
             , sortActualSorts = []
             }
-
-

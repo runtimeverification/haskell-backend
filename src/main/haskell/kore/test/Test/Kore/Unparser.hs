@@ -8,7 +8,6 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
        ( forAll, testProperty )
 
-import Data.Functor.Impredicative
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
@@ -31,34 +30,34 @@ test_unparse =
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     }
-                :: KoreSentenceSort Object)
+                    :: KoreSentenceSort Object
+                )
             )
             "sort x{} []"
         , unparseTest
-            (UnifiedSentence
-                { getUnifiedSentence = UnifiedObject (Rotate41
-                    { unRotate41 = SentenceAliasSentence (SentenceAlias
-                        { sentenceAliasAlias = Alias
-                            { aliasConstructor = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
-                            , aliasParams = []
-                            }
-                        , sentenceAliasSorts = []
-                        , sentenceAliasResultSort = SortVariableSort (SortVariable
-                            { getSortVariable = Id {getId = "z", idLocation = AstLocationTest} :: Id Object})
-                        , sentenceAliasLeftPattern = TopPattern (Top
-                            { topSort = SortActualSort (SortActual
-                                { sortActualName = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
-                                , sortActualSorts = []
-                                })})
-                        , sentenceAliasRightPattern = TopPattern (Top
-                            { topSort = SortVariableSort (SortVariable
-                                { getSortVariable = Id {getId = "q", idLocation = AstLocationTest} :: Id Object})
-                            })
-                        , sentenceAliasAttributes = Attributes {getAttributes = []}
+            ((UnifiedObjectSentence . SentenceAliasSentence)
+                SentenceAlias
+                    { sentenceAliasAlias = Alias
+                        { aliasConstructor = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
+                        , aliasParams = []
+                        }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasResultSort = SortVariableSort (SortVariable
+                        { getSortVariable = Id {getId = "z", idLocation = AstLocationTest} :: Id Object})
+                    , sentenceAliasLeftPattern = TopPattern (Top
+                        { topSort = SortActualSort (SortActual
+                            { sortActualName = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
+                            , sortActualSorts = []
+                            })})
+                    , sentenceAliasRightPattern = TopPattern (Top
+                        { topSort = SortVariableSort (SortVariable
+                            { getSortVariable = Id {getId = "q", idLocation = AstLocationTest} :: Id Object})
                         })
-                    })
-                } :: KoreSentence)
-                "alias i{}() : z where \\top{i{}}() := \\top{q}() []"
+                    , sentenceAliasAttributes = Attributes {getAttributes = []}
+                    }
+                :: KoreSentence
+            )
+            "alias i{}() : z where \\top{i{}}() := \\top{q}() []"
         , unparseTest
             Attributes
                 { getAttributes =
@@ -92,7 +91,8 @@ test_unparse =
                 { moduleName = ModuleName "t"
                 , moduleSentences = []
                 , moduleAttributes = Attributes []
-                }::KoreModule
+                }
+                :: KoreModule
             )
             "module t\n\
             \endmodule\n\
@@ -129,7 +129,8 @@ test_unparse =
                         , moduleAttributes = Attributes {getAttributes = []}
                         }
                     ]
-                }::KoreDefinition
+                }
+                :: KoreDefinition
             )
             "[]\n\
             \module i\n\
@@ -143,7 +144,8 @@ test_unparse =
                 { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
                 , sentenceImportAttributes =
                     Attributes { getAttributes = [] } :: Attributes
-                } :: KoreSentence
+                }
+                :: KoreSentence
             )
             "import sl []"
         , unparseTest

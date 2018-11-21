@@ -10,6 +10,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.String as String
 import           Kore.Step.ExpandedPattern
+import           Kore.Step.Pattern
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
@@ -271,15 +272,15 @@ test_string2Int =
     ]
 
 -- | Another name for asPattern.
-stringLiteral :: String -> CommonPurePattern Object
+stringLiteral :: String -> CommonStepPattern Object
 stringLiteral = asPattern
 
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
-asPattern :: String -> CommonPurePattern Object
+asPattern :: String -> CommonStepPattern Object
 asPattern = String.asPattern stringSort
 
 -- | Specialize 'String.asConcretePattern' to the builtin sort 'stringSort'.
-asConcretePattern :: String -> ConcretePurePattern Object
+asConcretePattern :: String -> ConcreteStepPattern Object
 asConcretePattern = String.asConcretePattern stringSort
 
 -- | Specialize 'String.asExpandedPattern' to the builtin sort 'stringSort'.
@@ -293,7 +294,7 @@ asPartialExpandedPattern = String.asPartialExpandedPattern stringSort
 testString
     :: String
     -> SymbolOrAlias Object
-    -> [CommonPurePattern Object]
+    -> [CommonStepPattern Object]
     -> CommonExpandedPattern Object
     -> TestTree
 testString = testSymbolWithSolver evaluate

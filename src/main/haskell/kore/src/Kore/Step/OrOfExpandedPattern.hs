@@ -39,7 +39,7 @@ import           Data.Reflection
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
-                 ( PureMLPattern, SortedVariable, Variable )
+                 ( SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr )
@@ -52,6 +52,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
 
 {-| 'MultiOr' is a Matching logic or of its children
 
@@ -121,11 +122,11 @@ makeMultiOr :: [a] -> MultiOr a
 makeMultiOr = MultiOr
 
 {-|'makeFromPurePattern' constructs a normalized 'OrOfExpandedPattern' from
-'PureMLPatterns'.
+'StepPatterns'.
 -}
 makeFromSinglePurePattern
     :: (MetaOrObject level, Ord (variable level))
-    => PureMLPattern level variable
+    => StepPattern level variable
     -> OrOfExpandedPattern level variable
 makeFromSinglePurePattern patt = make [ ExpandedPattern.fromPurePattern patt ]
 

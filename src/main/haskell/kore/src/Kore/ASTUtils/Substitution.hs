@@ -23,6 +23,8 @@ module Kore.ASTUtils.Substitution
 where
 
 import           Control.Lens
+import           Data.Functor.Classes
+                 ( Eq1 )
 import           Data.Functor.Foldable
 import qualified Data.Set as S
 import qualified Data.Text as Text
@@ -37,11 +39,11 @@ import Kore.ASTUtils.SmartPatterns
 -- Here `phi_1` is the old pattern that disappears
 -- and `phi_2` is the new pattern that replaces it.
 subst
-    :: MetaOrObject level
-    => CommonPurePattern level
-    -> CommonPurePattern level
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    :: (Eq1 dom, Traversable dom, MetaOrObject level)
+    => CommonPurePattern level dom
+    -> CommonPurePattern level dom
+    -> CommonPurePattern level dom
+    -> CommonPurePattern level dom
 subst old new = \case
     Forall_ s1 v p -> handleBinder old new Forall_ s1 v p
     Exists_ s1 v p -> handleBinder old new Exists_ s1 v p
@@ -64,8 +66,8 @@ handleBinder old new binder s1 v p
         [Variable (Id (name <> (Text.pack . show) n) loc) sort | n <- [(0::Integer)..] ]
 
 freeVars
-    :: MetaOrObject level
-    => CommonPurePattern level
+    :: (MetaOrObject level, Traversable dom)
+    => CommonPurePattern level dom
     -> S.Set (Variable level)
 freeVars = \case
     Forall_ s1 v p -> S.delete v $ freeVars p
@@ -78,10 +80,10 @@ freeVars = \case
 -- substituting at an arbitrary set of eligible positions,
 -- but it doesn't matter in practice.
 localSubst
-    :: MetaOrObject level
-    => CommonPurePattern level
-    -> CommonPurePattern level
+    :: (Eq1 dom, MetaOrObject level, Traversable dom)
+    => CommonPurePattern level dom
+    -> CommonPurePattern level dom
     -> [Int]
-    -> CommonPurePattern level
-    -> CommonPurePattern level
+    -> CommonPurePattern level dom
+    -> CommonPurePattern level dom
 localSubst a b path pat = localInPattern path (subst a b) pat

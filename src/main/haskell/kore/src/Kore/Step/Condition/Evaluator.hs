@@ -48,10 +48,11 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, toExpandedPattern )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..),
-                 SimplificationProof (SimplificationProof), Simplifier )
+                 SimplificationProof (SimplificationProof), Simplifier,
+                 StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           SMT
@@ -74,7 +75,7 @@ evaluate
         , Given (MetadataTools level StepperAttributes)
         )
     => PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> Predicate level variable
     -- ^ The condition to be evaluated.
@@ -84,7 +85,7 @@ evaluate
         (PredicateSubstitution level variable, SimplificationProof level)
 evaluate
     substitutionSimplifier
-    (PureMLPatternSimplifier simplifier)
+    (StepPatternSimplifier simplifier)
     predicate
   = give symbolOrAliasSorts $ do
     (simplified, _proof) <-
@@ -177,8 +178,8 @@ translatePredicate predicate = do
     runTranslator translator
   where
     translatePredicatePattern
-        :: PureMLPattern Object variable
-        -> Translator (PureMLPattern Object variable) SExpr
+        :: StepPattern Object variable
+        -> Translator (StepPattern Object variable) SExpr
     translatePredicatePattern pat =
         case Functor.Foldable.project pat of
             -- Logical connectives: translate as connectives
@@ -258,7 +259,7 @@ translateInt
     :: forall p variable.
         ( Given (MetadataTools Object StepperAttributes)
         , Ord (variable Object)
-        , p ~ PureMLPattern Object variable
+        , p ~ StepPattern Object variable
         )
     => p
     -> Translator p SExpr
@@ -279,7 +280,7 @@ translateBool
     :: forall p variable.
         ( Given (MetadataTools Object StepperAttributes)
         , Ord (variable Object)
-        , p ~ PureMLPattern Object variable
+        , p ~ StepPattern Object variable
         )
     => p
     -> Translator p SExpr
@@ -304,7 +305,7 @@ translateApplication
     :: forall p variable.
         ( Given (MetadataTools Object StepperAttributes)
         , Ord (variable Object)
-        , p ~ PureMLPattern Object variable
+        , p ~ StepPattern Object variable
         )
     => Application Object p
     -> Translator p SExpr
@@ -333,7 +334,7 @@ translatePattern
     :: forall p variable.
         ( Given (MetadataTools Object StepperAttributes)
         , Ord (variable Object)
-        , p ~ PureMLPattern Object variable
+        , p ~ StepPattern Object variable
         )
     => Sort Object
     -> p

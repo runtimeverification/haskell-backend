@@ -15,49 +15,63 @@ import           Data.Proxy
                  ( Proxy (Proxy) )
 import qualified Data.Text as Text
 
-import Kore.AST.Common
-       ( And (..), AstLocation, Bottom (..), BuiltinDomain (..), Ceil (..),
-       CharLiteral (..), DomainValue (..), Equals (..), Exists (..),
-       Floor (..), Forall (..), Id (..), Iff (..), Implies (..), In (..),
-       Next (..), Not (..), Or (..), Pattern (..), Rewrites (..),
-       StringLiteral (..), Top (..), Variable (..) )
-import Kore.AST.Kore
-       ( CommonKorePattern, pattern UnifiedMetaPattern, asKorePattern )
-import Kore.AST.MetaOrObject
-import Kore.ASTUtils.SmartPatterns
-import Kore.Building.AsAst
-import Kore.Building.Sorts
+import           Kore.AST.Common
+                 ( And (..), AstLocation, Bottom (..), Ceil (..),
+                 CharLiteral (..), DomainValue (..), Equals (..), Exists (..),
+                 Floor (..), Forall (..), Id (..), Iff (..), Implies (..),
+                 In (..), Next (..), Not (..), Or (..), Pattern (..),
+                 Rewrites (..), StringLiteral (..), Top (..), Variable (..) )
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.Building.AsAst
+import           Kore.Building.Sorts
+import qualified Kore.Domain.Builtin as Domain
 
 {-| When defining new patterns (e.g. for new symbols and aliases),
 users are expected to instantiate either
 `ProperMetaPattern` or `ProperObjectPattern`, the other derivations
 (e.g. for `MetaPattern` and `AsAst`) being inferred automatically.
 -}
-class MetaOrObject level => ProperPattern level sort patt | patt -> sort level where
+class
+    MetaOrObject level =>
+    ProperPattern level sort patt
+      | patt -> sort level
+  where
     asProperPattern
-        :: patt -> Pattern level Variable CommonKorePattern
+        :: patt -> Pattern level Domain.Builtin Variable CommonKorePattern
+
 type ProperMetaPattern = ProperPattern Meta
+
 type ProperObjectPattern = ProperPattern Object
 
-asProperObjectPattern :: (ProperPattern Object sort patt) =>
-  patt -> Pattern Object Variable CommonKorePattern
+asProperObjectPattern
+    :: (ProperPattern Object sort patt)
+    => patt -> Pattern Object Domain.Builtin Variable CommonKorePattern
 asProperObjectPattern = asProperPattern
-asProperMetaPattern :: (ProperPattern Meta sort patt) =>
-  patt -> Pattern Meta Variable CommonKorePattern
+
+asProperMetaPattern
+    :: (ProperPattern Meta sort patt)
+    => patt -> Pattern Meta Domain.Builtin Variable CommonKorePattern
 asProperMetaPattern = asProperPattern
 
 class AsAst CommonKorePattern patt => AsMetaPattern patt where
-    asMetaPattern :: patt -> Pattern Meta Variable CommonKorePattern
+    asMetaPattern
+        :: patt -> Pattern Meta Domain.Builtin Variable CommonKorePattern
+
 class AsAst CommonKorePattern patt => AsObjectPattern patt where
-    asObjectPattern :: patt -> Pattern Object Variable CommonKorePattern
+    asObjectPattern
+        :: patt -> Pattern Object Domain.Builtin Variable CommonKorePattern
 
 class AsAst CommonKorePattern patt => ObjectPattern sort patt where
 class AsAst CommonKorePattern patt => MetaPattern sort patt where
 
 -------------------------------------
 
-instance forall level sort patt . (ProperPattern level sort patt)
-         => AsAst CommonKorePattern patt
+instance
+    forall level sort patt.
+    ProperPattern level sort patt =>
+    AsAst CommonKorePattern patt
   where
     asAst pat = case isMetaOrObject (Proxy :: Proxy level) of
       IsMeta   -> asKorePattern (asProperMetaPattern pat)
@@ -188,11 +202,13 @@ instance
     asProperPattern (ObjectDomainValue sort child) =
         DomainValuePattern DomainValue
             { domainValueSort = asAst sort
-            , domainValueChild = BuiltinDomainPattern (StringLiteral_ literal)
+            , domainValueChild = Domain.BuiltinPattern (StringLiteral_ literal)
             }
       where
+        externalChild :: CommonKorePattern
+        externalChild = asAst child
         literal =
-            case Functor.Foldable.project (asAst child :: CommonKorePattern) of
+            case Functor.Foldable.project externalChild of
                 UnifiedMetaPattern
                     (StringLiteralPattern (StringLiteral str)) -> str
                 _ -> error "Domain value must be a string literal"

@@ -16,13 +16,14 @@ import Test.Tasty.QuickCheck
 
 import Data.Proxy
 
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.Implicit.ImplicitSorts
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Implicit.ImplicitSorts
+
 import Test.Kore
        ( idGen, testId )
-
 import Test.Tasty.HUnit.Extensions
 
 instance forall level. MetaOrObject level => Arbitrary (Id level) where
@@ -97,8 +98,8 @@ test_withSort =
         ]
   where
     assertSortedStub
-        :: SortedPattern Meta Variable CommonKorePattern
-        -> PatternStub Meta Variable CommonKorePattern
+        :: SortedPattern Meta Domain.Builtin Variable CommonKorePattern
+        -> PatternStub Meta Domain.Builtin Variable CommonKorePattern
         -> IO ()
     assertSortedStub expectedSorted stub =
         case stub of

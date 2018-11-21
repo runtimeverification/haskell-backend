@@ -22,11 +22,13 @@ import           Kore.AST.PureML
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Map as Map
+import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Data
 
@@ -47,11 +49,11 @@ genMapInteger :: Gen a -> Gen (Map Integer a)
 genMapInteger genElement =
     Gen.map (Range.linear 0 32) ((,) <$> genInteger <*> genElement)
 
-genConcreteMap :: Gen a -> Gen (Map (ConcretePurePattern Object) a)
+genConcreteMap :: Gen a -> Gen (Map (ConcreteStepPattern Object) a)
 genConcreteMap genElement =
     Map.mapKeys Test.Int.asConcretePattern <$> genMapInteger genElement
 
-genMapPattern :: Gen (CommonPurePattern Object)
+genMapPattern :: Gen (CommonStepPattern Object)
 genMapPattern = asPattern <$> genConcreteMap genIntegerPattern
 
 genMapSortedVariable
@@ -282,12 +284,12 @@ test_simplify =
                 key = Test.Int.asConcretePattern 1
                 original =
                     mkDomainValue mapSort
-                    $ BuiltinDomainMap
+                    $ Domain.BuiltinMap
                     $ Map.fromList [(key, mkAnd x mkTop)]
                 expected =
                     ExpandedPattern.fromPurePattern
                     $ mkDomainValue mapSort
-                    $ BuiltinDomainMap
+                    $ Domain.BuiltinMap
                     $ Map.fromList [(key, x)]
             actual <- evaluateWith solver original
             assertEqual "expected simplified Map" expected actual
@@ -309,15 +311,15 @@ test_symbolic =
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
-    :: Map (CommonPurePattern Object) (CommonPurePattern Object)
-    -> CommonPurePattern Object
+    :: Map (CommonStepPattern Object) (CommonStepPattern Object)
+    -> CommonStepPattern Object
 asSymbolicPattern result
     | Map.null result =
         applyUnit
     | otherwise =
         foldr1 applyConcat (applyElement <$> Map.toAscList result)
   where
-    applyUnit = mkDomainValue mapSort $ BuiltinDomainMap Map.empty
+    applyUnit = mkDomainValue mapSort $ Domain.BuiltinMap Map.empty
     applyElement (key, value) = App_ elementMapSymbol [key, value]
     applyConcat map1 map2 = App_ concatMapSymbol [map1, map2]
 
@@ -460,7 +462,7 @@ test_concretizeKeysAxiom =
             )
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map.Builtin Variable -> CommonPurePattern Object
+asPattern :: Map.Builtin Variable -> CommonStepPattern Object
 Right asPattern = Map.asPattern indexedModule mapSort
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
@@ -469,43 +471,43 @@ Right asExpandedPattern = Map.asExpandedPattern indexedModule mapSort
 
 -- * Constructors
 
-mkBottom :: CommonPurePattern Object
+mkBottom :: CommonStepPattern Object
 mkBottom = Kore.mkBottom
 
 mkEquals
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkEquals = give testSymbolOrAliasSorts Kore.mkEquals
 
 mkAnd
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkAnd = give testSymbolOrAliasSorts Kore.mkAnd
 
-mkTop :: CommonPurePattern Object
+mkTop :: CommonStepPattern Object
 mkTop = Kore.mkTop
 
-mkVar :: Variable Object -> CommonPurePattern Object
+mkVar :: Variable Object -> CommonStepPattern Object
 mkVar = give testSymbolOrAliasSorts Kore.mkVar
 
 mkDomainValue
     :: Sort Object
-    -> BuiltinDomain (CommonPurePattern Object)
-    -> CommonPurePattern Object
+    -> Domain.Builtin (CommonStepPattern Object)
+    -> CommonStepPattern Object
 mkDomainValue = give testSymbolOrAliasSorts Kore.mkDomainValue
 
 mkImplies
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkImplies = give testSymbolOrAliasSorts Kore.mkImplies
 
-mkNot :: CommonPurePattern Object -> CommonPurePattern Object
+mkNot :: CommonStepPattern Object -> CommonStepPattern Object
 mkNot = give testSymbolOrAliasSorts Kore.mkNot
 
-mkIntVar :: Id Object -> CommonPurePattern Object
+mkIntVar :: Id Object -> CommonStepPattern Object
 mkIntVar variableName =
     mkVar Variable { variableName, variableSort = intSort }
 

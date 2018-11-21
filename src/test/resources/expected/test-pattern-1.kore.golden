@@ -9,7 +9,7 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (TopPattern (Top (SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))))))))
+                        Fix (UnifiedPattern (UnifiedObjectPattern (TopPattern (Top (SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object)))))))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

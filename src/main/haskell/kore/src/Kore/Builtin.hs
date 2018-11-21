@@ -41,10 +41,11 @@ import           Data.Text
 import           GHC.Stack
                  ( HasCallStack )
 
-import qualified Kore.AST.Common as Kore
+import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
-import qualified Kore.ASTUtils.SmartPatterns as Kore
+import           Kore.AST.PureML
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Builtin.Bool as Bool
@@ -55,17 +56,18 @@ import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as String
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 
 {- | The default type of builtin domain values.
  -}
-type Builtin =
-    Kore.DomainValue Object (Kore.BuiltinDomain (Kore.CommonPurePattern Object))
+type Builtin = DomainValue Object Domain.Builtin (CommonStepPattern Object)
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -107,7 +109,7 @@ koreVerifiers =
 koreEvaluators
     :: KoreIndexedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map (Kore.Id Object) Builtin.Function
+    -> Map (Id Object) Builtin.Function
 koreEvaluators = evaluators builtins
   where
     builtins :: Map Text Builtin.Function
@@ -135,13 +137,13 @@ evaluators
     -- ^ Builtin functions indexed by name
     -> KoreIndexedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map (Kore.Id Object) Builtin.Function
+    -> Map (Id Object) Builtin.Function
 evaluators builtins indexedModule =
     Map.mapMaybe lookupBuiltins (hookedSymbolAttributes indexedModule)
   where
     hookedSymbolAttributes
         :: KoreIndexedModule StepperAttributes
-        -> Map (Kore.Id Object) StepperAttributes
+        -> Map (Id Object) StepperAttributes
     hookedSymbolAttributes im =
         Map.union
             (justAttributes <$> IndexedModule.hookedObjectSymbolSentences im)
@@ -151,7 +153,7 @@ evaluators builtins indexedModule =
 
     importHookedSymbolAttributes
         :: (a, b, KoreIndexedModule StepperAttributes)
-        -> Map (Kore.Id Object) StepperAttributes
+        -> Map (Id Object) StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
     lookupBuiltins :: StepperAttributes -> Maybe Builtin.Function
@@ -173,19 +175,19 @@ asPattern
     -- ^ indexed module defining hooks for builtin domains
     -> Builtin
     -- ^ domain value
-    -> Either (Error e) (Kore.CommonPurePattern Object)
+    -> Either (Error e) (CommonStepPattern Object)
 asPattern
     indexedModule
-    Kore.DomainValue { domainValueSort, domainValueChild }
+    DomainValue { domainValueSort, domainValueChild }
   =
     case domainValueChild of
-        Kore.BuiltinDomainPattern _ ->
-            return (Kore.DV_ domainValueSort domainValueChild)
-        Kore.BuiltinDomainMap map' ->
+        Domain.BuiltinPattern _ ->
+            return (DV_ domainValueSort domainValueChild)
+        Domain.BuiltinMap map' ->
             Map.asPattern indexedModule domainValueSort <*> pure map'
-        Kore.BuiltinDomainList list ->
+        Domain.BuiltinList list ->
             List.asPattern indexedModule domainValueSort <*> pure list
-        Kore.BuiltinDomainSet set ->
+        Domain.BuiltinSet set ->
             Set.asPattern indexedModule domainValueSort <*> pure set
 
 {- | Externalize all builtin domain values in the given pattern.
@@ -196,23 +198,19 @@ asPattern
     See also: 'asPattern'
 
  -}
--- TODO (thomas.tuegel): Parameterize patterns on the type of domain values. Use
--- 'StringLiteral' as the domain value type in the parser and a distinct domain
--- type for internally-represented builtin domains. Use this function to change
--- the domain value type parameter of the pattern and eliminate error cases
--- throughout.
+-- TODO (thomas.tuegel): Transform from Domain.Builtin to Domain.External.
 externalizePattern
     :: KoreIndexedModule attrs
     -- ^ indexed module defining hooks for builtin domains
-    -> Kore.CommonPurePattern Object
-    -> Either (Error e) (Kore.CommonPurePattern Object)
+    -> CommonStepPattern Object
+    -> Either (Error e) (CommonStepPattern Object)
 externalizePattern indexedModule =
     Functor.Foldable.fold externalizePattern0
   where
     externalizePattern0 =
         \case
-            Kore.DomainValuePattern dv ->
-                asPattern indexedModule =<< traverse sequence dv
+            DomainValuePattern dv ->
+                asPattern indexedModule =<< sequence dv
             pat -> Functor.Foldable.embed <$> sequence pat
 
 {- | Extract the meta-level pattern argument of a domain value.
@@ -222,14 +220,14 @@ externalizePattern indexedModule =
 
  -}
 asMetaPattern
-    :: Kore.BuiltinDomain child
-    -> Kore.CommonPurePattern Meta
+    :: Domain.Builtin child
+    -> CommonStepPattern Meta
 asMetaPattern =
     \case
-        Kore.BuiltinDomainPattern pat -> pat
-        Kore.BuiltinDomainMap _ -> notImplementedInternal
-        Kore.BuiltinDomainList _ -> notImplementedInternal
-        Kore.BuiltinDomainSet _ -> notImplementedInternal
+        Domain.BuiltinPattern pat -> castVoidDomainValues pat
+        Domain.BuiltinMap _ -> notImplementedInternal
+        Domain.BuiltinList _ -> notImplementedInternal
+        Domain.BuiltinSet _ -> notImplementedInternal
 
 {- | Throw an error for operations not implemented for internal domain values.
  -}

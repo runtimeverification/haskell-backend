@@ -57,14 +57,14 @@ Definition
                                     , symbolOrAliasParams = []
                                     }
                             , applicationChildren =
-                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                             , sortActualSorts = []
                                             }
-                                    }))))
+                                    })))
                                 ]
                             }
                     , sentenceAliasRightPattern =
@@ -75,22 +75,22 @@ Definition
                                     , symbolOrAliasParams = []
                                     }
                             , applicationChildren =
-                                [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                             , sortActualSorts = []
                                             }
-                                    }))))
-                                , Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                    })))
+                                , Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                                             , sortActualSorts = []
                                             }
-                                    }))))
+                                    })))
                                 ]
                             }
                     , sentenceAliasAttributes = Attributes []

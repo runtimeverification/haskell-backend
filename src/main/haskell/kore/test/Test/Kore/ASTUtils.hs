@@ -31,6 +31,7 @@ import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 import Kore.ASTUtils.Substitution
 import Kore.IndexedModule.MetadataTools
+import Kore.Step.Pattern
 
 test_substitutions :: TestTree
 test_substitutions = testGroup "Substitutions"
@@ -53,95 +54,99 @@ test_substitutions = testGroup "Substitutions"
 test_sortAgreement :: TestTree
 test_sortAgreement = testGroup "Sort agreement"
     [ testCase "sortAgreement1" $
-          assertEqual ""
-              (sortAgreement1 ^? inPath [1])
-              (Just $ Bottom_ (mkSort "X"))
+        assertEqual ""
+            (sortAgreement1 ^? inPath [1])
+            (Just $ Bottom_ (mkSort "X"))
     , testCase "sortAgreement2.1" $
-          assertEqual ""
-              (sortAgreement2 ^? inPath [0])
-              (Just $ Bottom_ (mkSort "Y"))
+        assertEqual ""
+            (sortAgreement2 ^? inPath [0])
+            (Just $ Bottom_ (mkSort "Y"))
     , testCase "sortAgreement2.2" $
-          assertEqual ""
-              (sortAgreement2 ^? (inPath [1] . resultSort ))
-              (Just $ mkSort "Y")
+        assertEqual ""
+            (sortAgreement2 ^? (inPath [1] . resultSort ))
+            (Just $ mkSort "Y")
     , testCase "predicateSort.1" $
-          assertEqual ""
-              (dummyEnvironment mkBottom ^? resultSort)
-              (Just (predicateSort :: Sort Object))
+        assertEqual ""
+            (dummyEnvironment
+                (mkBottom :: CommonStepPattern Object) ^? resultSort)
+            (Just (predicateSort :: Sort Object))
     , testCase "predicateSort.2" $
-          assertEqual ""
-              (dummyEnvironment mkTop ^? resultSort)
-              (Just (predicateSort :: Sort Object))
+        assertEqual ""
+            (dummyEnvironment
+                (mkTop :: CommonStepPattern Object) ^? resultSort)
+            (Just (predicateSort :: Sort Object))
     , testCase "predicateSort.3" $
-          assertEqual ""
-              (dummyEnvironment (mkExists (var_ "a" "A") mkBottom) ^? resultSort)
-              (Just (predicateSort :: Sort Object))
+        assertEqual ""
+            (dummyEnvironment
+                (mkExists (var_ "a" "A") mkBottom
+                    :: CommonStepPattern Object) ^? resultSort
+            )
+            (Just (predicateSort :: Sort Object))
     , testGroup "sortAgreementManySimplePatterns" $
-          dummyEnvironment sortAgreementManySimplePatterns
+        dummyEnvironment sortAgreementManySimplePatterns
     , testGetSetIdentity 5
     ]
 
-
-subTrivial :: CommonPurePattern Object
+subTrivial :: CommonStepPattern Object
 subTrivial = dummyEnvironment $
     subst (Var_ $ var "a") (Var_ $ var "b") $
     mkExists (var "p") (Var_ $ var "a")
 
-subTrivialSolution :: CommonPurePattern Object
+subTrivialSolution :: CommonStepPattern Object
 subTrivialSolution = dummyEnvironment $
     mkExists (var "p") (Var_ $ var "b")
 
-subShadow :: CommonPurePattern Object
+subShadow :: CommonStepPattern Object
 subShadow = dummyEnvironment $
     subst (Var_ $ var "a") (Var_ $ var "b") $
     mkExists (var "a") (Var_ $ var "q")
 
-subShadowSolution :: CommonPurePattern Object
+subShadowSolution :: CommonStepPattern Object
 subShadowSolution = dummyEnvironment $
     mkExists (var "a") (Var_ $ var "q")
 
-subAlphaRename1 :: CommonPurePattern Object
+subAlphaRename1 :: CommonStepPattern Object
 subAlphaRename1 = dummyEnvironment $
     subst (Var_ $ var "a") (Var_ $ var "b") $
     mkExists (var "b") (Var_ $ var "q")
 
-subAlphaRename1Solution :: CommonPurePattern Object
+subAlphaRename1Solution :: CommonStepPattern Object
 subAlphaRename1Solution = dummyEnvironment $
     mkExists (var "b0") (Var_ $ var "q")
 
-subAlphaRename2 :: CommonPurePattern Object
+subAlphaRename2 :: CommonStepPattern Object
 subAlphaRename2 = dummyEnvironment $
     subst (Var_ $ var "a") (Var_ $ var "b") $
     mkExists (var "b") (Var_ $ var "a")
 
-subTermForTerm :: CommonPurePattern Object
+subTermForTerm :: CommonStepPattern Object
 subTermForTerm = dummyEnvironment $
     subst (mkOr mkTop mkBottom) (mkAnd mkTop mkBottom) $
     mkImplies (mkOr mkTop mkBottom) mkTop
 
-subTermForTermSolution :: CommonPurePattern Object
+subTermForTermSolution :: CommonStepPattern Object
 subTermForTermSolution = dummyEnvironment $
     mkImplies (mkAnd mkTop mkBottom) mkTop
 
--- subAlphaRename2Solution :: CommonPurePattern Object
+-- subAlphaRename2Solution :: CommonStepPattern Object
 -- subAlphaRename2Solution = dummyEnvironment @Object $
 --   subst (Var_ $ var "a") (Var_ $ var "b") $
 --   mkExists (var "b0") (Var_ $ var "b")
 
 -- the a : X forces bottom : X
-sortAgreement1 :: CommonPurePattern Object
+sortAgreement1 :: CommonStepPattern Object
 sortAgreement1 = dummyEnvironment $
     mkOr (Var_ $ var_ "a" "X") mkBottom
 
 -- the y : Y should force everything else to be Y
-sortAgreement2 :: CommonPurePattern Object
+sortAgreement2 :: CommonStepPattern Object
 sortAgreement2 = dummyEnvironment $
     mkImplies mkBottom $
     mkIff
         (mkEquals (Var_ $ var_ "foo" "X") (Var_ $ var_ "bar" "X"))
         (Var_ $ var_ "y" "Y")
 
-varX :: (Given (SymbolOrAliasSorts Object)) => CommonPurePattern Object
+varX :: (Given (SymbolOrAliasSorts Object)) => CommonStepPattern Object
 varX = mkVar $ var_ "x" "X"
 
 sortAgreementManySimplePatterns
@@ -193,12 +198,12 @@ substitutionGetSetIdentity a b pat =
 generatePatterns
   :: Given (SymbolOrAliasSorts Object)
   => Int
-  -> [CommonPurePattern Object]
+  -> [CommonStepPattern Object]
 generatePatterns size = genBinaryPatterns size ++ genUnaryPatterns size
 genBinaryPatterns
   :: Given (SymbolOrAliasSorts Object)
   => Int
-  -> [CommonPurePattern Object]
+  -> [CommonStepPattern Object]
 genBinaryPatterns 0 = []
 genBinaryPatterns size = do
   sa <- [1..size-1]
@@ -209,7 +214,7 @@ genBinaryPatterns size = do
 genUnaryPatterns
   :: Given (SymbolOrAliasSorts Object)
   => Int
-  -> [CommonPurePattern Object]
+  -> [CommonStepPattern Object]
 genUnaryPatterns 0 = []
 genUnaryPatterns 1 = [Var_ $ var_ "x" "X"]
 genUnaryPatterns size = do

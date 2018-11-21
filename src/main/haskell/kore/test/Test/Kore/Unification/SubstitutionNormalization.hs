@@ -13,26 +13,16 @@ import qualified Data.Set as Set
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
 import           Kore.AST.Common
-                 ( AstLocation (..), CommonPurePattern, Sort (..),
-                 SortVariable (..), Variable, noLocationId )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( groundHead )
-import           Kore.AST.PureToKore
-                 ( patternKoreToPure )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartPatterns
-import           Kore.Building.AsAst
-import           Kore.Building.Patterns
-import           Kore.Building.Sorts
-import           Kore.Error
+import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import           Kore.MetaML.AST
-                 ( CommonMetaPattern )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
@@ -42,119 +32,105 @@ import           Kore.Unification.Error
 import           Kore.Unification.SubstitutionNormalization
 import           Kore.Variables.Fresh
 
+import Test.Kore
+
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =
     [ testCase "Empty substitution"
         (assertEqual ""
             (Right [])
             (runNormalizeSubstitution
-                ([] :: [(Variable Meta, CommonPurePattern Meta)])
+                ([] :: UnificationSubstitution Meta Variable)
             )
         )
     , testCase "Simple substitution"
         (assertEqual ""
-            (Right
-                [   ( asVariable (v1 PatternSort)
-                    , asPureMetaPattern (metaTop PatternSort)
-                    )
-                ]
-            )
+            (Right [(v1 patternMetaSort, Top_ patternMetaSort)])
             (runNormalizeSubstitution
-                [   ( asVariable (v1 PatternSort)
-                    , asPureMetaPattern (metaTop PatternSort)
-                    )
-                ]
+                [(v1 patternMetaSort , Top_ patternMetaSort)]
             )
         )
     , testCase "Simple unnormalized substitution"
         (assertEqual ""
             (Right
-                [   ( asVariable (v1 PatternSort)
-                    , asPureMetaPattern (metaTop PatternSort)
-                    )
-                ,   ( asVariable (x1 PatternSort)
-                    , asPureMetaPattern (metaTop PatternSort)
-                    )
+                [ (v1 patternMetaSort, Top_ patternMetaSort)
+                , (x1 patternMetaSort, Top_ patternMetaSort)
                 ]
             )
             (runNormalizeSubstitution
-                [   ( asVariable (v1 PatternSort)
-                    , asPureMetaPattern (x1 PatternSort)
-                    )
-                ,   ( asVariable (x1 PatternSort)
-                    , asPureMetaPattern (metaTop PatternSort)
-                    )
+                [ (v1 patternMetaSort, Var_ $ x1 patternMetaSort)
+                , (x1 patternMetaSort, Top_ patternMetaSort)
                 ]
             )
         )
     , testCase "Unnormalized substitution with 'and'"
         (assertEqual ""
             (Right
-                [   ( asVariable (v1 PatternSort)
-                    , asPureMetaPattern
-                        ( metaAnd
-                            PatternSort
-                            (metaTop PatternSort)
-                            (metaTop PatternSort)
+                [   ( v1 patternMetaSort
+                    ,
+                        ( And_
+                            patternMetaSort
+                            (Top_ patternMetaSort)
+                            (Top_ patternMetaSort)
                         )
                     )
-                ,   ( asVariable (x1 PatternSort)
-                    , asPureMetaPattern (metaTop PatternSort)
+                ,   (  (x1 patternMetaSort)
+                    ,  (Top_ patternMetaSort)
                     )
                 ]
             )
             (runNormalizeSubstitution
-                [   ( asVariable (v1 PatternSort)
-                    , asPureMetaPattern
-                        ( metaAnd
-                            PatternSort
-                            (x1 PatternSort)
-                            (metaTop PatternSort)
+                [   (  (v1 patternMetaSort)
+                    ,
+                        ( And_
+                            patternMetaSort
+                            (Var_ $ x1 patternMetaSort)
+                            (Top_ patternMetaSort)
                         )
                     )
-                ,   ( asVariable (x1 PatternSort)
-                    , asPureMetaPattern (metaTop PatternSort)
+                ,   (  (x1 patternMetaSort)
+                    ,  (Top_ patternMetaSort)
                     )
                 ]
             )
         )
     , let
-        var1 = asVariable (v1 PatternSort)
+        var1 =  (v1 patternMetaSort)
       in
         testCase "Simplest cycle"
             (assertEqual ""
                 (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
-                        , asPureMetaPattern (v1 PatternSort)
+                        , Var_ $ v1 patternMetaSort
                         )
                     ]
                 )
             )
     , let
-        var1 = asVariable (v1 PatternSort)
-        varx1 = asVariable (x1 PatternSort)
+        var1 =  (v1 patternMetaSort)
+        varx1 =  (x1 patternMetaSort)
       in
         testCase "Cycle with extra substitution"
             (assertEqual ""
                 (Right
-                    [   ( asVariable (x1 PatternSort)
-                        , asPureMetaPattern (v1 PatternSort)
+                    [   (  (x1 patternMetaSort)
+                        ,  Var_ $ v1 patternMetaSort
                         )
                     ]
                 )
                 (runNormalizeSubstitution
                     [   ( var1
-                        , asPureMetaPattern (v1 PatternSort)
+                        ,  Var_ $ v1 patternMetaSort
                         )
                     ,   ( varx1
-                        , asPureMetaPattern (v1 PatternSort)
+                        ,  Var_ $ v1 patternMetaSort
                         )
                     ]
                 )
             )
     , let
-        var1 = asVariable (v1 PatternSort)
+        var1 =  (v1 patternMetaSort)
       in
         testCase "Function cycle"
             (assertEqual ""
@@ -167,52 +143,52 @@ test_substitutionNormalization =
                 )
             )
     , let
-        var1 = asVariable (v1 PatternSort)
-        varx1 = asVariable (x1 PatternSort)
+        var1 =  (v1 patternMetaSort)
+        varx1 =  (x1 patternMetaSort)
       in
         testCase "Length 2 cycle"
             (assertEqual ""
                 (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
-                        , asPureMetaPattern (x1 PatternSort)
+                        ,  Var_ $ x1 patternMetaSort
                         )
                     ,   ( varx1
-                        , asPureMetaPattern (v1 PatternSort)
+                        ,  Var_ $ v1 patternMetaSort
                         )
                     ]
                 )
             )
     , let
-        var1 = asVariable (v1 PatternSort)
-        varx1 = asVariable (x1 PatternSort)
+        var1 =  (v1 patternMetaSort)
+        varx1 =  (x1 patternMetaSort)
       in
         testCase "Cycle with 'and'"
             (assertEqual ""
                 (Right [])
                 (runNormalizeSubstitution
                     [   ( var1
-                        , asPureMetaPattern
-                            ( metaAnd
-                                PatternSort
-                                (x1 PatternSort)
-                                (metaTop PatternSort)
+                        ,
+                            ( And_
+                                patternMetaSort
+                                (Var_ $ x1 patternMetaSort)
+                                (Top_ patternMetaSort)
                             )
                         )
                     ,   ( varx1
-                        , asPureMetaPattern
-                            ( metaAnd
-                                PatternSort
-                                (v1 PatternSort)
-                                (metaTop PatternSort)
+                        ,
+                            ( And_
+                                patternMetaSort
+                                (Var_ $ v1 patternMetaSort)
+                                (Top_ patternMetaSort)
                             )
                         )
                     ]
                 )
             )
     , let
-        var1 = asVariable (v1 PatternSort)
-        varx1 = asVariable (x1 PatternSort)
+        var1 =  (v1 patternMetaSort)
+        varx1 =  (x1 patternMetaSort)
       in
         testCase "Length 2 non-ctor cycle"
             (assertEqual ""
@@ -229,17 +205,11 @@ test_substitutionNormalization =
             )
     ]
   where
-    v1 :: MetaSort sort => sort -> MetaVariable sort
-    v1 = metaVariable "v1" AstLocationTest
-    x1 :: MetaSort sort => sort -> MetaVariable sort
-    x1 = metaVariable "x1" AstLocationTest
+    v1 :: Sort level -> Variable level
+    v1 = Variable (testId "v1")
+    x1 :: Sort level -> Variable level
+    x1 = Variable (testId "x1")
     f = groundHead "f" AstLocationTest
-    asPureMetaPattern
-        :: ProperPattern level sort patt => patt -> CommonMetaPattern
-    asPureMetaPattern patt =
-        case patternKoreToPure Meta (asAst patt) of
-            Left err  -> error (printError err)
-            Right pat -> pat
 
 runNormalizeSubstitution
     :: MetaOrObject level

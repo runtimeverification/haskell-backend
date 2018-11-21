@@ -30,12 +30,13 @@ import           Data.Reflection
 
 import           Kore.AST.Common
                  ( Application (..), DomainValue (..), Pattern (..),
-                 PureMLPattern, SymbolOrAlias (..) )
+                 SymbolOrAlias (..) )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Proof.Functional
+import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributesError
                  ( FunctionError (..), FunctionalError (..), TotalError (..) )
 import           Kore.Step.StepperAttributes
@@ -68,7 +69,7 @@ mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
 -}
 isFunctionalPattern
     :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> Either (FunctionalError level) [FunctionalProof level variable]
 isFunctionalPattern tools =
     provePattern (checkFunctionalHead tools)
@@ -78,7 +79,7 @@ isFunctionalPattern tools =
 -}
 isTotalPattern
     :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> Either (TotalError level) [TotalProof level variable]
 isTotalPattern tools =
     provePattern (checkTotalHead tools)
@@ -89,10 +90,10 @@ data PartialPatternProof proof
   deriving Functor
 
 provePattern
-    ::  (  Pattern level variable (Either error [proof])
+    ::  (  StepPatternHead level variable (Either error [proof])
         -> Either error (PartialPatternProof proof)
         )
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> Either error [proof]
 provePattern levelProver =
     cata reduceM
@@ -108,7 +109,7 @@ provePattern levelProver =
 -- Tells whether the pattern is a built-in constructor-like pattern
 isPreconstructedPattern
     :: err
-    -> Pattern level variable pat
+    -> StepPatternHead level variable pat
     -> Either err (PartialPatternProof (FunctionalProof level variable))
 isPreconstructedPattern
     _
@@ -126,7 +127,7 @@ isPreconstructedPattern err _ = Left err
 
 checkFunctionalHead
     :: MetadataTools level StepperAttributes
-    -> Pattern level variable a
+    -> StepPatternHead level variable a
     -> Either
         (FunctionalError level)
         (PartialPatternProof (FunctionalProof level variable))
@@ -150,7 +151,7 @@ construct.
 -}
 isConstructorLikeTop
     :: MetadataTools level StepperAttributes
-    -> Pattern level variable pat
+    -> StepPatternHead level variable pat
     -> Bool
 isConstructorLikeTop tools (ApplicationPattern ap) =
     give tools isConstructor_ patternHead
@@ -163,14 +164,14 @@ isConstructorLikeTop _ p = isRight (isPreconstructedPattern undefined p)
 -}
 isFunctionPattern
     :: MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> Either (FunctionError level) [FunctionProof level variable]
 isFunctionPattern tools =
     provePattern (checkFunctionHead tools)
 
 checkFunctionHead
     :: MetadataTools level StepperAttributes
-    -> Pattern level variable a
+    -> StepPatternHead level variable a
     -> Either
         (FunctionError level)
         (PartialPatternProof (FunctionProof level variable))
@@ -188,7 +189,7 @@ checkFunctionHead tools patt =
 
 checkTotalHead
     :: MetadataTools level StepperAttributes
-    -> Pattern level variable a
+    -> StepPatternHead level variable a
     -> Either
         (TotalError level)
         (PartialPatternProof (TotalProof level variable))

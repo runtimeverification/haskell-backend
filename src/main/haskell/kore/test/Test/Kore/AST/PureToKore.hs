@@ -7,13 +7,13 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
        ( forAll, testProperty )
 
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.PureToKore
-import Kore.AST.Sentence
-import Kore.MetaML.AST
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureToKore
+import           Kore.AST.Sentence
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.MetaML.AST
 
 import Test.Kore
 
@@ -86,7 +86,7 @@ test_pureToKore =
                             }
                         ]
                     }
-                  :: PureDefinition Meta
+                  :: PureDefinition Meta Domain.Builtin
                 )
             )
         )

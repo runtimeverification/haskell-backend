@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-|
 Module      : Kore.MetaML.AST
 Description : Data Structures for representing a Meta-only version of the
@@ -22,49 +21,47 @@ import           Data.Set
                  ( Set )
 import qualified Data.Text as Text
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-import Kore.AST.Sentence
-import Kore.Variables.Free
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.AST.Sentence
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Variables.Free
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to 'Meta'.
 
 'var' is the type of variables.
 -}
-type MetaMLPattern variable = PureMLPattern Meta variable
+type MetaMLPattern variable = PureMLPattern Meta Domain.Builtin variable
 
 -- |'MetaSentenceAxiom' is the 'Meta'-only version of 'SentenceAxiom'
-type MetaSentenceAxiom = PureSentenceAxiom Meta
+type MetaSentenceAxiom = PureSentenceAxiom Meta Domain.Builtin
 -- |'MetaSentenceAlias' is the 'Meta'-only version of 'SentenceAlias'
-type MetaSentenceAlias = PureSentenceAlias Meta
+type MetaSentenceAlias = PureSentenceAlias Meta Domain.Builtin
 -- |'MetaSentenceSymbol' is the 'Meta'-only version of 'SentenceSymbol'
-type MetaSentenceSymbol = PureSentenceSymbol Meta
+type MetaSentenceSymbol = PureSentenceSymbol Meta Domain.Builtin
 -- |'MetaSentenceImport' is the 'Meta'-only version of 'SentenceImport'
-type MetaSentenceImport = PureSentenceImport Meta
+type MetaSentenceImport = PureSentenceImport Meta Domain.Builtin
 
 -- |'MetaSentence' is the 'Meta'-only version of 'Sentence'
-type MetaSentence = PureSentence Meta
-
-instance AsSentence MetaSentence MetaSentenceImport where
-    asSentence = SentenceImportSentence
-
-instance AsSentence MetaSentence MetaSentenceAxiom where
-    asSentence = SentenceAxiomSentence
+type MetaSentence = PureSentence Meta Domain.Builtin
 
 -- |'MetaModule' is the 'Meta'-only version of 'Module'.
-type MetaModule = PureModule Meta
+type MetaModule = PureModule Meta Domain.Builtin
 
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
-type MetaDefinition = PureDefinition Meta
+type MetaDefinition = PureDefinition Meta Domain.Builtin
 
 -- |'CommonMetaPattern' is the instantiation of 'MetaPattern' with common
 -- 'Variable's.
 type CommonMetaPattern = MetaMLPattern Variable
-type PatternMetaType = Pattern Meta Variable CommonMetaPattern
 
-type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
+type PatternMetaType =
+    Pattern Meta Domain.Builtin Variable CommonMetaPattern
+
+type MetaPatternStub =
+    PatternStub Meta Domain.Builtin Variable CommonMetaPattern
 
 -- |'metaFreeVariables' collects the free variables of a 'CommonMetaPattern'.
 metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)

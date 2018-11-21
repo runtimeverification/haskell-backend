@@ -16,7 +16,7 @@ import Data.Reflection
        ( Given, give )
 
 import           Kore.AST.Common
-                 ( Pattern (..), PureMLPattern, SortedVariable )
+                 ( Pattern (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( fromPurePattern )
@@ -32,6 +32,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( toExpandedPattern )
+import           Kore.Step.Pattern
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
 import qualified Kore.Step.Simplification.Application as Application
@@ -43,9 +44,8 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -85,7 +85,7 @@ import           Kore.Variables.Fresh
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
 
-{-|'simplify' simplifies a PureMLPattern level variable, returning an
+{-|'simplify' simplifies a StepPattern level variable, returning an
 'ExpandedPattern'.
 -}
 simplify
@@ -104,7 +104,7 @@ simplify
     -> PredicateSubstitutionSimplifier level Simplifier
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> Simplifier
         ( ExpandedPattern level variable
         , SimplificationProof level
@@ -118,7 +118,7 @@ simplify tools substitutionSimplifier symbolIdToEvaluator patt = do
         , proof
         )
 
-{-|'simplifyToOr' simplifies a PureMLPattern level variable, returning an
+{-|'simplifyToOr' simplifies a StepPattern level variable, returning an
 'OrOfExpandedPattern'.
 -}
 simplifyToOr
@@ -137,7 +137,7 @@ simplifyToOr
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
@@ -153,7 +153,7 @@ simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt =
             (fromPurePattern patt)
         )
   where
-    simplifier = PureMLPatternSimplifier
+    simplifier = StepPatternSimplifier
         (simplifyToOr tools symbolIdToEvaluator)
 
 simplifyInternal
@@ -171,10 +171,10 @@ simplifyInternal
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern level variable (PureMLPattern level variable)
+    -> StepPatternHead level variable (StepPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
@@ -182,7 +182,7 @@ simplifyInternal
 simplifyInternal
     tools
     substitutionSimplifier
-    simplifier@(PureMLPatternSimplifier unwrappedSimplifier)
+    simplifier@(StepPatternSimplifier unwrappedSimplifier)
     symbolIdToEvaluator
     patt
   = do

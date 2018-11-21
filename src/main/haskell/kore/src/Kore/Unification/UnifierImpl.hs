@@ -38,6 +38,7 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  liftPredicateSubstitutionSimplifier )
@@ -108,7 +109,7 @@ simplifyAnds
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> [PureMLPattern level variable]
+    -> [StepPattern level variable]
     -> unifier m
         (ExpandedPattern level variable, UnificationProof level variable)
 simplifyAnds _ _ [] = throwError (UnificationError UnsupportedPatterns)
@@ -123,7 +124,7 @@ simplifyAnds tools substitutionSimplifier patterns = do
   where
     simplifyAnds'
         :: ExpandedPattern level variable
-        -> PureMLPattern level variable
+        -> StepPattern level variable
         -> ExceptT
             ( UnificationOrSubstitutionError level variable )
             m
@@ -181,7 +182,7 @@ solveGroupedSubstitution
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> variable level
-    -> [PureMLPattern level variable]
+    -> [StepPattern level variable]
     -> ExceptT
         ( UnificationOrSubstitutionError level variable )
         m
@@ -276,7 +277,7 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
         :: [UnificationSubstitution level variable]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
-    varAndSubstList :: [(variable level, [PureMLPattern level variable])]
+    varAndSubstList :: [(variable level, [StepPattern level variable])]
     varAndSubstList = fmap (fst . head &&& fmap snd) nonSingletonSubstitutions
 
 mergePredicateSubstitutionList

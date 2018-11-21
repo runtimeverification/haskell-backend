@@ -35,7 +35,7 @@ class MLPatternClass pat level where
     getMLPatternResultSort :: pat level child -> Sort level
     getPatternSorts :: pat level child -> [Sort level]
     getPatternChildren :: pat level child -> [child]
-    mlPatternToPattern :: pat level child -> Pattern level variable child
+    mlPatternToPattern :: pat level child -> Pattern level domain variable child
 
 {-|'MLBinderPatternClass' offers a common interface to the 'Exists' and 'Forall'
 ML patterns.
@@ -50,8 +50,10 @@ class MLBinderPatternClass pat where
     binderPatternConstructor
         :: MetaOrObject level
         => pat level variable child -> Sort level -> variable level -> child
-        -> Pattern level variable child
-    mlBinderPatternToPattern :: pat level variable child -> Pattern level variable child
+        -> Pattern level domain variable child
+    mlBinderPatternToPattern
+        :: pat level variable child
+        -> Pattern level domain variable child
 
 instance MLPatternClass And level where
     getPatternType _ = AndPatternType
@@ -190,29 +192,31 @@ can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
 with `applyPatternLeveledFunction` they form a function on patterns, hence the name.
 -}
 -- TODO: consider parameterizing on variable also
-data PatternLeveledFunction level variable child result = PatternLeveledFunction
-    { patternLeveledFunctionML
-        :: !(forall patt . MLPatternClass patt level
-            => patt level child -> result level)
-    , patternLeveledFunctionMLBinder
-        :: !(forall patt . MLBinderPatternClass patt
-        => patt level variable child
-        -> result level)
-    , stringLeveledFunction :: StringLiteral -> result Meta
-    , charLeveledFunction :: CharLiteral -> result Meta
-    , domainValueLeveledFunction
-        :: DomainValue Object (BuiltinDomain child)
-        -> result Object
-    , applicationLeveledFunction :: !(Application level child -> result level)
-    , variableLeveledFunction :: !(variable level -> result level)
-    }
+data PatternLeveledFunction level domain variable child result =
+    PatternLeveledFunction
+        { patternLeveledFunctionML
+            :: !(forall patt . MLPatternClass patt level
+                => patt level child -> result level)
+        , patternLeveledFunctionMLBinder
+            :: !(forall patt . MLBinderPatternClass patt
+            => patt level variable child
+            -> result level)
+        , stringLeveledFunction :: StringLiteral -> result Meta
+        , charLeveledFunction :: CharLiteral -> result Meta
+        , domainValueLeveledFunction
+            :: DomainValue Object domain child
+            -> result Object
+        , applicationLeveledFunction
+          :: !(Application level child -> result level)
+        , variableLeveledFunction :: !(variable level -> result level)
+        }
 
 {-|`applyPatternLeveledFunction` applies a patternFunction on the inner element of a
 `Pattern`, returning the result.
 -}
 applyPatternLeveledFunction
-    :: PatternLeveledFunction level variable child result
-    -> Pattern level variable child
+    :: PatternLeveledFunction level domain variable child result
+    -> Pattern level domain variable child
     -> result level
 applyPatternLeveledFunction function (AndPattern a) =
     patternLeveledFunctionML function a
@@ -259,8 +263,7 @@ applyPatternLeveledFunction function (VariablePattern a) =
 can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
 with `applyPatternFunction` they form a function on patterns, hence the name.
 -}
--- TODO: consider parameterizing on variable also
-data PatternFunction level variable child result = PatternFunction
+data PatternFunction level domain variable child result = PatternFunction
     { patternFunctionML
         :: !(forall patt . MLPatternClass patt level => patt level child -> result)
     , patternFunctionMLBinder
@@ -272,7 +275,7 @@ data PatternFunction level variable child result = PatternFunction
     , applicationFunction :: !(Application level child -> result)
     , variableFunction :: !(variable level -> result)
     , domainValueFunction
-        :: DomainValue Object (BuiltinDomain child)
+        :: DomainValue Object domain child
         -> result
     }
 
@@ -283,8 +286,8 @@ newtype ParameterizedProxy result level = ParameterizedProxy
 `Pattern`, returning the result.
 -}
 applyPatternFunction
-    :: PatternFunction level variable child result
-    -> Pattern level variable child
+    :: PatternFunction level domain variable child result
+    -> Pattern level domain variable child
     -> result
 applyPatternFunction patternFunction =
     getParameterizedProxy
@@ -316,7 +319,7 @@ getPatternResultSort
     :: SortedVariable variable
     => (SymbolOrAlias level -> ApplicationSorts level)
     -- ^Function to retrieve the sort of a given pattern Head
-    -> Pattern level variable child
+    -> Pattern level domain variable child
     -> Sort level
 getPatternResultSort applicationSorts =
     applyPatternLeveledFunction PatternLeveledFunction

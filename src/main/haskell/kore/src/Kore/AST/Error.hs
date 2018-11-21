@@ -24,11 +24,12 @@ module Kore.AST.Error
 import Data.List
        ( intercalate )
 
-import Kore.AST.AstWithLocation
-import Kore.AST.Common
-import Kore.AST.Kore
-import Kore.AST.Sentence
-import Kore.Error
+import           Kore.AST.AstWithLocation
+import           Kore.AST.Common
+import           Kore.AST.Kore
+import           Kore.AST.Sentence
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Error
 
 {-|'koreFailWithLocations' produces an error result with a context containing
 the provided locations. -}
@@ -149,7 +150,12 @@ withSentenceImportContext _ = \go -> go
 {- | Identify and  locate the given sentence in the error context.
  -}
 withSentenceContext
-    :: Sentence level UnifiedSortVariable UnifiedPattern Variable
+    :: Sentence
+        level
+        UnifiedSortVariable
+        UnifiedPattern
+        Domain.Builtin
+        Variable
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceContext =

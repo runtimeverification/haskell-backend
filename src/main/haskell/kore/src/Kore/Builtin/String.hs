@@ -22,7 +22,7 @@ module Kore.Builtin.String
     , symbolVerifiers
     , patternVerifier
     , builtinFunctions
-    , expectBuiltinDomainString
+    , expectBuiltinString
     , asMetaPattern
     , asPattern
     , asConcretePattern
@@ -53,15 +53,16 @@ import           Numeric
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
-import qualified Kore.AST.Common as Kore
+import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
 import           Kore.AST.PureML
                  ( fromConcretePurePattern )
-import qualified Kore.ASTUtils.SmartPatterns as Kore
+import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
@@ -69,8 +70,9 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PureMLPatternSimplifier, Simplifier )
+                 ( Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -152,16 +154,16 @@ parse = Parsec.many Parsec.anyChar
     by a 'BuiltinDomainMap', it is a bug.
 
  -}
-expectBuiltinDomainString
+expectBuiltinString
     :: Monad m
     => String  -- ^ Context for error message
-    -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
+    -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m String
-expectBuiltinDomainString ctx =
+expectBuiltinString ctx =
     \case
-        Kore.DV_ _ domain ->
+        DV_ _ domain ->
             case domain of
-                Kore.BuiltinDomainPattern (Kore.StringLiteral_ lit) ->
+                Domain.BuiltinPattern (StringLiteral_ lit) ->
                     (return . Builtin.runParser ctx)
                         (Builtin.parseString parse lit)
                 _ ->
@@ -179,9 +181,9 @@ expectBuiltinDomainString ctx =
 
  -}
 asPattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> String  -- ^ builtin value to render
-    -> Kore.PureMLPattern Object variable
+    -> StepPattern Object variable
 asPattern resultSort result =
     fromConcretePurePattern (asConcretePattern resultSort result)
 
@@ -194,29 +196,28 @@ asPattern resultSort result =
 
  -}
 asConcretePattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> String  -- ^ builtin value to render
-    -> Kore.ConcretePurePattern Object
+    -> ConcreteStepPattern Object
 asConcretePattern domainValueSort result =
-    (Functor.Foldable.embed . Kore.DomainValuePattern)
-        Kore.DomainValue
+    (Functor.Foldable.embed . DomainValuePattern)
+        DomainValue
             { domainValueSort
-            , domainValueChild =
-                Kore.BuiltinDomainPattern $ asMetaPattern result
+            , domainValueChild = Domain.BuiltinPattern $ asMetaPattern result
             }
 
-asMetaPattern :: String -> Kore.CommonPurePattern Meta
-asMetaPattern result = Kore.StringLiteral_ $ result
+asMetaPattern :: String -> CommonPurePattern Meta dom
+asMetaPattern result = StringLiteral_ $ result
 
 asExpandedPattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> String  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asPattern resultSort
 
 asPartialExpandedPattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> Maybe String  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asPartialExpandedPattern resultSort =
@@ -260,9 +261,9 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
     evalSubstr0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalSubstr0 _ _ resultSort arguments =
         Builtin.getAttemptedFunction $ do
@@ -270,9 +271,9 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
                     case arguments of
                         [_str, _start, _end] -> (_str, _start, _end)
                         _                    -> Builtin.wrongArity substrKey
-            _str   <- expectBuiltinDomainString substrKey _str
-            _start <- fromInteger <$> Int.expectBuiltinDomainInt substrKey _start
-            _end   <- fromInteger <$> Int.expectBuiltinDomainInt substrKey _end
+            _str   <- expectBuiltinString substrKey _str
+            _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
+            _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
             Builtin.appliedFunction
                 . asExpandedPattern resultSort
                 $ substr _start _end _str
@@ -283,9 +284,9 @@ evalLength = Builtin.functionEvaluator evalLength0
     evalLength0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalLength0 _ _ resultSort arguments =
         Builtin.getAttemptedFunction $ do
@@ -293,7 +294,7 @@ evalLength = Builtin.functionEvaluator evalLength0
                     case arguments of
                         [_str] -> _str
                         _      -> Builtin.wrongArity lengthKey
-            _str <- expectBuiltinDomainString lengthKey _str
+            _str <- expectBuiltinString lengthKey _str
             Builtin.appliedFunction
                 . Int.asExpandedPattern resultSort
                 . toInteger
@@ -308,9 +309,9 @@ evalFind = Builtin.functionEvaluator evalFind0
     evalFind0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalFind0 _ _ resultSort arguments =
         Builtin.getAttemptedFunction $ do
@@ -318,9 +319,9 @@ evalFind = Builtin.functionEvaluator evalFind0
                     case arguments of
                         [_str, _substr, _idx] -> (_str, _substr, _idx)
                         _                     -> Builtin.wrongArity findKey
-            _str <- expectBuiltinDomainString findKey _str
-            _substr <- expectBuiltinDomainString findKey _substr
-            _idx <- fromInteger <$> Int.expectBuiltinDomainInt substrKey _idx
+            _str <- expectBuiltinString findKey _str
+            _substr <- expectBuiltinString findKey _substr
+            _idx <- fromInteger <$> Int.expectBuiltinInt substrKey _idx
             Builtin.appliedFunction
                 . Int.asExpandedPattern resultSort
                 . maybeNotFound
@@ -332,9 +333,9 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
     evalString2Base0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalString2Base0 _ _ resultSort arguments =
         Builtin.getAttemptedFunction $ do
@@ -342,8 +343,8 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
                     case arguments of
                         [_str, _base] -> (_str, _base)
                         _             -> Builtin.wrongArity findKey
-            _str  <- expectBuiltinDomainString string2BaseKey _str
-            _base <- Int.expectBuiltinDomainInt string2BaseKey _base
+            _str  <- expectBuiltinString string2BaseKey _str
+            _base <- Int.expectBuiltinInt string2BaseKey _base
             readN <- case _base of
                 8  -> pure readOct
                 10 -> pure . readSigned $ readDec
@@ -363,9 +364,9 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
     evalString2Int0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalString2Int0 _ _ resultSort arguments =
         Builtin.getAttemptedFunction $ do
@@ -373,7 +374,7 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
                     case arguments of
                         [_str] -> _str
                         _      -> Builtin.wrongArity findKey
-            _str <- expectBuiltinDomainString findKey _str
+            _str <- expectBuiltinString findKey _str
             Builtin.appliedFunction
                 . maybe
                     ExpandedPattern.bottom

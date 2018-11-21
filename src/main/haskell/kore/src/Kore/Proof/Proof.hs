@@ -40,26 +40,23 @@ where
 import           Control.Lens
 import           Data.Foldable
 import           Data.Functor.Foldable
+import           Data.Hashable
 import           Data.Maybe
 import           Data.Reflection
 import qualified Data.Set as S
+import           Data.Text.Prettyprint.Doc as P
+import           GHC.Generics
+                 ( Generic )
+
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
+import           Kore.ASTPrettyPrint
+import           Kore.ASTUtils.SmartConstructors
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.ASTUtils.Substitution
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-
-import Data.Text.Prettyprint.Doc as P
-
-
-import Kore.ASTPrettyPrint
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
-import Kore.ASTUtils.Substitution
-import Kore.Unparser
-
-import Data.Hashable
-import GHC.Generics
-       ( Generic )
-
+import           Kore.Unparser
 
 -- A note about partial pattern matches:
 -- The basic Kore datatype has quite a few constructors,
@@ -82,7 +79,7 @@ import GHC.Generics
 impossible :: a
 impossible = error "The impossible happened."
 
-type Term = CommonPurePattern Object
+type Term = CommonPurePattern Object Domain.Builtin
 type Var = Variable Object
 
 -- | Fix-able functor representing a single deduction step

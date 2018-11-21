@@ -31,6 +31,7 @@ import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.PatternVerifier
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
@@ -80,7 +81,7 @@ definedNamesForSentence =
         definedNamesForObjectSentence
 
 definedNamesForMetaSentence
-    :: Sentence Meta sortParam pat variable -> [UnparameterizedId]
+    :: Sentence Meta sortParam pat dom var -> [UnparameterizedId]
 definedNamesForMetaSentence (SentenceAliasSentence sentenceAlias) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
 definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
@@ -90,7 +91,7 @@ definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
 definedNamesForMetaSentence (SentenceSortSentence _)   = []
 
 definedNamesForObjectSentence
-    :: Sentence Object sortParam pat variable -> [UnparameterizedId]
+    :: Sentence Object sortParam pat dom var -> [UnparameterizedId]
 definedNamesForObjectSentence (SentenceAliasSentence sentenceAlias) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
 definedNamesForObjectSentence (SentenceSymbolSentence sentenceSymbol) =
@@ -153,7 +154,7 @@ verifyMetaSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyMetaSentence
     builtinVerifiers
@@ -200,7 +201,7 @@ verifyObjectSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
+    -> Sentence Object UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyObjectSentence
     builtinVerifiers
@@ -235,7 +236,7 @@ verifyObjectSentence
 
 verifySentenceAttributes
     :: AttributesVerification atts
-    -> Sentence level UnifiedSortVariable UnifiedPattern Variable
+    -> Sentence level UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
     -> Either (Error VerifyError) VerifySuccess
 verifySentenceAttributes attributesVerification sentence =
     do
@@ -250,7 +251,7 @@ verifyHookSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> SentenceHook Object UnifiedPattern Variable
+    -> SentenceHook Object UnifiedPattern Domain.Builtin Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyHookSentence
     builtinVerifiers

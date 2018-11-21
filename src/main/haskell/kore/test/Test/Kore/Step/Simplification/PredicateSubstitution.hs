@@ -16,7 +16,7 @@ import           Data.These
                  ( These (That) )
 
 import           Kore.AST.Common
-                 ( Application, Pattern (..), PureMLPattern, SortedVariable )
+                 ( Application, Pattern (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkVar )
@@ -30,6 +30,7 @@ import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Data
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (SimplificationProof), Simplifier,
@@ -315,7 +316,7 @@ makeEvaluator
             , SortedVariable variable
             , ShowMetaOrObject variable
             )
-        => [(PureMLPattern Object variable, PureMLPattern Object variable)]
+        => [(StepPattern Object variable, StepPattern Object variable)]
         )
     -> ApplicationFunctionEvaluator Object
 makeEvaluator mapping =
@@ -329,8 +330,8 @@ simpleEvaluator
         , SortedVariable variable
         , ShowMetaOrObject variable
         )
-    => [(PureMLPattern Object variable, PureMLPattern Object variable)]
-    -> Application Object (PureMLPattern Object variable)
+    => [(StepPattern Object variable, StepPattern Object variable)]
+    -> Application Object (StepPattern Object variable)
     -> Simplifier
         ( AttemptedFunction Object variable
         , SimplificationProof Object

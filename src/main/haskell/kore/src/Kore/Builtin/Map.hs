@@ -54,17 +54,16 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain (BuiltinDomainMap), ConcretePurePattern,
-                 PureMLPattern, Sort, SortedVariable, SymbolOrAlias )
 import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
 import qualified Kore.AST.PureML as Kore
-import           Kore.ASTUtils.SmartPatterns as Kore
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Set as Builtin.Set
+import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
@@ -75,9 +74,10 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedFunction (..) )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, PureMLPatternSimplifier,
-                 SimplificationProof (..), SimplificationType, Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 SimplificationType, Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -143,7 +143,7 @@ symbolVerifiers =
     anySort = const $ const $ Right ()
 
 type Builtin variable =
-    Map (Kore.ConcretePurePattern Object) (Kore.PureMLPattern Object variable)
+    Map (ConcreteStepPattern Object) (StepPattern Object variable)
 
 {- | Abort function evaluation if the argument is not a Map domain value.
 
@@ -152,17 +152,17 @@ type Builtin variable =
     by a 'BuiltinDomainMap', it is a bug.
 
  -}
-expectBuiltinDomainMap
+expectBuiltinMap
     :: Monad m
     => String  -- ^ Context for error message
-    -> Kore.PureMLPattern Object variable  -- ^ Operand pattern
+    -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
-expectBuiltinDomainMap ctx _map =
+expectBuiltinMap ctx _map =
     do
         case _map of
-            Kore.DV_ _ domain ->
+            DV_ _ domain ->
                 case domain of
-                    Kore.BuiltinDomainMap map' -> return map'
+                    Domain.BuiltinMap map' -> return map'
                     _ ->
                         Builtin.verifierBug
                             (ctx ++ ": Domain value is not a map")
@@ -171,7 +171,7 @@ expectBuiltinDomainMap ctx _map =
 
 returnMap
     :: (Monad m, Ord (variable Object))
-    => Kore.Sort Object
+    => Sort Object
     -> Builtin variable
     -> m (AttemptedFunction Object variable)
 returnMap resultSort map' =
@@ -187,9 +187,9 @@ evalLookup =
     evalLookup0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
+        -> StepPatternSimplifier Object variable
         -> Sort Object
-        -> [PureMLPattern Object variable]
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalLookup0 tools _ _ arguments =
         Builtin.getAttemptedFunction
@@ -199,13 +199,13 @@ evalLookup =
                         [_map, _key] -> (_map, _key)
                         _ -> Builtin.wrongArity ctx
                 emptyMap = do
-                    _map <- expectBuiltinDomainMap ctx _map
+                    _map <- expectBuiltinMap ctx _map
                     if Map.null _map
                         then Builtin.appliedFunction ExpandedPattern.bottom
                         else empty
                 bothConcrete = do
                     _key <- Builtin.expectNormalConcreteTerm tools _key
-                    _map <- expectBuiltinDomainMap ctx _map
+                    _map <- expectBuiltinMap ctx _map
                     Builtin.appliedFunction $ maybeBottom $ Map.lookup _key _map
             emptyMap <|> bothConcrete
         )
@@ -236,9 +236,9 @@ evalConcat =
     evalConcat0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
+        -> StepPatternSimplifier Object variable
         -> Sort Object
-        -> [PureMLPattern Object variable]
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalConcat0 _ _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
@@ -248,7 +248,7 @@ evalConcat =
                         [_map1, _map2] -> (_map1, _map2)
                         _ -> Builtin.wrongArity ctx
                 leftIdentity = do
-                    _map1 <- expectBuiltinDomainMap ctx _map1
+                    _map1 <- expectBuiltinMap ctx _map1
                     if Map.null _map1
                         then
                             Builtin.appliedFunction
@@ -256,7 +256,7 @@ evalConcat =
                         else
                             empty
                 rightIdentity = do
-                    _map2 <- expectBuiltinDomainMap ctx _map2
+                    _map2 <- expectBuiltinMap ctx _map2
                     if Map.null _map2
                         then
                             Builtin.appliedFunction
@@ -264,8 +264,8 @@ evalConcat =
                         else
                             empty
                 bothConcrete = do
-                    _map1 <- expectBuiltinDomainMap ctx _map1
-                    _map2 <- expectBuiltinDomainMap ctx _map2
+                    _map1 <- expectBuiltinMap ctx _map1
+                    _map2 <- expectBuiltinMap ctx _map2
                     let overlapping =
                             (not . Set.null)
                                 (Set.intersection
@@ -303,7 +303,7 @@ evalUpdate =
                         [_map, _key, value'] -> (_map, _key, value')
                         _ -> Builtin.wrongArity "MAP.update"
             _key <- Builtin.expectNormalConcreteTerm tools _key
-            _map <- expectBuiltinDomainMap "MAP.update" _map
+            _map <- expectBuiltinMap "MAP.update" _map
             returnMap resultSort (Map.insert _key value _map)
         )
 
@@ -319,7 +319,7 @@ evalInKeys =
                         [_key, _map] -> (_key, _map)
                         _ -> Builtin.wrongArity "MAP.in_keys"
             _key <- Builtin.expectNormalConcreteTerm tools _key
-            _map <- expectBuiltinDomainMap "MAP.in_keys" _map
+            _map <- expectBuiltinMap "MAP.in_keys" _map
             Builtin.appliedFunction
                 $ Bool.asExpandedPattern resultSort
                 $ Map.member _key _map
@@ -333,9 +333,9 @@ evalKeys =
     evalKeys0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> PureMLPatternSimplifier Object variable
-        -> Kore.Sort Object
-        -> [Kore.PureMLPattern Object variable]
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
         -> Simplifier (AttemptedFunction Object variable)
     evalKeys0 _ _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
@@ -344,7 +344,7 @@ evalKeys =
                     case arguments of
                         [_map] -> _map
                         _ -> Builtin.wrongArity ctx
-            _map <- expectBuiltinDomainMap ctx _map
+            _map <- expectBuiltinMap ctx _map
             Builtin.Set.returnSet resultSort (Map.keysSet _map)
         )
 
@@ -377,19 +377,19 @@ builtinFunctions =
 asPattern
     :: KoreIndexedModule attrs
     -- ^ indexed module where pattern would appear
-    -> Kore.Sort Object
+    -> Sort Object
     -> Either
         (Kore.Error e)
-        (Builtin variable -> Kore.PureMLPattern Object variable)
+        (Builtin variable -> StepPattern Object variable)
 asPattern indexedModule dvSort
   = do
     symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let applyUnit = Kore.App_ symbolUnit []
+    let applyUnit = App_ symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
     let applyElement (key, value) =
-            Kore.App_ symbolElement [Kore.fromConcretePurePattern key, value]
+            App_ symbolElement [Kore.fromConcretePurePattern key, value]
     symbolConcat <- lookupSymbolConcat dvSort indexedModule
-    let applyConcat map1 map2 = Kore.App_ symbolConcat [map1, map2]
+    let applyConcat map1 map2 = App_ symbolConcat [map1, map2]
         asPattern0 result =
             foldr applyConcat applyUnit
                 (applyElement <$> Map.toAscList result)
@@ -416,17 +416,17 @@ asExpandedPattern symbols resultSort =
 {- | Embed a 'Map' in a builtin domain value pattern.
  -}
 asBuiltinDomainValue
-    :: Kore.Sort Object
+    :: Sort Object
     -> Builtin variable
-    -> Kore.PureMLPattern Object variable
-asBuiltinDomainValue resultSort map' = DV_ resultSort (BuiltinDomainMap map')
+    -> StepPattern Object variable
+asBuiltinDomainValue resultSort map' = DV_ resultSort (Domain.BuiltinMap map')
 
 {- | Find the symbol hooked to @MAP.unit@ in an indexed module.
  -}
 lookupSymbolUnit
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolUnit = Builtin.lookupSymbol "MAP.unit"
 
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
@@ -434,7 +434,7 @@ lookupSymbolUnit = Builtin.lookupSymbol "MAP.unit"
 lookupSymbolUpdate
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolUpdate = Builtin.lookupSymbol "MAP.update"
 
 {- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
@@ -442,7 +442,7 @@ lookupSymbolUpdate = Builtin.lookupSymbol "MAP.update"
 lookupSymbolLookup
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolLookup = Builtin.lookupSymbol "MAP.lookup"
 
 {- | Find the symbol hooked to @MAP.element@ in an indexed module.
@@ -450,7 +450,7 @@ lookupSymbolLookup = Builtin.lookupSymbol "MAP.lookup"
 lookupSymbolElement
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolElement = Builtin.lookupSymbol "MAP.element"
 
 {- | Find the symbol hooked to @MAP.concat@ in an indexed module.
@@ -458,7 +458,7 @@ lookupSymbolElement = Builtin.lookupSymbol "MAP.element"
 lookupSymbolConcat
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolConcat = Builtin.lookupSymbol "MAP.concat"
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
@@ -466,7 +466,7 @@ lookupSymbolConcat = Builtin.lookupSymbol "MAP.concat"
 lookupSymbolInKeys
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolInKeys = Builtin.lookupSymbol "MAP.in_keys"
 
 {- | Find the symbol hooked to @MAP.keys@ in an indexed module.
@@ -474,14 +474,14 @@ lookupSymbolInKeys = Builtin.lookupSymbol "MAP.in_keys"
 lookupSymbolKeys
     :: Sort Object
     -> KoreIndexedModule attrs
-    -> Either (Kore.Error e) (Kore.SymbolOrAlias Object)
+    -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolKeys = Builtin.lookupSymbol "MAP.keys"
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
 isSymbolConcat
     :: MetadataTools Object Hook
-    -> Kore.SymbolOrAlias Object
+    -> SymbolOrAlias Object
     -> Bool
 isSymbolConcat = Builtin.isSymbol "MAP.concat"
 
@@ -489,7 +489,7 @@ isSymbolConcat = Builtin.isSymbol "MAP.concat"
  -}
 isSymbolElement
     :: MetadataTools Object Hook
-    -> Kore.SymbolOrAlias Object
+    -> SymbolOrAlias Object
     -> Bool
 isSymbolElement = Builtin.isSymbol "MAP.element"
 
@@ -532,7 +532,7 @@ unifyEquals
         , MetaOrObject level
         , Hashable variable
         , FreshVariable variable
-        , p ~ PureMLPattern level variable
+        , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
         )
@@ -565,17 +565,17 @@ unifyEquals
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: PureMLPattern level variable
-        -> PureMLPattern level variable
+        :: StepPattern level variable
+        -> StepPattern level variable
         -> MaybeT m (expanded, proof)
 
-    unifyEquals0 dv1@(DV_ resultSort (BuiltinDomainMap map1)) =
+    unifyEquals0 dv1@(DV_ resultSort (Domain.BuiltinMap map1)) =
         \case
             dv2@(DV_ _ builtin2) ->
                 case builtin2 of
-                    BuiltinDomainMap map2 ->
+                    Domain.BuiltinMap map2 ->
                         Monad.Trans.lift
-                            $ unifyEqualsConcrete resultSort map1 map2
+                        $ unifyEqualsConcrete resultSort map1 map2
                     _ ->
                         (error . unlines)
                             [ "Cannot unify a builtin Map domain value:"
@@ -588,9 +588,9 @@ unifyEquals
                 | isSymbolConcat hookTools symbol2 ->
                     -- Accept the arguments of MAP.concat in either order.
                     Monad.Trans.lift $ case args2 of
-                        [ DV_ _ (BuiltinDomainMap map2), x@(Var_ _) ] ->
+                        [ DV_ _ (Domain.BuiltinMap map2), x@(Var_ _) ] ->
                             unifyEqualsFramed1 resultSort dv1 map2 x
-                        [ x@(Var_ _), DV_ _ (BuiltinDomainMap map2) ] ->
+                        [ x@(Var_ _), DV_ _ (Domain.BuiltinMap map2) ] ->
                             unifyEqualsFramed1 resultSort dv1 map2 x
                         [ _, _ ] ->
                             give symbolOrAliasSorts
@@ -614,16 +614,16 @@ unifyEquals
 
     unifyEquals0 pat1 =
         \case
-            dv@(DV_ _ (BuiltinDomainMap _)) -> unifyEquals0 dv pat1
+            dv@(DV_ _ (Domain.BuiltinMap _)) -> unifyEquals0 dv pat1
             _ -> empty
 
     -- | Unify two concrete maps.
     unifyEqualsConcrete
         ::  forall k.
-            (level ~ Object, k ~ ConcretePurePattern Object)
+            (level ~ Object, k ~ ConcreteStepPattern Object)
         => Sort level  -- ^ result sort
-        -> Map k (PureMLPattern level variable)
-        -> Map k (PureMLPattern level variable)
+        -> Map k (StepPattern level variable)
+        -> Map k (StepPattern level variable)
         -> m (expanded, proof)
     unifyEqualsConcrete resultSort map1 map2 = do
         intersect <-
@@ -652,7 +652,7 @@ unifyEquals
 
     -- | Unify one concrete map with one framed concrete map.
     unifyEqualsFramed1
-        :: forall k . (level ~ Object, k ~ ConcretePurePattern Object)
+        :: forall k . (level ~ Object, k ~ ConcreteStepPattern Object)
         => Sort level  -- ^ Sort of result
         -> p  -- ^ concrete map
         -> Map k p  -- ^ framed concrete map
@@ -660,9 +660,10 @@ unifyEquals
         -> m (expanded, proof)
     unifyEqualsFramed1
         resultSort
-        dv1@(DV_ _ (BuiltinDomainMap map1))
+        dv1@(DV_ _ (Domain.BuiltinMap map1))
         map2
-        x = do
+        x
+      = do
         intersect <-
             sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
         -- The framing variable unifies with the remainder of map1.
@@ -696,7 +697,7 @@ unifyEquals
 
 
     unifyEqualsElement
-        :: forall k . (level ~ Object, k ~ ConcretePurePattern Object)
+        :: forall k . (level ~ Object, k ~ ConcreteStepPattern Object)
         => Map k p  -- ^ concrete map
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key

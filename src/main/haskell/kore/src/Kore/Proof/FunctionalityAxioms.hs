@@ -8,44 +8,26 @@ Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes       #-}
-{-# LANGUAGE ConstraintKinds           #-}
-{-# LANGUAGE DeriveFoldable            #-}
-{-# LANGUAGE DeriveFunctor             #-}
-{-# LANGUAGE DeriveGeneric             #-}
-{-# LANGUAGE DeriveTraversable         #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE FlexibleInstances         #-}
-{-# LANGUAGE FunctionalDependencies    #-}
-{-# LANGUAGE LambdaCase                #-}
-{-# LANGUAGE MultiParamTypeClasses     #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE PatternSynonyms           #-}
-{-# LANGUAGE Rank2Types                #-}
-{-# LANGUAGE TypeApplications          #-}
-{-# LANGUAGE TypeFamilies              #-}
-{-# LANGUAGE TypeSynonymInstances      #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 {-# OPTIONS_GHC -Wno-unused-matches    #-}
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 
-
 module Kore.Proof.FunctionalityAxioms
-( generateFunctionalStatement
-, generateFunctionalHeadAxiom
-, proveFunctional
-, forallElimFunctional
-, forallElimFunctionalN
-) where
+    ( generateFunctionalStatement
+    , generateFunctionalHeadAxiom
+    , proveFunctional
+    , forallElimFunctional
+    , forallElimFunctionalN
+    ) where
 
 import Data.Reflection
+
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.IndexedModule.MetadataTools
-
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
-
+import Kore.IndexedModule.MetadataTools
 import Kore.Proof.Proof
 import Kore.Proof.Util
 
@@ -140,7 +122,10 @@ forallElimFunctional arg pat =
                     useRule $ FunctionalSubst
                         v
                         p
-                        ("x" `varS` getSort (V v))
+                        (varS
+                            "x"
+                            $ getSort (V v :: Term)
+                        )
                         arg
             in modusPonensN [pat, assume $ generateFunctionalStatement arg] ax
         _ -> impossible

@@ -40,14 +40,16 @@ import           Data.Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
-import qualified Kore.AST.Common as Kore
+import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Meta, Object )
-import qualified Kore.ASTUtils.SmartPatterns as Kore
+import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -113,20 +115,18 @@ parse = (Parsec.<|>) true false
 
  -}
 asPattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> Kore.PureMLPattern Object variable
-asPattern resultSort result =
-    Kore.DV_ resultSort
-        $ Kore.BuiltinDomainPattern
-        $ asMetaPattern result
+    -> StepPattern Object variable
+asPattern resultSort =
+    DV_ resultSort . Domain.BuiltinPattern . asMetaPattern
 
-asMetaPattern :: Bool -> Kore.CommonPurePattern Meta
-asMetaPattern True = Kore.StringLiteral_ "true"
-asMetaPattern False = Kore.StringLiteral_ "false"
+asMetaPattern :: Bool -> CommonPurePattern Meta domain
+asMetaPattern True = StringLiteral_ "true"
+asMetaPattern False = StringLiteral_ "false"
 
 asExpandedPattern
-    :: Kore.Sort Object  -- ^ resulting sort
+    :: Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =

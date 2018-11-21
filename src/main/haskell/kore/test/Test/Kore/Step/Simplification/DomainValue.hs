@@ -13,12 +13,13 @@ import           Data.Reflection
 import qualified Data.Sequence as Seq
 
 import           Kore.AST.Common
-                 ( BuiltinDomain (..), DomainValue (..), Sort (..) )
+                 ( DomainValue (..), Sort (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkDomainValue, mkStringLiteral )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_ )
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
@@ -50,7 +51,7 @@ test_domainValueSimplification =
                     { term =
                         mkDomainValue
                             testSort
-                            (BuiltinDomainPattern (mkStringLiteral "a"))
+                            (Domain.BuiltinPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
                     , substitution = []
                     }
@@ -60,7 +61,7 @@ test_domainValueSimplification =
                 mockMetadataTools
                 (DomainValue
                     testSort
-                    (BuiltinDomainPattern (mkStringLiteral "a"))
+                    (Domain.BuiltinPattern (mkStringLiteral "a"))
                 )
             )
         )
@@ -72,7 +73,9 @@ test_domainValueSimplification =
                 mockMetadataTools
                 (DomainValue
                     testSort
-                    (BuiltinDomainMap (Map.fromList [(Mock.aConcrete, bottom)]))
+                    (Domain.BuiltinMap
+                        (Map.fromList [(Mock.aConcrete, bottom)])
+                    )
                 )
             )
         )
@@ -84,7 +87,7 @@ test_domainValueSimplification =
                 mockMetadataTools
                 (DomainValue
                     testSort
-                    (BuiltinDomainList (Seq.fromList [bottom]))
+                    (Domain.BuiltinList (Seq.fromList [bottom]))
                 )
             )
         )
@@ -108,7 +111,7 @@ mockMetadataTools =
 evaluate
     :: (MetaOrObject Object)
     => MetadataTools Object attrs
-    -> DomainValue Object (BuiltinDomain (CommonOrOfExpandedPattern Object))
+    -> DomainValue Object Domain.Builtin (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate tools domainValue =
     case simplify tools domainValue of

@@ -15,13 +15,13 @@ module Kore.Step.RecursiveAttributes
     ) where
 
 
-import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
 
 recursivelyCheckHeadProperty
@@ -29,7 +29,7 @@ recursivelyCheckHeadProperty
        (MetaOrObject level)
     => (StepperAttributes -> Bool)
     -> MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> Bool
 recursivelyCheckHeadProperty prop tools = go
   where
@@ -45,7 +45,7 @@ isFunctionalPattern, isFunctionPattern, isTotalPattern
     :: forall level variable .
        (MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> PureMLPattern level variable
+    -> StepPattern level variable
     -> Bool
 --TODO(traiansf): we assume below that the pattern does not contain
 --sort injection symbols where the parameter sorts are not in subsort relation.

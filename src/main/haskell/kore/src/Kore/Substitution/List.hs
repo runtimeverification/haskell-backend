@@ -26,17 +26,17 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Substitution.Class
 import Kore.Variables.Free
-import Kore.Variables.Fresh
 
 -- |A very simple substitution represented as a list of pairs
 newtype Substitution var pat = Substitution { getSubstitution :: [(var, pat)] }
 
 instance
     ( UnifiedPatternInterface pat
-    , Functor (pat var)
+    , Foldable dom
+    , Functor (pat dom var)
     , Ord (var Object)
     , Ord (var Meta)
-    ) => SubstitutionClass Substitution (Unified var) (Fix (pat var))
+    ) => SubstitutionClass Substitution (Unified var) (Fix (pat dom var))
   where
     substitutionTermsFreeVars = foldMap (freeVariables . snd) . getSubstitution
 
@@ -47,19 +47,6 @@ instance Eq v => MapClass Substitution v t where
     delete v = Substitution . filter ((v /=) . fst) . getSubstitution
     insert v t  =
         Substitution . ((v,t) :) . filter ((v /=) . fst) . getSubstitution
-
-instance
-    ( MetaOrObject level
-    , Ord (variable Object)
-    , Ord (variable Meta)
-    , Hashable variable
-    , FreshVariable variable
-    )
-    => PatternSubstitutionClass
-        Substitution
-        variable
-        (Pattern level)
-  where
 
 fromList :: Eq k => [(k,v)] -> Substitution k v
 fromList = Substitution . nubBy (\x y -> fst x == fst y)

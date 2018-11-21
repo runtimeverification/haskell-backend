@@ -21,7 +21,7 @@ import Data.Reflection
        ( give )
 
 import           Kore.AST.Common
-                 ( Equals (..), PureMLPattern, SortedVariable )
+                 ( Equals (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkTop )
@@ -42,6 +42,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, toExpandedPattern )
+import           Kore.Step.Pattern
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -309,8 +310,8 @@ makeEvaluateTermsAssumesNoBottom
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottom
@@ -354,8 +355,8 @@ makeEvaluateTermsAssumesNoBottomMaybe
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> MaybeT Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottomMaybe tools substitutionSimplifier first second
@@ -398,8 +399,8 @@ makeEvaluateTermsToPredicateSubstitution
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> PureMLPattern level variable
-    -> PureMLPattern level variable
+    -> StepPattern level variable
+    -> StepPattern level variable
     -> m (PredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateTermsToPredicateSubstitution
     tools substitutionSimplifier first second

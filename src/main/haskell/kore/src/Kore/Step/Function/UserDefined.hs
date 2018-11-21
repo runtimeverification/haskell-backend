@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.UserDefined
-    ( PureMLPatternSimplifier
+    ( StepPatternSimplifier
     , axiomFunctionEvaluator
     ) where
 
@@ -17,8 +17,7 @@ import Control.Monad.Except
 import Data.Reflection
 
 import           Kore.AST.Common
-                 ( Application (..), Pattern (..), PureMLPattern,
-                 SortedVariable )
+                 ( Application (..), Pattern (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( asPurePattern )
@@ -41,10 +40,10 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, traverseWithPairs )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -74,9 +73,9 @@ axiomFunctionEvaluator
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
-    -> Application level (PureMLPattern level variable)
+    -> Application level (StepPattern level variable)
     -- ^ The function on which to evaluate the current function.
     -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
 axiomFunctionEvaluator
@@ -121,7 +120,7 @@ axiomFunctionEvaluator
             axiom
     stepperConfiguration
         :: MetaOrObject level
-        => Application level (PureMLPattern level variable)
+        => Application level (StepPattern level variable)
         -> ExpandedPattern level variable
     stepperConfiguration app' =
         Predicated
@@ -147,7 +146,7 @@ reevaluateFunctions
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
     -- ^ Function evaluation result.
@@ -155,7 +154,7 @@ reevaluateFunctions
 reevaluateFunctions
     tools
     substitutionSimplifier
-    wrappedSimplifier@(PureMLPatternSimplifier simplifier)
+    wrappedSimplifier@(StepPatternSimplifier simplifier)
     Predicated
         { term   = rewrittenPattern
         , predicate = rewritingCondition
@@ -202,7 +201,7 @@ evaluatePredicate
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> ExpandedPattern level variable
     -- ^ The condition to be evaluated.

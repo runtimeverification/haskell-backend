@@ -51,7 +51,7 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( CommonPureMLPatternSimplifier,
+                 ( CommonStepPatternSimplifier,
                  PredicateSubstitutionSimplifier, Simplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
@@ -91,7 +91,7 @@ transitionRule
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> CommonPureMLPatternSimplifier level
+    -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> Prim (AxiomPattern level)
     -> (CommonExpandedPattern level, StepProof level Variable)

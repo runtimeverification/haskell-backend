@@ -22,8 +22,8 @@ import           Data.These
                  ( these )
 
 import           Kore.AST.Common
-                 ( Application (..), Pattern (..), PureMLPattern, Sort,
-                 SortedVariable, SymbolOrAlias (..) )
+                 ( Application (..), Pattern (..), Sort, SortedVariable,
+                 SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( asPurePattern )
@@ -46,10 +46,10 @@ import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, make, merge )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 PureMLPatternSimplifier (..), SimplificationProof (..),
-                 Simplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isSortInjection_ )
 import           Kore.Substitution.Class
@@ -74,13 +74,13 @@ evaluateApplication
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
-    -> Application level (PureMLPattern level variable)
+    -> Application level (StepPattern level variable)
     -- ^ The pattern to be evaluated
     -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
 evaluateApplication
@@ -188,7 +188,7 @@ evaluateSortInjection
     :: (MetaOrObject level, Ord (variable level))
     => MetadataTools level StepperAttributes
     -> OrOfExpandedPattern level variable
-    -> Application level (PureMLPattern level variable)
+    -> Application level (StepPattern level variable)
     -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
 evaluateSortInjection tools unchanged ap = case apChild of
     (App_ apHeadChild grandChildren)
@@ -235,7 +235,7 @@ mergeWithConditionAndSubstitution
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> PureMLPatternSimplifier level variable
+    -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
     -- ^ Condition and substitution to add.

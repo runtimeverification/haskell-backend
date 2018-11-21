@@ -24,6 +24,7 @@ import           Kore.Parser.LexemeImpl
 import           Kore.Predicate.Predicate
 import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.ExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import           SMT
                  ( SMT )
@@ -149,25 +150,25 @@ evaluate predicate =
 -- ----------------------------------------------------------------
 -- Refute Int predicates
 
-vInt :: Text -> CommonPurePattern Object
+vInt :: Text -> CommonStepPattern Object
 vInt s = V (varS s Builtin.intSort)
 
-a, b, c :: CommonPurePattern Object
+a, b, c :: CommonStepPattern Object
 a = vInt "a"
 b = vInt "b"
 c = vInt "c"
 
-vBool :: Text -> CommonPurePattern Object
+vBool :: Text -> CommonStepPattern Object
 vBool s = V (varS s Builtin.boolSort)
 
-p, q :: CommonPurePattern Object
+p, q :: CommonStepPattern Object
 p = vBool "p"
 q = vBool "q"
 
 add, sub, mul, div
-    :: CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 add i j = App_ Builtin.addIntSymbol  [i, j]
 sub i j = App_ Builtin.subIntSymbol  [i, j]
 mul i j = App_ Builtin.mulIntSymbol  [i, j]

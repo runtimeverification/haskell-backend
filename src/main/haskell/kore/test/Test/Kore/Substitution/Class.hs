@@ -23,11 +23,6 @@ import           Kore.Variables.Fresh
 type UnifiedPatternSubstitution =
     S.Substitution (Unified Variable) CommonKorePattern
 
-instance
-    PatternSubstitutionClass
-        S.Substitution Variable UnifiedPattern
-  where
-
 testSubstitute
     :: CommonKorePattern
     -> UnifiedPatternSubstitution

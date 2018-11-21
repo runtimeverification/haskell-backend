@@ -47,6 +47,7 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Function.Data
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
@@ -62,9 +63,9 @@ import           Test.SMT
 mkPair
     :: Sort Object
     -> Sort Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
-    -> CommonPurePattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
 mkPair lSort rSort l r = App_ (pairSymbol lSort rSort) [l, r]
 
 substitutionSimplifier
@@ -73,7 +74,7 @@ substitutionSimplifier
 substitutionSimplifier tools =
     PredicateSubstitution.create
         tools
-        (PureMLPatternSimplifier
+        (StepPatternSimplifier
             (\_ p ->
                 return
                     ( OrOfExpandedPattern.make
@@ -90,7 +91,7 @@ substitutionSimplifier tools =
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
-    ::  ( p ~ CommonPurePattern Object
+    ::  ( p ~ CommonStepPattern Object
         , expanded ~ CommonExpandedPattern Object
         )
     => (p -> SMT expanded)
@@ -178,7 +179,7 @@ evaluators = Map.map This $ Builtin.koreEvaluators indexedModule
 
 evaluate
     :: MonadSMT m
-    => CommonPurePattern Object
+    => CommonStepPattern Object
     -> m (CommonExpandedPattern Object)
 evaluate =
     (<$>) fst
@@ -191,7 +192,7 @@ evaluate =
 
 evaluateWith
     :: MVar Solver
-    -> CommonPurePattern Object
+    -> CommonStepPattern Object
     -> IO (CommonExpandedPattern Object)
 evaluateWith solver patt =
     runReaderT (SMT.getSMT $ evaluate patt) solver

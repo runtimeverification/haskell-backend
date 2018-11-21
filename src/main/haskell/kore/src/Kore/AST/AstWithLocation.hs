@@ -91,8 +91,8 @@ instance AstWithLocation (Symbol level) where
         s { symbolConstructor = updateAstLocation (symbolConstructor s) loc }
 
 instance
-    AstWithLocation (variable level)
-    => AstWithLocation (Pattern level variable child)
+    AstWithLocation (variable level) =>
+    AstWithLocation (Pattern level domain variable child)
   where
     locationFromAst = applyPatternFunction PatternFunction
         { patternFunctionML = locationFromAst . getMLPatternResultSort

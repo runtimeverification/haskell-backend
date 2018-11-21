@@ -1,16 +1,16 @@
 Definition
     { definitionAttributes =
         Attributes 
-            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
                         { symbolOrAliasConstructor = (Id "key" AstLocationNone) :: Id Object
                         , symbolOrAliasParams = []
                         }
                 , applicationChildren =
-                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "\v")))))
+                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "\v"))))
                     ]
-                }))))
+                })))
             ]
     , definitionModules =
         [ Module

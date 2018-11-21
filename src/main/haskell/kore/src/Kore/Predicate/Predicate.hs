@@ -65,6 +65,7 @@ import Kore.Error
        ( Error, koreFail )
 import Kore.IndexedModule.MetadataTools
        ( SymbolOrAliasSorts )
+import Kore.Step.Pattern
 import Kore.Variables.Free
        ( freePureVariables, pureAllVariables )
 
@@ -77,7 +78,7 @@ newtype GenericPredicate pat = GenericPredicate pat
 
 {-| 'Predicate' is a user-visible representation for predicates.
 -}
-type Predicate level variable = GenericPredicate (PureMLPattern level variable)
+type Predicate level variable = GenericPredicate (StepPattern level variable)
 
 {-| 'CommonPredicate' follows the generic convention of particularizing types
 to Variable.
@@ -103,7 +104,7 @@ predicate evaluation and tests and should not be used outside of that.
 
 We should consider deleting this and implementing the functionality otherwise.
 -}
-wrapPredicate :: PureMLPattern level variable -> Predicate level variable
+wrapPredicate :: StepPattern level variable -> Predicate level variable
 wrapPredicate = GenericPredicate
 
 {- 'unwrapPredicate' wraps a pattern in a GenericPredicate. This should be
@@ -111,7 +112,7 @@ not be used outside of that.
 
 We should consider deleting this and implementing the functionality otherwise.
 -}
-unwrapPredicate :: Predicate level variable -> PureMLPattern level variable
+unwrapPredicate :: Predicate level variable -> StepPattern level variable
 unwrapPredicate (GenericPredicate p) = p
 
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
@@ -267,8 +268,8 @@ makeEqualsPredicate
         , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
+    => StepPattern level variable
+    -> StepPattern level variable
     -> Predicate level variable
 makeEqualsPredicate first second =
     GenericPredicate $ mkEquals first second
@@ -281,8 +282,8 @@ makeInPredicate
         , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
-    => PureMLPattern level variable
-    -> PureMLPattern level variable
+    => StepPattern level variable
+    -> StepPattern level variable
     -> Predicate level variable
 makeInPredicate first second =
     GenericPredicate $ mkIn first second
@@ -295,7 +296,7 @@ makeCeilPredicate
         , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
-    => PureMLPattern level variable
+    => StepPattern level variable
     -> Predicate level variable
 makeCeilPredicate patt =
     GenericPredicate $ mkCeil patt
@@ -308,7 +309,7 @@ makeFloorPredicate
         , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
-    => PureMLPattern level variable
+    => StepPattern level variable
     -> Predicate level variable
 makeFloorPredicate patt =
     GenericPredicate $ mkFloor patt
@@ -362,17 +363,20 @@ makeFalsePredicate =
 
 
 makePredicate
-    :: forall level variable e . ( MetaOrObject level
+    :: forall level variable e .
+        ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
-        , Show (variable level))
-    => PureMLPattern level variable
+        , Show (variable level)
+        )
+    => StepPattern level variable
     -> Either (Error e) (Predicate level variable)
 makePredicate = elgot makePredicateBottomUp makePredicateTopDown
   where
     makePredicateBottomUp
-        :: Pattern level variable (Either (Error e) (Predicate level variable))
+        :: StepPatternHead level variable
+            (Either (Error e) (Predicate level variable))
         -> Either (Error e) (Predicate level variable)
     makePredicateBottomUp patE = do
         pat <- sequence patE
@@ -392,10 +396,10 @@ makePredicate = elgot makePredicateBottomUp makePredicateTopDown
             p -> koreFail
                 ("Cannot translate to predicate: " ++ show p)
     makePredicateTopDown
-        :: PureMLPattern level variable
+        :: StepPattern level variable
         -> Either
             (Either (Error e) (Predicate level variable))
-            (Pattern level variable (PureMLPattern level variable))
+            (StepPatternHead level variable (StepPattern level variable))
     makePredicateTopDown =
         \case
             Ceil_ _ _ p ->
@@ -442,7 +446,7 @@ substitutionToPredicate
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
-    => [(variable level, PureMLPattern level variable)]
+    => [(variable level, StepPattern level variable)]
     -> Predicate level variable
 substitutionToPredicate =
     makeMultipleAndPredicate . fmap singleSubstitutionToPredicate
@@ -452,7 +456,7 @@ singleSubstitutionToPredicate
         , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Show (variable level))
-    => (variable level, PureMLPattern level variable)
+    => (variable level, StepPattern level variable)
     -> Predicate level variable
 singleSubstitutionToPredicate (var, patt) =
     makeEqualsPredicate (mkVar var) patt

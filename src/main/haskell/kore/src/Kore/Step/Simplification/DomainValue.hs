@@ -15,10 +15,10 @@ import Data.Reflection
        ( Given, give )
 
 import           Kore.AST.Common
-                 ( BuiltinDomain (..), DomainValue (..), PureMLPattern,
-                 SortedVariable )
+                 ( DomainValue (..), SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.Step.ExpandedPattern
@@ -26,6 +26,7 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
@@ -37,7 +38,7 @@ simplify
        , SortedVariable variable
        )
     => MetadataTools Object attrs
-    -> DomainValue Object (BuiltinDomain (OrOfExpandedPattern Object variable))
+    -> DomainValue Object Domain.Builtin (OrOfExpandedPattern Object variable)
     -> ( OrOfExpandedPattern Object variable
        , SimplificationProof Object
        )
@@ -47,29 +48,30 @@ simplify
   =
     ( OrOfExpandedPattern.filterOr
         (do
-            child <-
-                give symbolOrAliasSorts simplifyBuiltinDomain domainValueChild
+            child <- give symbolOrAliasSorts simplifyBuiltin domainValueChild
             return (DV_ domainValueSort <$> child)
         )
     , SimplificationProof
     )
 
-simplifyBuiltinDomain
+simplifyBuiltin
     :: ( Eq (variable Object), Show (variable Object)
        , Given (SymbolOrAliasSorts Object)
        , SortedVariable variable
        )
-    => BuiltinDomain (OrOfExpandedPattern Object variable)
-    -> MultiOr (Predicated Object variable (BuiltinDomain (PureMLPattern Object variable)))
-simplifyBuiltinDomain =
+    => Domain.Builtin (OrOfExpandedPattern Object variable)
+    -> MultiOr
+        (Predicated Object variable
+            (Domain.Builtin (StepPattern Object variable)))
+simplifyBuiltin =
     \case
-        BuiltinDomainPattern pat -> (return . pure) (BuiltinDomainPattern pat)
-        BuiltinDomainMap _map -> do
+        Domain.BuiltinPattern pat -> (return . pure) (Domain.BuiltinPattern pat)
+        Domain.BuiltinMap _map -> do
             _map <- sequence _map
             -- MultiOr propagates \bottom children upward.
-            return (BuiltinDomainMap <$> sequenceA _map)
-        BuiltinDomainList _list -> do
+            return (Domain.BuiltinMap <$> sequenceA _map)
+        Domain.BuiltinList _list -> do
             _list <- sequence _list
             -- MultiOr propagates \bottom children upward.
-            return (BuiltinDomainList <$> sequenceA _list)
-        BuiltinDomainSet set -> (return . pure) (BuiltinDomainSet set)
+            return (Domain.BuiltinList <$> sequenceA _list)
+        Domain.BuiltinSet set -> (return . pure) (Domain.BuiltinSet set)
