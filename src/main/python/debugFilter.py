@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Filters the stdin input to make kore debugging output readable. It was created
 to handle output produced by the Kore.Debug Haskell package, but may improve
@@ -180,9 +181,34 @@ def cleanVariable(line):
             + line[end : ]
             )
 
+def cleanBottom(line):
+    """Rewrites bottom patterns."""
+    while True:
+        (start, end) = findElementStartingWith(0, "Fix (BottomPattern", line)
+        if start < 0:
+            return line
+        line = line[:start] + "⊥" + line[end:]
+
+def cleanTop(line):
+    """Rewrites top patterns."""
+    while True:
+        (start, end) = findElementStartingWith(0, "Fix (TopPattern", line)
+        if start < 0:
+            return line
+        line = line[:start] + "T" + line[end:]
+
+def cleanStepProof(line):
+    """Removes StepProofs"""
+    while True:
+        (start, end) = findElementStartingWith(0, "StepProof {", line)
+        if start < 0:
+            return line
+        line = line[:start] + " proof" + line[end:]
+
 def clean(line):
     """Applies known cleaning algorithms to the line."""
-    return cleanVariable(cleanSort(cleanApplication(cleanIdLocation(line))))
+    return cleanBottom(cleanTop(cleanStepProof(
+        cleanVariable(cleanSort(cleanApplication(cleanIdLocation(line)))))))
 
 def printParseLine(indentLevel, maxOpenParenthesis, line):
     """Rudimentary attempts to split a line and indent it."""

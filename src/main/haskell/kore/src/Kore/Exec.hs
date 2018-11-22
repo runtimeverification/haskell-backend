@@ -16,10 +16,14 @@ module Kore.Exec
 import qualified Control.Arrow as Arrow
 import qualified Data.Map.Merge.Strict as Map
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+                 ( fromMaybe )
 import           Data.Reflection
                  ( give )
 import           Data.These
                  ( These (..) )
+import           Numeric.Natural
+                 ( Natural )
 
 import           Data.Limit
                  ( Limit (..) )
@@ -63,10 +67,13 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step
+                 ( Prim, ruleResultToRewriteTree, transitionRule )
+import qualified Kore.Step.Step as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Strategy
-                 ( Tree )
+                 ( Strategy, Tree (..), pickLongest, runStrategy )
 import           Kore.Substitution.Class
                  ( Hashable, substitute )
 import qualified Kore.Substitution.List as ListSubstitution
@@ -181,8 +188,16 @@ setUpConcreteExecution indexedModule purePattern stepLimit strategy execute = do
             case OrOfExpandedPattern.extractPatterns (fst simplifiedPatterns) of
                 [] -> ExpandedPattern.bottom
                 (config : _) -> config
-    executionTree <- runStrategy' initialPattern
-    execute metadataTools simplifier substitutionSimplifier executionTree
+    executionTree <-
+        runStrategy' (RulePattern.RewritePattern initialPattern)
+    execute
+        metadataTools
+        simplifier
+        substitutionSimplifier
+        (fromMaybe
+            (error "Unexpected root.")
+            (ruleResultToRewriteTree executionTree)
+        )
 
 makeExpandedPattern
     :: CommonStepPattern Object
