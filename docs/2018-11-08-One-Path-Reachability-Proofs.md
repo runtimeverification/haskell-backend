@@ -24,7 +24,7 @@ and variables.
 
 We will use the algorithm for simplifying patterns of the form
 `φ(X) ∧ ¬∃ Y . ψ(X, Y)`
-to a extended function-like pattern described in 
+to a extended function-like pattern described in
 [Configuration Splitting Simplification](2018-11-08-Configuration-Splitting-Simplification.md).
 
 This algorithm will be named `AndNotExistsSimplification` in the sequel.
@@ -52,7 +52,7 @@ Consider also the axiom
 
 where `•` denotes "strong-next" (`α(Z)` is an extended constructor pattern).
 
-The steps below show how the given goal is transformed by "applying" the 
+The steps below show how the given goal is transformed by "applying" the
 given axiom.
 
 
@@ -65,7 +65,7 @@ Then,  for any formula ψ:
 - `    = ψ ∨ •◇ ψ ∨ Δ` by unrolling `◇`
 - `    = ψ ∨ •◇ ψ ∨ •Δ` by unrolling `Δ`
 - `    = ψ ∨ •(◇ ψ ∨ Δ)`
-  because `•` commutes with `∨` 
+  because `•` commutes with `∨`
 - `    = ψ ∨ •◆ ψ`
 
 
@@ -124,7 +124,7 @@ Moreover, we can apply the `AndNotExistsSimplification` algorithm on
 `Φ(X) ∧ (¬ ∃ Z. α(Z))` to obtain an extended function-like pattern `Φα(X)`.
 
 
-Therefore, it is sound to replace the original goal with 
+Therefore, it is sound to replace the original goal with
 ```
 (∀ X . Φ'(X) → ◆ ∃ Y . ψ(X, Y))
 ∧
@@ -134,7 +134,7 @@ Therefore, it is sound to replace the original goal with
 The process of applying an axiom can then be restarted on the second conjunct,
 using a different axiom, until `Φα(X)` becomes `⊥`.
 
-Examples of using the above procedure 
+Examples of using the above procedure
 -------------------------------------
 
 When applying an axiom on a symbolic configuration new constraints may be
@@ -191,7 +191,7 @@ Now, since the `if` construct is not an integer, this simplifies to
 ```
 ∀ A:Int . if A <Int 0 then -1 else 1 -> •◆ (∃ B:Int . B = -1 ∨  B = 1)
 ```
- 
+
 
 Then, by using the first axiom, the goal will simplify to
 ```
