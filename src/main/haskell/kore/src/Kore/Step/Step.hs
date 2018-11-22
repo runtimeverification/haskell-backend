@@ -44,8 +44,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.AxiomPatterns
                  ( isCoolingRule, isHeatingRule, isNormalRule )
 import           Kore.Step.BaseStep
-                 ( AxiomPattern, StepProof (..), simplificationProof,
-                 stepWithAxiom )
+                 ( AxiomPattern, StepProof (..), StepResult (StepResult),
+                 simplificationProof, stepWithAxiom )
+import           Kore.Step.BaseStep as StepResult
+                 ( StepResult (..) )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -118,7 +120,12 @@ transitionRule tools substitutionSimplifier simplifier =
             $ stepWithAxiom tools substitutionSimplifier config a
         case result of
             Left _ -> pure []
-            Right (config', proof') ->
+            Right
+                ( StepResult
+                    { rewrittenPattern = config'
+                    -- TODO(virgil): Also use the remainder
+                    }
+                , proof') ->
                 if ExpandedPattern.isBottom config'
                     then return []
                     else return [(config', proof <> proof')]

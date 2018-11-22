@@ -26,8 +26,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeTruePredicate )
 import           Kore.Step.BaseStep
-                 ( AxiomPattern, UnificationProcedure (..),
-                 stepWithAxiomForUnifier )
+                 ( AxiomPattern, StepResult (StepResult),
+                 UnificationProcedure (..), stepWithAxiomForUnifier )
+import           Kore.Step.BaseStep as StepResult
+                 ( StepResult (..) )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
@@ -89,7 +91,8 @@ axiomFunctionEvaluator
     case result of
         Left _ ->
             return (AttemptedFunction.NotApplicable, SimplificationProof)
-        Right (stepPattern, _) ->
+        Right (StepResult { rewrittenPattern = stepPattern }, _proof) ->
+            -- TODO(virgil): ^^^ Also use the remainder.
             do
                 (   rewrittenPattern@Predicated
                         { predicate = rewritingCondition }

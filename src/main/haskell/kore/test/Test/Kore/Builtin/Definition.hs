@@ -8,6 +8,7 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Attribute.Constructor
+import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Smtlib
@@ -694,12 +695,16 @@ listModule =
                 elementListSymbol
                 listSort
                 [intSort]
-                [hookAttribute "LIST.element"]
+                [ hookAttribute "LIST.element"
+                , functionalAttribute
+                ]
             , hookedSymbolDecl
                 concatListSymbol
                 listSort
                 [listSort, listSort]
-                [hookAttribute "LIST.concat"]
+                [ hookAttribute "LIST.concat"
+                , functionalAttribute
+                ]
             , hookedSymbolDecl
                 getListSymbol
                 intSort
@@ -735,12 +740,16 @@ mapModule =
                 (builtinSymbol "elementMap")
                 mapSort
                 [intSort, intSort]
-                [hookAttribute "MAP.element"]
+                [ hookAttribute "MAP.element"
+                , functionalAttribute
+                ]
             , hookedSymbolDecl
                 concatMapSymbol
                 mapSort
                 [mapSort, mapSort]
-                [hookAttribute "MAP.concat"]
+                [ hookAttribute "MAP.concat"
+                , functionalAttribute
+                ]
             , hookedSymbolDecl
                 lookupMapSymbol
                 intSort
@@ -803,6 +812,7 @@ pairSymbolDecl =
                 Attributes
                     [ constructorAttribute
                     , injectiveAttribute
+                    , functionalAttribute
                     ]
             }
     leftSortVariable = SortVariable (testId "left")
@@ -834,12 +844,16 @@ setModule =
                 elementSetSymbol
                 setSort
                 [intSort]
-                [hookAttribute "SET.element"]
+                [ hookAttribute "SET.element"
+                , functionalAttribute
+                ]
             , hookedSymbolDecl
                 concatSetSymbol
                 setSort
                 [setSort, setSort]
-                [hookAttribute "SET.concat"]
+                [ hookAttribute "SET.concat"
+                , functionalAttribute
+                ]
             , hookedSymbolDecl
                 inSetSymbol
                 boolSort

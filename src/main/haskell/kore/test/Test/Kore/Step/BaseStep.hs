@@ -1,4 +1,4 @@
-module Test.Kore.Step.BaseStep (test_baseStep) where
+module Test.Kore.Step.BaseStep (test_baseStep, test_baseStepRemainder) where
 
 import Test.Tasty
        ( TestTree )
@@ -18,6 +18,8 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkVar )
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
@@ -42,7 +44,10 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+                 ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_baseStep :: [TestTree]
@@ -837,6 +842,189 @@ test_baseStep =
             , axiomPatternAttributes = def
             }
 
+test_baseStepRemainder :: [TestTree]
+test_baseStepRemainder = give mockSymbolOrAliasSortsR
+    [ testCase "If-then" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: if x then cg
+        --   axiom: if true y => y
+        -- Actual:
+        --   term: constr20(x, cg)
+        --   axiom: constr20(a, y) => y
+        -- Expected:
+        --   rewritten: cg, with ⌈cg⌉ and [x=a]
+        --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
+        let
+            expected = Right
+                ( StepResult
+                    { rewrittenPattern = Predicated
+                        { term = Mock.cg
+                        , predicate = makeCeilPredicate Mock.cg
+                        , substitution = [(Mock.x, Mock.a)]
+                        }
+                    , remainder = Predicated
+                        { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                        , predicate =
+                            makeNotPredicate
+                                (makeAndPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                                )
+                        , substitution = []
+                        }
+                    }
+                , mconcat
+                    (map stepProof
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
+                        ]
+                    )
+                )
+        actual <- runStepWithRemainder
+            mockMetadataToolsR
+            Predicated
+                { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                , predicate = makeTruePredicate
+                , substitution = []
+                }
+            AxiomPattern
+                { axiomPatternLeft =
+                    Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+                , axiomPatternRight = mkVar Mock.y
+                , axiomPatternRequires = makeTruePredicate
+                , axiomPatternAttributes = def
+                }
+        assertEqualWithExplanation "" expected actual
+    , testCase "If-then with existing predicate" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: if x then cg
+        --   axiom: if true y => y
+        -- Actual:
+        --   term: constr20(x, cg), with a ⌈cf⌉ predicate
+        --   axiom: constr20(a, y) => y
+        -- Expected:
+        --   rewritten: cg, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
+        --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
+        let
+            expected = Right
+                ( StepResult
+                    { rewrittenPattern = Predicated
+                        { term = Mock.cg
+                        , predicate = makeAndPredicate
+                            (makeCeilPredicate Mock.cf)
+                            (makeCeilPredicate Mock.cg)
+                        , substitution = [(Mock.x, Mock.a)]
+                        }
+                    , remainder = Predicated
+                        { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                        , predicate = makeAndPredicate
+                            (makeCeilPredicate Mock.cf)
+                            (makeNotPredicate
+                                (makeAndPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                                )
+                            )
+                        , substitution = []
+                        }
+                    }
+                , mconcat
+                    (map stepProof
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
+                        ]
+                    )
+                )
+        actual <- runStepWithRemainder
+            mockMetadataToolsR
+            Predicated
+                { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                , predicate = makeCeilPredicate Mock.cf
+                , substitution = []
+                }
+            AxiomPattern
+                { axiomPatternLeft =
+                    Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+                , axiomPatternRight = mkVar Mock.y
+                , axiomPatternRequires = makeTruePredicate
+                , axiomPatternAttributes = def
+                }
+        assertEqualWithExplanation "" expected actual
+    , testCase "signum - side condition" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: signum(x)
+        --   axiom: signum(y) => -1 if (y<0 == true)
+        -- Actual:
+        --   term: functionalConstr10(x)
+        --   axiom: functionalConstr10(y) => a if f(y) == b
+        -- Expected:
+        --   rewritten: a, with f(x) == b
+        --   remainder: functionalConstr10(x), with ¬(f(x) == b)
+        let
+            expected = Right
+                ( StepResult
+                    { rewrittenPattern = Predicated
+                        { term = Mock.a
+                        , predicate =
+                            makeEqualsPredicate (Mock.f (mkVar Mock.x)) Mock.b
+                        , substitution = []
+                        }
+                    , remainder = Predicated
+                        { term = Mock.functionalConstr10 (mkVar Mock.x)
+                        , predicate =
+                            makeNotPredicate
+                                (makeEqualsPredicate
+                                    (Mock.f (mkVar Mock.x))
+                                    Mock.b
+                                )
+                        , substitution = []
+                        }
+                    }
+                , mconcat
+                    (map stepProof
+                        [ StepProofVariableRenamings []
+                        , StepProofUnification EmptyUnificationProof
+                        ]
+                    )
+                )
+        actual <- runStepWithRemainder
+            mockMetadataToolsR
+            Predicated
+                { term = Mock.functionalConstr10 (mkVar Mock.x)
+                , predicate = makeTruePredicate
+                , substitution = []
+                }
+            AxiomPattern
+                { axiomPatternLeft =
+                    Mock.functionalConstr10 (mkVar Mock.y)
+                , axiomPatternRight = Mock.a
+                , axiomPatternRequires =
+                    makeEqualsPredicate (Mock.f (mkVar Mock.y)) Mock.b
+                , axiomPatternAttributes = def
+                }
+        assertEqualWithExplanation "" expected actual
+    ]
+  where
+    mockSymbolOrAliasSortsR :: SymbolOrAliasSorts Object
+    mockSymbolOrAliasSortsR =
+        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+    mockMetadataToolsR :: MetadataTools Object StepperAttributes
+    mockMetadataToolsR =
+        Mock.makeMetadataTools
+            mockSymbolOrAliasSortsR
+            Mock.attributesMapping
+            Mock.headTypeMapping
+            Mock.subsorts
+
 mockStepperAttributes :: SymbolOrAlias Meta -> StepperAttributes
 mockStepperAttributes patternHead =
     defaultStepperAttributes
@@ -929,7 +1117,26 @@ runStep
             (StepError level Variable)
             (CommonExpandedPattern level, StepProof level Variable)
         )
-runStep metadataTools configuration axiom =
+runStep metadataTools configuration axiom = do
+    ioResult <-
+        runStepWithRemainder metadataTools configuration axiom
+    return $ do
+        (StepResult { rewrittenPattern }, proof) <- ioResult
+        return (rewrittenPattern, proof)
+
+runStepWithRemainder
+    :: MetaOrObject level
+    => MetadataTools level StepperAttributes
+    -- ^functions yielding metadata for pattern heads
+    -> CommonExpandedPattern level
+    -- ^left-hand-side of unification
+    -> AxiomPattern level
+    -> IO
+        (Either
+            (StepError level Variable)
+            (StepResult level Variable, StepProof level Variable)
+        )
+runStepWithRemainder metadataTools configuration axiom =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier
     $ runExceptT

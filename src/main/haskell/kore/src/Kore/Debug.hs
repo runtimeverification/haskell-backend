@@ -46,6 +46,11 @@ cd src/main/k/working/tests/collections/set-unify-framing-variable
 make test-k 2>&1 | python ../../../../../python/debugFilter.py > debug.txt
 ```
 
+It also works for test error messages:
+```
+stack -j3 test --pedantic --test-arguments --pattern=zzz 2>&1 | python ../python/debugFilter.py`
+```
+
 Enjoy.
 -}
 module Kore.Debug

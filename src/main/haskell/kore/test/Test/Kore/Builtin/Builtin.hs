@@ -40,7 +40,9 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
                  ( AxiomPattern )
 import           Kore.Step.BaseStep
-                 ( StepProof, stepWithAxiom )
+                 ( StepProof, StepResult (StepResult), stepWithAxiom )
+import qualified Kore.Step.BaseStep as StepResult
+                 ( StepResult (..) )
 import           Kore.Step.Error
                  ( StepError )
 import           Kore.Step.ExpandedPattern
@@ -207,7 +209,23 @@ runStep
             (StepError Object Variable)
             (CommonExpandedPattern Object, StepProof Object Variable)
         )
-runStep configuration axiom =
+runStep configuration axiom = do
+    ioResult <- runStepResult configuration axiom
+    return $ do
+        (StepResult { rewrittenPattern }, proof) <- ioResult
+        return (rewrittenPattern, proof)
+
+runStepResult
+    :: CommonExpandedPattern Object
+    -- ^ configuration
+    -> AxiomPattern Object
+    -- ^ axiom
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (StepResult Object Variable, StepProof Object Variable)
+        )
+runStepResult configuration axiom =
     (runSMT . evalSimplifier . runExceptT)
         (stepWithAxiom
             testMetadataTools
@@ -230,7 +248,25 @@ runStepWith
             (StepError Object Variable)
             (CommonExpandedPattern Object, StepProof Object Variable)
         )
-runStepWith solver configuration axiom =
+runStepWith solver configuration axiom = do
+    ioResult <- runStepResultWith
+        solver configuration axiom
+    return $ do
+        (StepResult { rewrittenPattern }, proof) <- ioResult
+        return (rewrittenPattern, proof)
+
+runStepResultWith
+    :: MVar Solver
+    -> CommonExpandedPattern Object
+    -- ^ configuration
+    -> AxiomPattern Object
+    -- ^ axiom
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (StepResult Object Variable, StepProof Object Variable)
+        )
+runStepResultWith solver configuration axiom =
     let smt =
             (evalSimplifier . runExceptT)
                 (stepWithAxiom
