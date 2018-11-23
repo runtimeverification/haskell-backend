@@ -740,21 +740,24 @@ indexImportedModule
     indexedModules
     importedModuleName
   = do
-    koreModule <-
-        case Map.lookup importedModuleName nameToModule of
-            Nothing ->
-                koreFail
-                    (  "Module '"
-                    ++ getModuleNameForError importedModuleName
-                    ++ "' imported but not found."
-                    )
-            Just m -> return m
-    internalIndexModuleIfNeeded
-        implicitModule
-        importingModules
-        nameToModule
-        indexedModules
-        koreModule
+    case Map.lookup importedModuleName indexedModules of
+        Just indexedModule -> return (indexedModules, indexedModule)
+        Nothing -> do
+            koreModule <-
+                case Map.lookup importedModuleName nameToModule of
+                    Nothing ->
+                        koreFail
+                            (  "Module '"
+                            ++ getModuleNameForError importedModuleName
+                            ++ "' imported but not found."
+                            )
+                    Just m -> return m
+            internalIndexModuleIfNeeded
+                implicitModule
+                importingModules
+                nameToModule
+                indexedModules
+                koreModule
 
 metaNameForObjectSort :: String -> String
 metaNameForObjectSort name = "#`" ++ name

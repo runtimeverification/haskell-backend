@@ -10,6 +10,8 @@ import           Data.Functor.Foldable
 import           Data.List
                  ( intercalate )
 import qualified Data.Map as Map
+import           Data.Maybe
+                 ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Reflection
@@ -41,7 +43,8 @@ import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
-                 defaultAttributesVerification, verifyAndIndexDefinition )
+                 defaultAttributesVerification,
+                 verifyAndIndexDefinitionWithBase )
 import           Kore.ASTVerifier.PatternVerifier
                  ( verifyStandalonePattern )
 import qualified Kore.Builtin as Builtin
@@ -84,6 +87,32 @@ import GlobalMain
 Main module to run kore-exec
 TODO: add command line argument tab-completion
 -}
+
+data KoreProveOptions =
+    KoreProveOptions
+        { specFileName :: !FilePath
+        -- ^ Name of file containing the spec to be proven
+        , specMainModule :: !ModuleName
+        -- ^ The main module of the spec to be proven
+        }
+
+parseKoreProveOptions :: Parser KoreProveOptions
+parseKoreProveOptions =
+    KoreProveOptions
+    <$> strOption
+        (  metavar "SPEC_FILE"
+        <> long "prove"
+        <> help "Kore source file representing spec to be proven.\
+                \Needs --spec-module."
+        )
+    <*> (ModuleName
+        <$> strOption
+            (  metavar "SPEC_MODULE"
+            <> long "spec-module"
+            <> help "The name of the main module in the spec to be proven."
+            )
+        )
+
 
 data KoreSearchOptions =
     KoreSearchOptions
@@ -170,7 +199,7 @@ applyKoreSearchOptions koreSearchOptions koreExecOpts =
 data KoreExecOptions = KoreExecOptions
     { definitionFileName  :: !FilePath
     -- ^ Name for a file containing a definition to verify and use for execution
-    , patternFileName     :: !FilePath
+    , patternFileName     :: !(Maybe FilePath)
     -- ^ Name for file containing a pattern to verify and use for execution
     , outputFileName      :: !(Maybe FilePath)
     -- ^ Name for file to contain the output pattern
@@ -181,6 +210,7 @@ data KoreExecOptions = KoreExecOptions
     , strategy
         :: !([RewriteRule Object] -> Strategy (Prim (RewriteRule Object)))
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
+    , koreProveOptions    :: !(Maybe KoreProveOptions)
     }
 
 -- | Command Line Argument Parser
@@ -190,15 +220,18 @@ parseKoreExecOptions =
         <$> optional parseKoreSearchOptions
         <*> parseKoreExecOptions0
   where
+    parseKoreExecOptions0 :: Parser KoreExecOptions
     parseKoreExecOptions0 =
         KoreExecOptions
         <$> argument str
             (  metavar "DEFINITION_FILE"
             <> help "Kore definition file to verify and use for execution" )
-        <*> strOption
-            (  metavar "PATTERN_FILE"
-            <> long "pattern"
-            <> help "Verify and execute the Kore pattern found in PATTERN_FILE."
+        <*> optional
+            (strOption
+                (  metavar "PATTERN_FILE"
+                <> long "pattern"
+                <> help "Verify and execute the Kore pattern found in PATTERN_FILE."
+                )
             )
         <*> optional
             (strOption
@@ -217,6 +250,7 @@ parseKoreExecOptions =
         <*> parseStepLimit
         <*> parseStrategy
         <*> pure Nothing
+        <*> optional parseKoreProveOptions
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     readSMTTimeOut = do
         i <- auto
@@ -335,17 +369,20 @@ mainWithOptions
         , stepLimit
         , strategy
         , koreSearchOptions
+        , koreProveOptions
         }
   = do
         let smtConfig =
                 SMT.defaultConfig
                     { SMT.timeOut = smtTimeOut }
         parsedDefinition <- parseDefinition definitionFileName
-        indexedModules <- verifyDefinition True parsedDefinition
+        indexedDefinition@(indexedModules, _) <-
+            verifyDefinitionWithBase
+                Nothing
+                True
+                parsedDefinition
         indexedModule <-
             constructorFunctions <$> mainModule mainModuleName indexedModules
-        purePattern <-
-            mainPatternParseAndVerify indexedModule patternFileName
         searchParameters <-
             case koreSearchOptions of
                 Nothing -> return Nothing
@@ -355,20 +392,52 @@ mainWithOptions
                             mainParseSearchPattern indexedModule searchFileName
                         let searchConfig = Search.Config { bound, searchType }
                         (return . Just) (searchPattern, searchConfig)
+        proveParameters <-
+            case koreProveOptions of
+                Nothing -> return Nothing
+                Just KoreProveOptions { specFileName, specMainModule } ->
+                    do
+                        specDef <- parseDefinition specFileName
+                        (specDefIndexedModules, _) <-
+                            verifyDefinitionWithBase
+                                (Just indexedDefinition)
+                                True
+                                specDef
+                        specDefIndexedModule <-
+                            mainModule specMainModule specDefIndexedModules
+                        return (Just specDefIndexedModule)
+        maybePurePattern <- case patternFileName of
+            Nothing -> return Nothing
+            Just fileName ->
+                Just
+                <$> mainPatternParseAndVerify
+                    indexedModule
+                    fileName
         finalPattern <-
             clockSomethingIO "Executing"
             $ SMT.runSMT smtConfig
             $ evalSimplifier
-            $ case searchParameters of
-                Nothing -> exec indexedModule purePattern stepLimit strategy
-                Just (searchPattern, searchConfig) ->
-                    search
+            $ case proveParameters of
+                Nothing -> do
+                    let purePattern =
+                            fromMaybe
+                                (error "Missing: --pattern PATTERN_FILE")
+                                maybePurePattern
+                    case searchParameters of
+                        Nothing ->
+                            exec indexedModule purePattern stepLimit strategy
+                        Just (searchPattern, searchConfig) -> do
+                            search
+                                indexedModule
+                                purePattern
+                                stepLimit
+                                strategy
+                                searchPattern
+                                searchConfig
+                Just specIndexedModule ->
+                    prove
                         indexedModule
-                        purePattern
-                        stepLimit
-                        strategy
-                        searchPattern
-                        searchConfig
+                        specIndexedModule
         let
             finalExternalPattern =
                 either (error . printError) id
@@ -462,11 +531,19 @@ mainParse parser fileName = do
 Also prints timing information; see 'mainParse'.
 
  -}
-verifyDefinition
-    :: Bool -- ^ whether to check (True) or ignore attributes during verification
+verifyDefinitionWithBase
+    :: Maybe
+        ( Map.Map ModuleName (KoreIndexedModule StepperAttributes)
+        , Map.Map Text AstLocation
+        )
+    -- ^ base definition to use for verification
+    -> Bool -- ^ whether to check (True) or ignore attributes during verification
     -> KoreDefinition -- ^ Parsed definition to check well-formedness
-    -> IO (Map.Map ModuleName (KoreIndexedModule StepperAttributes))
-verifyDefinition willChkAttr definition =
+    -> IO
+        ( Map.Map ModuleName (KoreIndexedModule StepperAttributes)
+        , Map.Map Text AstLocation
+        )
+verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
     let attributesVerification =
             if willChkAttr
             then defaultAttributesVerification Proxy
@@ -474,14 +551,15 @@ verifyDefinition willChkAttr definition =
     in do
       verifyResult <-
         clockSomething "Verifying the definition"
-            (verifyAndIndexDefinition
+            (verifyAndIndexDefinitionWithBase
+                maybeBaseModule
                 attributesVerification
                 Builtin.koreVerifiers
                 definition
             )
       case verifyResult of
-        Left err1            -> error (printError err1)
-        Right indexedModules -> return indexedModules
+        Left err1               -> error (printError err1)
+        Right indexedDefinition -> return indexedDefinition
 
 
 -- | IO action verifies well-formedness of Kore patterns and prints
@@ -545,3 +623,4 @@ constructorFunctions ixm =
 
     recurseIntoImports (attrs, attributes, importedModule) =
         (attrs, attributes, constructorFunctions importedModule)
+

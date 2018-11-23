@@ -25,6 +25,7 @@ module Kore.Step.AxiomPatterns
     , AxiomPatternError (..)
     , koreSentenceToAxiomPattern
     , extractRewriteAxioms
+    , extractRewriteClaims
     ) where
 
 import qualified Control.Lens.TH.Rules as Lens
@@ -168,10 +169,39 @@ extractRewriteAxioms
     -- ^'IndexedModule' containing the definition
     -> [RewriteRule level]
 extractRewriteAxioms level idxMod =
+    extractRewriteAxiomsFrom
+        level
+        ( map (asSentence . getIndexedSentence)
+        $ indexedModuleAxioms idxMod
+        )
+
+-- | Extracts all 'RewriteRule' claims matching a given @level@ from
+-- a verified definition.
+extractRewriteClaims
+    :: MetaOrObject level
+    => level -- ^expected level for the axiom pattern
+    -> KoreIndexedModule atts
+    -- ^'IndexedModule' containing the definition
+    -> [RewriteRule level]
+extractRewriteClaims level idxMod =
+    extractRewriteAxiomsFrom
+        level
+        ( map (asSentence . getIndexedSentence)
+        $ indexedModuleClaims idxMod
+        )
+
+
+extractRewriteAxiomsFrom
+    :: MetaOrObject level
+    => level -- ^expected level for the axiom pattern
+    -> [KoreSentence]
+    -- ^ List of sentences to extract axiom patterns from
+    -> [RewriteRule level]
+extractRewriteAxiomsFrom level sentences =
     [ axiomPat | RewriteAxiomPattern axiomPat <-
         rights $ map
             (koreSentenceToAxiomPattern level)
-            (indexedModuleRawSentences idxMod)
+            sentences
     ]
 
 -- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
