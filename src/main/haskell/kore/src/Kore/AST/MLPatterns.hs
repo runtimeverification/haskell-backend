@@ -189,9 +189,9 @@ instance MLBinderPatternClass Forall where
 
 {-|`PatternLeveledFunction` holds a full set of functions that
 can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
-with `applyPatternLeveledFunction` they form a function on patterns, hence the name.
+with `applyPatternLeveledFunction` they form a function on patterns, hence the
+name.
 -}
--- TODO: consider parameterizing on variable also
 data PatternLeveledFunction level domain variable child result =
     PatternLeveledFunction
         { patternLeveledFunctionML
@@ -211,8 +211,8 @@ data PatternLeveledFunction level domain variable child result =
         , variableLeveledFunction :: !(variable level -> result level)
         }
 
-{-|`applyPatternLeveledFunction` applies a patternFunction on the inner element of a
-`Pattern`, returning the result.
+{-|`applyPatternLeveledFunction` applies a patternFunction on the inner element
+of a `Pattern`, returning the result.
 -}
 applyPatternLeveledFunction
     :: PatternLeveledFunction level domain variable child result
