@@ -32,6 +32,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, merge )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import qualified Kore.Unification.Substitution as Substitution
 
 {-|'simplify' simplifies an 'Or' pattern with 'OrOfExpandedPattern'
 children by merging the two children.
@@ -101,7 +102,7 @@ halfSimplifyEvaluated
     first@Predicated
         { term = Top_ _
         , predicate = firstPredicate
-        , substitution = []
+        , substitution = (Substitution.unwrap -> [])
         }
     second
   =

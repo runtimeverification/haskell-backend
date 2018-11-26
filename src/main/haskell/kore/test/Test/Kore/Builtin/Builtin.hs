@@ -83,7 +83,7 @@ substitutionSimplifier tools =
                         [ Predicated
                             { term = Kore.mkTop
                             , predicate = Predicate.wrapPredicate p
-                            , substitution = []
+                            , substitution = mempty
                             }
                         ]
                     , SimplificationProof

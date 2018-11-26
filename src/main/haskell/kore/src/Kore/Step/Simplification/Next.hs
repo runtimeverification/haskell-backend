@@ -74,7 +74,7 @@ simplifyEvaluated simplified =
                     $ ExpandedPattern.toMLPattern
                     $ OrOfExpandedPattern.toExpandedPattern simplified
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof

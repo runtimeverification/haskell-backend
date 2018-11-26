@@ -38,6 +38,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -54,12 +55,12 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate = makeCeilPredicate somethingOfA
-                    , substitution = []
+                    , substitution = mempty
                     }
                 , Predicated
                     { term = mkTop
                     , predicate = makeCeilPredicate somethingOfB
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -123,7 +124,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate somethingOfA)
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
                 ]
             )
@@ -131,7 +132,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = somethingOfA
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
             )
         )
@@ -154,7 +155,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                                     (makeCeilPredicate somethingOfA)
                                     (makeCeilPredicate somethingOfB)
                                 )
-                        , substitution = [(Mock.x, fOfB)]
+                        , substitution = Substitution.wrap [(Mock.x, fOfB)]
                         }
                     ]
                 )
@@ -162,7 +163,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = constructorTerm
                         , predicate = makeEqualsPredicate fOfA gOfA
-                        , substitution = [(Mock.x, fOfB)]
+                        , substitution = Substitution.wrap [(Mock.x, fOfB)]
                         }
                 )
             )
@@ -173,7 +174,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.constr10 Mock.a
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )
@@ -193,7 +194,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                                 (makeCeilPredicate somethingOfA)
                                 (makeCeilPredicate somethingOfB)
                             )
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
                 ]
             )
@@ -201,7 +202,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.functional20 somethingOfA somethingOfB
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
             )
         )
@@ -218,7 +219,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate fOfA)
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
                 ]
             )
@@ -226,7 +227,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
             )
         )
@@ -243,7 +244,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate fOfA)
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
                 ]
             )
@@ -251,7 +252,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
             )
         )
@@ -265,7 +266,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
                 ]
             )
@@ -273,7 +274,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.a
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
             )
         )
@@ -295,7 +296,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                                 (makeCeilPredicate fOfA)
                                 (makeCeilPredicate fOfB)
                             )
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
                 ]
             )
@@ -303,7 +304,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.functional20 fOfA fOfB
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(Mock.x, fOfB)]
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
             )
         )
@@ -315,7 +316,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkTop
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -326,7 +327,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                             testSort
                             (Domain.BuiltinPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )
@@ -342,7 +343,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate gOfB)
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -352,7 +353,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                         Mock.builtinMap
                             [(asConcrete fOfA, fOfB), (asConcrete gOfA, gOfB)]
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )
@@ -367,7 +368,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -375,7 +376,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.builtinList [fOfA, fOfB]
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )
@@ -390,7 +391,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )
@@ -407,12 +408,12 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
     somethingOfAExpanded = Predicated
         { term = somethingOfA
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     somethingOfBExpanded = Predicated
         { term = somethingOfB
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     mockSymbolOrAliasSorts =
         Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping

@@ -30,6 +30,7 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Unification.Data
+import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
                  ( testId )
@@ -244,7 +245,8 @@ tree_unifyFramingVariable =
                     Predicated
                         { term = patConcreteSet
                         , predicate = makeTruePredicate
-                        , substitution = [(frameVar, patRemainder)]
+                        , substitution = Substitution.wrap
+                            [(frameVar, patRemainder)]
                         }
             (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
         )
@@ -287,7 +289,7 @@ test_concretizeKeys =
                     symbolicKey
                     (asSymbolicPattern $ Set.fromList [symbolicKey])
             , predicate = Predicate.makeTruePredicate
-            , substitution =
+            , substitution = Substitution.unsafeWrap
                 [ (x, symbolicKey) ]
             }
 
@@ -336,7 +338,7 @@ test_concretizeKeysAxiom =
             ( Predicated
                 { term = symbolicKey
                 , predicate = Predicate.makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
             , mconcat
                 [ stepProof (StepProofVariableRenamings [])

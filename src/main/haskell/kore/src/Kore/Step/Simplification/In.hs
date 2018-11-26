@@ -139,7 +139,7 @@ makeEvaluateNonBoolIn tools patt1 patt2 =
                 -- TODO: Wrap in 'contained' and 'container'.
                 (ExpandedPattern.toMLPattern patt1)
                 (ExpandedPattern.toMLPattern patt2)
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof

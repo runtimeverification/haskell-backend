@@ -41,7 +41,7 @@ simplify str =
         [Predicated
             { term = asPurePattern (StringLiteralPattern str)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof

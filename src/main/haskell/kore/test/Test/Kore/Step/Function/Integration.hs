@@ -50,6 +50,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable, freshVariableFromVariable )
 import qualified SMT
@@ -67,7 +68,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -88,7 +89,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -109,7 +110,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -135,7 +136,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -159,7 +160,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.functional10 (Mock.functional10 Mock.c)
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -183,7 +184,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                             (Mock.functional10 (Mock.functional10 Mock.c))
                             (Mock.functional10 (Mock.functional10 Mock.d))
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -214,7 +215,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                                 (Mock.functional10 Mock.c)
                             )
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -240,7 +241,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.f Mock.d
                     , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -249,7 +250,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                     [ appliedMockEvaluator Predicated
                         { term   = Mock.d
                         , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -264,7 +265,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate Mock.cg)
                             (makeCeilPredicate Mock.cf)
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -274,7 +275,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.e
                                 , predicate = makeCeilPredicate Mock.cg
-                                , substitution = []
+                                , substitution = mempty
                                 }
                             ]
                         )
@@ -282,7 +283,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.e
                                 , predicate = makeCeilPredicate Mock.cf
-                                , substitution = []
+                                , substitution = mempty
                                 }
                             ]
                         )
@@ -302,7 +303,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.f Mock.e
                     , predicate = makeEqualsPredicate (Mock.f Mock.e) Mock.e
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             evaluate
@@ -316,7 +317,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                                 { term = Mock.e
                                 , predicate =
                                     makeEqualsPredicate (Mock.f Mock.e) Mock.e
-                                , substitution = []
+                                , substitution = mempty
                                 }
                             ]
                         )
@@ -336,7 +337,7 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                     , predicate =
                         makeCeilPredicate
                             (Mock.plain10 Mock.cf)
-                    , substitution =
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.var_x_1, Mock.cf), (Mock.var_y_1, Mock.b) ]
                     }
         actual <-
@@ -358,7 +359,8 @@ test_functionIntegration = give mockSymbolOrAliasSorts
                                                 (mkVar Mock.y)
                                             )
                                         )
-                                , substitution = [(Mock.x, Mock.cf)]
+                                , substitution =
+                                    Substitution.wrap [(Mock.x, Mock.cf)]
                                 }
                             ]
                         )

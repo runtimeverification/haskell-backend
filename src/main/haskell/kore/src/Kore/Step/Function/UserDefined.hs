@@ -129,7 +129,7 @@ axiomFunctionEvaluator
         Predicated
             { term = asPurePattern $ ApplicationPattern app'
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
 
 {-| 'reevaluateFunctions' re-evaluates functions after a user-defined function

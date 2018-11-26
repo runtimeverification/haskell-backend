@@ -9,22 +9,23 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Kore.AST.Common
-       ( AstLocation (..), Id (..), Sort (..), SortVariable (..),
-       SortedVariable (..) )
-import Kore.AST.MetaOrObject
-import Kore.ASTHelpers
-       ( ApplicationSorts (..) )
-import Kore.ASTUtils.SmartConstructors
-       ( mkAnd, mkBottom, mkEquals, mkTop, mkVar )
-import Kore.IndexedModule.MetadataTools
-       ( SymbolOrAliasSorts )
-import Kore.Predicate.Predicate
-       ( Predicate, makeEqualsPredicate, makeFalsePredicate,
-       makeTruePredicate )
-import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( Predicated (..), allVariables, mapVariables, toMLPattern )
-import Kore.Step.Pattern
+import           Kore.AST.Common
+                 ( AstLocation (..), Id (..), Sort (..), SortVariable (..),
+                 SortedVariable (..) )
+import           Kore.AST.MetaOrObject
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkAnd, mkBottom, mkEquals, mkTop, mkVar )
+import           Kore.IndexedModule.MetadataTools
+                 ( SymbolOrAliasSorts )
+import           Kore.Predicate.Predicate
+                 ( Predicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeTruePredicate )
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( Predicated (..), allVariables, mapVariables, toMLPattern )
+import           Kore.Step.Pattern
+import qualified Kore.Unification.Substitution as Substitution
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -36,13 +37,13 @@ test_expandedPattern =
             Predicated
                 { term = war "1"
                 , predicate = makeEquals (war "2") (war "3")
-                , substitution = [(W "4", war "5")]
+                , substitution = Substitution.wrap [(W "4", war "5")]
                 }
             (ExpandedPattern.mapVariables showVar
                 Predicated
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = [(V 4, var 5)]
+                    , substitution = Substitution.wrap [(V 4, var 5)]
                     }
             )
         )
@@ -54,7 +55,7 @@ test_expandedPattern =
                     Predicated
                         { term = var 1
                         , predicate = makeEquals (var 2) (var 3)
-                        , substitution = [(V 4, var 5)]
+                        , substitution = Substitution.wrap [(V 4, var 5)]
                         }
                 )
             )
@@ -72,7 +73,7 @@ test_expandedPattern =
                 Predicated
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = [(V 4, var 5)]
+                    , substitution = Substitution.wrap [(V 4, var 5)]
                     }
             )
         )
@@ -86,7 +87,7 @@ test_expandedPattern =
                 Predicated
                     { term = mkTop
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = [(V 4, var 5)]
+                    , substitution = Substitution.wrap [(V 4, var 5)]
                     }
             )
         )
@@ -97,7 +98,7 @@ test_expandedPattern =
                 Predicated
                     { term = var 1
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )
@@ -108,7 +109,7 @@ test_expandedPattern =
                 Predicated
                     { term = mkBottom
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = [(V 4, var 5)]
+                    , substitution = Substitution.wrap [(V 4, var 5)]
                     }
             )
         )
@@ -119,7 +120,7 @@ test_expandedPattern =
                 Predicated
                     { term = var 1
                     , predicate = makeFalsePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )

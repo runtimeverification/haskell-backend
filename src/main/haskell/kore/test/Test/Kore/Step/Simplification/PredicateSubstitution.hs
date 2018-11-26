@@ -43,6 +43,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
                  ( Hashable )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified SMT
@@ -73,7 +74,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         makeEqualsPredicate
                             (Mock.f Mock.a)
                             (Mock.g Mock.b)
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
@@ -86,7 +87,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         makeEqualsPredicate
                             (Mock.f (mkVar Mock.x))
                             (Mock.g (mkVar Mock.y))
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
@@ -101,7 +102,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         makeEqualsPredicate
                             Mock.functional00
                             Mock.functional01
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
@@ -114,7 +115,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         makeEqualsPredicate
                             (Mock.constr10 (mkVar Mock.x))
                             (Mock.constr10 (mkVar Mock.y))
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
@@ -126,7 +127,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = ()
                     , predicate = makeEqualsPredicate Mock.functional00 Mock.a
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
@@ -150,7 +151,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         makeEqualsPredicate
                             (Mock.f (mkVar Mock.x))
                             (Mock.f (mkVar Mock.y))
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
@@ -162,7 +163,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution =
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
@@ -185,7 +186,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         makeEqualsPredicate
                             (Mock.constr10 (mkVar Mock.x))
                             (Mock.f (mkVar Mock.y))
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [ (Mock.y, Mock.b)
                         ]
                     }
@@ -199,7 +200,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         makeEqualsPredicate
                             (Mock.f Mock.a)
                             (Mock.g Mock.a)
-                    , substitution =
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
@@ -228,7 +229,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                                 (Mock.f (mkVar Mock.x))
                                 (Mock.g Mock.a)
                             )
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [ (Mock.y, Mock.b)
                         ]
                     }
@@ -242,7 +243,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                         makeEqualsPredicate
                             (Mock.g Mock.b)
                             (Mock.g Mock.a)
-                    , substitution =
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
@@ -272,7 +273,7 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
                                 (Mock.f (mkVar Mock.x))
                                 (Mock.g Mock.a)
                             )
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [ (Mock.y, Mock.b)
                         ]
                     }

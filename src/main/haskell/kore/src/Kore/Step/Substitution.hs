@@ -18,6 +18,8 @@ import Control.Monad.Counter
        ( MonadCounter )
 import Control.Monad.Except
        ( ExceptT, lift, runExceptT, withExceptT )
+import Data.Foldable
+       ( fold )
 import Data.Reflection
        ( give )
 
@@ -43,11 +45,12 @@ import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Unification.Data
-                 ( UnificationProof (EmptyUnificationProof),
-                 UnificationSubstitution )
+                 ( UnificationProof (EmptyUnificationProof) )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError (..),
                  substitutionToUnifyOrSubError )
+import           Kore.Unification.Substitution
+                 ( Substitution )
 import           Kore.Unification.SubstitutionNormalization
                  ( normalizeSubstitution )
 import           Kore.Unification.UnifierImpl
@@ -92,7 +95,7 @@ normalize
               , predicate =
                     makeAndPredicate predicate
                     $ substitutionToPredicate substitution
-              , substitution = []
+              , substitution = mempty
               }
 
 normalizeSubstitutionAfterMerge
@@ -184,7 +187,7 @@ mergePredicatesAndSubstitutions
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> [Predicate level variable]
-    -> [UnificationSubstitution level variable]
+    -> [Substitution level variable]
     -> m
         ( PredicateSubstitution level variable
         , UnificationProof level variable
@@ -208,7 +211,7 @@ mergePredicatesAndSubstitutions
                     ( Predicated
                         { term = ()
                         , predicate = mergedPredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , EmptyUnificationProof
                     )
@@ -228,7 +231,7 @@ mergePredicatesAndSubstitutionsExcept
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> [Predicate level variable]
-    -> [UnificationSubstitution level variable]
+    -> [Substitution level variable]
     -> ExceptT
           ( UnificationOrSubstitutionError level variable )
           m
@@ -239,7 +242,7 @@ mergePredicatesAndSubstitutionsExcept
     tools substitutionSimplifier predicates substitutions
   = do
     let
-        mergedSubstitution = concat substitutions
+        mergedSubstitution = fold substitutions
         mergedPredicate =
             give (symbolOrAliasSorts tools) $
                 makeMultipleAndPredicate predicates
@@ -294,7 +297,7 @@ normalizePredicatedSubstitution
                     makeAndPredicate
                         predicate
                         (substitutionToPredicate substitution)
-                , substitution = []
+                , substitution = mempty
                 }
             , EmptyUnificationProof
             )

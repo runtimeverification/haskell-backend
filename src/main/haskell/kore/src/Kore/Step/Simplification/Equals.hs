@@ -62,6 +62,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
                  ( Hashable )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrOfExpandedPattern's.
@@ -227,12 +228,12 @@ makeEvaluate
     Predicated
         { term = firstTerm
         , predicate = PredicateTrue
-        , substitution = []
+        , substitution = (Substitution.unwrap -> [])
         }
     Predicated
         { term = secondTerm
         , predicate = PredicateTrue
-        , substitution = []
+        , substitution = (Substitution.unwrap -> [])
         }
   = do
     (result, _proof) <-
@@ -335,7 +336,7 @@ makeEvaluateTermsAssumesNoBottom
                 { term = mkTop
                 , predicate = give (MetadataTools.symbolOrAliasSorts tools)
                     $ makeEqualsPredicate firstTerm secondTerm
-                , substitution = []
+                , substitution = mempty
                 }
             ]
         , SimplificationProof
@@ -423,7 +424,7 @@ makeEvaluateTermsToPredicateSubstitution
                 ( Predicated
                     { term = ()
                     , predicate = makeEqualsPredicate first second
-                    , substitution = []
+                    , substitution = mempty
                     }
                 , SimplificationProof
                 )

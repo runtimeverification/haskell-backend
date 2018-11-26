@@ -30,6 +30,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import qualified Kore.Step.Simplification.Forall as Forall
                  ( makeEvaluate, simplify )
+import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -46,12 +47,12 @@ test_forallSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkForall Mock.x something1OfX
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 , Predicated
                     { term = mkForall Mock.x something2OfX
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -121,14 +122,15 @@ test_forallSimplification = give mockSymbolOrAliasSorts
                             )
                         )
                 , predicate = makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Predicated
                     { term = mkApp Mock.fSymbol [mkVar Mock.x]
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
-                    , substitution = [(Mock.x, gOfA), (Mock.y, fOfA)]
+                    , substitution =
+                        Substitution.wrap [(Mock.x, gOfA), (Mock.y, fOfA)]
                     }
             )
         )
@@ -139,14 +141,14 @@ test_forallSimplification = give mockSymbolOrAliasSorts
                 { term =
                     mkForall Mock.x (mkAnd fOfA (mkCeil gOfA))
                 , predicate = makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )
@@ -156,14 +158,14 @@ test_forallSimplification = give mockSymbolOrAliasSorts
             Predicated
                 { term = mkForall Mock.x (mkAnd fOfX (mkCeil gOfA))
                 , predicate = makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Predicated
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )
@@ -175,14 +177,14 @@ test_forallSimplification = give mockSymbolOrAliasSorts
             Predicated
                 { term = mkForall Mock.x (mkAnd fOfA (mkCeil fOfX))
                 , predicate = makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
-                    , substitution = []
+                    , substitution = mempty
                     }
             )
         )
@@ -197,14 +199,14 @@ test_forallSimplification = give mockSymbolOrAliasSorts
                             (mkEquals (mkVar Mock.y) hOfA)
                         )
                 , predicate = makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Predicated
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
-                    , substitution = [(Mock.y, hOfA)]
+                    , substitution = Substitution.wrap [(Mock.y, hOfA)]
                     }
             )
         )
@@ -236,12 +238,12 @@ test_forallSimplification = give mockSymbolOrAliasSorts
     something1OfXExpanded = Predicated
         { term = something1OfX
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     something2OfXExpanded = Predicated
         { term = something2OfX
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 

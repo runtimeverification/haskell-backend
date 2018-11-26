@@ -44,6 +44,7 @@ import           Kore.Step.Simplification.Data
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( freshVariableFromVariable )
 import qualified SMT
@@ -69,22 +70,22 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = mkApp sigmaSymbol [a, c]
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Predicated
                         { term = mkApp sigmaSymbol [a, d]
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Predicated
                         { term = mkApp sigmaSymbol [b, c]
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ,  Predicated
                         { term = mkApp sigmaSymbol [b, d]
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
         actual <-
@@ -156,7 +157,7 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                                 makeAndPredicate
                                     (makeEqualsPredicate fOfA fOfB)
                                     (makeEqualsPredicate gOfA gOfB)
-                            , substitution =
+                            , substitution = Substitution.unsafeWrap
                                 [ (x, fOfA)
                                 , (y, gOfA)
                                 ]
@@ -172,13 +173,13 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                         [   [ Predicated
                                 { term = a
                                 , predicate = makeEqualsPredicate fOfA fOfB
-                                , substitution = [ (x, fOfA) ]
+                                , substitution = Substitution.wrap [ (x, fOfA) ]
                                 }
                             ]
                         ,   [ Predicated
                                 { term = b
                                 , predicate = makeEqualsPredicate gOfA gOfB
-                                , substitution = [ (y, gOfA) ]
+                                , substitution = Substitution.wrap [ (y, gOfA) ]
                                 }
                             ]
                         ]
@@ -203,7 +204,7 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                                         (makeEqualsPredicate fOfA fOfB)
                                         (makeEqualsPredicate gOfA gOfB)
                                     )
-                            , substitution =
+                            , substitution = Substitution.unsafeWrap
                                 [ (freshVariableFromVariable z 1, gOfB)
                                 , (x, fOfA)
                                 , (y, gOfA)
@@ -230,7 +231,8 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                                                             fOfA
                                                             gOfA
                                                     , substitution =
-                                                        [ (zvar, gOfB) ]
+                                                        Substitution.wrap
+                                                            [ (zvar, gOfB) ]
                                                     }
                                                 ]
                                             )
@@ -245,13 +247,13 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                         [   [ Predicated
                                 { term = a
                                 , predicate = makeEqualsPredicate fOfA fOfB
-                                , substitution = [ (x, fOfA) ]
+                                , substitution = Substitution.wrap [ (x, fOfA) ]
                                 }
                             ]
                         ,   [ Predicated
                                 { term = b
                                 , predicate = makeEqualsPredicate gOfA gOfB
-                                , substitution = [ (y, gOfA) ]
+                                , substitution = Substitution.wrap [ (y, gOfA) ]
                                 }
                             ]
                         ]
@@ -309,28 +311,28 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
     aExpanded = Predicated
         { term = a
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     bExpanded = Predicated
         { term = b
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     cExpanded = Predicated
         { term = c
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     dExpanded = Predicated
         { term = d
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     gOfAExpanded :: ExpandedPattern Object variable
     gOfAExpanded = Predicated
         { term = gOfA
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     symbolOrAliasSortsMapping =
         [   ( aSymbol

@@ -176,18 +176,15 @@ makeEvaluateImpliesNonBool
         [ Predicated
             { term = t
             , predicate =
-                -- TODO: Remove fst
                 makeImpliesPredicate
-                    -- TODO: Remove fst
                     (makeAndPredicate
                         firstPredicate
                         (substitutionToPredicate firstSubstitution))
-                    -- TODO: Remove fst
                     (makeAndPredicate
                         secondPredicate
                         (substitutionToPredicate secondSubstitution)
                     )
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof
@@ -199,7 +196,7 @@ makeEvaluateImpliesNonBool patt1 patt2 =
                 (ExpandedPattern.toMLPattern patt1)
                 (ExpandedPattern.toMLPattern patt2)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof

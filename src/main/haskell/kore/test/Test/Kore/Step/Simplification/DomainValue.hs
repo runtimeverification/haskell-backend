@@ -53,7 +53,7 @@ test_domainValueSimplification =
                             testSort
                             (Domain.BuiltinPattern (mkStringLiteral "a"))
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )

@@ -34,7 +34,7 @@ substitutionSimplifier tools =
                         [ Predicated
                             { term = mkTop
                             , predicate = Predicate.wrapPredicate p
-                            , substitution = []
+                            , substitution = mempty
                             }
                         ]
                     , SimplificationProof

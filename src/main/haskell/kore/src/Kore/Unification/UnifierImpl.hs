@@ -47,6 +47,9 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Unification.Data
 import           Kore.Unification.Error
+import           Kore.Unification.Substitution
+                 ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -155,8 +158,8 @@ simplifyAnds tools substitutionSimplifier patterns = do
 
 groupSubstitutionByVariable
     :: Ord (variable level)
-    => UnificationSubstitution level variable
-    -> [UnificationSubstitution level variable]
+    => [(variable level, StepPattern level variable)]
+    -> [[(variable level, StepPattern level variable)]]
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
@@ -197,13 +200,14 @@ solveGroupedSubstitution tools substitutionSimplifier var patterns = do
         ( Predicated
             { term = ()
             , predicate = ExpandedPattern.predicate predSubst
-            , substitution = termAndSubstitution predSubst
+            , substitution = Substitution.wrap $ termAndSubstitution predSubst
             }
         , proof
         )
   where
     termAndSubstitution s =
-        (var, ExpandedPattern.term s) : ExpandedPattern.substitution s
+        (var, ExpandedPattern.term s)
+        : Substitution.unwrap (ExpandedPattern.substitution s)
 
 -- |Takes a potentially non-normalized substitution,
 -- and if it contains multiple assignments to the same variable,
@@ -226,7 +230,7 @@ normalizeSubstitutionDuplication
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> UnificationSubstitution level variable
+    -> Substitution level variable
     -> ExceptT
         ( UnificationOrSubstitutionError level variable )
         m
@@ -234,7 +238,7 @@ normalizeSubstitutionDuplication
         , UnificationProof level variable
         )
 normalizeSubstitutionDuplication tools substitutionSimplifier subst =
-    if null nonSingletonSubstitutions
+    if null nonSingletonSubstitutions || Substitution.isNormalized subst
         then return
             ( Predicated () Predicate.makeTruePredicate subst
             , EmptyUnificationProof
@@ -249,9 +253,8 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
                     varAndSubstList
             (finalSubst, proof) <-
                 normalizeSubstitutionDuplication tools substitutionSimplifier
-                    (concat singletonSubstitutions
-                     ++ Predicated.substitution predSubst
-                    )
+                    $ (Substitution.wrap $ concat singletonSubstitutions)
+                        <> Predicated.substitution predSubst
             let
                 pred' = give symbolOrAliasSorts
                     $ Predicate.makeAndPredicate
@@ -270,11 +273,11 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
                 )
   where
     symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
-    groupedSubstitution = groupSubstitutionByVariable subst
+    groupedSubstitution = groupSubstitutionByVariable $ Substitution.unwrap subst
     isSingleton [_] = True
     isSingleton _   = False
-    nonSingletonSubstitutions
-        :: [UnificationSubstitution level variable]
+    singletonSubstitutions, nonSingletonSubstitutions
+        :: [[(variable level, StepPattern level variable)]]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
     varAndSubstList :: [(variable level, [StepPattern level variable])]
@@ -308,7 +311,7 @@ mergePredicateSubstitutionList tools (p:ps) =
             , predicate =
                 give symbolOrAliasSorts
                 $ Predicate.makeAndPredicate p1 p2
-            , substitution = s1 ++ s2
+            , substitution = s1 <> s2
             }
         , proofs <> proof
         )

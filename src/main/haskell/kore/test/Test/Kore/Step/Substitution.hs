@@ -22,14 +22,15 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
+import           Kore.Step.Pattern
+                 ( StepPattern )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept,
                  normalizePredicatedSubstitution )
 import           Kore.Unification.Error
-import           Kore.Unification.Unifier
-                 ( UnificationSubstitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -50,7 +51,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Right Predicated
                         { term = ()
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [   ( Mock.x
                                 , Mock.constr10 Mock.a
                                 )
@@ -75,7 +76,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Right Predicated
                         { term = ()
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [   ( Mock.x
                                 , Mock.constr10 (mkVar Mock.y)
                                 )
@@ -100,7 +101,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Right Predicated
                         { term = ()
                         , predicate = makeFalsePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 normalize
@@ -137,7 +138,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Right Predicated
                         { term = ()
                         , predicate = makeEqualsPredicate Mock.a (Mock.f Mock.a)
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [   ( Mock.x
                                 , Mock.constr10 Mock.a
                                 )
@@ -167,7 +168,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                             makeEqualsPredicate
                                 ( mkVar Mock.y )
                                 ( Mock.f (mkVar Mock.y) )
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [   ( Mock.x
                                 , Mock.constr10 (Mock.f (mkVar Mock.y))
                                 )
@@ -195,7 +196,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                             makeEqualsPredicate
                                 ( mkVar Mock.y )
                                 ( Mock.functional10 (mkVar Mock.y) )
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [   ( Mock.x
                                 , Mock.constr10
                                     (Mock.functional10 $ mkVar Mock.y)
@@ -255,7 +256,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Predicated
                         { term = ()
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.constr10 Mock.a)
                             , (Mock.y, Mock.a)
                             ]
@@ -265,7 +266,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Predicated
                         { term = ()
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [ (Mock.x, Mock.constr10 Mock.a)
                             , (Mock.x, Mock.constr10 (mkVar Mock.y))
                             ]
@@ -278,7 +279,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Predicated
                         { term = ()
                         , predicate = makeEqualsPredicate Mock.cf Mock.cg
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.constr10 Mock.cf) ]
                         }
             actual <-
@@ -286,7 +287,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Predicated
                         { term = ()
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [ (Mock.x, Mock.constr10 Mock.cf)
                             , (Mock.x, Mock.constr10 Mock.cg)
                             ]
@@ -299,7 +300,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Predicated
                         { term = ()
                         , predicate = makeCeilPredicate (Mock.f Mock.a)
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.constr10 Mock.a)
                             , (Mock.y, Mock.a)
                             ]
@@ -309,7 +310,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
                     Predicated
                         { term = ()
                         , predicate = makeCeilPredicate (Mock.f (mkVar Mock.y))
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [ (Mock.x, Mock.constr10 Mock.a)
                             , (Mock.x, Mock.constr10 (mkVar Mock.y))
                             ]
@@ -328,8 +329,8 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
             []
 
     normalize
-        :: UnificationSubstitution Object Variable
-        -> UnificationSubstitution Object Variable
+        :: [(Variable Object, StepPattern Object Variable)]
+        -> [(Variable Object, StepPattern Object Variable)]
         -> IO
             (Either
                 ( UnificationOrSubstitutionError Object Variable )
@@ -338,11 +339,11 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     normalize s1 s2 = runExceptT $ do
         (result, _) <-
             Morph.hoist (runSMT . evalSimplifier)
-            $ mergePredicatesAndSubstitutionsExcept
+            . mergePredicatesAndSubstitutionsExcept
                 mockMetadataTools
                 (Mock.substitutionSimplifier mockMetadataTools)
                 []
-                [s1, s2]
+            $ Substitution.wrap <$> [s1, s2]
         return result
 
     normalizeWithPredicate

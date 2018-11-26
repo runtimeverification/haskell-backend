@@ -36,6 +36,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore.Comparators ()
@@ -54,12 +55,12 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = mkExists Mock.x something1OfX
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Predicated
                         { term = mkExists Mock.x something2OfX
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
         actual <-
@@ -112,7 +113,8 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                         { term = mkApp Mock.fSymbol [gOfA]
                         , predicate =
                             makeCeilPredicate (mkApp Mock.hSymbol [gOfA])
-                        , substitution = [(Mock.y, fOfA)]
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.y, fOfA)]
                         }
                     ]
         actual <-
@@ -121,7 +123,8 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = mkApp Mock.fSymbol [mkVar Mock.x]
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
-                    , substitution = [(Mock.x, gOfA), (Mock.y, fOfA)]
+                    , substitution =
+                        Substitution.wrap [(Mock.x, gOfA), (Mock.y, fOfA)]
                     }
         assertEqualWithExplanation "exists with substitution" expect actual
 
@@ -134,7 +137,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = fOfA
                         , predicate = makeCeilPredicate gOfA
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
         actual <-
@@ -143,7 +146,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
-                    , substitution = []
+                    , substitution = mempty
                     }
         assertEqualWithExplanation "exists with substitution" expect actual
 
@@ -156,7 +159,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = mkExists Mock.x fOfX
                         , predicate = makeCeilPredicate gOfA
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
         actual <-
@@ -165,7 +168,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
-                    , substitution = []
+                    , substitution = mempty
                     }
         assertEqualWithExplanation "exists on term" expect actual
 
@@ -179,7 +182,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                         { term = fOfA
                         , predicate =
                             makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
         actual <-
@@ -188,7 +191,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
-                    , substitution = []
+                    , substitution = mempty
                     }
         assertEqualWithExplanation "exists on predicate" expect actual
 
@@ -202,7 +205,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                         { term =
                             mkExists Mock.x (mkAnd fOfX (mkEquals fOfX gOfA))
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.y, hOfA)]
+                        , substitution = Substitution.wrap [(Mock.y, hOfA)]
                         }
                     ]
         actual <-
@@ -211,7 +214,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
-                    , substitution = [(Mock.y, hOfA)]
+                    , substitution = Substitution.wrap [(Mock.y, hOfA)]
                     }
         assertEqualWithExplanation "exists moves substitution" expect actual
 
@@ -225,7 +228,7 @@ test_existsSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
-                    , substitution = [(Mock.x, gOfA)]
+                    , substitution = Substitution.wrap [(Mock.x, gOfA)]
                     }
         assertEqualWithExplanation "exists reevaluates" expect actual
     ]
@@ -239,12 +242,12 @@ test_existsSimplification = give mockSymbolOrAliasSorts
     something1OfXExpanded = Predicated
         { term = something1OfX
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     something2OfXExpanded = Predicated
         { term = something2OfX
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     mockSymbolOrAliasSorts =
         Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping

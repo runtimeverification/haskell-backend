@@ -63,6 +63,7 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError (..) )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
 import           Kore.Variables.Free
@@ -431,7 +432,7 @@ matchVariableFunction
                 Predicated
                     { term = ()
                     , predicate
-                    , substitution = [(var, second)]
+                    , substitution = Substitution.wrap [(var, second)]
                     }
 matchVariableFunction _ _ _ _ = nothing
 
@@ -471,15 +472,20 @@ matchNonVarToPattern tools substitutionSimplifier first second
             -- predicates.
             -- TODO: Make a function for this.
             leftVars = freePureVariables first
+            rawSubstitution = Substitution.unwrap substitution
             (leftSubst, rightSubst) =
-                List.partition ((`elem` leftVars) . fst) substitution
+                List.partition ((`elem` leftVars) . fst) rawSubstitution
             finalPredicate = Predicated.toPredicate
-                Predicated { term = (), predicate, substitution = rightSubst }
+                Predicated
+                    { term = ()
+                    , predicate
+                    , substitution = Substitution.wrap rightSubst
+                    }
         (return . return)
             Predicated
                 { term = ()
                 , predicate = finalPredicate
-                , substitution = leftSubst
+                , substitution = Substitution.wrap leftSubst
                 }
 
 checkVariableEscape

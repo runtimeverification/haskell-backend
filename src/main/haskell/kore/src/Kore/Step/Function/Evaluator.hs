@@ -203,7 +203,7 @@ evaluateSortInjection tools unchanged ap = case apChild of
                     [ Predicated
                         { term = App_ apHeadNew grandChildren
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 , SimplificationProof

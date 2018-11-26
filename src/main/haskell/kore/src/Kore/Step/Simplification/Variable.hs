@@ -41,7 +41,7 @@ simplify var =
         [Predicated
             { term = asPurePattern (VariablePattern var)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof

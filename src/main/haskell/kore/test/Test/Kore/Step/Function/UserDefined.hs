@@ -45,6 +45,7 @@ import           Kore.Step.Simplification.Data
                  ( CommonStepPatternSimplifier, SimplificationProof (..),
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
+import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore
@@ -63,7 +64,7 @@ test_userDefinedFunction =
                         { term =
                             asApplication $ metaG (Var_ $ x patternMetaSort)
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
         actual <-
@@ -128,7 +129,7 @@ test_userDefinedFunction =
                         { term =
                             asApplication $ metaH (Var_ $ x patternMetaSort)
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
         actual <-
@@ -149,7 +150,7 @@ test_userDefinedFunction =
                                         asApplication
                                         $ metaH (Var_ $ x patternMetaSort)
                                     , predicate = makeTruePredicate
-                                    , substitution = []
+                                    , substitution = mempty
                                     }
                                 ]
                             , SimplificationProof
@@ -182,7 +183,7 @@ test_userDefinedFunction =
                                         asApplication
                                         $ metaH (Var_ $ x patternMetaSort)
                                     , predicate = makeFalsePredicate
-                                    , substitution = []
+                                    , substitution = mempty
                                     }
                                 ]
                             , SimplificationProof
@@ -203,7 +204,7 @@ test_userDefinedFunction =
                         { term =
                             asApplication $ metaG (Var_ $ b patternMetaSort)
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [(a patternMetaSort, Var_ $ b patternMetaSort)]
                         }
                     ]
@@ -234,7 +235,7 @@ test_userDefinedFunction =
                         { term =
                             asApplication $ metaH (Var_ $ c patternMetaSort)
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [   ( a patternMetaSort
                                 -- TODO(virgil): Do we want normalization here?
                                 , Var_ $ c patternMetaSort
@@ -265,7 +266,7 @@ test_userDefinedFunction =
                                         asApplication
                                         $ metaH (Var_ $ c patternMetaSort)
                                     , predicate = makeTruePredicate
-                                    , substitution =
+                                    , substitution = Substitution.wrap
                                         [   ( b patternMetaSort
                                             , Var_ $ c patternMetaSort
                                             )
@@ -386,7 +387,7 @@ evaluateWithAxiom
         Predicated
             { term = term
             , predicate = predicate
-            , substitution = sort substitution
+            , substitution = Substitution.modify sort substitution
             }
     evaluated =
         (<$>) fst

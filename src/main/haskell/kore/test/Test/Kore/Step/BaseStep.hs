@@ -38,6 +38,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationError (..), UnificationProof (..) )
 import qualified SMT
@@ -59,7 +60,7 @@ test_baseStep =
                     ( Predicated
                         { term = Var_ $ v1 patternMetaSort
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , mconcat
                         (map stepProof
@@ -74,7 +75,7 @@ test_baseStep =
                 Predicated
                     { term = Var_ $ v1 patternMetaSort
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomId
         assertEqualWithExplanation "" expect actual
@@ -85,7 +86,7 @@ test_baseStep =
                     ( Predicated
                         { term = Var_ $ y1 patternMetaSort
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , mconcat
                         (map stepProof
@@ -100,7 +101,7 @@ test_baseStep =
                 Predicated
                     { term = Var_ $ y1 patternMetaSort
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomId
         assertEqualWithExplanation "" expect actual
@@ -111,7 +112,7 @@ test_baseStep =
                     ( Predicated
                         { term = Var_ $ v1 patternMetaSort
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , mconcat
                         (map stepProof
@@ -129,7 +130,7 @@ test_baseStep =
                             (Var_ $ v1 patternMetaSort)
                             (Var_ $ v1 patternMetaSort)
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomMetaSigmaId
         assertEqualWithExplanation "" expect actual
@@ -142,7 +143,7 @@ test_baseStep =
                     ( Predicated
                         { term = metaF (Var_ $ b1 patternMetaSort)
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [   ( a1 patternMetaSort
                                 , metaF (Var_ $ b1 patternMetaSort)
                                 )
@@ -164,7 +165,7 @@ test_baseStep =
                             (Var_ $ a1 patternMetaSort)
                             (metaF (Var_ $ b1 patternMetaSort))
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomMetaSigmaId
         assertEqualWithExplanation "" expect actual
@@ -177,7 +178,7 @@ test_baseStep =
                     ( Predicated
                         { term = metaF (Var_ $ b1 patternMetaSort)
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [(a1 patternMetaSort, Var_ $ b1 patternMetaSort)]
                         }
                     , mconcat
@@ -196,7 +197,7 @@ test_baseStep =
                             (metaF $ Var_ $ a1 patternMetaSort)
                             (metaF $ Var_ $ b1 patternMetaSort)
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomMetaSigmaId
         assertEqualWithExplanation "" expect actual
@@ -224,7 +225,7 @@ test_baseStep =
                                 (Var_ $ b1 patternMetaSort)
                                 (Var_ $ b1 patternMetaSort)
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [(a1 patternMetaSort, Var_ $ b1 patternMetaSort)]
                         }
                     , mconcat
@@ -249,7 +250,7 @@ test_baseStep =
                                 (Var_ $ a1 patternMetaSort)
                             )
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -283,7 +284,7 @@ test_baseStep =
                                 (var_a1_0 patternMetaSort)
                                 (Var_ $ a1 patternMetaSort)
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , mconcat
                         (map stepProof
@@ -302,7 +303,7 @@ test_baseStep =
                 Predicated
                     { term = Var_ $ a1 patternMetaSort
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 AxiomPattern
                     { axiomPatternLeft = Var_ $ x1 patternMetaSort
@@ -329,7 +330,7 @@ test_baseStep =
                             (metaG (Var_ $ a1 patternMetaSort))
                             (metaF (Var_ $ b1 patternMetaSort))
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomMetaSigmaId
         assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
@@ -354,7 +355,7 @@ test_baseStep =
                                 (Var_ $ b1 patternMetaSort)
                             )
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -390,7 +391,7 @@ test_baseStep =
                             (Var_ $ a1 patternMetaSort)
                             (metaF (Var_ $ b1 patternMetaSort))
                     , predicate = makeTruePredicate
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [(b1 patternMetaSort, Var_ $ a1 patternMetaSort)]
                     }
                 axiomMetaSigmaId
@@ -418,7 +419,7 @@ test_baseStep =
                             (Var_ $ a1 patternMetaSort)
                             (metaH (Var_ $ b1 patternMetaSort))
                     , predicate = makeTruePredicate
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [(b1 patternMetaSort, Var_ $ a1 patternMetaSort)]
                     }
                 axiomMetaSigmaId
@@ -438,7 +439,7 @@ test_baseStep =
                             (Var_ $ a1 patternMetaSort)
                             (metaI (Var_ $ b1 patternMetaSort))
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomMetaSigmaId
         assertEqualWithExplanation "" expect actual
@@ -460,7 +461,7 @@ test_baseStep =
                                 (Var_ $ c1 patternMetaSort)
                             )
                     , predicate = makeTruePredicate
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [   ( a1 patternMetaSort
                             , metaSigma
                                 (Var_ $ c1 patternMetaSort)
@@ -492,7 +493,7 @@ test_baseStep =
                                 )
                             )
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomMetaSigmaId
         assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
@@ -509,7 +510,7 @@ test_baseStep =
                     ( Predicated
                         { term = metaSigma fOfB fOfB
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [(a1 patternMetaSort, fOfB)]
                         }
                     , mconcat
@@ -531,7 +532,7 @@ test_baseStep =
                             )
                             (Var_ $ a1 patternMetaSort)
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -564,7 +565,7 @@ test_baseStep =
                     ( Predicated
                         { term = metaSigma fOfC fOfC
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [ (a1 patternMetaSort, fOfC)
                             , (b1 patternMetaSort, Var_ $ c1 patternMetaSort)
                             ]
@@ -585,7 +586,7 @@ test_baseStep =
                             (metaSigma (Var_ $ a1 patternMetaSort) fOfB)
                             (Var_ $ a1 patternMetaSort)
                     , predicate = makeTruePredicate
-                    , substitution =
+                    , substitution = Substitution.wrap
                         [(a1 patternMetaSort, fOfC)]
                     }
                 AxiomPattern
@@ -617,7 +618,7 @@ test_baseStep =
                 Predicated
                     { term = StringLiteral_ "sl2"
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 AxiomPattern
                     { axiomPatternLeft = StringLiteral_ "sl1"
@@ -640,7 +641,7 @@ test_baseStep =
                             makeEqualsPredicate
                                 (metaG (Var_ $ a1 patternMetaSort))
                                 (metaF (Var_ $ a1 patternMetaSort))
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , mconcat
                         (map stepProof
@@ -658,7 +659,7 @@ test_baseStep =
                         makeEqualsPredicate
                             (metaG (Var_ $ a1 patternMetaSort))
                             (metaF (Var_ $ a1 patternMetaSort))
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomId
         assertEqualWithExplanation "" expect actual
@@ -676,7 +677,7 @@ test_baseStep =
                         { term = metaSigma fOfB fOfB
                         , predicate =
                             makeEqualsPredicate (metaG fOfB) (metaF fOfB)
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [(a1 patternMetaSort, fOfB)]
                         }
                     , mconcat
@@ -701,7 +702,7 @@ test_baseStep =
                         makeEqualsPredicate
                             (metaG (Var_ $ a1 patternMetaSort))
                             (metaF (Var_ $ a1 patternMetaSort))
-                    , substitution = []
+                    , substitution = mempty
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -735,7 +736,7 @@ test_baseStep =
                   ( Predicated
                       { term = Var_ $ a1 patternMetaSort
                       , predicate = preCondition a1
-                      , substitution = []
+                      , substitution = mempty
                       }
                   , mconcat
                       (map stepProof
@@ -750,7 +751,7 @@ test_baseStep =
                 Predicated
                     { term = Var_ $ a1 patternMetaSort
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 axiomId { axiomPatternRequires = preCondition x1 }
         assertEqualWithExplanation "" expect actual
@@ -791,7 +792,7 @@ test_baseStep =
                     ( Predicated
                         { term = Var_ $ var patternMetaSort
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , mconcat
                         (map stepProof
@@ -809,7 +810,7 @@ test_baseStep =
                             (Var_ $ var patternMetaSort)
                             (Var_ $ var patternMetaSort)
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -863,7 +864,8 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
                     { rewrittenPattern = Predicated
                         { term = Mock.cg
                         , predicate = makeCeilPredicate Mock.cg
-                        , substitution = [(Mock.x, Mock.a)]
+                        , substitution =
+                            Substitution.wrap [(Mock.x, Mock.a)]
                         }
                     , remainder = Predicated
                         { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
@@ -873,7 +875,7 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
                                     (makeCeilPredicate Mock.cg)
                                     (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                                 )
-                        , substitution = []
+                        , substitution = mempty
                         }
                     }
                 , mconcat
@@ -888,7 +890,7 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
             Predicated
                 { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
                 , predicate = makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
             AxiomPattern
                 { axiomPatternLeft =
@@ -919,7 +921,8 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
                         , predicate = makeAndPredicate
                             (makeCeilPredicate Mock.cf)
                             (makeCeilPredicate Mock.cg)
-                        , substitution = [(Mock.x, Mock.a)]
+                        , substitution = Substitution.wrap
+                            [(Mock.x, Mock.a)]
                         }
                     , remainder = Predicated
                         { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
@@ -931,7 +934,7 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
                                     (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                                 )
                             )
-                        , substitution = []
+                        , substitution = mempty
                         }
                     }
                 , mconcat
@@ -946,7 +949,7 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
             Predicated
                 { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
                 , predicate = makeCeilPredicate Mock.cf
-                , substitution = []
+                , substitution = mempty
                 }
             AxiomPattern
                 { axiomPatternLeft =
@@ -976,7 +979,7 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
                         { term = Mock.a
                         , predicate =
                             makeEqualsPredicate (Mock.f (mkVar Mock.x)) Mock.b
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , remainder = Predicated
                         { term = Mock.functionalConstr10 (mkVar Mock.x)
@@ -986,7 +989,7 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
                                     (Mock.f (mkVar Mock.x))
                                     Mock.b
                                 )
-                        , substitution = []
+                        , substitution = mempty
                         }
                     }
                 , mconcat
@@ -1001,7 +1004,7 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
             Predicated
                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                 , predicate = makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
             AxiomPattern
                 { axiomPatternLeft =

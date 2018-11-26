@@ -34,6 +34,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore.Comparators ()
@@ -93,7 +94,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = mkAnd plain0OfX plain1OfX
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <- evaluatePatterns plain0OfXExpanded plain1OfXExpanded
             assertEqualWithExplanation "" expect actual
@@ -103,7 +104,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
             assertEqualWithExplanation "" expect actual
@@ -116,19 +117,19 @@ test_andSimplification = give mockSymbolOrAliasSorts
                             makeAndPredicate
                                 (makeCeilPredicate fOfX)
                                 (makeCeilPredicate gOfX)
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 evaluatePatterns
                     Predicated
                         { term = mkTop
                         , predicate = makeCeilPredicate fOfX
-                        , substitution = []
+                        , substitution = mempty
                         }
                     Predicated
                         { term = mkTop
                         , predicate = makeCeilPredicate gOfX
-                        , substitution = []
+                        , substitution = mempty
                         }
             assertEqualWithExplanation "" expect actual
 
@@ -137,19 +138,20 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.y, fOfX), (Mock.z, gOfX)]
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.y, fOfX), (Mock.z, gOfX)]
                         }
             actual <-
                 evaluatePatterns
                     Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.y, fOfX)]
+                        , substitution = Substitution.wrap [(Mock.y, fOfX)]
                         }
                     Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.z, gOfX)]
+                        , substitution = Substitution.wrap [(Mock.z, gOfX)]
                         }
             assertEqualWithExplanation "" expect actual
             {-
@@ -183,14 +185,14 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = mkTop
                         , predicate = makeFalsePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 evaluatePatterns
                     Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [   ( Mock.y
                                 , Mock.functionalConstr10 (mkVar Mock.x)
                                 )
@@ -199,7 +201,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = mkTop
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [   ( Mock.y
                                 , Mock.functionalConstr11 (mkVar Mock.x)
                                 )
@@ -246,7 +248,8 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = fOfX
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.y, fOfX)]
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns yExpanded fOfXExpanded
             assertEqualWithExplanation "" expect actual
@@ -256,7 +259,8 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = fOfX
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.y, fOfX)]
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns fOfXExpanded yExpanded
             assertEqualWithExplanation "" expect actual
@@ -268,19 +272,19 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = Mock.constr10 fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 evaluatePatterns
                     Predicated
                         { term = Mock.constr10 fOfX
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     Predicated
                         { term = Mock.constr10 gOfX
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             assertEqualWithExplanation "" expect actual
 
@@ -291,12 +295,12 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = Mock.constr10 fOfX
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     Predicated
                         { term = Mock.constr11 gOfX
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             assertEqualWithExplanation "" expect actual
         ]
@@ -308,17 +312,17 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Predicated
                         { term = fOfX
                         , predicate = makeCeilPredicate gOfX
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Predicated
                         { term = gOfX
                         , predicate = makeCeilPredicate fOfX
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Predicated
                         { term = mkTop
@@ -326,7 +330,7 @@ test_andSimplification = give mockSymbolOrAliasSorts
                             makeAndPredicate
                                 (makeCeilPredicate fOfX)
                                 (makeCeilPredicate gOfX)
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
         actual <-
@@ -336,14 +340,14 @@ test_andSimplification = give mockSymbolOrAliasSorts
                     , Predicated
                         { term = mkTop
                         , predicate = makeCeilPredicate fOfX
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                     [ gOfXExpanded
                     , Predicated
                         { term = mkTop
                         , predicate = makeCeilPredicate gOfX
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -353,41 +357,41 @@ test_andSimplification = give mockSymbolOrAliasSorts
     yExpanded = Predicated
         { term = give mockSymbolOrAliasSorts $ mkVar Mock.y
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     fOfX = give mockSymbolOrAliasSorts $ Mock.f (mkVar Mock.x)
     fOfXExpanded = Predicated
         { term = fOfX
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     gOfX = give mockSymbolOrAliasSorts $ Mock.g (mkVar Mock.x)
     gOfXExpanded = Predicated
         { term = gOfX
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     plain0OfX = give mockSymbolOrAliasSorts $ Mock.plain10 (mkVar Mock.x)
     plain0OfXExpanded = Predicated
         { term = plain0OfX
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     plain1OfX = give mockSymbolOrAliasSorts $ Mock.plain11 (mkVar Mock.x)
     plain1OfXExpanded = Predicated
         { term = plain1OfX
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     bottomTerm = Predicated
         { term = mkBottom
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     falsePredicate = Predicated
         { term = mkTop
         , predicate = makeFalsePredicate
-        , substitution = []
+        , substitution = mempty
         }
 
 makeAnd

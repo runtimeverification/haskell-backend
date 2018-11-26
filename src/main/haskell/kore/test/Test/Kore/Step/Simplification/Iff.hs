@@ -30,6 +30,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
+import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -94,7 +95,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -104,7 +105,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                         [ Predicated
                             { term = Mock.a
                             , predicate = makeTruePredicate
-                            , substitution = []
+                            , substitution = mempty
                             }
                         ]
                     )
@@ -115,7 +116,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -124,7 +125,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                         [ Predicated
                             { term = Mock.a
                             , predicate = makeTruePredicate
-                            , substitution = []
+                            , substitution = mempty
                             }
                         ]
                         [ExpandedPattern.top]
@@ -136,7 +137,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = mkNot Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -146,7 +147,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                         [ Predicated
                             { term = Mock.a
                             , predicate = makeTruePredicate
-                            , substitution = []
+                            , substitution = mempty
                             }
                         ]
                     )
@@ -157,7 +158,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = mkNot Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -166,7 +167,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                         [ Predicated
                             { term = Mock.a
                             , predicate = makeTruePredicate
-                            , substitution = []
+                            , substitution = mempty
                             }
                         ]
                         []
@@ -220,7 +221,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -229,7 +230,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                 )
             -- iff(p, top) = p
@@ -238,7 +239,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -246,7 +247,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ExpandedPattern.top
                 )
@@ -256,7 +257,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = mkNot Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -265,7 +266,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                 )
             -- iff(p,bottom) = not p
@@ -274,7 +275,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = mkNot Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -282,7 +283,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ExpandedPattern.bottom
                 )
@@ -304,7 +305,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                                 (makeCeilPredicate Mock.cg)
                                 (makeEqualsPredicate (mkVar Mock.y) Mock.b)
                             )
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -312,12 +313,12 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = mkTop
                     , predicate = makeCeilPredicate Mock.cf
-                    , substitution = [(Mock.x, Mock.a)]
+                    , substitution = Substitution.wrap [(Mock.x, Mock.a)]
                     }
                 Predicated
                     { term = mkTop
                     , predicate = makeCeilPredicate Mock.cg
-                    , substitution = [(Mock.y, Mock.b)]
+                    , substitution = Substitution.wrap [(Mock.y, Mock.b)]
                     }
             )
         )
@@ -342,7 +343,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                                 (mkEquals (mkVar Mock.y) Mock.b)
                             )
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -350,12 +351,12 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate Mock.cf
-                    , substitution = [(Mock.x, Mock.a)]
+                    , substitution = Substitution.wrap [(Mock.x, Mock.a)]
                     }
                 Predicated
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate Mock.cg
-                    , substitution = [(Mock.y, Mock.b)]
+                    , substitution = Substitution.wrap [(Mock.y, Mock.b)]
                     }
             )
         )

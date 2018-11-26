@@ -34,7 +34,7 @@ test_charLiteralSimplification =
                 [ Predicated
                     { term = mkCharLiteral 'a'
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )

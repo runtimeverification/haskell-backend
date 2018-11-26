@@ -46,10 +46,11 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isConstructor_ )
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
-import           Kore.Unification.Data
-                 ( UnificationSubstitution )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
+import           Kore.Unification.Substitution
+                 ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Free
 import           Kore.Variables.Fresh
 
@@ -72,7 +73,7 @@ normalizeSubstitution
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
+    -> Substitution level variable
     -> ExceptT
         (SubstitutionError level variable)
         m
@@ -81,11 +82,14 @@ normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
   where
+    rawSubstitution :: [(variable level, StepPattern level variable)]
+    rawSubstitution = Substitution.unwrap substitution
+
     interestingVariables :: Set (variable level)
-    interestingVariables = extractVariables substitution
+    interestingVariables = extractVariables rawSubstitution
 
     variableToPattern :: Map (variable level) (StepPattern level variable)
-    variableToPattern = Map.fromList substitution
+    variableToPattern = Map.fromList rawSubstitution
 
     dependencies :: Map (variable level) (Set (variable level))
     dependencies =
@@ -103,7 +107,7 @@ normalizeSubstitution tools substitution =
     topologicalSortConverted =
         case topologicalSort (Set.toList <$> dependencies) of
             Left (ToplogicalSortCycles vars) -> do
-                checkCircularVariableDependency tools substitution vars
+                checkCircularVariableDependency tools rawSubstitution vars
                 Right Nothing
             Right result -> Right $ Just result
 
@@ -116,7 +120,7 @@ normalizeSubstitution tools substitution =
         :: [variable level]
         -> m (PredicateSubstitution level variable)
     normalizeSortedSubstitution' s =
-        normalizeSortedSubstitution (sortedSubstitution s) [] []
+        normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
     maybeToBottom
         :: Maybe [variable level]
@@ -128,7 +132,7 @@ normalizeSubstitution tools substitution =
 checkCircularVariableDependency
     :: (MetaOrObject level, Eq (variable level))
     =>  MetadataTools level StepperAttributes
-    -> UnificationSubstitution level variable
+    -> [(variable level, StepPattern level variable)]
     -> [variable level]
     -> Either (SubstitutionError level variable) ()
 checkCircularVariableDependency tools substitution vars =
@@ -177,21 +181,22 @@ variableToSubstitution varToPattern var =
 normalizeSortedSubstitution
     ::  ( MetaOrObject level
         , Eq (variable level)
+        , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
         , Hashable variable
         , MonadCounter m
         , FreshVariable variable
         )
-    => UnificationSubstitution level variable
-    -> UnificationSubstitution level variable
+    => [(variable level, StepPattern level variable)]
+    -> [(variable level, StepPattern level variable)]
     -> [(Unified variable, StepPattern level variable)]
     -> m (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
     return Predicated
         { term = ()
         , predicate = makeTruePredicate
-        , substitution = result
+        , substitution = Substitution.unsafeWrap result
         }
 normalizeSortedSubstitution ((_, Bottom_ _) : _) _ _ =
     return Predicated.bottomPredicate
@@ -216,7 +221,7 @@ extractVariables
     ::  ( MetaOrObject level
         , Ord (variable level)
         )
-    => UnificationSubstitution level variable
+    => [(variable level, StepPattern level variable)]
     -> Set (variable level)
 extractVariables unification =
     let (vars, _) = unzip unification

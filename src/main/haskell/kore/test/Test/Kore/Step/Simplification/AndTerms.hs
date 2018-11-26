@@ -33,6 +33,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier, liftPredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore.Comparators ()
@@ -50,7 +51,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <- simplifyUnify mockMetadataTools fOfA mkTop
             assertEqualWithExplanation "" (expected, Just expected) actual
@@ -60,7 +61,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <- simplifyUnify mockMetadataTools mkTop fOfA
             assertEqualWithExplanation "" (expected, Just expected) actual
@@ -90,7 +91,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 Predicated
                     { term = fOfA
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         actual <-
             simplifyUnify
@@ -104,7 +105,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.x, fOfA)]
+                        , substitution = Substitution.wrap [(Mock.x, fOfA)]
                         }
             actual <-
                 simplifyUnify
@@ -117,7 +118,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.x, fOfA)]
+                        , substitution = Substitution.wrap [(Mock.x, fOfA)]
                         }
             actual <-
                 simplifyUnify
@@ -132,7 +133,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = Mock.injective10 fOfA
                         , predicate = makeEqualsPredicate fOfA gOfA
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 simplifyUnify
@@ -144,7 +145,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Predicated
                         { term = Mock.injective10 fOfA
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 simplifyUnify
@@ -159,7 +160,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                                 (Mock.injective10 fOfA)
                                 (Mock.injective11 gOfA)
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Nothing
                     )
@@ -177,7 +178,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         { term = Mock.sortInjection10 Mock.cfSort0
                         , predicate =
                             makeEqualsPredicate Mock.cfSort0 Mock.cgSort0
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 simplifyUnify
@@ -191,7 +192,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         { term =
                             Mock.sortInjection10 Mock.cfSort0
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 simplifyUnify
@@ -220,7 +221,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                                     Mock.plain00Subsort
                                 )
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Nothing
                     )
@@ -242,7 +243,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                                     )
                                 )
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Nothing
                     )
@@ -305,7 +306,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         expected = Predicated
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeEqualsPredicate Mock.cf Mock.cg
-                            , substitution = []
+                            , substitution = mempty
                             }
                     in (expected, Just expected)
             actual <-
@@ -321,7 +322,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         expected = Predicated
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeTruePredicate
-                            , substitution = []
+                            , substitution = mempty
                             }
                     in (expected, Just expected)
             actual <-
@@ -363,7 +364,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         expected = Predicated
                             { term = aDomainValue
                             , predicate = makeTruePredicate
-                            , substitution = []
+                            , substitution = mempty
                             }
                     in (expected, Just expected)
             actual <-
@@ -391,7 +392,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         expected = Predicated
                             { term = mkStringLiteral "a"
                             , predicate = makeTruePredicate
-                            , substitution = []
+                            , substitution = mempty
                             }
                     in (expected, Just expected)
             actual <-
@@ -421,7 +422,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         expected = Predicated
                             { term = mkCharLiteral 'a'
                             , predicate = makeTruePredicate
-                            , substitution = []
+                            , substitution = mempty
                             }
                     in (expected, Just expected)
             actual <-
@@ -451,7 +452,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         expanded = Predicated
                             { term = fOfA
                             , predicate = makeTruePredicate
-                            , substitution = []
+                            , substitution = mempty
                             }
                     in (expanded, Just expanded)
             actual <-
@@ -466,7 +467,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         expanded = Predicated
                             { term = fOfA
                             , predicate = makeEqualsPredicate fOfA gOfA
-                            , substitution = []
+                            , substitution = mempty
                             }
                     in (expanded, Just expanded)
             actual <-
@@ -482,7 +483,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     ( Predicated
                         { term = mkAnd plain0OfA plain1OfA
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Nothing
                     )
@@ -497,7 +498,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     ( Predicated
                         { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Nothing
                     )
@@ -514,7 +515,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                             Mock.constr10
                                 (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Nothing
                     )
@@ -534,7 +535,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                             (mkAnd plain0OfA plain1OfA)
                             (mkAnd plain0OfB plain1OfB)
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 , Nothing
                 )
@@ -551,7 +552,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Just Predicated
                         { term = Mock.builtinMap [(Mock.aConcrete, Mock.b)]
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.x, Mock.b)]
+                        , substitution = Substitution.wrap [(Mock.x, Mock.b)]
                         }
             actual <-
                 unify
@@ -578,7 +579,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                                 , (Mock.bConcrete, fOfB)
                                 ]
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             , (Mock.x, fOfA)
                             ]
@@ -606,7 +607,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                                 , (Mock.bConcrete, fOfB)
                                 ]
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             , (Mock.x, fOfA)
                             ]
@@ -634,7 +635,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                                 , (Mock.bConcrete, fOfB)
                                 ]
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             , (Mock.x, fOfA)
                             ]
@@ -662,7 +663,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                                 , (Mock.bConcrete, fOfB)
                                 ]
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             , (Mock.x, fOfA)
                             ]
@@ -694,7 +695,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Just Predicated
                         { term = term1
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <- unify mockMetadataTools term1 term1
             assertEqualWithExplanation "" expect actual
@@ -706,7 +707,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Just Predicated
                         { term = Mock.builtinList [Mock.a, mkBottom]
                         , predicate = makeFalsePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <- unify mockMetadataTools term3 term4
             assertEqualWithExplanation "" expect actual
@@ -720,7 +721,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     Just Predicated
                         { term = Mock.builtinList $ [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.wrap
                             [(Mock.x, Mock.builtinList [Mock.b])]
                         }
             actual <- unify mockMetadataTools term5 term6

@@ -282,5 +282,5 @@ test_functionRegistry =
         Predicated
         { term = pat
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }

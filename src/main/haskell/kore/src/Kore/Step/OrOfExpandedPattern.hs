@@ -53,6 +53,7 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import qualified Kore.Unification.Substitution as Substitution
 
 {-| 'MultiOr' is a Matching logic or of its children
 
@@ -162,10 +163,10 @@ isTrue :: OrOfExpandedPattern level variable -> Bool
 isTrue
     (MultiOr
         [ Predicated
-            {term = Top_ _, predicate = PredicateTrue, substitution = []}
+            {term = Top_ _, predicate = PredicateTrue, substitution}
         ]
     )
-  = True
+  = Substitution.null substitution
 isTrue _ = False
 
 {-| 'fullCrossProduct' distributes all the elements in a list of or, making
@@ -432,5 +433,5 @@ toExpandedPattern (MultiOr patts) =
             Predicated
                 { term = foldl' mkOr p ps
                 , predicate = makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
