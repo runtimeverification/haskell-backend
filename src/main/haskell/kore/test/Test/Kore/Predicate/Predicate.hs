@@ -26,6 +26,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
 import           Kore.Step.Pattern
+import qualified Kore.Unification.Substitution as Substitution
 
 import Test.Kore
 import Test.Kore.Comparators ()
@@ -305,10 +306,10 @@ test_predicate = give mockSymbolOrAliasSorts
         ( do
             assertEqual "null substitutions is top"
                 makeTruePredicate
-                (substitutionToPredicate [] :: CommonPredicate Meta)
+                (substitutionToPredicate mempty :: CommonPredicate Meta)
             assertEqual "a = b"
                 (makeAndPredicate pr1 makeTruePredicate)
-                (substitutionToPredicate
+                (substitutionToPredicate $ Substitution.wrap
                     [(a patternMetaSort, Var_ $ b patternMetaSort)]
                 )
         )

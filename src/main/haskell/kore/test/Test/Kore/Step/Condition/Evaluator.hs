@@ -131,7 +131,7 @@ test_andNegation =
         Predicated
             { term = ()
             , predicate = makeFalsePredicate
-            , substitution = []
+            , substitution = mempty
             }
 
 evaluate

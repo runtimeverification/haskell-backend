@@ -92,7 +92,7 @@ makeEvaluateRewrites first second =
                 (ExpandedPattern.toMLPattern first)
                 (ExpandedPattern.toMLPattern second)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof

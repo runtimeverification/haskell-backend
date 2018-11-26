@@ -53,21 +53,24 @@ import Data.Set
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( mapPatternVariables )
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
-       ( pattern Bottom_, pattern Ceil_, pattern Equals_, pattern Floor_,
-       pattern In_, pattern Top_ )
-import Kore.Error
-       ( Error, koreFail )
-import Kore.IndexedModule.MetadataTools
-       ( SymbolOrAliasSorts )
-import Kore.Step.Pattern
-import Kore.Variables.Free
-       ( freePureVariables, pureAllVariables )
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( mapPatternVariables )
+import           Kore.ASTUtils.SmartConstructors
+import           Kore.ASTUtils.SmartPatterns
+                 ( pattern Bottom_, pattern Ceil_, pattern Equals_,
+                 pattern Floor_, pattern In_, pattern Top_ )
+import           Kore.Error
+                 ( Error, koreFail )
+import           Kore.IndexedModule.MetadataTools
+                 ( SymbolOrAliasSorts )
+import           Kore.Step.Pattern
+import           Kore.Unification.Substitution
+                 ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Variables.Free
+                 ( freePureVariables, pureAllVariables )
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
@@ -446,10 +449,12 @@ substitutionToPredicate
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level))
-    => [(variable level, StepPattern level variable)]
+    => Substitution level variable
     -> Predicate level variable
 substitutionToPredicate =
-    makeMultipleAndPredicate . fmap singleSubstitutionToPredicate
+    makeMultipleAndPredicate
+    . fmap singleSubstitutionToPredicate
+    . Substitution.unwrap
 
 singleSubstitutionToPredicate
     ::  ( MetaOrObject level

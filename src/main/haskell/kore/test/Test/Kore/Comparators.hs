@@ -33,6 +33,9 @@ import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
 import           Kore.Unification.Error
+import           Kore.Unification.Substitution
+                 ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
 
 import Test.Tasty.HUnit.Extensions
@@ -851,6 +854,40 @@ instance
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
+
+instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation (variable level)
+    )
+    => EqualWithExplanation (Substitution level variable)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation (variable level)
+    , Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    )
+    => SumEqualWithExplanation (Substitution level variable)
+  where
+    sumConstructorPair s1 s2
+        | s1Norm && s2Norm
+            = SumConstructorSameWithArguments
+                (EqWrap "NormalizedSubstitution" s1Inner s2Inner)
+        | not s1Norm && not s2Norm
+            = SumConstructorSameWithArguments
+                (EqWrap "Substitution" s1Inner s2Inner)
+        | otherwise =
+            SumConstructorDifferent
+                (printWithExplanation s1)
+                (printWithExplanation s2)
+      where
+        s1Norm = Substitution.isNormalized s1
+        s2Norm = Substitution.isNormalized s2
+        s1Inner = Substitution.unwrap s1
+        s2Inner = Substitution.unwrap s2
 
 instance
     ( Show level, Show (variable level), Show child

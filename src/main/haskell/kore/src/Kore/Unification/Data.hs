@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Unification.UnificationSolution
+Module      : Kore.Unification.Data
 Description : Datastructures and functionality for performing unification on
               Pure patterns
 Copyright   : (c) Runtime Verification, 2018
@@ -8,36 +8,14 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Unification.Data where
+module Kore.Unification.Data
+    ( UnificationProof (..)
+    ) where
 
 import Kore.AST.Common
-import Kore.AST.PureML
 import Kore.Proof.Functional
        ( FunctionalProof (..) )
 import Kore.Step.Pattern
-
-type UnificationSubstitution level variable =
-    [(variable level, StepPattern level variable)]
-
--- |'mapSubstitutionVariables' changes all the variables in the substitution
--- with the given function.
-mapSubstitutionVariables
-    ::  forall level variableFrom variableTo.
-        (variableFrom level -> variableTo level)
-    -> UnificationSubstitution level variableFrom
-    -> UnificationSubstitution level variableTo
-mapSubstitutionVariables variableMapper =
-    map (mapVariable variableMapper)
-  where
-    mapVariable
-        :: (variableFrom level -> variableTo level)
-        -> (variableFrom level, StepPattern level variableFrom)
-        -> (variableTo level, StepPattern level variableTo)
-    mapVariable
-        mapper
-        (variable, patt)
-      =
-        (mapper variable, mapPatternVariables mapper patt)
 
 -- |'UnificationProof' is meant to represent proof term stubs for various
 -- steps performed during unification

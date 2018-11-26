@@ -21,9 +21,11 @@ import Kore.Step.StepperAttributes
 import Kore.Substitution.Class
        ( Hashable )
 import Kore.Unification.Data
-       ( UnificationProof, UnificationSubstitution )
+       ( UnificationProof )
 import Kore.Unification.Error
        ( UnificationOrSubstitutionError )
+import Kore.Unification.Substitution
+       ( Substitution )
 import Kore.Variables.Fresh
        ( FreshVariable )
 
@@ -41,7 +43,7 @@ mergePredicatesAndSubstitutionsExcept
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> [Predicate level variable]
-    -> [UnificationSubstitution level variable]
+    -> [Substitution level variable]
     -> ExceptT
           ( UnificationOrSubstitutionError level variable )
           m

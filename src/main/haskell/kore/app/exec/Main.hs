@@ -438,7 +438,7 @@ mainParseSearchPattern indexedModule patternFileName
                 , predicate =
                     either (error . printError) id
                         (give symbolOrAliasSorts makePredicate predicateTerm)
-                , substitution = []
+                , substitution = mempty
                 }
         _ -> error "Unexpected non-conjunctive pattern"
 

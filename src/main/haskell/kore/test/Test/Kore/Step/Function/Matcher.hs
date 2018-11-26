@@ -42,6 +42,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationProof )
 import qualified SMT
@@ -62,7 +63,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                 Just Predicated
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     }
         actual <-
             match mockMetadataTools
@@ -76,7 +77,8 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                     Just Predicated
                         { term = ()
                         , predicate = makeTruePredicate
-                        , substitution = [(Mock.x, Mock.a)]
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.x, Mock.a)]
                         }
             actual <-
                 match mockMetadataTools
@@ -100,7 +102,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                             makeEqualsPredicate
                                 (Mock.f (mkVar Mock.x))
                                 (Mock.g Mock.a)
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 match mockMetadataTools
@@ -116,7 +118,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                             makeEqualsPredicate
                                 (Mock.plain10 (mkVar Mock.x))
                                 (Mock.plain11 Mock.a)
-                        , substitution = []
+                        , substitution = mempty
                         }
             actual <-
                 match mockMetadataTools
@@ -138,7 +140,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                 Just Predicated
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                     }
         actual <-
             match mockMetadataTools
@@ -171,7 +173,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                 Just Predicated
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     }
         actual <-
             match mockMetadataTools
@@ -183,7 +185,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.y, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(Mock.y, Mock.a)]
                     , term = ()
                     }
         actual <-
@@ -196,7 +198,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                     , term = ()
                     }
         actual <-
@@ -209,7 +211,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.y, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(Mock.y, Mock.a)]
                     , term = ()
                     }
         actual <-
@@ -222,7 +224,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -235,7 +237,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -248,7 +250,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -261,7 +263,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                     , term = ()
                     }
         actual <-
@@ -274,7 +276,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                     , term = ()
                     }
         actual <-
@@ -287,7 +289,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -300,7 +302,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -339,7 +341,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                     { predicate = makeEqualsPredicate
                         (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
                         (mkOr (Mock.plain10 Mock.a) Mock.b)
-                    , substitution = []
+                    , substitution = mempty
                     , term = ()
                     }
         actual <-
@@ -355,7 +357,7 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.functional00)]
+                    , substitution = Substitution.wrap [(Mock.x, Mock.functional00)]
                     , term = ()
                     }
         actual <-
@@ -368,7 +370,7 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeCeilPredicate Mock.cf
-                    , substitution = [(Mock.x, Mock.cf)]
+                    , substitution = Substitution.wrap [(Mock.x, Mock.cf)]
                     , term = ()
                     }
         actual <-
@@ -383,7 +385,7 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
                     { predicate = makeEqualsPredicate
                         (mkVar Mock.x)
                         (Mock.constr10 Mock.cf)
-                    , substitution = []
+                    , substitution = mempty
                     , term = ()
                     }
         actual <-
@@ -398,7 +400,7 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
                     { predicate = makeEqualsPredicate
                         (mkVar Mock.x)
                         (Mock.functional10 (mkVar Mock.y))
-                    , substitution = []
+                    , substitution = mempty
                     , term = ()
                     }
         actual <-
@@ -414,7 +416,8 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
             expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(x, Mock.sortInjectionSubSubToSub a)]
+                    , substitution =
+                        Substitution.wrap [(x, Mock.sortInjectionSubSubToSub a)]
                     , term = ()
                     }
         actual <-
@@ -432,7 +435,7 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
                     { predicate = makeEqualsPredicate
                         (mkVar Mock.x)
                         (Mock.functional10 (mkVar Mock.y))
-                    , substitution =
+                      , substitution = Substitution.unsafeWrap
                         [(xSub, Mock.sortInjectionSubSubToSub aSubSub)]
                     , term = ()
                     }
@@ -457,7 +460,7 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
                     { predicate = makeEqualsPredicate
                         (mkVar Mock.x)
                         (Mock.functional10 (mkVar Mock.y))
-                    , substitution =
+                      , substitution = Substitution.unsafeWrap
                         [(xSub, Mock.sortInjectionSubSubToSub aSubSub)]
                     , term = ()
                     }
@@ -477,7 +480,7 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
         let expect =
                 Just Predicated
                     { predicate = makeTruePredicate
-                    , substitution = [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                     , term = ()
                     }
         actual <-
@@ -512,7 +515,7 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
                 Just Predicated
                     { predicate = makeEqualsPredicate
                         (Mock.plain10 Mock.a) (Mock.plain11 Mock.b)
-                    , substitution = []
+                    , substitution = mempty
                     , term = ()
                     }
         actual <-
@@ -527,7 +530,7 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
                     { predicate = makeEqualsPredicate
                         (Mock.plain10 (mkVar Mock.x))
                         (Mock.plain11 Mock.b)
-                    , substitution = []
+                    , substitution = mempty
                     , term = ()
                     }
         actual <-
@@ -542,7 +545,7 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
                     { predicate = makeEqualsPredicate
                         (Mock.plain10 Mock.a)
                         (Mock.plain11 (mkVar Mock.x))
-                    , substitution = []
+                    , substitution = mempty
                     , term = ()
                     }
         actual <-
@@ -557,7 +560,7 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
                     { predicate = makeEqualsPredicate
                         (Mock.plain10 (mkVar Mock.x))
                         (Mock.plain11 (mkVar Mock.y))
-                    , substitution = []
+                    , substitution = mempty
                     , term = ()
                     }
         actual <-
@@ -576,7 +579,8 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate Mock.cf)
                             (makeEqualsPredicate Mock.cf Mock.cg)
-                    , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -592,7 +596,8 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate Mock.cf)
                             (makeEqualsPredicate Mock.cf Mock.cg)
-                    , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -614,7 +619,8 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate Mock.cf)
                             (makeEqualsPredicate Mock.cf Mock.cg)
-                    , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -630,7 +636,8 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate Mock.cf)
                             (makeEqualsPredicate Mock.cf Mock.cg)
-                    , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -646,7 +653,8 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate Mock.cf)
                             (makeEqualsPredicate Mock.cf Mock.cg)
-                    , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -668,7 +676,8 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate Mock.cf)
                             (makeEqualsPredicate Mock.cf Mock.cg)
-                    , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , substitution = Substitution.unsafeWrap
+                       [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -684,7 +693,8 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate Mock.cf)
                             (makeEqualsPredicate Mock.cf Mock.cg)
-                    , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
                     }
         actual <-
@@ -700,7 +710,8 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                         makeAndPredicate
                             (makeCeilPredicate Mock.cf)
                             (makeEqualsPredicate Mock.cf Mock.cg)
-                    , substitution = [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
                     }
         actual <-

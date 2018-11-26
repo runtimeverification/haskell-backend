@@ -152,7 +152,7 @@ searchPattern :: CommonExpandedPattern Object
 searchPattern = Predicated
     { term = searchVar
     , predicate = makeTruePredicate
-    , substitution = []
+    , substitution = mempty
     }
 
 -- | Turn a disjunction of "v = ???" into Just a set of the ???. If the input is

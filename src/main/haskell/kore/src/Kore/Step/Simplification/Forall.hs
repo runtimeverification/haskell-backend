@@ -116,7 +116,7 @@ makeEvaluate variable patt
             variable
             (ExpandedPattern.toMLPattern patt)
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     , SimplificationProof
     )

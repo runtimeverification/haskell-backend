@@ -73,12 +73,14 @@ import           Kore.Substitution.Class
                  ( Hashable (..), substitute )
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Data
-                 ( UnificationProof (..), UnificationSubstitution,
-                 mapSubstitutionVariables )
+                 ( UnificationProof (..) )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
+import           Kore.Unification.Substitution
+                 ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
@@ -384,8 +386,8 @@ stepWithAxiomForUnifier
                             -- Note that this filtering is reasonable only
                             -- because below we check that there are no axiom
                             -- variables left in the predicate.
-                            filter
-                                hasConfigurationVariable
+                            Substitution.modify
+                                (filter hasConfigurationVariable)
                                 normalizedRemainderSubstitution
                         }
         -- the remainder predicate is the start predicate from which we
@@ -400,9 +402,10 @@ stepWithAxiomForUnifier
         hasConfigurationVariable (ConfigurationVariable _, _) = True
 
     let
+        rawNormalizedSubstitution = Substitution.unwrap normalizedSubstitution
         unifiedSubstitution =
             ListSubstitution.fromList
-                (makeUnifiedSubstitution normalizedSubstitution)
+                (makeUnifiedSubstitution rawNormalizedSubstitution)
     -- Apply substitution to resulting configuration and conditions.
     rawResult <- substitute axiomRight unifiedSubstitution
 
@@ -422,7 +425,8 @@ stepWithAxiomForUnifier
         extractAxiomVariables =
             Set.fromList . mapMaybe toVariable . Set.toList
         substitutions =
-            Set.fromList . mapMaybe (toVariable . fst) $ normalizedSubstitution
+            Set.fromList . mapMaybe (toVariable . fst)
+            $ rawNormalizedSubstitution
 
     -- Unwrap internal 'StepperVariable's and collect the variable mappings
     -- for the proof.
@@ -466,10 +470,10 @@ stepWithAxiomForUnifier
                 -- TODO(virgil): Can there be unused variables? Should we
                 -- remove them?
                 , substitution =
-                    mapSubstitutionVariables
+                    Substitution.mapVariables
                         configurationVariableToCommon
                         (removeAxiomVariables normalizedSubstitution)
-                    `orElse` []
+                    `orElse` mempty
                 }
             , remainder =
                 if not (isFunctionPattern tools initialTerm)
@@ -888,14 +892,16 @@ addAxiomVariablesAsConfig
 
 removeAxiomVariables
     :: MetaOrObject level
-    => UnificationSubstitution level (StepperVariable variable)
-    -> UnificationSubstitution level (StepperVariable variable)
+    => Substitution level (StepperVariable variable)
+    -> Substitution level (StepperVariable variable)
 removeAxiomVariables =
-    filter
+    Substitution.wrap
+    . filter
         (\ (variable, _) -> case variable of
             AxiomVariable _         -> False
             ConfigurationVariable _ -> True
         )
+    . Substitution.unwrap
 
 makeUnifiedSubstitution
     :: MetaOrObject level

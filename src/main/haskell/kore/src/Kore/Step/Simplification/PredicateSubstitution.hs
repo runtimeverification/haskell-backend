@@ -36,8 +36,9 @@ import           Kore.Step.Substitution
 import           Kore.Substitution.Class
                  ( Hashable, substitute )
 import qualified Kore.Substitution.List as ListSubstitution
-import           Kore.Unification.Data
-                 ( UnificationSubstitution )
+import           Kore.Unification.Substitution
+                 ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -108,7 +109,7 @@ simplify
     let
         unifiedSubstitution =
             ListSubstitution.fromList
-                (makeUnifiedSubstitution substitution)
+                (makeUnifiedSubstitution $ Substitution.unwrap substitution)
     substitutedPredicate <-
         traverse
             (`substitute` unifiedSubstitution)
@@ -127,7 +128,7 @@ simplify
                         simplifier
                         substitutedPredicate
 
-            if null simplifiedSubstitution
+            if Substitution.null simplifiedSubstitution
                 then return
                     ( Predicated
                         { term = ()
@@ -142,7 +143,7 @@ simplify
                     -- enough to check that, say, simplifiedSubstitution's
                     -- variables are not among substitution's variables.
                     assertDistinctVariables
-                        (substitution ++ simplifiedSubstitution)
+                        (substitution <> simplifiedSubstitution)
                     (mergedPredicateSubstitution, _proof) <-
                         mergePredicatesAndSubstitutions
                             tools
@@ -160,9 +161,9 @@ assertDistinctVariables
     .   ( Show (variable level)
         , Eq (variable level)
         )
-    => UnificationSubstitution level variable
+    => Substitution level variable
     -> Simplifier ()
-assertDistinctVariables substitition =
+assertDistinctVariables subst =
     case filter moreThanOne (group variables) of
         [] -> return ()
         (var : _) -> error ("Duplicated variable: " ++ show var)
@@ -173,7 +174,7 @@ assertDistinctVariables substitition =
     moreThanOne _ = True
 
     variables :: [variable level]
-    variables = map fst substitition
+    variables = Substitution.variables subst
 
 makeUnifiedSubstitution
     :: MetaOrObject level

@@ -42,7 +42,7 @@ test_nextSimplification = give mockSymbolOrAliasSorts
                 [ Predicated
                     { term = mkNext Mock.a
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -51,7 +51,7 @@ test_nextSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )
@@ -68,7 +68,7 @@ test_nextSimplification = give mockSymbolOrAliasSorts
                                 (mkAnd Mock.b (mkEquals Mock.a Mock.b))
                             )
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -77,12 +77,12 @@ test_nextSimplification = give mockSymbolOrAliasSorts
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
-                        , substitution = []
+                        , substitution = mempty
                         }
                     , Predicated
                         { term = Mock.b
                         , predicate = makeEqualsPredicate Mock.a Mock.b
-                        , substitution = []
+                        , substitution = mempty
                         }
                     ]
                 )

@@ -78,7 +78,7 @@ expectTwoAxioms =
         ( Predicated
             { term = Var_ (v1 patternMetaSort)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         , (mconcat . map stepProof)
             [ StepProofVariableRenamings []
@@ -94,7 +94,7 @@ expectTwoAxioms =
                     (Var_ $ v1 patternMetaSort)
                     (Var_ $ v1 patternMetaSort)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         , (mconcat . map stepProof)
             [ StepProofVariableRenamings []
@@ -111,7 +111,7 @@ actualTwoAxioms =
         Predicated
             { term = Var_ (v1 patternMetaSort)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         [ rewriteIdentity
         , rewriteImplies
@@ -125,7 +125,7 @@ initialFailSimple =
                 (metaG (Var_ $ a1 patternMetaSort))
                 (metaF (Var_ $ b1 patternMetaSort))
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
 
 expectFailSimple :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
@@ -156,7 +156,7 @@ initialFailCycle =
                 (Var_ $ a1 patternMetaSort)
                 (Var_ $ a1 patternMetaSort)
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
 
 expectFailCycle :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
@@ -184,7 +184,7 @@ initialIdentity =
     Predicated
         { term = Var_ (v1 patternMetaSort)
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
 
 expectIdentity :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
@@ -281,7 +281,7 @@ expectOneStep =
     ( Predicated
         { term = metaG (Var_ $ v1 patternMetaSort)
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     , mconcat
         (map stepProof
@@ -300,7 +300,7 @@ actualOneStep =
         Predicated
             { term = metaF (Var_ $ v1 patternMetaSort)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         [ AxiomPattern
             { axiomPatternLeft = metaF (Var_ $ x1 patternMetaSort)
@@ -315,7 +315,7 @@ expectTwoSteps =
     ( Predicated
         { term = metaH (Var_ $ v1 patternMetaSort)
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     , (mconcat . map stepProof)
         [ StepProofVariableRenamings []
@@ -335,7 +335,7 @@ actualTwoSteps =
         Predicated
             { term = metaF (Var_ $ v1 patternMetaSort)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         axiomsSimpleStrategy
 
@@ -345,7 +345,7 @@ expectZeroStepLimit =
         ( Predicated
             { term = metaF (Var_ $ v1 patternMetaSort)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         , mempty
         )
@@ -358,7 +358,7 @@ actualZeroStepLimit =
         Predicated
             { term = metaF (Var_ $ v1 patternMetaSort)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         axiomsSimpleStrategy
 
@@ -367,7 +367,7 @@ expectStepLimit =
     ( Predicated
         { term = metaG (Var_ $ v1 patternMetaSort)
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     , (mconcat . map stepProof)
         [ StepProofVariableRenamings []
@@ -384,7 +384,7 @@ actualStepLimit =
         Predicated
             { term = metaF (Var_ $ v1 patternMetaSort)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         axiomsSimpleStrategy
 

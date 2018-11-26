@@ -75,6 +75,7 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError (..) )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 
 data SimplificationTarget = AndT | EqualsT | BothT
@@ -153,7 +154,7 @@ termEqualsAnd tools substitutionSimplifier =
                 ( Predicated
                     { term = mkTop
                     , predicate = makeEqualsPredicate first second
-                    , substitution = []
+                    , substitution = mempty
                     }
                 , SimplificationProof
                 )
@@ -501,7 +502,7 @@ toExpanded transformer tools first second =
         ( Predicated
             { term = term
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         , SimplificationProof
         )
@@ -600,7 +601,7 @@ bottomTermEquals
                 { term = mkTop
                 , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
                     makeNotPredicate predicate
-                , substitution = []
+                , substitution = mempty
                 }
             , SimplificationProof
             )
@@ -648,7 +649,7 @@ variableFunctionAndEquals
         ( Predicated
             { term = if v2 > v1 then second else first
             , predicate = makeTruePredicate
-            , substitution =
+            , substitution = Substitution.wrap
                 [ if v2 > v1
                     then (v1, second)
                     else (v2, first)
@@ -675,7 +676,7 @@ variableFunctionAndEquals
                     SimplificationType.Equals ->
                         case Ceil.makeEvaluateTerm tools second of
                             (pred', _proof) -> pred'
-            , substitution = [(v, second)]
+            , substitution = Substitution.wrap [(v, second)]
             }
         , SimplificationProof
         )
@@ -1098,7 +1099,7 @@ functionAnd
             -- one must be careful to not just drop the term.
             , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
                 makeEqualsPredicate first second
-            , substitution = []
+            , substitution = mempty
             }
         , SimplificationProof
         )

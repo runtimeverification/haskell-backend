@@ -30,6 +30,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Data
+import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
                  ( testId )
@@ -394,6 +395,7 @@ test_concretizeKeys =
                     (asSymbolicPattern $ Map.fromList [(symbolicKey, val)])
             , predicate = Predicate.makeTruePredicate
             , substitution =
+                Substitution.unsafeWrap
                 [ (v, val)
                 , (x, symbolicKey)
                 ]
@@ -448,7 +450,7 @@ test_concretizeKeysAxiom =
             ( Predicated
                 { term = val
                 , predicate = Predicate.makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
             , mconcat
                 [ stepProof (StepProofVariableRenamings [])

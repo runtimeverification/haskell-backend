@@ -159,7 +159,7 @@ makeEvaluateNonBoolIff
                         secondPredicate
                         (substitutionToPredicate secondSubstitution)
                     )
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof
@@ -171,7 +171,7 @@ makeEvaluateNonBoolIff patt1 patt2 =
                 (ExpandedPattern.toMLPattern patt1)
                 (ExpandedPattern.toMLPattern patt2)
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof

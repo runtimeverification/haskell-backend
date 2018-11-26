@@ -117,10 +117,9 @@ makeEvaluate
         [ Predicated
             { term = makeTermNot term
             , predicate = makeTruePredicate
-            , substitution = []
+            , substitution = mempty
             }
         , Predicated
-            -- TODO: Remove fst.
             { term = mkTop
             , predicate =
                 makeNotPredicate
@@ -128,7 +127,7 @@ makeEvaluate
                         predicate
                         (substitutionToPredicate substitution)
                     )
-            , substitution = []
+            , substitution = mempty
             }
         ]
     , SimplificationProof

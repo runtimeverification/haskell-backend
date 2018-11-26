@@ -64,6 +64,7 @@ import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.UnifierImpl
 import           SMT
                  ( SMT )
@@ -290,7 +291,7 @@ unificationResult (UnificationResultTerm pat) sub predicate =
     Predicated
         { term = extractPurePattern pat
         , predicate = predicate
-        , substitution = unificationSubstitution sub
+        , substitution = Substitution.wrap $ unificationSubstitution sub
         }
 
 newtype UnificationTerm level =
@@ -323,7 +324,8 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
                 { substitution =
                     sortBy
                         (compare `on` fst)
-                        (ExpandedPattern.substitution subst')
+                    `Substitution.modify`
+                    ExpandedPattern.substitution subst'
                 }
     assertEqualWithExplanation "" expect (subst'', proof')
 
@@ -400,8 +402,13 @@ unificationProcedureSuccess
                 (Mock.substitutionSimplifier tools)
                 (extractPurePattern term1)
                 (extractPurePattern term2)
-        let (Predicated { substitution, predicate }, proof') = result
-            actual = (sortBy (compare `on` fst) substitution, predicate, proof')
+        let
+            (Predicated { substitution, predicate }, proof') = result
+            actual =
+                ( sortBy (compare `on` fst) $ Substitution.unwrap substitution
+                , predicate
+                , proof'
+                )
         assertEqualWithExplanation "" expect actual
   where
     expect = (unificationSubstitution subst, predicate', proof)
@@ -606,8 +613,10 @@ test_unification =
     , testCase "Maps substitution variables"
         (assertEqualWithExplanation ""
             [(W "1", war' "2")]
-            (mapSubstitutionVariables showVar
-                [(V 1, var' 2)]
+            (Substitution.unwrap
+                . Substitution.mapVariables showVar
+                . Substitution.wrap
+                $ [(V 1, var' 2)]
             )
         )
     ]
@@ -764,7 +773,7 @@ simplifyPattern (UnificationTerm pStub) = do
     expandedPattern = Predicated
         { term = extractPurePattern pStub
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
 
 makeEqualsPredicate

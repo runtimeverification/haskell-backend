@@ -67,6 +67,7 @@ import           Kore.Step.Strategy
 import           Kore.Substitution.Class
                  ( Hashable, substitute )
 import qualified Kore.Substitution.List as ListSubstitution
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -187,7 +188,7 @@ makeExpandedPattern pat =
     Predicated
     { term = pat
     , predicate = makeTruePredicate
-    , substitution = []
+    , substitution = mempty
     }
 
 preSimplify
@@ -211,7 +212,7 @@ preSimplify simplifier
             OrOfExpandedPattern.extractPatterns simplifiedOrLhs
         listSubst =
             ListSubstitution.fromList
-                (map (Arrow.first asUnified) substitution)
+                (map (Arrow.first asUnified) (Substitution.unwrap substitution))
     newLhs <- substitute term listSubst
     newRhs <- substitute rhs listSubst
     newRequires <- traverse (`substitute` listSubst) requires

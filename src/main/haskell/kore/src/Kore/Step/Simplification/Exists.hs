@@ -46,8 +46,9 @@ import           Kore.Step.StepperAttributes
 import           Kore.Substitution.Class
                  ( Hashable (..), substitute )
 import qualified Kore.Substitution.List as ListSubstitution
-import           Kore.Unification.Unifier
-                 ( UnificationSubstitution )
+import           Kore.Unification.Substitution
+                 ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Free
                  ( freePureVariables )
 import           Kore.Variables.Fresh
@@ -176,14 +177,14 @@ makeEvaluate
                     term
                     predicate
                     localSubstitutionList
-                    globalSubstitution
+                    (Substitution.wrap globalSubstitution)
             (result, _proof) <-
                 ExpandedPattern.simplify
                     tools substitutionSimplifier simplifier substitutedPat
             return (result , SimplificationProof)
   where
     (Local localSubstitution, Global globalSubstitution) =
-        splitSubstitutionByVariable variable substitution
+        splitSubstitutionByVariable variable $ Substitution.unwrap substitution
     localSubstitutionList =
         ListSubstitution.fromList
             (map (Arrow.first asUnified) localSubstitution)
@@ -237,7 +238,7 @@ makeEvaluateNoFreeVarInSubstitution
                             Predicated
                                 { term = term
                                 , predicate = predicate
-                                , substitution = []
+                                , substitution = mempty
                                 }
                         )
                 , predicate = makeTruePredicate
@@ -260,7 +261,7 @@ substituteTermPredicate
     => StepPattern level variable
     -> Predicate level variable
     -> ListSubstitution.Substitution (Unified variable) (StepPattern level variable)
-    -> UnificationSubstitution level variable
+    -> Substitution level variable
     -> Simplifier
         (ExpandedPattern level variable, SimplificationProof level)
 substituteTermPredicate term predicate substitution globalSubstitution = do
@@ -282,12 +283,12 @@ newtype Global a = Global a
 splitSubstitutionByVariable
     :: Eq (variable level)
     => variable level
-    -> UnificationSubstitution level variable
-    ->  ( Local (UnificationSubstitution level variable)
-        , Global (UnificationSubstitution level variable)
+    -> [(variable level, StepPattern level variable)]
+    ->  ( Local [(variable level, StepPattern level variable)]
+        , Global [(variable level, StepPattern level variable)]
         )
 splitSubstitutionByVariable _ [] =
-    (Local [], Global [])
+    (Local mempty, Global mempty)
 splitSubstitutionByVariable variable ((var, term) : substs)
   | var == variable =
     (Local [(var, term)], Global substs)

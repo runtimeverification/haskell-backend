@@ -15,7 +15,11 @@ expandedPatternGen
     -> Gen (CommonExpandedPattern level)
 expandedPatternGen level = do
     term <- stepPatternGen level
-    return Predicated { term, predicate = makeTruePredicate, substitution = [] }
+    return Predicated
+        { term
+        , predicate = makeTruePredicate
+        , substitution = mempty
+        }
 
 orOfExpandedPatternGen
     :: MetaOrObject level

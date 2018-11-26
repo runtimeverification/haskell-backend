@@ -24,11 +24,12 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Pattern
+                 ( StepPattern )
 import           Kore.Step.StepperAttributes
-import           Kore.Unification.Data
-                 ( UnificationSubstitution )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.SubstitutionNormalization
 import           Kore.Variables.Fresh
 
@@ -40,7 +41,7 @@ test_substitutionNormalization =
         (assertEqual ""
             (Right [])
             (runNormalizeSubstitution
-                ([] :: UnificationSubstitution Meta Variable)
+                ([] :: [(Variable Meta, StepPattern Meta Variable)])
             )
         )
     , testCase "Simple substitution"
@@ -213,15 +214,15 @@ test_substitutionNormalization =
 
 runNormalizeSubstitution
     :: MetaOrObject level
-    => UnificationSubstitution level Variable
+    => [(Variable level, StepPattern level Variable)]
     -> Either
         (SubstitutionError level Variable)
-        (UnificationSubstitution level Variable)
+        [(Variable level, StepPattern level Variable)]
 runNormalizeSubstitution substitution =
-    fmap Predicated.substitution
+    fmap (Substitution.unwrap . Predicated.substitution)
     . evalCounter
     . runExceptT
-    $ normalizeSubstitution mockMetadataTools substitution
+    $ normalizeSubstitution mockMetadataTools (Substitution.wrap substitution)
 
 mockSymbolOrAliasSorts :: MetaOrObject level => SymbolOrAliasSorts level
 mockSymbolOrAliasSorts = const ApplicationSorts

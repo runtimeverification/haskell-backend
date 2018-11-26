@@ -60,7 +60,9 @@ import           Kore.Predicate.Predicate
                  substitutionToPredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
-import           Kore.Unification.Data
+import           Kore.Unification.Substitution
+                 ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Free
                  ( pureAllVariables )
 
@@ -80,7 +82,7 @@ quadratic complexity.
 data Predicated level variable child = Predicated
     { term :: child
     , predicate :: !(Predicate level variable)
-    , substitution :: !(UnificationSubstitution level variable)
+    , substitution :: !(Substitution level variable)
     }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
@@ -97,12 +99,12 @@ instance
     ) =>
     Applicative (Predicated level variable)
   where
-    pure a = Predicated a makeTruePredicate []
+    pure a = Predicated a makeTruePredicate mempty
     a <*> b =
         Predicated
             { term = f x
             , predicate = predicate1 `makeAndPredicate` predicate2
-            , substitution = substitution1 ++ substitution2
+            , substitution = substitution1 <> substitution2
             }
       where
         Predicated f predicate1 substitution1 = a
@@ -140,7 +142,8 @@ mapVariables
     Predicated
         { term = mapPatternVariables variableMapper term
         , predicate = Predicate.mapVariables variableMapper predicate
-        , substitution = mapSubstitutionVariables variableMapper substitution
+        , substitution =
+            Substitution.mapVariables variableMapper substitution
         }
 
 {-|'allVariables' extracts all variables, including the quantified ones,
@@ -155,7 +158,7 @@ allVariables
   =
     pureAllVariables term
     <> Predicate.allVariables predicate
-    <> allSubstitutionVars substitution
+    <> allSubstitutionVars (Substitution.unwrap substitution)
   where
     allSubstitutionVars sub =
         foldl
@@ -213,7 +216,7 @@ bottom =
     Predicated
         { term      = mkBottom
         , predicate = makeFalsePredicate
-        , substitution = []
+        , substitution = mempty
         }
 
 {-|'top' is an expanded pattern that has a top condition and that
@@ -224,7 +227,7 @@ top =
     Predicated
         { term      = mkTop
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
 
 {-| 'isTop' checks whether an ExpandedPattern is equivalent to a top Pattern.
@@ -232,8 +235,8 @@ top =
 isTop :: ExpandedPattern level variable -> Bool
 isTop
     Predicated
-        { term = Top_ _, predicate = PredicateTrue, substitution = [] }
-  = True
+        { term = Top_ _, predicate = PredicateTrue, substitution }
+  = Substitution.null substitution
 isTop _ = False
 
 {-| 'isBottom' checks whether an ExpandedPattern is equivalent to a bottom
@@ -267,7 +270,7 @@ fromPurePattern term =
             Predicated
                 { term
                 , predicate = makeTruePredicate
-                , substitution = []
+                , substitution = mempty
                 }
 
 topPredicate :: MetaOrObject level => PredicateSubstitution level variable

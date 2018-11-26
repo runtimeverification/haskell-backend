@@ -51,6 +51,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
                  ( Hashable )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified SMT
@@ -97,7 +98,7 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                             )
                             mkTop
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
 
@@ -135,7 +136,7 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                             )
                             mkTop
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
 
@@ -149,7 +150,8 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                                 (Mock.plain10 Mock.cf)
                                 (Mock.plain10 (mkVar Mock.x))
                             )
-                        , substitution = [(Mock.y, Mock.b)]
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.y, Mock.b)]
                         }
                     ]
         actual <-
@@ -168,7 +170,7 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                             )
                         )
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "zzzmap function" $ do
@@ -202,7 +204,7 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                 Predicated
                     { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     ]
@@ -219,7 +221,7 @@ test_substitute =
                                 Mock.a
                                 (Mock.functionalConstr10 (mkVar Mock.x))
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.a)
                             , (Mock.y, Mock.functionalConstr10 Mock.a)
                             ]
@@ -248,7 +250,7 @@ test_substitute =
                     [ ExpandedPattern.Predicated
                         { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.a)
                             , (Mock.y, Mock.a)
                             ]
@@ -281,7 +283,7 @@ test_substituteMap =
                                 Mock.a
                                 (mkDomainBuiltinMap [(Mock.a, mkVar Mock.x)])
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.a)
                             , (Mock.y, mkDomainBuiltinMap [(Mock.a, Mock.a)])
                             ]
@@ -321,7 +323,7 @@ test_substituteList =
                                 Mock.a
                                 (mkDomainBuiltinList [Mock.a, mkVar Mock.x])
                         , predicate = makeTruePredicate
-                        , substitution =
+                        , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.a)
                             , (Mock.y, mkDomainBuiltinList [Mock.a, Mock.a])
                             ]

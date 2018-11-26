@@ -35,6 +35,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
+import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
                  ( testId )
@@ -53,7 +54,7 @@ test_floorSimplification =
                     { term = mkTop
                     , predicate = give mockSymbolOrAliasSorts $
                         makeFloorPredicate (mkOr a b)
-                    , substitution = []
+                    , substitution = mempty
                     }
                 ]
             )
@@ -116,7 +117,7 @@ test_floorSimplification =
                         give mockSymbolOrAliasSorts $ makeAndPredicate
                             (makeFloorPredicate a)
                             (makeEqualsPredicate fOfA gOfA)
-                    , substitution = [(x, fOfB)]
+                    , substitution = Substitution.wrap [(x, fOfB)]
                     }
                 ]
             )
@@ -124,7 +125,7 @@ test_floorSimplification =
                 Predicated
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = [(x, fOfB)]
+                    , substitution = Substitution.wrap [(x, fOfB)]
                     }
             )
         )
@@ -158,12 +159,12 @@ test_floorSimplification =
     aExpanded = Predicated
         { term = a
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     bExpanded = Predicated
         { term = b
         , predicate = makeTruePredicate
-        , substitution = []
+        , substitution = mempty
         }
     symbolOrAliasSortsMapping =
         [   ( aSymbol

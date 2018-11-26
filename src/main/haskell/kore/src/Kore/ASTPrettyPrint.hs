@@ -25,6 +25,9 @@ import           Kore.Parser.CString
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.ExpandedPattern
+import           Kore.Unification.Substitution
+                 ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
@@ -790,6 +793,11 @@ instance (MetaOrObject level, PrettyPrint (variable level))
   where
     prettyPrint flags pat =
         prettyPrint flags (unwrapPredicate pat)
+
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (Substitution level variable)
+  where
+      prettyPrint flags = prettyPrint flags . Substitution.unwrap
 
 instance (MetaOrObject level, PrettyPrint (variable level))
     => PrettyPrint (ExpandedPattern level variable)
