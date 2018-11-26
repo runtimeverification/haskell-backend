@@ -24,7 +24,7 @@ result:
 f :: a -> b -> ExceptT c m d
 f arg1 arg2 =
     traceExceptT
-        "stepWithAxiomForUnifier"
+        "stepWithRuleForUnifier"
         ("arg1=" ++ show arg1 ++ ",arg2=" ++ show arg2)
     $ do
         <actual f function body>
@@ -33,9 +33,9 @@ f arg1 arg2 =
 The output will look something like:
 
 ```
-starting stepWithAxiomForUnifier with arg1=...,arg2=...
+starting stepWithRuleForUnifier with arg1=...,arg2=...
 <extra tracing done by the action>
-ending stepWithAxiomForUnifier with result: ...
+ending stepWithRuleForUnifier with result: ...
 ```
 
 In order to make the output readable, you can filter it through debugFilter.py,

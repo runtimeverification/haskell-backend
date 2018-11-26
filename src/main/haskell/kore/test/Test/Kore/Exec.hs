@@ -43,7 +43,7 @@ import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Step
-                 ( allAxioms, anyAxiom )
+                 ( allRewrites, anyRewrite )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import qualified SMT
@@ -58,7 +58,7 @@ test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
         indexedModule
         inputPattern
         Unlimited
-        anyAxiom
+        anyRewrite
     indexedModule = indexedMyModule $ Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
@@ -96,7 +96,7 @@ test_search =
                 indexedModule
                 inputPattern
                 Unlimited
-                allAxioms
+                allRewrites
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
         finalPattern <- SMT.runSMT SMT.defaultConfig $ evalSimplifier simplifier

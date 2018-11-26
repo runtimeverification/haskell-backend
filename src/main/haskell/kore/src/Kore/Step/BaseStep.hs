@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.BaseStep
-    ( AxiomPattern (..)
+    ( RulePattern
     , StepperConfiguration (..)
     , StepResult (..)
     , StepperVariable (..)
@@ -19,8 +19,8 @@ module Kore.Step.BaseStep
     , simplificationProof
     , stepProof
     , stepProofSumName
-    , stepWithAxiom
-    , stepWithAxiomForUnifier
+    , stepWithRule
+    , stepWithRuleForUnifier
     ) where
 
 import qualified Control.Arrow as Arrow
@@ -53,6 +53,9 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Proof.Functional
                  ( FunctionalProof (..) )
 import           Kore.Step.AxiomPatterns
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+import           Kore.Step.AxiomPatterns as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
@@ -202,7 +205,7 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Function.Matcher.matchAsUnification' to be used in
--- 'stepWithAxiomForUnifier'.
+-- 'stepWithRuleForUnifier'.
 newtype UnificationProcedure level =
     UnificationProcedure
         ( forall variable m
@@ -237,7 +240,7 @@ newtype UnificationProcedure level =
     Returns 'Left' only if there is an error. It is not an error if the axiom
     does not apply to the given configuration.
 -}
-stepWithAxiomForUnifier
+stepWithRuleForUnifier
     :: forall level variable .
         ( FreshVariable variable
         , Hashable variable
@@ -253,7 +256,7 @@ stepWithAxiomForUnifier
     -> PredicateSubstitutionSimplifier level Simplifier
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
-    -> AxiomPattern level
+    -> RulePattern level
     -- ^ Rewriting axiom
     -> ExceptT
         (StepError level variable)
@@ -261,7 +264,7 @@ stepWithAxiomForUnifier
         ( StepResult level variable
         , StepProof level variable
         )
-stepWithAxiomForUnifier
+stepWithRuleForUnifier
     tools
     (UnificationProcedure unificationProcedure')
     substitutionSimplifier
@@ -269,10 +272,10 @@ stepWithAxiomForUnifier
         { term = initialTerm
         , substitution = initialSubstitution
         }
-    axiom@AxiomPattern
-        { axiomPatternLeft = axiomLeftRaw
-        , axiomPatternRight = axiomRightRaw
-        , axiomPatternRequires = axiomRequiresRaw
+    axiom@RulePattern
+        { left = axiomLeftRaw
+        , right = axiomRightRaw
+        , requires = axiomRequiresRaw
         }
   = do
     -- Distinguish configuration (pattern) and axiom variables by lifting them
@@ -549,7 +552,7 @@ stepWithAxiomForUnifier
     sortTools :: SymbolOrAliasSorts level
     sortTools = MetadataTools.symbolOrAliasSorts tools
 
-stepWithAxiom
+stepWithRule
     ::  ( FreshVariable variable
         , Hashable variable
         , MetaOrObject level
@@ -563,7 +566,7 @@ stepWithAxiom
     -> PredicateSubstitutionSimplifier level Simplifier
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
-    -> AxiomPattern level
+    -> RewriteRule level
     -- ^ Rewriting axiom
     -> ExceptT
         (StepError level variable)
@@ -571,11 +574,13 @@ stepWithAxiom
         ( StepResult level variable
         , StepProof level variable
         )
-stepWithAxiom tools substitutionSimplifier =
-    stepWithAxiomForUnifier
+stepWithRule tools substitutionSimplifier patt (RewriteRule rule) =
+    stepWithRuleForUnifier
         tools
         (UnificationProcedure unificationProcedure)
         substitutionSimplifier
+        patt
+        rule
 
 unificationProofStepVariablesToCommon
     ::  ( FreshVariable variable

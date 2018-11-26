@@ -27,6 +27,10 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.AxiomPatterns
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+import           Kore.Step.AxiomPatterns as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
@@ -50,26 +54,26 @@ a1 = Variable (testId "#a1")
 b1 = Variable (testId "#b1")
 x1 = Variable (testId "#x1")
 
-rewriteIdentity :: AxiomPattern Meta
+rewriteIdentity :: RewriteRule Meta
 rewriteIdentity =
-    AxiomPattern
-        { axiomPatternLeft = Var_ (x1 patternMetaSort)
-        , axiomPatternRight = Var_ (x1 patternMetaSort)
-        , axiomPatternRequires = makeTruePredicate
-        , axiomPatternAttributes = def
+    RewriteRule RulePattern
+        { left = Var_ (x1 patternMetaSort)
+        , right = Var_ (x1 patternMetaSort)
+        , requires = makeTruePredicate
+        , attributes = def
         }
 
-rewriteImplies :: AxiomPattern Meta
+rewriteImplies :: RewriteRule Meta
 rewriteImplies =
-    AxiomPattern
-        { axiomPatternLeft = Var_ (x1 patternMetaSort)
-        , axiomPatternRight =
+    RewriteRule $ RulePattern
+        { left = Var_ (x1 patternMetaSort)
+        , right =
             Implies_
                 patternMetaSort
                 (Var_ $ x1 patternMetaSort)
                 (Var_ $ x1 patternMetaSort)
-        , axiomPatternRequires = makeTruePredicate
-        , axiomPatternAttributes = def
+        , requires = makeTruePredicate
+        , attributes = def
         }
 
 expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta Variable)]
@@ -136,15 +140,15 @@ actualFailSimple =
     runStep
         mockMetadataTools
         initialFailSimple
-        [ AxiomPattern
-            { axiomPatternLeft =
+        [ RewriteRule $ RulePattern
+            { left =
                 metaSigma
                     (Var_ $ x1 patternMetaSort)
                     (Var_ $ x1 patternMetaSort)
-            , axiomPatternRight =
+            , right =
                 Var_ (x1 patternMetaSort)
-            , axiomPatternRequires = makeTruePredicate
-            , axiomPatternAttributes = def
+            , requires = makeTruePredicate
+            , attributes = def
             }
         ]
 
@@ -167,15 +171,15 @@ actualFailCycle =
     runStep
         mockMetadataTools
         initialFailCycle
-        [ AxiomPattern
-            { axiomPatternLeft =
+        [ RewriteRule $ RulePattern
+            { left =
                 metaSigma
                     (metaF (Var_ $ x1 patternMetaSort))
                     (Var_ $ x1 patternMetaSort)
-            , axiomPatternRight =
+            , right =
                 Var_ (x1 patternMetaSort)
-            , axiomPatternRequires = makeTruePredicate
-            , axiomPatternAttributes = def
+            , requires = makeTruePredicate
+            , attributes = def
             }
         ]
 
@@ -260,19 +264,19 @@ test_simpleStrategy =
             =<< actualZeroStepLimit)
     ]
 
-axiomsSimpleStrategy :: [AxiomPattern Meta]
+axiomsSimpleStrategy :: [RewriteRule Meta]
 axiomsSimpleStrategy =
-    [ AxiomPattern
-        { axiomPatternLeft = metaF (Var_ $ x1 patternMetaSort)
-        , axiomPatternRight = metaG (Var_ $ x1 patternMetaSort)
-        , axiomPatternRequires = makeTruePredicate
-        , axiomPatternAttributes = def
+    [ RewriteRule $ RulePattern
+        { left = metaF (Var_ $ x1 patternMetaSort)
+        , right = metaG (Var_ $ x1 patternMetaSort)
+        , requires = makeTruePredicate
+        , attributes = def
         }
-    , AxiomPattern
-        { axiomPatternLeft = metaG (Var_ $ x1 patternMetaSort)
-        , axiomPatternRight = metaH (Var_ $ x1 patternMetaSort)
-        , axiomPatternRequires = makeTruePredicate
-        , axiomPatternAttributes = def
+    , RewriteRule $ RulePattern
+        { left = metaG (Var_ $ x1 patternMetaSort)
+        , right = metaH (Var_ $ x1 patternMetaSort)
+        , requires = makeTruePredicate
+        , attributes = def
         }
     ]
 
@@ -302,11 +306,11 @@ actualOneStep =
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-        [ AxiomPattern
-            { axiomPatternLeft = metaF (Var_ $ x1 patternMetaSort)
-            , axiomPatternRight = metaG (Var_ $ x1 patternMetaSort)
-            , axiomPatternRequires = makeTruePredicate
-            , axiomPatternAttributes = def
+        [ RewriteRule $ RulePattern
+            { left = metaF (Var_ $ x1 patternMetaSort)
+            , right = metaG (Var_ $ x1 patternMetaSort)
+            , requires = makeTruePredicate
+            , attributes = def
             }
         ]
 
@@ -458,7 +462,7 @@ runStep
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> [AxiomPattern level]
+    -> [RewriteRule level]
     -> IO [(CommonExpandedPattern level, StepProof level Variable)]
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
@@ -470,7 +474,7 @@ runStep metadataTools configuration axioms =
             (Mock.substitutionSimplifier metadataTools)
             simplifier
         )
-        [allAxioms axioms]
+        [allRewrites axioms]
         (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty
@@ -482,7 +486,7 @@ runSteps
     -> Limit Natural
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> [AxiomPattern level]
+    -> [RewriteRule level]
     -> IO (CommonExpandedPattern level, StepProof level Variable)
 runSteps metadataTools stepLimit configuration axioms =
     (<$>) pickLongest
@@ -494,7 +498,7 @@ runSteps metadataTools stepLimit configuration axioms =
             (Mock.substitutionSimplifier metadataTools)
             simplifier
         )
-        (Limit.replicate stepLimit $ allAxioms axioms)
+        (Limit.replicate stepLimit $ allRewrites axioms)
         (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty

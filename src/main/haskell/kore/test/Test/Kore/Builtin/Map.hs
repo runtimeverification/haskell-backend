@@ -439,11 +439,11 @@ test_concretizeKeysAxiom =
     val = Test.Int.asPattern 2
     symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
     axiom =
-        AxiomPattern
-            { axiomPatternLeft = mkPair intSort mapSort x symbolicMap
-            , axiomPatternRight = v
-            , axiomPatternRequires = Predicate.makeTruePredicate
-            , axiomPatternAttributes = Default.def
+        RewriteRule RulePattern
+            { left = mkPair intSort mapSort x symbolicMap
+            , right = v
+            , requires = Predicate.makeTruePredicate
+            , attributes = Default.def
             }
     expected =
         Right

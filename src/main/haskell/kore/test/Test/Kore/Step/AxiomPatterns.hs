@@ -57,11 +57,11 @@ axiomPatternsUnitTests =
         "AxiomPatterns Unit Tests"
         [ testCase "I1:AInt => I2:AInt"
             (assertEqual ""
-                (Right $ RewriteAxiomPattern AxiomPattern
-                    { axiomPatternLeft = extractPurePattern varI1
-                    , axiomPatternRight = extractPurePattern varI2
-                    , axiomPatternRequires = wrapPredicate topAInt
-                    , axiomPatternAttributes = def
+                (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
+                    { left = extractPurePattern varI1
+                    , right = extractPurePattern varI2
+                    , requires = wrapPredicate topAInt
+                    , attributes = def
                     }
                 )
                 ( koreSentenceToAxiomPattern Object
@@ -77,11 +77,11 @@ axiomPatternsUnitTests =
             )
         , testCase "definition containing I1:AInt => I2:AInt"
             (assertEqual ""
-                [AxiomPattern
-                    { axiomPatternLeft = extractPurePattern varI1
-                    , axiomPatternRight = extractPurePattern varI2
-                    , axiomPatternRequires = wrapPredicate topAInt
-                    , axiomPatternAttributes = def
+                [ RewriteRule RulePattern
+                    { left = extractPurePattern varI1
+                    , right = extractPurePattern varI2
+                    , requires = wrapPredicate topAInt
+                    , attributes = def
                     }
                 ]
                 ( extractRewriteAxioms Object
@@ -194,8 +194,8 @@ axiomPatternsIntegrationTests =
         "AxiomPatterns Unit Tests"
         [ testCase "I1 <= I2 => I1 <=Int I2 (generated)"
             (assertEqual ""
-                (Right $ RewriteAxiomPattern AxiomPattern
-                    { axiomPatternLeft = extractPurePattern $
+                (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
+                    { left = extractPurePattern $
                         applyS symbolTCell
                           [ applyS symbolKCell
                               [ applyS symbolKSeq
@@ -212,7 +212,7 @@ axiomPatternsIntegrationTests =
                               ]
                           , varStateCell
                           ]
-                    , axiomPatternRight = extractPurePattern $
+                    , right = extractPurePattern $
                         applyS symbolTCell
                           [ applyS symbolKCell
                               [ applyS symbolKSeq
@@ -223,8 +223,8 @@ axiomPatternsIntegrationTests =
                               ]
                           , varStateCell
                           ]
-                    , axiomPatternRequires = wrapPredicate topTCell
-                    , axiomPatternAttributes = def
+                    , requires = wrapPredicate topTCell
+                    , attributes = def
                     }
                 )
                 (koreSentenceToAxiomPattern Object =<< parseAxiom

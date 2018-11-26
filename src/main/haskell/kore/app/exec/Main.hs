@@ -57,7 +57,7 @@ import           Kore.Parser.Parser
 import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPattern (..) )
+                 ( RewriteRule )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Pattern
@@ -155,7 +155,7 @@ applyKoreSearchOptions koreSearchOptions koreExecOpts =
                 { koreSearchOptions = Just koreSearchOpts
                 , strategy =
                     -- Search relies on exploring the entire space of states.
-                    allAxioms
+                    allRewrites
                 , stepLimit = min stepLimit searchTypeStepLimit
                 }
           where
@@ -179,7 +179,7 @@ data KoreExecOptions = KoreExecOptions
     , smtTimeOut          :: !SMT.TimeOut
     , stepLimit           :: !(Limit Natural)
     , strategy
-        :: !([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
+        :: !([RewriteRule Object] -> Strategy (Prim (RewriteRule Object)))
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     }
 
@@ -230,15 +230,15 @@ parseKoreExecOptions =
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
             -- works correctly.
-            <> value anyAxiom
+            <> value anyRewrite
             <> help "Select rewrites using STRATEGY."
             )
       where
         strategies =
-            [ ("any", anyAxiom)
-            , ("all", allAxioms)
-            , ("any-heating-cooling", heatingCooling anyAxiom)
-            , ("all-heating-cooling", heatingCooling allAxioms)
+            [ ("any", anyRewrite)
+            , ("all", allRewrites)
+            , ("any-heating-cooling", heatingCooling anyRewrite)
+            , ("all-heating-cooling", heatingCooling allRewrites)
             ]
         readStrategy = do
             strat <- str

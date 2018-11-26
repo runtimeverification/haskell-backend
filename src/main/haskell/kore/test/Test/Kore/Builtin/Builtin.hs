@@ -38,9 +38,9 @@ import           Kore.IndexedModule.MetadataTools
                  extractMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPattern )
+                 ( RewriteRule )
 import           Kore.Step.BaseStep
-                 ( StepProof, StepResult (StepResult), stepWithAxiom )
+                 ( StepProof, StepResult (StepResult), stepWithRule )
 import qualified Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
 import           Kore.Step.Error
@@ -202,7 +202,7 @@ evaluateWith solver patt =
 runStep
     :: CommonExpandedPattern Object
     -- ^ configuration
-    -> AxiomPattern Object
+    -> RewriteRule Object
     -- ^ axiom
     -> IO
         (Either
@@ -218,7 +218,7 @@ runStep configuration axiom = do
 runStepResult
     :: CommonExpandedPattern Object
     -- ^ configuration
-    -> AxiomPattern Object
+    -> RewriteRule Object
     -- ^ axiom
     -> IO
         (Either
@@ -227,7 +227,7 @@ runStepResult
         )
 runStepResult configuration axiom =
     (runSMT . evalSimplifier . runExceptT)
-        (stepWithAxiom
+        (stepWithRule
             testMetadataTools
             testSubstitutionSimplifier
             configuration
@@ -241,7 +241,7 @@ runStepWith
     :: MVar Solver
     -> CommonExpandedPattern Object
     -- ^ configuration
-    -> AxiomPattern Object
+    -> RewriteRule Object
     -- ^ axiom
     -> IO
         (Either
@@ -259,7 +259,7 @@ runStepResultWith
     :: MVar Solver
     -> CommonExpandedPattern Object
     -- ^ configuration
-    -> AxiomPattern Object
+    -> RewriteRule Object
     -- ^ axiom
     -> IO
         (Either
@@ -269,7 +269,7 @@ runStepResultWith
 runStepResultWith solver configuration axiom =
     let smt =
             (evalSimplifier . runExceptT)
-                (stepWithAxiom
+                (stepWithRule
                     testMetadataTools
                     testSubstitutionSimplifier
                     configuration
