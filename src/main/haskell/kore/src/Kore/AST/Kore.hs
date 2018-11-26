@@ -62,6 +62,16 @@ data UnifiedPattern domain variable child where
         -> UnifiedPattern domain variable child
 
 $(return [])  -- Begin a new definition group where UnifiedPattern is in scope.
+              -- Without it, UnifiedPattern would be in scope for expressions,
+              -- but not for quoting, so using ''UnifiedPattern below would
+              -- fail.
+              --
+              -- Template Haskell limits the ways in which definitions can be
+              -- mutually recursive; a quoted name must be defined in a
+              -- previous definition group before it can be used.
+              -- A top-level Template Haskell splice always starts a new
+              -- definition group, even if the splice is empty, as is the
+              -- case here.
 
 instance
     ( NFData (Pattern Meta domain variable child)
