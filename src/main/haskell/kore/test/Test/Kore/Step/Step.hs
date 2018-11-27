@@ -11,6 +11,8 @@ import Test.Tasty.HUnit
 
 import           Data.Default
                  ( def )
+import           Data.List
+                 ( nub )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -26,6 +28,8 @@ import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
 import           Kore.AST.Common
+                 ( AstLocation (..), CommonPurePattern, Id (..), Sort,
+                 SymbolOrAlias (..), Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
@@ -289,7 +293,7 @@ test_onePathStrategy = give symbolOrAliasSorts
         -- Normal axiom: a => c
         -- Start pattern: a
         -- Expected: a
-        [(actual, _proof)] <- runOnePathSteps
+        [ actual ] <- runOnePathSteps
             metadataTools
             (Limit 0)
             (ExpandedPattern.fromPurePattern Mock.a)
@@ -297,15 +301,15 @@ test_onePathStrategy = give symbolOrAliasSorts
             [simpleAxiom Mock.a Mock.b]
             [simpleAxiom Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (ExpandedPattern.fromPurePattern Mock.a)
+            (RewritePattern $ ExpandedPattern.fromPurePattern Mock.a)
             actual
     , testCase "Axiom priority, first step" $ do
         -- Removal axiom: a => bottom
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
         -- Start pattern: a
-        -- Expected: a, since a->bottom and bottom is ignored
-        [(_actual, _proof)] <- runOnePathSteps
+        -- Expected: a, since a->bottom
+        [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 1)
             (ExpandedPattern.fromPurePattern Mock.a)
@@ -313,15 +317,16 @@ test_onePathStrategy = give symbolOrAliasSorts
             [simpleAxiom Mock.a Mock.b]
             [simpleAxiom Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (ExpandedPattern.fromPurePattern Mock.a)
+            Bottom
             _actual
+
         -- Removal axiom: d => bottom
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
         -- Start pattern: a
         -- Expected: c, since coinductive axioms are applied only at the second
         -- step
-        [(_actual, _proof)] <- runOnePathSteps
+        [ _actual1, _actual2 ] <- runOnePathSteps
             metadataTools
             (Limit 1)
             (ExpandedPattern.fromPurePattern Mock.a)
@@ -329,16 +334,19 @@ test_onePathStrategy = give symbolOrAliasSorts
             [simpleAxiom Mock.a Mock.b]
             [simpleAxiom Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (ExpandedPattern.fromPurePattern Mock.c)
-            _actual
+            Bottom
+            _actual1
+        assertEqualWithExplanation ""
+            (RewritePattern $ ExpandedPattern.fromPurePattern Mock.c)
+            _actual2
     , testCase "Axiom priority, second step" $ do
         -- Removal axiom: b => bottom
         -- Coinductive axiom: b => c
         -- Normal axiom: b => d
         -- Normal axiom: a => b
         -- Start pattern: a
-        -- Expected: b, since a->b->bottom and bottom is ignored
-        [(_actual, _proof)] <- runOnePathSteps
+        -- Expected: b, since a->b->bottom
+        [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 2)
             (ExpandedPattern.fromPurePattern Mock.a)
@@ -348,15 +356,16 @@ test_onePathStrategy = give symbolOrAliasSorts
             , simpleAxiom Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            (ExpandedPattern.fromPurePattern Mock.b)
+            Bottom
             _actual
+
         -- Removal axiom: e => bottom
         -- Coinductive axiom: b => c
         -- Normal axiom: b => d
         -- Normal axiom: a => b
         -- Start pattern: a
         -- Expected: c, since a->b->c and b->d is ignored
-        [(_actual, _proof)] <- runOnePathSteps
+        [ _actual1, _actual2 ] <- runOnePathSteps
             metadataTools
             (Limit 2)
             (ExpandedPattern.fromPurePattern Mock.a)
@@ -366,15 +375,19 @@ test_onePathStrategy = give symbolOrAliasSorts
             , simpleAxiom Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            (ExpandedPattern.fromPurePattern Mock.c)
-            _actual
+            Bottom
+            _actual1
+        assertEqualWithExplanation ""
+            (RewritePattern $ ExpandedPattern.fromPurePattern Mock.c)
+            _actual2
+
         -- Removal axiom: e => bottom
         -- Coinductive axiom: e => c
         -- Normal axiom: b => d
         -- Normal axiom: a => b
         -- Start pattern: a
-        -- Expected: c, since a->b->c and b->d is ignored
-        [(_actual, _proof)] <- runOnePathSteps
+        -- Expected: d, since a->b->d
+        [ _actual1, _actual2 ] <- runOnePathSteps
             metadataTools
             (Limit 2)
             (ExpandedPattern.fromPurePattern Mock.a)
@@ -384,8 +397,11 @@ test_onePathStrategy = give symbolOrAliasSorts
             , simpleAxiom Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            (ExpandedPattern.fromPurePattern Mock.d)
-            _actual
+            Bottom
+            _actual1
+        assertEqualWithExplanation ""
+            (RewritePattern $ ExpandedPattern.fromPurePattern Mock.d)
+            _actual2
     , testCase "Differentiated axioms" $ do
         -- Removal axiom: constr11(a) => f(a)
         -- Coinductive axiom: constr11(a) => g(a)
@@ -401,11 +417,7 @@ test_onePathStrategy = give symbolOrAliasSorts
         --   or (f(b) and x=b)
         --   or (f(c) and x=c)
         --   or (h(x) and x!=a and x!=b and x!=c )
-        [ (_actual1, _proof1)
-         , (_actual2, _proof2)
-         , (_actual3, _proof3)
-         , (_actual4, _proof4)
-         ] <-
+        [ _actual1, _actual2, _actual3, _actual4, _actual5 ] <-
             runOnePathSteps
                 metadataTools
                 (Limit 2)
@@ -427,28 +439,34 @@ test_onePathStrategy = give symbolOrAliasSorts
                     (Mock.functionalConstr11 (mkVar Mock.y))
                 ]
         assertEqualWithExplanation ""
-            Predicated
+            Bottom
+            _actual1
+        assertEqualWithExplanation ""
+            (RewritePattern Predicated
                 { term = Mock.f Mock.a
                 , predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.a)]
                 }
-            _actual1
+            )
+            _actual2
         assertEqualWithExplanation ""
-            Predicated
+            (RewritePattern Predicated
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.b)]
                 }
-            _actual2
+            )
+            _actual3
         assertEqualWithExplanation ""
-            Predicated
+            (RewritePattern Predicated
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
                 , substitution = [(Mock.x, Mock.c)]
                 }
-            _actual3
+            )
+            _actual4
         assertEqualWithExplanation ""
-            Predicated
+            (RewritePattern Predicated
                 { term = Mock.h (mkVar Mock.x)
                 , predicate =  -- TODO(virgil): Better and simplification.
                     makeAndPredicate
@@ -479,7 +497,8 @@ test_onePathStrategy = give symbolOrAliasSorts
                         )
                 , substitution = []
                 }
-            _actual4
+            )
+            _actual5
     ]
   where
     symbolOrAliasSorts :: SymbolOrAliasSorts Object
@@ -726,16 +745,22 @@ runSteps
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> (Tree (CommonExpandedPattern level, StepProof level Variable) -> a)
+    ->  (Tree
+            ( RulePattern (CommonExpandedPattern level)
+            , StepProof level Variable
+            )
+        -> Maybe (Tree (b, StepProof level Variable))
+        )
+    -> (Tree (b, StepProof level Variable) -> a)
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [Strategy (Prim (RewriteRule level))]
     -> IO a
-runSteps metadataTools picker configuration strategy =
+runSteps metadataTools treeFilter picker configuration strategy =
     (<$>) picker
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier
-    $ (fromMaybe (error "Unexpected missing tree") . ruleResultToRewriteTree)
+    $ (fromMaybe (error "Unexpected missing tree") . treeFilter)
     <$> runStrategy
         (transitionRule
             metadataTools
@@ -759,6 +784,7 @@ runExecutionSteps
 runExecutionSteps metadataTools stepLimit configuration rewrites =
     runSteps
         metadataTools
+        ruleResultToRewriteTree
         pickLongest
         configuration
         (Limit.replicate stepLimit $ allRewrites rewrites)
@@ -773,7 +799,7 @@ runOnePathSteps
     -> RewriteRule level
     -> [RewriteRule level]
     -> [RewriteRule level]
-    -> IO [(CommonExpandedPattern level, StepProof level Variable)]
+    -> IO [RulePattern (CommonExpandedPattern level)]
 runOnePathSteps
     metadataTools
     stepLimit
@@ -781,9 +807,10 @@ runOnePathSteps
     destinationRemovalRewrite
     coinductiveRewrites
     rewrites
-  =
-    runSteps
+  = do
+    result <- runSteps
         metadataTools
+        Just
         pickFinal
         configuration
         (Limit.takeWithin
@@ -797,3 +824,4 @@ runOnePathSteps
                 )
             )
         )
+    return (nub (map fst result))

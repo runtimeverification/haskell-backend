@@ -32,6 +32,10 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
+import           Kore.Step.Step
+                 ( RulePattern )
+import           Kore.Step.Step as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -1103,4 +1107,33 @@ instance
     => EqualWithExplanation (StepResult level variable)
   where
     compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation patt
+    , Show patt
+    , Eq patt
+    )
+    => SumEqualWithExplanation (RulePattern patt)
+  where
+    sumConstructorPair
+        (RulePattern.RewritePattern p1) (RulePattern.RewritePattern p2)
+      =
+        SumConstructorSameWithArguments (EqWrap "RewritePattern" p1 p2)
+    sumConstructorPair (RulePattern.Remainder p1) (RulePattern.Remainder p2) =
+        SumConstructorSameWithArguments (EqWrap "Remainder" p1 p2)
+    sumConstructorPair RulePattern.Bottom RulePattern.Bottom =
+        SumConstructorSameNoArguments
+    sumConstructorPair p1 p2 =
+        SumConstructorDifferent
+            (printWithExplanation p1)
+            (printWithExplanation p2)
+
+instance
+    ( Show patt
+    , SumEqualWithExplanation (RulePattern patt)
+    )
+    => EqualWithExplanation (RulePattern patt)
+  where
+    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

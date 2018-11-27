@@ -99,7 +99,7 @@ data RulePattern patt
     -- ^ special representation for a bottom rewriting/simplification result.
     -- This is needed when bottom results are expected and we don't want
     -- them to be treated as errors by 'Strategy.try'.
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- | Apply the rewrite.
 rewrite :: rewrite -> Prim rewrite
@@ -180,19 +180,19 @@ transitionRule
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier
         [(RulePattern (CommonExpandedPattern level), StepProof level Variable)]
-transitionRule tools substitutionSimplifier simplifier action patt =
-    case action of
-        Simplify -> transitionSimplify patt
-        Rewrite a -> transitionRewrite a patt
-        RewriteOnRemainder a -> transitionRewriteOnRemainder a patt
-        NonEmptyRemainderFail -> applyNonEmptyRemainderFail patt
-        CancelBottom -> applyCancelBottom patt
-        CancelRemainder -> applyCancelRemainder patt
+transitionRule tools substitutionSimplifier simplifier =
+    \case
+        Simplify -> transitionSimplify
+        Rewrite a -> transitionRewrite a
+        RewriteOnRemainder a -> transitionRewriteOnRemainder a
+        NonEmptyRemainderFail -> applyNonEmptyRemainderFail
+        CancelBottom -> applyCancelBottom
+        CancelRemainder -> applyCancelRemainder
   where
     applyNonEmptyRemainderFail r@(RewritePattern _, _) = return [r]
     applyNonEmptyRemainderFail r@(Remainder _, _) =
         error ("Unexpected remainder failure: " ++ show r)
-    applyNonEmptyRemainderFail (Bottom, _) = return []
+    applyNonEmptyRemainderFail (Bottom, proof) = return [(Bottom, proof)]
 
     applyCancelBottom r@(RewritePattern _, _) = return [r]
     applyCancelBottom r@(Remainder _, _) = return [r]
