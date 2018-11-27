@@ -82,19 +82,52 @@ data Prim axiom =
     | NonEmptyRemainderFail
     -- ^ Assertion that the remainder is empty.
     | CancelBottom
-    -- ^ Transforms Bottom into [].
+    -- ^ Transforms 'Bottom' into @[]@.
     | CancelRemainder
-    -- ^ Transforms Remainders into [].
+    -- ^ Transforms 'Remainder's into @[]@.
   deriving (Show)
 
 {- | A pattern on which a rule can be applied or on which a rule was applied.
+
+As an example, when rewriting
+
+@
+if x then phi else psi
+@
+
+with this axiom
+
+@
+if true then x else y => x
+@
+
+the 'RewritePattern' would be @phi@, while the 'Remainder' might be one of
+
+@
+(if x then phi else psi) and (x!=true)
+
+if false then phi else psi
+@
+
+When rewriting the same pattern with an axiom that does not match, e.g.
+
+@
+x + y => x +Int y
+@
+
+then the rewrite result should be 'Bottom', while the Remainder should be
+the original pattern, i.e.
+
+@
+if x then phi else psi
+@
 -}
 data RulePattern patt
     = RewritePattern !patt
     -- ^ Pattern on which a normal 'Axiom' can be applied. Also used
     -- for the start patterns.
     | Remainder !patt
-    -- ^ Unrewritten part from a rewrite axiom application.
+    -- ^ Unrewritten part of a pattern on which a rewrite axiom was applied.
     | Bottom
     -- ^ special representation for a bottom rewriting/simplification result.
     -- This is needed when bottom results are expected and we don't want
@@ -330,6 +363,7 @@ onePathFirstStep destinationRemovalAxiom axioms =
         ++ map
             axiomOnRemainderStep
             axioms
+        -- Fail if we can't rewrite the entire pattern.
         ++ [Strategy.apply nonEmptyRemainderFail]
         )
 
