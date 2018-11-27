@@ -121,6 +121,9 @@ the original pattern, i.e.
 @
 if x then phi else psi
 @
+
+Also see
+https://github.com/kframework/kore/blob/master/docs/2018-11-08-One-Path-Reachability-Proofs.md
 -}
 data RulePattern patt
     = RewritePattern !patt
