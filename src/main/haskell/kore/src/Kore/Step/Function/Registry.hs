@@ -36,7 +36,7 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..) )
 import           Kore.Step.Function.UserDefined
-                 ( axiomFunctionEvaluator )
+                 ( ruleFunctionEvaluator )
 import           Kore.Step.StepperAttributes
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
@@ -47,7 +47,7 @@ extractFunctionAxioms
         MetaOrObject level
     => level
     -> KoreIndexedModule StepperAttributes
-    -> Map (Id level) [AxiomPattern level]
+    -> Map (Id level) [EqualityRule level]
 extractFunctionAxioms level =
     \imod ->
         Foldable.foldl'
@@ -57,9 +57,9 @@ extractFunctionAxioms level =
   where
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
-        :: Map (Id level) [AxiomPattern level]
+        :: Map (Id level) [EqualityRule level]
         -> KoreIndexedModule StepperAttributes
-        -> Map (Id level) [AxiomPattern level]
+        -> Map (Id level) [EqualityRule level]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
       where
@@ -69,9 +69,9 @@ extractFunctionAxioms level =
     -- axioms with it. The map is returned unmodified in case the sentence is
     -- not a function axiom.
     extractSentenceAxiom
-        :: Map (Id level) [AxiomPattern level]
+        :: Map (Id level) [EqualityRule level]
         -> (attrs, KoreSentenceAxiom)
-        -> Map (Id level) [AxiomPattern level]
+        -> Map (Id level) [EqualityRule level]
     extractSentenceAxiom axioms (_, sentence) =
         let
             namedAxiom = axiomToIdAxiomPatternPair level sentence
@@ -80,9 +80,9 @@ extractFunctionAxioms level =
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom
-        :: Map (Id level) [AxiomPattern level]
-        -> (Id level, AxiomPattern level)
-        -> Map (Id level) [AxiomPattern level]
+        :: Map (Id level) [EqualityRule level]
+        -> (Id level, EqualityRule level)
+        -> Map (Id level) [EqualityRule level]
     insertAxiom axioms (name, patt) =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
@@ -90,14 +90,15 @@ axiomToIdAxiomPatternPair
     ::  ( MetaOrObject level )
     => level
     -> SentenceAxiom UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
-    -> Maybe (Id level, AxiomPattern level)
+    -> Maybe (Id level, EqualityRule level)
 axiomToIdAxiomPatternPair
     level
     axiom
   = case koreSentenceToAxiomPattern level (asSentence axiom) of
         Left _ -> Nothing
-        Right (FunctionAxiomPattern axiomPat) ->
-            case fromPurePattern (axiomPatternLeft axiomPat) of
+        Right
+            (FunctionAxiomPattern axiomPat@(EqualityRule RulePattern {left}))
+            -> case fromPurePattern left of
                 ApplicationPattern Application { applicationSymbolOrAlias } ->
                     case symbolOrAliasParams of
                         [] -> return (symbolOrAliasConstructor, axiomPat)
@@ -116,10 +117,10 @@ axiomToIdAxiomPatternPair
                 _ -> Nothing
         Right (RewriteAxiomPattern _) -> Nothing
 
--- |Converts a registry of 'AxiomPattern's to one of
+-- |Converts a registry of 'RulePattern's to one of
 -- 'ApplicationFunctionEvaluator's
 axiomPatternsToEvaluators
-    :: Map.Map (Id level) [AxiomPattern level]
+    :: Map.Map (Id level) [EqualityRule level]
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
 axiomPatternsToEvaluators axiomPatterns =
     -- remove the key if there are no associated function evaluators
@@ -134,9 +135,9 @@ axiom; this is determined by checking the 'AxiomPatternAttributes'.
 
  -}
 axiomPatternEvaluator
-    :: AxiomPattern level
+    :: EqualityRule level
     -> Maybe (ApplicationFunctionEvaluator level)
-axiomPatternEvaluator axiomPat@AxiomPattern { axiomPatternAttributes }
+axiomPatternEvaluator axiomPat@(EqualityRule RulePattern { attributes })
     | isAssoc = Nothing
     | isComm = Nothing
     -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
@@ -144,9 +145,9 @@ axiomPatternEvaluator axiomPat@AxiomPattern { axiomPatternAttributes }
     | isUnit = Nothing
     | isIdem = Nothing
     | otherwise =
-        Just (ApplicationFunctionEvaluator $ axiomFunctionEvaluator axiomPat)
+        Just (ApplicationFunctionEvaluator $ ruleFunctionEvaluator axiomPat)
   where
-    Assoc { isAssoc } = assoc axiomPatternAttributes
-    Comm { isComm } = comm axiomPatternAttributes
-    Unit { isUnit } = unit axiomPatternAttributes
-    Idem { isIdem } = idem axiomPatternAttributes
+    Assoc { isAssoc } = assoc attributes
+    Comm { isComm } = comm attributes
+    Unit { isUnit } = unit attributes
+    Idem { isIdem } = idem attributes

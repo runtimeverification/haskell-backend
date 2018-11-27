@@ -36,7 +36,10 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  makeTruePredicate, unwrapPredicate )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPattern (..), extractRewriteAxioms )
+                 ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern), extractRewriteAxioms )
+import           Kore.Step.AxiomPatterns as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.BaseStep
                  ( StepProof )
 import           Kore.Step.ExpandedPattern
@@ -79,7 +82,7 @@ exec
     -- ^ The input pattern
     -> Limit Natural
     -- ^ The step limit
-    -> ([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
+    -> ([RewriteRule Object] -> Strategy (Prim (RewriteRule Object)))
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> Simplifier (CommonStepPattern Object)
 exec indexedModule purePattern stepLimit strategy =
@@ -104,7 +107,7 @@ search
     -- ^ The input pattern
     -> Limit Natural
     -- ^ The step limit
-    -> ([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
+    -> ([RewriteRule Object] -> Strategy (Prim (RewriteRule Object)))
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> CommonExpandedPattern Object
     -- ^ The pattern to match during execution
@@ -147,7 +150,7 @@ setUpConcreteExecution
     -- ^ The input pattern
     -> Limit Natural
     -- ^ The step limit
-    -> ([AxiomPattern Object] -> Strategy (Prim (AxiomPattern Object)))
+    -> ([RewriteRule Object] -> Strategy (Prim (RewriteRule Object)))
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> (MetadataTools Object StepperAttributes
         -> StepPatternSimplifier Object Variable
@@ -186,25 +189,26 @@ makeExpandedPattern
     -> CommonExpandedPattern Object
 makeExpandedPattern pat =
     Predicated
-    { term = pat
-    , predicate = makeTruePredicate
-    , substitution = mempty
-    }
+        { term = pat
+        , predicate = makeTruePredicate
+        , substitution = mempty
+        }
 
 preSimplify
     ::  (  CommonStepPattern Object
         -> Simplifier
             (OrOfExpandedPattern Object Variable, SimplificationProof Object)
         )
-    -> AxiomPattern Object
-    -> Simplifier (AxiomPattern Object)
-preSimplify simplifier
-    AxiomPattern
-    { axiomPatternLeft = lhs
-    , axiomPatternRight = rhs
-    , axiomPatternRequires = requires
-    , axiomPatternAttributes = atts
-    }
+    -> RulePattern Object
+    -> Simplifier (RulePattern Object)
+preSimplify
+    simplifier
+    RulePattern
+        { left = lhs
+        , right = rhs
+        , requires
+        , attributes = atts
+        }
   = do
     (simplifiedOrLhs, _proof) <- simplifier lhs
     let
@@ -216,18 +220,18 @@ preSimplify simplifier
     newLhs <- substitute term listSubst
     newRhs <- substitute rhs listSubst
     newRequires <- traverse (`substitute` listSubst) requires
-    return AxiomPattern
-        { axiomPatternLeft = newLhs
-        , axiomPatternRight = newRhs
-        , axiomPatternRequires = newRequires
-        , axiomPatternAttributes = atts
+    return RulePattern
+        { left = newLhs
+        , right = newRhs
+        , requires = newRequires
+        , attributes = atts
         }
 
 makeAxiomsAndSimplifiers
     :: KoreIndexedModule StepperAttributes
     -> MetadataTools Object StepperAttributes
     -> Simplifier
-        ( [AxiomPattern Object]
+        ( [RewriteRule Object]
         , StepPatternSimplifier Object Variable
         , PredicateSubstitutionSimplifier Object Simplifier
         )
@@ -266,10 +270,15 @@ makeAxiomsAndSimplifiers indexedModule tools =
                 :: PredicateSubstitutionSimplifier Object Simplifier
             substitutionSimplifier =
                 PredicateSubstitution.create tools simplifier
-        return (rewriteAxioms, simplifier, substitutionSimplifier)
+        return
+            (rewriteAxioms, simplifier, substitutionSimplifier)
   where
-    simplifyFunctionAxioms = mapM (mapM (preSimplify emptyPatternSimplifier))
-    simplifyRewriteAxioms = mapM (preSimplify emptyPatternSimplifier)
+    simplifyFunctionAxioms = mapM (mapM simplifyEqualityRule)
+    simplifyEqualityRule (EqualityRule rule) =
+        EqualityRule <$> preSimplify emptyPatternSimplifier rule
+    simplifyRewriteAxioms = mapM simplifyRewriteRule
+    simplifyRewriteRule (RewriteRule rule) =
+        RewriteRule <$> preSimplify emptyPatternSimplifier rule
     emptySimplifier
         ::  ( SortedVariable variable
             , Ord (variable Meta)

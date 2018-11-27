@@ -27,6 +27,10 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Predicate.Predicate
+import           Kore.Step.AxiomPatterns
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+import           Kore.Step.AxiomPatterns as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.BaseStep
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
@@ -252,8 +256,8 @@ test_baseStep =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                AxiomPattern
-                    { axiomPatternLeft =
+                (RewriteRule RulePattern
+                    { left =
                         metaSigma
                             (metaSigma
                                 (Var_ $ x1 patternMetaSort)
@@ -263,13 +267,14 @@ test_baseStep =
                                 (Var_ $ y1 patternMetaSort)
                                 (Var_ $ y1 patternMetaSort)
                             )
-                    , axiomPatternRight =
+                    , right =
                         metaSigma
                             (Var_ $ x1 patternMetaSort)
                             (Var_ $ y1 patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
         assertEqualWithExplanation "" expect actual
 
     -- x => exists a . x    vs    a
@@ -305,16 +310,17 @@ test_baseStep =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                AxiomPattern
-                    { axiomPatternLeft = Var_ $ x1 patternMetaSort
-                    , axiomPatternRight =
+                (RewriteRule RulePattern
+                    { left = Var_ $ x1 patternMetaSort
+                    , right =
                         Exists_
                             patternMetaSort
                             (a1 patternMetaSort)
                             (Var_ $ x1 patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
         assertEqualWithExplanation "" expect actual
 
     -- sigma(x, x) -> x   vs   sigma(g(a), f(b))
@@ -357,8 +363,8 @@ test_baseStep =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                AxiomPattern
-                    { axiomPatternLeft =
+                (RewriteRule RulePattern
+                    { left =
                         metaSigma
                             (metaSigma
                                 (Var_ $ x1 patternMetaSort)
@@ -368,13 +374,14 @@ test_baseStep =
                                 (Var_ $ y1 patternMetaSort)
                                 (Var_ $ y1 patternMetaSort)
                             )
-                    , axiomPatternRight =
+                    , right =
                         metaSigma
                             (Var_ $ x1 patternMetaSort)
                             (Var_ $ y1 patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
         assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
 
     -- sigma(x, x) -> x
@@ -534,8 +541,8 @@ test_baseStep =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                AxiomPattern
-                    { axiomPatternLeft =
+                (RewriteRule RulePattern
+                    { left =
                         (metaSigma
                             (metaSigma
                                 (Var_ $ x1 patternMetaSort)
@@ -543,13 +550,14 @@ test_baseStep =
                             )
                             (Var_ $ y1 patternMetaSort)
                         )
-                    , axiomPatternRight =
+                    , right =
                         metaSigma
                             (Var_ $ x1 patternMetaSort)
                             (Var_ $ y1 patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
         assertEqualWithExplanation "" expect actual
 
     -- sigma(sigma(x, x), y) => sigma(x, y)
@@ -589,21 +597,22 @@ test_baseStep =
                     , substitution = Substitution.wrap
                         [(a1 patternMetaSort, fOfC)]
                     }
-                AxiomPattern
-                    { axiomPatternLeft =
+                (RewriteRule RulePattern
+                    { left =
                         metaSigma
                             (metaSigma
                                 (Var_ $ x1 patternMetaSort)
                                 (Var_ $ x1 patternMetaSort)
                             )
                             (Var_ $ y1 patternMetaSort)
-                    , axiomPatternRight =
+                    , right =
                         metaSigma
                             (Var_ $ x1 patternMetaSort)
                             (Var_ $ y1 patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
         assertEqualWithExplanation "" expect actual
 
     -- "sl1" => x
@@ -620,12 +629,13 @@ test_baseStep =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                AxiomPattern
-                    { axiomPatternLeft = StringLiteral_ "sl1"
-                    , axiomPatternRight = Var_ $ x1 patternMetaSort
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                (RewriteRule RulePattern
+                    { left = StringLiteral_ "sl1"
+                    , right = Var_ $ x1 patternMetaSort
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
         assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
 
     -- x => x
@@ -704,21 +714,22 @@ test_baseStep =
                             (metaF (Var_ $ a1 patternMetaSort))
                     , substitution = mempty
                     }
-                AxiomPattern
-                    { axiomPatternLeft =
+                (RewriteRule RulePattern
+                    { left =
                         metaSigma
                             (metaSigma
                                 (Var_ $ x1 patternMetaSort)
                                 (Var_ $ x1 patternMetaSort)
                             )
                             (Var_ $ y1 patternMetaSort)
-                    , axiomPatternRight =
+                    , right =
                         metaSigma
                             (Var_ $ x1 patternMetaSort)
                             (Var_ $ y1 patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
         assertEqualWithExplanation "" expect actual
 
     -- x => x requires g(x)=f(x)
@@ -753,7 +764,7 @@ test_baseStep =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                axiomId { axiomPatternRequires = preCondition x1 }
+                (RewriteRule ruleId { requires = preCondition x1 })
         assertEqualWithExplanation "" expect actual
 
     -- TODO(virgil): add tests for these after we implement
@@ -812,35 +823,37 @@ test_baseStep =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                AxiomPattern
-                    { axiomPatternLeft =
+                (RewriteRule RulePattern
+                    { left =
                         metaSigma
                             (Var_ $ x1 patternMetaSort)
                             (Var_ $ x1 patternMetaSort)
-                    , axiomPatternRight = Var_ $ x1 patternMetaSort
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , right = Var_ $ x1 patternMetaSort
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
         assertEqualWithExplanation "" expect actual
 
-    axiomId =
-        AxiomPattern
-            { axiomPatternLeft = Var_ $ x1 patternMetaSort
-            , axiomPatternRight = Var_ $ x1 patternMetaSort
-            , axiomPatternRequires = makeTruePredicate
-            , axiomPatternAttributes = def
+    ruleId =
+        RulePattern
+            { left = Var_ $ x1 patternMetaSort
+            , right = Var_ $ x1 patternMetaSort
+            , requires = makeTruePredicate
+            , attributes = def
             }
+    axiomId = RewriteRule ruleId
 
     axiomMetaSigmaId =
-        AxiomPattern
-            { axiomPatternLeft =
+        RewriteRule RulePattern
+            { left =
                 metaSigma
                     (Var_ $ x1 patternMetaSort)
                     (Var_ $ x1 patternMetaSort)
-            , axiomPatternRight =
+            , right =
                 Var_ $ x1 patternMetaSort
-            , axiomPatternRequires = makeTruePredicate
-            , axiomPatternAttributes = def
+            , requires = makeTruePredicate
+            , attributes = def
             }
 
 test_baseStepRemainder :: [TestTree]
@@ -892,13 +905,14 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-            AxiomPattern
-                { axiomPatternLeft =
+            (RewriteRule RulePattern
+                { left =
                     Mock.functionalConstr20 Mock.a (mkVar Mock.y)
-                , axiomPatternRight = mkVar Mock.y
-                , axiomPatternRequires = makeTruePredicate
-                , axiomPatternAttributes = def
+                , right = mkVar Mock.y
+                , requires = makeTruePredicate
+                , attributes = def
                 }
+            )
         assertEqualWithExplanation "" expected actual
     , testCase "If-then with existing predicate" $ do
         -- This uses `functionalConstr20(x, y)` instead of `if x then y`
@@ -951,13 +965,14 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
                 , predicate = makeCeilPredicate Mock.cf
                 , substitution = mempty
                 }
-            AxiomPattern
-                { axiomPatternLeft =
+            (RewriteRule RulePattern
+                { left =
                     Mock.functionalConstr20 Mock.a (mkVar Mock.y)
-                , axiomPatternRight = mkVar Mock.y
-                , axiomPatternRequires = makeTruePredicate
-                , axiomPatternAttributes = def
+                , right = mkVar Mock.y
+                , requires = makeTruePredicate
+                , attributes = def
                 }
+            )
         assertEqualWithExplanation "" expected actual
     , testCase "signum - side condition" $ do
         -- This uses `functionalConstr20(x, y)` instead of `if x then y`
@@ -1006,14 +1021,15 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-            AxiomPattern
-                { axiomPatternLeft =
+            (RewriteRule RulePattern
+                { left =
                     Mock.functionalConstr10 (mkVar Mock.y)
-                , axiomPatternRight = Mock.a
-                , axiomPatternRequires =
+                , right = Mock.a
+                , requires =
                     makeEqualsPredicate (Mock.f (mkVar Mock.y)) Mock.b
-                , axiomPatternAttributes = def
+                , attributes = def
                 }
+            )
         assertEqualWithExplanation "" expected actual
     ]
   where
@@ -1114,7 +1130,7 @@ runStep
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> AxiomPattern level
+    -> RewriteRule level
     -> IO
         (Either
             (StepError level Variable)
@@ -1133,7 +1149,7 @@ runStepWithRemainder
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> AxiomPattern level
+    -> RewriteRule level
     -> IO
         (Either
             (StepError level Variable)
@@ -1143,7 +1159,7 @@ runStepWithRemainder metadataTools configuration axiom =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier
     $ runExceptT
-    $ stepWithAxiom
+    $ stepWithRule
         metadataTools
         (Mock.substitutionSimplifier metadataTools)
         configuration

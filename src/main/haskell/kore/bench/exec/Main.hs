@@ -27,7 +27,7 @@ import           Kore.Parser.Parser
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Step
-                 ( anyAxiom )
+                 ( anyRewrite )
 import           Kore.Step.StepperAttributes
 
 import           Kore.AST.Common
@@ -149,7 +149,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
     execution (indexedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig
         $ evalSimplifier
-        $ exec indexedModule purePattern Unlimited anyAxiom
+        $ exec indexedModule purePattern Unlimited anyRewrite
     kompile = myShell $ (kBin </> "kompile")
         ++ " --backend haskell -d " ++ root
         ++ " " ++ (root </> kFile)

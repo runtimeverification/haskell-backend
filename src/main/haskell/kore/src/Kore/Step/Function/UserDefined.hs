@@ -9,7 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Function.UserDefined
     ( StepPatternSimplifier
-    , axiomFunctionEvaluator
+    , ruleFunctionEvaluator
     ) where
 
 import Control.Monad.Except
@@ -25,9 +25,11 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeTruePredicate )
+import           Kore.Step.AxiomPatterns
+                 ( EqualityRule (EqualityRule) )
 import           Kore.Step.BaseStep
-                 ( AxiomPattern, StepResult (StepResult),
-                 UnificationProcedure (..), stepWithAxiomForUnifier )
+                 ( StepResult (StepResult), UnificationProcedure (..),
+                 stepWithRuleForUnifier )
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
 import qualified Kore.Step.Condition.Evaluator as Predicate
@@ -54,12 +56,12 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
 
-{-| 'axiomFunctionEvaluator' evaluates a user-defined function. After
+{-| 'ruleFunctionEvaluator' evaluates a user-defined function. After
 evaluating the function, it tries to re-evaluate all functions on the result.
 
 The function is assumed to be defined through an axiom.
 -}
-axiomFunctionEvaluator
+ruleFunctionEvaluator
     ::  ( FreshVariable variable
         , Hashable variable
         , MetaOrObject level
@@ -69,7 +71,7 @@ axiomFunctionEvaluator
         , Show (variable level)
         , ShowMetaOrObject variable
         )
-    => AxiomPattern level
+    => EqualityRule level
     -- ^ Axiom defining the current function.
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
@@ -80,8 +82,8 @@ axiomFunctionEvaluator
     -> Application level (StepPattern level variable)
     -- ^ The function on which to evaluate the current function.
     -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
-axiomFunctionEvaluator
-    axiom
+ruleFunctionEvaluator
+    (EqualityRule rule)
     tools
     substitutionSimplifier
     simplifier
@@ -115,12 +117,12 @@ axiomFunctionEvaluator
                             rewrittenPattern
   where
     stepResult =
-        stepWithAxiomForUnifier
+        stepWithRuleForUnifier
             tools
             (UnificationProcedure matchAsUnification)
             substitutionSimplifier
             (stepperConfiguration app)
-            axiom
+            rule
     stepperConfiguration
         :: MetaOrObject level
         => Application level (StepPattern level variable)

@@ -10,15 +10,15 @@ Portability : portable
 module Kore.Step.Step
     ( -- * Primitive strategies
       Prim (..)
-    , axiom
+    , rewrite
     , simplify
-    , axiomStep
+    , rewriteStep
     , transitionRule
-    , allAxioms
-    , anyAxiom
+    , allRewrites
+    , anyRewrite
     , heatingCooling
       -- * Re-exports
-    , AxiomPattern
+    , RulePattern
     , Natural
     , Strategy
     , pickLongest
@@ -42,10 +42,11 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.AxiomPatterns
-                 ( isCoolingRule, isHeatingRule, isNormalRule )
+                 ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
+                 isHeatingRule, isNormalRule )
 import           Kore.Step.BaseStep
-                 ( AxiomPattern, StepProof (..), StepResult (StepResult),
-                 simplificationProof, stepWithAxiom )
+                 ( StepProof (..), StepResult (StepResult),
+                 simplificationProof, stepWithRule )
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
 import           Kore.Step.ExpandedPattern
@@ -62,27 +63,27 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 
-{- | A strategy primitive: a rewrite axiom or builtin simplification step.
+{- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
-data Prim axiom = Simplify | Axiom !axiom
+data Prim rewrite = Simplify | Rewrite !rewrite
 
--- | Apply the axiom.
-axiom :: axiom -> Prim axiom
-axiom = Axiom
+-- | Apply the rewrite.
+rewrite :: rewrite -> Prim rewrite
+rewrite = Rewrite
 
--- | Apply builtin simplification rules and evaluate functions.
-simplify :: Prim axiom
+-- | Apply builtin simplification rewrites and evaluate functions.
+simplify :: Prim rewrite
 simplify = Simplify
 
-{- | A single-step strategy which applies the given axiom.
+{- | A single-step strategy which applies the given rewrite rule.
 
-If the axiom is successful, the built-in simplification rules and function
+If the rewrite is successful, the built-in simplification rules and function
 evaluator are applied (see 'ExpandedPattern.simplify' for details).
 
  -}
-axiomStep :: axiom -> Strategy (Prim axiom)
-axiomStep a =
-    Strategy.sequence [Strategy.apply (axiom a), Strategy.apply simplify]
+rewriteStep :: rewrite -> Strategy (Prim rewrite)
+rewriteStep a =
+    Strategy.sequence [Strategy.apply (rewrite a), Strategy.apply simplify]
 
 {- | Transition rule for primitive strategies in 'Prim'.
 
@@ -95,14 +96,14 @@ transitionRule
     -> PredicateSubstitutionSimplifier level Simplifier
     -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions in patterns
-    -> Prim (AxiomPattern level)
+    -> Prim (RewriteRule level)
     -> (CommonExpandedPattern level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier [(CommonExpandedPattern level, StepProof level Variable)]
 transitionRule tools substitutionSimplifier simplifier =
     \case
         Simplify -> transitionSimplify
-        Axiom a -> transitionAxiom a
+        Rewrite a -> transitionRewrite a
   where
     transitionSimplify (config, proof) =
         do
@@ -115,9 +116,9 @@ transitionRule tools substitutionSimplifier simplifier =
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = ExpandedPattern.filterOr configs
             return (prove <$> toList nonEmptyConfigs)
-    transitionAxiom a (config, proof) = do
+    transitionRewrite a (config, proof) = do
         result <- runExceptT
-            $ stepWithAxiom tools substitutionSimplifier config a
+            $ stepWithRule tools substitutionSimplifier config a
         case result of
             Left _ -> pure []
             Right
@@ -130,51 +131,54 @@ transitionRule tools substitutionSimplifier simplifier =
                     then return []
                     else return [(config', proof <> proof')]
 
-{- | A strategy that applies all the axioms in parallel.
+{- | A strategy that applies all the rewrites in parallel.
 
-After each successful axiom, the built-in simplification rules and function
+After each successful rewrite, the built-in simplification rules and function
 evaluator are applied (see 'ExpandedPattern.simplify' for details).
 
 See also: 'Strategy.all'
 
  -}
-allAxioms
-    :: [axiom]
-    -> Strategy (Prim axiom)
-allAxioms axioms =
-    Strategy.all (axiomStep <$> axioms)
+allRewrites
+    :: [rewrite]
+    -> Strategy (Prim rewrite)
+allRewrites rewrites =
+    Strategy.all (rewriteStep <$> rewrites)
 
-{- | A strategy that applies the axioms until one succeeds.
+{- | A strategy that applies the rewrites until one succeeds.
 
-The axioms are attempted in order until one succeeds. After a successful axiom,
-the built-in simplification rules and function evaluator are applied (see
-'ExpandedPattern.simplify' for details).
+The rewrites are attempted in order until one succeeds. After a successful
+rewrite, the built-in simplification rules and function evaluator are applied
+(see 'ExpandedPattern.simplify' for details).
 
 See also: 'Strategy.any'
 
  -}
-anyAxiom
-    :: [axiom]
-    -> Strategy (Prim axiom)
-anyAxiom axioms =
-    Strategy.any (axiomStep <$> axioms)
+anyRewrite
+    :: [rewrite]
+    -> Strategy (Prim rewrite)
+anyRewrite rewrites =
+    Strategy.any (rewriteStep <$> rewrites)
 
-{- | Heat the configuration, apply a normal rule, and cool the result.
+{- | Heat the configuration, apply a normal rewrite, and cool the result.
  -}
 -- TODO (thomas.tuegel): This strategy is not right because heating/cooling
 -- rules must have side conditions if encoded as \rewrites, or they must be
 -- \equals rules, which are not handled by this strategy.
 heatingCooling
-    :: (forall axiom. [axiom] -> Strategy (Prim axiom))
-    -- ^ 'allAxioms' or 'anyAxiom'
-    -> [AxiomPattern level]
-    -> Strategy (Prim (AxiomPattern level))
-heatingCooling axiomStrategy axioms =
+    :: (forall rewrite. [rewrite] -> Strategy (Prim rewrite))
+    -- ^ 'allRewrites' or 'anyRewrite'
+    -> [RewriteRule level]
+    -> Strategy (Prim (RewriteRule level))
+heatingCooling rewriteStrategy rewrites =
     Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
   where
-    heatingRules = filter isHeatingRule axioms
-    heat = axiomStrategy heatingRules
-    normalRules = filter isNormalRule axioms
-    normal = axiomStrategy normalRules
-    coolingRules = filter isCoolingRule axioms
-    cool = axiomStrategy coolingRules
+    heatingRules = filter isHeating rewrites
+    isHeating (RewriteRule rule) = isHeatingRule rule
+    heat = rewriteStrategy heatingRules
+    normalRules = filter isNormal rewrites
+    isNormal (RewriteRule rule) = isNormalRule rule
+    normal = rewriteStrategy normalRules
+    coolingRules = filter isCooling rewrites
+    isCooling (RewriteRule rule) = isCoolingRule rule
+    cool = rewriteStrategy coolingRules

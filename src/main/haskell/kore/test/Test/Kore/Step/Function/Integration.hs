@@ -22,8 +22,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
-import           Kore.Step.BaseStep
-                 ( AxiomPattern (..) )
+import           Kore.Step.AxiomPatterns
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import           Kore.Step.AxiomPatterns as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern,
                  Predicated (Predicated) )
@@ -33,7 +35,7 @@ import           Kore.Step.Function.Data
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.Function.UserDefined
-                 ( axiomFunctionEvaluator )
+                 ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
@@ -376,13 +378,14 @@ axiomEvaluator
     -> ApplicationFunctionEvaluator Object
 axiomEvaluator left right =
     ApplicationFunctionEvaluator
-        (axiomFunctionEvaluator
-            AxiomPattern
-                { axiomPatternLeft  = left
-                , axiomPatternRight = right
-                , axiomPatternRequires = makeTruePredicate
-                , axiomPatternAttributes = def
+        (ruleFunctionEvaluator
+            (EqualityRule RulePattern
+                { left
+                , right
+                , requires = makeTruePredicate
+                , attributes = def
                 }
+            )
         )
 
 appliedMockEvaluator

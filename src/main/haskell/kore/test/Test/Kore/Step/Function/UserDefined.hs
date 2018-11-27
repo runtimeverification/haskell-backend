@@ -28,8 +28,10 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Predicate.Predicate
                  ( makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.BaseStep
-                 ( AxiomPattern (..) )
+import           Kore.Step.AxiomPatterns
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import           Kore.Step.AxiomPatterns as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom )
 import           Kore.Step.Function.Data as AttemptedFunction
@@ -37,7 +39,7 @@ import           Kore.Step.Function.Data as AttemptedFunction
 import           Kore.Step.Function.Data
                  ( CommonAttemptedFunction )
 import           Kore.Step.Function.UserDefined
-                 ( axiomFunctionEvaluator )
+                 ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
@@ -70,14 +72,15 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
-                AxiomPattern
-                    { axiomPatternLeft =
+                (EqualityRule RulePattern
+                    { left =
                         asApplication $ metaF (Var_ $ x patternMetaSort)
-                    , axiomPatternRight =
+                    , right =
                         asApplication $ metaG (Var_ $ x patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
                 (mockSimplifier [])
                 (metaF (Var_ $ x patternMetaSort))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
@@ -88,14 +91,15 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
-                AxiomPattern
-                    { axiomPatternLeft =
+                (EqualityRule RulePattern
+                    { left =
                         asApplication $ metaF (Var_ $ x patternMetaSort)
-                    , axiomPatternRight =
+                    , right =
                         asApplication $ metaG (Var_ $ x patternMetaSort)
-                    , axiomPatternRequires = makeFalsePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeFalsePredicate
+                    , attributes = def
                     }
+                )
                 (mockSimplifier [])
                 (metaF (Var_ $ x patternMetaSort))
         assertEqualWithExplanation "f(x) => g(x) requires false" expect actual
@@ -107,14 +111,15 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
-                AxiomPattern
-                    { axiomPatternLeft =
+                (EqualityRule RulePattern
+                    { left =
                         asApplication $ metaF (Var_ $ x patternMetaSort)
-                    , axiomPatternRight =
+                    , right =
                         asApplication $ metaG (Var_ $ x patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
                 (mockSimplifier
                     -- Evaluate Top to Bottom.
                     [ (mkTop, ([], SimplificationProof)) ]
@@ -135,14 +140,15 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
-                AxiomPattern
-                    { axiomPatternLeft =
+                (EqualityRule RulePattern
+                    { left =
                         asApplication $ metaF (Var_ $ x patternMetaSort)
-                    , axiomPatternRight =
+                    , right =
                         asApplication $ metaG (Var_ $ x patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
                 (mockSimplifier
                     [   (   asApplication $ metaG (Var_ $ x patternMetaSort)
                         ,   (   [ Predicated
@@ -168,14 +174,15 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
-                AxiomPattern
-                    { axiomPatternLeft =
+                (EqualityRule RulePattern
+                    { left =
                         asApplication $ metaF (Var_ $ x patternMetaSort)
-                    , axiomPatternRight =
+                    , right =
                         asApplication $ metaG (Var_ $ x patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
                 (mockSimplifier
                     [   (   asApplication $ metaG (Var_ $ x patternMetaSort)
                         ,   (   [ Predicated
@@ -211,16 +218,17 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
-                AxiomPattern
-                    { axiomPatternLeft  =
+                (EqualityRule RulePattern
+                    { left  =
                         asApplication $ metaSigma
                             (Var_ $ x patternMetaSort)
                             (Var_ $ x patternMetaSort)
-                    , axiomPatternRight =
+                    , right =
                         asApplication $ metaG (Var_ $ x patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
                 (mockSimplifier [])
                 (metaSigma
                     (Var_ $ a patternMetaSort)
@@ -249,16 +257,17 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
-                AxiomPattern
-                    { axiomPatternLeft  =
+                (EqualityRule RulePattern
+                    { left  =
                         asApplication $ metaSigma
                             (Var_ $ x patternMetaSort)
                             (Var_ $ x patternMetaSort)
-                    , axiomPatternRight =
+                    , right =
                         asApplication $ metaG (Var_ $ x patternMetaSort)
-                    , axiomPatternRequires = makeTruePredicate
-                    , axiomPatternAttributes = def
+                    , requires = makeTruePredicate
+                    , attributes = def
                     }
+                )
                 (mockSimplifier
                     [   (   asApplication $ metaG (Var_ $ b patternMetaSort)
                         ,   (   [ Predicated
@@ -368,7 +377,7 @@ asApplication = Functor.Foldable.embed . ApplicationPattern
 evaluateWithAxiom
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> AxiomPattern level
+    -> EqualityRule level
     -> CommonStepPatternSimplifier level
     -> Application level (CommonStepPattern level)
     -> IO (CommonAttemptedFunction level)
@@ -393,7 +402,7 @@ evaluateWithAxiom
         (<$>) fst
         $ SMT.runSMT SMT.defaultConfig
         $ evalSimplifier
-        $ axiomFunctionEvaluator
+        $ ruleFunctionEvaluator
             axiom
             metadataTools
             (Mock.substitutionSimplifier metadataTools)

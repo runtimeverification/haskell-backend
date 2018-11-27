@@ -8,7 +8,9 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Kore.Step.AxiomPatterns
-    ( AxiomPattern (..)
+    ( EqualityRule (..)
+    , RewriteRule (..)
+    , RulePattern (..)
     , AxiomPatternAttributes (..)
     , lensHeatCool, HeatCool (..)
     , lensProductionID, ProductionID (..)
@@ -98,62 +100,73 @@ instance ParseAttributes AxiomPatternAttributes where
 
 newtype AxiomPatternError = AxiomPatternError ()
 
-{- | Normal rewriting and function axioms
+{- | Normal rewriting and function axioms, claims and patterns.
 
-Currently @AxiomPattern@ can only represent axioms of the form
+Currently @RulePattern@ can only represent rules of the form
 @
-  axiomPatternLeft => axiomPatternRight requires axiomPatternRequires
+  left => right if requires
+  left = right if requires
 @
 --}
-data AxiomPattern level = AxiomPattern
-    { axiomPatternLeft  :: !(CommonStepPattern level)
-    , axiomPatternRight :: !(CommonStepPattern level)
-    , axiomPatternRequires :: !(CommonPredicate level)
-    , axiomPatternAttributes :: !AxiomPatternAttributes
+data RulePattern level = RulePattern
+    { left  :: !(CommonStepPattern level)
+    , right :: !(CommonStepPattern level)
+    , requires :: !(CommonPredicate level)
+    , attributes :: !AxiomPatternAttributes
     }
+    deriving (Eq, Show)
+
+{-  | Equality-based rule pattern.
+-}
+newtype EqualityRule level = EqualityRule (RulePattern level)
+    deriving (Eq, Show)
+
+{-  | Rewrite-based rule pattern.
+-}
+newtype RewriteRule level = RewriteRule (RulePattern level)
     deriving (Eq, Show)
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern level
-    = RewriteAxiomPattern (AxiomPattern level)
-    | FunctionAxiomPattern (AxiomPattern level)
+    = RewriteAxiomPattern (RewriteRule level)
+    | FunctionAxiomPattern (EqualityRule level)
     deriving (Eq, Show)
 
 {- | Does the axiom pattern represent a heating rule?
  -}
-isHeatingRule :: AxiomPattern level -> Bool
-isHeatingRule AxiomPattern { axiomPatternAttributes } =
-    case heatCool axiomPatternAttributes of
+isHeatingRule :: RulePattern level -> Bool
+isHeatingRule RulePattern { attributes } =
+    case heatCool attributes of
         Heat -> True
         _ -> False
 
 {- | Does the axiom pattern represent a cooling rule?
  -}
-isCoolingRule :: AxiomPattern level -> Bool
-isCoolingRule AxiomPattern { axiomPatternAttributes } =
-    case heatCool axiomPatternAttributes of
+isCoolingRule :: RulePattern level -> Bool
+isCoolingRule RulePattern { attributes } =
+    case heatCool attributes of
         Cool -> True
         _ -> False
 
 {- | Does the axiom pattern represent a normal rule?
  -}
-isNormalRule :: AxiomPattern level -> Bool
-isNormalRule AxiomPattern { axiomPatternAttributes } =
-    case heatCool axiomPatternAttributes of
+isNormalRule :: RulePattern level -> Bool
+isNormalRule RulePattern { attributes } =
+    case heatCool attributes of
         Normal -> True
         _ -> False
 
 
--- | Extracts all 'AxiomPattern' structures matching a given @level@ from
+-- | Extracts all 'RewriteRule' axioms matching a given @level@ from
 -- a verified definition.
 extractRewriteAxioms
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
     -> KoreIndexedModule atts
     -- ^'IndexedModule' containing the definition
-    -> [AxiomPattern level]
+    -> [RewriteRule level]
 extractRewriteAxioms level idxMod =
     [ axiomPat | RewriteAxiomPattern axiomPat <-
         rights $ map
@@ -161,7 +174,7 @@ extractRewriteAxioms level idxMod =
             (indexedModuleRawSentences idxMod)
     ]
 
--- | Attempts to extract an 'AxiomPattern' of the given @level@ from
+-- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
 -- a given 'KoreSentence'.
 koreSentenceToAxiomPattern
     :: MetaOrObject level
@@ -176,7 +189,8 @@ koreSentenceToAxiomPattern level =
 sentenceToAxiomPattern
     :: MetaOrObject level
     => level
-    -> Sentence level' UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    -> Sentence
+        level' UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 sentenceToAxiomPattern
     level
@@ -186,15 +200,15 @@ sentenceToAxiomPattern
         }
     )
   = do
-    axiomPatternAttributes <-
+    attributes <-
         Attribute.Parser.liftParser (parseAttributes sentenceAxiomAttributes)
     case patternKoreToPure level sentenceAxiomPattern of
-        Right pat -> patternToAxiomPattern axiomPatternAttributes pat
+        Right pat -> patternToAxiomPattern attributes pat
         Left err  -> Left err
 sentenceToAxiomPattern _ _ =
     koreFail "Only axiom sentences can be translated to AxiomPatterns"
 
-{- | Match a pure pattern encoding an 'AxiomPattern'.
+{- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
 @patternToAxiomPattern@ returns an error if the given 'CommonPurePattern' does
 not encode a normal rewrite or function axiom.
@@ -204,31 +218,31 @@ patternToAxiomPattern
     => AxiomPatternAttributes
     -> CommonStepPattern level
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
-patternToAxiomPattern axiomPatternAttributes pat =
+patternToAxiomPattern attributes pat =
     case pat of
         -- normal rewrite axioms
         And_ _ requires (And_ _ _ensures (Rewrites_ _ lhs rhs)) ->
-            pure $ RewriteAxiomPattern AxiomPattern
-                { axiomPatternLeft = lhs
-                , axiomPatternRight = rhs
-                , axiomPatternRequires = wrapPredicate requires
-                , axiomPatternAttributes
+            pure $ RewriteAxiomPattern $ RewriteRule RulePattern
+                { left = lhs
+                , right = rhs
+                , requires = wrapPredicate requires
+                , attributes
                 }
         -- function axioms: general
         Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
-            pure $ FunctionAxiomPattern AxiomPattern
-                { axiomPatternLeft = lhs
-                , axiomPatternRight = rhs
-                , axiomPatternRequires = wrapPredicate requires
-                , axiomPatternAttributes
+            pure $ FunctionAxiomPattern $ EqualityRule RulePattern
+                { left = lhs
+                , right = rhs
+                , requires = wrapPredicate requires
+                , attributes
                 }
         -- function axioms: trivial pre- and post-conditions
         Equals_ _ _ lhs rhs ->
-            pure $ FunctionAxiomPattern AxiomPattern
-                { axiomPatternLeft = lhs
-                , axiomPatternRight = rhs
-                , axiomPatternRequires = makeTruePredicate
-                , axiomPatternAttributes
+            pure $ FunctionAxiomPattern $ EqualityRule RulePattern
+                { left = lhs
+                , right = rhs
+                , requires = makeTruePredicate
+                , attributes
                 }
-        Forall_ _ _ child -> patternToAxiomPattern axiomPatternAttributes child
+        Forall_ _ _ child -> patternToAxiomPattern attributes child
         _ -> koreFail "Unsupported pattern type in axiom"

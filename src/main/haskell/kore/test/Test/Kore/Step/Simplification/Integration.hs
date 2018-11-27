@@ -29,7 +29,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPattern (..) )
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import           Kore.Step.AxiomPatterns as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -173,7 +175,7 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                     , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
-    , testCase "zzzmap function" $ do
+    , testCase "map function" $ do
         let expect = OrOfExpandedPattern.make []
         actual <-
             evaluateWithAxioms
@@ -181,8 +183,8 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                 (axiomPatternsToEvaluators
                     (Map.fromList
                         [   ( Mock.function20MapTestId
-                            ,   [ AxiomPattern
-                                    { axiomPatternLeft =
+                            ,   [ EqualityRule RulePattern
+                                    { left =
                                         Mock.function20MapTest
                                             (Mock.concatMap
                                                 (Mock.elementMap
@@ -192,9 +194,9 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                                                 (mkVar Mock.m)
                                             )
                                             (mkVar Mock.x)
-                                    , axiomPatternRight = mkVar Mock.y
-                                    , axiomPatternRequires = makeTruePredicate
-                                    , axiomPatternAttributes = def
+                                    , right = mkVar Mock.y
+                                    , requires = makeTruePredicate
+                                    , attributes = def
                                     }
                                 ]
                             )

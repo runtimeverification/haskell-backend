@@ -24,7 +24,9 @@ import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPattern (..) )
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+import           Kore.Step.AxiomPatterns as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -327,11 +329,11 @@ test_concretizeKeysAxiom =
     symbolicSet = asSymbolicPattern $ Set.fromList [x]
     concreteSet = asPattern $ Set.fromList [concreteKey]
     axiom =
-        AxiomPattern
-            { axiomPatternLeft = mkPair intSort setSort x symbolicSet
-            , axiomPatternRight = x
-            , axiomPatternRequires = Predicate.makeTruePredicate
-            , axiomPatternAttributes = Default.def
+        RewriteRule RulePattern
+            { left = mkPair intSort setSort x symbolicSet
+            , right = x
+            , requires = Predicate.makeTruePredicate
+            , attributes = Default.def
             }
     expected =
         Right
