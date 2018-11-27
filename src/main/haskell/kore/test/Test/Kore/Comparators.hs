@@ -33,9 +33,9 @@ import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
 import           Kore.Step.Step
-                 ( RulePattern )
-import           Kore.Step.Step as RulePattern
-                 ( RulePattern (..) )
+                 ( StrategyPattern )
+import           Kore.Step.Step as StrategyPattern
+                 ( StrategyPattern (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -1114,15 +1114,15 @@ instance
     , Show patt
     , Eq patt
     )
-    => SumEqualWithExplanation (RulePattern patt)
+    => SumEqualWithExplanation (StrategyPattern patt)
   where
     sumConstructorPair
-        (RulePattern.RewritePattern p1) (RulePattern.RewritePattern p2)
+        (StrategyPattern.RewritePattern p1) (StrategyPattern.RewritePattern p2)
       =
         SumConstructorSameWithArguments (EqWrap "RewritePattern" p1 p2)
-    sumConstructorPair (RulePattern.Remainder p1) (RulePattern.Remainder p2) =
+    sumConstructorPair (StrategyPattern.Remainder p1) (StrategyPattern.Remainder p2) =
         SumConstructorSameWithArguments (EqWrap "Remainder" p1 p2)
-    sumConstructorPair RulePattern.Bottom RulePattern.Bottom =
+    sumConstructorPair StrategyPattern.Bottom StrategyPattern.Bottom =
         SumConstructorSameNoArguments
     sumConstructorPair p1 p2 =
         SumConstructorDifferent
@@ -1131,9 +1131,9 @@ instance
 
 instance
     ( Show patt
-    , SumEqualWithExplanation (RulePattern patt)
+    , SumEqualWithExplanation (StrategyPattern patt)
     )
-    => EqualWithExplanation (RulePattern patt)
+    => EqualWithExplanation (StrategyPattern patt)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

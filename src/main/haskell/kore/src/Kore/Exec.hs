@@ -68,8 +68,8 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step
                  ( Prim, ruleResultToRewriteTree, transitionRule )
-import qualified Kore.Step.Step as RulePattern
-                 ( RulePattern (..) )
+import qualified Kore.Step.Step as StrategyPattern
+                 ( StrategyPattern (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Strategy
@@ -189,7 +189,7 @@ setUpConcreteExecution indexedModule purePattern stepLimit strategy execute = do
                 [] -> ExpandedPattern.bottom
                 (config : _) -> config
     executionTree <-
-        runStrategy' (RulePattern.RewritePattern initialPattern)
+        runStrategy' (StrategyPattern.RewritePattern initialPattern)
     execute
         metadataTools
         simplifier

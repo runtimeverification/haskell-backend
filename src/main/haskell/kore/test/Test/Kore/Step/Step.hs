@@ -59,6 +59,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
 import qualified SMT
@@ -297,9 +298,9 @@ test_onePathStrategy = give symbolOrAliasSorts
             metadataTools
             (Limit 0)
             (ExpandedPattern.fromPurePattern Mock.a)
-            (simpleAxiom Mock.a mkBottom)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleAxiom Mock.a Mock.c]
+            (simpleRewrite Mock.a mkBottom)
+            [simpleRewrite Mock.a Mock.b]
+            [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
             (RewritePattern $ ExpandedPattern.fromPurePattern Mock.a)
             actual
@@ -313,9 +314,9 @@ test_onePathStrategy = give symbolOrAliasSorts
             metadataTools
             (Limit 1)
             (ExpandedPattern.fromPurePattern Mock.a)
-            (simpleAxiom Mock.a mkBottom)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleAxiom Mock.a Mock.c]
+            (simpleRewrite Mock.a mkBottom)
+            [simpleRewrite Mock.a Mock.b]
+            [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
             Bottom
             _actual
@@ -330,9 +331,9 @@ test_onePathStrategy = give symbolOrAliasSorts
             metadataTools
             (Limit 1)
             (ExpandedPattern.fromPurePattern Mock.a)
-            (simpleAxiom Mock.d mkBottom)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleAxiom Mock.a Mock.c]
+            (simpleRewrite Mock.d mkBottom)
+            [simpleRewrite Mock.a Mock.b]
+            [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
             Bottom
             _actual1
@@ -350,10 +351,10 @@ test_onePathStrategy = give symbolOrAliasSorts
             metadataTools
             (Limit 2)
             (ExpandedPattern.fromPurePattern Mock.a)
-            (simpleAxiom Mock.b mkBottom)
-            [simpleAxiom Mock.b Mock.c]
-            [ simpleAxiom Mock.b Mock.d
-            , simpleAxiom Mock.a Mock.b
+            (simpleRewrite Mock.b mkBottom)
+            [simpleRewrite Mock.b Mock.c]
+            [ simpleRewrite Mock.b Mock.d
+            , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
             Bottom
@@ -369,10 +370,10 @@ test_onePathStrategy = give symbolOrAliasSorts
             metadataTools
             (Limit 2)
             (ExpandedPattern.fromPurePattern Mock.a)
-            (simpleAxiom Mock.e mkBottom)
-            [simpleAxiom Mock.b Mock.c]
-            [ simpleAxiom Mock.b Mock.d
-            , simpleAxiom Mock.a Mock.b
+            (simpleRewrite Mock.e mkBottom)
+            [simpleRewrite Mock.b Mock.c]
+            [ simpleRewrite Mock.b Mock.d
+            , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
             Bottom
@@ -391,10 +392,10 @@ test_onePathStrategy = give symbolOrAliasSorts
             metadataTools
             (Limit 2)
             (ExpandedPattern.fromPurePattern Mock.a)
-            (simpleAxiom Mock.e mkBottom)
-            [simpleAxiom Mock.e Mock.c]
-            [ simpleAxiom Mock.b Mock.d
-            , simpleAxiom Mock.a Mock.b
+            (simpleRewrite Mock.e mkBottom)
+            [simpleRewrite Mock.e Mock.c]
+            [ simpleRewrite Mock.b Mock.d
+            , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
             Bottom
@@ -424,17 +425,17 @@ test_onePathStrategy = give symbolOrAliasSorts
                 (ExpandedPattern.fromPurePattern
                     (Mock.functionalConstr10 (mkVar Mock.x))
                 )
-                (simpleAxiom (Mock.functionalConstr11 Mock.a) (Mock.f Mock.a))
-                [ simpleAxiom (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-                , simpleAxiom (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                (simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.f Mock.a))
+                [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
+                , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
                 ]
-                [ simpleAxiom (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-                , simpleAxiom (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
-                , simpleAxiom (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
-                , simpleAxiom
+                [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
+                , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
+                , simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
+                , simpleRewrite
                     (Mock.functionalConstr11 (mkVar Mock.y))
                     (Mock.h (mkVar Mock.y))
-                , simpleAxiom
+                , simpleRewrite
                     (Mock.functionalConstr10 (mkVar Mock.y))
                     (Mock.functionalConstr11 (mkVar Mock.y))
                 ]
@@ -445,7 +446,7 @@ test_onePathStrategy = give symbolOrAliasSorts
             (RewritePattern Predicated
                 { term = Mock.f Mock.a
                 , predicate = makeTruePredicate
-                , substitution = [(Mock.x, Mock.a)]
+                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                 }
             )
             _actual2
@@ -453,7 +454,7 @@ test_onePathStrategy = give symbolOrAliasSorts
             (RewritePattern Predicated
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
-                , substitution = [(Mock.x, Mock.b)]
+                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                 }
             )
             _actual3
@@ -461,7 +462,7 @@ test_onePathStrategy = give symbolOrAliasSorts
             (RewritePattern Predicated
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
-                , substitution = [(Mock.x, Mock.c)]
+                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
                 }
             )
             _actual4
@@ -495,7 +496,7 @@ test_onePathStrategy = give symbolOrAliasSorts
                         (makeNotPredicate
                             (makeEqualsPredicate (mkVar Mock.x) Mock.c)
                         )
-                , substitution = []
+                , substitution = mempty
                 }
             )
             _actual5
@@ -656,17 +657,17 @@ mockMetadataTools = MetadataTools
     , subsorts = Set.singleton
     }
 
-simpleRule
+simpleRewrite
     :: MetaOrObject level
     => CommonStepPattern level
     -> CommonStepPattern level
-    -> RulePattern level
-simpleRule left right =
-    RulePattern
-        { axiomPatternLeft = left
-        , axiomPatternRight = right
-        , axiomPatternRequires = makeTruePredicate
-        , axiomPatternAttributes = def
+    -> RewriteRule level
+simpleRewrite left right =
+    RewriteRule RulePattern
+        { left = left
+        , right = right
+        , requires = makeTruePredicate
+        , attributes = def
         }
 
 sigmaSymbol :: SymbolOrAlias Meta
@@ -746,7 +747,7 @@ runSteps
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     ->  (Tree
-            ( RulePattern (CommonExpandedPattern level)
+            ( StrategyPattern (CommonExpandedPattern level)
             , StepProof level Variable
             )
         -> Maybe (Tree (b, StepProof level Variable))
@@ -799,7 +800,7 @@ runOnePathSteps
     -> RewriteRule level
     -> [RewriteRule level]
     -> [RewriteRule level]
-    -> IO [RulePattern (CommonExpandedPattern level)]
+    -> IO [StrategyPattern (CommonExpandedPattern level)]
 runOnePathSteps
     metadataTools
     stepLimit

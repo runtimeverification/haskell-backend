@@ -10,7 +10,7 @@ Portability : portable
 module Kore.Step.Step
     ( -- * Primitive strategies
       Prim (..)
-    , RulePattern (..)
+    , StrategyPattern (..)
     , rewrite
     , simplify
     , rewriteStep
@@ -46,10 +46,11 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.AxiomPatterns
-                 ( isCoolingRule, isHeatingRule, isNormalRule )
+                 ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
+                 isHeatingRule, isNormalRule )
 import           Kore.Step.BaseStep
-                 ( AxiomPattern, StepProof (..), StepResult (StepResult),
-                 simplificationProof, stepWithAxiom )
+                 ( StepProof (..), StepResult (StepResult),
+                 simplificationProof, stepWithRule )
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
 import           Kore.Step.ExpandedPattern
@@ -68,7 +69,7 @@ import qualified Kore.Step.Strategy as Strategy
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
-data Prim axiom =
+data Prim rewrite =
       Simplify
     -- ^ Builtin and function symbol simplification step
     | Rewrite !rewrite
@@ -95,7 +96,7 @@ As an example, when rewriting
 if x then phi else psi
 @
 
-with this axiom
+with this rule
 
 @
 if true then x else y => x
@@ -109,7 +110,7 @@ the 'RewritePattern' would be @phi@, while the 'Remainder' might be one of
 if false then phi else psi
 @
 
-When rewriting the same pattern with an axiom that does not match, e.g.
+When rewriting the same pattern with an rule that does not match, e.g.
 
 @
 x + y => x +Int y
@@ -125,12 +126,12 @@ if x then phi else psi
 Also see
 https://github.com/kframework/kore/blob/master/docs/2018-11-08-One-Path-Reachability-Proofs.md
 -}
-data RulePattern patt
+data StrategyPattern patt
     = RewritePattern !patt
-    -- ^ Pattern on which a normal 'Axiom' can be applied. Also used
+    -- ^ Pattern on which a normal 'Rewrite' can be applied. Also used
     -- for the start patterns.
     | Remainder !patt
-    -- ^ Unrewritten part of a pattern on which a rewrite axiom was applied.
+    -- ^ Unrewritten part of a pattern on which a rewrite rule was applied.
     | Bottom
     -- ^ special representation for a bottom rewriting/simplification result.
     -- This is needed when bottom results are expected and we don't want
@@ -141,21 +142,21 @@ data RulePattern patt
 rewrite :: rewrite -> Prim rewrite
 rewrite = Rewrite
 
--- | Apply the axiom on the remainder of the .
-rewriteOnRemainder :: Rewrite -> Prim rewrite
+-- | Apply the rule on the remainder of another rule.
+rewriteOnRemainder :: rewrite -> Prim rewrite
 rewriteOnRemainder = RewriteOnRemainder
 
 -- | Apply builtin simplification rewrites and evaluate functions.
 simplify :: Prim rewrite
 simplify = Simplify
 
-cancelBottom :: Prim axiom
+cancelBottom :: Prim rewrite
 cancelBottom = CancelBottom
 
-cancelRemainder :: Prim axiom
+cancelRemainder :: Prim rewrite
 cancelRemainder = CancelRemainder
 
-nonEmptyRemainderFail :: Prim axiom
+nonEmptyRemainderFail :: Prim rewrite
 nonEmptyRemainderFail = NonEmptyRemainderFail
 
 {- | A single-step strategy which applies the given rewrite rule.
@@ -176,7 +177,7 @@ rewriteStep a =
 {- | A single-step strategy which applies the given rewrite, allowing
 the use of the remainder.
 
-If the axiom is successful, the built-in simplification rules and function
+If the rewrite is successful, the built-in simplification rules and function
 evaluator are applied (see 'ExpandedPattern.simplify' for details).
  -}
 rewriteWithRemainderStep :: rewrite -> Strategy (Prim rewrite)
@@ -212,10 +213,12 @@ transitionRule
     -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> Prim (RewriteRule level)
-    -> (RulePattern (CommonExpandedPattern level), StepProof level Variable)
+    -> (StrategyPattern (CommonExpandedPattern level), StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier
-        [(RulePattern (CommonExpandedPattern level), StepProof level Variable)]
+        [   ( StrategyPattern (CommonExpandedPattern level)
+            , StepProof level Variable)
+        ]
 transitionRule tools substitutionSimplifier simplifier =
     \case
         Simplify -> transitionSimplify
@@ -267,7 +270,7 @@ transitionRule tools substitutionSimplifier simplifier =
     transitionRewriteOnRemainder _ (RewritePattern _, _) =
         return []
     transitionRewriteOnRemainder a (Remainder config, proof) =
-        applyAxiom a (config, proof)
+        applyRewrite a (config, proof)
     transitionRewriteOnRemainder _ (Bottom, _) =
         return []
 
@@ -349,23 +352,23 @@ heatingCooling rewriteStrategy rewrites =
 For subsequent steps, use 'onePathFollowupStep'.
 
 It first removes the destination from the input, then it tries to apply
-the normal axioms.
+the normal rewrites.
 
-Whenever it applies an axiom, the subsequent axioms see only the part of the
-pattern to which the axiom wasn't applied.
+Whenever it applies a rewrite, the subsequent rewrites see only the part of the
+pattern to which the initial rewrite wasn't applied.
 -}
 onePathFirstStep
-    :: axiom
-    -- ^ axiom with which to remove the destination we`re trying to reach
-    -> [axiom]
-    -- ^ normal axioms
-    -> Strategy (Prim axiom)
-onePathFirstStep destinationRemovalAxiom axioms =
+    :: rewrite
+    -- ^ rewrite with which to remove the destination we`re trying to reach
+    -> [rewrite]
+    -- ^ normal rewrites
+    -> Strategy (Prim rewrite)
+onePathFirstStep destinationRemovalRewrite rewrites =
     Strategy.sequence
-        (  [axiomWithRemainderStep destinationRemovalAxiom]
+        (  [rewriteWithRemainderStep destinationRemovalRewrite]
         ++ map
-            axiomOnRemainderStep
-            axioms
+            rewriteOnRemainderStep
+            rewrites
         -- Fail if we can't rewrite the entire pattern.
         ++ [Strategy.apply nonEmptyRemainderFail]
         )
@@ -374,22 +377,22 @@ onePathFirstStep destinationRemovalAxiom axioms =
 For the first step, use 'onePathFirstStep'.
 
 It first removes the destination from the input, then it tries to apply
-the coinductive axioms to whatever is left, then it tries to apply the normal
-axioms.
+the coinductive rewrites to whatever is left, then it tries to apply the normal
+rewrites.
 
-Whenever it applies an axiom, the subsequent axioms see only the part of the
-pattern to which the axiom wasn't applied.
+Whenever it applies an rewrite, the subsequent rewrites see only the part of the
+pattern to which the rewrite wasn't applied.
 -}
 onePathFollowupStep
-    :: axiom
-    -- ^ axiom with which to remove the destination we`re trying to reach
-    -> [axiom]
-    -- ^ coinductive axioms
-    -> [axiom]
-    -- ^ normal axioms
-    -> Strategy (Prim axiom)
-onePathFollowupStep destinationRemovalAxiom coinductiveAxioms axioms =
-    onePathFirstStep destinationRemovalAxiom (coinductiveAxioms ++ axioms)
+    :: rewrite
+    -- ^ rewrite with which to remove the destination we`re trying to reach
+    -> [rewrite]
+    -- ^ coinductive rewrites
+    -> [rewrite]
+    -- ^ normal rewrites
+    -> Strategy (Prim rewrite)
+onePathFollowupStep destinationRemovalRewrite coinductiveRewrites rewrites =
+    onePathFirstStep destinationRemovalRewrite (coinductiveRewrites ++ rewrites)
 
 {-| Removes 'Remainder' nodes from a Tree.
 
@@ -397,14 +400,14 @@ If the tree cannot be transformed into a single tree, which can happen
 only if the root is a 'RewritePattern', it returns Nothing.
 -}
 ruleResultToRewriteTree
-    :: Tree (RulePattern patt, proof) -> Maybe (Tree (patt, proof))
+    :: Tree (StrategyPattern patt, proof) -> Maybe (Tree (patt, proof))
 ruleResultToRewriteTree tree =
     case ruleResultToRewriteTreeList tree of
         [a] -> Just a
         _ -> Nothing
 
 ruleResultToRewriteTreeList
-    :: Tree (RulePattern patt, proof) -> [Tree (patt, proof)]
+    :: Tree (StrategyPattern patt, proof) -> [Tree (patt, proof)]
 ruleResultToRewriteTreeList (Node (RewritePattern p, proof) children) =
     [Node (p, proof) (concatMap ruleResultToRewriteTreeList children)]
 ruleResultToRewriteTreeList (Node (Remainder _, _) children) =
