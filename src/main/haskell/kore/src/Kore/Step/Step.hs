@@ -10,7 +10,6 @@ Portability : portable
 module Kore.Step.Step
     ( -- * Primitive strategies
       Prim (..)
-    , StrategyPattern (..)
     , rewrite
     , simplify
     , rewriteStep
@@ -18,9 +17,6 @@ module Kore.Step.Step
     , allRewrites
     , anyRewrite
     , heatingCooling
-    , onePathFirstStep
-    , onePathFollowupStep
-    , ruleResultToRewriteTree
       -- * Re-exports
     , RulePattern
     , Natural
@@ -69,95 +65,15 @@ import qualified Kore.Step.Strategy as Strategy
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
-data Prim rewrite =
-      Simplify
-    -- ^ Builtin and function symbol simplification step
-    | Rewrite !rewrite
-    -- ^ Rewrite rule applied only on 'RewritePattern's. May produce
-    -- RewritePatterns and 'Remainder's. If the resulting RewritePattern
-    -- is bottom, we use 'Bottom' instead.
-    | RewriteOnRemainder !rewrite
-    -- ^ Rewrite rule applied only on rewrite 'Remainder's. May produce
-    -- RewritePatterns and 'Remainder's. If the resulting RewritePattern
-    -- is bottom, we use 'Bottom' instead.
-    | NonEmptyRemainderFail
-    -- ^ Assertion that the remainder is empty.
-    | CancelBottom
-    -- ^ Transforms 'Bottom' into @[]@.
-    | CancelRemainder
-    -- ^ Transforms 'Remainder's into @[]@.
-  deriving (Show)
-
-{- | A pattern on which a rule can be applied or on which a rule was applied.
-
-As an example, when rewriting
-
-@
-if x then phi else psi
-@
-
-with this rule
-
-@
-if true then x else y => x
-@
-
-the 'RewritePattern' would be @phi@, while the 'Remainder' might be one of
-
-@
-(if x then phi else psi) and (x!=true)
-
-if false then phi else psi
-@
-
-When rewriting the same pattern with an rule that does not match, e.g.
-
-@
-x + y => x +Int y
-@
-
-then the rewrite result should be 'Bottom', while the Remainder should be
-the original pattern, i.e.
-
-@
-if x then phi else psi
-@
-
-Also see
-https://github.com/kframework/kore/blob/master/docs/2018-11-08-One-Path-Reachability-Proofs.md
--}
-data StrategyPattern patt
-    = RewritePattern !patt
-    -- ^ Pattern on which a normal 'Rewrite' can be applied. Also used
-    -- for the start patterns.
-    | Remainder !patt
-    -- ^ Unrewritten part of a pattern on which a rewrite rule was applied.
-    | Bottom
-    -- ^ special representation for a bottom rewriting/simplification result.
-    -- This is needed when bottom results are expected and we don't want
-    -- them to be treated as errors by 'Strategy.try'.
-  deriving (Show, Eq)
+data Prim rewrite = Simplify | Rewrite !rewrite
 
 -- | Apply the rewrite.
 rewrite :: rewrite -> Prim rewrite
 rewrite = Rewrite
 
--- | Apply the rule on the remainder of another rule.
-rewriteOnRemainder :: rewrite -> Prim rewrite
-rewriteOnRemainder = RewriteOnRemainder
-
 -- | Apply builtin simplification rewrites and evaluate functions.
 simplify :: Prim rewrite
 simplify = Simplify
-
-cancelBottom :: Prim rewrite
-cancelBottom = CancelBottom
-
-cancelRemainder :: Prim rewrite
-cancelRemainder = CancelRemainder
-
-nonEmptyRemainderFail :: Prim rewrite
-nonEmptyRemainderFail = NonEmptyRemainderFail
 
 {- | A single-step strategy which applies the given rewrite rule.
 
@@ -167,39 +83,7 @@ evaluator are applied (see 'ExpandedPattern.simplify' for details).
  -}
 rewriteStep :: rewrite -> Strategy (Prim rewrite)
 rewriteStep a =
-    Strategy.sequence
-        [ Strategy.apply (rewrite a)
-        , Strategy.apply simplify
-        , Strategy.apply cancelBottom
-        , Strategy.apply cancelRemainder
-        ]
-
-{- | A single-step strategy which applies the given rewrite, allowing
-the use of the remainder.
-
-If the rewrite is successful, the built-in simplification rules and function
-evaluator are applied (see 'ExpandedPattern.simplify' for details).
- -}
-rewriteWithRemainderStep :: rewrite -> Strategy (Prim rewrite)
-rewriteWithRemainderStep a =
-    Strategy.sequence
-        [ Strategy.apply (rewrite a)
-        , Strategy.apply simplify
-        ]
-
-{- | A single-step strategy which applies the given rewrite on the
-remainder of the previous rules.
-
-If the rewrite is successful, the built-in simplification rules and function
-evaluator are applied (see 'ExpandedPattern.simplify' for details).
-
--}
-rewriteOnRemainderStep :: rewrite -> Strategy (Prim rewrite)
-rewriteOnRemainderStep a =
-    Strategy.try
-        (Strategy.sequence
-            [ Strategy.apply (rewriteOnRemainder a), Strategy.apply simplify ]
-        )
+    Strategy.sequence [Strategy.apply (rewrite a), Strategy.apply simplify]
 
 {- | Transition rule for primitive strategies in 'Prim'.
 
@@ -213,42 +97,15 @@ transitionRule
     -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> Prim (RewriteRule level)
-    -> (StrategyPattern (CommonExpandedPattern level), StepProof level Variable)
+    -> (CommonExpandedPattern level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> Simplifier
-        [   ( StrategyPattern (CommonExpandedPattern level)
-            , StepProof level Variable)
-        ]
+    -> Simplifier [(CommonExpandedPattern level, StepProof level Variable)]
 transitionRule tools substitutionSimplifier simplifier =
     \case
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
-        RewriteOnRemainder a -> transitionRewriteOnRemainder a
-        NonEmptyRemainderFail -> applyNonEmptyRemainderFail
-        CancelBottom -> applyCancelBottom
-        CancelRemainder -> applyCancelRemainder
   where
-    applyNonEmptyRemainderFail r@(RewritePattern _, _) = return [r]
-    applyNonEmptyRemainderFail r@(Remainder _, _) =
-        error ("Unexpected remainder failure: " ++ show r)
-    applyNonEmptyRemainderFail (Bottom, proof) = return [(Bottom, proof)]
-
-    applyCancelBottom r@(RewritePattern _, _) = return [r]
-    applyCancelBottom r@(Remainder _, _) = return [r]
-    applyCancelBottom (Bottom, _) = return []
-
-    applyCancelRemainder r@(RewritePattern _, _) = return [r]
-    applyCancelRemainder (Remainder _, _) = return []
-    applyCancelRemainder r@(Bottom, _) = return [r]
-
-    transitionSimplify (RewritePattern config, proof) =
-        applySimplify RewritePattern (config, proof)
-    transitionSimplify (Remainder config, proof) =
-        applySimplify Remainder (config, proof)
-    transitionSimplify (Bottom, proof) =
-        return [(Bottom, proof)]
-
-    applySimplify wrapper (config, proof) =
+    transitionSimplify (config, proof) =
         do
             (configs, proof') <-
                 ExpandedPattern.simplify
@@ -258,23 +115,8 @@ transitionRule tools substitutionSimplifier simplifier =
                 prove config' = (config', proof'')
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = ExpandedPattern.filterOr configs
-            return (prove <$> map wrapper (toList nonEmptyConfigs))
-
-    transitionRewrite a (RewritePattern config, proof) =
-        applyRewrite a (config, proof)
-    transitionRewrite _ (Remainder _, _) =
-        error "Unexpected remainder."
-    transitionRewrite _ (Bottom, _) =
-        return []
-
-    transitionRewriteOnRemainder _ (RewritePattern _, _) =
-        return []
-    transitionRewriteOnRemainder a (Remainder config, proof) =
-        applyRewrite a (config, proof)
-    transitionRewriteOnRemainder _ (Bottom, _) =
-        return []
-
-    applyRewrite a (config, proof) = do
+            return (prove <$> toList nonEmptyConfigs)
+    transitionRewrite a (config, proof) = do
         result <- runExceptT
             $ stepWithRule tools substitutionSimplifier config a
         case result of
@@ -282,19 +124,12 @@ transitionRule tools substitutionSimplifier simplifier =
             Right
                 ( StepResult
                     { rewrittenPattern = config'
-                    , remainder
+                    -- TODO(virgil): Also use the remainder
                     }
                 , proof') ->
-                    let combinedProof = proof <> proof'
-                    in return $
-                        ( if ExpandedPattern.isBottom config'
-                            then Bottom
-                            else RewritePattern config'
-                        , combinedProof
-                        )
-                        : if ExpandedPattern.isBottom remainder
-                            then []
-                            else [(Remainder remainder, combinedProof)]
+                if ExpandedPattern.isBottom config'
+                    then return []
+                    else return [(config', proof <> proof')]
 
 {- | A strategy that applies all the rewrites in parallel.
 
@@ -347,72 +182,3 @@ heatingCooling rewriteStrategy rewrites =
     coolingRules = filter isCooling rewrites
     isCooling (RewriteRule rule) = isCoolingRule rule
     cool = rewriteStrategy coolingRules
-
-{-| A strategy for doing the first step of a one-path verification.
-For subsequent steps, use 'onePathFollowupStep'.
-
-It first removes the destination from the input, then it tries to apply
-the normal rewrites.
-
-Whenever it applies a rewrite, the subsequent rewrites see only the part of the
-pattern to which the initial rewrite wasn't applied.
--}
-onePathFirstStep
-    :: rewrite
-    -- ^ rewrite with which to remove the destination we`re trying to reach
-    -> [rewrite]
-    -- ^ normal rewrites
-    -> Strategy (Prim rewrite)
-onePathFirstStep destinationRemovalRewrite rewrites =
-    Strategy.sequence
-        (  [rewriteWithRemainderStep destinationRemovalRewrite]
-        ++ map
-            rewriteOnRemainderStep
-            rewrites
-        -- Fail if we can't rewrite the entire pattern.
-        ++ [Strategy.apply nonEmptyRemainderFail]
-        )
-
-{-| A strategy for doing a one-path verification subsequent step.
-For the first step, use 'onePathFirstStep'.
-
-It first removes the destination from the input, then it tries to apply
-the coinductive rewrites to whatever is left, then it tries to apply the normal
-rewrites.
-
-Whenever it applies an rewrite, the subsequent rewrites see only the part of the
-pattern to which the rewrite wasn't applied.
--}
-onePathFollowupStep
-    :: rewrite
-    -- ^ rewrite with which to remove the destination we`re trying to reach
-    -> [rewrite]
-    -- ^ coinductive rewrites
-    -> [rewrite]
-    -- ^ normal rewrites
-    -> Strategy (Prim rewrite)
-onePathFollowupStep destinationRemovalRewrite coinductiveRewrites rewrites =
-    onePathFirstStep destinationRemovalRewrite (coinductiveRewrites ++ rewrites)
-
-{-| Removes 'Remainder' nodes from a Tree.
-
-If the tree cannot be transformed into a single tree, which can happen
-only if the root is a 'RewritePattern', it returns Nothing.
--}
-ruleResultToRewriteTree
-    :: Tree (StrategyPattern patt, proof) -> Maybe (Tree (patt, proof))
-ruleResultToRewriteTree tree =
-    case ruleResultToRewriteTreeList tree of
-        [a] -> Just a
-        _ -> Nothing
-
-ruleResultToRewriteTreeList
-    :: Tree (StrategyPattern patt, proof) -> [Tree (patt, proof)]
-ruleResultToRewriteTreeList (Node (RewritePattern p, proof) children) =
-    [Node (p, proof) (concatMap ruleResultToRewriteTreeList children)]
-ruleResultToRewriteTreeList (Node (Remainder _, _) children) =
-    concatMap ruleResultToRewriteTreeList children
-ruleResultToRewriteTreeList (Node (Bottom, _) children) =
-    if null children
-    then []
-    else error "Unexpected bottom node with children."

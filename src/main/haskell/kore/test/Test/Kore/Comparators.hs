@@ -18,6 +18,10 @@ import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.OnePath.Step
+                 ( StrategyPattern )
+import           Kore.OnePath.Step as StrategyPattern
+                 ( StrategyPattern (..) )
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.BaseStep
@@ -32,10 +36,6 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
-import           Kore.Step.Step
-                 ( StrategyPattern )
-import           Kore.Step.Step as StrategyPattern
-                 ( StrategyPattern (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -1120,8 +1120,8 @@ instance
         (StrategyPattern.RewritePattern p1) (StrategyPattern.RewritePattern p2)
       =
         SumConstructorSameWithArguments (EqWrap "RewritePattern" p1 p2)
-    sumConstructorPair (StrategyPattern.Remainder p1) (StrategyPattern.Remainder p2) =
-        SumConstructorSameWithArguments (EqWrap "Remainder" p1 p2)
+    sumConstructorPair (StrategyPattern.Stuck p1) (StrategyPattern.Stuck p2) =
+        SumConstructorSameWithArguments (EqWrap "Stuck" p1 p2)
     sumConstructorPair StrategyPattern.Bottom StrategyPattern.Bottom =
         SumConstructorSameNoArguments
     sumConstructorPair p1 p2 =
