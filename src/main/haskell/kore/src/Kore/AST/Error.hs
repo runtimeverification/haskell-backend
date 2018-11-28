@@ -14,6 +14,7 @@ module Kore.AST.Error
     , withLocationsContext
     , withSentenceAliasContext
     , withSentenceAxiomContext
+    , withSentenceClaimContext
     , withSentenceHookContext
     , withSentenceImportContext
     , withSentenceSortContext
@@ -110,6 +111,14 @@ withSentenceAxiomContext
     -> Either (Error e) a
 withSentenceAxiomContext _ = withContext "axiom declaration"
 
+{- | Identify and locate the given claim declaration in the error context.
+ -}
+withSentenceClaimContext
+    :: KoreSentenceAxiom
+    -> Either (Error e) a
+    -> Either (Error e) a
+withSentenceClaimContext _ = withContext "claim declaration"
+
 {- | Identify and locate the given sort declaration in the error context.
  -}
 withSentenceSortContext
@@ -162,6 +171,7 @@ withSentenceContext =
     \case
         SentenceAliasSentence s -> withSentenceAliasContext s
         SentenceAxiomSentence s -> withSentenceAxiomContext s
+        SentenceClaimSentence s -> withSentenceClaimContext s
         SentenceHookSentence s -> withSentenceHookContext s
         SentenceImportSentence s -> withSentenceImportContext s
         SentenceSortSentence s -> withSentenceSortContext s

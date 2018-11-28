@@ -670,6 +670,8 @@ instance
         writeOneFieldStruct flags "SentenceImportSentence" s
     prettyPrint flags (SentenceAxiomSentence s)        =
         writeOneFieldStruct flags "SentenceAxiomSentence" s
+    prettyPrint flags (SentenceClaimSentence s)        =
+        writeOneFieldStruct flags "SentenceClaimSentence" s
     prettyPrint flags (SentenceSortSentence s)         =
         writeOneFieldStruct flags "SentenceSortSentence" s
     prettyPrint flags (SentenceHookSentence s)         =

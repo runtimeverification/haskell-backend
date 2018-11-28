@@ -893,7 +893,8 @@ BNF definition fragments:
 koreSentenceParser :: Parser KoreSentence
 koreSentenceParser = keywordBasedParsers
     [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
-    , ( "axiom", axiomSentenceRemainderParser )
+    , ( "axiom", axiomSentenceRemainderParser SentenceAxiomSentence )
+    , ( "claim", axiomSentenceRemainderParser SentenceClaimSentence )
     , ( "sort", sentenceSortRemainderParser )
     , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
     , ( "import", importSentenceRemainderParser )
@@ -1033,9 +1034,13 @@ BNF example:
 
 Always starts with @{@.
 -}
-axiomSentenceRemainderParser :: Parser KoreSentence
-axiomSentenceRemainderParser =
-  asSentence
+axiomSentenceRemainderParser
+    ::  (  SentenceAxiom UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+        -> Sentence Meta UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+        )
+    -> Parser KoreSentence
+axiomSentenceRemainderParser ctor =
+  (UnifiedMetaSentence . ctor)
   <$> ( SentenceAxiom
         <$> inCurlyBracesListParser unifiedSortVariableParser
         <*> korePatternParser

@@ -88,6 +88,7 @@ definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
 definedNamesForMetaSentence (SentenceImportSentence _) = []
 definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
+definedNamesForMetaSentence (SentenceClaimSentence _)  = []
 definedNamesForMetaSentence (SentenceSortSentence _)   = []
 
 definedNamesForObjectSentence
@@ -178,6 +179,11 @@ verifyMetaSentence
             SentenceAxiomSentence axiomSentence ->
                 verifyAxiomSentence
                     axiomSentence
+                    builtinVerifiers
+                    indexedModule
+            SentenceClaimSentence claimSentence ->
+                verifyAxiomSentence
+                    claimSentence
                     builtinVerifiers
                     indexedModule
             SentenceSortSentence sortSentence -> do

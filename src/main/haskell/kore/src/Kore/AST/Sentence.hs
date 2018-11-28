@@ -236,6 +236,9 @@ data Sentence
     SentenceAxiomSentence
         :: !(SentenceAxiom param pat domain variable)
         -> Sentence Meta param pat domain variable
+    SentenceClaimSentence
+        :: !(SentenceAxiom param pat domain variable)
+        -> Sentence Meta param pat domain variable
     SentenceSortSentence
         :: !(SentenceSort level pat domain variable)
         -> Sentence level param pat domain variable
@@ -286,6 +289,7 @@ instance
             SentenceSymbolSentence p -> rnf p
             SentenceImportSentence p -> rnf p
             SentenceAxiomSentence p -> rnf p
+            SentenceClaimSentence p -> rnf p
             SentenceSortSentence p -> rnf p
             SentenceHookSentence p -> rnf p
 
@@ -307,6 +311,9 @@ sentenceAttributes =
             SentenceImport { sentenceImportAttributes } ->
                 sentenceImportAttributes
         SentenceAxiomSentence
+            SentenceAxiom { sentenceAxiomAttributes } ->
+                sentenceAxiomAttributes
+        SentenceClaimSentence
             SentenceAxiom { sentenceAxiomAttributes } ->
                 sentenceAxiomAttributes
         SentenceSortSentence

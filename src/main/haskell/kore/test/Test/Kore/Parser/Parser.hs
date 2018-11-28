@@ -66,6 +66,7 @@ test_koreParser =
     , testGroup "sentenceAliasParser" sentenceAliasParserTests
     , testGroup "sentenceImportParser" sentenceImportParserTests
     , testGroup "sentenceAxiomParser" sentenceAxiomParserTests
+    , testGroup "sentenceClaimParser" sentenceClaimParserTests
     , testGroup "sentenceSortParser" sentenceSortParserTests
     , testGroup "sentenceSymbolParser" sentenceSymbolParserTests
     , testGroup "attributesParser" attributesParserTests
@@ -1104,6 +1105,70 @@ sentenceAxiomParserTests =
             -- , "axiom{}\"a\"[\"b\"]" See the TODO above.
             , "axiom{sv1}[\"b\"]"
             , "axiom{sv1}\"a\""
+            ]
+        ]
+
+sentenceClaimParserTests :: [TestTree]
+sentenceClaimParserTests =
+    parseTree koreSentenceParser
+        [ success "claim{sv1}\"a\"[\"b\"]"
+            ( constructUnifiedSentence SentenceClaimSentence $
+                (SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [UnifiedObject
+                            (SortVariable (testId "sv1"))]
+                    , sentenceAxiomPattern =
+                        asKorePattern $ StringLiteralPattern (StringLiteral "a")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ asKorePattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                    }
+                :: KoreSentenceAxiom)
+            )
+        {- TODO(virgil): The Scala parser allows empty sort variable lists
+           while the semantics-of-k document does not. -}
+        , success "claim{}\"a\"[\"b\"]"
+            ( constructUnifiedSentence SentenceClaimSentence $
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [] :: [UnifiedSortVariable]
+                    , sentenceAxiomPattern =
+                        asKorePattern $ StringLiteralPattern (StringLiteral "a")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ asKorePattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                    }
+                :: KoreSentenceAxiom)
+            )
+        , success "claim { sv1 , sv2 } \"a\" [ \"b\" ] "
+            ( constructUnifiedSentence SentenceClaimSentence $
+                (SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ UnifiedObject
+                            (SortVariable (testId "sv1"))
+                        , UnifiedObject
+                            (SortVariable (testId "sv2"))
+                        ]
+                    , sentenceAxiomPattern =
+                        asKorePattern $ StringLiteralPattern (StringLiteral "a")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ asKorePattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                    }
+                :: KoreSentenceAxiom)
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "{sv1}\"a\"[\"b\"]"
+            , "claim\"a\"[\"b\"]"
+            -- , "claim{}\"a\"[\"b\"]" See the TODO above.
+            , "claim{sv1}[\"b\"]"
+            , "claim{sv1}\"a\""
             ]
         ]
 
