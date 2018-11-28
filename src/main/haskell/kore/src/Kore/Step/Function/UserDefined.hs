@@ -48,8 +48,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 {-| 'ruleFunctionEvaluator' evaluates a user-defined function. After
@@ -59,7 +57,6 @@ The function is assumed to be defined through an axiom.
 -}
 ruleFunctionEvaluator
     ::  ( FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , Ord (variable level)
         , OrdMetaOrObject variable
@@ -141,7 +138,6 @@ reevaluateFunctions
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
@@ -196,7 +192,6 @@ evaluatePredicate
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns

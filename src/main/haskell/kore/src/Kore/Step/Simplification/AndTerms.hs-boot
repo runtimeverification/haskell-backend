@@ -19,8 +19,6 @@ import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
-import Kore.Substitution.Class
-       ( Hashable )
 import Kore.Unification.Error
        ( UnificationOrSubstitutionError )
 import Kore.Variables.Fresh
@@ -28,7 +26,6 @@ import Kore.Variables.Fresh
 
 termAnd
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -45,7 +42,6 @@ termAnd
 
 termUnification
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)

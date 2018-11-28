@@ -44,8 +44,6 @@ import           Kore.Step.Simplification.Data
                  liftPredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Error
@@ -65,7 +63,6 @@ unificationProcedure
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , MonadCounter m
         )

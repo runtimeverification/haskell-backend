@@ -66,7 +66,6 @@ normalizeSubstitution
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , Hashable variable
         , FreshVariable variable
         , MonadCounter m
         , Show (variable level)
@@ -185,7 +184,6 @@ normalizeSortedSubstitution
     ::  ( MetaOrObject level
         , OrdMetaOrObject variable
         , Eq (variable level)
-        , Hashable variable
         , MonadCounter m
         , FreshVariable variable
         )

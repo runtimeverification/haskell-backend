@@ -39,8 +39,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -310,7 +308,6 @@ runSimplifier patternSimplifierMap predicateSubstitution =
 makeEvaluator
     ::  (forall variable
         .   ( FreshVariable variable
-            , Hashable variable
             , OrdMetaOrObject variable
             , SortedVariable variable
             , ShowMetaOrObject variable
@@ -324,7 +321,6 @@ makeEvaluator mapping =
 
 simpleEvaluator
     ::  ( FreshVariable variable
-        , Hashable variable
         , OrdMetaOrObject variable
         , SortedVariable variable
         , ShowMetaOrObject variable

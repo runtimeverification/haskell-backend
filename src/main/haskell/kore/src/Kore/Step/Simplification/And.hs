@@ -36,8 +36,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'And' of 'OrOfExpandedPattern'.
@@ -84,7 +82,6 @@ simplify
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -115,7 +112,6 @@ simplifyEvaluated
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -158,7 +154,6 @@ makeEvaluate
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -184,7 +179,6 @@ makeEvaluateNonBool
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -233,7 +227,6 @@ makeEvaluateNonBool
 
 makeTermAnd
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)

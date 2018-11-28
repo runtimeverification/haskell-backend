@@ -34,8 +34,6 @@ import Kore.Step.Simplification.Data
        StepPatternSimplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
-import Kore.Substitution.Class
-       ( Hashable )
 import Kore.Variables.Fresh
        ( FreshVariable )
 
@@ -61,7 +59,6 @@ newtype ApplicationFunctionEvaluator level =
     ApplicationFunctionEvaluator
         (forall variable
         .   ( FreshVariable variable
-            , Hashable variable
             , MetaOrObject level
             , Ord (variable level)
             , OrdMetaOrObject variable

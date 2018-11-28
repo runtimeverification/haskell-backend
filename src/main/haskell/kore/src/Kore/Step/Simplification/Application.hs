@@ -40,8 +40,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 -- data ExpandedApplication level variable = ExpandedApplication
@@ -74,7 +72,6 @@ simplify
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -123,7 +120,6 @@ makeAndEvaluateApplications
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -164,7 +160,6 @@ makeAndEvaluateSymbolApplications
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -202,7 +197,6 @@ evaluateApplicationFunction
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -239,7 +233,6 @@ makeExpandedApplication
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

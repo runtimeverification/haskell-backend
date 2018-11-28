@@ -76,8 +76,6 @@ import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -96,7 +94,6 @@ simplify
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -129,7 +126,6 @@ simplifyToOr
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
@@ -165,7 +161,6 @@ simplifyInternal
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

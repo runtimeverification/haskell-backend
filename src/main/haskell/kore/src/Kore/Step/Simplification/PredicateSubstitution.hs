@@ -34,7 +34,7 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Substitution.Class
-                 ( Hashable, substitute )
+                 ( substitute )
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -48,7 +48,6 @@ create
     :: MetadataTools level StepperAttributes
     ->  (forall variable0
         .   ( FreshVariable variable0
-            , Hashable variable0
             , MetaOrObject level
             , Ord (variable0 level)
             , Ord (variable0 Meta)
@@ -79,12 +78,10 @@ simplify
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     ->  (forall variable0
         .   ( FreshVariable variable0
-            , Hashable variable0
             , MetaOrObject level
             , Ord (variable0 level)
             , Ord (variable0 Meta)

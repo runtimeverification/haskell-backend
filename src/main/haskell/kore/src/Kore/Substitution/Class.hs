@@ -11,7 +11,6 @@ Portability : portable
 -}
 module Kore.Substitution.Class
     ( SubstitutionClass (..)
-    , Hashable (..)
     , substitute
     ) where
 
@@ -19,8 +18,6 @@ import           Control.Comonad
 import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Hashable
-                 ( hash )
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Set as Set
@@ -81,12 +78,6 @@ instance (SubstitutionClass s var pat)
   where
     substitutionTermsFreeVars = substitutionTermsFreeVars . substitution
 
-class Hashable var where
-    getVariableHash :: var level -> Int
-
-instance Hashable Variable where
-    getVariableHash = hash . getId . variableName
-
 -- | Apply a substitution @s@ to a pattern @pat@.
 substitute
     ::  ( UnifiedPatternInterface pat
@@ -96,7 +87,6 @@ substitute
         , Traversable (pat dom var)
         , OrdMetaOrObject var
         , FreshVariable var
-        , Hashable var
         , Corecursive (f ann)
         , Recursive (f ann)
         , Base (f ann) ~ CofreeF (pat dom var) ann

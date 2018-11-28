@@ -71,8 +71,6 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -99,7 +97,6 @@ See also: 'termAnd'
  -}
 termEquals
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -120,7 +117,6 @@ termEquals tools substitutionSimplifier first second = do
 
 termEqualsAnd
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -160,7 +156,6 @@ termEqualsAnd tools substitutionSimplifier =
 
 maybeTermEquals
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -195,7 +190,6 @@ the special cases handled by this.
 -- signature.
 termUnification
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -239,7 +233,6 @@ See also: 'termUnification'
 -- signature.
 termAnd
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -274,7 +267,6 @@ termAnd tools substitutionSimplifier =
 
 maybeTermAnd
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -296,7 +288,6 @@ andFunctions
     ::  ( Eq (variable level)
         , Eq (variable Meta)
         , FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
@@ -325,7 +316,6 @@ equalsFunctions
     ::  ( Eq (variable level)
         , Eq (variable Meta)
         , FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
@@ -354,7 +344,6 @@ andEqualsFunctions
     ::  ( Eq (variable level)
         , Eq (variable Meta)
         , FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
@@ -435,7 +424,6 @@ type TermTransformationOld level variable m =
 
 maybeTransformTerm
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Ord (variable Meta)
@@ -714,7 +702,6 @@ See also: 'StepperAttributes.isInjective', 'StepperAttributes.isSortInjection',
  -}
 equalInjectiveHeadsAndEquals
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)

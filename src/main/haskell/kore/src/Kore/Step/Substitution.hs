@@ -42,8 +42,6 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..) )
 import           Kore.Step.StepperAttributes
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Unification.Data
                  ( UnificationProof (EmptyUnificationProof) )
 import           Kore.Unification.Error
@@ -64,7 +62,6 @@ normalize
         , Monad m
         , MonadCounter m
         , MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , SortedVariable variable
         , OrdMetaOrObject variable
@@ -107,7 +104,6 @@ normalizeSubstitutionAfterMerge
         , SortedVariable variable
         , FreshVariable variable
         , MonadCounter m
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -182,7 +178,6 @@ mergePredicatesAndSubstitutions
        , ShowMetaOrObject variable
        , FreshVariable variable
        , MonadCounter m
-       , Hashable variable
        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -226,7 +221,6 @@ mergePredicatesAndSubstitutionsExcept
        , ShowMetaOrObject variable
        , FreshVariable variable
        , MonadCounter m
-       , Hashable variable
        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -271,7 +265,6 @@ normalizePredicatedSubstitution
         , SortedVariable variable
         , FreshVariable variable
         , MonadCounter m
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m

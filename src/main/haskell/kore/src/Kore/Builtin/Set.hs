@@ -82,8 +82,6 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( normalize )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -443,7 +441,6 @@ unifyEquals
         , SortedVariable variable
         , MonadCounter m
         , MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable

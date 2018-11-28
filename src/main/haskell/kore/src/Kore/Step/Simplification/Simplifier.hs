@@ -27,8 +27,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 create
@@ -41,7 +39,6 @@ create
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)

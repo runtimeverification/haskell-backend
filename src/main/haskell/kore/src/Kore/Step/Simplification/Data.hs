@@ -31,8 +31,6 @@ import Kore.Step.ExpandedPattern
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
 import Kore.Step.Pattern
-import Kore.Substitution.Class
-       ( Hashable )
 import Kore.Variables.Fresh
 import SMT
        ( MonadSMT, SMT )
@@ -106,7 +104,6 @@ newtype PredicateSubstitutionSimplifier level m =
     PredicateSubstitutionSimplifier
         (forall variable
         .   ( FreshVariable variable
-            , Hashable variable
             , MetaOrObject level
             , Ord (variable level)
             , Ord (variable Meta)

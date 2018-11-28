@@ -42,8 +42,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  liftPredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
@@ -103,7 +101,6 @@ simplifyAnds
         , Show (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
-        , Hashable variable
         , SortedVariable variable
         , FreshVariable variable
         , MonadCounter m
@@ -184,7 +181,6 @@ solveGroupedSubstitution
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , SortedVariable variable
-       , Hashable variable
        , FreshVariable variable
        , MonadCounter m
        )
@@ -230,7 +226,6 @@ normalizeSubstitutionDuplication
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , Hashable variable
         , FreshVariable variable
         , MonadCounter m
         )

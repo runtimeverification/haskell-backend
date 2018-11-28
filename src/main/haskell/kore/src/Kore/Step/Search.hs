@@ -49,8 +49,6 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Variables.Fresh
@@ -120,7 +118,6 @@ matchWith
         , SortedVariable variable
         , Eq (variable level)
         , FreshVariable variable
-        , Hashable variable
         , Ord (variable level)
         , OrdMetaOrObject variable
         , Show (variable level)

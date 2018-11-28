@@ -47,8 +47,6 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isSortInjection_ )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 {-| 'evaluateApplication' - evaluates functions on an application pattern.
@@ -61,7 +59,6 @@ evaluateApplication
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         , Show (variable Meta)
         , Show (variable Object)
         )
@@ -227,7 +224,6 @@ mergeWithConditionAndSubstitution
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

@@ -48,8 +48,6 @@ import           Kore.Step.Simplification.Equals
                  ( makeEvaluate )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -118,7 +116,6 @@ builtinFunctions =
 
 evalKEq
     ::  ( FreshVariable variable
-        , Hashable variable
         , OrdMetaOrObject variable
         , SortedVariable variable
         , ShowMetaOrObject variable
@@ -156,7 +153,6 @@ evalKEq true false tools substitutionSimplifier _ pat =
 evalKIte
     ::  forall variable
     .   ( FreshVariable variable
-        , Hashable variable
         , OrdMetaOrObject variable
         , SortedVariable variable
         , ShowMetaOrObject variable

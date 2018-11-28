@@ -51,8 +51,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -387,7 +385,6 @@ evaluateWithAxioms tools axioms patt =
   where
     simplifier
         ::  ( FreshVariable variable
-            , Hashable variable
             , Ord (variable Meta)
             , Ord (variable Object)
             , Show (variable Meta)

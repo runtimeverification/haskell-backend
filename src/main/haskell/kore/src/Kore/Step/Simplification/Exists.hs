@@ -44,7 +44,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Substitution.Class
-                 ( Hashable (..), substitute )
+                 ( substitute )
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -83,7 +83,6 @@ simplify
         , Show (variable Object)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , Hashable variable
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
@@ -113,7 +112,6 @@ simplifyEvaluated
         , Show (variable Object)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , Hashable variable
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
@@ -150,7 +148,6 @@ makeEvaluate
         , Show (variable Object)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , Hashable variable
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
@@ -255,7 +252,6 @@ substituteTermPredicate
         , Show (variable Object)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , Hashable variable
         , FreshVariable variable
         )
     => StepPattern level variable
