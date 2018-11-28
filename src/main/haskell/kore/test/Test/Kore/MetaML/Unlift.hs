@@ -6,13 +6,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Functor.Foldable
-
-import Kore.AST.Common
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
 import Kore.AST.PureToKore
+import Kore.ASTUtils.SmartPatterns
 import Kore.Implicit.ImplicitSorts
 import Kore.MetaML.AST
 import Kore.MetaML.Unlift
@@ -24,14 +20,13 @@ test_unlift :: [TestTree]
 test_unlift =
     [ testCase "Failing to unlift to Id 1"
         (prettyAssertEqual "" Nothing
-            (unliftFromMeta
-                (Fix (StringLiteralPattern (StringLiteral "")))
+            (unliftFromMeta (StringLiteral_ "")
             ::Maybe (Id Object))
         )
     , testCase "Failing to unlift to Id 2"
         (prettyAssertEqual "" Nothing
             (unliftFromMeta
-                (Fix (StringLiteralPattern (StringLiteral "#a")))
+                (StringLiteral_ "#a")
             ::Maybe (Id Object))
         )
     , testCase "Failing to unlift to Id 0"
@@ -72,14 +67,12 @@ test_unlift =
     , testCase "Unlift to asKorePattern"
         (let
             metaPattern =
-                Fix
-                    (apply consSortListHead
-                        [variablePattern "#`a" sortMetaSort]
-                    )
+                App_
+                    consSortListHead
+                    [variablePattern "#`a" sortMetaSort]
         in
             prettyAssertEqual ""
                 (Just (patternPureToKore metaPattern))
                 (unliftFromMeta metaPattern :: Maybe CommonKorePattern)
         )
     ]
-

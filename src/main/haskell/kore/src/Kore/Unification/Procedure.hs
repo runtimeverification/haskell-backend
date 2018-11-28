@@ -11,13 +11,14 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import Control.Monad.Counter
-       ( MonadCounter )
-import Control.Monad.Except
-       ( ExceptT (..) )
-import Data.Functor.Foldable
-import Data.Reflection
-       ( give )
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import           Control.Monad.Counter
+                 ( MonadCounter )
+import           Control.Monad.Except
+                 ( ExceptT (..) )
+import qualified Data.Functor.Foldable as Recursive
+import           Data.Reflection
+                 ( give )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -112,7 +113,10 @@ unificationProcedure tools substitutionSimplifier p1 p2
             )
   where
       symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
-      resultSort = getPatternResultSort symbolOrAliasSorts
+      resultSort =
+          getPatternResultSort symbolOrAliasSorts
+          . Cofree.tailF
+          . Recursive.project
 
-      p1Sort = resultSort (project p1)
-      p2Sort = resultSort (project p2)
+      p1Sort = resultSort p1
+      p2Sort = resultSort p2

@@ -16,9 +16,7 @@ import Control.Monad
        ( (>=>) )
 import Data.Default
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser
@@ -47,7 +45,7 @@ heatSymbol =
 -- | Kore pattern representing the @heat@ attribute.
 heatAttribute :: CommonKorePattern
 heatAttribute =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = heatSymbol
             , applicationChildren = []
@@ -68,7 +66,7 @@ coolSymbol =
 -- | Kore pattern representing the @cool@ attribute.
 coolAttribute :: CommonKorePattern
 coolAttribute =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = coolSymbol
             , applicationChildren = []

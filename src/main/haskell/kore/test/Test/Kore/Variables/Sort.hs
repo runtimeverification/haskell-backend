@@ -7,9 +7,7 @@ import Test.Tasty.HUnit
 
 import qualified Data.Set as Set
 
-import Kore.AST.Common
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts as Sorts

@@ -17,17 +17,16 @@ module Kore.ASTHelpers
     , quantifyFreeVariables
     ) where
 
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
 import           Data.Foldable
                  ( foldl' )
-import           Data.Functor.Foldable
-                 ( Fix (..) )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.AST.Pure
 import Kore.AST.Sentence
 import Kore.Error
 import Kore.Variables.Free
@@ -110,8 +109,8 @@ It assumes that the pattern has the provided sort.
 quantifyFreeVariables
     :: (Foldable domain, Functor domain, MetaOrObject level)
     => Sort level
-    -> CommonPurePattern level domain
-    -> CommonPurePattern level domain
+    -> CommonPurePattern level domain ()
+    -> CommonPurePattern level domain ()
 quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)
@@ -119,13 +118,14 @@ quantifyFreeVariables s p =
         (checkUnique (freePureVariables p))
 
 wrapAndQuantify
-    :: Sort level
-    -> CommonPurePattern level domain
+    :: Functor domain
+    => Sort level
+    -> CommonPurePattern level domain ()
     -> Variable level
-    -> CommonPurePattern level domain
+    -> CommonPurePattern level domain ()
 wrapAndQuantify s p var =
-    Fix
-        (ForallPattern Forall
+    asPurePattern
+        (() :< ForallPattern Forall
             { forallSort = s
             , forallVariable = var
             , forallChild = p

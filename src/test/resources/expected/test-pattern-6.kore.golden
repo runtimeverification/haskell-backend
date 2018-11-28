@@ -9,22 +9,36 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObjectPattern (ImpliesPattern Implies
-                            { impliesSort =
-                                SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                            , impliesFirst =
-                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "X" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                    })))
-                            , impliesSecond =
-                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "X" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                    })))
-                            })))
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (ImpliesPattern Implies
+                                        { impliesSort =
+                                            SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                        , impliesFirst =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                        { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableSort =
+                                                            SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                                        })
+                                                    }
+                                                }
+                                        , impliesSecond =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                        { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableSort =
+                                                            SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                                        })
+                                                    }
+                                                }
+                                        })
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

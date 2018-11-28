@@ -24,9 +24,7 @@ import           GHC.Generics
                  ( Generic )
 import           SimpleSMT
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..), Parser )
 import qualified Kore.Attribute.Parser as Parser
@@ -85,11 +83,11 @@ smtlibSymbol =
 -- | Kore pattern representing the @smtlib@ attribute.
 smtlibAttribute :: String -> CommonKorePattern
 smtlibAttribute syntax =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = smtlibSymbol
             , applicationChildren =
-                [ (KoreMetaPattern . StringLiteralPattern)
+                [ (asCommonKorePattern . StringLiteralPattern)
                     (StringLiteral syntax)
                 ]
             }

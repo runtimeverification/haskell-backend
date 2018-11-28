@@ -15,9 +15,7 @@ import           Data.Reflection
 import           Data.These
                  ( These (That) )
 
-import           Kore.AST.Common
-                 ( Application, Pattern (..), SortedVariable )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkVar )
 import           Kore.IndexedModule.MetadataTools
@@ -339,7 +337,7 @@ simpleEvaluator
         )
 simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
 simpleEvaluator ((from, to) : ps) app
-  | from == embed (ApplicationPattern app) =
+  | from == embed (() :< ApplicationPattern app) =
     return
         ( Applied
             (OrOfExpandedPattern.make

@@ -13,12 +13,7 @@ import Data.Hashable
 import GHC.Generics
        ( Generic )
 
-import           Kore.AST.Common
-                 ( Application (..), Id (..), Pattern (ApplicationPattern),
-                 Sort, SymbolOrAlias (..) )
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser
@@ -63,7 +58,7 @@ where @Sub@ is the subsort and @Super@ is the supersort.
  -}
 subsortAttribute :: Sort Object -> Sort Object -> CommonKorePattern
 subsortAttribute subsort supersort =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = subsortSymbol subsort supersort
             , applicationChildren = []

@@ -11,7 +11,6 @@ import           Data.Default
 import           Data.Function
                  ( (&) )
 
-import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.Sentence
        ( Attributes (..) )
@@ -31,11 +30,11 @@ parse = parseAttributes . Attributes
 
 testAttribute :: CommonKorePattern
 testAttribute =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias =
                 SymbolOrAlias
-                    { symbolOrAliasConstructor = "test"
+                    { symbolOrAliasConstructor = "test" :: Id Object
                     , symbolOrAliasParams = []
                     }
             , applicationChildren = []
@@ -43,9 +42,9 @@ testAttribute =
 
 badHookAttribute :: CommonKorePattern
 badHookAttribute =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
-            { applicationSymbolOrAlias = hookSymbol
+            { applicationSymbolOrAlias = hookSymbol :: SymbolOrAlias Object
             , applicationChildren = []
             }
 

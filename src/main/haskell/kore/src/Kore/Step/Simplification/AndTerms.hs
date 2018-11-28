@@ -17,6 +17,7 @@ module Kore.Step.Simplification.AndTerms
 
 import           Control.Applicative
                  ( Alternative (..) )
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( ExceptT, MaybeT (..), fromMaybe )
 import qualified Control.Error as Error
@@ -25,8 +26,7 @@ import           Control.Exception
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Bifunctor as Bifunctor
-import           Data.Functor.Foldable
-                 ( project )
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
@@ -114,8 +114,7 @@ termEquals
     -> StepPattern level variable
     -> MaybeT m
         (PredicateSubstitution level variable, SimplificationProof level)
-termEquals tools substitutionSimplifier first second
-  = do
+termEquals tools substitutionSimplifier first second = do
     result <- termEqualsAnd tools substitutionSimplifier first second
     return (Bifunctor.first erasePredicatedTerm result)
 
@@ -851,8 +850,10 @@ sortInjectionAndEqualsAssumesDifferentHeads
 
     isSubsortOf = MetadataTools.isSubsortOf tools
 
-    isFirstConstructorLike = isConstructorLikeTop tools (project firstChild)
-    isSecondConstructorLike = isConstructorLikeTop tools (project secondChild)
+    isConstructorLike =
+        isConstructorLikeTop tools . Cofree.tailF . Recursive.project
+    isFirstConstructorLike = isConstructorLike firstChild
+    isSecondConstructorLike = isConstructorLike secondChild
 
     {- |
         Merge the terms inside a sort injection,

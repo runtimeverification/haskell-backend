@@ -18,9 +18,7 @@ module Kore.AST.MLPatterns
     , undefinedHeadSort
     ) where
 
-import Kore.AST.Common
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.Implicit.ImplicitSorts

@@ -53,14 +53,20 @@ Definition
                                         ]
                                     }
                             , applicationChildren =
-                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "N" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortActualSort SortActual
-                                            { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
-                                            , sortActualSorts = []
+                                [ KorePattern
+                                    { getKorePattern = CofreeT
+                                        { runCofreeT = Identity
+                                            { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                { variableName = (Id "N" AstLocationNone) :: Id Object
+                                                , variableSort =
+                                                    SortActualSort SortActual
+                                                        { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
+                                                        , sortActualSorts = []
+                                                        }
+                                                })
                                             }
-                                    })))
+                                        }
+                                    }
                                 ]
                             }
                     , sentenceAliasRightPattern =
@@ -73,14 +79,20 @@ Definition
                                         ]
                                     }
                             , applicationChildren =
-                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "N" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortActualSort SortActual
-                                            { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
-                                            , sortActualSorts = []
+                                [ KorePattern
+                                    { getKorePattern = CofreeT
+                                        { runCofreeT = Identity
+                                            { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                { variableName = (Id "N" AstLocationNone) :: Id Object
+                                                , variableSort =
+                                                    SortActualSort SortActual
+                                                        { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
+                                                        , sortActualSorts = []
+                                                        }
+                                                })
                                             }
-                                    })))
+                                        }
+                                    }
                                 ]
                             }
                     , sentenceAliasAttributes = Attributes []

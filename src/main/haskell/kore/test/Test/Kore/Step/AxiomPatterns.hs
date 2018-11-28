@@ -16,11 +16,8 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Builders
-import           Kore.AST.Common
 import           Kore.AST.Kore
-                 ( asKorePattern )
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
@@ -149,19 +146,19 @@ axiomPatternsUnitTests =
             )
         , testCase "\"a\" => \"b\""
             (assertEqual ""
-                (koreFail "Unexpected non-Object pattern")
+                (koreFail "Unexpected meta-level pattern")
                 ( koreSentenceToAxiomPattern Object
                 $ asSentence
                     (SentenceAxiom
                         { sentenceAxiomPattern =
-                            asKorePattern $ RewritesPattern Rewrites
+                            asCommonKorePattern $ RewritesPattern Rewrites
                                 { rewritesSort =
                                     sortVariableSort "s"
                                 , rewritesFirst =
-                                    asKorePattern $
+                                    asCommonKorePattern $
                                         StringLiteralPattern (StringLiteral "a")
                                 , rewritesSecond =
-                                    asKorePattern $
+                                    asCommonKorePattern $
                                         StringLiteralPattern (StringLiteral "b")
                                 }
                         , sentenceAxiomParameters = []
@@ -319,7 +316,7 @@ symbolLeqAInt =
     symbol_ "leqAInt"
         AstLocationTest [sortAInt, sortAInt] sortABool
 
-varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object Domain.Builtin
+varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object Domain.Builtin ()
 varI1 = parameterizedVariable_ sortAInt "VarI1" AstLocationTest
 varI2 = parameterizedVariable_ sortAInt "VarI2" AstLocationTest
 varKRemainder = parameterizedVariable_ sortK "VarDotVar1" AstLocationTest

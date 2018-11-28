@@ -19,7 +19,7 @@ module Kore.Builtin.KEqual
     , builtinFunctions
     ) where
 
-import qualified Data.Functor.Foldable as Functor.Foldable
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
@@ -27,8 +27,7 @@ import qualified Data.Map as Map
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( SentenceSymbol (..) )
 import qualified Kore.Builtin.Bool as Bool
@@ -170,17 +169,19 @@ evalKIte
         ( AttemptedFunction Object variable
         , SimplificationProof Object
         )
-evalKIte _ _ _ pat =
-    case pat of
+evalKIte _ _ _ =
+    \case
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2
         _ -> Builtin.wrongArity "KEQUAL.ite"
   where
     evaluate
-        :: Functor.Foldable.Fix (Pattern Object Domain.Builtin variable)
+        :: StepPattern Object variable
         -> Maybe Bool
-    evaluate (Functor.Foldable.Fix (DomainValuePattern a)) = Just (get a)
-    evaluate _ = Nothing
+    evaluate (Recursive.project -> _ :< pat) =
+        case pat of
+            DomainValuePattern dv -> Just (get dv)
+            _ -> Nothing
 
     get :: DomainValue Object Domain.Builtin child -> Bool
     get =

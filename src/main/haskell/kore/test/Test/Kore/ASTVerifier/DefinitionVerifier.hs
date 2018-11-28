@@ -10,9 +10,7 @@ import Data.Proxy
 import Data.Text
        ( Text )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -559,7 +557,7 @@ unifiedSortVariable _x (SortVariableName name) =
 
 stringUnifiedPattern :: String -> CommonKorePattern
 stringUnifiedPattern s =
-    asKorePattern (StringLiteralPattern (StringLiteral s))
+    asCommonKorePattern (StringLiteralPattern (StringLiteral s))
 
 variable :: VariableName -> Sort level -> Variable level
 variable (VariableName name) sort =
@@ -581,7 +579,7 @@ variablePattern name sort =
 unifiedVariablePattern
     :: MetaOrObject level => VariableName -> Sort level -> CommonKorePattern
 unifiedVariablePattern name sort =
-    asKorePattern (variablePattern name sort)
+    asCommonKorePattern (variablePattern name sort)
 
 simpleExistsPattern
     :: MetaOrObject level
@@ -592,13 +590,13 @@ simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
         { existsSort = resultSort
         , existsVariable = quantifiedVariable
-        , existsChild = asKorePattern (VariablePattern quantifiedVariable)
+        , existsChild = asCommonKorePattern (VariablePattern quantifiedVariable)
         }
 
 simpleExistsUnifiedPattern
     :: MetaOrObject level => VariableName -> Sort level -> CommonKorePattern
 simpleExistsUnifiedPattern name sort =
-    asKorePattern
+    asCommonKorePattern
         ( simpleExistsPattern
             (variable name sort)
             sort
@@ -624,11 +622,11 @@ simpleExistsEqualsUnifiedPattern
     (OperandSort operandSort)
     (ResultSort resultSort)
   =
-    asKorePattern
+    asCommonKorePattern
         (ExistsPattern Exists
             { existsSort = resultSort
             , existsVariable = variable name operandSort
-            , existsChild = asKorePattern
+            , existsChild = asCommonKorePattern
                 (EqualsPattern Equals
                     { equalsOperandSort = operandSort
                     , equalsResultSort = resultSort
@@ -644,7 +642,7 @@ simpleExistsEqualsUnifiedPattern
 applicationObjectUnifiedPatternWithChildren
     :: SymbolName -> [CommonKorePattern] -> CommonKorePattern
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
-    asKorePattern
+    asCommonKorePattern
         ( applicationPatternWithChildren name unifiedPatterns
         :: Pattern Meta Domain.Builtin Variable CommonKorePattern)
 
@@ -664,7 +662,7 @@ applicationPatternWithChildren (SymbolName name) unifiedPatterns =
 applicationUnifiedPatternWithParams
     :: MetaOrObject level => SymbolName -> [Sort level] -> CommonKorePattern
 applicationUnifiedPatternWithParams (SymbolName name) params =
-    asKorePattern
+    asCommonKorePattern
         (ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = testId name

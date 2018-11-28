@@ -28,6 +28,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.And
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
@@ -449,8 +450,8 @@ mockMetadataTools =
         Mock.headTypeMapping
         Mock.subsorts
 
-testSort :: MetaOrObject level => Sort level
+testSort :: forall level. MetaOrObject level => Sort level
 testSort =
-    case mkBottom of
+    case mkBottom :: CommonStepPattern level of
         Bottom_ sort -> sort
         _ -> error "unexpected"

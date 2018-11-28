@@ -13,8 +13,7 @@ import qualified Data.Set as Set
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartPatterns
@@ -412,9 +411,10 @@ sigmaSymbol = SymbolOrAlias
     }
 
 metaSigma
-    :: CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
+    :: Functor dom
+    => CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
 metaSigma p1 p2 = App_ sigmaSymbol [p1, p2]
 
 
@@ -425,8 +425,9 @@ fSymbol = SymbolOrAlias
     }
 
 metaF
-    :: CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
+    :: Functor dom
+    => CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
 metaF p = App_ fSymbol [p]
 
 
@@ -437,8 +438,9 @@ gSymbol = SymbolOrAlias
     }
 
 metaG
-    :: CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
+    :: Functor dom
+    => CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
 metaG p = App_ gSymbol [p]
 
 
@@ -449,8 +451,9 @@ hSymbol = SymbolOrAlias
     }
 
 metaH
-    :: CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
+    :: Functor dom
+    => CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
 metaH p = App_ hSymbol [p]
 
 runStep

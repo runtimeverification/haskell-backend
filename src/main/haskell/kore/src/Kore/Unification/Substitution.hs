@@ -13,7 +13,7 @@ module Kore.Unification.Substitution
     , unwrap
     , wrap
     , modify
-    , mapVariables
+    , Kore.Unification.Substitution.mapVariables
     , isNormalized
     , null
     , variables
@@ -28,7 +28,7 @@ import GHC.Generics
 import Prelude hiding
        ( null )
 
-import Kore.AST.PureML
+import Kore.AST.Pure as Pure
 import Kore.Step.Pattern
        ( StepPattern )
 
@@ -107,7 +107,7 @@ mapVariables variableMapper =
         mapper
         (variable, patt)
       =
-        (mapper variable, mapPatternVariables mapper patt)
+        (mapper variable, Pure.mapVariables mapper patt)
 
 -- | Returns true iff the substitution is normalized.
 isNormalized :: Substitution level variable -> Bool

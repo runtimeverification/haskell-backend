@@ -17,18 +17,18 @@ module Kore.Proof.Value
     , asConcretePurePattern
     ) where
 
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Data.Deriving
                  ( deriveEq1, deriveOrd1, deriveShow1 )
 import           Data.Functor.Foldable
                  ( Fix (..) )
-import qualified Data.Functor.Foldable as Functor.Foldable
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 
-import           Kore.AST.Common
-                 ( Concrete, DomainValue, Pattern (..) )
-import qualified Kore.AST.Common as Pattern
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
+                 ( CofreeF (..), Object, Pattern (..) )
+import qualified Kore.AST.Pure as Pattern
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Pattern
@@ -44,7 +44,7 @@ data ValueF level child where
     Constructor :: !(Pattern.Application level child) -> ValueF level child
     SortInjection :: !(Pattern.Application level child) -> ValueF level child
     DomainValue
-        :: !(DomainValue Object Domain.Builtin child)
+        :: !(Pattern.DomainValue Object Domain.Builtin child)
         -> ValueF Object child
 
 deriving instance Eq child => Eq (ValueF level child)
@@ -69,7 +69,7 @@ type Value level = Fix (ValueF level)
  -}
 eraseSortInjection :: Value level -> Maybe (Value level)
 eraseSortInjection val =
-    case Functor.Foldable.project val of
+    case Recursive.project val of
         Constructor _ -> Just val
         DomainValue _ -> Just val
         SortInjection _ -> Nothing
@@ -123,13 +123,13 @@ fromConcretePurePattern
     -> ConcreteStepPattern level
     -> Maybe (Value level)
 fromConcretePurePattern tools =
-    Functor.Foldable.fold (fromPattern tools)
+    Recursive.fold (fromPattern tools . Cofree.tailF)
 
 {- | Project a 'Value' to a concrete 'Pattern' head.
  -}
 asPattern :: Value level -> StepPatternHead level Concrete (Value level)
 asPattern val =
-    case Functor.Foldable.project val of
+    case Recursive.project val of
         Constructor appP -> ApplicationPattern appP
         SortInjection appP -> ApplicationPattern appP
         DomainValue dvP -> DomainValuePattern dvP
@@ -137,4 +137,4 @@ asPattern val =
 {- | View a normalized value as a 'ConcretePurePattern'.
  -}
 asConcretePurePattern :: Value level -> ConcreteStepPattern level
-asConcretePurePattern = Functor.Foldable.unfold asPattern
+asConcretePurePattern = Recursive.unfold ((:<) mempty . asPattern)

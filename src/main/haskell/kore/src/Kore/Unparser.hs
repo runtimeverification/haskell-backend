@@ -13,22 +13,20 @@ module Kore.Unparser
     , layoutPrettyUnbounded
     ) where
 
-import Data.Functor.Const
-import Data.Functor.Foldable
-       ( Fix (..) )
-import Data.Maybe
-       ( catMaybes )
-import Data.String
-       ( IsString (fromString) )
-import Data.Text.Prettyprint.Doc hiding
-       ( list )
-import Data.Text.Prettyprint.Doc.Render.String
-       ( renderString )
-import Data.Void
+import           Data.Functor.Const
+import qualified Data.Functor.Foldable as Recursive
+import           Data.Maybe
+                 ( catMaybes )
+import           Data.String
+                 ( IsString (fromString) )
+import           Data.Text.Prettyprint.Doc hiding
+                 ( list )
+import           Data.Text.Prettyprint.Doc.Render.String
+                 ( renderString )
+import           Data.Void
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
@@ -55,9 +53,6 @@ class Unparse p where
 unparseToString :: Unparse p => p -> String
 unparseToString =
     renderString . layoutPretty defaultLayoutOptions . unparse
-
-instance Unparse (f (Fix f)) => Unparse (Fix f) where
-    unparse (Fix fx) = unparse fx
 
 instance Unparse (Id level) where
     unparse = pretty . getId
@@ -291,6 +286,27 @@ instance
             VariablePattern p      -> unparse p
 
 instance
+    ( Functor dom
+    , Unparse (var lvl)
+    , Unparse (dom self)
+    , self ~ PurePattern lvl dom var ann
+    ) =>
+    Unparse (PurePattern lvl dom var ann)
+  where
+    unparse (Recursive.project -> _ :< pat) = unparse pat
+
+instance
+    ( Functor dom
+    , Unparse (var Meta)
+    , Unparse (var Object)
+    , Unparse (dom self)
+    , self ~ KorePattern dom var ann
+    ) =>
+    Unparse (KorePattern dom var ann)
+  where
+    unparse (Recursive.project -> _ :< pat) = unparse pat
+
+instance
     ( Unparse (variable Meta), Unparse (variable Object)
     , Unparse (domain child)
     , Unparse child
@@ -309,7 +325,7 @@ instance
     ( Unparse (var lvl)
     , Unparse child
     , Unparse (dom child)
-    , child ~ Fix (pat dom var)
+    , child ~ pat dom var ()
     ) =>
     Unparse (SentenceAlias lvl pat dom var)
   where
@@ -379,7 +395,7 @@ instance Unparse (SentenceSort lvl pat dom var) where
             ]
 
 instance
-    ( Unparse (Fix (pat dom var))
+    ( Unparse (pat dom var ())
     , Unparse param
     ) =>
     Unparse (SentenceAxiom param pat dom var)

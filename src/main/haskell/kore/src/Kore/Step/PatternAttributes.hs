@@ -23,14 +23,11 @@ import           Control.Lens
 import qualified Control.Lens as Lens
 import           Data.Either
                  ( isRight )
-import           Data.Functor.Foldable
-                 ( cata )
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 
-import           Kore.AST.Common
-                 ( Application (..), DomainValue (..), Pattern (..),
-                 SymbolOrAlias (..) )
+import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -96,9 +93,9 @@ provePattern
     -> StepPattern level variable
     -> Either error [proof]
 provePattern levelProver =
-    cata reduceM
+    Recursive.fold reduceM
   where
-    reduceM patt = do
+    reduceM (_ :< patt) = do
         wrappedProof <- levelProver patt
         case wrappedProof of
             DoNotDescend proof -> return [proof]

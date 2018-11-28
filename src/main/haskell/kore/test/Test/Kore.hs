@@ -13,9 +13,8 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Domain.Builtin as Domain
@@ -394,11 +393,11 @@ patternGen vars childGen x =
 purePatternGen
     :: forall level. MetaOrObject level
     => level
-    -> Gen (CommonPurePattern level Domain.Builtin)
+    -> Gen (CommonPurePattern level Domain.Builtin ())
 purePatternGen level =
     childGen []
   where
-    childGen vars = embed <$> sized (purePatternGenWorker vars)
+    childGen vars = embed . (mempty :<) <$> sized (purePatternGenWorker vars)
     purePatternGenWorker vars n
       | n <= 0 =
         case isMetaOrObject (Proxy :: Proxy level) of
@@ -421,7 +420,7 @@ stepPatternGen
 stepPatternGen level =
     childGen []
   where
-    childGen vars = embed <$> sized (stepPatternGenWorker vars)
+    childGen vars = embed . (mempty :<) <$> sized (stepPatternGenWorker vars)
     stepPatternGenWorker vars n
       | n <= 0 =
         case isMetaOrObject (Proxy :: Proxy level) of
@@ -443,22 +442,35 @@ korePatternGen :: Gen CommonKorePattern
 korePatternGen = sized (\n ->
     if n<=0
         then oneof
-            [ asKorePattern . StringLiteralPattern <$> stringLiteralGen
-            , asKorePattern . CharLiteralPattern <$> charLiteralGen
+            [ korePatternGenStringLiteral
+            , korePatternGenCharLiteral
             ]
         else frequency
-            [ (15, asKorePattern <$> patternGen [] (const korePatternGen) Meta)
-            , (15, asKorePattern <$> patternGen [] (const korePatternGen) Object)
-            , (1, asKorePattern . StringLiteralPattern <$> stringLiteralGen)
-            , (1, asKorePattern . CharLiteralPattern <$> charLiteralGen)
-            , (1, asKorePattern . DomainValuePattern
-                <$> domainValueGen [] externalDomainGen Object)
-            , (1, asKorePattern . NextPattern
-                <$> nextGen [] (const korePatternGen) Object)
-            , (1, asKorePattern . RewritesPattern
-                <$> rewritesGen [] (const korePatternGen) Object)
+            [ (15, korePatternGenLevel Meta)
+            , (15, korePatternGenLevel Object)
+            , (1, korePatternGenStringLiteral)
+            , (1, korePatternGenCharLiteral)
+            , (1, korePatternGenDomainValue)
+            , (1, korePatternGenNext)
+            , (1, korePatternGenRewrites)
             ]
     )
+  where
+    korePatternGenLevel level =
+        asCommonKorePattern <$> patternGen [] (const korePatternGen) level
+    korePatternGenStringLiteral =
+        asCommonKorePattern . StringLiteralPattern <$> stringLiteralGen
+    korePatternGenCharLiteral =
+        asCommonKorePattern . CharLiteralPattern <$> charLiteralGen
+    korePatternGenDomainValue =
+        asCommonKorePattern . DomainValuePattern
+            <$> domainValueGen [] externalDomainGen Object
+    korePatternGenNext =
+        asCommonKorePattern . NextPattern
+            <$> nextGen [] (const korePatternGen) Object
+    korePatternGenRewrites =
+        asCommonKorePattern . RewritesPattern
+            <$> rewritesGen [] (const korePatternGen) Object
 
 predicateGen
     ::  ( Given (SymbolOrAliasSorts level)
@@ -486,7 +498,7 @@ predicateGen level =
 sentenceAliasGen
     :: MetaOrObject level
     => level
-    -> Gen (Fix (pat dom Variable))
+    -> Gen (pat dom Variable ())
     -> Gen (SentenceAlias level pat dom Variable)
 sentenceAliasGen x patGen = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
@@ -514,7 +526,7 @@ sentenceImportGen = pure SentenceImport
 
 sentenceAxiomGen
    :: Gen sortParam
-   -> Gen (Fix (pat dom var))
+   -> Gen (pat dom var ())
    -> Gen (SentenceAxiom sortParam pat dom var)
 sentenceAxiomGen sortParamGen patGen =
     pure SentenceAxiom
@@ -575,19 +587,21 @@ definitionGen senGen = pure Definition
     <*> scale (`div` 2) attributesGen
     <*> scale (`div` 2) (modulesGen senGen)
 
-metaMLPatternGen :: Gen (MetaMLPattern Variable)
-metaMLPatternGen = Fix <$> sized (\n ->
-    if n<=0
-        then oneof
+metaMLPatternGen :: Gen (MetaMLPattern Variable ())
+metaMLPatternGen = asPurePattern . (mempty :<) <$> sized metaMLPatternGenWorker
+  where
+    metaMLPatternGenWorker n
+      | n <= 0 =
+        oneof
             [ StringLiteralPattern <$> stringLiteralGen
             , CharLiteralPattern <$> charLiteralGen
             ]
-        else frequency
+      | otherwise =
+        frequency
             [ (15, patternGen [] (const metaMLPatternGen) Meta)
             , (1, StringLiteralPattern <$> stringLiteralGen)
             , (1, CharLiteralPattern <$> charLiteralGen)
             ]
-    )
 
 metaSentenceGen :: Gen MetaSentence
 metaSentenceGen = oneof

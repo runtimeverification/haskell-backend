@@ -35,9 +35,7 @@ import           Data.Default
 import           Data.Either
                  ( rights )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
@@ -182,15 +180,14 @@ koreSentenceToAxiomPattern
     -> KoreSentence
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 koreSentenceToAxiomPattern level =
-    applyUnifiedSentence
-        (sentenceToAxiomPattern level)
-        (sentenceToAxiomPattern level)
+    \case
+        UnifiedMetaSentence meta -> sentenceToAxiomPattern level meta
+        UnifiedObjectSentence object -> sentenceToAxiomPattern level object
 
 sentenceToAxiomPattern
     :: MetaOrObject level
     => level
-    -> Sentence
-        level' UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    -> Sentence level' UnifiedSortVariable KorePattern Domain.Builtin Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 sentenceToAxiomPattern
     level

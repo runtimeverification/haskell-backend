@@ -16,11 +16,7 @@ import Control.Monad.Except
        ( runExceptT )
 import Data.Reflection
 
-import           Kore.AST.Common
-                 ( Application (..), Pattern (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( asPurePattern )
+import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -129,7 +125,7 @@ ruleFunctionEvaluator
         -> ExpandedPattern level variable
     stepperConfiguration app' =
         Predicated
-            { term = asPurePattern $ ApplicationPattern app'
+            { term = asPurePattern (mempty :< ApplicationPattern app')
             , predicate = makeTruePredicate
             , substitution = mempty
             }

@@ -41,7 +41,6 @@ import           Control.Arrow
                  ( (&&&) )
 import           Control.Monad
                  ( unless, void )
-import           Data.Functor.Foldable
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Text as Text
@@ -50,11 +49,8 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec.Char as Parser
                  ( char )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( castMetaDomainValues )
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.MetaML.AST
@@ -535,11 +531,11 @@ koreVariableOrTermPatternParser = do
     c <- ParserUtils.peekChar'
     if c == '#'
         then
-            asKorePattern <$> variableOrTermPatternParser
+            asCommonKorePattern <$> variableOrTermPatternParser
                 korePatternParser
                 Meta
         else
-            asKorePattern <$> variableOrTermPatternParser
+            asCommonKorePattern <$> variableOrTermPatternParser
                 korePatternParser
                 Object
 
@@ -598,9 +594,9 @@ koreMLConstructorParser = do
         openCurlyBraceParser
         c <- ParserUtils.peekChar'
         if c == '#'
-            then asKorePattern <$>
+            then asCommonKorePattern <$>
                 mlConstructorRemainderParser korePatternParser Meta patternType
-            else asKorePattern <$>
+            else asCommonKorePattern <$>
                 mlConstructorRemainderParser korePatternParser Object
                     patternType
 
@@ -776,8 +772,8 @@ korePatternParser = do
     c <- ParserUtils.peekChar'
     case c of
         '\\' -> koreMLConstructorParser
-        '"'  -> asKorePattern . StringLiteralPattern <$> stringLiteralParser
-        '\'' -> asKorePattern . CharLiteralPattern <$> charLiteralParser
+        '"'  -> asCommonKorePattern . StringLiteralPattern <$> stringLiteralParser
+        '\'' -> asCommonKorePattern . CharLiteralPattern <$> charLiteralParser
         _    -> koreVariableOrTermPatternParser
 
 {-|'inSquareBracketsListParser' parses a @list@ of items delimited by
@@ -991,7 +987,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 aliasSentenceRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (SentenceAlias level UnifiedPattern Domain.Builtin Variable)
+    -> Parser (SentenceAlias level KorePattern Domain.Builtin Variable)
 aliasSentenceRemainderParser x
   = do
     aliasSymbol <- (aliasParser x)
@@ -1035,8 +1031,8 @@ BNF example:
 Always starts with @{@.
 -}
 axiomSentenceRemainderParser
-    ::  (  SentenceAxiom UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
-        -> Sentence Meta UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    ::  (  SentenceAxiom UnifiedSortVariable KorePattern Domain.Builtin Variable
+        -> Sentence Meta UnifiedSortVariable KorePattern Domain.Builtin Variable
         )
     -> Parser KoreSentence
 axiomSentenceRemainderParser ctor =
@@ -1109,9 +1105,10 @@ leveledPatternParser patternParser level = do
 purePatternParser
     :: MetaOrObject level
     => level
-    -> Parser (CommonPurePattern level Domain.Builtin)
-purePatternParser level =
-    Fix <$> leveledPatternParser (purePatternParser level) level
+    -> Parser (CommonPurePattern level Domain.Builtin ())
+purePatternParser level = do
+    patternHead <- leveledPatternParser (purePatternParser level) level
+    return $ asPurePattern (mempty :< patternHead)
 
 metaPatternParser :: Parser CommonMetaPattern
 metaPatternParser = castMetaDomainValues <$> purePatternParser Meta

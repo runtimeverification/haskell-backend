@@ -83,110 +83,160 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "R" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObjectPattern (EqualsPattern Equals
-                            { equalsOperandSort =
-                                SortActualSort SortActual
-                                    { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
-                                    , sortActualSorts = []
-                                    }
-                            , equalsResultSort =
-                                SortVariableSort (SortVariable ((Id "R" AstLocationNone) :: Id Object))
-                            , equalsFirst =
-                                Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id "lambda" AstLocationNone) :: Id Object
-                                            , symbolOrAliasParams = []
-                                            }
-                                    , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "#variableAsPattern" AstLocationNone) :: Id Meta
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#X" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Variable" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                                ]
-                                            })))
-                                        , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                            { variableName = (Id "#E" AstLocationNone) :: Id Meta
-                                            , variableSort =
-                                                SortActualSort SortActual
-                                                    { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                    , sortActualSorts = []
-                                                    }
-                                            })))
-                                        ]
-                                    })))
-                            , equalsSecond =
-                                Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id "#\exists" AstLocationNone) :: Id Meta
-                                            , symbolOrAliasParams = []
-                                            }
-                                    , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                            { variableName = (Id "#Exp" AstLocationNone) :: Id Meta
-                                            , variableSort =
-                                                SortActualSort SortActual
-                                                    { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
-                                                    , sortActualSorts = []
-                                                    }
-                                            })))
-                                        , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                            { variableName = (Id "#X" AstLocationNone) :: Id Meta
-                                            , variableSort =
-                                                SortActualSort SortActual
-                                                    { sortActualName = (Id "#Variable" AstLocationNone) :: Id Meta
-                                                    , sortActualSorts = []
-                                                    }
-                                            })))
-                                        , Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "lambda0" AstLocationNone) :: Id Object
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                                    { applicationSymbolOrAlias =
-                                                        SymbolOrAlias
-                                                            { symbolOrAliasConstructor = (Id "#variableAsPattern" AstLocationNone) :: Id Meta
-                                                            , symbolOrAliasParams = []
-                                                            }
-                                                    , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                            { variableName = (Id "#X" AstLocationNone) :: Id Meta
-                                                            , variableSort =
-                                                                SortActualSort SortActual
-                                                                    { sortActualName = (Id "#Variable" AstLocationNone) :: Id Meta
-                                                                    , sortActualSorts = []
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (EqualsPattern Equals
+                                        { equalsOperandSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , equalsResultSort =
+                                            SortVariableSort (SortVariable ((Id "R" AstLocationNone) :: Id Object))
+                                        , equalsFirst =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                        { applicationSymbolOrAlias =
+                                                            SymbolOrAlias
+                                                                { symbolOrAliasConstructor = (Id "lambda" AstLocationNone) :: Id Object
+                                                                , symbolOrAliasParams = []
+                                                                }
+                                                        , applicationChildren =
+                                                            [ CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "#variableAsPattern" AstLocationNone) :: Id Meta
+                                                                                , symbolOrAliasParams = []
+                                                                                }
+                                                                        , applicationChildren =
+                                                                            [ CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#X" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Variable" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        })
                                                                     }
-                                                            })))
-                                                        ]
-                                                    })))
-                                                , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#E" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                                ]
-                                            })))
-                                        ]
-                                    })))
-                            })))
+                                                                }
+                                                            , CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                        { variableName = (Id "#E" AstLocationNone) :: Id Meta
+                                                                        , variableSort =
+                                                                            SortActualSort SortActual
+                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                , sortActualSorts = []
+                                                                                }
+                                                                        })
+                                                                    }
+                                                                }
+                                                            ]
+                                                        })
+                                                    }
+                                                }
+                                        , equalsSecond =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                        { applicationSymbolOrAlias =
+                                                            SymbolOrAlias
+                                                                { symbolOrAliasConstructor = (Id "#\exists" AstLocationNone) :: Id Meta
+                                                                , symbolOrAliasParams = []
+                                                                }
+                                                        , applicationChildren =
+                                                            [ CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                        { variableName = (Id "#Exp" AstLocationNone) :: Id Meta
+                                                                        , variableSort =
+                                                                            SortActualSort SortActual
+                                                                                { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                                                                , sortActualSorts = []
+                                                                                }
+                                                                        })
+                                                                    }
+                                                                }
+                                                            , CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                        { variableName = (Id "#X" AstLocationNone) :: Id Meta
+                                                                        , variableSort =
+                                                                            SortActualSort SortActual
+                                                                                { sortActualName = (Id "#Variable" AstLocationNone) :: Id Meta
+                                                                                , sortActualSorts = []
+                                                                                }
+                                                                        })
+                                                                    }
+                                                                }
+                                                            , CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "lambda0" AstLocationNone) :: Id Object
+                                                                                , symbolOrAliasParams = []
+                                                                                }
+                                                                        , applicationChildren =
+                                                                            [ CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                                        { applicationSymbolOrAlias =
+                                                                                            SymbolOrAlias
+                                                                                                { symbolOrAliasConstructor = (Id "#variableAsPattern" AstLocationNone) :: Id Meta
+                                                                                                , symbolOrAliasParams = []
+                                                                                                }
+                                                                                        , applicationChildren =
+                                                                                            [ CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                        { variableName = (Id "#X" AstLocationNone) :: Id Meta
+                                                                                                        , variableSort =
+                                                                                                            SortActualSort SortActual
+                                                                                                                { sortActualName = (Id "#Variable" AstLocationNone) :: Id Meta
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            ]
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            , CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#E" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        })
+                                                                    }
+                                                                }
+                                                            ]
+                                                        })
+                                                    }
+                                                }
+                                        })
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceSymbolSentence SentenceSymbol
@@ -213,86 +263,124 @@ Definition
                         , UnifiedMeta (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedMetaPattern (EqualsPattern Equals
-                            { equalsOperandSort =
-                                SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                            , equalsResultSort =
-                                SortVariableSort (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
-                            , equalsFirst =
-                                Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
-                                            , symbolOrAliasParams =
-                                                [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                                ]
-                                            }
-                                    , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "#variableAsPattern" AstLocationNone) :: Id Meta
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                                    { applicationSymbolOrAlias =
-                                                        SymbolOrAlias
-                                                            { symbolOrAliasConstructor = (Id "#variable" AstLocationNone) :: Id Meta
-                                                            , symbolOrAliasParams = []
-                                                            }
-                                                    , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                            { variableName = (Id "#NAME" AstLocationNone) :: Id Meta
-                                                            , variableSort =
-                                                                SortActualSort SortActual
-                                                                    { sortActualName = (Id "#CharList" AstLocationNone) :: Id Meta
-                                                                    , sortActualSorts = []
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedMetaPattern (EqualsPattern Equals
+                                        { equalsOperandSort =
+                                            SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                        , equalsResultSort =
+                                            SortVariableSort (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
+                                        , equalsFirst =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                        { applicationSymbolOrAlias =
+                                                            SymbolOrAlias
+                                                                { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
+                                                                , symbolOrAliasParams =
+                                                                    [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                                    ]
+                                                                }
+                                                        , applicationChildren =
+                                                            [ CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "#variableAsPattern" AstLocationNone) :: Id Meta
+                                                                                , symbolOrAliasParams = []
+                                                                                }
+                                                                        , applicationChildren =
+                                                                            [ CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                                        { applicationSymbolOrAlias =
+                                                                                            SymbolOrAlias
+                                                                                                { symbolOrAliasConstructor = (Id "#variable" AstLocationNone) :: Id Meta
+                                                                                                , symbolOrAliasParams = []
+                                                                                                }
+                                                                                        , applicationChildren =
+                                                                                            [ CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                        { variableName = (Id "#NAME" AstLocationNone) :: Id Meta
+                                                                                                        , variableSort =
+                                                                                                            SortActualSort SortActual
+                                                                                                                { sortActualName = (Id "#CharList" AstLocationNone) :: Id Meta
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            , CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                        { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
+                                                                                                        , variableSort =
+                                                                                                            SortActualSort SortActual
+                                                                                                                { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            ]
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        })
                                                                     }
-                                                            })))
-                                                        , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                            { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
-                                                            , variableSort =
-                                                                SortActualSort SortActual
-                                                                    { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
-                                                                    , sortActualSorts = []
+                                                                }
+                                                            ]
+                                                        })
+                                                    }
+                                                }
+                                        , equalsSecond =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedMetaPattern (EqualsPattern Equals
+                                                        { equalsOperandSort =
+                                                            SortActualSort SortActual
+                                                                { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                                                , sortActualSorts = []
+                                                                }
+                                                        , equalsResultSort =
+                                                            SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                        , equalsFirst =
+                                                            CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                        { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
+                                                                        , variableSort =
+                                                                            SortActualSort SortActual
+                                                                                { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                                                                , sortActualSorts = []
+                                                                                }
+                                                                        })
                                                                     }
-                                                            })))
-                                                        ]
-                                                    })))
-                                                ]
-                                            })))
-                                        ]
-                                    })))
-                            , equalsSecond =
-                                Fix (UnifiedPattern (UnifiedMetaPattern (EqualsPattern Equals
-                                    { equalsOperandSort =
-                                        SortActualSort SortActual
-                                            { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
-                                            , sortActualSorts = []
-                                            }
-                                    , equalsResultSort =
-                                        SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                    , equalsFirst =
-                                        Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                            { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
-                                            , variableSort =
-                                                SortActualSort SortActual
-                                                    { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
-                                                    , sortActualSorts = []
+                                                                }
+                                                        , equalsSecond =
+                                                            CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "#`Exp" AstLocationNone) :: Id Meta
+                                                                                , symbolOrAliasParams = []
+                                                                                }
+                                                                        , applicationChildren = []
+                                                                        })
+                                                                    }
+                                                                }
+                                                        })
                                                     }
-                                            })))
-                                    , equalsSecond =
-                                        Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "#`Exp" AstLocationNone) :: Id Meta
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren = []
-                                            })))
-                                    })))
-                            })))
+                                                }
+                                        })
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -301,94 +389,136 @@ Definition
                         , UnifiedMeta (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedMetaPattern (EqualsPattern Equals
-                            { equalsOperandSort =
-                                SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                            , equalsResultSort =
-                                SortVariableSort (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
-                            , equalsFirst =
-                                Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
-                                            , symbolOrAliasParams =
-                                                [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                                ]
-                                            }
-                                    , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "app" AstLocationNone) :: Id Object
-                                                    , symbolOrAliasParams = []
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedMetaPattern (EqualsPattern Equals
+                                        { equalsOperandSort =
+                                            SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                        , equalsResultSort =
+                                            SortVariableSort (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
+                                        , equalsFirst =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                        { applicationSymbolOrAlias =
+                                                            SymbolOrAlias
+                                                                { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
+                                                                , symbolOrAliasParams =
+                                                                    [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                                    ]
+                                                                }
+                                                        , applicationChildren =
+                                                            [ CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "app" AstLocationNone) :: Id Object
+                                                                                , symbolOrAliasParams = []
+                                                                                }
+                                                                        , applicationChildren =
+                                                                            [ CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#E1" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            , CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#E2" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        })
+                                                                    }
+                                                                }
+                                                            ]
+                                                        })
                                                     }
-                                            , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#E1" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                                , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#E2" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                                ]
-                                            })))
-                                        ]
-                                    })))
-                            , equalsSecond =
-                                Fix (UnifiedPattern (UnifiedMetaPattern (AndPattern And
-                                    { andSort =
-                                        SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                    , andFirst =
-                                        Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
-                                                    , symbolOrAliasParams =
-                                                        [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                                        ]
+                                                }
+                                        , equalsSecond =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedMetaPattern (AndPattern And
+                                                        { andSort =
+                                                            SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                        , andFirst =
+                                                            CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
+                                                                                , symbolOrAliasParams =
+                                                                                    [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                                                    ]
+                                                                                }
+                                                                        , applicationChildren =
+                                                                            [ CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#E1" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        })
+                                                                    }
+                                                                }
+                                                        , andSecond =
+                                                            CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
+                                                                                , symbolOrAliasParams =
+                                                                                    [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                                                    ]
+                                                                                }
+                                                                        , applicationChildren =
+                                                                            [ CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#E2" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        })
+                                                                    }
+                                                                }
+                                                        })
                                                     }
-                                            , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#E1" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                                ]
-                                            })))
-                                    , andSecond =
-                                        Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
-                                                    , symbolOrAliasParams =
-                                                        [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                                        ]
-                                                    }
-                                            , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#E2" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                                ]
-                                            })))
-                                    })))
-                            })))
+                                                }
+                                        })
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -397,128 +527,186 @@ Definition
                         , UnifiedMeta (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedMetaPattern (EqualsPattern Equals
-                            { equalsOperandSort =
-                                SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                            , equalsResultSort =
-                                SortVariableSort (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
-                            , equalsFirst =
-                                Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
-                                            , symbolOrAliasParams =
-                                                [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                                ]
-                                            }
-                                    , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "lambda" AstLocationNone) :: Id Object
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                                    { applicationSymbolOrAlias =
-                                                        SymbolOrAlias
-                                                            { symbolOrAliasConstructor = (Id "#variableAsPattern" AstLocationNone) :: Id Meta
-                                                            , symbolOrAliasParams = []
-                                                            }
-                                                    , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                                            { applicationSymbolOrAlias =
-                                                                SymbolOrAlias
-                                                                    { symbolOrAliasConstructor = (Id "#variable" AstLocationNone) :: Id Meta
-                                                                    , symbolOrAliasParams = []
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedMetaPattern (EqualsPattern Equals
+                                        { equalsOperandSort =
+                                            SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                        , equalsResultSort =
+                                            SortVariableSort (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
+                                        , equalsFirst =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                        { applicationSymbolOrAlias =
+                                                            SymbolOrAlias
+                                                                { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
+                                                                , symbolOrAliasParams =
+                                                                    [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                                    ]
+                                                                }
+                                                        , applicationChildren =
+                                                            [ CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "lambda" AstLocationNone) :: Id Object
+                                                                                , symbolOrAliasParams = []
+                                                                                }
+                                                                        , applicationChildren =
+                                                                            [ CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                                        { applicationSymbolOrAlias =
+                                                                                            SymbolOrAlias
+                                                                                                { symbolOrAliasConstructor = (Id "#variableAsPattern" AstLocationNone) :: Id Meta
+                                                                                                , symbolOrAliasParams = []
+                                                                                                }
+                                                                                        , applicationChildren =
+                                                                                            [ CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                                                        { applicationSymbolOrAlias =
+                                                                                                            SymbolOrAlias
+                                                                                                                { symbolOrAliasConstructor = (Id "#variable" AstLocationNone) :: Id Meta
+                                                                                                                , symbolOrAliasParams = []
+                                                                                                                }
+                                                                                                        , applicationChildren =
+                                                                                                            [ CofreeT
+                                                                                                                { runCofreeT = Identity
+                                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                                        { variableName = (Id "#NAME" AstLocationNone) :: Id Meta
+                                                                                                                        , variableSort =
+                                                                                                                            SortActualSort SortActual
+                                                                                                                                { sortActualName = (Id "#CharList" AstLocationNone) :: Id Meta
+                                                                                                                                , sortActualSorts = []
+                                                                                                                                }
+                                                                                                                        })
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            , CofreeT
+                                                                                                                { runCofreeT = Identity
+                                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                                        { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
+                                                                                                                        , variableSort =
+                                                                                                                            SortActualSort SortActual
+                                                                                                                                { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                                                                                                                , sortActualSorts = []
+                                                                                                                                }
+                                                                                                                        })
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            ]
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            ]
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            , CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#E" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        })
                                                                     }
-                                                            , applicationChildren =
-                                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                                    { variableName = (Id "#NAME" AstLocationNone) :: Id Meta
-                                                                    , variableSort =
-                                                                        SortActualSort SortActual
-                                                                            { sortActualName = (Id "#CharList" AstLocationNone) :: Id Meta
-                                                                            , sortActualSorts = []
-                                                                            }
-                                                                    })))
-                                                                , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                                    { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
-                                                                    , variableSort =
-                                                                        SortActualSort SortActual
-                                                                            { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
-                                                                            , sortActualSorts = []
-                                                                            }
-                                                                    })))
-                                                                ]
-                                                            })))
-                                                        ]
-                                                    })))
-                                                , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#E" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                                ]
-                                            })))
-                                        ]
-                                    })))
-                            , equalsSecond =
-                                Fix (UnifiedPattern (UnifiedMetaPattern (AndPattern And
-                                    { andSort =
-                                        SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                    , andFirst =
-                                        Fix (UnifiedPattern (UnifiedMetaPattern (EqualsPattern Equals
-                                            { equalsOperandSort =
-                                                SortActualSort SortActual
-                                                    { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
-                                                    , sortActualSorts = []
+                                                                }
+                                                            ]
+                                                        })
                                                     }
-                                            , equalsResultSort =
-                                                SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                            , equalsFirst =
-                                                Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                            , equalsSecond =
-                                                Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                                    { applicationSymbolOrAlias =
-                                                        SymbolOrAlias
-                                                            { symbolOrAliasConstructor = (Id "#`Exp" AstLocationNone) :: Id Meta
-                                                            , symbolOrAliasParams = []
-                                                            }
-                                                    , applicationChildren = []
-                                                    })))
-                                            })))
-                                    , andSecond =
-                                        Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
-                                                    , symbolOrAliasParams =
-                                                        [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                                        ]
+                                                }
+                                        , equalsSecond =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedMetaPattern (AndPattern And
+                                                        { andSort =
+                                                            SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                        , andFirst =
+                                                            CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (EqualsPattern Equals
+                                                                        { equalsOperandSort =
+                                                                            SortActualSort SortActual
+                                                                                { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                                                                , sortActualSorts = []
+                                                                                }
+                                                                        , equalsResultSort =
+                                                                            SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                                        , equalsFirst =
+                                                                            CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#SORT" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                        , equalsSecond =
+                                                                            CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                                        { applicationSymbolOrAlias =
+                                                                                            SymbolOrAlias
+                                                                                                { symbolOrAliasConstructor = (Id "#`Exp" AstLocationNone) :: Id Meta
+                                                                                                , symbolOrAliasParams = []
+                                                                                                }
+                                                                                        , applicationChildren = []
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                        })
+                                                                    }
+                                                                }
+                                                        , andSecond =
+                                                            CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
+                                                                                , symbolOrAliasParams =
+                                                                                    [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                                                    ]
+                                                                                }
+                                                                        , applicationChildren =
+                                                                            [ CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#E" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        })
+                                                                    }
+                                                                }
+                                                        })
                                                     }
-                                            , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#E" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                                ]
-                                            })))
-                                    })))
-                            })))
+                                                }
+                                        })
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -527,172 +715,254 @@ Definition
                         , UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedMetaPattern (ImpliesPattern Implies
-                            { impliesSort =
-                                SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                            , impliesFirst =
-                                Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
-                                            , symbolOrAliasParams =
-                                                [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                                ]
-                                            }
-                                    , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "app" AstLocationNone) :: Id Object
-                                                    , symbolOrAliasParams = []
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedMetaPattern (ImpliesPattern Implies
+                                        { impliesSort =
+                                            SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                        , impliesFirst =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                        { applicationSymbolOrAlias =
+                                                            SymbolOrAlias
+                                                                { symbolOrAliasConstructor = (Id "#isExp" AstLocationNone) :: Id Meta
+                                                                , symbolOrAliasParams =
+                                                                    [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                                    ]
+                                                                }
+                                                        , applicationChildren =
+                                                            [ CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                        { applicationSymbolOrAlias =
+                                                                            SymbolOrAlias
+                                                                                { symbolOrAliasConstructor = (Id "app" AstLocationNone) :: Id Object
+                                                                                , symbolOrAliasParams = []
+                                                                                }
+                                                                        , applicationChildren =
+                                                                            [ CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                                        { applicationSymbolOrAlias =
+                                                                                            SymbolOrAlias
+                                                                                                { symbolOrAliasConstructor = (Id "lambda" AstLocationNone) :: Id Object
+                                                                                                , symbolOrAliasParams = []
+                                                                                                }
+                                                                                        , applicationChildren =
+                                                                                            [ CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                                        { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                                                                        , variableSort =
+                                                                                                            SortActualSort SortActual
+                                                                                                                { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            , CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                        { variableName = (Id "#E" AstLocationNone) :: Id Meta
+                                                                                                        , variableSort =
+                                                                                                            SortActualSort SortActual
+                                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            ]
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            , CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                        { variableName = (Id "#E'" AstLocationNone) :: Id Meta
+                                                                                        , variableSort =
+                                                                                            SortActualSort SortActual
+                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        })
+                                                                    }
+                                                                }
+                                                            ]
+                                                        })
                                                     }
-                                            , applicationChildren =
-                                                [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                                    { applicationSymbolOrAlias =
-                                                        SymbolOrAlias
-                                                            { symbolOrAliasConstructor = (Id "lambda" AstLocationNone) :: Id Object
-                                                            , symbolOrAliasParams = []
-                                                            }
-                                                    , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                                            { variableName = (Id "X" AstLocationNone) :: Id Object
-                                                            , variableSort =
-                                                                SortActualSort SortActual
-                                                                    { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
-                                                                    , sortActualSorts = []
+                                                }
+                                        , impliesSecond =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                        { applicationSymbolOrAlias =
+                                                            SymbolOrAlias
+                                                                { symbolOrAliasConstructor = (Id "#provable" AstLocationNone) :: Id Meta
+                                                                , symbolOrAliasParams =
+                                                                    [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
+                                                                    ]
+                                                                }
+                                                        , applicationChildren =
+                                                            [ CofreeT
+                                                                { runCofreeT = Identity
+                                                                    { runIdentity = () :< UnifiedObjectPattern (EqualsPattern Equals
+                                                                        { equalsOperandSort =
+                                                                            SortActualSort SortActual
+                                                                                { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
+                                                                                , sortActualSorts = []
+                                                                                }
+                                                                        , equalsResultSort =
+                                                                            SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                                                        , equalsFirst =
+                                                                            CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                                        { applicationSymbolOrAlias =
+                                                                                            SymbolOrAlias
+                                                                                                { symbolOrAliasConstructor = (Id "app" AstLocationNone) :: Id Object
+                                                                                                , symbolOrAliasParams = []
+                                                                                                }
+                                                                                        , applicationChildren =
+                                                                                            [ CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                                                        { applicationSymbolOrAlias =
+                                                                                                            SymbolOrAlias
+                                                                                                                { symbolOrAliasConstructor = (Id "lambda" AstLocationNone) :: Id Object
+                                                                                                                , symbolOrAliasParams = []
+                                                                                                                }
+                                                                                                        , applicationChildren =
+                                                                                                            [ CofreeT
+                                                                                                                { runCofreeT = Identity
+                                                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                                                        { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                                                                                        , variableSort =
+                                                                                                                            SortActualSort SortActual
+                                                                                                                                { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
+                                                                                                                                , sortActualSorts = []
+                                                                                                                                }
+                                                                                                                        })
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            , CofreeT
+                                                                                                                { runCofreeT = Identity
+                                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                                        { variableName = (Id "#E" AstLocationNone) :: Id Meta
+                                                                                                                        , variableSort =
+                                                                                                                            SortActualSort SortActual
+                                                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                                                , sortActualSorts = []
+                                                                                                                                }
+                                                                                                                        })
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            ]
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            , CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                        { variableName = (Id "#E'" AstLocationNone) :: Id Meta
+                                                                                                        , variableSort =
+                                                                                                            SortActualSort SortActual
+                                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            ]
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                        , equalsSecond =
+                                                                            CofreeT
+                                                                                { runCofreeT = Identity
+                                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                                        { applicationSymbolOrAlias =
+                                                                                            SymbolOrAlias
+                                                                                                { symbolOrAliasConstructor = (Id "#substitute" AstLocationNone) :: Id Meta
+                                                                                                , symbolOrAliasParams = []
+                                                                                                }
+                                                                                        , applicationChildren =
+                                                                                            [ CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                        { variableName = (Id "#E" AstLocationNone) :: Id Meta
+                                                                                                        , variableSort =
+                                                                                                            SortActualSort SortActual
+                                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            , CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedMetaPattern (VariablePattern Variable
+                                                                                                        { variableName = (Id "#E'" AstLocationNone) :: Id Meta
+                                                                                                        , variableSort =
+                                                                                                            SortActualSort SortActual
+                                                                                                                { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            , CofreeT
+                                                                                                { runCofreeT = Identity
+                                                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                                                        { applicationSymbolOrAlias =
+                                                                                                            SymbolOrAlias
+                                                                                                                { symbolOrAliasConstructor = (Id "#variable" AstLocationNone) :: Id Meta
+                                                                                                                , symbolOrAliasParams = []
+                                                                                                                }
+                                                                                                        , applicationChildren =
+                                                                                                            [ CofreeT
+                                                                                                                { runCofreeT = Identity
+                                                                                                                    { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "X"))
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            , CofreeT
+                                                                                                                { runCofreeT = Identity
+                                                                                                                    { runIdentity = () :< UnifiedMetaPattern (ApplicationPattern Application
+                                                                                                                        { applicationSymbolOrAlias =
+                                                                                                                            SymbolOrAlias
+                                                                                                                                { symbolOrAliasConstructor = (Id "#`Exp" AstLocationNone) :: Id Meta
+                                                                                                                                , symbolOrAliasParams = []
+                                                                                                                                }
+                                                                                                                        , applicationChildren = []
+                                                                                                                        })
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            ]
+                                                                                                        })
+                                                                                                    }
+                                                                                                }
+                                                                                            ]
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                        })
                                                                     }
-                                                            })))
-                                                        , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                            { variableName = (Id "#E" AstLocationNone) :: Id Meta
-                                                            , variableSort =
-                                                                SortActualSort SortActual
-                                                                    { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                                    , sortActualSorts = []
-                                                                    }
-                                                            })))
-                                                        ]
-                                                    })))
-                                                , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                    { variableName = (Id "#E'" AstLocationNone) :: Id Meta
-                                                    , variableSort =
-                                                        SortActualSort SortActual
-                                                            { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                            , sortActualSorts = []
-                                                            }
-                                                    })))
-                                                ]
-                                            })))
-                                        ]
-                                    })))
-                            , impliesSecond =
-                                Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id "#provable" AstLocationNone) :: Id Meta
-                                            , symbolOrAliasParams =
-                                                [ SortVariableSort (SortVariable ((Id "#S" AstLocationNone) :: Id Meta))
-                                                ]
-                                            }
-                                    , applicationChildren =
-                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (EqualsPattern Equals
-                                            { equalsOperandSort =
-                                                SortActualSort SortActual
-                                                    { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
-                                                    , sortActualSorts = []
+                                                                }
+                                                            ]
+                                                        })
                                                     }
-                                            , equalsResultSort =
-                                                SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                            , equalsFirst =
-                                                Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                                    { applicationSymbolOrAlias =
-                                                        SymbolOrAlias
-                                                            { symbolOrAliasConstructor = (Id "app" AstLocationNone) :: Id Object
-                                                            , symbolOrAliasParams = []
-                                                            }
-                                                    , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                                            { applicationSymbolOrAlias =
-                                                                SymbolOrAlias
-                                                                    { symbolOrAliasConstructor = (Id "lambda" AstLocationNone) :: Id Object
-                                                                    , symbolOrAliasParams = []
-                                                                    }
-                                                            , applicationChildren =
-                                                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                                                    { variableName = (Id "X" AstLocationNone) :: Id Object
-                                                                    , variableSort =
-                                                                        SortActualSort SortActual
-                                                                            { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
-                                                                            , sortActualSorts = []
-                                                                            }
-                                                                    })))
-                                                                , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                                    { variableName = (Id "#E" AstLocationNone) :: Id Meta
-                                                                    , variableSort =
-                                                                        SortActualSort SortActual
-                                                                            { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                                            , sortActualSorts = []
-                                                                            }
-                                                                    })))
-                                                                ]
-                                                            })))
-                                                        , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                            { variableName = (Id "#E'" AstLocationNone) :: Id Meta
-                                                            , variableSort =
-                                                                SortActualSort SortActual
-                                                                    { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                                    , sortActualSorts = []
-                                                                    }
-                                                            })))
-                                                        ]
-                                                    })))
-                                            , equalsSecond =
-                                                Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                                    { applicationSymbolOrAlias =
-                                                        SymbolOrAlias
-                                                            { symbolOrAliasConstructor = (Id "#substitute" AstLocationNone) :: Id Meta
-                                                            , symbolOrAliasParams = []
-                                                            }
-                                                    , applicationChildren =
-                                                        [ Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                            { variableName = (Id "#E" AstLocationNone) :: Id Meta
-                                                            , variableSort =
-                                                                SortActualSort SortActual
-                                                                    { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                                    , sortActualSorts = []
-                                                                    }
-                                                            })))
-                                                        , Fix (UnifiedPattern (UnifiedMetaPattern (VariablePattern Variable
-                                                            { variableName = (Id "#E'" AstLocationNone) :: Id Meta
-                                                            , variableSort =
-                                                                SortActualSort SortActual
-                                                                    { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
-                                                                    , sortActualSorts = []
-                                                                    }
-                                                            })))
-                                                        , Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                                            { applicationSymbolOrAlias =
-                                                                SymbolOrAlias
-                                                                    { symbolOrAliasConstructor = (Id "#variable" AstLocationNone) :: Id Meta
-                                                                    , symbolOrAliasParams = []
-                                                                    }
-                                                            , applicationChildren =
-                                                                [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "X"))))
-                                                                , Fix (UnifiedPattern (UnifiedMetaPattern (ApplicationPattern Application
-                                                                    { applicationSymbolOrAlias =
-                                                                        SymbolOrAlias
-                                                                            { symbolOrAliasConstructor = (Id "#`Exp" AstLocationNone) :: Id Meta
-                                                                            , symbolOrAliasParams = []
-                                                                            }
-                                                                    , applicationChildren = []
-                                                                    })))
-                                                                ]
-                                                            })))
-                                                        ]
-                                                    })))
-                                            })))
-                                        ]
-                                    })))
-                            })))
+                                                }
+                                        })
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

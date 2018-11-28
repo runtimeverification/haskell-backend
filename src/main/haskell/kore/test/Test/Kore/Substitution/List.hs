@@ -7,9 +7,7 @@ import Test.Tasty.HUnit
 
 import Test.Kore.Substitution
 
-import Kore.AST.Common
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
 import Kore.Substitution.List
 
 type UnifiedPatternSubstitution =

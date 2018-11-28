@@ -14,6 +14,7 @@ module Kore.Step.Condition.Evaluator
 
 import           Control.Applicative
                  ( Alternative (..) )
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( MaybeT, runMaybeT )
 import           Control.Monad.Counter
@@ -24,7 +25,7 @@ import           Control.Monad.Morph as Morph
 import           Control.Monad.State.Strict
                  ( StateT, evalStateT )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Functor.Foldable as Functor.Foldable
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -181,7 +182,7 @@ translatePredicate predicate = do
         :: StepPattern Object variable
         -> Translator (StepPattern Object variable) SExpr
     translatePredicatePattern pat =
-        case Functor.Foldable.project pat of
+        case Cofree.tailF (Recursive.project pat) of
             -- Logical connectives: translate as connectives
             AndPattern and' -> translatePredicateAnd and'
             BottomPattern _ -> return (SMT.bool False)
@@ -264,7 +265,7 @@ translateInt
     => p
     -> Translator p SExpr
 translateInt pat =
-    case Functor.Foldable.project pat of
+    case Cofree.tailF (Recursive.project pat) of
         VariablePattern _ -> translateUninterpretedInt pat
         DomainValuePattern dv ->
             (return . SMT.int . Builtin.runParser ctx)
@@ -285,12 +286,12 @@ translateBool
     => p
     -> Translator p SExpr
 translateBool pat =
-    case Functor.Foldable.project pat of
+    case Cofree.tailF (Recursive.project pat) of
         VariablePattern _ -> translateUninterpretedBool pat
         DomainValuePattern dv ->
             (return . SMT.bool . Builtin.runParser ctx)
             (Builtin.parseDomainValue Builtin.Bool.parse dv)
-            where
+          where
             ctx = Text.unpack Builtin.Bool.sort
         NotPattern Not { notChild } ->
             -- \not is equivalent to BOOL.not for functional patterns.

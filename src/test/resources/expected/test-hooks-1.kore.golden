@@ -9,16 +9,26 @@ Definition
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
-                                        , symbolOrAliasParams = []
+                            [ KorePattern
+                                { getKorePattern = CofreeT
+                                    { runCofreeT = Identity
+                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationChildren =
+                                                [ CofreeT
+                                                    { runCofreeT = Identity
+                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "S.S"))
+                                                        }
+                                                    }
+                                                ]
+                                            })
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "S.S"))))
-                                    ]
-                                })))
+                                    }
+                                }
                             ]
                     }))
                 , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
@@ -35,16 +45,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObjectPattern (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
-                                        , symbolOrAliasParams = []
+                            [ KorePattern
+                                { getKorePattern = CofreeT
+                                    { runCofreeT = Identity
+                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationChildren =
+                                                [ CofreeT
+                                                    { runCofreeT = Identity
+                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "S.f"))
+                                                        }
+                                                    }
+                                                ]
+                                            })
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMetaPattern (StringLiteralPattern (StringLiteral "S.f"))))
-                                    ]
-                                })))
+                                    }
+                                }
                             ]
                     }))
                 ]

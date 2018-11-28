@@ -53,10 +53,7 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Common
-import qualified Kore.AST.Common as Kore
-import           Kore.AST.MetaOrObject
-import qualified Kore.AST.PureML as Kore
+import           Kore.AST.Pure as Kore
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Hook
                  ( Hook )

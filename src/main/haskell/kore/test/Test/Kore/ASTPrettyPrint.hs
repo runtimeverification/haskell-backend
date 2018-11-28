@@ -5,13 +5,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Data.Functor.Foldable
-       ( Fix (..) )
-
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.ASTPrettyPrint
+import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
                  ( charMetaSort )
@@ -72,18 +68,19 @@ test_astPrettyPrint =
             "Nothing"
             (prettyPrintToString (Nothing :: Maybe (Id Object)))
         )
-        , testCase "MetaMLPattern - Top"
+    , testCase "MetaMLPattern - Top"
         (assertEqual ""
-            (  "Fix (TopPattern (Top (SortActualSort SortActual\n"
-            ++ "    { sortActualName = (Id \"#Char\" AstLocationNone) :: Id Meta\n"
-            ++ "    , sortActualSorts = []\n"
-            ++ "    })))"
-            )
-            (prettyPrintToString
-                (Fix (TopPattern (Top charMetaSort))
-                :: MetaMLPattern Variable
-                )
-            )
+            "PurePattern\n\
+            \    { getPurePattern = CofreeT\n\
+            \        { runCofreeT = Identity\n\
+            \            { runIdentity = () :< TopPattern (Top (SortActualSort SortActual\n\
+            \                { sortActualName = (Id \"#Char\" AstLocationNone) :: Id Meta\n\
+            \                , sortActualSorts = []\n\
+            \                }))\n\
+            \            }\n\
+            \        }\n\
+            \    }"
+            (prettyPrintToString (Top_ charMetaSort :: CommonMetaPattern))
         )
     ]
 

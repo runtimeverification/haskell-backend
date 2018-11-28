@@ -48,8 +48,7 @@ import           Data.Text.Prettyprint.Doc as P
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTPrettyPrint
 import           Kore.ASTUtils.SmartConstructors
 import           Kore.ASTUtils.SmartPatterns
@@ -79,7 +78,7 @@ import           Kore.Unparser
 impossible :: a
 impossible = error "The impossible happened."
 
-type Term = CommonPurePattern Object Domain.Builtin
+type Term = CommonPurePattern Object Domain.Builtin ()
 type Var = Variable Object
 
 -- | Fix-able functor representing a single deduction step

@@ -3,7 +3,6 @@ module Test.Kore.Attribute.ProductionID where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.Attribute.ProductionID
 
@@ -41,7 +40,7 @@ test_zeroArguments =
         $ parseProductionID $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (KoreObjectPattern . ApplicationPattern)
+        (asCommonKorePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = productionIDSymbol
                 , applicationChildren = []
@@ -54,13 +53,13 @@ test_twoArguments =
         $ parseProductionID $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (KoreObjectPattern . ApplicationPattern)
+        (asCommonKorePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = productionIDSymbol
                 , applicationChildren =
-                    [ (KoreMetaPattern . StringLiteralPattern)
+                    [ (asCommonKorePattern . StringLiteralPattern)
                         (StringLiteral "illegal")
-                    , (KoreMetaPattern . StringLiteralPattern)
+                    , (asCommonKorePattern . StringLiteralPattern)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -72,7 +71,7 @@ test_parameters =
         $ parseProductionID $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (KoreObjectPattern . ApplicationPattern)
+        (asCommonKorePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
@@ -81,7 +80,7 @@ test_parameters =
                             [ SortVariableSort (SortVariable "illegal") ]
                         }
                 , applicationChildren =
-                    [ (KoreMetaPattern . StringLiteralPattern)
+                    [ (asCommonKorePattern . StringLiteralPattern)
                         (StringLiteral "string")
                     ]
                 }

@@ -13,9 +13,7 @@ import Test.Tasty.HUnit.Extensions
 
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as S
 import           Kore.Variables.Fresh
@@ -127,7 +125,7 @@ metaVariableSubstitute n =
 
 metaVariableUnifiedPatternSubstitute :: Int -> CommonKorePattern
 metaVariableUnifiedPatternSubstitute =
-    asKorePattern . VariablePattern . metaVariableSubstitute
+    asCommonKorePattern . VariablePattern . metaVariableSubstitute
 
 objectVariableSubstitute :: Int -> Variable Object
 objectVariableSubstitute n =
@@ -140,7 +138,7 @@ objectVariableSubstitute n =
 
 objectVariableUnifiedPatternSubstitute :: Int -> CommonKorePattern
 objectVariableUnifiedPatternSubstitute =
-    asKorePattern . VariablePattern . objectVariableSubstitute
+    asCommonKorePattern . VariablePattern . objectVariableSubstitute
 
 substitution1 :: UnifiedPatternSubstitution
 substitution1 = S.fromList
@@ -155,99 +153,101 @@ substitution3 = S.fromList
   [ (unifiedObjectVariable, metaVariableUnifiedPattern) ]
 
 existsObjectUnifiedPattern1 :: CommonKorePattern
-existsObjectUnifiedPattern1 = asKorePattern $ ExistsPattern Exists
+existsObjectUnifiedPattern1 = asCommonKorePattern $ ExistsPattern Exists
     { existsSort = objectSort
     , existsVariable = objectVariable
     , existsChild = objectVariableUnifiedPattern
     }
 
 existsMetaUnifiedPattern1 :: CommonKorePattern
-existsMetaUnifiedPattern1 = asKorePattern $ ExistsPattern Exists
+existsMetaUnifiedPattern1 = asCommonKorePattern $ ExistsPattern Exists
     { existsSort = metaSort
     , existsVariable = metaVariable
     , existsChild = metaVariableUnifiedPattern
     }
 
 existsMetaUnifiedPattern1S3 :: CommonKorePattern
-existsMetaUnifiedPattern1S3 = asKorePattern $ ExistsPattern Exists
+existsMetaUnifiedPattern1S3 = asCommonKorePattern $ ExistsPattern Exists
     { existsSort = metaSort
     , existsVariable = metaVariableSubstitute 17
     , existsChild = metaVariableUnifiedPatternSubstitute 17
     }
 
 existsObjectUnifiedPattern1S :: Int -> CommonKorePattern
-existsObjectUnifiedPattern1S n = asKorePattern $ ExistsPattern Exists
+existsObjectUnifiedPattern1S n = asCommonKorePattern $ ExistsPattern Exists
     { existsSort = objectSort
     , existsVariable = objectVariableSubstitute n
     , existsChild = objectVariableUnifiedPatternSubstitute n
     }
 
 forallObjectUnifiedPattern1 :: CommonKorePattern
-forallObjectUnifiedPattern1 = asKorePattern $ ForallPattern Forall
+forallObjectUnifiedPattern1 = asCommonKorePattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariable
     , forallChild = objectVariableUnifiedPattern
     }
 
 forallObjectUnifiedPattern2 :: CommonKorePattern
-forallObjectUnifiedPattern2 = asKorePattern $ ForallPattern Forall
+forallObjectUnifiedPattern2 = asCommonKorePattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariable
     , forallChild = objectTopPattern
     }
 
 forallObjectUnifiedPattern1S3 :: CommonKorePattern
-forallObjectUnifiedPattern1S3 = asKorePattern $ ForallPattern Forall
+forallObjectUnifiedPattern1S3 = asCommonKorePattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariableSubstitute 5
     , forallChild = metaVariableUnifiedPattern
     }
 
 forallExistsObjectUnifiedPattern1 :: CommonKorePattern
-forallExistsObjectUnifiedPattern1 = asKorePattern $ ForallPattern Forall
+forallExistsObjectUnifiedPattern1 = asCommonKorePattern $ ForallPattern Forall
     { forallSort = objectSort
     , forallVariable = objectVariable
     , forallChild = existsObjectUnifiedPattern1
     }
 
 forallExistsObjectUnifiedPattern2 :: CommonKorePattern
-forallExistsObjectUnifiedPattern2 = asKorePattern $ ForallPattern Forall
+forallExistsObjectUnifiedPattern2 = asCommonKorePattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariable
     , forallChild = existsObjectUnifiedPattern1
     }
 
 forallExistsObjectUnifiedPattern1S2 :: CommonKorePattern
-forallExistsObjectUnifiedPattern1S2 = asKorePattern $ ForallPattern Forall
+forallExistsObjectUnifiedPattern1S2 = asCommonKorePattern $ ForallPattern Forall
     { forallSort = objectSort
     , forallVariable = objectVariableSubstitute 7
     , forallChild = existsObjectUnifiedPattern1S 8
     }
 
 testSubstitutionStatePattern :: CommonKorePattern
-testSubstitutionStatePattern = asKorePattern $ ApplicationPattern Application
-    { applicationSymbolOrAlias = SymbolOrAlias
-        { symbolOrAliasConstructor = testId "sigma" :: Id Object
-        , symbolOrAliasParams = []
+testSubstitutionStatePattern =
+    asCommonKorePattern $ ApplicationPattern Application
+        { applicationSymbolOrAlias = SymbolOrAlias
+            { symbolOrAliasConstructor = testId "sigma" :: Id Object
+            , symbolOrAliasParams = []
+            }
+        , applicationChildren =
+            [ existsObjectUnifiedPattern1
+            , objectVariableUnifiedPattern
+            , existsMetaUnifiedPattern1
+            , metaVariableUnifiedPattern
+            ]
         }
-    , applicationChildren =
-        [ existsObjectUnifiedPattern1
-        , objectVariableUnifiedPattern
-        , existsMetaUnifiedPattern1
-        , metaVariableUnifiedPattern
-        ]
-    }
 
 testSubstitutionStatePatternS3 :: CommonKorePattern
-testSubstitutionStatePatternS3 = asKorePattern $ ApplicationPattern Application
-    { applicationSymbolOrAlias = SymbolOrAlias
-        { symbolOrAliasConstructor = testId "sigma" :: Id Object
-        , symbolOrAliasParams = []
+testSubstitutionStatePatternS3 =
+    asCommonKorePattern $ ApplicationPattern Application
+        { applicationSymbolOrAlias = SymbolOrAlias
+            { symbolOrAliasConstructor = testId "sigma" :: Id Object
+            , symbolOrAliasParams = []
+            }
+        , applicationChildren =
+            [ existsObjectUnifiedPattern1
+            , metaVariableUnifiedPattern
+            , existsMetaUnifiedPattern1S3
+            , metaVariableUnifiedPattern
+            ]
         }
-    , applicationChildren =
-        [ existsObjectUnifiedPattern1
-        , metaVariableUnifiedPattern
-        , existsMetaUnifiedPattern1S3
-        , metaVariableUnifiedPattern
-        ]
-    }

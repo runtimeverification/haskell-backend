@@ -10,8 +10,6 @@ import Test.Tasty.HUnit
 
 import           Control.Applicative
                  ( liftA2 )
-import           Data.Functor.Foldable
-                 ( Fix (..) )
 import           Data.Limit
                  ( Limit (Unlimited) )
 import qualified Data.Map as Map
@@ -21,13 +19,15 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
+import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
+import           Kore.Attribute.Constructor
+import           Kore.Attribute.Functional
 import qualified Kore.Builtin as Builtin
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
@@ -48,6 +48,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import qualified SMT
 
+import Test.Kore
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
@@ -77,8 +78,8 @@ test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
             ]
         , moduleAttributes = Attributes []
         }
-    inputPattern = Fix $ applyToNoArgs "b"
-    expected = Fix $ applyToNoArgs "d"
+    inputPattern = applyToNoArgs "b"
+    expected = applyToNoArgs "d"
 
 test_search :: TestTree
 test_search =
@@ -123,13 +124,13 @@ test_search =
             ]
         , moduleAttributes = Attributes []
         }
-    inputPattern = Fix $ applyToNoArgs "a"
+    inputPattern = applyToNoArgs "a"
     expected =
         let
-            a = Fix $ applyToNoArgs "a"
-            b = Fix $ applyToNoArgs "b"
-            c = Fix $ applyToNoArgs "c"
-            d = Fix $ applyToNoArgs "d"
+            a = applyToNoArgs "a"
+            b = applyToNoArgs "b"
+            c = applyToNoArgs "c"
+            d = applyToNoArgs "d"
         in
             \case
                 ONE -> Set.fromList [b, c]
@@ -139,10 +140,11 @@ test_search =
 
 -- | V:MySort{}
 searchVar :: CommonStepPattern Object
-searchVar = Fix $ VariablePattern Variable
-    { variableName = Id "V" AstLocationTest
-    , variableSort = mySort
-    }
+searchVar =
+    Var_ Variable
+        { variableName = Id "V" AstLocationTest
+        , variableSort = mySort
+        }
 
 -- |
 --  \and{MySort{}}(
@@ -161,17 +163,18 @@ extractSearchResults
     :: CommonStepPattern Object -> Maybe (Set (CommonStepPattern Object))
 extractSearchResults =
     \case
-        Fix (EqualsPattern equals)
-            | equalsOperandSort equals == mySort
-                && equalsResultSort equals == predicateSort
-                && equalsFirst equals == searchVar
-            -> Just $ Set.singleton $ equalsSecond equals
-        Fix (OrPattern Or { orSort, orFirst, orSecond })
-            | orSort == predicateSort
-            -> liftA2
+        Equals_ operandSort resultSort first second
+          | operandSort == mySort
+            && resultSort == predicateSort
+            && first == searchVar
+          -> Just $ Set.singleton second
+        Or_ sort first second
+          | sort == predicateSort
+          ->
+            liftA2
                 Set.union
-                (extractSearchResults orFirst)
-                (extractSearchResults orSecond)
+                (extractSearchResults first)
+                (extractSearchResults second)
         _ -> Nothing
   where
     predicateSort = SortActualSort SortActual
@@ -220,8 +223,8 @@ constructorDecl name = SentenceSymbol
     , sentenceSymbolSorts = []
     , sentenceSymbolResultSort = mySort
     , sentenceSymbolAttributes = Attributes
-        [ asObjectKorePattern $ applyToNoArgs "functional"
-        , asObjectKorePattern $ applyToNoArgs "constructor"
+        [ functionalAttribute
+        , constructorAttribute
         ]
     }
 
@@ -237,19 +240,18 @@ functionalAxiom :: Text -> KoreSentenceAxiom
 functionalAxiom name = SentenceAxiom
     { sentenceAxiomParameters = [UnifiedObject r]
     , sentenceAxiomPattern =
-        asObjectKorePattern $ ExistsPattern Exists
+        asCommonKorePattern $ ExistsPattern Exists
             { existsSort = SortVariableSort r
             , existsVariable = v
             , existsChild =
-                asObjectKorePattern $ EqualsPattern Equals
+                asCommonKorePattern $ EqualsPattern Equals
                     { equalsOperandSort = mySort
                     , equalsResultSort = SortVariableSort r
-                    , equalsFirst = asObjectKorePattern $ VariablePattern v
-                    , equalsSecond = asObjectKorePattern $ applyToNoArgs name
+                    , equalsFirst = asCommonKorePattern $ VariablePattern v
+                    , equalsSecond = patternPureToKore $ applyToNoArgs name
                     }
             }
-    , sentenceAxiomAttributes =
-        Attributes [asObjectKorePattern $ applyToNoArgs "functional"]
+    , sentenceAxiomAttributes = Attributes [functionalAttribute]
     }
   where
     v = Variable
@@ -271,27 +273,28 @@ functionalAxiom name = SentenceAxiom
 rewritesAxiom :: Text -> Text -> KoreSentenceAxiom
 rewritesAxiom lhsName rhsName = SentenceAxiom
     { sentenceAxiomParameters = []
-    , sentenceAxiomPattern = asObjectKorePattern $ AndPattern And
+    , sentenceAxiomPattern = asCommonKorePattern $ AndPattern And
         { andSort = mySort
-        , andFirst = asObjectKorePattern $ TopPattern $ Top mySort
-        , andSecond = asObjectKorePattern $ AndPattern And
+        , andFirst = asCommonKorePattern $ TopPattern $ Top mySort
+        , andSecond = asCommonKorePattern $ AndPattern And
             { andSort = mySort
-            , andFirst = asObjectKorePattern $ TopPattern $ Top mySort
-            , andSecond = asObjectKorePattern $ RewritesPattern Rewrites
+            , andFirst = asCommonKorePattern $ TopPattern $ Top mySort
+            , andSecond = asCommonKorePattern $ RewritesPattern Rewrites
                 { rewritesSort = mySort
-                , rewritesFirst = asObjectKorePattern $ applyToNoArgs lhsName
-                , rewritesSecond = asObjectKorePattern $ applyToNoArgs rhsName
+                , rewritesFirst = patternPureToKore $ applyToNoArgs lhsName
+                , rewritesSecond = patternPureToKore $ applyToNoArgs rhsName
                 }
             }
         }
     , sentenceAxiomAttributes = Attributes []
     }
 
-applyToNoArgs :: Text -> Pattern level domain variable child
-applyToNoArgs name = ApplicationPattern Application
-    { applicationSymbolOrAlias = SymbolOrAlias
-        { symbolOrAliasConstructor = Id name AstLocationTest
+applyToNoArgs :: Text -> CommonStepPattern Object
+applyToNoArgs name =
+    App_
+    (SymbolOrAlias
+        { symbolOrAliasConstructor = testId name
         , symbolOrAliasParams = []
         }
-    , applicationChildren = []
-    }
+    )
+    []

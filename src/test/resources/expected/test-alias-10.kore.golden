@@ -31,7 +31,13 @@ Definition
                             { domainValueSort =
                                 SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                             , domainValueChild =
-                                Domain.BuiltinString (Fix (StringLiteralPattern (StringLiteral "f")))
+                                Domain.BuiltinString PurePattern
+                                    { getPurePattern = CofreeT
+                                        { runCofreeT = Identity
+                                            { runIdentity = () :< StringLiteralPattern (StringLiteral "f")
+                                            }
+                                        }
+                                    }
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

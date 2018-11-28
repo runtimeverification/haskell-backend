@@ -14,10 +14,7 @@ import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( fromConcretePurePattern )
+import           Kore.AST.Pure
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Map as Map

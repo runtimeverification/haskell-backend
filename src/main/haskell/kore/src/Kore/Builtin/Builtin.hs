@@ -53,12 +53,13 @@ module Kore.Builtin.Builtin
     , unifyEqualsUnsolved
     ) where
 
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( MaybeT (..), fromMaybe )
 import           Control.Monad
                  ( zipWithM_ )
 import qualified Control.Monad.Except as Except
-import qualified Data.Functor.Foldable as Functor.Foldable
+import qualified Data.Functor.Foldable as Recursive
 import           Data.HashMap.Strict
                  ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
@@ -77,13 +78,8 @@ import           Text.Megaparsec
                  ( Parsec )
 import qualified Text.Megaparsec as Parsec
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-                 ( CommonKorePattern )
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.AST.PureML
-                 ( asConcretePurePattern )
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
@@ -506,7 +502,7 @@ unaryOperator
         -> [StepPattern level variable]
         -> Simplifier (AttemptedFunction level variable)
     unaryOperator0 _ _ resultSort children =
-        case Functor.Foldable.project <$> children of
+        case Cofree.tailF . Recursive.project <$> children of
             [DomainValuePattern a] -> do
                 -- Apply the operator to a domain value
                 let r = op (get a)
@@ -553,7 +549,7 @@ binaryOperator
         -> [StepPattern level variable]
         -> Simplifier (AttemptedFunction level variable)
     binaryOperator0 _ _ resultSort children =
-        case Functor.Foldable.project <$> children of
+        case Cofree.tailF . Recursive.project <$> children of
             [DomainValuePattern a, DomainValuePattern b] -> do
                 -- Apply the operator to two domain values
                 let r = op (get a) (get b)
@@ -600,7 +596,7 @@ ternaryOperator
         -> [StepPattern level variable]
         -> Simplifier (AttemptedFunction level variable)
     ternaryOperator0 _ _ resultSort children =
-        case Functor.Foldable.project <$> children of
+        case Cofree.tailF . Recursive.project <$> children of
             [DomainValuePattern a, DomainValuePattern b, DomainValuePattern c] -> do
                 -- Apply the operator to three domain values
                 let r = op (get a) (get b) (get c)
@@ -702,8 +698,7 @@ expectNormalConcreteTerm
 expectNormalConcreteTerm tools purePattern =
     MaybeT $ return $ do
         p <- asConcretePurePattern purePattern
-        -- TODO (thomas.tuegel): Use the return value as the term. Will require
-        -- factoring BuiltinDomain out of Kore.AST.Common.
+        -- TODO (thomas.tuegel): Use the return value as the term.
         _ <- Value.fromConcretePurePattern tools p
         return p
 

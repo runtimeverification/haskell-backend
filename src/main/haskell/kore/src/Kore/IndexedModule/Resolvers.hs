@@ -32,15 +32,11 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
-                 ( Id, Sort (..), SortActual (..), SymbolOrAlias (..),
-                 Variable, getIdForError )
 import           Kore.AST.Error
                  ( koreFailWithLocations )
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-                 ( IsMetaOrObject (..), MetaOrObject, Object, isMetaOrObject )
-import           Kore.AST.Sentence
+import           Kore.AST.Sentence hiding
+                 ( Alias (..), Symbol (..) )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..), symbolOrAliasSorts )
 import qualified Kore.Domain.Builtin as Domain
@@ -56,7 +52,7 @@ symbolSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceSymbol level UnifiedPattern Domain.Builtin Variable)
+        (atts, SentenceSymbol level KorePattern Domain.Builtin Variable)
 symbolSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSymbolSentences m
@@ -68,7 +64,7 @@ aliasSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceAlias level UnifiedPattern Domain.Builtin Variable)
+        (atts, SentenceAlias level KorePattern Domain.Builtin Variable)
 aliasSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaAliasSentences m

@@ -3,13 +3,14 @@ module Kore.Step.Pattern
     , CommonStepPattern
     , ConcreteStepPattern
     , StepPatternHead
+    , module Kore.AST.Pure
     ) where
 
-import           Kore.AST.Common
-                 ( Concrete, Pattern, PureMLPattern, Variable )
+import           Kore.AST.Pure
+                 ( Concrete, Pattern, PurePattern, Variable )
 import qualified Kore.Domain.Builtin as Domain
 
-type StepPattern lvl var = PureMLPattern lvl Domain.Builtin var
+type StepPattern lvl var = PurePattern lvl Domain.Builtin var ()
 
 type CommonStepPattern lvl = StepPattern lvl Variable
 

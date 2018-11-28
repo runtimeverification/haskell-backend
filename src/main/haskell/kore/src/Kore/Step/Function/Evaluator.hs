@@ -21,12 +21,7 @@ import           Data.Reflection
 import           Data.These
                  ( these )
 
-import           Kore.AST.Common
-                 ( Application (..), Pattern (..), Sort, SortedVariable,
-                 SymbolOrAlias (..) )
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( asPurePattern )
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern App_ )
 import           Kore.IndexedModule.MetadataTools
@@ -128,7 +123,8 @@ evaluateApplication
         case childrenPredicateSubstitution of
             Predicated { predicate, substitution } ->
                 Predicated
-                    { term         = asPurePattern $ ApplicationPattern app
+                    { term         =
+                        asPurePattern (mempty :< ApplicationPattern app)
                     , predicate    = predicate
                     , substitution = substitution
                     }

@@ -31,13 +31,11 @@ import           Kore.AST.Common
                  ( Id (..), Sort (..), SortActual (..), SymbolOrAlias (..),
                  Variable (..) )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+import           Kore.AST.Pure
                  ( asConcretePurePattern )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkApp )
-import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Domain.Builtin as Domain
@@ -1503,14 +1501,14 @@ subsorts =
 builtinMap
     :: [(ConcreteStepPattern Object, StepPattern Object variable)]
     -> StepPattern Object variable
-builtinMap = DV_ mapSort . Domain.BuiltinMap . Map.fromList
+builtinMap = mkDomainValue mapSort . Domain.BuiltinMap . Map.fromList
 
 builtinList
     :: [StepPattern Object variable]
     -> StepPattern Object variable
-builtinList = DV_ listSort . Domain.BuiltinList . Seq.fromList
+builtinList = mkDomainValue listSort . Domain.BuiltinList . Seq.fromList
 
 builtinSet
     :: [ConcreteStepPattern Object]
     -> StepPattern Object variable
-builtinSet = DV_ listSort . Domain.BuiltinSet . Set.fromList
+builtinSet = mkDomainValue listSort . Domain.BuiltinSet . Set.fromList

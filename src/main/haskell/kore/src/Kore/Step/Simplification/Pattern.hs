@@ -12,14 +12,12 @@ module Kore.Step.Simplification.Pattern
     , simplifyToOr
     ) where
 
-import Data.Reflection
-       ( Given, give )
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import           Data.Reflection
+                 ( Given, give )
 
-import           Kore.AST.Common
-                 ( Pattern (..), SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( fromPurePattern )
+import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -150,7 +148,7 @@ simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt =
             substitutionSimplifier
             simplifier
             symbolIdToEvaluator
-            (fromPurePattern patt)
+            (Cofree.tailF $ fromPurePattern patt)
         )
   where
     simplifier = StepPatternSimplifier

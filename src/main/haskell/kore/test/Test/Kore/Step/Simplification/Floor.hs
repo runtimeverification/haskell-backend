@@ -33,6 +33,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -207,7 +208,7 @@ makeFloor patterns =
 
 testSort :: Sort Object
 testSort =
-    case mkBottom of
+    case mkBottom :: CommonStepPattern Object of
         Bottom_ sort -> sort
         _ -> error "unexpected"
 

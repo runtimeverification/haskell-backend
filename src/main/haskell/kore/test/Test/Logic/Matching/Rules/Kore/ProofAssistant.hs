@@ -17,13 +17,7 @@ import           Data.List
 import qualified Data.Map.Strict as Map
 import           Data.Text.Prettyprint.Doc
 
-import           Kore.AST.Common
-                 ( Application (..), AstLocation (..), Id (..), Pattern (..),
-                 Symbol (..), SymbolOrAlias (..), Variable )
 import           Kore.AST.Kore
-                 ( CommonKorePattern )
-import           Kore.AST.MetaOrObject
-                 ( Meta (..) )
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -36,7 +30,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.MetaML.AST
-                 ( MetaMLPattern )
+                 ( CommonMetaPattern )
 import           Logic.Matching.Error
 import           Logic.Matching.Rules.Kore as MLProofSystem
 import           Logic.Matching.Rules.Minimal
@@ -2143,9 +2137,9 @@ type MLProof =
         (MLRule
             (SymbolOrAlias Meta)
             (Variable Meta)
-            (MetaMLPattern Variable)
+            CommonMetaPattern
         )
-        (MetaMLPattern Variable)
+        (CommonMetaPattern)
 
 data GoalMLProofState
     = GoalUnproven
@@ -2419,13 +2413,13 @@ goalState goalId proof =
         (idx, Just (GoalPartlyProven (GoalNeeds (childIdx:idxs))))
     combineStates _ _ = error "`goalState` helper `combineStates` case not implemented"
 
-lookupGoal :: GoalId -> MLProof -> Maybe (MetaMLPattern Variable)
+lookupGoal :: GoalId -> MLProof -> Maybe (CommonMetaPattern)
 lookupGoal goalId proof = snd <$> Map.lookup goalId (index proof)
 
 lookupFormula
     :: GoalId
     -> MLProof
-    -> Either (Error MLError) (MetaMLPattern Variable)
+    -> Either (Error MLError) (CommonMetaPattern)
 lookupFormula goalId proof =
     case Map.lookup goalId (index proof) of
         Nothing ->

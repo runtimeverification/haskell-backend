@@ -16,14 +16,12 @@ module Kore.ASTVerifier.AttributesVerifier
     , parseAttributes
     ) where
 
-import Data.Proxy
-       ( Proxy )
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Data.Functor.Foldable as Recursive
+import           Data.Proxy
+                 ( Proxy )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-                 ( KorePattern, applyKorePattern )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.Error
 import           Kore.Attribute.Hook
@@ -53,23 +51,25 @@ verifyAttributes
   = do
     withContext
         "attributes"
-        (mapM_
-            (applyKorePattern
-                (const (koreFail "Meta attributes are not supported"))
-                verifyAttributePattern
-            )
-            patterns
-        )
+        (mapM_ (verifyAttributePattern . project) patterns)
     verifySuccess
+  where
+    project = Cofree.tailF . Recursive.project
 verifyAttributes _ DoNotVerifyAttributes =
     verifySuccess
 
 verifyAttributePattern
-    :: Pattern Object dom var (KorePattern dom var)
+    :: UnifiedPattern dom var (KorePattern dom var ())
     -> Either (Error VerifyError) VerifySuccess
-verifyAttributePattern (ApplicationPattern _) = verifySuccess
-verifyAttributePattern _
-     = koreFail "Non-application attributes are not supported"
+verifyAttributePattern =
+    \case
+        UnifiedMetaPattern _ ->
+            koreFail "Meta attributes are not supported"
+        UnifiedObjectPattern pat ->
+            case pat of
+                ApplicationPattern _ -> verifySuccess
+                _ ->
+                    koreFail "Non-application attributes are not supported"
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 

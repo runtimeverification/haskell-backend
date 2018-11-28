@@ -12,6 +12,7 @@ module Kore.Step.Function.Registry
     , axiomPatternsToEvaluators
     ) where
 
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Foldable as Foldable
 import           Data.Map
                  ( Map )
@@ -19,13 +20,8 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-                 ( UnifiedPattern, UnifiedSortVariable )
-import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
-import           Kore.AST.PureML
-                 ( fromPurePattern )
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( AsSentence (..), KoreSentenceAxiom, SentenceAxiom (..) )
 import qualified Kore.Domain.Builtin as Domain
@@ -89,7 +85,7 @@ extractFunctionAxioms level =
 axiomToIdAxiomPatternPair
     ::  ( MetaOrObject level )
     => level
-    -> SentenceAxiom UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    -> SentenceAxiom UnifiedSortVariable KorePattern Domain.Builtin Variable
     -> Maybe (Id level, EqualityRule level)
 axiomToIdAxiomPatternPair
     level
@@ -97,8 +93,10 @@ axiomToIdAxiomPatternPair
   = case koreSentenceToAxiomPattern level (asSentence axiom) of
         Left _ -> Nothing
         Right
-            (FunctionAxiomPattern axiomPat@(EqualityRule RulePattern {left}))
-            -> case fromPurePattern left of
+            (FunctionAxiomPattern
+                axiomPat@(EqualityRule RulePattern { left }))
+          ->
+            case (Cofree.tailF . fromPurePattern) left of
                 ApplicationPattern Application { applicationSymbolOrAlias } ->
                     case symbolOrAliasParams of
                         [] -> return (symbolOrAliasConstructor, axiomPat)

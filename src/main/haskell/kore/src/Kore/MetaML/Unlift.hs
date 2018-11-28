@@ -14,18 +14,19 @@ for all MetaML constructs up to patterns.
 module Kore.MetaML.Unlift ( UnliftableFromMetaML (..) ) where
 
 import           Control.Applicative
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
 import           Data.Functor.Const
                  ( Const )
-import           Data.Functor.Foldable
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Maybe
 import qualified Data.Text as Text
 import           Data.Void
                  ( Void )
 
-import           Kore.AST.Common
+import qualified Kore.AST.Common as Head
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( SentenceSymbolOrAlias (..) )
 import           Kore.ASTUtils.SmartPatterns
@@ -47,7 +48,7 @@ class UnliftableFromMetaML mixed where
 
 isImplicitHead
     :: SentenceSymbolOrAlias s
-    => s level (Pattern level) domain Variable
+    => s level (PurePattern level) domain Variable
     -> SymbolOrAlias level
     -> Bool
 isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])
@@ -71,12 +72,12 @@ unliftObjectId
         _ -> Nothing
 
 instance UnliftableFromMetaML (Id Object) where
-    unliftFromMeta (Fix (StringLiteralPattern (StringLiteral str))) =
+    unliftFromMeta (StringLiteral_ str) =
         parseObjectId str AstLocationNone
     unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML (SortVariable Object) where
-    unliftFromMeta (Fix (VariablePattern v))
+    unliftFromMeta (Var_ v)
         | variableSort v == sortMetaSort
         = SortVariable <$> unliftObjectId (variableName v)
     unliftFromMeta _ = Nothing
@@ -99,9 +100,9 @@ unliftHeadConstructor sa = case unliftSortConstructor sa of
     x                        -> x
 
 instance UnliftableFromMetaML (SortActual Object) where
-    unliftFromMeta (Fix (ApplicationPattern sa)) = do
-        sortConstructor <- unliftSortConstructor (applicationSymbolOrAlias sa)
-        sortParams <- mapM unliftFromMeta (applicationChildren sa)
+    unliftFromMeta (App_ symbolOrAlias children) = do
+        sortConstructor <- unliftSortConstructor symbolOrAlias
+        sortParams <- mapM unliftFromMeta children
         return SortActual
             { sortActualName = sortConstructor
             , sortActualSorts = sortParams
@@ -113,7 +114,7 @@ instance UnliftableFromMetaML (Sort Object) where
         <|> (SortActualSort <$> unliftFromMeta p)
 
 instance UnliftableFromMetaML [Sort Object] where
-    unliftFromMeta (Fix (ApplicationPattern a))
+    unliftFromMeta (App_ apHead apChildren)
         | isImplicitHead consSortList apHead =
             case apChildren of
                 [uSort, uSorts] ->
@@ -121,15 +122,12 @@ instance UnliftableFromMetaML [Sort Object] where
                 _ -> Nothing
         | isImplicitHead nilSortList apHead && null apChildren = Just []
         | otherwise = Nothing
-      where
-        apHead = applicationSymbolOrAlias a
-        apChildren = applicationChildren a
     unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML (Variable Object) where
-    unliftFromMeta (Fix (ApplicationPattern a))
-        | isImplicitHead variable (applicationSymbolOrAlias a) =
-            case applicationChildren a of
+    unliftFromMeta (App_ symbolOrAlias children)
+        | isImplicitHead variable symbolOrAlias =
+            case children of
                 [uVariableName, uVariableSort] ->
                     pure Variable
                         <*> unliftFromMeta uVariableName
@@ -139,7 +137,7 @@ instance UnliftableFromMetaML (Variable Object) where
     unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML [CommonMetaPattern] where
-    unliftFromMeta (Fix (ApplicationPattern a))
+    unliftFromMeta (App_ apHead apChildren)
         | isImplicitHead consPatternList apHead =
             case apChildren of
                 [uPattern, uPatterns] ->
@@ -147,9 +145,6 @@ instance UnliftableFromMetaML [CommonMetaPattern] where
                 _ -> Nothing
         | isImplicitHead nilPatternList apHead && null apChildren = Just []
         | otherwise = Nothing
-      where
-        apHead = applicationSymbolOrAlias a
-        apChildren = applicationChildren a
     unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML CommonKorePattern where
@@ -162,14 +157,15 @@ data UnliftResult = UnliftResult
     }
 
 unliftPattern :: CommonMetaPattern -> UnliftResult
-unliftPattern = cata reducer
+unliftPattern = Recursive.fold reducer
   where
-    reducer p = UnliftResult
-        { unliftResultOriginal = Fix $ fmap unliftResultOriginal p
+    reducer (_ :< p) = UnliftResult
+        { unliftResultOriginal =
+            asCommonMetaPattern $ unliftResultOriginal <$> p
         , unliftResultFinal =
-            case unliftPatternReducer (castMetaDomainValue p) of
-                Just pat -> asKorePattern pat
-                _ -> asKorePattern (fmap unliftResultFinal p)
+            case unliftPatternReducer (Head.castMetaDomainValues p) of
+                Just pat -> asCommonKorePattern pat
+                _ -> asCommonKorePattern (unliftResultFinal <$> p)
         }
 
 unliftPatternReducer
@@ -268,9 +264,10 @@ unliftDomainValuePattern [rSort, rChild] =
     do
         domainValueSort <- unliftFromMeta (unliftResultOriginal rSort)
         domainValueChild <-
-            case project (unliftResultOriginal rChild) of
-                StringLiteralPattern (StringLiteral str) ->
-                    pure (Domain.BuiltinPattern (StringLiteral_ str))
+            case Recursive.project (unliftResultOriginal rChild) of
+                ann :< StringLiteralPattern lit ->
+                    (pure . Domain.BuiltinPattern . asPurePattern)
+                        (ann :< StringLiteralPattern lit)
                 _ ->
                     Nothing
         pure

@@ -3,9 +3,7 @@ module Test.Kore.Builtin.Definition where
 import Data.Text
        ( Text )
 
-import Kore.AST.Common
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Attribute.Constructor
 import Kore.Attribute.Functional

@@ -9,12 +9,24 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObjectPattern (DomainValuePattern DomainValue
-                            { domainValueSort =
-                                SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                            , domainValueChild =
-                                Domain.BuiltinString (Fix (StringLiteralPattern (StringLiteral "0")))
-                            })))
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
+                                        , domainValueChild =
+                                            Domain.BuiltinString PurePattern
+                                                { getPurePattern = CofreeT
+                                                    { runCofreeT = Identity
+                                                        { runIdentity = () :< StringLiteralPattern (StringLiteral "0")
+                                                        }
+                                                    }
+                                                }
+                                        })
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

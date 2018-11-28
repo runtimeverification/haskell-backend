@@ -7,15 +7,13 @@ import Test.Tasty.HUnit
 
 import           Data.Default
                  ( def )
-import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.List
                  ( sort )
 import qualified Data.Set as Set
 
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
@@ -328,8 +326,8 @@ fSymbol = SymbolOrAlias
     }
 
 metaF
-    :: CommonPurePattern Meta dom
-    -> Application Meta (CommonPurePattern Meta dom)
+    :: CommonPurePattern Meta dom ()
+    -> Application Meta (CommonPurePattern Meta dom ())
 metaF p = Application fSymbol [p]
 
 
@@ -340,8 +338,8 @@ gSymbol = SymbolOrAlias
     }
 
 metaG
-    :: CommonPurePattern Meta dom
-    -> Application Meta (CommonPurePattern Meta dom)
+    :: CommonPurePattern Meta dom ()
+    -> Application Meta (CommonPurePattern Meta dom ())
 metaG p = Application gSymbol [p]
 
 hSymbol :: SymbolOrAlias Meta
@@ -351,8 +349,8 @@ hSymbol = SymbolOrAlias
     }
 
 metaH
-    :: CommonPurePattern Meta dom
-    -> Application Meta (CommonPurePattern Meta dom)
+    :: CommonPurePattern Meta dom ()
+    -> Application Meta (CommonPurePattern Meta dom ())
 metaH p = Application hSymbol [p]
 
 
@@ -363,16 +361,16 @@ sigmaSymbol = SymbolOrAlias
     }
 
 metaSigma
-    :: CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
-    -> Application Meta (CommonPurePattern Meta dom)
+    :: CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
+    -> Application Meta (CommonPurePattern Meta dom ())
 metaSigma p1 p2 = Application sigmaSymbol [p1, p2]
 
 asApplication
     :: Functor dom
-    => Application Meta (CommonPurePattern Meta dom)
-    -> CommonPurePattern Meta dom
-asApplication = Functor.Foldable.embed . ApplicationPattern
+    => Application Meta (CommonPurePattern Meta dom ())
+    -> CommonPurePattern Meta dom ()
+asApplication = asPurePattern . (mempty :<) . ApplicationPattern
 
 evaluateWithAxiom
     :: MetaOrObject level

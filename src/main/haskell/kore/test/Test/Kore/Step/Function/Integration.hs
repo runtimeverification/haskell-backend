@@ -13,8 +13,8 @@ import           Data.Reflection
 import           Data.These
                  ( These (..) )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure hiding
+                 ( mapVariables )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkOr, mkVar )
 import           Kore.IndexedModule.MetadataTools

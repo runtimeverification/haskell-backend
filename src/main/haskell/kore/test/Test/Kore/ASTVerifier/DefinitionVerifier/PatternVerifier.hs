@@ -10,9 +10,7 @@ import Test.Tasty.HUnit
 import qualified Data.List as List
 
 import           Kore.AST.AstWithLocation
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Attribute.Hook as Attribute.Hook
@@ -49,7 +47,7 @@ testPatternUnifiedPattern
 testPatternUnifiedPattern
     TestPattern {testPatternPattern = p}
   =
-    asKorePattern p
+    asCommonKorePattern p
 
 test_patternVerifier :: [TestTree]
 test_patternVerifier =
@@ -100,7 +98,7 @@ test_patternVerifier =
             { existsSort = anotherSort
             , existsVariable = anotherVariable
             , existsChild =
-                asKorePattern
+                asCommonKorePattern
                     (simpleExistsPattern objectVariable' objectSort)
             }
         )
@@ -123,7 +121,7 @@ test_patternVerifier =
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                asKorePattern (VariablePattern anotherVariable)
+                asCommonKorePattern (VariablePattern anotherVariable)
             }
         )
         (NamePrefix "dummy")
@@ -156,7 +154,7 @@ test_patternVerifier =
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                asKorePattern
+                asCommonKorePattern
                     (simpleExistsPattern
                         objectVariableSortVariable objectSortVariableSort)
             }
@@ -920,7 +918,7 @@ genericPatternInAllContexts
         ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild = asKorePattern (VariablePattern anotherVariable)
+            , existsChild = asCommonKorePattern (VariablePattern anotherVariable)
             }
     anotherVariable =
         Variable
@@ -973,7 +971,7 @@ objectPatternInAllContexts
         ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild = asKorePattern (VariablePattern anotherVariable)
+            , existsChild = asCommonKorePattern (VariablePattern anotherVariable)
             }
     anotherVariable =
         Variable
@@ -1087,7 +1085,7 @@ genericPatternInPatterns
         [ TestPattern
             { testPatternPattern = ApplicationPattern Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = [asKorePattern testedPattern]
+                , applicationChildren = [asCommonKorePattern testedPattern]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1100,7 +1098,7 @@ genericPatternInPatterns
         , TestPattern
             { testPatternPattern = ApplicationPattern Application
                 { applicationSymbolOrAlias = alias
-                , applicationChildren = [asKorePattern testedPattern]
+                , applicationChildren = [asCommonKorePattern testedPattern]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1130,7 +1128,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         { testPatternPattern = ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = quantifiedVariable
-            , existsChild = asKorePattern testedPattern
+            , existsChild = asCommonKorePattern testedPattern
             }
         , testPatternSort = testedSort
         , testPatternErrorStack =
@@ -1144,7 +1142,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         { testPatternPattern = ForallPattern Forall
             { forallSort = testedSort
             , forallVariable = quantifiedVariable
-            , forallChild = asKorePattern testedPattern
+            , forallChild = asCommonKorePattern testedPattern
             }
         , testPatternSort = testedSort
         , testPatternErrorStack =
@@ -1309,8 +1307,8 @@ patternInUnquantifiedGenericPatterns
         }
     ]
   where
-    anotherUnifiedPattern = asKorePattern anotherPattern
-    testedUnifiedPattern = asKorePattern testedPattern
+    anotherUnifiedPattern = asCommonKorePattern anotherPattern
+    testedUnifiedPattern = asCommonKorePattern testedPattern
 
 patternInUnquantifiedObjectPatterns
     :: Pattern Object Domain.Builtin Variable CommonKorePattern
@@ -1351,8 +1349,8 @@ patternInUnquantifiedObjectPatterns
 
     ]
   where
-    anotherUnifiedPattern = asKorePattern anotherPattern
-    testedUnifiedPattern = asKorePattern testedPattern
+    anotherUnifiedPattern = asCommonKorePattern anotherPattern
+    testedUnifiedPattern = asCommonKorePattern testedPattern
 
 testsForUnifiedPatternInTopLevelContext
     :: MetaOrObject level

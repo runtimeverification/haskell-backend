@@ -8,16 +8,14 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Data.Functor.Foldable
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.AST.AstWithLocation
 import           Kore.AST.Builders
-import           Kore.AST.Common
 import           Kore.AST.Kore
-                 ( CommonKorePattern )
-import           Kore.AST.MetaOrObject
 import           Kore.AST.MLPatterns
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
@@ -31,10 +29,10 @@ import Test.Kore
 
 extractPurePattern
     :: MetaOrObject level
-    => CommonPurePatternStub level Domain.Builtin
-    -> CommonPurePattern level Domain.Builtin
+    => CommonPurePatternStub level Domain.Builtin ()
+    -> CommonPurePattern level Domain.Builtin ()
 extractPurePattern (SortedPatternStub sp) =
-    asPurePattern $ sortedPatternPattern sp
+    asPurePattern $ mempty :< sortedPatternPattern sp
 extractPurePattern (UnsortedPatternStub ups) =
     error ("Cannot find a sort for "
         ++ show (ups (dummySort (undefined :: level))))
@@ -49,9 +47,10 @@ test_mlPattern =
                 charListMetaSort
                 (getPatternResultSort
                     undefinedHeadSort
-                    (project
-                      $ extractPurePattern
-                        (withSort charListMetaSort top_)
+                    (Cofree.tailF
+                        $ Recursive.project
+                        $ extractPurePattern
+                        $ withSort charListMetaSort top_
                     )
                 )
             )
@@ -60,18 +59,16 @@ test_mlPattern =
                 charListMetaSort
                 (getPatternResultSort
                     undefinedHeadSort
-                    (project
-                      $ extractPurePattern
-                        (withSort charListMetaSort
-                            (forall_
-                                (Variable
-                                    (testId "x")
-                                    charListMetaSort
-                                )
-                                top_
+                    $ Cofree.tailF
+                        $ Recursive.project
+                        $ extractPurePattern
+                        $ withSort charListMetaSort
+                        $ forall_
+                            (Variable
+                                (testId "x")
+                                charListMetaSort
                             )
-                        )
-                    )
+                            top_
                 )
             )
         , testCase "DomainValue"
@@ -90,7 +87,8 @@ test_mlPattern =
                 (getPatternResultSort
                     undefinedHeadSort
                     (StringLiteralPattern (StringLiteral "Hello!")
-                    :: UnFixedPureMLPattern Meta Domain.Builtin Variable
+                        :: Pattern Meta Domain.Builtin Variable
+                            (CommonPurePattern Meta Domain.Builtin ())
                     )
                 )
             )
@@ -100,7 +98,8 @@ test_mlPattern =
                 (getPatternResultSort
                     undefinedHeadSort
                     (CharLiteralPattern (CharLiteral 'h')
-                    :: UnFixedPureMLPattern Meta Domain.Builtin Variable
+                        :: Pattern Meta Domain.Builtin Variable
+                            (CommonPurePattern Meta Domain.Builtin ())
                     )
                 )
             )
@@ -125,7 +124,9 @@ test_mlPattern =
                     charListMetaSort
                     (getPatternResultSort
                         headSort
-                        (project $ extractPurePattern (applyS s []))
+                        $ Cofree.tailF
+                            $ Recursive.project
+                            $ extractPurePattern (applyS s [])
                     )
                 )
             ]

@@ -11,12 +11,17 @@ Portability : portable
 -}
 module Test.Kore.Comparators where
 
+import Control.Applicative
+       ( Alternative (..) )
+import Control.Comonad.Trans.Cofree
+       ( CofreeF (..), CofreeT (..) )
+import Data.Functor.Identity
+       ( Identity (..) )
 import Numeric.Natural
        ( Natural )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.OnePath.Step
                  ( StrategyPattern )
@@ -33,6 +38,7 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.OrOfExpandedPattern
+import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
@@ -201,9 +207,130 @@ instance
     printWithExplanation = show
 
 instance
+    ( Show (PurePattern lvl dom var ann)
+    , Show (dom (CofreeT (Pattern lvl dom var) Identity ann))
+    , Eq (dom (CofreeT (Pattern lvl dom var) Identity ann))
+    , Show (var lvl)
+    , Eq (var lvl)
+    , EqualWithExplanation (var lvl)
+    , Show ann
+    , Eq ann
+    , Eq lvl
+    , EqualWithExplanation ann
+    ) =>
+    EqualWithExplanation (PurePattern lvl dom var ann)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( Show (PurePattern lvl dom var ann)
+    , Show (dom (CofreeT (Pattern lvl dom var) Identity ann))
+    , Eq (dom (CofreeT (Pattern lvl dom var) Identity ann))
+    , Show (var lvl)
+    , Eq (var lvl)
+    , EqualWithExplanation (var lvl)
+    , Show ann
+    , Eq ann
+    , Eq lvl
+    , EqualWithExplanation ann
+    ) =>
+    WrapperEqualWithExplanation (PurePattern lvl dom var ann)
+  where
+    wrapperField expected actual =
+        EqWrap
+            "getPurePattern = "
+            (getPurePattern expected)
+            (getPurePattern actual)
+    wrapperConstructorName _ = "PurePattern"
+
+instance
+    ( Show (KorePattern dom var ann)
+    , Show (dom (CofreeT (UnifiedPattern dom var) Identity ann))
+    , Eq (dom (CofreeT (UnifiedPattern dom var) Identity ann))
+    , Show ann
+    , Eq ann
+    , EqualWithExplanation ann
+    , EqualWithExplanation (var Meta)
+    , EqualWithExplanation (var Object)
+    , OrdMetaOrObject var
+    , ShowMetaOrObject var
+    ) =>
+    EqualWithExplanation (KorePattern dom var ann)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( Show (KorePattern dom var ann)
+    , Show (dom (CofreeT (UnifiedPattern dom var) Identity ann))
+    , Eq (dom (CofreeT (UnifiedPattern dom var) Identity ann))
+    , Show ann
+    , Eq ann
+    , EqualWithExplanation ann
+    , EqualWithExplanation (var Meta)
+    , EqualWithExplanation (var Object)
+    , OrdMetaOrObject var
+    , ShowMetaOrObject var
+    ) =>
+    WrapperEqualWithExplanation (KorePattern dom var ann)
+  where
+    wrapperField expected actual =
+        EqWrap
+            "getKorePattern = "
+            (getKorePattern expected)
+            (getKorePattern actual)
+    wrapperConstructorName _ = "KorePattern"
+
+instance
+    ( Show (CofreeT f w a)
+    , EqualWithExplanation (w (CofreeF f a (CofreeT f w a)))
+    ) =>
+    EqualWithExplanation (CofreeT f w a)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( Show (CofreeT f w a)
+    , EqualWithExplanation (w (CofreeF f a (CofreeT f w a)))
+    ) =>
+    WrapperEqualWithExplanation (CofreeT f w a)
+  where
+    wrapperField expected actual =
+        EqWrap "runCofreeT = " (runCofreeT expected) (runCofreeT actual)
+    wrapperConstructorName _ = "CofreeT"
+
+instance
+    ( EqualWithExplanation a, Show a ) =>
+    EqualWithExplanation (Identity a)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation a, Show a ) =>
+    WrapperEqualWithExplanation (Identity a)
+  where
+    wrapperField expected actual =
+        EqWrap "runIdentity = " (runIdentity expected) (runIdentity actual)
+    wrapperConstructorName _ = "Identity"
+
+instance
+    ( Show a, EqualWithExplanation a
+    , Show (f b), EqualWithExplanation (f b)
+    ) =>
+    EqualWithExplanation (CofreeF f a b)
+  where
+    compareWithExplanation (a1 :< fb1) (a2 :< fb2) =
+        compareWithExplanation a1 a2 <|> compareWithExplanation fb1 fb2
+    printWithExplanation = show
+
+instance
     ( Eq level, Show level
     , Eq (variable level), Show (variable level)
     , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => SumEqualWithExplanation (StepProof level variable)
   where
@@ -214,6 +341,7 @@ instance
     ( Eq level, Show level
     , Eq (variable level), Show (variable level)
     , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => SumEqualWithExplanation (StepProofAtom level variable)
   where
@@ -245,6 +373,7 @@ instance
     ( Eq level, Show level
     , Eq (variable level), Show (variable level)
     , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => EqualWithExplanation (StepProofAtom level variable)
   where
@@ -255,6 +384,7 @@ instance
     ( Eq level, Show level
     , Eq (variable level), Show (variable level)
     , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => EqualWithExplanation (StepProof level variable)
   where
@@ -750,6 +880,7 @@ instance
     ( Eq level, Eq (variable level)
     , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => SumEqualWithExplanation (UnificationProof level variable)
   where
@@ -805,6 +936,7 @@ instance
     ( Eq level, Eq (variable level)
     , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => EqualWithExplanation (UnificationProof level variable)
   where
@@ -898,6 +1030,7 @@ instance
     , Eq level, Eq (variable level)
     , EqualWithExplanation (variable level)
     , EqualWithExplanation child
+    , EqualWithExplanation (StepPattern level variable)
     )
     => StructEqualWithExplanation (Predicated level variable child)
   where
@@ -922,6 +1055,7 @@ instance
     , Eq level, Eq (variable level)
     , EqualWithExplanation (variable level)
     , EqualWithExplanation child
+    , EqualWithExplanation (StepPattern level variable)
     )
     => EqualWithExplanation (Predicated level variable child)
   where
@@ -929,7 +1063,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( EqualWithExplanation (PureMLPattern level Domain.Builtin variable)
+    ( EqualWithExplanation (PurePattern level Domain.Builtin variable ())
     , Show level, Show (variable level)
     )
     => EqualWithExplanation (Predicate level variable)
@@ -946,7 +1080,8 @@ instance
 instance
     ( Show level, Show (variable level)
     , Eq level, Eq (variable level)
-    , EqualWithExplanation(variable level)
+    , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => SumEqualWithExplanation (AttemptedFunction level variable)
   where
@@ -971,7 +1106,8 @@ instance
 instance
     ( Show level, Show (variable level)
     , Eq level, Eq (variable level)
-    , EqualWithExplanation(variable level)
+    , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => EqualWithExplanation (AttemptedFunction level variable)
   where
@@ -1081,7 +1217,8 @@ instance
 instance
     ( Show level, Show (variable level)
     , Eq level, Eq (variable level)
-    , EqualWithExplanation(variable level)
+    , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => StructEqualWithExplanation (StepResult level variable)
   where
@@ -1102,7 +1239,8 @@ instance
 instance
     ( Show level, Show (variable level)
     , Eq level, Eq (variable level)
-    , EqualWithExplanation(variable level)
+    , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
     )
     => EqualWithExplanation (StepResult level variable)
   where

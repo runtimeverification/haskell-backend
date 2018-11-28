@@ -35,7 +35,7 @@ module Kore.Attribute.Parser
     , getTwoParams
     , getZeroArguments
     , getOneArgument
-    , getStringLiteral
+    , Kore.Attribute.Parser.getStringLiteral
     ) where
 
 import           Control.Monad.Except
@@ -45,15 +45,11 @@ import           Data.Default
                  ( Default )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
 
-import           Kore.AST.Common
-                 ( Application (..), Id (..), Pattern (..), Sort,
-                 StringLiteral, SymbolOrAlias (..), getIdForError )
 import qualified Kore.AST.Error as Kore.Error
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
                  ( Attributes (Attributes) )
 import           Kore.Error
@@ -123,9 +119,9 @@ withApplication
     -> CommonKorePattern
     -> attrs
     -> Parser attrs
-withApplication ident go =
-    \case
-        KoreObjectPattern (ApplicationPattern app)
+withApplication ident go kore =
+    case Recursive.project kore of
+        _ :< UnifiedObjectPattern (ApplicationPattern app)
           | symbolOrAliasConstructor == ident -> \attrs ->
             Kore.Error.withLocationAndContext
                 symbol
@@ -183,7 +179,7 @@ getOneArgument =
             arity = length args
 
 getStringLiteral :: CommonKorePattern -> Parser (StringLiteral)
-getStringLiteral =
-    \case
-        KoreMetaPattern (StringLiteralPattern lit) -> return lit
+getStringLiteral kore =
+    case Recursive.project kore of
+        _ :< UnifiedMetaPattern (StringLiteralPattern lit) -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"

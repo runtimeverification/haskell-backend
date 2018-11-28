@@ -11,11 +11,9 @@ module Kore.Step.Simplification.CharLiteral
     ( simplify
     ) where
 
-import           Kore.AST.Common
-                 ( CharLiteral (..), Pattern (CharLiteralPattern) )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( asPurePattern )
+import           Kore.AST.Pure
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -36,10 +34,10 @@ simplify
     -> ( OrOfExpandedPattern Meta variable
        , SimplificationProof Meta
        )
-simplify str =
+simplify (CharLiteral char) =
     ( OrOfExpandedPattern.make
         [Predicated
-            { term = asPurePattern (CharLiteralPattern str)
+            { term = CharLiteral_ char
             , predicate = makeTruePredicate
             , substitution = mempty
             }

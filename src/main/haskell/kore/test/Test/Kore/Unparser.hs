@@ -8,9 +8,7 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
        ( forAll, testProperty )
 
-import Kore.AST.Common
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Parser.LexemeImpl
 import Kore.Parser.ParserImpl
@@ -61,11 +59,11 @@ test_unparse =
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ asKorePattern (TopPattern Top
+                    [ asCommonKorePattern (TopPattern Top
                         { topSort = SortVariableSort SortVariable
                             { getSortVariable = testId "#Fm" :: Id Meta }
                         })
-                    , asKorePattern (InPattern In
+                    , asCommonKorePattern (InPattern In
                         { inOperandSort = SortActualSort SortActual
                             { sortActualName = testId "B" :: Id Object
                             , sortActualSorts = []
@@ -75,12 +73,12 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asKorePattern $ VariablePattern Variable
+                            asCommonKorePattern $ VariablePattern Variable
                                 { variableName = testId "T" :: Id Object
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 }
-                        , inContainingChild = asKorePattern (StringLiteralPattern
+                        , inContainingChild = asCommonKorePattern (StringLiteralPattern
                             StringLiteral { getStringLiteral = "" })
                         })
                     ]
@@ -151,7 +149,7 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asKorePattern
+                    [ asCommonKorePattern
                         ( TopPattern Top
                             { topSort = SortActualSort SortActual
                                 { sortActualName = testId "#CharList" :: Id Meta
@@ -166,11 +164,11 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asKorePattern
+                    [ asCommonKorePattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )
-                    , asKorePattern
+                    , asCommonKorePattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )

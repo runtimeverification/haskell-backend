@@ -18,9 +18,7 @@ import           Data.Default
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser
@@ -55,7 +53,7 @@ sortInjectionSymbol =
 -- | Kore pattern representing the @sortInjection@ attribute.
 sortInjectionAttribute :: CommonKorePattern
 sortInjectionAttribute =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = sortInjectionSymbol
             , applicationChildren = []

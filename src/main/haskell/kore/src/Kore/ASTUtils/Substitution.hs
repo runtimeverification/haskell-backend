@@ -29,8 +29,7 @@ import           Data.Functor.Foldable
 import qualified Data.Set as S
 import qualified Data.Text as Text
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.AST.Pure
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 
@@ -39,11 +38,14 @@ import Kore.ASTUtils.SmartPatterns
 -- Here `phi_1` is the old pattern that disappears
 -- and `phi_2` is the new pattern that replaces it.
 subst
-    :: (Eq1 dom, Traversable dom, MetaOrObject level)
-    => CommonPurePattern level dom
-    -> CommonPurePattern level dom
-    -> CommonPurePattern level dom
-    -> CommonPurePattern level dom
+    ::  ( Traversable dom
+        , MetaOrObject level
+        , Eq1 dom
+        )
+    => CommonPurePattern level dom ()
+    -> CommonPurePattern level dom ()
+    -> CommonPurePattern level dom ()
+    -> CommonPurePattern level dom ()
 subst old new = \case
     Forall_ s1 v p -> handleBinder old new Forall_ s1 v p
     Exists_ s1 v p -> handleBinder old new Exists_ s1 v p
@@ -67,7 +69,7 @@ handleBinder old new binder s1 v p
 
 freeVars
     :: (MetaOrObject level, Traversable dom)
-    => CommonPurePattern level dom
+    => CommonPurePattern level dom ()
     -> S.Set (Variable level)
 freeVars = \case
     Forall_ s1 v p -> S.delete v $ freeVars p
@@ -81,9 +83,9 @@ freeVars = \case
 -- but it doesn't matter in practice.
 localSubst
     :: (Eq1 dom, MetaOrObject level, Traversable dom)
-    => CommonPurePattern level dom
-    -> CommonPurePattern level dom
+    => CommonPurePattern level dom ()
+    -> CommonPurePattern level dom ()
     -> [Int]
-    -> CommonPurePattern level dom
-    -> CommonPurePattern level dom
+    -> CommonPurePattern level dom ()
+    -> CommonPurePattern level dom ()
 localSubst a b path pat = localInPattern path (subst a b) pat

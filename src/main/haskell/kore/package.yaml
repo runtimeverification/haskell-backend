@@ -25,6 +25,7 @@ dependencies:
   - base >= 4.7
   - array
   - bytestring >= 0.10
+  - comonad
   - containers >= 0.5.8
   - clock
   - data-default

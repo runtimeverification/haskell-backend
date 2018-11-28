@@ -9,7 +9,6 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import Data.CallStack
-import Data.Functor.Foldable
 import Data.Proxy
        ( Proxy (..) )
 import Data.Text
@@ -17,12 +16,11 @@ import Data.Text
 
 import           Kore.AST.Builders
 import           Kore.AST.BuildersImpl
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
+import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
 import           Kore.MetaML.AST
@@ -39,47 +37,44 @@ variablePattern name sort =
 test_lift :: [TestTree]
 test_lift =
     [ testLiftUnlift "testId"
-        (Fix (StringLiteralPattern (StringLiteral "object")))
+        (StringLiteral_ "object")
         (testId "object" :: Id Object)
     , testLiftUnlift "Meta Pattern"
         metaStringPattern
         unifiedStringPattern
     , testLiftUnlift "Bottom"
-        (Fix
-            (apply (metaMLPatternHead BottomPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort ]
-            )
+        (App_
+            (metaMLPatternHead BottomPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             ( BottomPattern Bottom
                 { bottomSort = SortVariableSort
                     (SortVariable (testId "a" :: Id Object))
                 }
             )
-        ::CommonKorePattern)
-    , testLiftUnlift "Top"
-        (Fix
-            (apply (metaMLPatternHead TopPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort ]
-            )
         )
-        (asKorePattern
+    , testLiftUnlift "Top"
+        (App_
+            (metaMLPatternHead TopPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort ]
+        )
+        (asCommonKorePattern
             ( TopPattern Top
                 { topSort =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
                 }
             )
-        ::CommonKorePattern)
-    , testLiftUnlift "Ceil"
-        (Fix
-            (apply (metaMLPatternHead CeilPatternType AstLocationTest)
-                [ variablePattern "#b" sortMetaSort
-                , variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                ]
-            )
         )
-        (asKorePattern
+    , testLiftUnlift "Ceil"
+        (App_
+            (metaMLPatternHead CeilPatternType AstLocationTest)
+            [ variablePattern "#b" sortMetaSort
+            , variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            ]
+        )
+        (asCommonKorePattern
             (CeilPattern Ceil
                 { ceilResultSort =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
@@ -90,15 +85,14 @@ test_lift =
             )
         )
     , testLiftUnlift "Floor"
-        (Fix
-            (apply (metaMLPatternHead FloorPatternType AstLocationTest)
-                [ variablePattern "#b" sortMetaSort
-                , variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead FloorPatternType AstLocationTest)
+            [ variablePattern "#b" sortMetaSort
+            , variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (FloorPattern Floor
                 { floorResultSort =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
@@ -109,16 +103,15 @@ test_lift =
             )
         )
     , testLiftUnlift "Equals"
-        (Fix
-            (apply (metaMLPatternHead EqualsPatternType AstLocationTest)
-                [ variablePattern "#b" sortMetaSort
-                , variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead EqualsPatternType AstLocationTest)
+            [ variablePattern "#b" sortMetaSort
+            , variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (EqualsPattern Equals
                 { equalsResultSort =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
@@ -130,16 +123,15 @@ test_lift =
             )
         )
     , testLiftUnlift "In"
-        (Fix
-            (apply (metaMLPatternHead InPatternType AstLocationTest)
-                [ variablePattern "#b" sortMetaSort
-                , variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead InPatternType AstLocationTest)
+            [ variablePattern "#b" sortMetaSort
+            , variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (InPattern In
                 { inResultSort =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
@@ -151,32 +143,25 @@ test_lift =
             )
         )
     , testLiftUnlift @CommonKorePattern "Forall"
-        (Fix
-            (apply (metaMLPatternHead ForallPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , Fix
-                    (apply variableHead
-                        [ Fix (StringLiteralPattern (StringLiteral "x"))
-                        , variablePattern "#a" sortMetaSort
-                        ]
-                    )
-                , Fix
-                    (apply variableAsPatternHead
-                        [ Fix
-                            (apply variableHead
-                                [ Fix
-                                    (StringLiteralPattern
-                                        (StringLiteral "x")
-                                    )
-                                , variablePattern "#a" sortMetaSort
-                                ]
-                            )
-                        ]
-                    )
+        (App_
+            (metaMLPatternHead ForallPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , App_
+                variableHead
+                [ StringLiteral_ "x"
+                , variablePattern "#a" sortMetaSort
                 ]
-            )
+            , App_
+                variableAsPatternHead
+                [ App_
+                    variableHead
+                    [ StringLiteral_ "x"
+                    , variablePattern "#a" sortMetaSort
+                    ]
+                ]
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (ForallPattern Forall
                 { forallSort =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
@@ -186,7 +171,7 @@ test_lift =
                         SortVariableSort (SortVariable (testId "a"))
                     }
                 , forallChild =
-                    asKorePattern
+                    asCommonKorePattern
                         (VariablePattern Variable
                             { variableName = testId "x" :: Id Object
                             , variableSort = SortVariableSort
@@ -197,32 +182,25 @@ test_lift =
             )
         )
     , testLiftUnlift @CommonKorePattern "Exists"
-        (Fix
-            (apply (metaMLPatternHead ExistsPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , Fix
-                    (apply variableHead
-                        [ Fix (StringLiteralPattern (StringLiteral "x"))
-                        , variablePattern "#a" sortMetaSort
-                        ]
-                    )
-                , Fix
-                    (apply variableAsPatternHead
-                        [ Fix
-                            (apply variableHead
-                                [ Fix
-                                    (StringLiteralPattern
-                                        (StringLiteral "x")
-                                    )
-                                , variablePattern "#a" sortMetaSort
-                                ]
-                            )
-                        ]
-                    )
+        (App_
+            (metaMLPatternHead ExistsPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , App_
+                variableHead
+                [ StringLiteral_ "x"
+                , variablePattern "#a" sortMetaSort
                 ]
-            )
+            , App_
+                variableAsPatternHead
+                [ App_
+                    variableHead
+                    [ StringLiteral_ "x"
+                    , variablePattern "#a" sortMetaSort
+                    ]
+                ]
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (ExistsPattern Exists
                 { existsSort =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
@@ -232,7 +210,7 @@ test_lift =
                         SortVariableSort (SortVariable (testId "a"))
                     }
                 , existsChild =
-                    asKorePattern
+                    asCommonKorePattern
                         (VariablePattern Variable
                             { variableName = testId "x" :: Id Object
                             , variableSort = SortVariableSort
@@ -243,18 +221,16 @@ test_lift =
             )
         )
     , testLiftUnlift @CommonKorePattern "Variable Pattern"
-        (Fix
-            (apply variableAsPatternHead
-                [ Fix
-                    (apply variableHead
-                        [ Fix (StringLiteralPattern (StringLiteral "x"))
-                        , variablePattern "#a" sortMetaSort
-                        ]
-                    )
+        (App_
+            variableAsPatternHead
+            [ App_
+                variableHead
+                [ StringLiteral_ "x"
+                , variablePattern "#a" sortMetaSort
                 ]
-            )
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (VariablePattern Variable
                 { variableName = testId "x" :: Id Object
                 , variableSort = SortVariableSort
@@ -263,15 +239,13 @@ test_lift =
             )
         )
     , testLiftUnlift "An actual sort"
-        (Fix
-            (apply consSortListHead
-                [ Fix
-                    (apply (groundHead "#`Exp" AstLocationTest)
-                        [ variablePattern "#v" sortMetaSort ]
-                    )
-                , Fix (apply nilSortListHead [])
-                ]
-            )
+        (App_
+            consSortListHead
+            [ App_
+                (groundHead "#`Exp" AstLocationTest)
+                [ variablePattern "#v" sortMetaSort ]
+            , App_ nilSortListHead []
+            ]
         )
         [SortActualSort SortActual
             { sortActualName = testId "Exp" :: Id Object
@@ -280,21 +254,19 @@ test_lift =
             }
         ]
     , testLiftUnlift "Meta Pattern List"
-        (Fix
-            (apply consPatternListHead
-                [ metaStringPattern
-                , Fix (apply nilPatternListHead [])
-                ]
-            )
+        (App_
+            consPatternListHead
+            [ metaStringPattern
+            , App_ nilPatternListHead []
+            ]
         )
         [metaStringPattern]
     , testLiftUnlift "A Variable"
-        (Fix
-            (apply variableHead
-                [ Fix (StringLiteralPattern (StringLiteral "object"))
-                , variablePattern "#v" sortMetaSort
-                ]
-            )
+        (App_
+            variableHead
+            [ StringLiteral_ "object"
+            , variablePattern "#v" sortMetaSort
+            ]
         )
         Variable
             { variableName = testId "object" :: Id Object
@@ -302,22 +274,19 @@ test_lift =
                 SortVariableSort (SortVariable (testId "v"))
             }
     , testLiftUnlift "A pure object pattern."
-        ( Fix
-            ( apply (metaMLPatternHead NotPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , Fix
-                    ( apply
-                        (metaMLPatternHead TopPatternType AstLocationTest)
-                        [ variablePattern "#a" sortMetaSort ]
-                    )
-                ]
-            )
+        (App_
+            (metaMLPatternHead NotPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , App_
+                (metaMLPatternHead TopPatternType AstLocationTest)
+                [ variablePattern "#a" sortMetaSort ]
+            ]
         )
-        ( asKorePattern
-            ( NotPattern Not
+        (asCommonKorePattern
+            (NotPattern Not
                 { notSort =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
-                , notChild = asKorePattern
+                , notChild = asCommonKorePattern
                     ( TopPattern Top
                         { topSort = SortVariableSort
                             (SortVariable (testId "a" :: Id Object))
@@ -325,17 +294,16 @@ test_lift =
                     )
                 }
             )
-        ::CommonKorePattern)
-    , testLiftUnlift "And pattern"
-        (Fix
-            (apply (metaMLPatternHead AndPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                , metaStringPattern
-                ]
-            )
         )
-        (asKorePattern
+    , testLiftUnlift "And pattern"
+        (App_
+            (metaMLPatternHead AndPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            , metaStringPattern
+            ]
+        )
+        (asCommonKorePattern
             (AndPattern And
                 { andSort =
                     SortVariableSort
@@ -346,15 +314,14 @@ test_lift =
             )
         )
     , testLiftUnlift "Or pattern"
-        (Fix
-            (apply (metaMLPatternHead OrPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead OrPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (OrPattern Or
                 { orSort =
                     SortVariableSort
@@ -365,15 +332,14 @@ test_lift =
             )
         )
     , testLiftUnlift "Iff pattern"
-        (Fix
-            (apply (metaMLPatternHead IffPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead IffPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (IffPattern Iff
                 { iffSort =
                     SortVariableSort
@@ -384,15 +350,14 @@ test_lift =
             )
         )
     , testLiftUnlift "Implies pattern"
-        (Fix
-            (apply (metaMLPatternHead ImpliesPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead ImpliesPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (ImpliesPattern Implies
                 { impliesSort =
                     SortVariableSort
@@ -403,14 +368,13 @@ test_lift =
             )
         )
     , testLiftUnlift "Not"
-        (Fix
-            (apply (metaMLPatternHead NotPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead NotPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (NotPattern Not
                 { notSort =
                     SortVariableSort
@@ -420,15 +384,14 @@ test_lift =
             )
         )
     , testLiftUnlift "Rewrites pattern"
-        (Fix
-            (apply (metaMLPatternHead RewritesPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead RewritesPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (RewritesPattern Rewrites
                 { rewritesSort =
                     SortVariableSort (SortVariable (testId "a"))
@@ -438,15 +401,13 @@ test_lift =
             )
         )
     , testLiftUnlift "Domain Value"
-        (Fix
-            (apply
-                (metaMLPatternHead DomainValuePatternType AstLocationTest)
-                [ variablePattern "#Int" sortMetaSort
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead DomainValuePatternType AstLocationTest)
+            [ variablePattern "#Int" sortMetaSort
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (DomainValuePattern DomainValue
                 { domainValueSort =
                     SortVariableSort (SortVariable (testId "Int"))
@@ -457,33 +418,33 @@ test_lift =
             )
         :: CommonKorePattern)
     , testLiftUnlift "Application"
-        (Fix
-            (apply (groundHead "#`test" AstLocationTest)
-                [ variablePattern "#Int" sortMetaSort
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (groundHead "#`test" AstLocationTest)
+            [ variablePattern "#Int" sortMetaSort
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
-            (apply
-                SymbolOrAlias
-                    { symbolOrAliasConstructor = testId "test" :: Id Object
-                    , symbolOrAliasParams =
-                        [ SortVariableSort (SortVariable (testId "Int"))
-                        ]
-                    }
-                [unifiedStringPattern]
+        (asCommonKorePattern
+            (ApplicationPattern Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId "test" :: Id Object
+                        , symbolOrAliasParams =
+                            [ SortVariableSort (SortVariable (testId "Int"))
+                            ]
+                        }
+                , applicationChildren = [unifiedStringPattern]
+                }
             )
         )
     , testLiftUnlift "Next"
-        (Fix
-            (apply (metaMLPatternHead NextPatternType AstLocationTest)
-                [ variablePattern "#a" sortMetaSort
-                , metaStringPattern
-                ]
-            )
+        (App_
+            (metaMLPatternHead NextPatternType AstLocationTest)
+            [ variablePattern "#a" sortMetaSort
+            , metaStringPattern
+            ]
         )
-        (asKorePattern
+        (asCommonKorePattern
             (NextPattern Next
                 { nextSort =
                     SortVariableSort (SortVariable (testId "a"))
@@ -533,25 +494,23 @@ test_lift =
             , SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
                     [ sortParameter Proxy "#s" AstLocationTest ]
-                , sentenceAxiomPattern = Fix
-                    (EqualsPattern Equals
-                        { equalsOperandSort =
-                            SortActualSort SortActual
-                                { sortActualName = testId "#Pattern" :: Id Meta
-                                , sortActualSorts = []
-                                }
-                        , equalsResultSort =
-                            SortVariableSort
-                                (sortParameter Proxy "#s" AstLocationTest)
-                        , equalsFirst = Fix
-                            (apply (groundHead "#\\top" AstLocationImplicit)
-                                [ Fix (apply (groundHead "#`s3" AstLocationImplicit) []) ]
-                            )
-                        , equalsSecond = Fix
-                            (apply (groundHead "#\\top" AstLocationImplicit)
-                                [ Fix (apply (groundHead "#`s3" AstLocationImplicit) []) ]
-                            )
-                        })
+                , sentenceAxiomPattern =
+                    Equals_
+                        (SortActualSort SortActual
+                            { sortActualName = testId "#Pattern" :: Id Meta
+                            , sortActualSorts = []
+                            }
+                        )
+                        (SortVariableSort
+                            $ sortParameter Proxy "#s" AstLocationTest)
+                        (App_
+                            (groundHead "#\\top" AstLocationImplicit)
+                            [ App_ (groundHead "#`s3" AstLocationImplicit) [] ]
+                        )
+                        (App_
+                            (groundHead "#\\top" AstLocationImplicit)
+                            [ App_ (groundHead "#`s3" AstLocationImplicit) [] ]
+                        )
                 , sentenceAxiomAttributes = Attributes []
                 }
             ]
@@ -585,159 +544,90 @@ test_lift =
                 { sentenceAxiomParameters =
                     [sortParameter Proxy "#s" AstLocationTest]
                 , sentenceAxiomPattern =
-                    Fix
-                        (EqualsPattern Equals
-                            { equalsOperandSort = patternMetaSort
-                            , equalsResultSort =
-                                SortVariableSort
-                                    (sortParameter Proxy "#s" AstLocationTest)
-                            , equalsFirst =
-                                Fix
-                                    (apply
-                                        (groundHead
-                                            "#`alias" AstLocationTest)
-                                        [ variablePattern
-                                            "#a"
-                                            sortMetaSort
-                                        , variablePattern
-                                            "#P1"
-                                            patternMetaSort
-                                        ]
-                                    )
-                            , equalsSecond = Fix
-                                (apply applicationHead
-                                    [ Fix
-                                        (apply symbolHead
-                                            [ Fix
-                                                (StringLiteralPattern
-                                                    (StringLiteral "alias")
-                                                )
-                                            , Fix
-                                                (apply consSortListHead
-                                                    [ variablePattern
-                                                        "#a"
-                                                        sortMetaSort
-                                                    , Fix
-                                                        (apply
-                                                            nilSortListHead
-                                                            []
-                                                        )
-                                                    ]
-                                                )
-                                            , Fix
-                                                (apply consSortListHead
-                                                    [ variablePattern
-                                                        "#a"
-                                                        sortMetaSort
-                                                    , Fix
-                                                        (apply
-                                                            nilSortListHead
-                                                            []
-                                                        )
-                                                    ]
-                                                )
-                                            , variablePattern
-                                                "#a"
-                                                sortMetaSort
-                                            ]
-                                        )
-                                    , Fix
-                                        (apply consPatternListHead
-                                            [ variablePattern
-                                                "#P1"
-                                                patternMetaSort
-                                            , Fix
-                                                (apply nilPatternListHead
-                                                    []
-                                                )
-                                            ]
-                                        )
+                    Equals_
+                        patternMetaSort
+                        (SortVariableSort
+                            $ sortParameter Proxy "#s" AstLocationTest
+                        )
+                        (App_
+                            (groundHead
+                                "#`alias" AstLocationTest)
+                            [ variablePattern
+                                "#a"
+                                sortMetaSort
+                            , variablePattern
+                                "#P1"
+                                patternMetaSort
+                            ]
+                        )
+                        (App_
+                            applicationHead
+                            [ App_
+                                symbolHead
+                                [ StringLiteral_ "alias"
+                                , App_
+                                    consSortListHead
+                                    [ variablePattern "#a" sortMetaSort
+                                    , App_ nilSortListHead []
                                     ]
-                                )
-                            }
+                                , App_
+                                    consSortListHead
+                                    [ variablePattern "#a" sortMetaSort
+                                    , App_ nilSortListHead []
+                                    ]
+                                , variablePattern "#a" sortMetaSort
+                                ]
+                            , App_
+                                consPatternListHead
+                                [ variablePattern "#P1" patternMetaSort
+                                , App_ nilPatternListHead []
+                                ]
+                            ]
                         )
                 , sentenceAxiomAttributes = Attributes []
                 }
             , SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
                     [ sortParameter Proxy "#s" AstLocationTest ]
-                , sentenceAxiomPattern = Fix
-                    (ImpliesPattern Implies
-                        { impliesSort =
-                            SortVariableSort
-                                (sortParameter Proxy "#s" AstLocationTest)
-                        , impliesFirst =
-                            Fix
-                                (apply
-                                    (sortsDeclaredHead
-                                        (SortVariableSort
-                                            (sortParameter
-                                                Proxy "#s" AstLocationTest)
-                                        )
-                                    )
-                                    [ Fix
-                                        (apply consSortListHead
-                                            [ variablePattern
-                                                "#a"
-                                                sortMetaSort
-                                            , Fix
-                                                (apply
-                                                    nilSortListHead
-                                                    []
-                                                )
-                                            ]
-                                        )
-
+                , sentenceAxiomPattern =
+                    Implies_
+                        (SortVariableSort
+                            $ sortParameter Proxy "#s" AstLocationTest
+                        )
+                        (App_
+                            (sortsDeclaredHead
+                                $ SortVariableSort
+                                $ sortParameter Proxy "#s" AstLocationTest
+                            )
+                            [ App_
+                                consSortListHead
+                                [ variablePattern "#a" sortMetaSort
+                                , App_ nilSortListHead []
+                                ]
+                            ]
+                        )
+                        (App_
+                            (symbolDeclaredHead
+                                $ SortVariableSort
+                                $ sortParameter Proxy "#s" AstLocationTest
+                            )
+                            [ App_
+                                symbolHead
+                                [ StringLiteral_ "alias"
+                                , App_
+                                    consSortListHead
+                                    [ variablePattern "#a" sortMetaSort
+                                    , App_ nilSortListHead []
                                     ]
-                                )
-                        , impliesSecond =
-                            Fix
-                                (apply
-                                    (symbolDeclaredHead
-                                        (SortVariableSort
-                                            (sortParameter
-                                                Proxy "#s" AstLocationTest)
-                                        )
-                                    )
-                                    [ Fix
-                                        (apply symbolHead
-                                            [ Fix
-                                                (StringLiteralPattern
-                                                    (StringLiteral "alias")
-                                                )
-                                            , Fix
-                                                (apply consSortListHead
-                                                    [ variablePattern
-                                                        "#a"
-                                                        sortMetaSort
-                                                    , Fix
-                                                        (apply
-                                                            nilSortListHead
-                                                            []
-                                                        )
-                                                    ]
-                                                )
-                                            , Fix
-                                                (apply consSortListHead
-                                                    [ variablePattern
-                                                        "#a"
-                                                        sortMetaSort
-                                                    , Fix
-                                                        (apply
-                                                            nilSortListHead
-                                                            []
-                                                        )
-                                                    ]
-                                                )
-                                            , variablePattern
-                                                "#a"
-                                                sortMetaSort
-                                            ]
-                                        )
+                                , App_
+                                    consSortListHead
+                                    [ variablePattern "#a" sortMetaSort
+                                    , App_ nilSortListHead []
                                     ]
-                                )
-                        }
-                    )
+                                , variablePattern "#a" sortMetaSort
+                                ]
+                            ]
+                        )
                 , sentenceAxiomAttributes = Attributes []
                 }
             ]
@@ -803,80 +693,57 @@ test_lift =
             , SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
                     [ sortParameter Proxy "#s" AstLocationTest ]
-                , sentenceAxiomPattern = Fix
-                        (EqualsPattern Equals
-                            { equalsOperandSort = sortMetaSort
-                            , equalsResultSort =
-                                SortVariableSort
-                                    (sortParameter Proxy "#s" AstLocationTest)
-                            , equalsFirst = Fix
-                                (apply (groundHead "#`List" AstLocationTest)
-                                    [ variablePattern "#a" sortMetaSort ]
-                                )
-                            , equalsSecond = Fix
-                                (apply sortHead
-                                    [ Fix
-                                        (StringLiteralPattern
-                                            (StringLiteral "List")
-                                        )
-                                    , Fix
-                                        (apply consSortListHead
-                                            [ variablePattern "#a"
-                                                sortMetaSort
-                                            , Fix (apply nilSortListHead [])
-                                            ]
-                                        )
-                                    ]
-                                )
-                            }
+                , sentenceAxiomPattern =
+                    Equals_
+                        sortMetaSort
+                        (SortVariableSort
+                            $ sortParameter Proxy "#s" AstLocationTest
+                        )
+                        (App_
+                            (groundHead "#`List" AstLocationTest)
+                            [ variablePattern "#a" sortMetaSort ]
+                        )
+                        (App_
+                            sortHead
+                            [ StringLiteral_ "List"
+                            , App_
+                                consSortListHead
+                                [ variablePattern "#a" sortMetaSort
+                                , App_ nilSortListHead []
+                                ]
+                            ]
                         )
                 , sentenceAxiomAttributes = Attributes []
                 }
             , SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
                     [sortParameter Proxy "#s" AstLocationTest]
-                , sentenceAxiomPattern = Fix
-                        (ImpliesPattern Implies
-                            { impliesSort =
-                                SortVariableSort
-                                    (sortParameter
-                                        Proxy "#s" AstLocationTest)
-                            , impliesFirst = Fix
-                                (apply
-                                    (sortsDeclaredHead
-                                        (SortVariableSort
-                                            (sortParameter
-                                                Proxy "#s" AstLocationTest)
-                                        )
-                                    )
-                                    [ Fix
-                                        (apply consSortListHead
-                                            [ variablePattern "#a"
-                                                sortMetaSort
-                                            , Fix (apply nilSortListHead [])
-                                            ]
-                                        )
-                                    ]
-                                )
-                            , impliesSecond = Fix
-                                (apply
-                                    (sortDeclaredHead
-                                        (SortVariableSort
-                                            (sortParameter
-                                                Proxy "#s" AstLocationTest)
-                                        )
-                                    )
-                                    [ Fix
-                                        (apply
-                                            (groundHead
-                                                "#`List" AstLocationTest)
-                                            [ variablePattern "#a"
-                                                sortMetaSort
-                                            ]
-                                        )
-                                    ]
-                                )
-                            }
+                , sentenceAxiomPattern =
+                    Implies_
+                        (SortVariableSort
+                            $ sortParameter Proxy "#s" AstLocationTest
+                        )
+                        (App_
+                            (sortsDeclaredHead
+                                $ SortVariableSort
+                                $ sortParameter Proxy "#s" AstLocationTest
+                            )
+                            [ App_
+                                consSortListHead
+                                [ variablePattern "#a" sortMetaSort
+                                , App_ nilSortListHead []
+                                ]
+                            ]
+                        )
+                        (App_
+                            (sortDeclaredHead
+                                $ SortVariableSort
+                                $ sortParameter Proxy "#s" AstLocationTest
+                            )
+                            [ App_
+                                (groundHead "#`List" AstLocationTest)
+                                [ variablePattern "#a" sortMetaSort ]
+                            ]
                         )
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -899,31 +766,28 @@ test_lift =
             [ SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
                     [sortParameter Proxy "#a" AstLocationTest]
-                , sentenceAxiomPattern = Fix
-                    (ImpliesPattern Implies
-                        { impliesSort = patternMetaSort
-                        , impliesFirst = Fix
-                            (apply (sortsDeclaredHead patternMetaSort)
-                                [ Fix
-                                    (apply consSortListHead
-                                        [ variablePattern "#a" sortMetaSort
-                                        , Fix (apply nilSortListHead [])
-                                        ]
-                                    )
+                , sentenceAxiomPattern =
+                    Implies_
+                        patternMetaSort
+                        (App_
+                            (sortsDeclaredHead patternMetaSort)
+                            [ App_
+                                consSortListHead
+                                [ variablePattern "#a" sortMetaSort
+                                , App_ nilSortListHead []
                                 ]
-                            )
-                        , impliesSecond = Fix
-                            (apply (provableHead patternMetaSort)
-                                [ Fix
-                                    (apply
-                                        (metaMLPatternHead
-                                            TopPatternType AstLocationTest)
-                                        [variablePattern "#a" sortMetaSort]
-                                    )
-                                ]
-                            )
-                        }
-                    )
+                            ]
+                        )
+                        (App_
+                            (provableHead patternMetaSort)
+                            [ App_
+                                (metaMLPatternHead
+                                    TopPatternType
+                                    AstLocationTest
+                                )
+                                [variablePattern "#a" sortMetaSort]
+                            ]
+                        )
                 , sentenceAxiomAttributes = Attributes []
                 }
             ]
@@ -933,7 +797,7 @@ test_lift =
                         [ UnifiedObject (SortVariable (testId "a"))
                         , UnifiedMeta (SortVariable (testId "#a"))
                         ]
-                    , sentenceAxiomPattern = asKorePattern
+                    , sentenceAxiomPattern = asCommonKorePattern
                         (TopPattern
                             (Top
                                 (SortVariableSort
@@ -951,16 +815,14 @@ test_lift =
         (prettyAssertEqual ""
             [ SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = Fix
-                    (ImpliesPattern Implies
-                        { impliesSort = charListMetaSort
-                        , impliesFirst = Fix
-                            (apply (sortsDeclaredHead charListMetaSort)
-                                [ Fix (apply nilSortListHead []) ]
-                            )
-                        , impliesSecond = metaStringPattern
-                        }
-                    )
+                , sentenceAxiomPattern =
+                    Implies_
+                        charListMetaSort
+                        (App_
+                            (sortsDeclaredHead charListMetaSort)
+                            [ App_ nilSortListHead [] ]
+                        )
+                        metaStringPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
             ]
@@ -1035,10 +897,10 @@ stringPattern :: Pattern Meta dom Variable child
 stringPattern = StringLiteralPattern (StringLiteral "a")
 
 unifiedStringPattern :: CommonKorePattern
-unifiedStringPattern = asKorePattern stringPattern
+unifiedStringPattern = asCommonKorePattern stringPattern
 
 metaStringPattern :: CommonMetaPattern
-metaStringPattern = Fix stringPattern
+metaStringPattern = asCommonMetaPattern stringPattern
 
 sentenceImport :: SentenceImport pat dom var
 sentenceImport =

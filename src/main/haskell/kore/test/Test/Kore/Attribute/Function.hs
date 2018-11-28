@@ -3,7 +3,6 @@ module Test.Kore.Attribute.Function where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.Attribute.Function
 
@@ -38,11 +37,11 @@ test_arguments =
         $ parseFunction $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (KoreObjectPattern . ApplicationPattern)
+        (asCommonKorePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = functionSymbol
                 , applicationChildren =
-                    [ (KoreMetaPattern . StringLiteralPattern)
+                    [ (asCommonKorePattern . StringLiteralPattern)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -54,7 +53,7 @@ test_parameters =
         $ parseFunction $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (KoreObjectPattern . ApplicationPattern)
+        (asCommonKorePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

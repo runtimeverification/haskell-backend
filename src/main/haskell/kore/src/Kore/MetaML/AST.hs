@@ -8,7 +8,7 @@ Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 
-This module specializes the 'Kore.AST.Common' datastructures for
+This module specializes the 'Kore.AST.Pure' datastructures for
 representing definitions, modules, axioms, patterns that only use 'Meta'-level
 constructs.
 
@@ -17,13 +17,13 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Kore.MetaML.AST where
 
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
 import           Data.Set
                  ( Set )
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Variables.Free
@@ -33,7 +33,7 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 
 'var' is the type of variables.
 -}
-type MetaMLPattern variable = PureMLPattern Meta Domain.Builtin variable
+type MetaMLPattern variable = PurePattern Meta Domain.Builtin variable
 
 -- |'MetaSentenceAxiom' is the 'Meta'-only version of 'SentenceAxiom'
 type MetaSentenceAxiom = PureSentenceAxiom Meta Domain.Builtin
@@ -55,7 +55,12 @@ type MetaDefinition = PureDefinition Meta Domain.Builtin
 
 -- |'CommonMetaPattern' is the instantiation of 'MetaPattern' with common
 -- 'Variable's.
-type CommonMetaPattern = MetaMLPattern Variable
+type CommonMetaPattern = MetaMLPattern Variable ()
+
+asCommonMetaPattern
+    :: Pattern Meta Domain.Builtin Variable CommonMetaPattern
+    -> CommonMetaPattern
+asCommonMetaPattern = asPurePattern . (mempty :<)
 
 type PatternMetaType =
     Pattern Meta Domain.Builtin Variable CommonMetaPattern
@@ -73,8 +78,8 @@ nilSortListHead = groundHead "#nilSortList" AstLocationImplicit
 consSortListHead :: SymbolOrAlias Meta
 consSortListHead = groundHead "#consSortList" AstLocationImplicit
 
-nilSortListMetaPattern :: MetaMLPattern v
-nilSortListMetaPattern = asPurePattern $ constant nilSortListHead
+nilSortListMetaPattern :: MetaMLPattern v ()
+nilSortListMetaPattern = asPurePattern $ () :< constant nilSortListHead
 
 nilPatternListHead :: SymbolOrAlias Meta
 nilPatternListHead = groundHead "#nilPatternList" AstLocationImplicit
@@ -82,8 +87,8 @@ nilPatternListHead = groundHead "#nilPatternList" AstLocationImplicit
 consPatternListHead :: SymbolOrAlias Meta
 consPatternListHead = groundHead "#consPatternList" AstLocationImplicit
 
-nilPatternListMetaPattern :: MetaMLPattern v
-nilPatternListMetaPattern = asPurePattern $ constant nilPatternListHead
+nilPatternListMetaPattern :: MetaMLPattern v ()
+nilPatternListMetaPattern = asPurePattern $ () :< constant nilPatternListHead
 
 variableHead :: SymbolOrAlias Meta
 variableHead = groundHead "#variable" AstLocationImplicit

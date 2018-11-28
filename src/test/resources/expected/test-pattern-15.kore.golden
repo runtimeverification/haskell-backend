@@ -9,22 +9,36 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObjectPattern (RewritesPattern Rewrites
-                            { rewritesSort =
-                                SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                            , rewritesFirst =
-                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "X" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                    })))
-                            , rewritesSecond =
-                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "X" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                    })))
-                            })))
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (RewritesPattern Rewrites
+                                        { rewritesSort =
+                                            SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                        , rewritesFirst =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                        { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableSort =
+                                                            SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                                        })
+                                                    }
+                                                }
+                                        , rewritesSecond =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                        { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableSort =
+                                                            SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                                        })
+                                                    }
+                                                }
+                                        })
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

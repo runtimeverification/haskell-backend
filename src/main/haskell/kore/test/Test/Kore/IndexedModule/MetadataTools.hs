@@ -5,8 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertBool, assertEqual, testCase )
 
-import           Data.Functor.Foldable
-                 ( Fix (..) )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -14,9 +12,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import           Kore.AST.Builders
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
@@ -25,6 +21,8 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import qualified Kore.Attribute.Null as Attribute
+import           Kore.Attribute.Subsort
+                 ( subsortAttribute )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -258,19 +256,10 @@ testSubsortModule =
           (SentenceAxiom
               { sentenceAxiomParameters = [UnifiedObject (sortVariable "R")]
               , sentenceAxiomPattern =
-                  Fix . asUnifiedPattern $ TopPattern (Top sortVarR)
+                  asCommonKorePattern $ TopPattern (Top sortVarR)
               , sentenceAxiomAttributes = Attributes
                   [subsortAttribute subSort superSort]
               })
-
-    subsortAttribute
-        :: Sort Object
-        -> Sort Object
-        -> KorePattern Domain.Builtin Variable
-    subsortAttribute subSort superSort = Fix . asUnifiedPattern $
-        (ApplicationPattern (Application
-            (SymbolOrAlias (testId "subsort") [subSort,superSort])
-            []))
 
     sortDecl :: Sort Object -> KoreSentence
     sortDecl (SortActualSort (SortActual name [])) =

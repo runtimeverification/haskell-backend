@@ -40,10 +40,7 @@ import qualified Data.Set as Set
 import           GHC.Generics
 
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( mapPatternVariables )
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom )
 import           Kore.IndexedModule.MetadataTools
@@ -293,7 +290,7 @@ stepWithRuleForUnifier
             } =
                 ExpandedPattern.mapVariables
                     ConfigurationVariable expandedPattern
-        wrapAxiomVariables = mapPatternVariables AxiomVariable
+        wrapAxiomVariables = mapVariables AxiomVariable
         axiomLeft = wrapAxiomVariables axiomLeftRaw
         axiomRight = wrapAxiomVariables axiomRightRaw
         axiomRequires = Predicate.mapVariables AxiomVariable axiomRequiresRaw
@@ -816,7 +813,7 @@ predicateStepVariablesToCommon existingVars mapped predicate' = do
         )
   where
     configurationVariablesToCommon =
-        mapPatternVariables configurationVariableToCommon
+        mapVariables configurationVariableToCommon
 
 patternStepVariablesToCommon
     ::  ( FreshVariable variable
@@ -843,7 +840,7 @@ patternStepVariablesToCommon existingVars mapped patt = do
         )
   where
     configurationVariablesToCommon =
-        mapPatternVariables configurationVariableToCommon
+        mapVariables configurationVariableToCommon
 
 configurationVariableToCommon
     :: StepperVariable variable level -> variable level
@@ -859,7 +856,7 @@ replacePatternVariables
     -> StepPattern level (StepperVariable variable)
     -> StepPattern level (StepperVariable variable)
 replacePatternVariables mapping =
-    mapPatternVariables
+    mapVariables
         (\var -> fromMaybe var (Map.lookup var mapping))
 
 addAxiomVariablesAsConfig
