@@ -10,8 +10,6 @@ import           Data.Default
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
@@ -45,6 +43,7 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Tasty.HUnit.Extensions
 

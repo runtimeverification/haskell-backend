@@ -18,6 +18,10 @@ import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.OnePath.Step
+                 ( StrategyPattern )
+import           Kore.OnePath.Step as StrategyPattern
+                 ( StrategyPattern (..) )
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.BaseStep
@@ -1103,4 +1107,33 @@ instance
     => EqualWithExplanation (StepResult level variable)
   where
     compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation patt
+    , Show patt
+    , Eq patt
+    )
+    => SumEqualWithExplanation (StrategyPattern patt)
+  where
+    sumConstructorPair
+        (StrategyPattern.RewritePattern p1) (StrategyPattern.RewritePattern p2)
+      =
+        SumConstructorSameWithArguments (EqWrap "RewritePattern" p1 p2)
+    sumConstructorPair (StrategyPattern.Stuck p1) (StrategyPattern.Stuck p2) =
+        SumConstructorSameWithArguments (EqWrap "Stuck" p1 p2)
+    sumConstructorPair StrategyPattern.Bottom StrategyPattern.Bottom =
+        SumConstructorSameNoArguments
+    sumConstructorPair p1 p2 =
+        SumConstructorDifferent
+            (printWithExplanation p1)
+            (printWithExplanation p2)
+
+instance
+    ( Show patt
+    , SumEqualWithExplanation (StrategyPattern patt)
+    )
+    => EqualWithExplanation (StrategyPattern patt)
+  where
+    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

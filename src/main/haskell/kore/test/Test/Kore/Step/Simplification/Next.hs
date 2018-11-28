@@ -91,7 +91,8 @@ test_nextSimplification = give mockSymbolOrAliasSorts
     ]
 
 mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+mockSymbolOrAliasSorts =
+    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
 findSort :: [CommonExpandedPattern Object] -> Sort Object
 findSort [] = Mock.testSort

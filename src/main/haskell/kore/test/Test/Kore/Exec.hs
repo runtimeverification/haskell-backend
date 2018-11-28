@@ -59,7 +59,7 @@ test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
         inputPattern
         Unlimited
         anyRewrite
-    indexedModule = indexedMyModule $ Module
+    indexedModule = indexedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
             [ asSentence $ mySortDecl
@@ -102,7 +102,7 @@ test_search =
         finalPattern <- SMT.runSMT SMT.defaultConfig $ evalSimplifier simplifier
         let Just results = extractSearchResults finalPattern
         return results
-    indexedModule = indexedMyModule $ Module
+    indexedModule = indexedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
             [ asSentence $ mySortDecl

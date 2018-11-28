@@ -131,7 +131,7 @@ compareListWithExplanation l =
         Left ("..." : diff)
     compareListElement (Right same) (EqWrap prefix x y) =
         case compareWithExplanation x y of
-            Just diff -> Left ((prefix ++ diff) : same)
+            Just diff -> Left ((prefix ++ " " ++ diff) : same)
             Nothing   -> Right ("..." : same)
 
 rawCompareWithExplanation :: (Eq a, Show a) => a -> a -> Maybe String
