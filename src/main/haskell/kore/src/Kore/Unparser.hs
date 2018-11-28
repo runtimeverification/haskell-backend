@@ -430,6 +430,7 @@ instance
             SentenceSymbolSentence s -> unparse s
             SentenceImportSentence s -> unparse s
             SentenceAxiomSentence s -> unparse s
+            SentenceClaimSentence s -> unparse s
             SentenceSortSentence s -> unparse s
             SentenceHookSentence s -> unparse s
 

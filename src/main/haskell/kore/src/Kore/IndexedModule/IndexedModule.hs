@@ -18,7 +18,8 @@ module Kore.IndexedModule.IndexedModule
         , indexedModuleObjectAliasSentences, indexedModuleMetaSymbolSentences
         , indexedModuleObjectSymbolSentences
         , indexedModuleObjectSortDescriptions
-        , indexedModuleMetaSortDescriptions, indexedModuleAxioms
+        , indexedModuleMetaSortDescriptions
+        , indexedModuleAxioms, indexedModuleClaims
         , indexedModuleAttributes, indexedModuleImports
         , indexedModuleHooks
         )
@@ -107,6 +108,8 @@ data IndexedModule sortParam pat dom var atts =
         :: !(Map.Map (Id Meta) (atts, SentenceSort Meta pat dom var))
     , indexedModuleAxioms
         :: ![(atts, SentenceAxiom sortParam pat dom var)]
+    , indexedModuleClaims
+        :: ![(atts, SentenceAxiom sortParam pat dom var)]
     , indexedModuleAttributes :: !(atts, Attributes)
     , indexedModuleImports
         :: ![( atts
@@ -170,6 +173,8 @@ indexedModuleRawSentences im =
     ++
     map (asSentence . getIndexedSentence) (indexedModuleAxioms im)
     ++
+    map (asSentence . getIndexedSentence) (indexedModuleClaims im)
+    ++
     [ constructUnifiedSentence SentenceImportSentence
       (SentenceImport (indexedModuleName m) attributes)
     | (_, attributes, m) <- indexedModuleImports im
@@ -219,6 +224,7 @@ emptyIndexedModule name =
     , indexedModuleObjectSortDescriptions = Map.empty
     , indexedModuleMetaSortDescriptions = Map.empty
     , indexedModuleAxioms = []
+    , indexedModuleClaims = []
     , indexedModuleAttributes = (def, Attributes [])
     , indexedModuleImports = []
     , indexedModuleHookedIdentifiers = Set.empty
@@ -436,6 +442,7 @@ indexModuleMetaSentence
         { indexedModuleMetaAliasSentences
         , indexedModuleMetaSymbolSentences
         , indexedModuleAxioms
+        , indexedModuleClaims
         , indexedModuleImports
         , indexedModuleMetaSortDescriptions
         }
@@ -446,11 +453,12 @@ indexModuleMetaSentence
   where
     indexModuleMetaSentence0 =
         case sentence of
-            SentenceAliasSentence s -> indexSentenceAlias s
+            SentenceAliasSentence s  -> indexSentenceAlias s
             SentenceSymbolSentence s -> indexSentenceSymbol s
-            SentenceAxiomSentence s -> indexSentenceAxiom s
+            SentenceAxiomSentence s  -> indexSentenceAxiom s
+            SentenceClaimSentence s  -> indexSentenceClaim s
             SentenceImportSentence s -> indexSentenceImport s
-            SentenceSortSentence s -> indexSentenceSort s
+            SentenceSortSentence s   -> indexSentenceSort s
 
     indexSentenceAlias
         _sentence@SentenceAlias
@@ -495,6 +503,18 @@ indexModuleMetaSentence
             , indexedModule
                 { indexedModuleAxioms =
                     (atts, _sentence) : indexedModuleAxioms
+                }
+            )
+
+    indexSentenceClaim
+        _sentence@SentenceAxiom { sentenceAxiomAttributes }
+      = do
+        atts <- parseAttributes sentenceAxiomAttributes
+        return
+            ( indexedModules
+            , indexedModule
+                { indexedModuleClaims =
+                    (atts, _sentence) : indexedModuleClaims
                 }
             )
 

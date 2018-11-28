@@ -401,7 +401,25 @@ liftMetaSentence (SentenceSortSentence mss) =
         }
     ]
 liftMetaSentence (SentenceAxiomSentence as) =
-    [ SentenceAxiomSentence SentenceAxiom
+    liftMetaSentenceClaimOrAxiom SentenceAxiomSentence as
+liftMetaSentence (SentenceClaimSentence as) =
+    liftMetaSentenceClaimOrAxiom SentenceClaimSentence as
+liftMetaSentence (SentenceImportSentence is) =
+    [ SentenceImportSentence is
+        { sentenceImportAttributes =
+            sentenceImportAttributes is
+        }
+    ]
+
+liftMetaSentenceClaimOrAxiom
+    ::  (  forall param pat domain variable
+        .  SentenceAxiom param pat domain variable
+        -> Sentence Meta param pat domain variable
+        )
+    -> SentenceAxiom (Unified SortVariable) UnifiedPattern Domain.Builtin Variable
+    -> [MetaSentence]
+liftMetaSentenceClaimOrAxiom ctor as =
+    [ ctor SentenceAxiom
         { sentenceAxiomParameters = metaParameters
         , sentenceAxiomAttributes = sentenceAxiomAttributes as
         , sentenceAxiomPattern =
@@ -435,13 +453,6 @@ liftMetaSentence (SentenceAxiomSentence as) =
             UnifiedMetaPattern _   -> liftedPattern
             UnifiedObjectPattern _ ->
                 Fix (apply (provableHead axiomSort) [liftedPattern])
-liftMetaSentence (SentenceImportSentence is) =
-    [ SentenceImportSentence is
-        { sentenceImportAttributes =
-            sentenceImportAttributes is
-        }
-    ]
-
 liftObjectSentence
     :: Sentence Object UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
     -> [MetaSentence]
