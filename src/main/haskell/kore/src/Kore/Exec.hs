@@ -53,7 +53,7 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Search
-                 ( searchTree )
+                 ( searchGraph )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
@@ -66,7 +66,6 @@ import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Strategy
-                 ( Tree )
 import           Kore.Substitution.Class
                  ( Hashable, substitute )
 import qualified Kore.Substitution.List as ListSubstitution
@@ -92,11 +91,11 @@ exec indexedModule purePattern stepLimit strategy =
         :: MetadataTools Object StepperAttributes
         -> StepPatternSimplifier Object Variable
         -> PredicateSubstitutionSimplifier Object Simplifier
-        -> Tree (CommonExpandedPattern Object, StepProof Object Variable)
+        -> ExecutionGraph (CommonExpandedPattern Object, StepProof Object Variable)
         -> Simplifier (CommonStepPattern Object)
-    execute metadataTools _ _ executionTree =
+    execute metadataTools _ _ executionGraph =
         give (symbolOrAliasSorts metadataTools) $ do
-            let (finalConfig, _) = pickLongest executionTree
+            let (finalConfig, _) = pickLongest executionGraph
             return (ExpandedPattern.toMLPattern finalConfig)
 
 -- | Concrete execution search
@@ -124,7 +123,7 @@ search
   =
     setUpConcreteExecution indexedModule purePattern stepLimit strategy execute
   where
-    execute metadataTools simplifier substitutionSimplifier executionTree = do
+    execute metadataTools simplifier substitutionSimplifier executionGraph = do
         let
             match target (config, _proof) =
                 Search.matchWith
@@ -133,7 +132,7 @@ search
                     simplifier
                     target
                     config
-        solutions <- searchTree searchConfig (match searchPattern) executionTree
+        solutions <- searchGraph searchConfig (match searchPattern) executionGraph
         let
             orPredicate =
                 give (symbolOrAliasSorts metadataTools)
@@ -155,7 +154,7 @@ setUpConcreteExecution
     -> (MetadataTools Object StepperAttributes
         -> StepPatternSimplifier Object Variable
         -> PredicateSubstitutionSimplifier Object Simplifier
-        -> Tree (CommonExpandedPattern Object, StepProof Object Variable)
+        -> ExecutionGraph (CommonExpandedPattern Object, StepProof Object Variable)
         -> Simplifier a)
     -- ^ Callback to do the execution
     -> Simplifier a
@@ -181,8 +180,8 @@ setUpConcreteExecution indexedModule purePattern stepLimit strategy execute = do
             case OrOfExpandedPattern.extractPatterns (fst simplifiedPatterns) of
                 [] -> ExpandedPattern.bottom
                 (config : _) -> config
-    executionTree <- runStrategy' initialPattern
-    execute metadataTools simplifier substitutionSimplifier executionTree
+    executionGraph <- runStrategy' initialPattern
+    execute metadataTools simplifier substitutionSimplifier executionGraph
 
 makeExpandedPattern
     :: CommonStepPattern Object

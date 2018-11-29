@@ -44,6 +44,7 @@ import Control.DeepSeq
        ( NFData )
 import Data.Functor.Foldable
        ( elgot, project )
+import Data.Hashable
 import Data.List
        ( foldl', nub )
 import Data.Reflection
@@ -78,6 +79,10 @@ can be manipulated only by functions in this module.
 -}
 newtype GenericPredicate pat = GenericPredicate pat
     deriving (Eq, Foldable, Functor, Generic, NFData, Ord, Show, Traversable)
+
+instance
+    (Hashable pat
+    ) => Hashable (GenericPredicate pat)
 
 {-| 'Predicate' is a user-visible representation for predicates.
 -}

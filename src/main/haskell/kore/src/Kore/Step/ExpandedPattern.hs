@@ -35,6 +35,7 @@ import           Control.DeepSeq
                  ( NFData )
 import           Data.Functor
                  ( ($>) )
+import           Data.Hashable
 import           Data.Monoid
                  ( (<>) )
 import           Data.Reflection
@@ -85,6 +86,11 @@ data Predicated level variable child = Predicated
     , substitution :: !(Substitution level variable)
     }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+
+instance
+    (Hashable child
+    , Hashable (variable level)
+    ) => Hashable (Predicated level variable child)
 
 instance
     (NFData child, NFData (variable level)) =>

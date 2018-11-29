@@ -12,6 +12,7 @@ import Kore.Step.Strategy ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
 @
 -}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Kore.Step.Strategy
     ( -- * Strategies
       Strategy (..)
@@ -28,28 +29,32 @@ module Kore.Step.Strategy
     , stuck
     , continue
       -- * Running strategies
+    , constructExecutionGraph
+    , ExecutionGraph(..)
     , runStrategy
     , pickLongest
     , pickFinal
     , pickOne
     , pickStar
     , pickPlus
-      -- * Re-exports
-    , Tree (..)
+    , assert
     ) where
 
-import           Data.Bifunctor
-                 ( first )
-import           Data.List.NonEmpty
-                 ( NonEmpty (..) )
-import           Data.Semigroup
-import           Data.Tree
-                 ( Tree )
-import qualified Data.Tree as Tree
+import           Data.Function
+                 ( on )
+import qualified Data.Graph.Inductive.Graph as Graph
+import           Data.Graph.Inductive.PatriciaTree
+                 ( Gr )
+import           Data.Hashable
+import           Data.List
+                 ( groupBy )
+import           Data.Maybe
 import           Prelude hiding
                  ( all, and, any, or, replicate, seq, sequence )
 
-import Control.Monad.Counter
+
+assert :: Bool -> a -> a
+assert b a = if b then a else error "assertion failed"
 
 {- | An execution strategy.
 
@@ -198,34 +203,120 @@ seq a continue === a
 continue :: Strategy prim
 continue = Continue
 
-{- | Run a simple state machine.
+data ExecutionGraph config = ExecutionGraph
+    { root :: Graph.Node
+    , graph :: Gr config ()
+    , history :: [[ConfigNode config]]
+    }
+    deriving(Eq, Show)
 
-The transition rule may allow branching. Returns a tree of all machine states.
+-- | A temporary data structure used to construct the @ExecutionGraph@. 
+-- Well, it was intended to be temporary, but for the purpose of making
+-- @pickLongest@ fast it turns out to be useful to keep it around. 
+data ConfigNode config = ConfigNode
+    { config :: config
+    , timestep :: Int
+    -- ^`timestep` represents the time at which a configuration was generated
+    -- during execution. Identical configurations occuring at different times
+    -- are considered different for the purposes of this algorithm. 
+    , nodeId :: Int
+    -- ^ `nodeId` is the hash of `config` and `timestep`.
+    , parents :: [Int]
+    -- ^ a list of Ids of predecessor configurations in the execution graph. 
+    } 
+    deriving (Eq, Show, Functor)
 
- -}
-runMachine
-    :: Monad m
+constructExecutionHistory
+    :: forall m config instr . (Monad m, Hashable config)
     => (instr -> config -> m [config])
-    -- ^ Transition rule
     -> [instr]
-    -- ^ instructions
     -> config
-    -> m (Tree config)
-runMachine transit instrs0 config0 =
-    Tree.unfoldTreeM_BF runMachine0 (config0, instrs0)
+    -> m [[ConfigNode config]]
+constructExecutionHistory transit instrs0 config0 =
+    (pool0:) <$> step instrs0 pool0
+
   where
-    runMachine0 (config, instrs) =
-        case instrs of
-            [] -> return (config, [])
-            instr : instrs' -> do
-                configs <- transit instr config
-                return (config, (,) <$> configs <*> pure instrs')
+
+    pool0 :: [ConfigNode config]
+    pool0 = [ConfigNode config0 0 (hash (config0, 0 :: Int)) []]
+
+    step :: [instr] -> [ConfigNode config] -> m [[ConfigNode config]]
+    step [] _pool = pure []
+    step (instr : instrs) pool = do
+        newPool <- mergeDuplicates . concat <$> mapM (getChildNodes instr) pool
+        if null newPool
+            then pure []
+            else (newPool :) <$> step instrs newPool
+
+    getChildNodes :: instr -> ConfigNode config -> m [ConfigNode config]
+    getChildNodes instr (ConfigNode config timestep node _) = do
+        children <- transit instr config
+        pure
+            [ ConfigNode
+                child
+                (timestep+1)
+                (hash (child, timestep+1))
+                [node]
+            | child <- children ]
+
+    mergeDuplicates :: [ConfigNode config] -> [ConfigNode config]
+    mergeDuplicates = map mergeDuplicates0 . groupBy ((==) `on` nodeId)
+
+    mergeDuplicates0 :: [ConfigNode config] -> ConfigNode config
+    mergeDuplicates0 nodes@(node : _) = ConfigNode
+        (config node)
+        (timestep node)
+        (nodeId node)
+        (concat $ map parents nodes)
+    mergeDuplicates0 _ = error "The impossible happened"
+
+{- | Execute a 'Strategy'.
+ 
+ The primitive strategy rule is used to execute the 'apply' strategy. The
+ primitive rule is considered successful if it returns any children and
+ considered failed if it returns no children.
+ 
+ The strategies are applied in sequence. An edge `a -> b` exists between
+ two configurations `a, b` if `b` follows by applying one step of the strategy to `a`
+ Nondeterministic strategies result in nodes with an outdegree > 1. 
+ If two different branches converge to the same configuration at the same time step,
+ they will be recombined, yielding a node with indegree > 1. 
+ 
+See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
+  -}
+
+constructExecutionGraph
+    :: forall m config instr . (Monad m, Hashable config)
+    => (instr -> config -> m [config])
+    -> [instr]
+    -> config
+    -> m (ExecutionGraph config)
+constructExecutionGraph transit instrs0 config0 =
+    toGraph <$> constructExecutionHistory transit instrs0 config0
+
+-- | @toGraph@ is a helper function for @constructExecutionGraph@.
+-- It takes a list of timesteps `history`
+-- (where `history !! 3` represents all configurations at time t = 3)
+-- and converts it to a directed graph, in which two configurations
+-- `a` and `b` have an edge `a -> b` if `b` follows from
+-- `a` in one step in whatever execution strategy was used.
+-- Note this is NOT the same as `b` following from `a` with
+-- the application of exactly one axiom. 
+toGraph :: [[ConfigNode config]] -> ExecutionGraph config
+toGraph history = ExecutionGraph
+    (fst $ head vertices)
+    (Graph.mkGraph vertices edges)
+    history
+  where
+    allConfigNodes = concat history
+    vertices = map
+        (\(ConfigNode config _ node _) -> (node, config))
+        allConfigNodes
+    edges = concatMap
+        (\(ConfigNode _ _ node parents) -> map (\p -> (p, node, ())) parents)
+        allConfigNodes
 
 {- | Transition rule for running a 'Strategy'.
-
-The primitive strategy rule is used to execute the 'Apply' strategy. The
-primitive rule is considered successful if it returns any children and
-considered failed if it returns no children.
 
  -}
 transitionRule
@@ -287,78 +378,58 @@ strategy in the list; the tree is unfolded likewise by recursion.
 See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
  -}
+
 runStrategy
-    :: Monad m
+    :: forall m prim config . (Monad m, Show config, Hashable config)
     => (prim -> config -> m [config])
     -- ^ Primitive strategy rule
     -> [Strategy prim]
     -- ^ Strategies
     -> config
     -- ^ Initial configuration
-    -> m (Tree config)
-runStrategy applyPrim = runMachine (transitionRule applyPrim)
+    -> m (ExecutionGraph config)
+runStrategy applyPrim instrs0 config0 =
+    constructExecutionGraph (transitionRule applyPrim) instrs0 config0
 
 {- | Pick the longest-running branch from a 'Tree'.
 
   See also: 'runStrategy'
 
  -}
-pickLongest :: Tree config -> config
-pickLongest =
-    getLongest . Tree.foldTree pickLongestAt
 
-{- | A 'Semigroup' which returns its longest-running argument.
-
-  See also: 'longest', 'longer'
-
- -}
-newtype Longest a = Longest (Max (Arg Natural a))
-    deriving (Semigroup)
-
-getLongest :: Longest a -> a
-getLongest (Longest (Max (Arg _ a))) = a
-
-{- | Insert a value into 'Longest' at length 0.
- -}
-longest :: a -> Longest a
-longest a = Longest (Max (Arg 0 a))
-
-{- | Increase the length of the argument.
- -}
-longer :: Longest a -> Longest a
-longer (Longest a) = Longest (first succ <$> a)
-
-{- | Pick the longest-running branch at one node of a tree.
-
-  'pickLongest' folds @pickLongestAt@ over an entire tree.
-
- -}
-pickLongestAt :: config -> [Longest config] -> Longest config
-pickLongestAt config children =
-    sconcat (longest config :| (longer <$> children))
+pickLongest :: ExecutionGraph config -> config
+pickLongest ExecutionGraph { history } =
+    config $ head $ last $ history
 
 {- | Return all 'stuck' configurations, i.e. all leaves of the 'Tree'.
  -}
-pickFinal :: Tree config -> [config]
-pickFinal = Tree.foldTree pickFinalAt
 
-pickFinalAt :: config -> [[config]] -> [config]
-pickFinalAt config children =
-    case children of
-        [] -> [config]
-        _ -> mconcat children
+pickFinal :: ExecutionGraph config -> [config]
+pickFinal ExecutionGraph { graph } =
+    map (fromJust . Graph.lab graph) $
+    filter isFinal $
+    Graph.nodes graph
+        where isFinal = (0==) . Graph.outdeg graph
 
 {- | Return all configurations reachable in one step.
  -}
-pickOne :: Tree config -> [config]
-pickOne tree = Tree.rootLabel <$> Tree.subForest tree
+
+pickOne :: ExecutionGraph config -> [config]
+pickOne ExecutionGraph { root, graph } =
+    map (fromJust . Graph.lab graph) $
+    Graph.neighbors graph root
 
 {- | Return all reachable configurations.
  -}
-pickStar :: Tree config -> [config]
-pickStar = foldr (:) []
+
+pickStar :: ExecutionGraph config -> [config]
+pickStar ExecutionGraph { graph } = map snd $ Graph.labNodes graph
 
 {- | Return all configurations reachable after at least one step.
  -}
-pickPlus :: Tree config -> [config]
-pickPlus = foldr (flip (foldr (:))) [] . Tree.subForest
+
+pickPlus :: ExecutionGraph config -> [config]
+pickPlus ExecutionGraph { root, graph } =
+    map snd $
+    filter ((/= root) . fst) $
+    Graph.labNodes graph
