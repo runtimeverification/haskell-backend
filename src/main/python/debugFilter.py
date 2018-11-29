@@ -205,10 +205,85 @@ def cleanStepProof(line):
             return line
         line = line[:start] + " proof" + line[end:]
 
+def cleanStringDomainValue(line):
+    """Cleans string domain values"""
+    nextStart = 0
+    while True:
+        (start, end) = findElementStartingWith(
+            nextStart,
+            "Fix (DomainValuePattern (DomainValue",
+            line)
+        if start < 0:
+            return line
+        (sortStart, sortEnd) = findElementAndSkipPrefix(
+            start,
+            "domainValueSort = ",
+            line)
+        assert sortStart > 0
+        (childStart, childEnd) = findElementAndSkipPrefix(
+            start,
+            "domainValueChild = ",
+            line)
+        assert childStart > 0
+        assert childEnd < end
+        isString = line[childStart:].startswith(
+            "BuiltinPattern (Fix (StringLiteral")
+        if not isString:
+            nextStart = start + 1
+            continue
+        (valueStart, valueEnd) = findElementAndSkipPrefix(
+            start,
+            "getStringLiteral = ",
+            line)
+        assert valueStart > 0
+        assert valueEnd <= end
+        line = (
+            line[:start] +
+            "DomainValue(" +
+            line[valueStart : valueEnd] +
+            ":" +
+            line [sortStart : sortEnd] +
+            ")" +
+            line[end:]
+            )
+        nextStart += 1
+
+def cleanStandardPattern(name, line):
+    """Simplifies the (Fix (<name>Pattern(<name>))) part of patterns"""
+    prefix = "Fix (" + name + "Pattern (" + name
+    while True:
+        (start, end) = findElementStartingWith(0, prefix, line)
+        if start < 0:
+            return line
+        line = (
+            line[:start] +
+            name +
+            line[start + len(prefix) : end - 2] +
+            line[end:])
+
+def cleanStandardPatterns(line):
+    return cleanStandardPattern("And",
+        cleanStandardPattern("Ceil",
+        cleanStandardPattern("DomainValue",
+        cleanStandardPattern("Equals",
+        cleanStandardPattern("Exists",
+        cleanStandardPattern("Floor",
+        cleanStandardPattern("Forall",
+        cleanStandardPattern("Iff",
+        cleanStandardPattern("Implies",
+        cleanStandardPattern("In",
+        cleanStandardPattern("Next",
+        cleanStandardPattern("Not",
+        cleanStandardPattern("Or",
+        cleanStandardPattern("Rewrites",
+        cleanStandardPattern("Variable",
+        line)))))))))))))))
+
 def clean(line):
     """Applies known cleaning algorithms to the line."""
     return cleanBottom(cleanTop(cleanStepProof(
-        cleanVariable(cleanSort(cleanApplication(cleanIdLocation(line)))))))
+        cleanStandardPatterns(cleanStringDomainValue(
+        cleanVariable(cleanSort(cleanApplication(cleanIdLocation(line)))))))))
 
 def printParseLine(indentLevel, maxOpenParenthesis, line):
     """Rudimentary attempts to split a line and indent it."""

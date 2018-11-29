@@ -25,6 +25,8 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (StepPatternSimplifier) )
 
+import Kore.Debug
+
 {-| Simplifies a predicate, producing another predicate and a substitution,
 without trying to reapply the substitution on the predicate.
 
@@ -45,7 +47,7 @@ simplifyPartial
     substitutionSimplifier
     (StepPatternSimplifier simplifier)
     predicate
-  = do
+  = traceNonErrorMonad "Predicate.simplifyPartial" "**********************" $ do
     (patternOr, _proof) <-
         simplifier substitutionSimplifier (unwrapPredicate predicate)
     case OrOfExpandedPattern.extractPatterns patternOr of

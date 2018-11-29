@@ -57,6 +57,8 @@ import           Kore.Unification.UnifierImpl
                  ( normalizeSubstitutionDuplication )
 import           Kore.Variables.Fresh
 
+--import Kore.Debug
+
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
     :: forall level variable m .
@@ -122,7 +124,8 @@ normalizeSubstitutionAfterMerge
     tools
     wrappedSimplifier@(PredicateSubstitutionSimplifier substitutionSimplifier)
     Predicated { predicate, substitution }
-  = do
+  = --traceExceptT "normalizeSubstitutionAfterMerge" ("predicate="++show predicate++",substitution="++show substitution) $
+   do
     (Predicated
             { predicate = duplicationPredicate
             , substitution = duplicationSubstitution

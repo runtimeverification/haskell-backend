@@ -254,7 +254,8 @@ onePathFirstStep
     -> Strategy (Prim rewrite)
 onePathFirstStep destinationRemovalRewrite rewrites =
     Strategy.sequence
-        [ Strategy.apply
+        [ Strategy.apply simplify
+        , Strategy.apply
             (applyWithRemainder (destinationRemovalRewrite : rewrites))
         , Strategy.apply simplify
         ]

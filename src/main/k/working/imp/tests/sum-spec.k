@@ -16,10 +16,10 @@ rule
     =>
       .K
     ...</k>
-  <state>...
+  <state>
       n   |-> (N:Int => 0)
       sum |-> (S:Int => S +Int ((N +Int 1) *Int N /Int 2))
-  ...</state>
+  </state>
 requires N >=Int 0
 
 rule

@@ -63,7 +63,7 @@ create
     -> PredicateSubstitutionSimplifier level Simplifier
 create tools simplifier =
     PredicateSubstitutionSimplifier
-        (simplify tools simplifier)
+        (\p -> simplify tools simplifier p True)
 
 {-| Simplifies a predicate-substitution by applying the substitution to the
 predicate, simplifying the result and repeating with the new
@@ -97,6 +97,7 @@ simplify
         => StepPatternSimplifier level variable0
         )
     -> PredicateSubstitution level variable
+    -> Bool
     -> Simplifier
         ( PredicateSubstitution level variable
         , SimplificationProof level
@@ -105,6 +106,7 @@ simplify
     tools
     simplifier
     initialValue@Predicated { predicate, substitution }
+    first
   = do
     let
         unifiedSubstitution =
@@ -114,7 +116,7 @@ simplify
         traverse
             (`substitute` unifiedSubstitution)
             predicate
-    if substitutedPredicate == predicate
+    if substitutedPredicate == predicate && not first
         then return (initialValue, SimplificationProof)
         else do
             (   Predicated
@@ -154,7 +156,7 @@ simplify
   where
     substitutionSimplifier =
         PredicateSubstitutionSimplifier
-            (simplify tools simplifier)
+            (\p -> simplify tools simplifier p False)
 
 assertDistinctVariables
     :: forall level variable

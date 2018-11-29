@@ -87,6 +87,8 @@ import           Kore.Substitution.Class
                  ( Hashable )
 import           Kore.Variables.Fresh
 
+import Kore.Debug
+
 {- | Builtin name of the @Map@ sort.
  -}
 sort :: Text
@@ -218,7 +220,7 @@ evalElement =
   where
     evalElement0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedFunction
-        (do
+        (traceNonErrorMonad "Map.evalElement" ("arguments=" ++ show arguments) $ do
             let (_key, _value) =
                     case arguments of
                         [_key, _value] -> (_key, _value)

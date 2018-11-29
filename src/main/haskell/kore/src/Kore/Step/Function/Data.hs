@@ -67,6 +67,7 @@ newtype ApplicationFunctionEvaluator level =
             , OrdMetaOrObject variable
             , SortedVariable variable
             , Show (variable level)
+            , Show (variable Object)
             , ShowMetaOrObject variable
             )
         => MetadataTools level StepperAttributes

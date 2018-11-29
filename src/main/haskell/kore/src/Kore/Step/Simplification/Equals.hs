@@ -65,6 +65,8 @@ import           Kore.Substitution.Class
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 
+import Kore.Debug
+
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrOfExpandedPattern's.
 
 This uses the following simplifications
@@ -362,7 +364,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottomMaybe tools substitutionSimplifier first second
   =
-    give tools $ do
+    traceNonErrorMonad "Predicate.simplifyPartial" ("first="++ show first++ ",second="++ show second) $ give tools $ do
         (result, _) <-
             AndTerms.termEquals tools substitutionSimplifier first second
         let Predicated { predicate, substitution } = result
