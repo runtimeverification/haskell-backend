@@ -46,8 +46,6 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification,
                  verifyAndIndexDefinitionWithBase )
-import           Kore.ASTVerifier.PatternVerifier
-                 ( verifyStandalonePattern )
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
@@ -81,8 +79,6 @@ import           Kore.Variables.Fresh
 import qualified SMT
 
 import GlobalMain
-       ( MainOptions (..), clockSomething, clockSomethingIO, mainGlobal )
-
 
 {-
 Main module to run kore-exec
@@ -572,25 +568,6 @@ verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
       case verifyResult of
         Left err1               -> error (printError err1)
         Right indexedDefinition -> return indexedDefinition
-
-
--- | IO action verifies well-formedness of Kore patterns and prints
--- timing information.
-mainPatternVerify
-    :: KoreIndexedModule StepperAttributes
-    -- ^ Module containing definitions visible in the pattern
-    -> CommonKorePattern -- ^ Parsed pattern to check well-formedness
-    -> IO ()
-mainPatternVerify indexedModule patt =
-    do
-      verifyResult <-
-        clockSomething "Verifying the pattern"
-            (verifyStandalonePattern patternVerifier indexedModule patt)
-      case verifyResult of
-        Left err1 -> error (printError err1)
-        Right _   -> return ()
-  where
-    Builtin.Verifiers { patternVerifier } = Builtin.koreVerifiers
 
 makePurePattern
     :: CommonKorePattern

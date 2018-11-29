@@ -16,8 +16,8 @@ import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternPureToKore )
 import           Kore.ASTUtils.SmartPatterns
-import           Kore.ASTVerifier.PatternVerifier
-                 ( verifyPattern )
+import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import qualified Kore.Attribute.Null as Attribute
 import           Kore.Error
                  ( Error, castError, koreFail, koreFailWhen, withContext )
 import           Kore.IndexedModule.IndexedModule
@@ -52,17 +52,20 @@ formulaVerifier
     -> CommonMetaPattern
     -> Either (Error MLError) ()
 formulaVerifier indexedModule formula = do
-    castError
-        (verifyPattern
-            mempty -- Kore.Builtin.Verifiers: don't validate builtin patterns
-            indexedModule
-            (sortVariables unifiedFormula)
-            Nothing
-            unifiedFormula
-        )
+    castError $ runPatternVerifier context $ do
+        verifyPattern Nothing unifiedFormula
     return ()
   where
     unifiedFormula = patternPureToKore formula
+    context =
+        PatternVerifier.Context
+            { indexedModule = Attribute.Null <$ indexedModule
+            , declaredSortVariables = sortVariables unifiedFormula
+            , builtinPatternVerifier =
+                -- Do not validate builtin patterns.
+                mempty
+            , declaredVariables = emptyDeclaredVariables
+            }
 
 -- TODO(virgil): Check that symbols and not aliases are used in a few places
 -- like checkSingvar

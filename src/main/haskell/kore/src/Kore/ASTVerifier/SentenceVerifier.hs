@@ -26,8 +26,9 @@ import           Kore.AST.MLPatterns
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
-import           Kore.ASTVerifier.PatternVerifier
+import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import           Kore.ASTVerifier.SortVerifier
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -340,18 +341,21 @@ verifyAliasSentence
                 verifySuccess
             else
                 koreFail "Left and Right sorts do not match"
-        verifyAliasLeftPattern
-            (Builtin.patternVerifier builtinVerifiers)
-            indexedModule
-            variables
-            (Just $ asUnified leftPatternSort)
-            (asCommonKorePattern $ sentenceAliasLeftPattern sentence)
-        verifyPattern
-            (Builtin.patternVerifier builtinVerifiers)
-            indexedModule
-            variables
-            (Just $ asUnified rightPatternSort)
-            (asCommonKorePattern $ sentenceAliasRightPattern sentence)
+        let context =
+                PatternVerifier.Context
+                    { builtinPatternVerifier =
+                        Builtin.patternVerifier builtinVerifiers
+                    , indexedModule = Attribute.Null <$ indexedModule
+                    , declaredSortVariables = variables
+                    , declaredVariables = emptyDeclaredVariables
+                    }
+        runPatternVerifier context $ do
+            verifyAliasLeftPattern
+                (Just $ asUnified leftPatternSort)
+                (asCommonKorePattern $ sentenceAliasLeftPattern sentence)
+            verifyPattern
+                (Just $ asUnified rightPatternSort)
+                (asCommonKorePattern $ sentenceAliasRightPattern sentence)
   where
     findSort         = findIndexedSort indexedModule
     sortParams       = (aliasParams . sentenceAliasAlias) sentence
@@ -372,12 +376,16 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
         variables <-
             buildDeclaredUnifiedSortVariables
                 (sentenceAxiomParameters axiom)
-        verifyPattern
-            (Builtin.patternVerifier builtinVerifiers)
-            indexedModule
-            variables
-            Nothing
-            (sentenceAxiomPattern axiom)
+        let context =
+                PatternVerifier.Context
+                    { builtinPatternVerifier =
+                        Builtin.patternVerifier builtinVerifiers
+                    , indexedModule = Attribute.Null <$ indexedModule
+                    , declaredSortVariables = variables
+                    , declaredVariables = emptyDeclaredVariables
+                    }
+        runPatternVerifier context $ do
+            verifyPattern Nothing (sentenceAxiomPattern axiom)
 
 verifySortSentence
     :: KoreSentenceSort Object
