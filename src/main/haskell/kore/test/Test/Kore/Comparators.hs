@@ -15,6 +15,7 @@ import Control.Applicative
        ( Alternative (..) )
 import Control.Comonad.Trans.Cofree
        ( CofreeF (..), CofreeT (..) )
+import Data.Functor.Classes
 import Data.Functor.Identity
        ( Identity (..) )
 import Numeric.Natural
@@ -22,7 +23,6 @@ import Numeric.Natural
 
 import           Kore.AST.Kore
 import           Kore.AST.Pure
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.OnePath.Step
                  ( StrategyPattern )
 import           Kore.OnePath.Step as StrategyPattern
@@ -65,8 +65,8 @@ instance
     , Eq child
     , Eq level
     , Show child
-    , Eq (domain child)
-    , Show (domain child)
+    , Eq1 domain
+    , Show1 domain
     , EqualWithExplanation (variable level)
     , Eq (variable level)
     , Show (variable level)
@@ -199,8 +199,8 @@ instance
     , Show child
     , EqualWithExplanation (variable level)
     , Show (variable level)
-    , Show (domain child)
-    , Eq (domain child)
+    , Show1 domain
+    , Eq1 domain
     ) => EqualWithExplanation (Pattern level domain variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
@@ -208,9 +208,8 @@ instance
 
 instance
     ( Show (PurePattern level domain variable annotation)
-    , Show
-        (domain (CofreeT (Pattern level domain variable) Identity annotation))
-    , Eq (domain (CofreeT (Pattern level domain variable) Identity annotation))
+    , Show1 domain
+    , Eq1 domain
     , Show (variable level)
     , Eq (variable level)
     , EqualWithExplanation (variable level)
@@ -226,9 +225,8 @@ instance
 
 instance
     ( Show (PurePattern level domain variable annotation)
-    , Show
-        (domain (CofreeT (Pattern level domain variable) Identity annotation))
-    , Eq (domain (CofreeT (Pattern level domain variable) Identity annotation))
+    , Show1 domain
+    , Eq1 domain
     , Show (variable level)
     , Eq (variable level)
     , EqualWithExplanation (variable level)
@@ -248,9 +246,8 @@ instance
 
 instance
     ( Show (KorePattern domain variable annotation)
-    , Show
-        (domain (CofreeT (UnifiedPattern domain variable) Identity annotation))
-    , Eq (domain (CofreeT (UnifiedPattern domain variable) Identity annotation))
+    , Show1 domain
+    , Eq1 domain
     , Show annotation
     , Eq annotation
     , EqualWithExplanation annotation
@@ -266,16 +263,12 @@ instance
 
 instance
     ( Show (KorePattern domain variable annotation)
-    , Show
-        (domain (CofreeT (UnifiedPattern domain variable) Identity annotation))
-    , Eq (domain (CofreeT (UnifiedPattern domain variable) Identity annotation))
-    , Show annotation
-    , Eq annotation
+    , Eq1 domain, Show1 domain
+    , Eq annotation, Show annotation
     , EqualWithExplanation annotation
     , EqualWithExplanation (variable Meta)
     , EqualWithExplanation (variable Object)
-    , OrdMetaOrObject variable
-    , ShowMetaOrObject variable
+    , OrdMetaOrObject variable, ShowMetaOrObject variable
     ) =>
     WrapperEqualWithExplanation (KorePattern domain variable annotation)
   where
@@ -478,7 +471,7 @@ instance (EqualWithExplanation child, Show child)
     printWithExplanation = show
 
 instance
-    (Eq child, Show child, Eq (domain child), Show (domain child)) =>
+    (Eq child, Show child, Eq1 domain, Show1 domain) =>
     EqualWithExplanation (DomainValue level domain child)
   where
     compareWithExplanation = rawCompareWithExplanation
@@ -1067,8 +1060,9 @@ instance
     printWithExplanation = show
 
 instance
-    ( EqualWithExplanation (PurePattern level Domain.Builtin variable ())
-    , Show level, Show (variable level)
+    ( EqualWithExplanation (variable level)
+    , Eq level, Show level
+    , Eq (variable level), Show (variable level)
     )
     => EqualWithExplanation (Predicate level variable)
   where
@@ -1178,8 +1172,8 @@ instance
     , EqualWithExplanation (variable Meta)
     , EqualWithExplanation (variable Object)
     , EqualWithExplanation child
-    , Show (domain child)
-    , Eq (domain child)
+    , Show1 domain
+    , Eq1 domain
     )
     => EqualWithExplanation (UnifiedPattern domain variable child)
   where
@@ -1192,8 +1186,8 @@ instance
     , EqualWithExplanation (variable Object)
     , EqualWithExplanation (variable Meta)
     , EqualWithExplanation child
-    , Show (domain child)
-    , Eq (domain child)
+    , Show1 domain
+    , Eq1 domain
     )
     => SumEqualWithExplanation (UnifiedPattern domain variable child)
   where

@@ -241,8 +241,7 @@ instance
 deriving instance
     ( Show annotation
     , ShowMetaOrObject variable
-    , Show (domain child)
-    , child ~ Cofree (UnifiedPattern domain variable) annotation
+    , Show1 domain
     ) =>
     Show (KorePattern domain variable annotation)
 
