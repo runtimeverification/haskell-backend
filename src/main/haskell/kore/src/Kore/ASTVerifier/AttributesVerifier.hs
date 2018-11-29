@@ -36,15 +36,16 @@ data AttributesVerification atts
     = VerifyAttributes (Proxy atts)
     | DoNotVerifyAttributes
 
-parseAttributes :: Attributes -> Either (Error VerifyError) Hook
+parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 
 {-|'verifyAttributes' verifies the wellformedness of the given attributes.
 -}
 verifyAttributes
-    :: Attributes
+    :: MonadError (Error VerifyError) m
+    => Attributes
     -> AttributesVerification atts
-    -> Either (Error VerifyError) VerifySuccess
+    -> m VerifySuccess
 verifyAttributes
     (Attributes patterns)
     (VerifyAttributes _)
@@ -59,8 +60,9 @@ verifyAttributes _ DoNotVerifyAttributes =
     verifySuccess
 
 verifyAttributePattern
-    :: UnifiedPattern dom var (KorePattern dom var ())
-    -> Either (Error VerifyError) VerifySuccess
+    :: MonadError (Error VerifyError) m
+    => UnifiedPattern dom var (KorePattern dom var ())
+    -> m VerifySuccess
 verifyAttributePattern =
     \case
         UnifiedMetaPattern _ ->

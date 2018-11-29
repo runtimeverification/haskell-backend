@@ -6,6 +6,7 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import Kore.AST.Common
+import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.ASTHelpers
 import Kore.Error
@@ -66,7 +67,8 @@ test_symbolOrAliasSorts =
         )
     , testCase "sort variable not found"
         (assertEqual "Expecting error"
-            (koreFail "Sort variable not found: 'sv'.")
+            (koreFail "Sort variable not found: 'sv'."
+                :: Either (Error e) (ApplicationSorts Object))
             (symbolOrAliasSorts
                 [simpleSortActual]
                 (symbolSentence
@@ -75,7 +77,8 @@ test_symbolOrAliasSorts =
         )
     , testCase "more sorts than the declaration"
         (assertEqual "Expecting error"
-            (koreFail "Application uses more sorts than the declaration.")
+            (koreFail "Application uses more sorts than the declaration."
+                :: Either (Error e) (ApplicationSorts Object))
             (symbolOrAliasSorts
                 [simpleSortActual, simpleSortActual]
                 (symbolSentence
@@ -84,7 +87,8 @@ test_symbolOrAliasSorts =
         )
     , testCase "less sorts than the declaration"
         (assertEqual "Expecting error"
-            (koreFail "Application uses less sorts than the declaration.")
+            (koreFail "Application uses less sorts than the declaration."
+                :: Either (Error e) (ApplicationSorts Object))
             (symbolOrAliasSorts
                 []
                 (symbolSentence

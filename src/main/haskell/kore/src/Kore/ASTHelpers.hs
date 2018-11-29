@@ -42,10 +42,10 @@ data ApplicationSorts level = ApplicationSorts
 pattern from the given sort parameters.
 -}
 symbolOrAliasSorts
-    :: (SentenceSymbolOrAlias ssoa)
+    :: (SentenceSymbolOrAlias ssoa, MonadError (Error e) m)
     => [Sort level]
     -> ssoa level pat domain variable
-    -> Either (Error b) (ApplicationSorts level)
+    -> m (ApplicationSorts level)
 symbolOrAliasSorts params sentence = do
     variableToSort <-
         pairVariablesToSorts
@@ -70,12 +70,13 @@ symbolOrAliasSorts params sentence = do
 
 
 substituteSortVariables
-    :: Map.Map (SortVariable level) (Sort level)
+    :: MonadError (Error e) m
+    => Map.Map (SortVariable level) (Sort level)
     -> Sort level
-    -> Either (Error b) (Sort level)
+    -> m (Sort level)
 substituteSortVariables variableToSort (SortVariableSort variable) =
     case Map.lookup variable variableToSort of
-        Just sort -> Right sort
+        Just sort -> return sort
         Nothing   ->
             koreFail
                 (  "Sort variable not found: '"
@@ -90,15 +91,16 @@ substituteSortVariables
     return (SortActualSort sort { sortActualSorts = substituted })
 
 pairVariablesToSorts
-    :: [SortVariable level]
+    :: MonadError (Error e) m
+    => [SortVariable level]
     -> [Sort level]
-    -> Either (Error b) [(SortVariable level, Sort level)]
+    -> m [(SortVariable level, Sort level)]
 pairVariablesToSorts variables sorts
     | variablesLength < sortsLength =
         koreFail "Application uses more sorts than the declaration."
     | variablesLength > sortsLength =
         koreFail "Application uses less sorts than the declaration."
-    | otherwise = Right (zip variables sorts)
+    | otherwise = return (zip variables sorts)
   where
     variablesLength = length variables
     sortsLength = length sorts

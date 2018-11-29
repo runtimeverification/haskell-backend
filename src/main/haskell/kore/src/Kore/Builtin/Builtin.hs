@@ -95,7 +95,7 @@ import           Kore.Attribute.Hook
 import           Kore.Builtin.Error
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-                 ( Error )
+                 ( Error, MonadError )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, SortDescription )
@@ -170,9 +170,10 @@ newtype PatternVerifier =
         See also: 'verifyDomainValue'
       -}
       runPatternVerifier
-          :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
+          :: forall m. MonadError (Error VerifyError) m
+          => (Id Object -> m HookedSortDescription)
           -> StepPatternHead Object Variable CommonKorePattern
-          -> Either (Error VerifyError) ()
+          -> m ()
     }
 
 instance Semigroup PatternVerifier where
@@ -195,8 +196,8 @@ instance Monoid PatternVerifier where
     mappend = (<>)
 
 type DomainValueVerifier =
-    DomainValue Object Domain.Builtin CommonKorePattern
-    -> Either (Error VerifyError) ()
+    forall m. MonadError (Error (VerifyError)) m =>
+    DomainValue Object Domain.Builtin CommonKorePattern -> m ()
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
@@ -286,10 +287,11 @@ verifySortDecl SentenceSort { sentenceSortParameters } =
 
  -}
 verifySort
-    :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
+    :: MonadError (Error VerifyError) m
+    => (Id Object -> m HookedSortDescription)
     -> Text
     -> Sort Object
-    -> Either (Error VerifyError) ()
+    -> m ()
 verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
     do
         SentenceSort { sentenceSortAttributes } <- findSort sortActualName
@@ -369,11 +371,12 @@ verifyDomainValue builtinSort validate =
     PatternVerifier { runPatternVerifier }
   where
     runPatternVerifier
-        :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
+        :: forall m. MonadError (Error VerifyError) m
+        => (Id Object -> m HookedSortDescription)
         -- ^ Function to lookup sorts by identifier
         -> StepPatternHead Object Variable CommonKorePattern
         -- ^ Pattern to verify
-        -> Either (Error VerifyError) ()
+        -> m ()
     runPatternVerifier findSort =
         \case
             DomainValuePattern dv@DomainValue { domainValueSort } ->
@@ -388,9 +391,9 @@ verifyDomainValue builtinSort validate =
         skipOtherSorts
             :: Sort Object
             -- ^ Sort of pattern under verification
-            -> Either (Error VerifyError) ()
+            -> m ()
             -- ^ Verifier run iff pattern sort is hooked to designated builtin
-            -> Either (Error VerifyError) ()
+            -> m ()
         skipOtherSorts sort next = do
             decl <-
                 Except.catchError
@@ -408,7 +411,7 @@ verifyDomainValue builtinSort validate =
 
  -}
 verifyStringLiteral
-    :: (String -> Either (Error VerifyError) ())
+    :: (forall m. MonadError (Error VerifyError) m => String -> m ())
     -- ^ validation function
     -> DomainValueVerifier
 verifyStringLiteral validate DomainValue { domainValueChild } =
@@ -423,9 +426,10 @@ verifyStringLiteral validate DomainValue { domainValueChild } =
 
  -}
 parseDomainValue
-    :: Parser a
+    :: MonadError (Error VerifyError) m
+    => Parser a
     -> DomainValue Object Domain.Builtin child
-    -> Either (Error VerifyError) a
+    -> m a
 parseDomainValue
     parser
     DomainValue { domainValueChild }
@@ -441,9 +445,10 @@ parseDomainValue
 
  -}
 parseString
-    :: Parser a
+    :: MonadError (Error VerifyError) m
+    => Parser a
     -> String
-    -> Either (Error VerifyError) a
+    -> m a
 parseString parser lit =
     let parsed = Parsec.parse (parser <* Parsec.eof) "<string literal>" lit
     in castParseError parsed

@@ -41,7 +41,6 @@ import           Kore.ASTHelpers
                  ( ApplicationSorts (..), symbolOrAliasSorts )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-                 ( Error, koreFail, printError )
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule, SortDescription,
                  getIndexedSentence, indexedModulesInScope )
@@ -222,50 +221,53 @@ resolveThingInternal
 also searching in the imported modules.
 -}
 resolveSymbol
-    :: MetaOrObject level
+    :: (MetaOrObject level, MonadError (Error e) m)
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error e) (atts, KoreSentenceSymbol level)
+    -> m (atts, KoreSentenceSymbol level)
 resolveSymbol m headId =
     case resolveThing (symbolSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
             koreFailWithLocations
                 [headId]
                 ("Symbol '" ++ getIdForError headId ++  "' not defined.")
-        Just result -> Right result
+        Just result ->
+            return result
 
 {-|'resolveAlias' looks up a symbol id in an 'IndexedModule',
 also searching in the imported modules.
 -}
 resolveAlias
-    :: MetaOrObject level
+    :: (MetaOrObject level, MonadError (Error e) m)
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error e) (atts, KoreSentenceAlias level)
+    -> m (atts, KoreSentenceAlias level)
 resolveAlias m headId =
     case resolveThing (aliasSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
             koreFailWithLocations
                 [headId]
                 ("Alias '" ++ getIdForError headId ++  "' not defined.")
-        Just result -> Right result
+        Just result ->
+            return result
 
 
 {-|'resolveSort' looks up a sort id in an 'IndexedModule',
 also searching in the imported modules.
 -}
 resolveSort
-    :: MetaOrObject level
+    :: (MetaOrObject level, MonadError (Error e) m)
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error e) (atts, SortDescription level Domain.Builtin)
+    -> m (atts, SortDescription level Domain.Builtin)
 resolveSort m sortId =
     case resolveThing (sortSentencesMap (Proxy :: Proxy level)) m sortId of
         Nothing ->
             koreFailWithLocations
                 [sortId]
                 ("Sort '" ++ getIdForError sortId ++  "' not declared.")
-        Just sortDescription -> Right sortDescription
+        Just sortDescription ->
+            return sortDescription
 
 resolveHook
     :: KoreIndexedModule atts
