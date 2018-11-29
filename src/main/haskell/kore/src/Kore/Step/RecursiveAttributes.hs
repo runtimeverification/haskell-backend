@@ -14,15 +14,13 @@ module Kore.Step.RecursiveAttributes
     , isTotalPattern
     ) where
 
+import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
-import           Kore.Step.Pattern
-import           Kore.Step.StepperAttributes
+import Kore.AST.Pure
+import Kore.IndexedModule.MetadataTools
+       ( MetadataTools (..) )
+import Kore.Step.Pattern
+import Kore.Step.StepperAttributes
 
 recursivelyCheckHeadProperty
     :: forall level variable .
@@ -31,15 +29,24 @@ recursivelyCheckHeadProperty
     -> MetadataTools level StepperAttributes
     -> StepPattern level variable
     -> Bool
-recursivelyCheckHeadProperty prop tools = go
+recursivelyCheckHeadProperty prop MetadataTools { symAttributes } =
+    Recursive.fold checkProperty
   where
-    go (App_ patHead patChildren) = prop atts && all go patChildren
-        where atts = MetadataTools.symAttributes tools patHead
-    go (DV_ _ pat) = all go pat
-    go (Var_ _)           = True
-    go (StringLiteral_ _) = True
-    go (CharLiteral_ _)   = True
-    go _ = False
+    checkProperty (_ :< pat) =
+        case pat of
+            -- Trivial cases
+            VariablePattern _ -> True
+            StringLiteralPattern _ -> True
+            CharLiteralPattern _ -> True
+            -- Recursive cases
+            ApplicationPattern app
+              | prop attrs -> and app
+              | otherwise -> False
+              where
+                Application { applicationSymbolOrAlias } = app
+                attrs = symAttributes applicationSymbolOrAlias
+            DomainValuePattern dv -> and dv
+            _ -> False
 
 isFunctionalPattern, isFunctionPattern, isTotalPattern
     :: forall level variable .

@@ -409,8 +409,8 @@ This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
 data And level child = And
     { andSort   :: !(Sort level)
-    , andFirst  :: !child
-    , andSecond :: !child
+    , andFirst  :: child
+    , andSecond :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -449,7 +449,7 @@ This represents the σ(φ1, ..., φn) symbol patterns in Matching Logic.
 -}
 data Application level child = Application
     { applicationSymbolOrAlias :: !(SymbolOrAlias level)
-    , applicationChildren      :: ![child]
+    , applicationChildren      :: [child]
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -528,7 +528,7 @@ This represents the ⌈ceilPattern⌉ Matching Logic construct.
 data Ceil level child = Ceil
     { ceilOperandSort :: !(Sort level)
     , ceilResultSort  :: !(Sort level)
-    , ceilChild       :: !child
+    , ceilChild       :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -617,8 +617,8 @@ This represents the 'equalsFirst = equalsSecond' Matching Logic construct.
 data Equals level child = Equals
     { equalsOperandSort :: !(Sort level)
     , equalsResultSort  :: !(Sort level)
-    , equalsFirst       :: !child
-    , equalsSecond      :: !child
+    , equalsFirst       :: child
+    , equalsSecond      :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -660,7 +660,7 @@ This represents the '∃existsVariable(existsChild)' Matching Logic construct.
 data Exists level v child = Exists
     { existsSort     :: !(Sort level)
     , existsVariable :: !(v level)
-    , existsChild    :: !child
+    , existsChild    :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -704,7 +704,7 @@ This represents the '⌊floorPattern⌋' Matching Logic construct.
 data Floor level child = Floor
     { floorOperandSort :: !(Sort level)
     , floorResultSort  :: !(Sort level)
-    , floorChild       :: !child
+    , floorChild       :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -746,7 +746,7 @@ This represents the '∀forallVariable(forallChild)' Matching Logic construct.
 data Forall level v child = Forall
     { forallSort     :: !(Sort level)
     , forallVariable :: !(v level)
-    , forallChild    :: !child
+    , forallChild    :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -787,8 +787,8 @@ This represents the 'iffFirst ⭤ iffSecond' Matching Logic construct.
 -}
 data Iff level child = Iff
     { iffSort   :: !(Sort level)
-    , iffFirst  :: !child
-    , iffSecond :: !child
+    , iffFirst  :: child
+    , iffSecond :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -829,8 +829,8 @@ This represents the 'impliesFirst ⭢ impliesSecond' Matching Logic construct.
 -}
 data Implies level child = Implies
     { impliesSort   :: !(Sort level)
-    , impliesFirst  :: !child
-    , impliesSecond :: !child
+    , impliesFirst  :: child
+    , impliesSecond :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -877,8 +877,8 @@ two patterns have a non-empty intersection.
 data In level child = In
     { inOperandSort     :: !(Sort level)
     , inResultSort      :: !(Sort level)
-    , inContainedChild  :: !child
-    , inContainingChild :: !child
+    , inContainedChild  :: child
+    , inContainingChild :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -919,7 +919,7 @@ This represents the '∘ nextChild' Matching Logic construct.
 -}
 data Next level child = Next
     { nextSort  :: !(Sort level)
-    , nextChild :: !child
+    , nextChild :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -960,7 +960,7 @@ This represents the '¬ notChild' Matching Logic construct.
 -}
 data Not level child = Not
     { notSort  :: !(Sort level)
-    , notChild :: !child
+    , notChild :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -1001,8 +1001,8 @@ This represents the 'orFirst ∨ orSecond' Matching Logic construct.
 -}
 data Or level child = Or
     { orSort   :: !(Sort level)
-    , orFirst  :: !child
-    , orSecond :: !child
+    , orFirst  :: child
+    , orSecond :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
@@ -1044,8 +1044,8 @@ This represents the 'rewritesFirst ⇒ rewritesSecond' Matching Logic construct.
 
 data Rewrites level child = Rewrites
     { rewritesSort   :: !(Sort level)
-    , rewritesFirst  :: !child
-    , rewritesSecond :: !child
+    , rewritesFirst  :: child
+    , rewritesSecond :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
