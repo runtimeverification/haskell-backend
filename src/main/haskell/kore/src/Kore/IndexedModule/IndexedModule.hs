@@ -121,7 +121,7 @@ data IndexedModule sortParam pat dom var atts =
         -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
         -- identifiers
     }
-    deriving Generic
+    deriving (Functor, Generic)
 
 -- |Convenient notation for retrieving a sentence from a
 -- @(attributes,sentence)@ pair format.
