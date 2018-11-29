@@ -15,6 +15,8 @@ module Kore.Exec
     ) where
 
 import qualified Control.Arrow as Arrow
+import           Control.Monad.Trans.Except
+                 ( runExceptT )
 import qualified Data.Map.Merge.Strict as Map
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
@@ -34,18 +36,21 @@ import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
+import           Kore.OnePath.Verification
+                 ( Axiom (Axiom), Claim (Claim), defaultStrategy, verify )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  makeTruePredicate, unwrapPredicate )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), extractRewriteAxioms, extractRewriteClaims )
+                 RulePattern (RulePattern), extractRewriteAxioms,
+                 extractRewriteClaims )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
                  ( StepProof )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Predicated (..), toMLPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Registry
@@ -329,14 +334,33 @@ prove
 prove definitionModule specModule = do
     let
         tools = extractMetadataTools definitionModule
+        symbolOrAlias = symbolOrAliasSorts tools
     axiomsAndSimplifiers <-
         makeAxiomsAndSimplifiers definitionModule tools
     let
-        (_rewriteAxioms, _simplifier, _substitutionSimplifier) =
+        (rewriteAxioms, simplifier, substitutionSimplifier) =
             axiomsAndSimplifiers
-    _specAxioms <-
+    specAxioms <-
         simplifyRewriteAxioms tools
             (extractRewriteClaims Object specModule)
+    let
+        axioms = fmap Axiom rewriteAxioms
+        claims = fmap Claim specAxioms
 
-    return (Pattern.mkBottom)
+    result <- runExceptT
+        $ verify
+            tools
+            simplifier
+            substitutionSimplifier
+            (defaultStrategy claims axioms)
+            (fmap makeClaim claims)
+
+    return $
+        either
+            (give symbolOrAlias toMLPattern)
+            (const Pattern.mkBottom)
+            result
+
+  where
+    makeClaim claim = (claim, Unlimited)
 
