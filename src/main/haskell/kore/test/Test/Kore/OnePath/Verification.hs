@@ -69,6 +69,11 @@ test_onePathVerification = give symbolOrAliasSorts
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error b
+        -- Note that the check that we have reached the destination happens
+        -- at the beginning of each step. At the beginning of the first step
+        -- the pattern is 'a', so we didn't reach our destination yet, even if
+        -- the rewrite transforms 'a' into 'b'. We detect the success at the
+        -- beginning of the second step, which does not run here.
         actual <- runVerification
             metadataTools
             (Limit 1)
