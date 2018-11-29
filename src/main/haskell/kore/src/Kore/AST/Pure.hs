@@ -82,8 +82,7 @@ newtype PurePattern
     deriving (Foldable, Functor, Generic, Traversable)
 
 instance
-    ( Eq annotation
-    , Eq level
+    ( Eq level
     , Eq (variable level)
     , Eq1 domain, Functor domain
     ) =>
@@ -92,14 +91,13 @@ instance
     (==) = eqWorker
       where
         eqWorker
-            (Recursive.project -> annotation1 :< pat1)
-            (Recursive.project -> annotation2 :< pat2)
+            (Recursive.project -> _ :< pat1)
+            (Recursive.project -> _ :< pat2)
           =
-            annotation1 == annotation2 && liftEq eqWorker pat1 pat2
+            liftEq eqWorker pat1 pat2
 
 instance
-    ( Ord annotation
-    , Ord level
+    ( Ord level
     , Ord (variable level)
     , Ord1 domain, Functor domain
     ) =>
@@ -108,11 +106,10 @@ instance
     compare = compareWorker
       where
         compareWorker
-            (Recursive.project -> annotation1 :< pat1)
-            (Recursive.project -> annotation2 :< pat2)
+            (Recursive.project -> _ :< pat1)
+            (Recursive.project -> _ :< pat2)
           =
-            compare annotation1 annotation2
-            <> liftCompare compareWorker pat1 pat2
+            liftCompare compareWorker pat1 pat2
 
 deriving instance
     ( Show annotation
@@ -124,15 +121,13 @@ deriving instance
 
 instance
     ( Functor domain
-    , Hashable annotation
     , Hashable (variable level)
     , Hashable (domain child)
     , child ~ PurePattern level domain variable annotation
     ) =>
     Hashable (PurePattern level domain variable annotation)
   where
-    hashWithSalt salt (Recursive.project -> annotation :< pat) =
-        salt `hashWithSalt` annotation `hashWithSalt` pat
+    hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
 
 instance
     ( Functor domain
