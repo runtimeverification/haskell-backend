@@ -117,7 +117,7 @@ instance
 deriving instance
     ( Show annotation
     , Show (variable level)
-    , Show (domain child)
+    , Show1 domain
     , child ~ Cofree (Pattern level domain variable) annotation
     ) =>
     Show (PurePattern level domain variable annotation)
