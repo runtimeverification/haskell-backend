@@ -23,8 +23,9 @@ Please refer to Section 9 (The Kore Language) of the
 {-# LANGUAGE TemplateHaskell #-}
 
 module Kore.AST.Kore
-    ( CommonKorePattern
-    , KorePattern (..)
+    ( KorePattern (..)
+    , CommonKorePattern
+    , VerifiedKorePattern
     , asKorePattern
     , asCommonKorePattern
     , UnifiedSortVariable
@@ -36,6 +37,7 @@ module Kore.AST.Kore
     , Base, CofreeF (..)
     , module Kore.AST.Common
     , module Kore.AST.MetaOrObject
+    , module Kore.Annotation.Valid
     ) where
 
 import           Control.Comonad
@@ -58,6 +60,7 @@ import           Data.Hashable
 import           GHC.Generics
                  ( Generic )
 
+import           Kore.Annotation.Valid
 import           Kore.AST.Common hiding
                  ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
                  mapVariables, traverseVariables )
@@ -328,6 +331,9 @@ instance UnifiedPatternInterface UnifiedPattern where
 -- |'CommonKorePattern' is the instantiation of 'KorePattern' with common
 -- 'Variable's.
 type CommonKorePattern = KorePattern Domain.Builtin Variable ()
+
+-- | A 'CommonKorePattern' that has passed verification.
+type VerifiedKorePattern = KorePattern Domain.Builtin Variable (Unified Valid)
 
 type UnifiedSortVariable = Unified SortVariable
 type UnifiedSort = Unified Sort

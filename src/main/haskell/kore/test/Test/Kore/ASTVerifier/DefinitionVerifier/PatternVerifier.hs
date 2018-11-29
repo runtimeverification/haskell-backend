@@ -187,7 +187,6 @@ test_patternVerifier =
             "Expecting sort 'anotherSort2{}' but got 'ObjectSort{}'.")
         (ErrorStack
             [ "\\exists 'ObjectVariable' (<test data>)"
-            , "variable 'ObjectVariable' (<test data>)"
             , "(<test data>, <test data>)"
             ]
         )
@@ -206,7 +205,6 @@ test_patternVerifier =
             "Expecting sort '#Variable{}' but got '#CharList{}'.")
         (ErrorStack
             [ "\\exists '#MetaVariable' (<test data>)"
-            , "variable '#MetaVariable' (<test data>)"
             , "(<test data>, <test data>)"
             ]
         )
@@ -438,9 +436,7 @@ test_patternVerifier =
         (ExpectedErrorMessage
             "Expecting sort '#Char{}' but got '#CharList{}'.")
         (ErrorStack
-            [ "<string> (<unknown location>)"
-            , "(<test data>, <implicitly defined entity>)"
-            ]
+            [ "(<test data>, <implicitly defined entity>)" ]
         )
         (StringLiteralPattern (StringLiteral "MetaString"))
         (NamePrefix "#dummy")

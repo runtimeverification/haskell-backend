@@ -170,9 +170,9 @@ newtype PatternVerifier =
         See also: 'verifyDomainValue'
       -}
       runPatternVerifier
-          :: forall m. MonadError (Error VerifyError) m
+          :: forall m child. MonadError (Error VerifyError) m
           => (Id Object -> m HookedSortDescription)
-          -> StepPatternHead Object Variable CommonKorePattern
+          -> StepPatternHead Object Variable child
           -> m ()
     }
 
@@ -196,8 +196,8 @@ instance Monoid PatternVerifier where
     mappend = (<>)
 
 type DomainValueVerifier =
-    forall m. MonadError (Error (VerifyError)) m =>
-    DomainValue Object Domain.Builtin CommonKorePattern -> m ()
+    forall m child. MonadError (Error (VerifyError)) m =>
+    DomainValue Object Domain.Builtin child -> m ()
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
@@ -210,8 +210,8 @@ data Verifiers =
 
 {- | Look up and apply a builtin sort declaration verifier.
 
-  The 'Hook' name should refer to a builtin sort; if it is unset or the name is
-  not recognized, verification succeeds.
+The 'Hook' name should refer to a builtin sort; if it is unset or the name is
+not recognized, verification succeeds.
 
  -}
 sortDeclVerifier :: Verifiers -> Hook -> SortDeclVerifier
@@ -236,8 +236,8 @@ sortDeclVerifier Verifiers { sortDeclVerifiers } hook =
 
 {- | Look up and apply a builtin symbol verifier.
 
-  The 'Hook' name should refer to a builtin symbol; if it is unset or the name is
-  not recognized, verification succeeds.
+The 'Hook' name should refer to a builtin symbol; if it is unset or the name is
+not recognized, verification succeeds.
 
  -}
 symbolVerifier :: Verifiers -> Hook -> SymbolVerifier
@@ -371,10 +371,10 @@ verifyDomainValue builtinSort validate =
     PatternVerifier { runPatternVerifier }
   where
     runPatternVerifier
-        :: forall m. MonadError (Error VerifyError) m
+        :: forall m child. MonadError (Error VerifyError) m
         => (Id Object -> m HookedSortDescription)
         -- ^ Function to lookup sorts by identifier
-        -> StepPatternHead Object Variable CommonKorePattern
+        -> StepPatternHead Object Variable child
         -- ^ Pattern to verify
         -> m ()
     runPatternVerifier findSort =

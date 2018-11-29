@@ -183,7 +183,7 @@ mainPatternVerify indexedModule patt =
     do
       verifyResult <-
         clockSomething "Verifying the pattern"
-            (runPatternVerifier context $ verifyPattern Nothing patt)
+            (runPatternVerifier context $ verifyStandalonePattern Nothing patt)
       case verifyResult of
         Left err1 -> error (printError err1)
         Right _   -> return ()

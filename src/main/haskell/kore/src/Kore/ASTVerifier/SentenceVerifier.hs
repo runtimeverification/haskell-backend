@@ -350,12 +350,13 @@ verifyAliasSentence
                     , declaredVariables = emptyDeclaredVariables
                     }
         runPatternVerifier context $ do
-            verifyAliasLeftPattern
+            _ <- verifyAliasLeftPattern
                 (Just $ asUnified leftPatternSort)
                 (asCommonKorePattern $ sentenceAliasLeftPattern sentence)
-            verifyPattern
+            _ <- verifyPattern
                 (Just $ asUnified rightPatternSort)
                 (asCommonKorePattern $ sentenceAliasRightPattern sentence)
+            verifySuccess
   where
     findSort         = findIndexedSort indexedModule
     sortParams       = (aliasParams . sentenceAliasAlias) sentence
@@ -384,8 +385,9 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables
                     }
-        runPatternVerifier context $ do
+        _ <- runPatternVerifier context $ do
             verifyPattern Nothing (sentenceAxiomPattern axiom)
+        verifySuccess
 
 verifySortSentence
     :: KoreSentenceSort Object

@@ -34,7 +34,6 @@ test_metaObject =
                 [ "module 'test'"
                 , "axiom declaration"
                 , "\\not (<test data>)"
-                , "\\top (<test data>)"
                 , "(<test data>, <test data>)"
                 ]
             , errorError   =
@@ -79,7 +78,6 @@ test_metaObject =
                 [ "module 'test'"
                 , "axiom declaration"
                 , "\\not (<test data>)"
-                , "\\top (<test data>)"
                 , "(<test data>, <test data>)"
                 ]
             , errorError   =
