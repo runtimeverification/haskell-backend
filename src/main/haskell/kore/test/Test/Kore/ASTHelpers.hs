@@ -5,8 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.AST.Kore
 import Kore.AST.Sentence
 import Kore.ASTHelpers
 import Kore.Error

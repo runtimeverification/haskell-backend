@@ -14,7 +14,7 @@ import Data.Hashable
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.Common
+import Kore.Sort
        ( Sort )
 
 {- | @Valid@ is a pattern annotation of facts collected during verification.

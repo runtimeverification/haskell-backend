@@ -10,9 +10,7 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
-import           Kore.AST.Common
-                 ( Next (..), Sort )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( getSort, mkAnd, mkEquals, mkNext, mkOr )
 import           Kore.IndexedModule.MetadataTools

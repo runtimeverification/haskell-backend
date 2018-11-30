@@ -13,6 +13,7 @@ import Control.Exception
 import Control.Monad.Counter
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
+import Kore.Sort
 import Kore.Variables.Fresh
 
 import Test.Kore
@@ -135,5 +136,3 @@ test_freshVariable =
     action n = do
         _ <- increment
         return n
-
-

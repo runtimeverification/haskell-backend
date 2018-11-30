@@ -23,8 +23,7 @@ module Kore.Proof.ConstructorAxioms
 
 import Data.Reflection
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.AST.Pure
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools

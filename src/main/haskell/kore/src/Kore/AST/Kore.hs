@@ -36,8 +36,10 @@ module Kore.AST.Kore
     -- * Re-exports
     , Base, CofreeF (..)
     , module Kore.AST.Common
+    , module Kore.AST.Identifier
     , module Kore.AST.MetaOrObject
     , module Kore.Annotation.Valid
+    , module Kore.Sort
     ) where
 
 import           Control.Comonad
@@ -64,8 +66,10 @@ import           Kore.Annotation.Valid
 import           Kore.AST.Common hiding
                  ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
                  mapVariables, traverseVariables )
+import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Sort
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
 allow using toghether both 'Meta' and 'Object' patterns.

@@ -21,9 +21,7 @@ import           Data.Proxy
 import           Data.These
                  ( These (This) )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-                 ( Object )
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns

@@ -11,8 +11,7 @@ Portability : POSIX
 module Kore.Building.Implicit where
 
 import Kore.AST.Common
-       ( Application (..), AstLocation (..), Id (..), Pattern (..),
-       SymbolOrAlias (..) )
+       ( Application (..), Pattern (..), SymbolOrAlias (..) )
 import Kore.AST.MetaOrObject
        ( Meta )
 import Kore.Building.Patterns

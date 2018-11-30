@@ -9,10 +9,7 @@ import qualified Data.Map as Map
 import           Data.Reflection
                  ( Given, give )
 
-import           Kore.AST.Common
-                 ( AstLocation (..), Exists (..), Id (..), Sort (..),
-                 SortActual (..), Variable )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkEquals, mkExists, mkTop, mkVar )
 import           Kore.IndexedModule.MetadataTools

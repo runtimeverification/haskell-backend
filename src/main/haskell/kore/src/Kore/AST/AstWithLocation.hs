@@ -16,6 +16,7 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.Sentence
+import Kore.Sort
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.

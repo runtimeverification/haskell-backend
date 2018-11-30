@@ -40,9 +40,7 @@ import           Data.Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-                 ( Meta, Object )
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain

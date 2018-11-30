@@ -7,19 +7,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Common
-                 ( Sort (..), Top (..) )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkTop )
 import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Top_ )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Top
                  ( simplify )

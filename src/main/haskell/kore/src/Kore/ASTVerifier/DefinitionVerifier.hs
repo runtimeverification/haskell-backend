@@ -26,7 +26,7 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
+import           Kore.AST.Kore
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier

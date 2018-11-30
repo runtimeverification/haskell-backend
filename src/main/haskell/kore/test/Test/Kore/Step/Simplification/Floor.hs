@@ -10,10 +10,7 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( Given, give )
 
-import           Kore.AST.Common
-                 ( AstLocation (..), Floor (..), Id (..), Sort (..),
-                 SymbolOrAlias (..), Variable (..) )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors

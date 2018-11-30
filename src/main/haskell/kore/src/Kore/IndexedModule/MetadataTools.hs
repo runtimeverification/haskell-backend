@@ -31,6 +31,7 @@ import Kore.ASTHelpers
 import Kore.Attribute.Subsort
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
+import Kore.Sort
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.

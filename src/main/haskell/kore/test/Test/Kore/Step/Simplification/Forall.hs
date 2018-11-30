@@ -10,10 +10,7 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( Given, give )
 
-import           Kore.AST.Common
-                 ( AstLocation (..), Forall (..), Id (..), Sort (..),
-                 SortActual (..), Variable )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkApp, mkCeil, mkEquals, mkForall, mkVar )
 import           Kore.IndexedModule.MetadataTools

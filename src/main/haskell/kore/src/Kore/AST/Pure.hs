@@ -27,7 +27,9 @@ module Kore.AST.Pure
     -- * Re-exports
     , Base, CofreeF (..)
     , module Kore.AST.Common
+    , module Kore.AST.Identifier
     , module Kore.AST.MetaOrObject
+    , module Kore.Sort
     ) where
 
 import           Control.Comonad
@@ -58,7 +60,9 @@ import           Kore.AST.Common hiding
                  ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
                  mapVariables, traverseVariables )
 import qualified Kore.AST.Common as Head
+import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
+import           Kore.Sort
 
 {- | The abstract syntax of Kore at a fixed level @level@.
 

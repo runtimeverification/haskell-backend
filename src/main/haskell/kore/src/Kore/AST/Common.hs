@@ -25,130 +25,27 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Kore.AST.Common where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Deriving
-                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
-import           Data.Function
-                 ( on )
-import           Data.Functor.Classes
-import           Data.Functor.Const
-                 ( Const )
-import           Data.Functor.Identity
-                 ( Identity (..) )
-import           Data.Hashable
-import           Data.Proxy
-import           Data.String
-                 ( IsString (..) )
-import           Data.Text
-                 ( Text )
-import qualified Data.Text as Text
-import           Data.Void
-                 ( Void )
-import           GHC.Generics
-                 ( Generic )
+import Control.DeepSeq
+       ( NFData (..) )
+import Data.Deriving
+       ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
+import Data.Function
+       ( on )
+import Data.Functor.Classes
+import Data.Functor.Const
+       ( Const )
+import Data.Functor.Identity
+       ( Identity (..) )
+import Data.Hashable
+import Data.Proxy
+import Data.Void
+       ( Void )
+import GHC.Generics
+       ( Generic )
 
+import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
-
-{-| 'FileLocation' represents a position in a source file.
--}
-data FileLocation = FileLocation
-    { fileName :: FilePath
-    , line     :: Int
-    , column   :: Int
-    }
-    deriving (Eq, Show, Generic)
-
-instance Hashable FileLocation
-instance NFData FileLocation
-
-{-| 'AstLocation' represents the origin of an AST node.
-
-Its representation may change, e.g. the `AstLocationFile` branch could become a
-range instead of a single character position. You should treat the entire
-AstLocation as much as possible as an opaque token, i.e. hopefully only
-the kore parsing code and pretty printing code below would access
-the AstLocationFile branch.
--}
-data AstLocation
-    = AstLocationNone
-    | AstLocationImplicit
-    | AstLocationGeneratedVariable
-    | AstLocationTest
-    | AstLocationFile FileLocation
-    | AstLocationLifted AstLocation
-    | AstLocationUnknown
-    -- ^ This should not be used and should be eliminated in further releases
-    deriving (Eq, Show, Generic)
-
-instance Hashable AstLocation
-instance NFData AstLocation
-
-{-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
-(sort of) user friendly.
--}
-prettyPrintAstLocation :: AstLocation -> String
-prettyPrintAstLocation AstLocationNone = "<unknown location>"
-prettyPrintAstLocation AstLocationImplicit = "<implicitly defined entity>"
-prettyPrintAstLocation AstLocationGeneratedVariable =
-    "<variable generated internally>"
-prettyPrintAstLocation AstLocationTest = "<test data>"
-prettyPrintAstLocation
-    (AstLocationFile FileLocation
-        { fileName = name
-        , line = line'
-        , column = column'
-        }
-    )
-    = name ++ " " ++ show line' ++ ":" ++ show column'
-prettyPrintAstLocation (AstLocationLifted location) =
-    "<lifted(" ++ prettyPrintAstLocation location ++ ")>"
-prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
-
-{-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
-syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-We may chage the Id's representation in the future so one should treat it as
-an opaque entity as much as possible.
-
-Note that Id comparison ignores the AstLocation.
--}
-data Id level = Id
-    { getId      :: !Text
-    , idLocation :: !AstLocation
-    }
-    deriving (Show, Generic)
-
-instance Ord (Id level) where
-    compare first@(Id _ _) second@(Id _ _) =
-        compare (getId first) (getId second)
-
-{-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
-instance Eq (Id level) where
-    first == second = compare first second == EQ
-
-instance Hashable (Id level)
-
-instance NFData (Id level)
-
-instance IsString (Id level) where
-    fromString = noLocationId . fromString
-
-{-| 'noLocationId' creates an Id without a source location. While there are some
-narrow cases where this makes sense, you should really consider other options
-(including adding a new entry to the `AstLocation` data definition).
--}
-noLocationId :: Text -> Id level
-noLocationId value = Id
-    { getId = value
-    , idLocation = AstLocationNone
-    }
-
-getIdForError :: Id level -> String
-getIdForError = Text.unpack . getId
+import Kore.Sort
 
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
@@ -186,113 +83,6 @@ data SymbolOrAlias level = SymbolOrAlias
 instance Hashable (SymbolOrAlias level)
 
 instance NFData (SymbolOrAlias level)
-
-{-|'SortVariable' corresponds to the @object-sort-variable@ and
-@meta-sort-variable@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-newtype SortVariable level = SortVariable
-    { getSortVariable  :: Id level }
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable (SortVariable level)
-
-instance NFData (SortVariable level)
-
-{-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
-@object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-data SortActual level = SortActual
-    { sortActualName  :: !(Id level)
-    , sortActualSorts :: ![Sort level]
-    }
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable (SortActual level)
-
-instance NFData (SortActual level)
-
-{-|'Sort' corresponds to the @object-sort@ and
-@meta-sort@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-data Sort level
-    = SortVariableSort !(SortVariable level)
-    | SortActualSort !(SortActual level)
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable (Sort level)
-
-instance NFData (Sort level)
-
-{-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
-from the Semantics of K, Section 9.1.2 (Sorts).
-
-Ths is not represented directly in the AST, we're using the string
-representation instead.
--}
-data MetaBasicSortType
-    = CharSort
-    | PatternSort
-    | SortSort
-    | SymbolSort
-    | VariableSort
-    | UserSort String -- arbitrary MetaSort
-    deriving(Generic)
-
-instance Hashable MetaBasicSortType
-
-data MetaSortType
-    = MetaBasicSortType MetaBasicSortType
-    | MetaListSortType MetaBasicSortType
-    | StringSort
-    deriving(Generic)
-
-instance Hashable MetaSortType
-
-metaBasicSortsList :: [MetaBasicSortType]
-metaBasicSortsList =
-    [ CharSort
-    , PatternSort
-    , SortSort
-    , SymbolSort
-    , VariableSort
-    ]
-
-metaSortsList :: [MetaSortType]
-metaSortsList =
-    map MetaBasicSortType metaBasicSortsList
-    ++ map MetaListSortType metaBasicSortsList
-
-metaSortsListWithString :: [MetaSortType]
-metaSortsListWithString = StringSort : metaSortsList
-
-metaBasicSortTypeString :: MetaBasicSortType -> String
-metaBasicSortTypeString CharSort        = "Char"
-metaBasicSortTypeString PatternSort     = "Pattern"
-metaBasicSortTypeString SortSort        = "Sort"
-metaBasicSortTypeString SymbolSort      = "Symbol"
-metaBasicSortTypeString VariableSort    = "Variable"
-metaBasicSortTypeString (UserSort name) =  name
-
-metaSortTypeString :: MetaSortType -> String
-metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
-metaSortTypeString (MetaListSortType s)  =
-    metaBasicSortTypeString s ++ "List"
-metaSortTypeString StringSort            = "String"
-
-instance Show MetaSortType where
-    show sortType = '#' : metaSortTypeString sortType
 
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,

@@ -50,8 +50,7 @@ import qualified Data.Sequence as Seq
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Hook
                  ( Hook )

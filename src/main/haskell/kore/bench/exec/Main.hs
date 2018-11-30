@@ -30,7 +30,7 @@ import           Kore.Step.Step
                  ( anyRewrite )
 import           Kore.Step.StepperAttributes
 
-import           Kore.AST.Common
+import           Kore.AST.Identifier
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule )
 import qualified SMT

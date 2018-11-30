@@ -46,6 +46,7 @@ import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import           Kore.AST.Common
+import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
                  ( IsMetaOrObject (..), MetaOrObject (..), toProxy )
 import           Kore.AST.Sentence
@@ -53,6 +54,7 @@ import qualified Kore.Parser.CharDict as CharDict
 import           Kore.Parser.CharSet as CharSet
 import           Kore.Parser.CString
 import           Kore.Parser.ParserUtils as ParserUtils
+import           Kore.Sort
 
 sourcePosToFileLocation :: SourcePos -> FileLocation
 sourcePosToFileLocation

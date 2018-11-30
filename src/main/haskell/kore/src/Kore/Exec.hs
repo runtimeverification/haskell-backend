@@ -33,6 +33,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Meta, Object (..), asUnified )
 
+import           Kore.AST.Identifier
 import qualified Kore.Builtin as Builtin
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
@@ -362,4 +363,3 @@ prove limit definitionModule specModule = do
 
   where
     makeClaim claim = (claim, limit)
-

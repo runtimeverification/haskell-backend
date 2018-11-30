@@ -14,10 +14,10 @@ import           Data.Proxy
 import qualified Data.Text as Text
 
 import Kore.AST.Builders
-import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Implicit.ImplicitVarsInternal
 import Kore.MetaML.AST
+import Kore.Sort
 
 parameterizedEqualsAxiom
     :: [SortVariable Meta]

@@ -21,6 +21,7 @@ module Kore.Unification.Error
 import qualified Data.Set as Set
 
 import Kore.AST.Common
+import Kore.Sort
 
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError level variable

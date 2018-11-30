@@ -22,7 +22,8 @@ import           Data.These
                  ( These )
 
 import Kore.AST.Common
-       ( Application, Id, SortedVariable, Variable )
+       ( Application, SortedVariable, Variable )
+import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )

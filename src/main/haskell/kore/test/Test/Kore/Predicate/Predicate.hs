@@ -11,8 +11,7 @@ import           Data.Reflection
                  ( Given, give )
 import qualified Data.Set as Set
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors

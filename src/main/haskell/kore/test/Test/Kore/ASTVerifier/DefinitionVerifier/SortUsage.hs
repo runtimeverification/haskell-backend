@@ -12,8 +12,7 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Text as Text
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.AST.Kore
 import Kore.AST.Sentence
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
