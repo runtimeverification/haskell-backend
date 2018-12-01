@@ -33,30 +33,6 @@ test_unparse =
             )
             "sort x{} []"
         , unparseTest
-            ((UnifiedObjectSentence . SentenceAliasSentence)
-                SentenceAlias
-                    { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
-                        , aliasParams = []
-                        }
-                    , sentenceAliasSorts = []
-                    , sentenceAliasResultSort = SortVariableSort (SortVariable
-                        { getSortVariable = Id {getId = "z", idLocation = AstLocationTest} :: Id Object})
-                    , sentenceAliasLeftPattern = TopPattern (Top
-                        { topSort = SortActualSort (SortActual
-                            { sortActualName = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
-                            , sortActualSorts = []
-                            })})
-                    , sentenceAliasRightPattern = TopPattern (Top
-                        { topSort = SortVariableSort (SortVariable
-                            { getSortVariable = Id {getId = "q", idLocation = AstLocationTest} :: Id Object})
-                        })
-                    , sentenceAliasAttributes = Attributes {getAttributes = []}
-                    }
-                :: KoreSentence
-            )
-            "alias i{}() : z where \\top{i{}}() := \\top{q}() []"
-        , unparseTest
             Attributes
                 { getAttributes =
                     [ asCommonKorePattern (TopPattern Top

@@ -452,87 +452,6 @@ test_lift =
                 }
             )
         )
-    , testCase "Lift Meta Alias Declaration"
-        (prettyAssertEqual ""
-            [ SentenceAliasSentence SentenceAlias
-                { sentenceAliasAlias = Alias
-                    { aliasConstructor = testId "#alias"
-                    , aliasParams = []
-                    }
-                , sentenceAliasSorts = []
-                , sentenceAliasLeftPattern  = topPatMeta
-                , sentenceAliasRightPattern = topPatMeta
-                , sentenceAliasResultSort =
-                    SortVariableSort (SortVariable (testId "#a"))
-                , sentenceAliasAttributes = Attributes []
-                }
-            ]
-            (liftSentence
-                (asSentence
-                    (SentenceAlias
-                        { sentenceAliasAlias = Alias
-                            { aliasConstructor = testId "#alias"
-                            , aliasParams = []
-                            }
-                        , sentenceAliasSorts = []
-                        , sentenceAliasResultSort =
-                                SortVariableSort
-                                    (SortVariable (testId "#a"))
-                        , sentenceAliasLeftPattern  = topPatMeta
-                        , sentenceAliasRightPattern = topPatMeta
-                        , sentenceAliasAttributes =
-                            Attributes []
-                        }
-                    :: KoreSentenceAlias Meta)
-                )
-            )
-        )
-    , testCase "Lift Object Alias Declaration"
-        (prettyAssertEqual ""
-            [ SentenceSymbolSentence
-                (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
-            , SentenceAxiomSentence SentenceAxiom
-                { sentenceAxiomParameters =
-                    [ sortParameter Proxy "#s" AstLocationTest ]
-                , sentenceAxiomPattern =
-                    Equals_
-                        (SortActualSort SortActual
-                            { sortActualName = testId "#Pattern" :: Id Meta
-                            , sortActualSorts = []
-                            }
-                        )
-                        (SortVariableSort
-                            $ sortParameter Proxy "#s" AstLocationTest)
-                        (App_
-                            (groundHead "#\\top" AstLocationImplicit)
-                            [ App_ (groundHead "#`s3" AstLocationImplicit) [] ]
-                        )
-                        (App_
-                            (groundHead "#\\top" AstLocationImplicit)
-                            [ App_ (groundHead "#`s3" AstLocationImplicit) [] ]
-                        )
-                , sentenceAxiomAttributes = Attributes []
-                }
-            ]
-            (liftSentence
-                (asSentence
-                    (SentenceAlias
-                        { sentenceAliasAlias = Alias
-                            { aliasConstructor = testId "alias"
-                            , aliasParams = []
-                            }
-                        , sentenceAliasSorts = []
-                        , sentenceAliasResultSort =
-                                SortVariableSort (SortVariable (testId "a"))
-                        , sentenceAliasLeftPattern = topPatObj
-                        , sentenceAliasRightPattern = topPatObj
-                        , sentenceAliasAttributes =
-                            Attributes []
-                        }
-                    :: KoreSentenceAlias Object)
-                )
-            )
-        )
     , testCase "Lift Object Symbol Declaration"
         (prettyAssertEqual ""
             [ SentenceSymbolSentence
@@ -902,7 +821,7 @@ unifiedStringPattern = asCommonKorePattern stringPattern
 metaStringPattern :: CommonMetaPattern
 metaStringPattern = asCommonMetaPattern stringPattern
 
-sentenceImport :: SentenceImport pat dom var
+sentenceImport :: SentenceImport pat
 sentenceImport =
     SentenceImport
         { sentenceImportModuleName = ModuleName "MODULE"
