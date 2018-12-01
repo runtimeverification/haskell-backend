@@ -210,20 +210,20 @@ data ExecutionGraph config = ExecutionGraph
     }
     deriving(Eq, Show)
 
--- | A temporary data structure used to construct the @ExecutionGraph@. 
+-- | A temporary data structure used to construct the 'ExecutionGraph'.
 -- Well, it was intended to be temporary, but for the purpose of making
--- @pickLongest@ fast it turns out to be useful to keep it around. 
+-- 'pickLongest' fast it turns out to be useful to keep it around.
 data ConfigNode config = ConfigNode
     { config :: config
     , timestep :: Int
-    -- ^`timestep` represents the time at which a configuration was generated
+    -- ^'timestep' represents the time at which a configuration was generated
     -- during execution. Identical configurations occuring at different times
-    -- are considered different for the purposes of this algorithm. 
+    -- are considered different for the purposes of this algorithm.
     , nodeId :: Int
-    -- ^ `nodeId` is the hash of `config` and `timestep`.
+    -- ^ 'nodeId' is the hash of 'config' and 'timestep'.
     , parents :: [Int]
-    -- ^ a list of Ids of predecessor configurations in the execution graph. 
-    } 
+    -- ^ a list of Ids of predecessor configurations in the execution graph.
+    }
     deriving (Eq, Show, Functor)
 
 constructExecutionHistory
@@ -271,17 +271,17 @@ constructExecutionHistory transit instrs0 config0 =
     mergeDuplicates0 _ = error "The impossible happened"
 
 {- | Execute a 'Strategy'.
- 
+
  The primitive strategy rule is used to execute the 'apply' strategy. The
  primitive rule is considered successful if it returns any children and
  considered failed if it returns no children.
- 
- The strategies are applied in sequence. An edge `a -> b` exists between
- two configurations `a, b` if `b` follows by applying one step of the strategy to `a`
- Nondeterministic strategies result in nodes with an outdegree > 1. 
+
+ The strategies are applied in sequence. An edge @a -> b@ exists between
+ two configurations @a, b@ if @b@ follows by applying one step of the strategy to @a@
+ Nondeterministic strategies result in nodes with an outdegree > 1.
  If two different branches converge to the same configuration at the same time step,
- they will be recombined, yielding a node with indegree > 1. 
- 
+ they will be recombined, yielding a node with indegree > 1.
+
 See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
   -}
 
@@ -294,14 +294,14 @@ constructExecutionGraph
 constructExecutionGraph transit instrs0 config0 =
     toGraph <$> constructExecutionHistory transit instrs0 config0
 
--- | @toGraph@ is a helper function for @constructExecutionGraph@.
--- It takes a list of timesteps `history`
--- (where `history !! 3` represents all configurations at time t = 3)
+-- | @toGraph@ is a helper function for 'constructExecutionGraph'.
+-- It takes a list of timesteps @history@
+-- (where @history !! 3@ represents all configurations at time t = 3)
 -- and converts it to a directed graph, in which two configurations
--- `a` and `b` have an edge `a -> b` if `b` follows from
--- `a` in one step in whatever execution strategy was used.
--- Note this is NOT the same as `b` following from `a` with
--- the application of exactly one axiom. 
+-- @a@ and @b@ have an edge @a -> b@ if @b@ follows from
+-- @a@ in one step in whatever execution strategy was used.
+-- Note this is NOT the same as @b@ following from @a@ with
+-- the application of exactly one axiom.
 toGraph :: [[ConfigNode config]] -> ExecutionGraph config
 toGraph history = ExecutionGraph
     (fst $ head vertices)

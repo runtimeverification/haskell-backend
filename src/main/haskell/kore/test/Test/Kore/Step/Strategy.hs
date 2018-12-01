@@ -22,7 +22,7 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Data.Maybe
 import           Kore.Step.Strategy
-                 ( ExecutionGraph(..), Strategy )
+                 ( ExecutionGraph (..), Strategy )
 import qualified Kore.Step.Strategy as Strategy
 
 {-| Convert an ExecutionGraph to a Tree, for the sake

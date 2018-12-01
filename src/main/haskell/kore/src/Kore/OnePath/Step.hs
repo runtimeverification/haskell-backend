@@ -21,8 +21,10 @@ import Control.Monad.Except
        ( runExceptT )
 import Data.Foldable
        ( toList )
+import Data.Hashable
 import Data.Semigroup
        ( (<>) )
+import GHC.Generics
 
 import           Kore.AST.Common
                  ( Variable )
@@ -51,6 +53,7 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
+
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -110,7 +113,9 @@ data StrategyPattern patt
     -- ^ special representation for a bottom rewriting/simplification result.
     -- This is needed when bottom results are expected and we want to
     -- differentiate between them and stuck results.
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord, Generic)
+
+instance Hashable patt => Hashable (StrategyPattern patt)
 
 -- | Apply the rewrites in order. The first one is applied on the start pattern,
 -- then each subsequent one is applied on the remainder of the previous one.

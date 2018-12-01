@@ -10,14 +10,12 @@ import Test.Tasty.HUnit
 import           Data.Default
                  ( def )
 import           Data.List
-                 ( nub )
+                 ( nub, sort )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
 import           Data.Reflection
                  ( give )
-import           Data.Tree
-                 ( Tree )
 import           Numeric.Natural
                  ( Natural )
 
@@ -49,7 +47,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
 import           Kore.Step.Strategy
-                 ( Strategy, pickFinal, runStrategy )
+                 ( ExecutionGraph, Strategy, pickFinal, runStrategy )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -100,7 +98,7 @@ test_onePathStrategy = give symbolOrAliasSorts
         -- Start pattern: a
         -- Expected: c, since coinductive axioms are applied only at the second
         -- step
-        [ _actual1, _actual2 ] <- runOnePathSteps
+        [_actual1, _actual2 ] <- runOnePathSteps
             metadataTools
             (Limit 1)
             (ExpandedPattern.fromPurePattern Mock.a)
@@ -108,11 +106,16 @@ test_onePathStrategy = give symbolOrAliasSorts
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            Bottom
-            _actual1
-        assertEqualWithExplanation ""
-            (RewritePattern $ ExpandedPattern.fromPurePattern Mock.c)
-            _actual2
+            (sort
+                [ Bottom
+                , RewritePattern $ ExpandedPattern.fromPurePattern Mock.c
+                ]
+            )
+            (sort
+                [ _actual1
+                , _actual2
+                ]
+            )
     , testCase "Axiom priority, second step" $ do
         -- Removal axiom: b => bottom
         -- Coinductive axiom: b => c
@@ -149,11 +152,16 @@ test_onePathStrategy = give symbolOrAliasSorts
             , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            Bottom
-            _actual1
-        assertEqualWithExplanation ""
-            (RewritePattern $ ExpandedPattern.fromPurePattern Mock.c)
-            _actual2
+            (sort
+                [ Bottom
+                , RewritePattern $ ExpandedPattern.fromPurePattern Mock.c
+                ]
+            )
+            (sort
+                [ _actual1
+                , _actual2
+                ]
+            )
 
         -- Removal axiom: e => bottom
         -- Coinductive axiom: e => c
@@ -171,11 +179,16 @@ test_onePathStrategy = give symbolOrAliasSorts
             , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            Bottom
-            _actual1
-        assertEqualWithExplanation ""
-            (RewritePattern $ ExpandedPattern.fromPurePattern Mock.d)
-            _actual2
+            (sort
+                [ Bottom
+                , RewritePattern $ ExpandedPattern.fromPurePattern Mock.d
+                ]
+            )
+            (sort
+                [ _actual1
+                , _actual2
+                ]
+            )
     , testCase "Differentiated axioms" $ do
         -- Removal axiom: constr11(a) => f(a)
         -- Coinductive axiom: constr11(a) => g(a)
@@ -213,66 +226,64 @@ test_onePathStrategy = give symbolOrAliasSorts
                     (Mock.functionalConstr11 (mkVar Mock.y))
                 ]
         assertEqualWithExplanation ""
-            Bottom
-            _actual1
-        assertEqualWithExplanation ""
-            (RewritePattern Predicated
-                { term = Mock.f Mock.a
-                , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
-                }
-            )
-            _actual2
-        assertEqualWithExplanation ""
-            (RewritePattern Predicated
-                { term = Mock.f Mock.b
-                , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
-                }
-            )
-            _actual3
-        assertEqualWithExplanation ""
-            (RewritePattern Predicated
-                { term = Mock.f Mock.c
-                , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
-                }
-            )
-            _actual4
-        assertEqualWithExplanation ""
-            (RewritePattern Predicated
-                { term = Mock.h (mkVar Mock.x)
-                , predicate =  -- TODO(virgil): Better and simplification.
-                    makeAndPredicate
-                        (makeAndPredicate
+            (sort
+                [ Bottom
+                , RewritePattern Predicated
+                    { term = Mock.f Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    }
+                , RewritePattern Predicated
+                    { term = Mock.f Mock.b
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    }
+                , RewritePattern Predicated
+                    { term = Mock.f Mock.c
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
+                    }
+                , RewritePattern Predicated
+                    { term = Mock.h (mkVar Mock.x)
+                    , predicate =  -- TODO(virgil): Better and simplification.
+                        makeAndPredicate
                             (makeAndPredicate
                                 (makeAndPredicate
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (mkVar Mock.x) Mock.a
+                                    (makeAndPredicate
+                                        (makeNotPredicate
+                                            (makeEqualsPredicate
+                                                (mkVar Mock.x) Mock.a
+                                            )
+                                        )
+                                        (makeNotPredicate
+                                            (makeEqualsPredicate
+                                                (mkVar Mock.x) Mock.b
+                                            )
                                         )
                                     )
                                     (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (mkVar Mock.x) Mock.b
-                                        )
+                                        (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                                     )
                                 )
                                 (makeNotPredicate
-                                    (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                                    (makeEqualsPredicate (mkVar Mock.x) Mock.b)
                                 )
                             )
                             (makeNotPredicate
-                                (makeEqualsPredicate (mkVar Mock.x) Mock.b)
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.c)
                             )
-                        )
-                        (makeNotPredicate
-                            (makeEqualsPredicate (mkVar Mock.x) Mock.c)
-                        )
-                , substitution = mempty
-                }
+                    , substitution = mempty
+                    }
+                ]
             )
-            _actual5
+            (sort
+                [ _actual1
+                , _actual2
+                , _actual3
+                , _actual4
+                , _actual5
+                ]
+            )
     , testCase "Stuck pattern" $ do
         -- Removal axiom: constr11(a) => f(a)
         -- Coinductive axiom: constr11(b) => f(b)
@@ -300,56 +311,55 @@ test_onePathStrategy = give symbolOrAliasSorts
                     (Mock.functionalConstr11 (mkVar Mock.y))
                 ]
         assertEqualWithExplanation ""
-            Bottom
-            _actual1
-        assertEqualWithExplanation ""
-            (RewritePattern Predicated
-                { term = Mock.f Mock.a
-                , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
-                }
-            )
-            _actual2
-        assertEqualWithExplanation ""
-            (RewritePattern Predicated
-                { term = Mock.f Mock.b
-                , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
-                }
-            )
-            _actual3
-        assertEqualWithExplanation ""
-            (RewritePattern Predicated
-                { term = Mock.f Mock.c
-                , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
-                }
-            )
-            _actual4
-        assertEqualWithExplanation ""
-            (Stuck Predicated
-                { term = Mock.functionalConstr11 (mkVar Mock.x)
-                , predicate =
-                    makeAndPredicate
-                        (makeAndPredicate
-                            (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (mkVar Mock.x) Mock.a
+            (
+                sort
+                [ Bottom
+                , RewritePattern Predicated
+                    { term = Mock.f Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    }
+                , RewritePattern Predicated
+                    { term = Mock.f Mock.b
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    }
+                , RewritePattern Predicated
+                    { term = Mock.f Mock.c
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
+                    }
+                , Stuck Predicated
+                    { term = Mock.functionalConstr11 (mkVar Mock.x)
+                    , predicate =
+                        makeAndPredicate
+                            (makeAndPredicate
+                                (makeNotPredicate
+                                    (makeEqualsPredicate
+                                        (mkVar Mock.x) Mock.a
+                                    )
+                                )
+                                (makeNotPredicate
+                                    (makeEqualsPredicate
+                                        (mkVar Mock.x) Mock.b
+                                    )
                                 )
                             )
                             (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (mkVar Mock.x) Mock.b
-                                )
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.c)
                             )
-                        )
-                        (makeNotPredicate
-                            (makeEqualsPredicate (mkVar Mock.x) Mock.c)
-                        )
-                , substitution = mempty
-                }
+                    , substitution = mempty
+                    }
+                ]
             )
-            _actual5
+            (sort
+                [ _actual1
+                , _actual2
+                , _actual3
+                , _actual4
+                , _actual5
+                ]
+            )
     ]
   where
     symbolOrAliasSorts :: SymbolOrAliasSorts Object
@@ -381,22 +391,22 @@ runSteps
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    ->  (Tree
+    ->  (ExecutionGraph
             ( StrategyPattern (CommonExpandedPattern level)
             , StepProof level Variable
             )
-        -> Maybe (Tree (b, StepProof level Variable))
+        -> Maybe (ExecutionGraph (b, StepProof level Variable))
         )
-    -> (Tree (b, StepProof level Variable) -> a)
+    -> (ExecutionGraph (b, StepProof level Variable) -> a)
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [Strategy (Prim (RewriteRule level))]
     -> IO a
-runSteps metadataTools treeFilter picker configuration strategy =
+runSteps metadataTools graphFilter picker configuration strategy =
     (<$>) picker
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier
-    $ (fromMaybe (error "Unexpected missing tree") . treeFilter)
+    $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy
         (transitionRule
             metadataTools
@@ -443,4 +453,4 @@ runOnePathSteps
                 )
             )
         )
-    return (nub (map fst result))
+    return (sort $ nub (map fst result))
