@@ -21,12 +21,7 @@ import           Data.Reflection
 import           Data.These
                  ( these )
 
-import           Kore.AST.Common
-                 ( Application (..), Pattern (..), Sort, SortedVariable,
-                 SymbolOrAlias (..) )
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( asPurePattern )
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern App_ )
 import           Kore.IndexedModule.MetadataTools
@@ -52,8 +47,6 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isSortInjection_ )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 {-| 'evaluateApplication' - evaluates functions on an application pattern.
@@ -66,7 +59,6 @@ evaluateApplication
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         , Show (variable Meta)
         , Show (variable Object)
         )
@@ -128,7 +120,8 @@ evaluateApplication
         case childrenPredicateSubstitution of
             Predicated { predicate, substitution } ->
                 Predicated
-                    { term         = asPurePattern $ ApplicationPattern app
+                    { term         =
+                        asPurePattern (mempty :< ApplicationPattern app)
                     , predicate    = predicate
                     , substitution = substitution
                     }
@@ -231,7 +224,6 @@ mergeWithConditionAndSubstitution
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

@@ -12,10 +12,8 @@ module Kore.ASTVerifier.SortVerifier (verifySort) where
 
 import qualified Data.Set as Set
 
-import Kore.AST.Common
 import Kore.AST.Error
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.ASTVerifier.Error
 import Kore.Error

@@ -5,20 +5,17 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( Assertion, assertEqual, testCase )
 
+import Data.Text.Prettyprint.Doc
+
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
-
 import Kore.Proof.Dummy
 import Kore.Proof.FunctionalityAxioms
-import Kore.Proof.Proof
-
 import Kore.Proof.LineBasedProof
+import Kore.Proof.Proof
 import Kore.Proof.Unification
-
-import Data.Text.Prettyprint.Doc
 
 test_exampleProofs :: TestTree
 test_exampleProofs = testGroup "exampleProofs" $
@@ -54,4 +51,3 @@ Right unifyffabcfde = dummyEnvironment $ unificationProof lhs rhs
 ffabfcdIsFunctional :: Proof
 ffabfcdIsFunctional = dummyEnvironment $ proveFunctional $
     mkApp f [mkApp f [V a, V b], mkApp f [V c, V d]]
-

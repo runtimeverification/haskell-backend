@@ -26,13 +26,7 @@ import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
-                 ( Application (..), Id,
-                 Pattern (ApplicationPattern, StringLiteralPattern),
-                 StringLiteral (..), SymbolOrAlias (..) )
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
                  ( Attributes )
 import           Kore.Attribute.Parser
@@ -83,13 +77,13 @@ function.
 hookAttribute :: String  -- ^ hooked function name
               -> CommonKorePattern
 hookAttribute builtin =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = hookSymbol
             , applicationChildren = [lit]
             }
   where
-    lit = (KoreMetaPattern . StringLiteralPattern) (StringLiteral builtin)
+    lit = (asCommonKorePattern . StringLiteralPattern) (StringLiteral builtin)
 
 {- | Parse the @hook@ Kore attribute, if present.
 

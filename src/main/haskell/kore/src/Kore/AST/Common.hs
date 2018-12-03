@@ -31,8 +31,10 @@ import           Data.Deriving
                  ( deriveEq1, deriveOrd1, deriveShow1, makeLiftCompare,
                  makeLiftEq, makeLiftShowsPrec )
 import           Data.Functor.Classes
-import           Data.Functor.Foldable
-                 ( Fix (..), cata )
+import           Data.Functor.Const
+                 ( Const )
+import           Data.Functor.Identity
+                 ( Identity (..) )
 import           Data.Hashable
 import           Data.Proxy
 import           Data.String
@@ -40,6 +42,8 @@ import           Data.String
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
+import           Data.Void
+                 ( Void )
 import           GHC.Generics
                  ( Generic )
 
@@ -182,46 +186,6 @@ data SymbolOrAlias level = SymbolOrAlias
 instance Hashable (SymbolOrAlias level)
 
 instance NFData (SymbolOrAlias level)
-
-{-|'Symbol' corresponds to the
-@object-head-constructor{object-sort-variable-list}@ part of the
-@object-symbol-declaration@ and @meta-symbol-declaration@ syntactic categories
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-Note that this is very similar to 'SymbolOrAlias'.
--}
-data Symbol level = Symbol
-    { symbolConstructor :: !(Id level)
-    , symbolParams      :: ![SortVariable level]
-    }
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable (Symbol level)
-
-instance NFData (Symbol level)
-
-{-|'Alias' corresponds to the
-@object-head-constructor{object-sort-variable-list}@ part of the
-@object-alias-declaration@ and @meta-alias-declaration@ syntactic categories
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-Note that this is very similar to 'SymbolOrAlias'.
--}
-data Alias level = Alias
-    { aliasConstructor :: !(Id level)
-    , aliasParams      :: ![SortVariable level]
-    }
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable (Alias level)
-
-instance NFData (Alias level)
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
@@ -967,21 +931,6 @@ data Pattern level domain variable child where
     VariablePattern
         :: !(variable level) -> Pattern level domain variable child
 
-{-|'PureMLPattern' corresponds to "fixed point" representations
-of the 'Pattern' class where the level is fixed to a given @level@.
-
-@var@ is the type of variables.
--}
-type PureMLPattern level dom var = Fix (Pattern level dom var)
-
--- |'CommonPurePattern' is the instantiation of 'PureMLPattern' with common
--- 'Variable's.
-type CommonPurePattern level domain = PureMLPattern level domain Variable
-
-{- | @ConcretePurePattern level@ is a concrete pattern at level @level@.
- -}
-type ConcretePurePattern level domain = PureMLPattern level domain Concrete
-
 $(return [])
 {- dummy top-level splice to make ''Pattern available for lifting -}
 
@@ -1216,10 +1165,121 @@ instance
             IsMeta   -> error "Expecting Object pattern"
     unifiedPatternApply = id
 
--- |'patternBottomUpVisitor' is @cata . unifiedPatternApply@
-patternBottomUpVisitor
-    :: (UnifiedPatternInterface pat, Functor (pat domain variable))
-    =>  (forall level . MetaOrObject level =>
-            Pattern level domain variable result -> result)
-    -> (Fix (pat domain variable) -> result)
-patternBottomUpVisitor reduce = cata (unifiedPatternApply reduce)
+-- | Use the provided mapping to replace all variables in a 'Pattern' head.
+mapVariables
+    :: (variable1 level -> variable2 level)
+    -> Pattern level domain variable1 child
+    -> Pattern level domain variable2 child
+mapVariables mapping =
+    runIdentity . traverseVariables (Identity . mapping)
+{-# INLINE mapVariables #-}
+
+-- | Use the provided traversal to replace all variables in a 'Pattern' head.
+traverseVariables
+    :: Applicative f
+    => (variable1 level -> f (variable2 level))
+    -> Pattern level domain variable1 child
+    -> f (Pattern level domain variable2 child)
+traverseVariables traversing =
+    \case
+        -- Non-trivial cases
+        ExistsPattern any0 -> ExistsPattern <$> traverseVariablesExists any0
+        ForallPattern all0 -> ForallPattern <$> traverseVariablesForall all0
+        VariablePattern variable -> VariablePattern <$> traversing variable
+        -- Trivial cases
+        AndPattern andP -> pure (AndPattern andP)
+        ApplicationPattern appP -> pure (ApplicationPattern appP)
+        BottomPattern botP -> pure (BottomPattern botP)
+        CeilPattern ceilP -> pure (CeilPattern ceilP)
+        DomainValuePattern dvP -> pure (DomainValuePattern dvP)
+        EqualsPattern eqP -> pure (EqualsPattern eqP)
+        FloorPattern flrP -> pure (FloorPattern flrP)
+        IffPattern iffP -> pure (IffPattern iffP)
+        ImpliesPattern impP -> pure (ImpliesPattern impP)
+        InPattern inP -> pure (InPattern inP)
+        NextPattern nxtP -> pure (NextPattern nxtP)
+        NotPattern notP -> pure (NotPattern notP)
+        OrPattern orP -> pure (OrPattern orP)
+        RewritesPattern rewP -> pure (RewritesPattern rewP)
+        StringLiteralPattern strP -> pure (StringLiteralPattern strP)
+        CharLiteralPattern charP -> pure (CharLiteralPattern charP)
+        TopPattern topP -> pure (TopPattern topP)
+  where
+    traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
+        Exists existsSort <$> traversing existsVariable <*> pure existsChild
+    traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
+        Forall forallSort <$> traversing forallVariable <*> pure forallChild
+
+-- | Use the provided mapping to replace all domain values in a 'Pattern' head.
+mapDomainValues
+    :: (forall child'. domain1 child' -> domain2 child')
+    -> Pattern level domain1 variable child
+    -> Pattern level domain2 variable child
+mapDomainValues mapping =
+    \case
+        -- Non-trivial case
+        DomainValuePattern dvP ->
+            DomainValuePattern dvP
+                { domainValueChild = mapping domainValueChild }
+          where
+            DomainValue { domainValueChild } = dvP
+        -- Trivial cases
+        AndPattern andP -> AndPattern andP
+        ApplicationPattern appP -> ApplicationPattern appP
+        BottomPattern botP -> BottomPattern botP
+        CeilPattern ceilP -> CeilPattern ceilP
+        EqualsPattern eqP -> EqualsPattern eqP
+        ExistsPattern existsP -> ExistsPattern existsP
+        FloorPattern flrP -> FloorPattern flrP
+        ForallPattern forallP -> ForallPattern forallP
+        IffPattern iffP -> IffPattern iffP
+        ImpliesPattern impP -> ImpliesPattern impP
+        InPattern inP -> InPattern inP
+        NextPattern nextP -> NextPattern nextP
+        NotPattern notP -> NotPattern notP
+        OrPattern orP -> OrPattern orP
+        RewritesPattern rewP -> RewritesPattern rewP
+        StringLiteralPattern strP -> StringLiteralPattern strP
+        CharLiteralPattern charP -> CharLiteralPattern charP
+        TopPattern topP -> TopPattern topP
+        VariablePattern varP -> VariablePattern varP
+
+{- | Cast a 'Pattern' head with @'Const' 'Void'@ domain values into any domain.
+
+The @Const Void@ domain excludes domain values; the pattern head can be cast
+trivially because it must contain no domain values.
+
+ -}
+castVoidDomainValues
+    :: Pattern level (Const Void) variable child
+    -> Pattern level domain       variable child
+castVoidDomainValues = mapDomainValues (\case {})
+
+{- | Cast a 'Meta'-'Pattern' head into any domain.
+
+The pattern head can be cast trivially because it meta-patterns contain no
+domain values.
+
+ -}
+castMetaDomainValues
+    :: Pattern Meta domain1 variable child
+    -> Pattern Meta domain2 variable child
+castMetaDomainValues =
+    \case
+        AndPattern andP -> AndPattern andP
+        ApplicationPattern appP -> ApplicationPattern appP
+        BottomPattern botP -> BottomPattern botP
+        CeilPattern ceilP -> CeilPattern ceilP
+        EqualsPattern eqP -> EqualsPattern eqP
+        ExistsPattern existsP -> ExistsPattern existsP
+        FloorPattern flrP -> FloorPattern flrP
+        ForallPattern forallP -> ForallPattern forallP
+        IffPattern iffP -> IffPattern iffP
+        ImpliesPattern impP -> ImpliesPattern impP
+        InPattern inP -> InPattern inP
+        NotPattern notP -> NotPattern notP
+        OrPattern orP -> OrPattern orP
+        StringLiteralPattern strP -> StringLiteralPattern strP
+        CharLiteralPattern charP -> CharLiteralPattern charP
+        TopPattern topP -> TopPattern topP
+        VariablePattern varP -> VariablePattern varP

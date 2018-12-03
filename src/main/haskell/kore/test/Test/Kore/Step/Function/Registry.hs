@@ -15,11 +15,8 @@ import           Data.Text
 import           Data.These
                  ( These (That) )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( groundHead )
+import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternPureToKore )
 import           Kore.AST.Sentence
@@ -64,7 +61,7 @@ updateAttributes attrs = applyUnifiedSentence updateAttrs updateAttrs
         => Sentence
             level
             UnifiedSortVariable
-            UnifiedPattern
+            KorePattern
             Domain.Builtin
             Variable
         -> KoreSentence

@@ -37,7 +37,6 @@ import           Control.Error
                  ( MaybeT )
 import           Control.Monad
                  ( void )
-import qualified Data.Functor.Foldable as Functor.Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.List
                  ( findIndex, isPrefixOf, tails )
@@ -53,11 +52,7 @@ import           Numeric
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-                 ( Meta, Object )
-import           Kore.AST.PureML
-                 ( fromConcretePurePattern )
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -200,13 +195,13 @@ asConcretePattern
     -> String  -- ^ builtin value to render
     -> ConcreteStepPattern Object
 asConcretePattern domainValueSort result =
-    (Functor.Foldable.embed . DomainValuePattern)
+    (asPurePattern . (mempty :<) . DomainValuePattern)
         DomainValue
             { domainValueSort
             , domainValueChild = Domain.BuiltinPattern $ asMetaPattern result
             }
 
-asMetaPattern :: String -> CommonPurePattern Meta dom
+asMetaPattern :: Functor dom => String -> CommonPurePattern Meta dom ()
 asMetaPattern result = StringLiteral_ $ result
 
 asExpandedPattern

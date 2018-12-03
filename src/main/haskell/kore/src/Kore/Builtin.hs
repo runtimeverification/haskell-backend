@@ -30,7 +30,8 @@ module Kore.Builtin
     , notImplementedInternal
     ) where
 
-import qualified Data.Functor.Foldable as Functor.Foldable
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -41,10 +42,7 @@ import           Data.Text
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-                 ( Meta, Object )
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Hook
                  ( Hook (..) )
@@ -205,13 +203,13 @@ externalizePattern
     -> CommonStepPattern Object
     -> Either (Error e) (CommonStepPattern Object)
 externalizePattern indexedModule =
-    Functor.Foldable.fold externalizePattern0
+    Recursive.fold (externalizePattern0 . Cofree.tailF)
   where
     externalizePattern0 =
         \case
             DomainValuePattern dv ->
                 asPattern indexedModule =<< sequence dv
-            pat -> Functor.Foldable.embed <$> sequence pat
+            pat -> Recursive.embed . (mempty :<) <$> sequence pat
 
 {- | Extract the meta-level pattern argument of a domain value.
 

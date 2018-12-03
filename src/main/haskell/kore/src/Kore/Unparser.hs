@@ -13,22 +13,20 @@ module Kore.Unparser
     , layoutPrettyUnbounded
     ) where
 
-import Data.Functor.Const
-import Data.Functor.Foldable
-       ( Fix (..) )
-import Data.Maybe
-       ( catMaybes )
-import Data.String
-       ( IsString (fromString) )
-import Data.Text.Prettyprint.Doc hiding
-       ( list )
-import Data.Text.Prettyprint.Doc.Render.String
-       ( renderString )
-import Data.Void
+import           Data.Functor.Const
+import qualified Data.Functor.Foldable as Recursive
+import           Data.Maybe
+                 ( catMaybes )
+import           Data.String
+                 ( IsString (fromString) )
+import           Data.Text.Prettyprint.Doc hiding
+                 ( list )
+import           Data.Text.Prettyprint.Doc.Render.String
+                 ( renderString )
+import           Data.Void
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
@@ -55,9 +53,6 @@ class Unparse p where
 unparseToString :: Unparse p => p -> String
 unparseToString =
     renderString . layoutPretty defaultLayoutOptions . unparse
-
-instance Unparse (f (Fix f)) => Unparse (Fix f) where
-    unparse (Fix fx) = unparse fx
 
 instance Unparse (Id level) where
     unparse = pretty . getId
@@ -291,7 +286,29 @@ instance
             VariablePattern p      -> unparse p
 
 instance
-    ( Unparse (variable Meta), Unparse (variable Object)
+    ( Functor domain
+    , Unparse (variable level)
+    , Unparse (domain self)
+    , self ~ PurePattern level domain variable annotation
+    ) =>
+    Unparse (PurePattern level domain variable annotation)
+  where
+    unparse (Recursive.project -> _ :< pat) = unparse pat
+
+instance
+    ( Functor domain
+    , Unparse (variable Meta)
+    , Unparse (variable Object)
+    , Unparse (domain self)
+    , self ~ KorePattern domain variable annotation
+    ) =>
+    Unparse (KorePattern domain variable annotation)
+  where
+    unparse (Recursive.project -> _ :< pat) = unparse pat
+
+instance
+    ( Unparse (variable Meta)
+    , Unparse (variable Object)
     , Unparse (domain child)
     , Unparse child
     ) =>
@@ -306,12 +323,12 @@ instance Unparse Attributes where
     unparse = attributes . getAttributes
 
 instance
-    ( Unparse (var lvl)
+    ( Unparse (variable level)
     , Unparse child
-    , Unparse (dom child)
-    , child ~ Fix (pat dom var)
+    , Unparse (domain child)
+    , child ~ pat domain variable ()
     ) =>
-    Unparse (SentenceAlias lvl pat dom var)
+    Unparse (SentenceAlias level pat domain variable)
   where
     unparse
         SentenceAlias
@@ -335,7 +352,7 @@ instance
             , unparse sentenceAliasAttributes
             ]
 
-instance Unparse (SentenceSymbol lvl pat dom var) where
+instance Unparse (SentenceSymbol level pat domain variable) where
     unparse
         SentenceSymbol
             { sentenceSymbolSymbol
@@ -355,7 +372,7 @@ instance Unparse (SentenceSymbol lvl pat dom var) where
 instance Unparse ModuleName where
     unparse = pretty . getModuleName
 
-instance Unparse (SentenceImport pat dom var) where
+instance Unparse (SentenceImport pat domain variable) where
     unparse
         SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
       =
@@ -364,7 +381,7 @@ instance Unparse (SentenceImport pat dom var) where
             , unparse sentenceImportAttributes
             ]
 
-instance Unparse (SentenceSort lvl pat dom var) where
+instance Unparse (SentenceSort level pat domain variable) where
     unparse
         SentenceSort
             { sentenceSortName
@@ -379,10 +396,10 @@ instance Unparse (SentenceSort lvl pat dom var) where
             ]
 
 instance
-    ( Unparse (Fix (pat dom var))
-    , Unparse param
+    ( Unparse (pat domain variable ())
+    , Unparse sortParam
     ) =>
-    Unparse (SentenceAxiom param pat dom var)
+    Unparse (SentenceAxiom sortParam pat domain variable)
   where
     unparse
         SentenceAxiom
@@ -405,10 +422,10 @@ instance Unparse UnifiedSortVariable where
             UnifiedObject sv -> unparse sv
 
 instance
-    ( Unparse (SentenceSort lvl pat dom var)
-    , Unparse (SentenceSymbol lvl pat dom var)
+    ( Unparse (SentenceSort level pat domain variable)
+    , Unparse (SentenceSymbol level pat domain variable)
     ) =>
-    Unparse (SentenceHook lvl pat dom var)
+    Unparse (SentenceHook level pat domain variable)
   where
     unparse =
         \case
@@ -416,13 +433,13 @@ instance
             SentenceHookedSymbol a -> "hooked-" <> unparse a
 
 instance
-    ( Unparse (SentenceAlias lvl pat dom var)
-    , Unparse (SentenceSymbol lvl pat dom var)
-    , Unparse (SentenceImport pat dom var)
-    , Unparse (SentenceAxiom param pat dom var)
-    , Unparse (SentenceSort lvl pat dom var)
+    ( Unparse (SentenceAlias level pat domain variable)
+    , Unparse (SentenceSymbol level pat domain variable)
+    , Unparse (SentenceImport pat domain variable)
+    , Unparse (SentenceAxiom sortParam pat domain variable)
+    , Unparse (SentenceSort level pat domain variable)
     ) =>
-    Unparse (Sentence lvl param pat dom var)
+    Unparse (Sentence level sortParam pat domain variable)
   where
      unparse =
         \case
@@ -436,10 +453,10 @@ instance
 
 
 instance
-    ( Unparse (Sentence Meta param pat dom var)
-    , Unparse (Sentence Object param pat dom var)
+    ( Unparse (Sentence Meta sortParam pat domain variable)
+    , Unparse (Sentence Object sortParam pat domain variable)
     ) =>
-    Unparse (UnifiedSentence param pat dom var)
+    Unparse (UnifiedSentence sortParam pat domain variable)
   where
     unparse =
         \case
@@ -447,8 +464,8 @@ instance
             UnifiedObjectSentence sentence -> unparse sentence
 
 instance
-    Unparse (sentence param pat dom var) =>
-    Unparse (Module sentence param pat dom var)
+    Unparse (sentence sortParam pat domain variable) =>
+    Unparse (Module sentence sortParam pat domain variable)
   where
     unparse
         Module { moduleName, moduleSentences, moduleAttributes }
@@ -463,8 +480,8 @@ instance
             ]
 
 instance
-    Unparse (sentence param pat dom var) =>
-    Unparse (Definition sentence param pat dom var)
+    Unparse (sentence sortParam pat domain variable) =>
+    Unparse (Definition sentence sortParam pat domain variable)
   where
     unparse Definition { definitionAttributes, definitionModules } =
         vsep (unparse definitionAttributes : map unparse definitionModules)

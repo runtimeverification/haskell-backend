@@ -6,15 +6,12 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import           Data.Default
-import           Data.Functor.Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
 
 import           Kore.AST.Builders
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
@@ -35,10 +32,10 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-topPatMeta :: Pattern Meta dom var (Fix (pat dom var))
+topPatMeta :: Pattern Meta dom var (pat dom var ())
 topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
 
-topPatObj :: Pattern Object dom var (Fix (pat dom var))
+topPatObj :: Pattern Object dom var (pat dom var ())
 topPatObj  = TopPattern $ Top { topSort = objectS1 }
 
 objectA :: PureSentenceSymbol Object Domain.Builtin

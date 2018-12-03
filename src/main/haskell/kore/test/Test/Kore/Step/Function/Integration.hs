@@ -13,8 +13,8 @@ import           Data.Reflection
 import           Data.These
                  ( These (..) )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure hiding
+                 ( mapVariables )
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkOr, mkVar )
 import           Kore.IndexedModule.MetadataTools
@@ -50,8 +50,6 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
-import           Kore.Substitution.Class
-                 ( Hashable )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable, freshVariableFromVariable )
@@ -444,7 +442,6 @@ evaluate metadataTools functionIdToEvaluator patt =
             , Show (variable Meta)
             , Show (variable Object)
             , FreshVariable variable
-            , Hashable variable
             )
         => StepPatternSimplifier level variable
     patternSimplifier =

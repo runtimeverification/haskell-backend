@@ -17,17 +17,17 @@ module Kore.MetaML.Lift
     , LiftableToMetaML(liftToMeta)
     ) where
 
-import           Data.Functor.Foldable
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.AST.MLPatterns
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
@@ -47,11 +47,15 @@ class VerboseLiftableToMetaML mixed where
 
 -- Section 9.2.1 Lift Object Identifiers to String Literals
 instance LiftableToMetaML (Id Object) where
-    liftToMeta = Fix . StringLiteralPattern . StringLiteral . getIdForError
+    liftToMeta =
+        asCommonMetaPattern
+        . StringLiteralPattern
+        . StringLiteral
+        . getIdForError
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortVariable Object) where
-    liftToMeta sv = Fix $ VariablePattern Variable
+    liftToMeta sv = asCommonMetaPattern $ VariablePattern Variable
         { variableName = Id
             { getId = Text.cons '#' $ getId $ getSortVariable sv
             , idLocation = AstLocationLifted $ idLocation $ getSortVariable sv
@@ -69,7 +73,7 @@ liftHeadConstructor = liftSortConstructor
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortActual Object) where
-    liftToMeta sa = Fix $ apply
+    liftToMeta sa = App_
         (groundHead
             (liftSortConstructor (getId sortId))
             (AstLocationLifted (idLocation sortId))
@@ -81,7 +85,7 @@ instance LiftableToMetaML (SortActual Object) where
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance VerboseLiftableToMetaML (SortActual Object) where
     verboseLiftToMeta sa =
-        Fix $ apply sortHead
+        App_ sortHead
             [ liftToMeta (sortActualName sa)
             , verboseLiftToMeta (sortActualSorts sa)
             ]
@@ -105,7 +109,7 @@ liftSortListToMeta sortLifter =
         nilSortListMetaPattern
   where
     applyConsSortList sort sortList =
-        Fix $ apply consSortListHead [sort, sortList]
+        App_ consSortListHead [sort, sortList]
 
 instance VerboseLiftableToMetaML [Sort Object] where
     verboseLiftToMeta = liftSortListToMeta verboseLiftToMeta
@@ -118,24 +122,24 @@ instance LiftableToMetaML [CommonMetaPattern] where
         foldr applyConsPatternList nilPatternListMetaPattern
       where
         applyConsPatternList pat patList =
-            Fix $ apply consPatternListHead [pat, patList]
+            App_ consPatternListHead [pat, patList]
 
 -- Section 9.2.8 Lift Patterns
 instance LiftableToMetaML (Variable Object) where
-    liftToMeta v = Fix $ apply variableHead
+    liftToMeta v = App_ variableHead
         [ liftToMeta (variableName v)
         , liftToMeta (variableSort v)]
 
 -- Section 9.2.8 Lift Patterns
 instance LiftableToMetaML CommonKorePattern where
-    liftToMeta = cata liftReducer
+    liftToMeta = Recursive.fold (liftReducer . Cofree.tailF)
 
 liftReducer
     :: UnifiedPattern Domain.Builtin Variable CommonMetaPattern
     -> CommonMetaPattern
 liftReducer =
     \case
-        UnifiedMetaPattern metaP -> Fix metaP
+        UnifiedMetaPattern metaP -> asCommonMetaPattern metaP
         UnifiedObjectPattern objectP -> liftObjectReducer objectP
 
 liftObjectReducer
@@ -149,7 +153,7 @@ liftObjectReducer p = case p of
             sa = applicationSymbolOrAlias ap
             saId = symbolOrAliasConstructor sa
         in
-        Fix $ apply
+        App_
             (groundHead
                 (liftHeadConstructor (getId saId))
                 (AstLocationLifted (idLocation saId))
@@ -210,10 +214,10 @@ liftObjectReducer p = case p of
     TopPattern bp -> applyMetaMLPatternHead TopPatternType
         [liftToMeta (topSort bp)]
     VariablePattern vp ->
-        Fix $ apply variableAsPatternHead [liftToMeta vp]
+        App_ variableAsPatternHead [liftToMeta vp]
   where
     applyMetaMLPatternHead patternType =
-        Fix . apply
+        App_
             (metaMLPatternHead
                 patternType
                 (AstLocationLifted AstLocationImplicit)
@@ -246,7 +250,7 @@ liftSortDeclaration ss =
     helperFunctionAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = Fix . EqualsPattern
+        , sentenceAxiomPattern = asCommonMetaPattern . EqualsPattern
             $ Equals
                 { equalsOperandSort = sortMetaSort
                 , equalsResultSort = sortParamAsSort
@@ -257,12 +261,12 @@ liftSortDeclaration ss =
     declaredAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = Fix . ImpliesPattern
+        , sentenceAxiomPattern = asCommonMetaPattern . ImpliesPattern
             $ Implies
                 { impliesSort = SortVariableSort sortParam
-                , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
+                , impliesFirst = App_ (sortsDeclaredHead sortParamAsSort)
                     [liftToMeta sortParametersAsSorts]
-                , impliesSecond = Fix $ apply (sortDeclaredHead sortParamAsSort)
+                , impliesSecond = App_ (sortDeclaredHead sortParamAsSort)
                     [liftToMeta actualSort]
                 }
         }
@@ -282,13 +286,13 @@ liftSymbolDeclaration sd =
     symbolName = symbolConstructor symbol
     liftedSymbolId = liftHeadConstructor (getId symbolName)
     liftedSymbolLocation = AstLocationLifted (idLocation symbolName)
-    sigma = Fix $ apply symbolHead
+    sigma = App_ symbolHead
         [ liftToMeta symbolName
         , liftToMeta sortParametersAsSorts
         , liftToMeta sorts
         , liftToMeta (sentenceSymbolResultSort sd)
         ]
-    freshVariable n s = Fix $ VariablePattern Variable
+    freshVariable n s = asCommonMetaPattern $ VariablePattern Variable
         { variableName = Id ("#P" <> (Text.pack . show) (n::Int)) liftedSymbolLocation
         , variableSort = s
         }
@@ -298,27 +302,27 @@ liftSymbolDeclaration sd =
     helperFunctionAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = Fix . EqualsPattern
+        , sentenceAxiomPattern = asCommonMetaPattern . EqualsPattern
             $ Equals
                 { equalsOperandSort = patternMetaSort
                 , equalsResultSort = sortParamAsSort
                 , equalsFirst =
-                    Fix $ apply (groundHead liftedSymbolId liftedSymbolLocation)
+                    App_ (groundHead liftedSymbolId liftedSymbolLocation)
                         (map liftToMeta sortParametersAsSorts ++ phis)
-                , equalsSecond = Fix $ apply applicationHead
+                , equalsSecond = App_ applicationHead
                     [ sigma, liftToMeta phis]
                 }
         }
     declaredAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = Fix . ImpliesPattern
+        , sentenceAxiomPattern = asCommonMetaPattern . ImpliesPattern
             $ Implies
                 { impliesSort = SortVariableSort sortParam
-                , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
+                , impliesFirst = App_ (sortsDeclaredHead sortParamAsSort)
                     [liftToMeta sortParametersAsSorts]
                 , impliesSecond =
-                    Fix $ apply (symbolDeclaredHead sortParamAsSort) [sigma]
+                    App_ (symbolDeclaredHead sortParamAsSort) [sigma]
                 }
         }
 
@@ -358,15 +362,15 @@ liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom)
         , sentenceAxiomParameters = [ sortParam ]
         , sentenceAxiomPattern    = pat
         }
-    pat = Fix . EqualsPattern $
+    pat = asCommonMetaPattern . EqualsPattern $
         Equals
             { equalsOperandSort = patternMetaSort
             , equalsResultSort  = SortVariableSort sortParam
             , equalsFirst       = left
             , equalsSecond      = right
             }
-    left  = liftToMeta (asKorePattern (sentenceAliasLeftPattern as))
-    right = liftToMeta (asKorePattern (sentenceAliasRightPattern as))
+    left  = liftToMeta (asCommonKorePattern (sentenceAliasLeftPattern as))
+    right = liftToMeta (asCommonKorePattern (sentenceAliasRightPattern as))
     sortParam = SortVariable (Id "#s" liftedSymbolLocation)
     sortName = (aliasConstructor . sentenceAliasAlias) as
     liftedSymbolLocation = AstLocationLifted (idLocation sortName)
@@ -378,7 +382,7 @@ liftSentence :: KoreSentence -> [MetaSentence]
 liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
 
 liftMetaSentence
-    :: Sentence Meta UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    :: Sentence Meta UnifiedSortVariable KorePattern Domain.Builtin Variable
     -> [MetaSentence]
 liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
@@ -416,22 +420,22 @@ liftMetaSentenceClaimOrAxiom
         .  SentenceAxiom param pat domain variable
         -> Sentence Meta param pat domain variable
         )
-    -> SentenceAxiom (Unified SortVariable) UnifiedPattern Domain.Builtin Variable
+    -> SentenceAxiom (Unified SortVariable) KorePattern Domain.Builtin Variable
     -> [MetaSentence]
 liftMetaSentenceClaimOrAxiom ctor as =
     [ ctor SentenceAxiom
         { sentenceAxiomParameters = metaParameters
         , sentenceAxiomAttributes = sentenceAxiomAttributes as
         , sentenceAxiomPattern =
-            Fix
+            asCommonMetaPattern
                 (ImpliesPattern Implies
                     { impliesSort = axiomSort
-                    , impliesFirst = Fix
-                        (apply (sortsDeclaredHead axiomSort)
+                    , impliesFirst =
+                        App_
+                            (sortsDeclaredHead axiomSort)
                             [ liftToMeta
                                 (map SortVariableSort objectParameters)
                             ]
-                        )
                     , impliesSecond = provableLiftedPattern
                     }
                 )
@@ -442,19 +446,20 @@ liftMetaSentenceClaimOrAxiom ctor as =
         [sv | UnifiedMeta sv <- sentenceAxiomParameters as]
     originalPattern = sentenceAxiomPattern as
     axiomSort =
-        case project originalPattern of
+        case Cofree.tailF (Recursive.project originalPattern) of
             UnifiedObjectPattern _ -> patternMetaSort
             UnifiedMetaPattern p   -> getPatternResultSort undefinedHeadSort p
     objectParameters =
         [sv | UnifiedObject sv <- sentenceAxiomParameters as]
     liftedPattern = liftToMeta originalPattern
     provableLiftedPattern =
-        case project originalPattern of
+        case Cofree.tailF (Recursive.project originalPattern) of
             UnifiedMetaPattern _   -> liftedPattern
             UnifiedObjectPattern _ ->
-                Fix (apply (provableHead axiomSort) [liftedPattern])
+                App_ (provableHead axiomSort) [liftedPattern]
+
 liftObjectSentence
-    :: Sentence Object UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    :: Sentence Object UnifiedSortVariable KorePattern Domain.Builtin Variable
     -> [MetaSentence]
 liftObjectSentence (SentenceAliasSentence osa) =
     let (mas, axiom) = liftAliasDeclaration osa in

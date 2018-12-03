@@ -59,8 +59,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -87,8 +85,7 @@ it selectively is not trivial, e.g. a bottom inside a function should become
 Left, but inside a constructor we may be able to keep it as bottom.
 -}
 matchAsUnification
-    ::  ( Hashable variable
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Ord (variable Object)
@@ -118,8 +115,7 @@ matchAsUnification tools substitutionSimplifier first second = do
     matchResult = match tools substitutionSimplifier Map.empty first second
 
 match
-    ::  ( Hashable variable
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Ord (variable Object)
@@ -158,7 +154,6 @@ matchEqualHeadPatterns
        , Show (variable Meta)
        , Show (variable Object)
        , FreshVariable variable
-       , Hashable variable
        , MonadCounter m
        )
     => MetadataTools level StepperAttributes
@@ -358,8 +353,7 @@ matchEqualHeadPatterns
             else nothing
 
 matchJoin
-    ::  ( Hashable variable
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Ord (variable Meta)
@@ -437,8 +431,7 @@ matchVariableFunction
 matchVariableFunction _ _ _ _ = nothing
 
 matchNonVarToPattern
-    :: ( Hashable variable
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Ord (variable Object)

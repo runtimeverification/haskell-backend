@@ -14,9 +14,7 @@ module Kore.Attribute.Unit
 import qualified Control.Monad as Monad
 import           Data.Default
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser
@@ -44,7 +42,7 @@ unitSymbol =
 -- | Kore pattern representing the @unit@ attribute.
 unitAttribute :: CommonKorePattern
 unitAttribute =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = unitSymbol
             , applicationChildren = []

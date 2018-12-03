@@ -30,8 +30,6 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 {-| Simplifies an 'ExpandedPattern', returning an 'OrOfExpandedPattern'.
@@ -46,7 +44,6 @@ simplify
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

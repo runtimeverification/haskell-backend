@@ -40,10 +40,7 @@ import qualified Data.Set as Set
 import           GHC.Generics
 
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( mapPatternVariables )
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom )
 import           Kore.IndexedModule.MetadataTools
@@ -76,7 +73,7 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import           Kore.Substitution.Class
-                 ( Hashable (..), substitute )
+                 ( substitute )
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
@@ -169,17 +166,6 @@ instance
         sortedVariableSort variable
 
 instance
-    Hashable variable
-    => Hashable (StepperVariable variable)
-  where
-    -- TODO(virgil): For performance reasons, this should generate different
-    -- hashes for axiom and configuration variables.
-    getVariableHash (ConfigurationVariable variable) =
-        getVariableHash variable
-    getVariableHash (AxiomVariable variable) =
-        getVariableHash variable
-
-instance
     FreshVariable variable
     => FreshVariable (StepperVariable variable)
   where
@@ -220,7 +206,6 @@ newtype UnificationProcedure level =
             , OrdMetaOrObject variable
             , ShowMetaOrObject variable
             , MetaOrObject level
-            , Hashable variable
             , FreshVariable variable
             , MonadCounter m
             )
@@ -248,7 +233,6 @@ newtype UnificationProcedure level =
 stepWithRuleForUnifier
     :: forall level variable .
         ( FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , Ord (variable level)
         , OrdMetaOrObject variable
@@ -293,7 +277,7 @@ stepWithRuleForUnifier
             } =
                 ExpandedPattern.mapVariables
                     ConfigurationVariable expandedPattern
-        wrapAxiomVariables = mapPatternVariables AxiomVariable
+        wrapAxiomVariables = mapVariables AxiomVariable
         axiomLeft = wrapAxiomVariables axiomLeftRaw
         axiomRight = wrapAxiomVariables axiomRightRaw
         axiomRequires = Predicate.mapVariables AxiomVariable axiomRequiresRaw
@@ -559,7 +543,6 @@ stepWithRuleForUnifier
 
 stepWithRule
     ::  ( FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , Ord (variable level)
         , OrdMetaOrObject variable
@@ -816,7 +799,7 @@ predicateStepVariablesToCommon existingVars mapped predicate' = do
         )
   where
     configurationVariablesToCommon =
-        mapPatternVariables configurationVariableToCommon
+        mapVariables configurationVariableToCommon
 
 patternStepVariablesToCommon
     ::  ( FreshVariable variable
@@ -843,7 +826,7 @@ patternStepVariablesToCommon existingVars mapped patt = do
         )
   where
     configurationVariablesToCommon =
-        mapPatternVariables configurationVariableToCommon
+        mapVariables configurationVariableToCommon
 
 configurationVariableToCommon
     :: StepperVariable variable level -> variable level
@@ -859,7 +842,7 @@ replacePatternVariables
     -> StepPattern level (StepperVariable variable)
     -> StepPattern level (StepperVariable variable)
 replacePatternVariables mapping =
-    mapPatternVariables
+    mapVariables
         (\var -> fromMaybe var (Map.lookup var mapping))
 
 addAxiomVariablesAsConfig

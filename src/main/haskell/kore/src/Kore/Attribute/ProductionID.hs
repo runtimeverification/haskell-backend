@@ -18,9 +18,7 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser
@@ -48,11 +46,11 @@ productionIDSymbol =
 -- | Kore pattern representing a @productionID@ attribute.
 productionIDAttribute :: Text -> CommonKorePattern
 productionIDAttribute name =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = productionIDSymbol
             , applicationChildren =
-                [ (KoreMetaPattern . StringLiteralPattern)
+                [ (asCommonKorePattern . StringLiteralPattern)
                     (StringLiteral $ Text.unpack name)
                 ]
             }

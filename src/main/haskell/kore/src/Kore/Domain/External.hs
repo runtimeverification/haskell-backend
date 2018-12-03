@@ -18,11 +18,10 @@ import Data.Void
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.AST.Pure
 
 newtype External child =
-    External { getExternal :: CommonPurePattern Meta (Const Void) }
+    External { getExternal :: CommonPurePattern Meta (Const Void) () }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 deriveEq1 ''External
@@ -33,4 +32,4 @@ instance NFData (External child)
 
 instance Hashable (External child)
 
-type CommonExternalPattern lvl = CommonPurePattern lvl External
+type CommonExternalPattern level = CommonPurePattern level External

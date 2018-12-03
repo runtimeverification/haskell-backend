@@ -43,8 +43,8 @@ module Kore.AST.Builders
     , unparameterizedVariable_
     ) where
 
-import           Data.Functor.Foldable
-                 ( Fix (..) )
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Text
@@ -52,9 +52,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.BuildersImpl
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
 import           Kore.ASTUtils.SmartPatterns
@@ -77,15 +75,16 @@ It can also be used to transform a symbol or alias sentence to something that
 can be applied to patterns.
 -}
 applyPS
-    ::  ( SentenceSymbolOrAlias s
+    ::  ( Functor domain
+        , SentenceSymbolOrAlias s
         , Show level
         , Show (Pattern level domain Variable child)
-        , child ~ PureMLPattern level domain Variable
+        , child ~ PurePattern level domain Variable ()
         )
-    => s level (Pattern level) domain Variable
+    => s level (PurePattern level) domain Variable
     -> [Sort level]
-    -> [CommonPurePatternStub level domain]
-    -> CommonPurePatternStub level domain
+    -> [CommonPurePatternStub level domain ()]
+    -> CommonPurePatternStub level domain ()
 applyPS sentence sortParameters patterns =
     SortedPatternStub SortedPattern
         { sortedPatternPattern =
@@ -111,14 +110,15 @@ It can also be used to transform a symbol or alias sentence to something that
 can be applied to patterns.
 -}
 applyS
-    ::  ( SentenceSymbolOrAlias s
+    ::  ( Functor domain
+        , SentenceSymbolOrAlias s
         , Show level
         , Show (Pattern level domain Variable child)
-        , child ~ PureMLPattern level domain Variable
+        , child ~ PurePattern level domain Variable ()
         )
-    => s level (Pattern level) domain Variable
-    -> [CommonPurePatternStub level domain]
-    -> CommonPurePatternStub level domain
+    => s level (PurePattern level) domain Variable
+    -> [CommonPurePatternStub level domain ()]
+    -> CommonPurePatternStub level domain ()
 applyS sentence = applyPS sentence []
 
 -- |Creates a 'level' 'Sort' from a given 'MetaSortType'
@@ -137,7 +137,7 @@ sort_ sortType =
 unparameterizedVariable_
     :: Text
     -> AstLocation
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
 unparameterizedVariable_ name location =
     UnsortedPatternStub
         (\sortS ->
@@ -156,7 +156,7 @@ parameterizedVariable_
     :: Sort level
     -> Text
     -> AstLocation
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
 parameterizedVariable_ sort name location =
     withSort sort (unparameterizedVariable_ name location)
 
@@ -200,8 +200,8 @@ alias_
     -> AstLocation
     -> [Sort level]
     -> Sort level
-    -> Pattern level domain Variable (CommonPurePattern level domain)
-    -> Pattern level domain Variable (CommonPurePattern level domain)
+    -> Pattern level domain Variable (CommonPurePattern level domain ())
+    -> Pattern level domain Variable (CommonPurePattern level domain ())
     -> PureSentenceAlias level domain
 alias_ name location = parameterizedAlias_ name location []
 
@@ -213,8 +213,8 @@ parameterizedAlias_
     -> [SortVariable level]
     -> [Sort level]
     -> Sort level
-    -> Pattern level domain Variable (CommonPurePattern level domain)
-    -> Pattern level domain Variable (CommonPurePattern level domain)
+    -> Pattern level domain Variable (CommonPurePattern level domain ())
+    -> Pattern level domain Variable (CommonPurePattern level domain ())
     -> PureSentenceAlias level domain
 parameterizedAlias_ name location parameters operandSorts resultSort leftPat rightPat =
     SentenceAlias
@@ -233,107 +233,124 @@ parameterizedAlias_ name location parameters operandSorts resultSort leftPat rig
         }
 
 -- |A 'PatternStub' representing 'Bottom'.
-bottom_ :: CommonPurePatternStub level domain
+bottom_ :: CommonPurePatternStub level domain ()
 bottom_ = UnsortedPatternStub (BottomPattern . Bottom)
 
 -- |A 'PatternStub' representing 'Top'.
-top_ :: CommonPurePatternStub level domain
+top_ :: CommonPurePatternStub level domain ()
 top_ = UnsortedPatternStub (TopPattern . Top)
 
 -- |Builds a 'PatternStub' representing 'Equals' given the sort of the
 -- operands and their corresponding 'PatternStub's.
 equalsS_
-    :: (MetaOrObject level , Show (CommonPurePattern level domain))
+    ::  ( Functor domain
+        , MetaOrObject level
+        , Show (CommonPurePattern level domain ())
+        )
     => Sort level
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 equalsS_ s = equalsM_ (Just s)
 
 -- |Builds a 'PatternStub' representing 'Equals' given the
 -- corresponding 'PatternStub's.  Assumes operand sort is inferrable.
 equals_
-    :: (MetaOrObject level, Show (CommonPurePattern level domain))
-    => CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    ::  ( Functor domain
+        , MetaOrObject level
+        , Show (CommonPurePattern level domain ())
+        )
+    => CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 equals_ = equalsM_ Nothing
 
 -- |Builds a 'PatternStub' representing 'In' given the sort of the
 -- operands and their corresponding 'PatternStub's.
 inS_
-    :: (MetaOrObject level, Show (CommonPurePattern level domain))
+    ::  ( Functor domain
+        , MetaOrObject level
+        , Show (CommonPurePattern level domain ())
+        )
     => Sort level
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 inS_ s = inM_ (Just s)
 
 -- |Builds a 'PatternStub' representing 'In' given the
 -- corresponding 'PatternStub's.  Assumes operand sort is inferrable.
 in_
-    :: (MetaOrObject level, Show (CommonPurePattern level domain))
-    => CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    ::  ( Functor domain
+        , MetaOrObject level
+        , Show (CommonPurePattern level domain ())
+        )
+    => CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 in_ = inM_ Nothing
 
 -- |Builds a PatternStub representing 'Ceil' given the sort of the
 -- operand and its corresponding 'PatternStub's.
 ceilS_
-    ::  ( MetaOrObject level
-        , child ~ CommonPurePattern level domain
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ CommonPurePattern level domain ()
         , Show child
         , Show (Pattern level domain Variable child)
         )
     => Sort level
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 ceilS_ s = ceilM_ (Just s)
 
 -- |Builds a 'PatternStub' representing 'Ceil' given the corresponding
 -- operand 'PatternStub'.  Assumes operand sort is inferrable.
 ceil_
-    ::  (MetaOrObject level
-        , child ~ CommonPurePattern level domain
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ CommonPurePattern level domain ()
         , Show child
         , Show (Pattern level domain Variable child)
         )
-    => CommonPurePatternStub level domain -> CommonPurePatternStub level domain
+    => CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 ceil_ = ceilM_ Nothing
 
 -- |Builds a 'PatternStub' representing 'Floor' given the sort of the
 -- operand and its corresponding 'PatternStub's.
 floorS_
-    ::  ( MetaOrObject level
-        , child ~ CommonPurePattern level domain
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ CommonPurePattern level domain ()
         , Show child
         , Show (Pattern level domain Variable child)
         )
     => Sort level
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 floorS_ s = floorM_ (Just s)
 
 -- |Builds a 'PatternStub' representing 'Floor' given the corresponding
 -- operand 'PatternStub'.  Assumes operand sort is inferrable.
 floor_
-    ::  ( MetaOrObject level
-        , child ~ CommonPurePattern level domain
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ CommonPurePattern level domain ()
         , Show child
         , Show (Pattern level domain Variable child)
         )
-    => CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    => CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 floor_ = floorM_ Nothing
 
 -- |Builds a 'PatternStub' representing 'Exists' given a variable and an
 -- operand 'PatternStub'.
 exists_
-    :: (MetaOrObject level)
+    :: (Functor domain, MetaOrObject level)
     => Variable level
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 exists_ variable1 =
     unaryPattern
         (\sortS pattern1 ->
@@ -347,9 +364,10 @@ exists_ variable1 =
 -- |Builds a 'PatternStub' representing 'Forall' given a variable and an
 -- operand 'PatternStub'.
 forall_
-    :: Variable level
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    :: Functor domain
+    => Variable level
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 forall_ variable1 =
     unaryPattern
         (\sortS pattern1 ->
@@ -363,9 +381,10 @@ forall_ variable1 =
 -- |Builds a 'PatternStub' representing 'Or' given 'PatternStub's for its
 -- operands.
 or_
-    :: CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    :: Functor domain
+    => CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 or_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
@@ -379,9 +398,10 @@ or_ =
 -- |Builds a 'PatternStub' representing 'And' given 'PatternStub's for its
 -- operands.
 and_
-    :: CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    :: Functor domain
+    => CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 and_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
@@ -395,9 +415,10 @@ and_ =
 -- |Builds a 'PatternStub' representing 'Iff' given 'PatternStub's for its
 -- operands.
 iff_
-    :: CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    :: Functor domain
+    => CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 iff_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
@@ -411,9 +432,10 @@ iff_ =
 -- |Builds a 'PatternStub' representing 'Implies' given 'PatternStub's for
 -- its operands.
 implies_
-    :: CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    :: Functor domain
+    => CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 implies_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
@@ -426,7 +448,10 @@ implies_ =
 
 -- |Builds a 'PatternStub' representing 'Not' given a 'PatternStub' for
 -- its operand.
-not_ :: CommonPurePatternStub level domain -> CommonPurePatternStub level domain
+not_
+    :: Functor domain
+    => CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
 not_ =
     unaryPattern
         (\sortS pattern1 ->
@@ -439,8 +464,9 @@ not_ =
 -- |Builds a 'PatternStub' representing 'Next' given a 'PatternStub' for
 -- its operand.
 next_
-    :: CommonPurePatternStub Object domain
-    -> CommonPurePatternStub Object domain
+    :: Functor domain
+    => CommonPurePatternStub Object domain ()
+    -> CommonPurePatternStub Object domain ()
 next_ =
     unaryPattern
         (\sortS pattern1 ->
@@ -453,7 +479,7 @@ next_ =
 -- |Builds a 'PatternStub' representing 'DomainValue' given a 'Sort' and
 -- a'String' for its operand.
 parameterizedDomainValue_
-    :: Sort Object -> String -> CommonPurePatternStub Object Domain.Builtin
+    :: Sort Object -> String -> CommonPurePatternStub Object Domain.Builtin ()
 parameterizedDomainValue_ sort str =
     SortedPatternStub
         SortedPattern
@@ -469,9 +495,10 @@ parameterizedDomainValue_ sort str =
 -- |Builds a 'PatternStub' representing 'Rewrites' given 'PatternStub's for its
 -- operands.
 rewrites_
-    :: CommonPurePatternStub Object domain
-    -> CommonPurePatternStub Object domain
-    -> CommonPurePatternStub Object domain
+    :: Functor domain
+    => CommonPurePatternStub Object domain ()
+    -> CommonPurePatternStub Object domain ()
+    -> CommonPurePatternStub Object domain ()
 rewrites_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
@@ -489,12 +516,12 @@ parameterizedAxiom_
     ::  ( Foldable domain
         , Functor domain
         , MetaOrObject level
-        , child ~ CommonPurePattern level domain
+        , child ~ CommonPurePattern level domain ()
         , Show child
         , Show (Pattern level domain Variable child)
         )
     => [SortVariable level]
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
     -> PureSentenceAxiom level domain
 parameterizedAxiom_ _ (UnsortedPatternStub p) =
     error
@@ -509,7 +536,8 @@ parameterizedAxiom_
   =
     SentenceAxiom
         { sentenceAxiomParameters = parameters
-        , sentenceAxiomPattern = quantifyFreeVariables s (Fix p)
+        , sentenceAxiomPattern =
+            quantifyFreeVariables s (asPurePattern $ () :< p)
         , sentenceAxiomAttributes = Attributes []
         }
 {-|Creates an axiom with no sort parameters from a pattern.
@@ -518,11 +546,11 @@ axiom_
     ::  ( Foldable domain
         , Functor domain
         , MetaOrObject level
-        , child ~ CommonPurePattern level domain
+        , child ~ CommonPurePattern level domain ()
         , Show child
         , Show (Pattern level domain Variable child)
         )
-    => CommonPurePatternStub level domain
+    => CommonPurePatternStub level domain ()
     -> PureSentenceAxiom level domain
 axiom_ = parameterizedAxiom_ []
 
@@ -537,14 +565,14 @@ parameterizedEqualsAxiom_
     ::  ( Foldable domain
         , Functor domain
         , MetaOrObject level
-        , child ~ CommonPurePattern level domain
+        , child ~ CommonPurePattern level domain ()
         , Show child
         , Show (Pattern level domain Variable child)
         )
     => [SortVariable level]
     -> SortVariable level
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
     -> PureSentenceAxiom level domain
 parameterizedEqualsAxiom_ parameters equalsSortParam first second =
     parameterizedAxiom_
@@ -561,12 +589,12 @@ equalsAxiom_
     ::  ( Foldable domain
         , Functor domain
         , MetaOrObject level
-        , child ~ CommonPurePattern level domain
+        , child ~ CommonPurePattern level domain ()
         , Show child
         , Show (Pattern level domain Variable child)
         )
     => SortVariable level
-    -> CommonPurePatternStub level domain
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub level domain ()
+    -> CommonPurePatternStub level domain ()
     -> PureSentenceAxiom level domain
 equalsAxiom_ = parameterizedEqualsAxiom_ []

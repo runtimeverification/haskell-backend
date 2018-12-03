@@ -14,9 +14,7 @@ module Kore.Attribute.Comm
 import qualified Control.Monad as Monad
 import           Data.Default
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser
@@ -44,7 +42,7 @@ commSymbol =
 -- | Kore pattern representing the @comm@ attribute.
 commAttribute :: CommonKorePattern
 commAttribute =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = commSymbol
             , applicationChildren = []

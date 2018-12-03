@@ -17,28 +17,45 @@ module Kore.Substitution.List
     , toList
     ) where
 
-import Data.Functor.Foldable
 import Data.List
        ( nubBy )
 
 import Data.Map.Class
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.Substitution.Class
 import Kore.Variables.Free
 
 -- |A very simple substitution represented as a list of pairs
-newtype Substitution var pat = Substitution { getSubstitution :: [(var, pat)] }
+newtype Substitution variable pat =
+    Substitution { getSubstitution :: [(variable, pat)] }
 
 instance
-    ( UnifiedPatternInterface pat
-    , Foldable dom
-    , Functor (pat dom var)
-    , Ord (var Object)
-    , Ord (var Meta)
-    ) => SubstitutionClass Substitution (Unified var) (Fix (pat dom var))
+    ( Foldable domain
+    , Functor domain
+    , OrdMetaOrObject variable
+    , MetaOrObject level
+    ) =>
+    SubstitutionClass
+        Substitution
+        (Unified variable)
+        (PurePattern level domain variable annotation)
   where
-    substitutionTermsFreeVars = foldMap (freeVariables . snd) . getSubstitution
+    substitutionTermsFreeVars =
+        foldMap (freeVariables . snd) . getSubstitution
+
+instance
+    ( Foldable domain
+    , Functor domain
+    , OrdMetaOrObject variable
+    ) =>
+    SubstitutionClass
+        Substitution
+        (Unified variable)
+        (KorePattern domain variable annotation)
+  where
+    substitutionTermsFreeVars =
+        foldMap (freeVariables . snd) . getSubstitution
 
 instance Eq v => MapClass Substitution v t where
     isEmpty = null . getSubstitution

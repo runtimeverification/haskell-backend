@@ -3,14 +3,12 @@ module Test.Kore.Proof.Value where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Functor.Foldable as Functor.Foldable
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
 import           Kore.AST.MLPatterns
-import           Kore.AST.PureML
+import           Kore.AST.Pure
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import qualified Kore.ASTUtils.SmartConstructors as Kore
@@ -61,23 +59,19 @@ mkApp
 mkApp = give symbolOrAliasSorts Kore.mkApp
 
 mkInj :: CommonStepPattern Object -> CommonStepPattern Object
-mkInj input = mkApp (injSymbol inputSort supSort) [input]
+mkInj input@(Recursive.project -> _ :< projected) =
+    mkApp (injSymbol inputSort supSort) [input]
   where
-    inputSort =
-        getPatternResultSort
-            symbolOrAliasSorts
-            (Functor.Foldable.project input)
+    inputSort = getPatternResultSort symbolOrAliasSorts projected
 
 mkPair
     :: CommonStepPattern Object
     -> CommonStepPattern Object
     -> CommonStepPattern Object
-mkPair a b = mkApp (pairSymbol inputSort) [a, b]
+mkPair a@(Recursive.project -> _ :< projected) b =
+    mkApp (pairSymbol inputSort) [a, b]
   where
-    inputSort =
-        getPatternResultSort
-            symbolOrAliasSorts
-            (Functor.Foldable.project a)
+    inputSort = getPatternResultSort symbolOrAliasSorts projected
 
 mkDomainValue
     :: Sort Object

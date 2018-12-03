@@ -12,14 +12,12 @@ module Kore.Step.Simplification.Pattern
     , simplifyToOr
     ) where
 
-import Data.Reflection
-       ( Given, give )
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import           Data.Reflection
+                 ( Given, give )
 
-import           Kore.AST.Common
-                 ( Pattern (..), SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( fromPurePattern )
+import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -78,8 +76,6 @@ import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -98,7 +94,6 @@ simplify
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -131,7 +126,6 @@ simplifyToOr
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
@@ -150,7 +144,7 @@ simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt =
             substitutionSimplifier
             simplifier
             symbolIdToEvaluator
-            (fromPurePattern patt)
+            (Cofree.tailF $ fromPurePattern patt)
         )
   where
     simplifier = StepPatternSimplifier
@@ -167,7 +161,6 @@ simplifyInternal
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

@@ -6,21 +6,16 @@ module Logic.Matching.Rules.Kore where
 
 import           Control.Monad.Error.Class
                  ( MonadError )
-import           Data.Functor.Foldable
 import qualified Data.Set as Set
 
-import           Kore.AST.Common
-                 ( And (..), Application (..), Exists (..), Implies (..),
-                 Not (..), Or (..), Pattern (..), SymbolOrAlias (..),
-                 Variable )
-import qualified Kore.AST.Common as Common
-                 ( Forall (..) )
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Meta (..), Unified (..) )
+import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternPureToKore )
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.PatternVerifier
                  ( verifyPattern )
 import           Kore.Error
@@ -115,18 +110,7 @@ checkPropositional1Derivation phi psi topImplication
   = do
     (phi1, phi2, phi3) <-
         case topImplication of
-            Fix
-                (ImpliesPattern Implies
-                    { impliesFirst = a
-                    , impliesSecond = Fix
-                        ( ImpliesPattern Implies
-                            { impliesFirst = b
-                            , impliesSecond = c
-                            }
-                        )
-                    }
-                )
-                -> return (a, b, c)
+            Implies_ _ a (Implies_ _ b c) -> return (a, b, c)
             _ -> koreFail
                 "Expected a pattern of the form (phi1 -> (phi2 -> phi3))."
     testFormulaEquality
@@ -149,38 +133,10 @@ checkPropositional2Derivation phi1 phi2 phi3 conclusion
   = do
     (psi1, psi2, psi3, psi4, psi5, psi6, psi7) <-
         case conclusion of
-            Fix
-                ( ImpliesPattern Implies
-                    { impliesFirst = Fix
-                        ( ImpliesPattern Implies
-                            { impliesFirst = a
-                            , impliesSecond = Fix
-                                ( ImpliesPattern Implies
-                                    { impliesFirst = b
-                                    , impliesSecond = c
-                                    }
-                                )
-                            }
-                        )
-                    , impliesSecond = Fix
-                        ( ImpliesPattern Implies
-                            { impliesFirst = Fix
-                                ( ImpliesPattern Implies
-                                    { impliesFirst = d
-                                    , impliesSecond = e
-                                    }
-                                )
-                            , impliesSecond = Fix
-                                ( ImpliesPattern Implies
-                                    { impliesFirst = f
-                                    , impliesSecond = g
-                                    }
-                                )
-                            }
-                        )
-                    }
-                )
-                -> return (a, b, c, d, e, f, g)
+            Implies_ _
+                (Implies_ _ a (Implies_ _ b c))
+                (Implies_ _ (Implies_ _ d e) (Implies_ _ f g))
+              -> return (a, b, c, d, e, f, g)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind ++ ".")
     testFormulaEquality
@@ -218,25 +174,8 @@ checkPropositional3Derivation phi1 phi2 conclusion
   = do
     (psi1, psi2, psi3, psi4) <-
         case conclusion of
-            Fix
-                ( ImpliesPattern Implies
-                    { impliesFirst = Fix
-                        ( ImpliesPattern Implies
-                            { impliesFirst =
-                                Fix (NotPattern Not { notChild = a })
-                            , impliesSecond =
-                                Fix (NotPattern Not { notChild = b })
-                            }
-                        )
-                    , impliesSecond = Fix
-                        ( ImpliesPattern Implies
-                            { impliesFirst = c
-                            , impliesSecond = d
-                            }
-                        )
-                    }
-                )
-                -> return (a, b, c, d)
+            Implies_ _ (Implies_ _ (Not_ _ a) (Not_ _ b)) (Implies_ _ c d) ->
+                return (a, b, c, d)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind ++ ".")
     testFormulaEquality
@@ -265,13 +204,7 @@ checkModusPonensDerivation phi1 psi1ImpliesPsi2 conclusion
   = do
     (psi1, psi2) <-
         case psi1ImpliesPsi2 of
-            Fix
-                ( ImpliesPattern Implies
-                    { impliesFirst = a
-                    , impliesSecond = b
-                    }
-                )
-                -> return (a, b)
+            Implies_ _ a b -> return (a, b)
             _ -> koreFail
                     (  "Expected "
                     ++ nameInProposition "psi2"
@@ -315,18 +248,7 @@ checkVariableSubstitution
   = getNoCapture $ do
     (var, psi1, psi2) <-
         case conclusion of
-            Fix
-                ( ImpliesPattern Implies
-                    { impliesFirst = Fix
-                        ( ForallPattern Common.Forall
-                            { Common.forallVariable = v1
-                            , Common.forallChild = p1
-                            }
-                        )
-                    , impliesSecond = p2
-                    }
-                )
-                -> return (v1, p1, p2)
+            Implies_ _ (Forall_ _ v1 p1) p2 -> return (v1, p1, p2)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind ++ ".")
     testFormulaEquality
@@ -352,7 +274,7 @@ checkVariableSubstitution
     nameInKind name = name ++ " in " ++ kind
     nameInProposition name =
         name ++ " in VariableSubstitution(substituting, substituted, phi)"
-    substitutingPattern = Fix (VariablePattern substituting)
+    substitutingPattern = Var_ substituting
 
 checkForall
     :: Variable Meta
@@ -364,33 +286,10 @@ checkForall variable phi1 phi2 conclusion
   = do
     (var1, var2, psi1, psi2, psi3, psi4) <-
         case conclusion of
-            Fix
-                ( ImpliesPattern Implies
-                    { impliesFirst = Fix
-                        ( ForallPattern Common.Forall
-                            { Common.forallVariable = v1
-                            , Common.forallChild = Fix
-                                ( ImpliesPattern Implies
-                                    { impliesFirst = p1
-                                    , impliesSecond = p2
-                                    }
-                                )
-                            }
-                        )
-                    , impliesSecond = Fix
-                        ( ImpliesPattern Implies
-                            { impliesFirst = p3
-                            , impliesSecond = Fix
-                                ( ForallPattern Common.Forall
-                                    { Common.forallVariable = v2
-                                    , Common.forallChild = p4
-                                    }
-                                )
-                            }
-                        )
-                    }
-                )
-                -> return (v1, v2, p1, p2, p3, p4)
+            Implies_ _
+                (Forall_ _ v1 (Implies_ _ p1 p2))
+                (Implies_ _ p3 (Forall_ _ v2 p4))
+              -> return (v1, v2, p1, p2, p3, p4)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind ++ ".")
     testFormulaEquality
@@ -429,13 +328,7 @@ checkGeneralizationDerivation variable phi conclusion
   = do
     (var, psi) <-
         case conclusion of
-            Fix
-                ( ForallPattern Common.Forall
-                    { Common.forallVariable = a
-                    , Common.forallChild = b
-                    }
-                )
-                -> return (a, b)
+            Forall_ _ a b -> return (a, b)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind ++ ".")
     testFormulaEquality
@@ -460,33 +353,8 @@ checkPropagateOr symbol idx phi1 phi2 conclusion
   = do
     (sym1, sym2, sym3, patterns1, patterns2, patterns3) <-
         case conclusion of
-            Fix
-                ( ImpliesPattern Implies
-                    { impliesFirst = Fix
-                        ( ApplicationPattern Application
-                            { applicationSymbolOrAlias = s1
-                            , applicationChildren = c1
-                            }
-                        )
-                    , impliesSecond = Fix
-                        ( OrPattern Or
-                            { orFirst = Fix
-                                ( ApplicationPattern Application
-                                    { applicationSymbolOrAlias = s2
-                                    , applicationChildren = c2
-                                    }
-                                )
-                            , orSecond = Fix
-                                ( ApplicationPattern Application
-                                    { applicationSymbolOrAlias = s3
-                                    , applicationChildren = c3
-                                    }
-                                )
-                            }
-                        )
-                    }
-                )
-                -> return (s1, s2, s3, c1, c2, c3)
+            Implies_ _ (App_ s1 c1) (Or_ _ (App_ s2 c2) (App_ s3 c3))
+              -> return (s1, s2, s3, c1, c2, c3)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind0 ++ ".")
     testFormulaEquality
@@ -513,13 +381,7 @@ checkPropagateOr symbol idx phi1 phi2 conclusion
     let disjunction = patterns1 !! idx
     (psi1, psi2) <-
         case disjunction of
-            Fix
-                ( OrPattern Or
-                    { orFirst = a
-                    , orSecond = b
-                    }
-                )
-                -> return (a, b)
+            Or_ _ a b -> return (a, b)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind2 ++ ".")
     testFormulaEquality
@@ -572,30 +434,10 @@ checkPropagateExists symbol idx variable phi conclusion
   = do
     (application, var1, sym1, sym2, patterns1, patterns2) <-
         case conclusion of
-            Fix
-                ( ImpliesPattern Implies
-                    { impliesFirst =
-                        a@(Fix
-                            ( ApplicationPattern Application
-                                { applicationSymbolOrAlias = s1
-                                , applicationChildren = c1
-                                }
-                            )
-                        )
-                    , impliesSecond = Fix
-                        ( ExistsPattern Exists
-                            { existsVariable = v
-                            , existsChild = Fix
-                                ( ApplicationPattern Application
-                                    { applicationSymbolOrAlias = s2
-                                    , applicationChildren = c2
-                                    }
-                                )
-                            }
-                        )
-                    }
-                )
-                -> return (a, v, s1, s2, c1, c2)
+            Implies_ _
+                a@(App_ s1 c1)
+                (Exists_ _ v (App_ s2 c2))
+              -> return (a, v, s1, s2, c1, c2)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind1 ++ ".")
     testFormulaEquality
@@ -626,13 +468,7 @@ checkPropagateExists symbol idx variable phi conclusion
     let quantification = patterns1 !! idx
     (var2, psi1) <-
         case quantification of
-            Fix
-                ( ExistsPattern Exists
-                    { existsVariable = a
-                    , existsChild = b
-                    }
-                )
-                -> return (a, b)
+            Exists_ _ a b -> return (a, b)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind2 ++ ".")
     testFormulaEquality
@@ -676,27 +512,7 @@ checkFraming symbol idx hypothesis conclusion
   = do
     (sym1, sym2, patterns1, patterns2) <-
         case conclusion of
-            Fix
-                ( ImpliesPattern Implies
-                    { impliesFirst =
-                        (Fix
-                            ( ApplicationPattern Application
-                                { applicationSymbolOrAlias = s1
-                                , applicationChildren = c1
-                                }
-                            )
-                        )
-                    , impliesSecond =
-                        (Fix
-                            ( ApplicationPattern Application
-                                { applicationSymbolOrAlias = s2
-                                , applicationChildren = c2
-                                }
-                            )
-                        )
-                    }
-                )
-                -> return (s1, s2, c1, c2)
+            Implies_ _ (App_ s1 c1) (App_ s2 c2) -> return (s1, s2, c1, c2)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind1 ++ ".")
     testFormulaEquality
@@ -719,13 +535,7 @@ checkFraming symbol idx hypothesis conclusion
     let patB = patterns2 !! idx
     (hypA,hypB) <-
         case hypothesis of
-            Fix
-                ( ImpliesPattern Implies
-                    { impliesFirst = a
-                    , impliesSecond = b
-                    }
-                )
-                -> return (a,b)
+            Implies_ _ a b -> return (a,b)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind2 ++ ".")
     testFormulaEquality
@@ -757,13 +567,7 @@ checkExistence variable conclusion
   = do
     (var1, var2) <-
         case conclusion of
-            Fix
-                ( ExistsPattern Exists
-                    { existsVariable = v1
-                    , existsChild = Fix (VariablePattern v2)
-                    }
-                )
-                -> return (v1, v2)
+            Exists_ _ v1 (Var_ v2) -> return (v1, v2)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind1 ++ ".")
     testFormulaEquality
@@ -790,17 +594,7 @@ checkSingvar variable phi path1 path2 conclusion
   = do
     (psi1, psi2) <-
         case conclusion of
-            Fix
-                ( NotPattern Not
-                    { notChild = Fix
-                        (AndPattern And
-                            { andFirst = a
-                            , andSecond = b
-                            }
-                        )
-                    }
-                )
-                -> return (a, b)
+            Not_ _ (And_ _ a b) -> return (a, b)
             _ -> koreFail
                     ("Expected a meta-pattern of the form " ++ kind1 ++ ".")
     withContext (nameInKind1 "psi1")
@@ -836,13 +630,7 @@ checkSingvarContext
   = do
     (var, psi) <-
         case formula of
-            Fix
-                (AndPattern And
-                    { andFirst = Fix (VariablePattern v)
-                    , andSecond = p
-                    }
-                )
-                -> return (v, p)
+            And_ _ (Var_ v) p -> return (v, p)
             _ -> koreFail
                 ("Expected a meta-pattern of the form " ++ kind ++ ".")
     testFormulaEquality
@@ -859,14 +647,7 @@ checkSingvarContext
   = do
     (var, psi) <-
         case formula of
-            Fix
-                (AndPattern And
-                    { andFirst = Fix (VariablePattern v)
-                    , andSecond = Fix
-                        (NotPattern Not { notChild = p })
-                    }
-                )
-                -> return (v, p)
+            And_ _ (Var_ v) (Not_ _ p) -> return (v, p)
             _ -> koreFail
                 ("Expected a meta-pattern of the form " ++ kind ++ ".")
     testFormulaEquality
@@ -883,11 +664,7 @@ checkSingvarContext
   = do
     patterns <-
         case formula of
-            Fix
-                (ApplicationPattern Application
-                    { applicationChildren = p }
-                )
-                -> return p
+            App_ _ p -> return p
             _ -> koreFail
                 ("Expected a meta-pattern of the form " ++ kind ++ ".")
     koreFailWhen (pathItem < 0)

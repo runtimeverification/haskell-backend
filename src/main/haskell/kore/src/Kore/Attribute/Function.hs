@@ -18,9 +18,7 @@ import           Data.Default
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser
@@ -55,7 +53,7 @@ functionSymbol =
 -- | Kore pattern representing the @function@ attribute.
 functionAttribute :: CommonKorePattern
 functionAttribute =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = functionSymbol
             , applicationChildren = []

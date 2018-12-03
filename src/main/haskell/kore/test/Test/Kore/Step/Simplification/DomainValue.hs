@@ -31,6 +31,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 import           Kore.Step.StepperAttributes
@@ -97,7 +98,7 @@ test_domainValueSimplification =
 
 testSort :: Sort Object
 testSort =
-    case mkBottom of
+    case mkBottom :: CommonStepPattern Object of
         Bottom_ sort -> sort
         _ -> error "unexpected"
 

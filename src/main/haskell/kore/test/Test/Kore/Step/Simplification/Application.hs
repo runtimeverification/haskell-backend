@@ -443,7 +443,7 @@ makeApplication symbol patterns =
 
 testSort :: Sort Object
 testSort =
-    case mkBottom of
+    case mkBottom :: CommonStepPattern Object of
         Bottom_ sort -> sort
         _ -> error "unexpected"
 

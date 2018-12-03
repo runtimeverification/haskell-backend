@@ -44,11 +44,10 @@ import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
-                 ( SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( mapPatternVariables )
+import           Kore.AST.Pure hiding
+                 ( fromPurePattern, mapVariables )
+import qualified Kore.AST.Pure as Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkAnd, mkBottom, mkTop )
 import           Kore.ASTUtils.SmartPatterns
@@ -146,7 +145,7 @@ mapVariables
     Predicated { term, predicate, substitution }
   =
     Predicated
-        { term = mapPatternVariables variableMapper term
+        { term = Pure.mapVariables variableMapper term
         , predicate = Predicate.mapVariables variableMapper predicate
         , substitution =
             Substitution.mapVariables variableMapper substitution

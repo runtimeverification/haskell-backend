@@ -21,20 +21,26 @@ module Kore.AST.PureToKore
     , patternKoreToPure
     ) where
 
-import Data.Functor.Foldable
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 
 patternPureToKore
     :: MetaOrObject level
-    => CommonPurePattern level Domain.Builtin
+    => CommonPurePattern level Domain.Builtin ann
     -> CommonKorePattern
-patternPureToKore = cata asKorePattern
+patternPureToKore =
+    Recursive.unfold patternPureToKoreWorker
+  where
+    patternPureToKoreWorker =
+        (mempty :<) . asUnifiedPattern . Cofree.tailF . Recursive.project
 
 -- |Given a level, this function attempts to extract a pure patten
 -- of this level from a KorePattern.
@@ -45,20 +51,29 @@ patternKoreToPure
     :: MetaOrObject level
     => level
     -> CommonKorePattern
-    -> Either (Error a) (CommonPurePattern level Domain.Builtin)
-patternKoreToPure level = patternBottomUpVisitor (extractPurePattern level)
+    -> Either (Error a) (CommonPurePattern level Domain.Builtin ())
+patternKoreToPure level =
+    Recursive.fold (extractPurePattern $ isMetaOrObject $ toProxy level)
 
 extractPurePattern
-    :: (MetaOrObject level, MetaOrObject level1, Traversable domain)
-    => level
-    -> Pattern level1 domain Variable
-        (Either (Error a) (CommonPurePattern level domain))
-    -> Either (Error a) (CommonPurePattern level domain)
-extractPurePattern level p =
-    case (getMetaOrObjectPatternType p, isMetaOrObject (toProxy level)) of
-        (IsMeta, IsMeta) -> fmap Fix (sequence p)
-        (IsObject, IsObject) -> fmap Fix (sequence p)
-        _ -> koreFail ("Unexpected non-" ++ show level ++ " pattern")
+    ::  ( MetaOrObject level
+        , result ~ Either (Error a) (CommonPurePattern level Domain.Builtin ())
+        )
+    => IsMetaOrObject level
+    -> Base CommonKorePattern result
+    -> result
+extractPurePattern IsMeta = \(_ :< pat) ->
+    case pat of
+        UnifiedMetaPattern meta ->
+            Recursive.embed . (mempty :<) <$> sequence meta
+        UnifiedObjectPattern _ ->
+            koreFail "Unexpected object-level pattern"
+extractPurePattern IsObject = \(_ :< pat) ->
+    case pat of
+        UnifiedObjectPattern object ->
+            Recursive.embed . (mempty :<) <$> sequence object
+        UnifiedMetaPattern _ ->
+            koreFail "Unexpected meta-level pattern"
 
 -- FIXME : all of this attribute record syntax stuff
 -- Should be temporary measure

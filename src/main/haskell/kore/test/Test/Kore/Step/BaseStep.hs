@@ -14,8 +14,7 @@ import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
@@ -1081,9 +1080,10 @@ sigmaSymbol = SymbolOrAlias
     }
 
 metaSigma
-    :: CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
+    :: Functor dom
+    => CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
 metaSigma p1 p2 = App_ sigmaSymbol [p1, p2]
 
 
@@ -1093,7 +1093,10 @@ fSymbol = SymbolOrAlias
     , symbolOrAliasParams = []
     }
 
-metaF :: CommonPurePattern Meta dom -> CommonPurePattern Meta dom
+metaF
+    :: Functor dom
+    => CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
 metaF p = App_ fSymbol [p]
 
 
@@ -1103,7 +1106,10 @@ gSymbol = SymbolOrAlias
     , symbolOrAliasParams = []
     }
 
-metaG :: CommonPurePattern Meta dom -> CommonPurePattern Meta dom
+metaG
+    :: Functor dom
+    => CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
 metaG p = App_ gSymbol [p]
 
 hSymbol :: SymbolOrAlias Meta
@@ -1112,7 +1118,10 @@ hSymbol = SymbolOrAlias
     , symbolOrAliasParams = []
     }
 
-metaH :: CommonPurePattern Meta dom -> CommonPurePattern Meta dom
+metaH
+    :: Functor dom
+    => CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
 metaH p = App_ hSymbol [p]
 
 iSymbol :: SymbolOrAlias Meta
@@ -1121,7 +1130,10 @@ iSymbol = SymbolOrAlias
     , symbolOrAliasParams = []
     }
 
-metaI :: CommonPurePattern Meta dom -> CommonPurePattern Meta dom
+metaI
+    :: Functor dom
+    => CommonPurePattern Meta dom ()
+    -> CommonPurePattern Meta dom ()
 metaI p = App_ iSymbol [p]
 
 runStep

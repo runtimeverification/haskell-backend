@@ -16,11 +16,7 @@ import Control.Monad.Except
        ( runExceptT )
 import Data.Reflection
 
-import           Kore.AST.Common
-                 ( Application (..), Pattern (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( asPurePattern )
+import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -52,8 +48,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 {-| 'ruleFunctionEvaluator' evaluates a user-defined function. After
@@ -63,7 +57,6 @@ The function is assumed to be defined through an axiom.
 -}
 ruleFunctionEvaluator
     ::  ( FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , Ord (variable level)
         , OrdMetaOrObject variable
@@ -129,7 +122,7 @@ ruleFunctionEvaluator
         -> ExpandedPattern level variable
     stepperConfiguration app' =
         Predicated
-            { term = asPurePattern $ ApplicationPattern app'
+            { term = asPurePattern (mempty :< ApplicationPattern app')
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -145,7 +138,6 @@ reevaluateFunctions
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
@@ -200,7 +192,6 @@ evaluatePredicate
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns

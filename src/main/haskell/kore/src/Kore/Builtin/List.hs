@@ -72,8 +72,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 {- | Builtin variable name of the @List@ sort.
@@ -372,7 +370,6 @@ unifyEquals
         , SortedVariable variable
         , MonadCounter m
         , MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable

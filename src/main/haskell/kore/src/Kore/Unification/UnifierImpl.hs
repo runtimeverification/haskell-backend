@@ -10,25 +10,24 @@ Portability : portable
 -}
 module Kore.Unification.UnifierImpl where
 
-import Control.Arrow
-       ( (&&&) )
-import Control.Monad
-       ( foldM )
-import Control.Monad.Counter
-       ( MonadCounter )
-import Control.Monad.Except
-       ( ExceptT (..), throwError )
-import Data.Function
-       ( on )
-import Data.Functor.Foldable
-import Data.List
-       ( foldl', groupBy, partition, sortBy )
-import Data.Reflection
-       ( give )
+import           Control.Arrow
+                 ( (&&&) )
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import           Control.Monad
+                 ( foldM )
+import           Control.Monad.Counter
+                 ( MonadCounter )
+import           Control.Monad.Except
+                 ( ExceptT (..), throwError )
+import           Data.Function
+                 ( on )
+import qualified Data.Functor.Foldable as Recursive
+import           Data.List
+                 ( foldl', groupBy, partition, sortBy )
+import           Data.Reflection
+                 ( give )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
@@ -43,8 +42,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  liftPredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
@@ -104,7 +101,6 @@ simplifyAnds
         , Show (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
-        , Hashable variable
         , SortedVariable variable
         , FreshVariable variable
         , MonadCounter m
@@ -132,28 +128,34 @@ simplifyAnds tools substitutionSimplifier patterns = do
             ( UnificationOrSubstitutionError level variable )
             m
             ( ExpandedPattern level variable )
-    simplifyAnds' intermediate (And_ _ lhs rhs) =
-        foldM simplifyAnds' intermediate [lhs, rhs]
-    simplifyAnds' intermediate pat = do
-        (result, _) <-
-            termUnification
-                tools
-                (liftPredicateSubstitutionSimplifier substitutionSimplifier)
-                (ExpandedPattern.term intermediate)
-                pat
-        (predSubst, _) <-
-            mergePredicatesAndSubstitutionsExcept tools substitutionSimplifier
-                [ ExpandedPattern.predicate result
-                , ExpandedPattern.predicate intermediate
-                ]
-                [ ExpandedPattern.substitution result
-                , ExpandedPattern.substitution intermediate
-                ]
-
-        return $ ExpandedPattern.Predicated
-            ( ExpandedPattern.term result )
-            ( Predicated.predicate predSubst )
-            ( Predicated.substitution predSubst )
+    simplifyAnds' intermediate pat =
+        case Cofree.tailF (Recursive.project pat) of
+            AndPattern And { andFirst = lhs, andSecond = rhs } ->
+                foldM simplifyAnds' intermediate [lhs, rhs]
+            _ -> do
+                (result, _) <-
+                    termUnification
+                        tools
+                        substitutionSimplifier'
+                        (ExpandedPattern.term intermediate)
+                        pat
+                (predSubst, _) <-
+                    mergePredicatesAndSubstitutionsExcept
+                        tools
+                        substitutionSimplifier
+                        [ ExpandedPattern.predicate result
+                        , ExpandedPattern.predicate intermediate
+                        ]
+                        [ ExpandedPattern.substitution result
+                        , ExpandedPattern.substitution intermediate
+                        ]
+                return $ ExpandedPattern.Predicated
+                    ( ExpandedPattern.term result )
+                    ( Predicated.predicate predSubst )
+                    ( Predicated.substitution predSubst )
+              where
+                substitutionSimplifier' =
+                    liftPredicateSubstitutionSimplifier substitutionSimplifier
 
 
 groupSubstitutionByVariable
@@ -163,8 +165,9 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Fix (VariablePattern var'))
-        | var' < var = (var', Fix (VariablePattern var))
+    sortRenaming (var, Recursive.project -> ann :< VariablePattern var')
+        | var' < var =
+          (var', Recursive.embed (ann :< VariablePattern var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
@@ -178,7 +181,6 @@ solveGroupedSubstitution
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , SortedVariable variable
-       , Hashable variable
        , FreshVariable variable
        , MonadCounter m
        )
@@ -224,7 +226,6 @@ normalizeSubstitutionDuplication
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , Hashable variable
         , FreshVariable variable
         , MonadCounter m
         )

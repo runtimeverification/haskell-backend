@@ -12,6 +12,7 @@ module Kore.Unification.SubstitutionNormalization
     ( normalizeSubstitution
     ) where
 
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Monad
                  ( (>=>) )
 import           Control.Monad.Except
@@ -19,7 +20,8 @@ import           Control.Monad.Except
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor.Foldable
-                 ( Fix, cata )
+                 ( Recursive )
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -30,10 +32,7 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Bottom_, pattern Var_ )
+import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -67,7 +66,6 @@ normalizeSubstitution
         , Ord (variable level)
         , Ord (variable Meta)
         , Ord (variable Object)
-        , Hashable variable
         , FreshVariable variable
         , MonadCounter m
         , Show (variable level)
@@ -152,8 +150,10 @@ checkThatApplicationUsesConstructors
 checkThatApplicationUsesConstructors tools err (Just t) =
     cataM (checkApplicationConstructor tools err) t
   where
-    cataM :: (Traversable f, Monad m) => (f x -> m x) -> Fix f -> m x
-    cataM = cata . (sequence >=>)
+    cataM
+        :: (Traversable (Base t), Recursive t, Monad m)
+        => (Base t x -> m x) -> t -> m x
+    cataM = Recursive.fold . (sequence >=>)
 checkThatApplicationUsesConstructors _ _ Nothing =
     error "This should not be reachable"
 
@@ -161,12 +161,14 @@ checkApplicationConstructor
     :: (MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> checkError
-    -> StepPatternHead level variable ()
+    -> Base (StepPattern level variable) ()
     -> Either checkError ()
-checkApplicationConstructor tools err (ApplicationPattern (Application h _))
-    | give tools isConstructor_ h = return ()
-    | otherwise = Left err
-checkApplicationConstructor _ _ _ = return ()
+checkApplicationConstructor tools err =
+    \case
+        _ :< ApplicationPattern (Application h _)
+          | give tools isConstructor_ h -> return ()
+          | otherwise -> Left err
+        _ -> return ()
 
 variableToSubstitution
     :: (Ord (variable level), Show (variable level))
@@ -180,11 +182,8 @@ variableToSubstitution varToPattern var =
 
 normalizeSortedSubstitution
     ::  ( MetaOrObject level
+        , OrdMetaOrObject variable
         , Eq (variable level)
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Hashable variable
         , MonadCounter m
         , FreshVariable variable
         )
@@ -198,24 +197,23 @@ normalizeSortedSubstitution [] result _ =
         , predicate = makeTruePredicate
         , substitution = Substitution.unsafeWrap result
         }
-normalizeSortedSubstitution ((_, Bottom_ _) : _) _ _ =
-    return Predicated.bottomPredicate
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result
     substitution
-  = if eqVar varPattern
-      then normalizeSortedSubstitution unprocessed result substitution
-      else do
+  =
+    case Cofree.tailF (Recursive.project varPattern) of
+        BottomPattern _ -> return Predicated.bottomPredicate
+        VariablePattern var'
+          | var == var' ->
+            normalizeSortedSubstitution unprocessed result substitution
+        _ -> do
             substitutedVarPattern <-
                 substitute varPattern (ListSubstitution.fromList substitution)
             normalizeSortedSubstitution
                 unprocessed
                 ((var, substitutedVarPattern) : result)
                 ((asUnified var, substitutedVarPattern) : substitution)
-    where
-        eqVar (Var_ var') = var == var'
-        eqVar _           = False
 
 extractVariables
     ::  ( MetaOrObject level
@@ -241,7 +239,7 @@ getDependencies
     -> variable level  -- ^ substitution variable
     -> StepPattern level variable  -- ^ substitution pattern
     -> Set (variable level)
-getDependencies interesting var =
-    \case
-        Var_ v | v == var -> Set.empty
-        patt -> Set.intersection interesting (freePureVariables patt)
+getDependencies interesting var p@(Recursive.project -> _ :< h) =
+    case h of
+        VariablePattern v | v == var -> Set.empty
+        _ -> Set.intersection interesting (freePureVariables p)

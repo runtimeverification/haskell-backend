@@ -18,9 +18,7 @@ import           Data.Default
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser
@@ -55,7 +53,7 @@ constructorSymbol =
 -- | Kore pattern representing the @constructor@ attribute.
 constructorAttribute :: CommonKorePattern
 constructorAttribute =
-    (KoreObjectPattern . ApplicationPattern)
+    (asCommonKorePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = constructorSymbol
             , applicationChildren = []

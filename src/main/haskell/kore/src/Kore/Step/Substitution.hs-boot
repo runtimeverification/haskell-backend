@@ -18,8 +18,6 @@ import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
-import Kore.Substitution.Class
-       ( Hashable )
 import Kore.Unification.Data
        ( UnificationProof )
 import Kore.Unification.Error
@@ -38,7 +36,6 @@ mergePredicatesAndSubstitutionsExcept
        , ShowMetaOrObject variable
        , FreshVariable variable
        , MonadCounter m
-       , Hashable variable
        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m

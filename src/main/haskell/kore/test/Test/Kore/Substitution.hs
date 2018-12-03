@@ -1,8 +1,6 @@
 module Test.Kore.Substitution where
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
 
 import Test.Kore
@@ -24,7 +22,7 @@ objectVariablePattern
 objectVariablePattern = VariablePattern objectVariable
 
 objectVariableUnifiedPattern :: CommonKorePattern
-objectVariableUnifiedPattern = asKorePattern objectVariablePattern
+objectVariableUnifiedPattern = asCommonKorePattern objectVariablePattern
 
 metaSort :: Sort Meta
 metaSort = SortVariableSort (SortVariable (testId "#s"))
@@ -42,10 +40,10 @@ metaVariablePattern :: Pattern Meta Domain.Builtin Variable CommonKorePattern
 metaVariablePattern = VariablePattern metaVariable
 
 metaVariableUnifiedPattern :: CommonKorePattern
-metaVariableUnifiedPattern = asKorePattern metaVariablePattern
+metaVariableUnifiedPattern = asCommonKorePattern metaVariablePattern
 
 objectTopPattern :: CommonKorePattern
-objectTopPattern = asKorePattern $ TopPattern $ Top objectSort
+objectTopPattern = asCommonKorePattern $ TopPattern $ Top objectSort
 
 objectBottomPattern :: CommonKorePattern
-objectBottomPattern = asKorePattern $ BottomPattern $ Bottom objectSort
+objectBottomPattern = asCommonKorePattern $ BottomPattern $ Bottom objectSort

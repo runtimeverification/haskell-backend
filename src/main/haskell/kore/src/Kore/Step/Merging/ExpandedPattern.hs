@@ -32,8 +32,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 {-| 'mergeWithPredicateSubstitution' ands the given predicate-substitution
 with the given pattern.
@@ -46,7 +44,6 @@ mergeWithPredicateSubstitution
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         , Given (MetadataTools level StepperAttributes)
         )
     => MetadataTools level StepperAttributes
@@ -101,7 +98,6 @@ mergeWithEvaluatedCondition
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

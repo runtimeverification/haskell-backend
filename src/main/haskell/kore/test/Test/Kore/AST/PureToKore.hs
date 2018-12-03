@@ -7,9 +7,7 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
        ( forAll, testProperty )
 
-import           Kore.AST.Common
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
@@ -39,7 +37,7 @@ test_pureToKore =
                                     { sentenceImportModuleName =
                                         ModuleName "TEST-MODULE"
                                     , sentenceImportAttributes = Attributes
-                                        [ asKorePattern
+                                        [ asCommonKorePattern
                                             ( TopPattern Top
                                                 { topSort =
                                                     SortVariableSort
@@ -71,13 +69,14 @@ test_pureToKore =
                                     { sentenceImportModuleName =
                                         ModuleName "TEST-MODULE"
                                     , sentenceImportAttributes = Attributes
-                                        [ asMetaKorePattern
+                                        [ asCommonKorePattern
                                             ( TopPattern Top
                                                 { topSort =
                                                     SortVariableSort
                                                         (SortVariable
                                                             (testId "#s1")
                                                         )
+                                                    :: Sort Meta
                                                 }
                                             )
                                         ]

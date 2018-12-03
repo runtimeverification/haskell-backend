@@ -53,10 +53,7 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Common
-import qualified Kore.AST.Common as Kore
-import           Kore.AST.MetaOrObject
-import qualified Kore.AST.PureML as Kore
+import           Kore.AST.Pure as Kore
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -83,8 +80,6 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( normalize )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Map@ sort.
@@ -530,7 +525,6 @@ unifyEquals
         , SortedVariable variable
         , MonadCounter m
         , MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable

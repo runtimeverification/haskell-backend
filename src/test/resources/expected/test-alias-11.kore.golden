@@ -28,16 +28,28 @@ Definition
                                         ]
                                     }
                             , applicationChildren =
-                                [ Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "a" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    })))
-                                , Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "b" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    })))
+                                [ KorePattern
+                                    { getKorePattern = CofreeT
+                                        { runCofreeT = Identity
+                                            { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                { variableName = (Id "a" AstLocationNone) :: Id Object
+                                                , variableSort =
+                                                    SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
+                                                })
+                                            }
+                                        }
+                                    }
+                                , KorePattern
+                                    { getKorePattern = CofreeT
+                                        { runCofreeT = Identity
+                                            { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                { variableName = (Id "b" AstLocationNone) :: Id Object
+                                                , variableSort =
+                                                    SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
+                                                })
+                                            }
+                                        }
+                                    }
                                 ]
                             }
                     , sentenceAliasRightPattern =
@@ -45,17 +57,29 @@ Definition
                             { rewritesSort =
                                 SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                             , rewritesFirst =
-                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "a" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    })))
+                                KorePattern
+                                    { getKorePattern = CofreeT
+                                        { runCofreeT = Identity
+                                            { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                { variableName = (Id "a" AstLocationNone) :: Id Object
+                                                , variableSort =
+                                                    SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
+                                                })
+                                            }
+                                        }
+                                    }
                             , rewritesSecond =
-                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "b" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                    })))
+                                KorePattern
+                                    { getKorePattern = CofreeT
+                                        { runCofreeT = Identity
+                                            { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                { variableName = (Id "b" AstLocationNone) :: Id Object
+                                                , variableSort =
+                                                    SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
+                                                })
+                                            }
+                                        }
+                                    }
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

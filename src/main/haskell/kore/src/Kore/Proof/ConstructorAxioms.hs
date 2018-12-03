@@ -16,23 +16,20 @@ Portability : portable
 
 
 module Kore.Proof.ConstructorAxioms
-( generateInjectivityAxiom
-, generateNoConfusionAxiom
-, generateCoveringAxiom
-) where
+    ( generateInjectivityAxiom
+    , generateNoConfusionAxiom
+    , generateCoveringAxiom
+    ) where
 
 import Data.Reflection
+
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.IndexedModule.MetadataTools
-
 import Kore.ASTUtils.SmartConstructors
 import Kore.ASTUtils.SmartPatterns
-
+import Kore.IndexedModule.MetadataTools
 import Kore.Proof.Proof
 import Kore.Proof.Util
-
-
 
 -- | Given head symbol h, return sort of h, arguments sorts s_i,
 -- generates axiom of the form:

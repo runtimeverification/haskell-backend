@@ -5,9 +5,7 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.Imports
 import Test.Tasty
        ( TestTree, testGroup )
 
-import Kore.AST.Common
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
@@ -330,9 +328,9 @@ sortVisibilityTests =
             , sentenceSortAttributes = Attributes []
             }
         :: KoreSentenceSort Object)
-    topSortPattern = asKorePattern ( TopPattern Top { topSort = sort } )
+    topSortPattern = asCommonKorePattern ( TopPattern Top { topSort = sort } )
     metaTopSortPattern =
-        asKorePattern ( TopPattern Top { topSort = charMetaSort } )
+        asCommonKorePattern ( TopPattern Top { topSort = charMetaSort } )
     sortReferenceInSort =
         SortActualSort SortActual
             { sortActualName = testId "sort2"
@@ -342,7 +340,7 @@ sortVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( TopPattern Top { topSort = sortReferenceInSort } )
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -376,14 +374,14 @@ sortVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( ExistsPattern Exists
                         { existsSort = sort
                         , existsVariable = Variable
                             { variableName = testId "var"
                             , variableSort = sort
                             }
-                        , existsChild = asKorePattern
+                        , existsChild = asCommonKorePattern
                             ( VariablePattern Variable
                                 { variableName = testId "var"
                                 , variableSort = sort
@@ -398,7 +396,7 @@ sortVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( AndPattern And
                         { andSort = sort
                         , andFirst = topSortPattern
@@ -412,7 +410,7 @@ sortVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( NextPattern Next
                         { nextSort = sort
                         , nextChild = topSortPattern
@@ -425,10 +423,10 @@ sortVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( NextPattern Next
                         { nextSort = anotherSort
-                        , nextChild = asKorePattern
+                        , nextChild = asCommonKorePattern
                             ( EqualsPattern Equals
                                 { equalsResultSort = anotherSort
                                 , equalsOperandSort = sort
@@ -503,7 +501,7 @@ sortVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( ApplicationPattern Application
                         { applicationSymbolOrAlias = SymbolOrAlias
                             { symbolOrAliasConstructor = testId "symbol2"
@@ -610,9 +608,9 @@ symbolVisibilityTests =
         (SupportingSentences [])
     ]
   where
-    topSortPattern = asKorePattern ( TopPattern Top { topSort = defaultSort } )
+    topSortPattern = asCommonKorePattern ( TopPattern Top { topSort = defaultSort } )
     symbolPattern :: CommonKorePattern
-    symbolPattern = asKorePattern
+    symbolPattern = asCommonKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = testId "symbol1"
@@ -634,7 +632,7 @@ symbolVisibilityTests =
             }
         :: KoreSentenceSymbol Object)
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
-    metaSymbolPattern = asKorePattern
+    metaSymbolPattern = asCommonKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = testId "#symbol1"
@@ -675,7 +673,7 @@ symbolVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( AndPattern And
                         { andSort = defaultSort
                         , andFirst = symbolPattern
@@ -689,7 +687,7 @@ symbolVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( ExistsPattern Exists
                         { existsSort = defaultSort
                         , existsVariable = Variable
@@ -706,7 +704,7 @@ symbolVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( NextPattern Next
                         { nextSort = defaultSort
                         , nextChild = symbolPattern
@@ -719,7 +717,7 @@ symbolVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( ApplicationPattern Application
                         { applicationSymbolOrAlias = SymbolOrAlias
                             { symbolOrAliasConstructor = testId "symbol2"
@@ -827,9 +825,9 @@ aliasVisibilityTests =
         (SupportingSentences [])
     ]
   where
-    topSortPattern = asKorePattern ( TopPattern Top { topSort = defaultSort } )
+    topSortPattern = asCommonKorePattern ( TopPattern Top { topSort = defaultSort } )
     aliasPattern :: CommonKorePattern
-    aliasPattern = asKorePattern
+    aliasPattern = asCommonKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = testId "alias1"
@@ -853,7 +851,7 @@ aliasVisibilityTests =
             }
         :: KoreSentenceAlias Object)
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
-    metaAliasPattern = asKorePattern
+    metaAliasPattern = asCommonKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = testId "#alias1"
@@ -896,7 +894,7 @@ aliasVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( AndPattern And
                         { andSort = defaultSort
                         , andFirst = aliasPattern
@@ -910,7 +908,7 @@ aliasVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( ExistsPattern Exists
                         { existsSort = defaultSort
                         , existsVariable = Variable
@@ -927,7 +925,7 @@ aliasVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( NextPattern Next
                         { nextSort = defaultSort
                         , nextChild = aliasPattern
@@ -940,7 +938,7 @@ aliasVisibilityTests =
         asSentence
             (SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = asKorePattern
+                , sentenceAxiomPattern = asCommonKorePattern
                     ( ApplicationPattern Application
                         { applicationSymbolOrAlias = SymbolOrAlias
                             { symbolOrAliasConstructor = testId "alias2"

@@ -15,6 +15,7 @@ module Kore.ASTVerifier.PatternVerifier
 
 import           Control.Monad
                  ( foldM, zipWithM_ )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
@@ -23,10 +24,8 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Text.Prettyprint.Doc.Render.String
                  ( renderString )
 
-import           Kore.AST.Common
 import           Kore.AST.Error
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.AST.MLPatterns
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
@@ -180,22 +179,25 @@ internalVerifyPattern
     sortParamsSet
     declaredVariables
     mUnifiedSort
+    (Recursive.project -> _ :< upat)
   =
-    applyKorePattern
-        (internalVerifyMetaPattern
-            builtinVerifier
-            indexedModule
-            sortParamsSet
-            declaredVariables
-            mUnifiedSort
-        )
-        (internalVerifyObjectPattern
-            builtinVerifier
-            indexedModule
-            sortParamsSet
-            declaredVariables
-            mUnifiedSort
-        )
+    case upat of
+        UnifiedMetaPattern mpat ->
+            internalVerifyMetaPattern
+                builtinVerifier
+                indexedModule
+                sortParamsSet
+                declaredVariables
+                mUnifiedSort
+                mpat
+        UnifiedObjectPattern opat ->
+            internalVerifyObjectPattern
+                builtinVerifier
+                indexedModule
+                sortParamsSet
+                declaredVariables
+                mUnifiedSort
+                opat
 
 internalVerifyMetaPattern
     :: Builtin.PatternVerifier

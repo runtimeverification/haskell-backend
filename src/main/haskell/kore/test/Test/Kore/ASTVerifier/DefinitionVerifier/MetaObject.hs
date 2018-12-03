@@ -6,9 +6,7 @@ import Test.Tasty
        ( TestTree )
 
 import Kore.AST.AstWithLocation
-import Kore.AST.Common
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
@@ -21,10 +19,10 @@ test_metaObject =
         (simpleDefinitionFromSentences
             (ModuleName "test")
             [ simpleAxiomSentence
-                (asKorePattern
+                (asCommonKorePattern
                     (notPattern
                         (updateAstLocation patternMetaSort AstLocationTest)
-                        (asKorePattern (topPattern objectSort))
+                        (asCommonKorePattern (topPattern objectSort))
                     )
                 )
             , objectSortSentence
@@ -46,10 +44,10 @@ test_metaObject =
         (simpleDefinitionFromSentences
             (ModuleName "test")
             [ simpleAxiomSentence
-                (asKorePattern
+                (asCommonKorePattern
                     (notPattern
                         (updateAstLocation charMetaSort AstLocationTest)
-                        (asKorePattern (topPattern objectSort))
+                        (asCommonKorePattern (topPattern objectSort))
                     )
                 )
             , objectSortSentence
@@ -59,10 +57,10 @@ test_metaObject =
         (simpleDefinitionFromSentences
             (ModuleName "test")
             [ simpleAxiomSentence
-                (asKorePattern
+                (asCommonKorePattern
                     (notPattern
                         objectSort
-                        (asKorePattern
+                        (asCommonKorePattern
                             (topPattern
                                 (updateAstLocation
                                     patternMetaSort AstLocationTest
@@ -91,10 +89,10 @@ test_metaObject =
         (simpleDefinitionFromSentences
             (ModuleName "test")
             [ simpleAxiomSentence
-                (asKorePattern
+                (asCommonKorePattern
                     (notPattern
                         objectSort
-                        (asKorePattern
+                        (asCommonKorePattern
                             (topPattern
                                 (updateAstLocation
                                     charMetaSort AstLocationTest)

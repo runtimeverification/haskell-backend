@@ -10,19 +10,12 @@ Portability : POSIX
 -}
 module Kore.Building.Patterns where
 
-import qualified Data.Functor.Foldable as Functor.Foldable
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Proxy
                  ( Proxy (Proxy) )
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
-                 ( And (..), AstLocation, Bottom (..), Ceil (..),
-                 CharLiteral (..), DomainValue (..), Equals (..), Exists (..),
-                 Floor (..), Forall (..), Id (..), Iff (..), Implies (..),
-                 In (..), Next (..), Not (..), Or (..), Pattern (..),
-                 Rewrites (..), StringLiteral (..), Top (..), Variable (..) )
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Building.AsAst
 import           Kore.Building.Sorts
@@ -74,8 +67,8 @@ instance
     AsAst CommonKorePattern patt
   where
     asAst pat = case isMetaOrObject (Proxy :: Proxy level) of
-      IsMeta   -> asKorePattern (asProperMetaPattern pat)
-      IsObject -> asKorePattern (asProperObjectPattern pat)
+      IsMeta   -> asCommonKorePattern (asProperMetaPattern pat)
+      IsObject -> asCommonKorePattern (asProperObjectPattern pat)
 
 instance ProperMetaPattern sort patt => MetaPattern sort patt where
 instance ProperMetaPattern sort patt => AsMetaPattern patt where
@@ -208,8 +201,8 @@ instance
         externalChild :: CommonKorePattern
         externalChild = asAst child
         literal =
-            case Functor.Foldable.project externalChild of
-                UnifiedMetaPattern
+            case Recursive.project externalChild of
+                _ :< UnifiedMetaPattern
                     (StringLiteralPattern (StringLiteral str)) -> str
                 _ -> error "Domain value must be a string literal"
 

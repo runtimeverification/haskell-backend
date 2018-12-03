@@ -39,12 +39,7 @@ module Kore.Parser.Parser
     , CommonMetaPattern
     ) where
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (..), Variable )
 import           Kore.AST.Kore
-                 ( CommonKorePattern )
-import           Kore.AST.MetaOrObject
-                 ( Meta (..) )
 import           Kore.AST.Sentence
 import           Kore.MetaML.AST
                  ( CommonMetaPattern )

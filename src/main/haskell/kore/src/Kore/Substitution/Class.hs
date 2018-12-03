@@ -11,13 +11,13 @@ Portability : portable
 -}
 module Kore.Substitution.Class
     ( SubstitutionClass (..)
-    , Hashable (..)
     , substitute
     ) where
 
+import           Control.Comonad
 import           Data.Functor.Foldable
-import           Data.Hashable
-                 ( hash )
+                 ( Base, Corecursive, Recursive )
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Set as Set
@@ -25,9 +25,8 @@ import           Prelude hiding
                  ( lookup )
 
 import Data.Map.Class
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
+import Kore.AST.Pure
 import Kore.Variables.Free
 import Kore.Variables.Fresh
 
@@ -51,8 +50,8 @@ data SubstitutionAndQuantifiedVars s var pat = SubstitutionAndQuantifiedVars
     , freeVars :: Set.Set var
     }
 
-type FixedSubstitutionAndQuantifiedVars s var pat =
-    SubstitutionAndQuantifiedVars s (Unified var) (Fix (pat var))
+type FixedSubstitutionAndQuantifiedVars s var t =
+    SubstitutionAndQuantifiedVars s (Unified var) t
 
 addFreeVariable
     :: (Ord var)
@@ -79,26 +78,23 @@ instance (SubstitutionClass s var pat)
   where
     substitutionTermsFreeVars = substitutionTermsFreeVars . substitution
 
-class Hashable var where
-    getVariableHash :: var level -> Int
-
-instance Hashable Variable where
-    getVariableHash = hash . getId . variableName
-
 -- | Apply a substitution @s@ to a pattern @pat@.
 substitute
     ::  ( UnifiedPatternInterface pat
-        , SubstitutionClass subst (Unified var) (Fix (pat dom var))
+        , SubstitutionClass subst (Unified var) (f ann)
         , MonadCounter m
         , Traversable dom
         , Traversable (pat dom var)
         , OrdMetaOrObject var
         , FreshVariable var
-        , Hashable var
+        , Corecursive (f ann)
+        , Recursive (f ann)
+        , Base (f ann) ~ CofreeF (pat dom var) ann
+        , Comonad f
         )
-    => Fix (pat dom var)
-    -> subst (Unified var) (Fix (pat dom var))
-    -> m (Fix (pat dom var))
+    => f ann
+    -> subst (Unified var) (f ann)
+    -> m (f ann)
 substitute p s =
     substituteM
         SubstitutionAndQuantifiedVars
@@ -108,34 +104,46 @@ substitute p s =
         p
 
 substituteM
-    ::  forall subst pat (dom :: * -> *) var m.
+    ::  forall subst pat (dom :: * -> *) var m f ann.
         ( MonadCounter m
-        , SubstitutionClass subst (Unified var) (Fix (pat dom var))
+        , SubstitutionClass subst (Unified var) (f ann)
         , UnifiedPatternInterface pat
-        , Functor (pat dom var)
         , Traversable dom
         , FreshVariable var
         , OrdMetaOrObject var
+        , Recursive (f ann), Corecursive (f ann)
+        , Base (f ann) ~ CofreeF (pat dom var) ann
+        , Comonad f
         )
-    => SubstitutionAndQuantifiedVars subst (Unified var) (Fix (pat dom var))
-    -> Fix (pat dom var)
-    -> m (Fix (pat dom var))
+    => SubstitutionAndQuantifiedVars subst (Unified var) (f ann)
+    -> f ann
+    -> m (f ann)
 substituteM subst p
-    | isEmpty subst = return p
-    | otherwise = unifiedPatternApply substPattern (project p)
+  | isEmpty subst = return p
+  | otherwise =
+    case Recursive.project p of
+        ann :< projected ->
+            unifiedPatternApply (substPattern ann) projected
   where
     substPattern
         :: MetaOrObject level'
-        => Pattern level' dom var (Fix (pat dom var))
-        -> m (Fix (pat dom var))
-    substPattern (ExistsPattern e) = binderPatternSubstitutePreprocess subst e
-    substPattern (ForallPattern f) = binderPatternSubstitutePreprocess subst f
-    substPattern varPat@(VariablePattern v) = do
-        return $ case lookup (asUnified v) subst of
-                     Just up -> up
-                     Nothing -> Fix (unifyPattern varPat)
-    substPattern otherPat =
-        fmap (Fix . unifyPattern) (mapM (substituteM subst) otherPat)
+        => ann
+        -> Pattern level' dom var (f ann)
+        -> m (f ann)
+    substPattern ann =
+        \case
+            ExistsPattern e ->
+                binderPatternSubstitutePreprocess subst ann e
+            ForallPattern f ->
+                binderPatternSubstitutePreprocess subst ann f
+            var@(VariablePattern v) ->
+                return $ case lookup (asUnified v) subst of
+                    Just up -> ann <$ up
+                    Nothing -> Recursive.embed (ann :< unifyPattern var)
+            other ->
+                (<$>)
+                    (Recursive.embed . (:<) ann . unifyPattern)
+                    (mapM (substituteM subst) other)
 
 {-
 * if the quantified variable is among the encountered free variables
@@ -146,21 +154,25 @@ substituteM subst p
   context, the quantified variable is free).
 -}
 binderPatternSubstitutePreprocess
-    ::  forall subst level binder pat (dom :: * -> *) (var :: * -> *) m.
+    ::  forall subst level binder pat (dom :: * -> *) (var :: * -> *) ann m f.
         ( MLBinderPatternClass binder
         , MetaOrObject level
         , MonadCounter m
-        , SubstitutionClass subst (Unified var) (Fix (pat dom var))
+        , SubstitutionClass subst (Unified var) (f ann)
         , FreshVariable var
         , UnifiedPatternInterface pat
         , Traversable dom
-        , Functor (pat dom var)
         , OrdMetaOrObject var
+        , Corecursive (f ann)
+        , Recursive (f ann)
+        , Base (f ann) ~ CofreeF (pat dom var) ann
+        , Comonad f
         )
-    => FixedSubstitutionAndQuantifiedVars subst var (pat dom)
-    -> binder level var (Fix (pat dom var))
-    -> m (Fix (pat dom var))
-binderPatternSubstitutePreprocess s q
+    => FixedSubstitutionAndQuantifiedVars subst var (f ann)
+    -> ann
+    -> binder level var (f ann)
+    -> m (f ann)
+binderPatternSubstitutePreprocess s ann q
     | unifiedVar `Set.member` substitutionFreeVars
       = do
         var' <- freshVariableSuchThat
@@ -181,7 +193,7 @@ binderPatternSubstitutePreprocess s q
           return $ toPat $
             binderPatternConstructor q sort var pat'
   where
-    toPat p = Fix (unifyPattern p)
+    toPat p = Recursive.embed (ann :< unifyPattern p)
     (sort,var,pat) = (getBinderPatternSort q
                      ,getBinderPatternVariable q
                      ,getBinderPatternChild q)

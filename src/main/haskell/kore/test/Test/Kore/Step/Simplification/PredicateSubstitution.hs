@@ -15,9 +15,7 @@ import           Data.Reflection
 import           Data.These
                  ( These (That) )
 
-import           Kore.AST.Common
-                 ( Application, Pattern (..), SortedVariable )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkVar )
 import           Kore.IndexedModule.MetadataTools
@@ -41,8 +39,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -312,7 +308,6 @@ runSimplifier patternSimplifierMap predicateSubstitution =
 makeEvaluator
     ::  (forall variable
         .   ( FreshVariable variable
-            , Hashable variable
             , OrdMetaOrObject variable
             , SortedVariable variable
             , ShowMetaOrObject variable
@@ -326,7 +321,6 @@ makeEvaluator mapping =
 
 simpleEvaluator
     ::  ( FreshVariable variable
-        , Hashable variable
         , OrdMetaOrObject variable
         , SortedVariable variable
         , ShowMetaOrObject variable
@@ -339,7 +333,7 @@ simpleEvaluator
         )
 simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
 simpleEvaluator ((from, to) : ps) app
-  | from == embed (ApplicationPattern app) =
+  | from == embed (() :< ApplicationPattern app) =
     return
         ( Applied
             (OrOfExpandedPattern.make

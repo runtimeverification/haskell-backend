@@ -17,6 +17,7 @@ module Kore.Step.Simplification.AndTerms
 
 import           Control.Applicative
                  ( Alternative (..) )
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( ExceptT, MaybeT (..), fromMaybe )
 import qualified Control.Error as Error
@@ -25,8 +26,7 @@ import           Control.Exception
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Bifunctor as Bifunctor
-import           Data.Functor.Foldable
-                 ( project )
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
@@ -71,8 +71,6 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( Hashable )
 import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -99,7 +97,6 @@ See also: 'termAnd'
  -}
 termEquals
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -114,14 +111,12 @@ termEquals
     -> StepPattern level variable
     -> MaybeT m
         (PredicateSubstitution level variable, SimplificationProof level)
-termEquals tools substitutionSimplifier first second
-  = do
+termEquals tools substitutionSimplifier first second = do
     result <- termEqualsAnd tools substitutionSimplifier first second
     return (Bifunctor.first erasePredicatedTerm result)
 
 termEqualsAnd
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -161,7 +156,6 @@ termEqualsAnd tools substitutionSimplifier =
 
 maybeTermEquals
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -196,7 +190,6 @@ the special cases handled by this.
 -- signature.
 termUnification
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -240,7 +233,6 @@ See also: 'termUnification'
 -- signature.
 termAnd
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -275,7 +267,6 @@ termAnd tools substitutionSimplifier =
 
 maybeTermAnd
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -297,7 +288,6 @@ andFunctions
     ::  ( Eq (variable level)
         , Eq (variable Meta)
         , FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
@@ -326,7 +316,6 @@ equalsFunctions
     ::  ( Eq (variable level)
         , Eq (variable Meta)
         , FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
@@ -355,7 +344,6 @@ andEqualsFunctions
     ::  ( Eq (variable level)
         , Eq (variable Meta)
         , FreshVariable variable
-        , Hashable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
@@ -436,7 +424,6 @@ type TermTransformationOld level variable m =
 
 maybeTransformTerm
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Ord (variable Meta)
@@ -715,7 +702,6 @@ See also: 'StepperAttributes.isInjective', 'StepperAttributes.isSortInjection',
  -}
 equalInjectiveHeadsAndEquals
     ::  ( MetaOrObject level
-        , Hashable variable
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -851,8 +837,10 @@ sortInjectionAndEqualsAssumesDifferentHeads
 
     isSubsortOf = MetadataTools.isSubsortOf tools
 
-    isFirstConstructorLike = isConstructorLikeTop tools (project firstChild)
-    isSecondConstructorLike = isConstructorLikeTop tools (project secondChild)
+    isConstructorLike =
+        isConstructorLikeTop tools . Cofree.tailF . Recursive.project
+    isFirstConstructorLike = isConstructorLike firstChild
+    isSecondConstructorLike = isConstructorLike secondChild
 
     {- |
         Merge the terms inside a sort injection,

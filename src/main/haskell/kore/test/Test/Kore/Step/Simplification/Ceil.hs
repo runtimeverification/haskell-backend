@@ -10,11 +10,7 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
-import           Kore.AST.Common
-                 ( Ceil (..), Sort (..), Variable )
-import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( asConcretePurePattern )
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkDomainValue, mkStringLiteral, mkTop )
 import           Kore.ASTUtils.SmartPatterns
@@ -439,7 +435,7 @@ makeCeil patterns =
 
 testSort :: Sort Object
 testSort =
-    case mkBottom of
+    case mkBottom :: CommonStepPattern Object of
         Bottom_ sort -> sort
         _ -> error "unexpected"
 

@@ -121,7 +121,7 @@ asPattern
 asPattern resultSort =
     DV_ resultSort . Domain.BuiltinPattern . asMetaPattern
 
-asMetaPattern :: Bool -> CommonPurePattern Meta domain
+asMetaPattern :: Functor dom => Bool -> PurePattern Meta dom var ()
 asMetaPattern True = StringLiteral_ "true"
 asMetaPattern False = StringLiteral_ "false"
 

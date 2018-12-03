@@ -47,8 +47,6 @@ import qualified Control.Monad.State.Strict as Monad.State
 import           Data.Default
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Classes
-import           Data.Functor.Foldable
-                 ( Fix )
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -59,10 +57,8 @@ import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
 import           Kore.AST.Error
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Parser
@@ -73,7 +69,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 
-type SortDescription level dom = SentenceSort level UnifiedPattern dom Variable
+type SortDescription level dom = SentenceSort level KorePattern dom Variable
 
 data IndexModuleError
 
@@ -139,15 +135,15 @@ getIndexedSentence = snd
 deriving instance
     ( Show1 (pat dom var)
     , Show (dom child)
-    , Show (pat dom var child)
+    , Show (pat dom var ())
     , Show sortParam
     , ShowMetaOrObject var
     , Show parsedAttributes
-    , child ~ Fix (pat dom var)
+    , child ~ pat dom var ()
     ) => Show (IndexedModule sortParam pat dom var parsedAttributes)
 
 type KoreIndexedModule =
-    IndexedModule UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    IndexedModule UnifiedSortVariable KorePattern Domain.Builtin Variable
 
 instance NFData a => NFData (KoreIndexedModule a)
 
@@ -206,7 +202,7 @@ newtype ImplicitIndexedModule sortParam pat dom var atts =
 type KoreImplicitIndexedModule =
     ImplicitIndexedModule
         UnifiedSortVariable
-        UnifiedPattern
+        KorePattern
         Domain.Builtin
         Variable
 
@@ -431,7 +427,7 @@ indexModuleMetaSentence
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName indexed, indexed)
-    -> Sentence Meta UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    -> Sentence Meta UnifiedSortVariable KorePattern Domain.Builtin Variable
     -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
 indexModuleMetaSentence
     implicitModule
@@ -568,7 +564,7 @@ indexModuleObjectSentence
     -> Sentence
         Object
         UnifiedSortVariable
-        UnifiedPattern
+        KorePattern
         Domain.Builtin
         Variable
     -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)

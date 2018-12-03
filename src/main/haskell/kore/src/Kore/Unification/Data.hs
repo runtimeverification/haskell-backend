@@ -12,7 +12,7 @@ module Kore.Unification.Data
     ( UnificationProof (..)
     ) where
 
-import Kore.AST.Common
+import Kore.AST.Pure
 import Kore.Proof.Functional
        ( FunctionalProof (..) )
 import Kore.Step.Pattern

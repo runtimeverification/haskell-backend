@@ -11,11 +11,8 @@ module Kore.Step.Simplification.Variable
     ( simplify
     ) where
 
-import           Kore.AST.Common
-                 ( Pattern (VariablePattern) )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.PureML
-                 ( asPurePattern )
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -39,7 +36,7 @@ simplify
 simplify var =
     ( OrOfExpandedPattern.make
         [Predicated
-            { term = asPurePattern (VariablePattern var)
+            { term = Var_ var
             , predicate = makeTruePredicate
             , substitution = mempty
             }

@@ -9,22 +9,32 @@ Definition
                         [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        Fix (UnifiedPattern (UnifiedObjectPattern (ExistsPattern Exists
-                            { existsSort =
-                                SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                            , existsVariable =
-                                Variable
-                                    { variableName = (Id "X" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (ExistsPattern Exists
+                                        { existsSort =
+                                            SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                        , existsVariable =
+                                            Variable
+                                                { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                , variableSort =
+                                                    SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                                }
+                                        , existsChild =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                        { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableSort =
+                                                            SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                                        })
+                                                    }
+                                                }
+                                        })
                                     }
-                            , existsChild =
-                                Fix (UnifiedPattern (UnifiedObjectPattern (VariablePattern Variable
-                                    { variableName = (Id "X" AstLocationNone) :: Id Object
-                                    , variableSort =
-                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                    })))
-                            })))
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

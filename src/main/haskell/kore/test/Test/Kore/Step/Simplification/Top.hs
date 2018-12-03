@@ -20,6 +20,7 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Top
                  ( simplify )
 
@@ -41,7 +42,7 @@ test_topSimplification =
 
 testSort :: Sort Object
 testSort =
-    case mkTop of
+    case mkTop :: CommonStepPattern Object of
         Top_ sort -> sort
         _ -> error "unexpected"
 

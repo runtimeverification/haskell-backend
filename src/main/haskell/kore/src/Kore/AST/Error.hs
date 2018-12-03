@@ -26,7 +26,6 @@ import Data.List
        ( intercalate )
 
 import           Kore.AST.AstWithLocation
-import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
@@ -162,7 +161,7 @@ withSentenceContext
     :: Sentence
         level
         UnifiedSortVariable
-        UnifiedPattern
+        KorePattern
         Domain.Builtin
         Variable
     -> Either (Error e) a

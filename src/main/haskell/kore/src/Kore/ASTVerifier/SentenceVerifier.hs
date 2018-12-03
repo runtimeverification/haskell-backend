@@ -20,10 +20,8 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
 import           Kore.AST.Error
 import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
 import           Kore.AST.MLPatterns
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
@@ -155,7 +153,7 @@ verifyMetaSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Sentence Meta UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    -> Sentence Meta UnifiedSortVariable KorePattern Domain.Builtin Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyMetaSentence
     builtinVerifiers
@@ -207,7 +205,7 @@ verifyObjectSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Sentence Object UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    -> Sentence Object UnifiedSortVariable KorePattern Domain.Builtin Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyObjectSentence
     builtinVerifiers
@@ -242,7 +240,7 @@ verifyObjectSentence
 
 verifySentenceAttributes
     :: AttributesVerification atts
-    -> Sentence level UnifiedSortVariable UnifiedPattern Domain.Builtin Variable
+    -> Sentence level UnifiedSortVariable KorePattern Domain.Builtin Variable
     -> Either (Error VerifyError) VerifySuccess
 verifySentenceAttributes attributesVerification sentence =
     do
@@ -257,7 +255,7 @@ verifyHookSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> SentenceHook Object UnifiedPattern Domain.Builtin Variable
+    -> SentenceHook Object KorePattern Domain.Builtin Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyHookSentence
     builtinVerifiers
@@ -346,13 +344,13 @@ verifyAliasSentence
             indexedModule
             variables
             (Just $ asUnified leftPatternSort)
-            (asKorePattern $ sentenceAliasLeftPattern sentence)
+            (asCommonKorePattern $ sentenceAliasLeftPattern sentence)
         verifyPattern
             (Builtin.patternVerifier builtinVerifiers)
             indexedModule
             variables
             (Just $ asUnified rightPatternSort)
-            (asKorePattern $ sentenceAliasRightPattern sentence)
+            (asCommonKorePattern $ sentenceAliasRightPattern sentence)
   where
     findSort         = findIndexedSort indexedModule
     sortParams       = (aliasParams . sentenceAliasAlias) sentence

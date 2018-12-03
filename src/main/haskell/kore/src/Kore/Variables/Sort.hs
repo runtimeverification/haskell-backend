@@ -13,17 +13,14 @@ module Kore.Variables.Sort
     ( TermWithSortVariablesClass(sortVariables)
     ) where
 
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
 import           Data.Foldable
-                 ( fold )
-import           Data.Functor.Foldable
-                 ( cata )
-import           Data.List
-                 ( foldl' )
+                 ( fold, foldl' )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 
-import Kore.AST.Common
 import Kore.AST.Kore
-import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.MetaML.AST
 
@@ -35,15 +32,25 @@ class TermWithSortVariablesClass term var where
     sortVariables :: term -> Set.Set var
 
 instance TermWithSortVariablesClass CommonKorePattern UnifiedSortVariable where
-    sortVariables = patternBottomUpVisitor sortVarsVisitor
+    sortVariables = Recursive.fold sortVarsVisitor
       where
-        sortVarsVisitor p =
-            addPatternSortVariables p (addSortVariables asUnified) (fold p)
+        sortVarsVisitor (_ :< up) =
+            case up of
+                UnifiedMetaPattern p ->
+                    addPatternSortVariables p addUnifiedSortVariables (fold p)
+                UnifiedObjectPattern p ->
+                    addPatternSortVariables p addUnifiedSortVariables (fold p)
+        addUnifiedSortVariables
+            :: MetaOrObject level
+            => Set.Set UnifiedSortVariable
+            -> Sort level
+            -> Set.Set UnifiedSortVariable
+        addUnifiedSortVariables = addSortVariables asUnified
 
 instance TermWithSortVariablesClass CommonMetaPattern (SortVariable Meta) where
-    sortVariables = cata sortVarsVisitor
+    sortVariables = Recursive.fold sortVarsVisitor
       where
-        sortVarsVisitor p =
+        sortVarsVisitor (_ :< p) =
             addPatternSortVariables p (addSortVariables id) (fold p)
 
 addSortVariables

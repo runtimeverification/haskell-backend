@@ -5,8 +5,7 @@ import           Control.Applicative
 import qualified Control.Lens as Lens
 import           Data.Function
                  ( (&) )
-import           Data.Functor.Foldable
-                 ( Base, Fix (..), cata )
+import qualified Data.Functor.Foldable as Recursive
 import           Data.List
                  ( intercalate )
 import qualified Data.Map as Map
@@ -31,10 +30,9 @@ import           System.IO
 
 import           Data.Limit
                  ( Limit (..) )
-import           Kore.AST.Common
 import           Kore.AST.Kore
                  ( CommonKorePattern )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
@@ -277,7 +275,7 @@ parserInfoModifiers =
     <> header "kore-exec - an interpreter for Kore definitions"
 
 externalizeFreshVars :: CommonStepPattern level -> CommonStepPattern level
-externalizeFreshVars pat = cata renameFreshLocal pat
+externalizeFreshVars pat = Recursive.fold renameFreshLocal pat
   where
     allVarsIds :: Set.Set Text
     allVarsIds = Set.map (getId . variableName) (pureAllVariables pat)
@@ -300,7 +298,7 @@ externalizeFreshVars pat = cata renameFreshLocal pat
     renameFreshLocal
         :: Base (CommonStepPattern level) (CommonStepPattern level)
         -> CommonStepPattern level
-    renameFreshLocal (VariablePattern v@(Variable {variableName}))
+    renameFreshLocal (_ :< VariablePattern v@(Variable {variableName}))
       | name `Set.member` freshVarsIds =
         Var_ v {
             variableName = variableName
@@ -311,7 +309,7 @@ externalizeFreshVars pat = cata renameFreshLocal pat
       where
         name :: Text
         name = getId variableName
-    renameFreshLocal pat' = Fix pat'
+    renameFreshLocal pat' = asPurePattern pat'
 
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs

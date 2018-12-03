@@ -9,12 +9,12 @@ Portability : POSIX
 -}
 module Kore.AST.BuildersImpl where
 
-import Data.Functor.Foldable
-import Data.Proxy
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
+import qualified Data.Functor.Foldable as Recursive
+import           Data.Proxy
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
+import Kore.AST.Pure
 
 
 newtype ChildSort level = ChildSort (Sort level)
@@ -25,14 +25,15 @@ checking that the sorts are identical where possible, creating a pattern with
 the provided sort otherwise.
 -}
 fillCheckSorts
-    ::  ( Show level
+    ::  ( Functor domain
+        , Show level
         , Show (variable level)
         , Show (Pattern level domain variable child)
-        , child ~ PureMLPattern level domain variable
+        , child ~ PurePattern level domain variable ()
         )
     => [Sort level]
-    -> [PurePatternStub level domain variable]
-    -> [PureMLPattern level domain variable]
+    -> [PurePatternStub level domain variable ()]
+    -> [PurePattern level domain variable ()]
 fillCheckSorts [] []         = []
 fillCheckSorts [] _          = error "Not enough sorts!"
 fillCheckSorts _ []          = error "Not enough patterns!"
@@ -43,51 +44,55 @@ that the pattern's sorts is identical if possible, creating a pattern with the
 provided sort otherwise.
 -}
 fillCheckSort
-    ::  ( Show level
+    ::  ( Functor domain
+        , Show level
         , Show (variable level)
         , Show (Pattern level domain variable child)
-        , child ~ PureMLPattern level domain variable
+        , child ~ PurePattern level domain variable ()
         )
     => Sort level
-    -> PurePatternStub level domain variable
-    -> PureMLPattern level domain variable
+    -> PurePatternStub level domain variable ()
+    -> PurePattern level domain variable ()
 fillCheckSort
     desiredSort
     ( SortedPatternStub SortedPattern
         { sortedPatternPattern = p, sortedPatternSort = actualSort }
     )
-  =
-    if desiredSort /= actualSort
-    then error
-        (  "Unmatched sorts, expected:\n"
-        ++ show desiredSort
-        ++ "\nbut got:\n"
-        ++ show actualSort
-        ++ "\nfor pattern\n"
-        ++ show p
-        ++ "."
-        )
-    else Fix p
+  | desiredSort == actualSort =
+    Recursive.embed $ () :< p
+  | otherwise =
+    (error . unlines)
+        [ "Unmatched sorts, expected:"
+        , show desiredSort
+        , "but got:"
+        , show actualSort
+        , "for pattern"
+        , show p ++ "."
+        ]
 fillCheckSort desiredSort (UnsortedPatternStub p) =
-    Fix (p desiredSort)
+    Recursive.embed $ () :< p desiredSort
 
 {-|'fillCheckPairSorts' takes two 'PurePatternStub' objects, assumes that
 they must have the same sort, and tries to build 'CommonKorePattern's from them
 if possible, otherwise it returns functions that can build 'CommonKorePattern's.
 -}
 fillCheckPairSorts
-    :: PurePatternStub level domain variable
-    -> PurePatternStub level domain variable
+    :: Functor domain
+    => PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
     -> Either
-        ( Sort level -> PureMLPattern level domain variable
-        , Sort level -> PureMLPattern level domain variable
+        ( Sort level -> PurePattern level domain variable ()
+        , Sort level -> PurePattern level domain variable ()
         )
         ( Sort level
-        , PureMLPattern level domain variable
-        , PureMLPattern level domain variable
+        , PurePattern level domain variable ()
+        , PurePattern level domain variable ()
         )
 fillCheckPairSorts (UnsortedPatternStub first) (UnsortedPatternStub second) =
-    Left (Fix . first, Fix . second)
+    Left
+        ( Recursive.embed . (:<) () . first
+        , Recursive.embed . (:<) () . second
+        )
 fillCheckPairSorts
     (UnsortedPatternStub first)
     ( SortedPatternStub SortedPattern
@@ -96,8 +101,8 @@ fillCheckPairSorts
   =
     Right
         ( s
-        , Fix (first s)
-        , Fix second
+        , Recursive.embed (() :< first s)
+        , Recursive.embed (() :< second)
         )
 fillCheckPairSorts
     ( SortedPatternStub SortedPattern
@@ -107,8 +112,8 @@ fillCheckPairSorts
   =
     Right
         ( s
-        , Fix first
-        , Fix (second s)
+        , Recursive.embed (() :< first)
+        , Recursive.embed (() :< second s)
         )
 fillCheckPairSorts
     ( SortedPatternStub SortedPattern
@@ -117,32 +122,31 @@ fillCheckPairSorts
     ( SortedPatternStub SortedPattern
         { sortedPatternPattern = p2, sortedPatternSort = actualSort2 }
     )
-  =
-    if actualSort1 /= actualSort2
-        then error
-            (  "Unmatched sorts: "
-            ++ show actualSort1
-            ++ " and "
-            ++ show actualSort2
-            ++ "."
-            )
-        else
-            Right
-                ( actualSort1
-                , Fix p1
-                , Fix p2
-                )
+  | actualSort1 == actualSort2 =
+    Right
+        ( actualSort1
+        , Recursive.embed (() :< p1)
+        , Recursive.embed (() :< p2)
+        )
+  | otherwise =
+    (error . unwords)
+        [ "Unmatched sorts:"
+        , show actualSort1
+        , "and"
+        , show actualSort2 ++ "."
+        ]
 
 {-|'unaryPattern' is a helper for building 'PurePatternStub's for unary
 operators, like @\not@.
 -}
 unaryPattern
-    :: (Sort level
-        -> PureMLPattern level domain variable
-        -> UnFixedPureMLPattern level domain variable
+    :: Functor domain
+    => (Sort level
+        -> PurePattern level domain variable ()
+        -> Pattern level domain variable (PurePattern level domain variable ())
        )
-    -> PurePatternStub level domain variable
-    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 unaryPattern
     constructor
     ( SortedPatternStub SortedPattern
@@ -150,35 +154,39 @@ unaryPattern
     )
   =
     SortedPatternStub SortedPattern
-        { sortedPatternPattern = constructor s (Fix p)
+        { sortedPatternPattern =
+            constructor s (Recursive.embed (() :< p))
         , sortedPatternSort    = s
         }
 unaryPattern constructor (UnsortedPatternStub p) =
-    UnsortedPatternStub (\sortS -> constructor sortS (Fix (p sortS)))
+    UnsortedPatternStub
+        (\sortS -> constructor sortS (Recursive.embed (() :< p sortS)))
 
 {-|'unarySortedPattern' is a helper for building 'PurePatternStub's for unary
 operators where the result sort is different from the operand sort, like \ceil.
 -}
 unarySortedPattern
-    ::  ( MetaOrObject level
-        , child ~ PureMLPattern level domain variable
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ PurePattern level domain variable ()
         , Show child
         , Show (Pattern level domain variable child)
         )
-    => (ResultSort level
+    =>  (  ResultSort level
         -> ChildSort level
         -> child
-        -> Base child child)
+        -> Pattern level domain variable child
+        )
     -> Maybe (ChildSort level)
-    -> PurePatternStub level domain variable
-    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 unarySortedPattern constructor maybeSort patternStub =
     UnsortedPatternStub
         (\sortS ->
             constructor
                 (ResultSort sortS)
                 (ChildSort childSort)
-                (Fix $ sortedPatternPattern sortedPat)
+                (Recursive.embed $ () :< sortedPatternPattern sortedPat)
         )
   where
     (childSort, SortedPatternStub sortedPat) = case (maybeSort, patternStub) of
@@ -193,13 +201,15 @@ unarySortedPattern constructor maybeSort patternStub =
 operators, like @\and@.
 -}
 binaryPattern
-    :: (Sort level
-        -> PureMLPattern level domain variable
-        -> PureMLPattern level domain variable
-        -> UnFixedPureMLPattern level domain variable)
-    -> PurePatternStub level domain variable
-    -> PurePatternStub level domain variable
-    -> PurePatternStub level domain variable
+    :: Functor domain
+    =>  (  Sort level
+        -> PurePattern level domain variable ()
+        -> PurePattern level domain variable ()
+        -> Pattern level domain variable (PurePattern level domain variable ())
+        )
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 binaryPattern constructor first second =
     case fillCheckPairSorts first second of
         Left (firstPattern, secondPattern) ->
@@ -219,19 +229,21 @@ operators where the result sort is different from the operand sort,
 like \equals.
 -}
 binarySortedPattern
-    ::  ( MetaOrObject level
-        , child ~ PureMLPattern level domain variable
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ PurePattern level domain variable ()
         , Show child
         )
-    => (ResultSort level
+    =>  (  ResultSort level
         -> ChildSort level
         -> child
         -> child
-        -> Base child child)
+        -> Pattern level domain variable child
+        )
     -> Maybe (ChildSort level)
-    -> PurePatternStub level domain variable
-    -> PurePatternStub level domain variable
-    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 binarySortedPattern constructor maybeSort first second =
     case fillCheckPairSorts first second of
         Left (firstPattern, secondPattern) ->
@@ -271,20 +283,22 @@ binarySortedPattern constructor maybeSort first second =
     patternFromChildSort firstPattern secondPattern childSort =
         UnsortedPatternStub
             (\sortS ->
-                constructor (ResultSort sortS) childSort
+                constructor
+                    (ResultSort sortS)
+                    childSort
                     firstPattern
                     secondPattern
             )
 
 equalsM_
-    ::  ( MetaOrObject level
-        , Show (PureMLPattern level domain variable)
+    ::  ( Functor domain
+        , MetaOrObject level
+        , Show (PurePattern level domain variable ())
         )
     => Maybe (Sort level)
-    -> (PurePatternStub level domain variable
-        -> PurePatternStub level domain variable
-        -> PurePatternStub level domain variable
-       )
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 equalsM_ s =
     binarySortedPattern
         (\(ResultSort resultSort)
@@ -302,15 +316,15 @@ equalsM_ s =
         (ChildSort <$> s)
 
 inM_
-    ::  ( MetaOrObject level
+    ::  ( Functor domain
+        , MetaOrObject level
         , Show (variable level)
-        , Show (PureMLPattern level domain variable)
+        , Show (PurePattern level domain variable ())
         )
-    =>  Maybe (Sort level)
-    -> (PurePatternStub level domain variable
-        -> PurePatternStub level domain variable
-        -> PurePatternStub level domain variable
-       )
+    => Maybe (Sort level)
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 inM_ s =
     binarySortedPattern
         (\(ResultSort resultSort)
@@ -328,14 +342,15 @@ inM_ s =
         (ChildSort <$> s)
 
 ceilM_
-    ::  ( MetaOrObject level
-        , child ~ PureMLPattern level domain variable
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ PurePattern level domain variable ()
         , Show child
         , Show (Pattern level domain variable child)
         )
     => Maybe (Sort level)
-    -> PurePatternStub level domain variable
-    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 ceilM_ s =
     unarySortedPattern
         (\(ResultSort resultSort)
@@ -351,14 +366,15 @@ ceilM_ s =
         (ChildSort <$> s)
 
 floorM_
-    ::  ( MetaOrObject level
-        , child ~ PureMLPattern level domain variable
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ PurePattern level domain variable ()
         , Show child
         , Show (Pattern level domain variable child)
         )
     => Maybe (Sort level)
-    -> PurePatternStub level domain variable
-    -> PurePatternStub level domain variable
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 floorM_ s =
     unarySortedPattern
         (\(ResultSort resultSort)
