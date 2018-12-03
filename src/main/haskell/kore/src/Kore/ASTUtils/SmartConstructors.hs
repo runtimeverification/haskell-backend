@@ -80,10 +80,10 @@ import Kore.IndexedModule.MetadataTools
 getSort
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Functor dom
+        , SortedVariable variable
+        , Functor domain
         )
-    => PurePattern level dom var ann
+    => PurePattern level domain variable annotation
     -> Sort level
 getSort (Recursive.project -> _ :< pat) =
     getPatternResultSort given pat
@@ -98,13 +98,18 @@ predicateSort
 predicateSort = mkSort "PREDICATE"
 
 patternLens
-    :: forall f lvl dom var var1 ann.
-        (Applicative f, MetaOrObject lvl, Traversable dom)
-    => (Sort lvl -> f (Sort lvl))
-    -> (Sort lvl -> f (Sort lvl))
-    -> (var lvl -> f (var1 lvl))
-    -> (PurePattern lvl dom var ann -> f (PurePattern lvl dom var1 ann))
-    -> (PurePattern lvl dom var ann -> f (PurePattern lvl dom var1 ann))
+    ::  forall f level domain variable1 variable2 annotation.
+        (Applicative f, MetaOrObject level, Traversable domain)
+    => (Sort level -> f (Sort level))  -- ^ Operand sorts
+    -> (Sort level -> f (Sort level))  -- ^ Result sorts
+    -> (variable1 level -> f (variable2 level))  -- ^ Variables
+    ->  (  PurePattern level domain variable1 annotation
+        -> f (PurePattern level domain variable2 annotation)
+        )
+        -- ^ Children
+    ->  (  PurePattern level domain variable1 annotation
+        -> f (PurePattern level domain variable2 annotation)
+        )
 patternLens
     lensOperandSort   -- input sort
     lensResultSort   -- result sort
@@ -154,9 +159,12 @@ patternLens
             <*> lensChild ceilChild
 
     patternLensDomainValue
-        :: lvl ~ Object
-        => DomainValue lvl dom (PurePattern lvl dom var ann)
-        -> f (DomainValue lvl dom (PurePattern lvl dom var1 ann))
+        :: level ~ Object
+        => DomainValue level domain
+            (PurePattern level domain variable1 annotation)
+        -> f
+            (DomainValue level domain
+                (PurePattern level domain variable2 annotation))
     patternLensDomainValue DomainValue { domainValueSort, domainValueChild } =
         DomainValue
             <$> lensResultSort domainValueSort
@@ -262,9 +270,10 @@ patternLens
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc.
 inputSort
-    :: (MetaOrObject lvl, Traversable dom)
-    => Traversal' (PurePattern lvl dom var ann) (Sort lvl)
+    :: (MetaOrObject level, Traversable domain)
+    => Traversal' (PurePattern level domain variable annotation) (Sort level)
 inputSort        f = patternLens f    pure pure pure
+
 -- | The sort returned by a top level constructor.
 -- NOTE ABOUT NOTATION:
 -- In the this haskell code, this is always `s2`.
@@ -278,46 +287,62 @@ inputSort        f = patternLens f    pure pure pure
 -- Note that a few constructors like App and StringLiteral
 -- lack a result sort in the AST.
 resultSort
-    :: (MetaOrObject lvl, Traversable dom)
-    => Traversal' (PurePattern lvl dom var ann) (Sort lvl)
+    :: (MetaOrObject level, Traversable domain)
+    => Traversal' (PurePattern level domain variable annotation) (Sort level)
 resultSort = \f -> patternLens pure f pure pure
+
 -- | Points to the bound variable in Forall/Exists,
 -- and also the Variable in VariablePattern
 variable
-    :: (MetaOrObject lvl, Traversable dom)
-    => Traversal' (PurePattern lvl dom var ann) (var lvl)
+    :: (MetaOrObject level, Traversable domain)
+    => Traversal'
+        (PurePattern level domain variable annotation)
+        (variable level)
 variable = \f -> patternLens pure pure f pure
--- All sub-expressions which are Patterns.
--- use partsOf allChildren to get a lens to a List.
+
+-- | All sub-expressions which are 'Pattern's.
+-- Use partsOf allChildren to get a lens to a List.
 allChildren
-    :: (MetaOrObject lvl, Traversable dom)
-    => Traversal' (PurePattern lvl dom var ann) (PurePattern lvl dom var ann)
+    :: (MetaOrObject level, Traversable domain)
+    => Traversal'
+        (PurePattern level domain variable annotation)
+        (PurePattern level domain variable annotation)
 allChildren = patternLens pure pure pure
 
 changeVar
-    :: (MetaOrObject lvl, Applicative f, Traversable dom)
-    => (var lvl -> f (var1 lvl))
-    -> (PurePattern lvl dom var ann -> f (PurePattern lvl dom var1 ann))
-    -> (PurePattern lvl dom var ann -> f (PurePattern lvl dom var1 ann))
+    :: (MetaOrObject level, Applicative f, Traversable domain)
+    => (variable1 level -> f (variable2 level))
+    ->  (  PurePattern level domain variable1 annotation
+        -> f (PurePattern level domain variable2 annotation)
+        )
+    ->  (  PurePattern level domain variable1 annotation
+        -> f (PurePattern level domain variable2 annotation)
+        )
 changeVar = patternLens pure pure
 
 -- | Applies a function at an `[Int]` path.
 localInPattern
-    :: (MetaOrObject lvl, Traversable dom)
+    :: (MetaOrObject level, Traversable domain)
     => [Int]
-    -> (PurePattern lvl dom var ann -> PurePattern lvl dom var ann)
-    -> PurePattern lvl dom var ann
-    -> PurePattern lvl dom var ann
+    ->  (  PurePattern level domain variable annotation
+        -> PurePattern level domain variable annotation
+        )
+    -> PurePattern level domain variable annotation
+    -> PurePattern level domain variable annotation
 localInPattern path f pat = pat & inPath path %~ f
 
 -- | Takes an `[Int]` representing a path, and returns a lens to that position.
 -- The ints represent subpatterns in the obvious way:
 -- [0,1] points to b in \ceil(a /\ b), etc.
 inPath
-    :: (MetaOrObject lvl, Applicative f, Traversable dom)
+    :: (MetaOrObject level, Applicative f, Traversable domain)
     => [Int]
-    -> (PurePattern lvl dom var ann -> f (PurePattern lvl dom var ann))
-    -> (PurePattern lvl dom var ann -> f (PurePattern lvl dom var ann))
+    ->  (  PurePattern level domain variable annotation
+        -> f (PurePattern level domain variable annotation)
+        )
+    ->  (  PurePattern level domain variable annotation
+        -> f (PurePattern level domain variable annotation)
+        )
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 
@@ -325,8 +350,8 @@ inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 -- single uniquely determined sort,
 -- which we can't change.
 hasRigidHead
-    :: (MetaOrObject lvl, Functor dom)
-    => PurePattern lvl dom var ann
+    :: (MetaOrObject level, Functor domain)
+    => PurePattern level domain variable annotation
     -> Bool
 hasRigidHead (Recursive.project -> _ :< pat) =
     case pat of
@@ -337,7 +362,6 @@ hasRigidHead (Recursive.project -> _ :< pat) =
         CharLiteralPattern   _ -> True
         _                      -> False
 
-
 -- | Flexible pattern heads are those which can be
 -- any sort, like predicates \equals, \ceil etc.
 -- The 3rd possibility (not hasFlexibleHead && not hasRigidHead)
@@ -345,8 +369,8 @@ hasRigidHead (Recursive.project -> _ :< pat) =
 -- must match the sort of of its subexpressions:
 -- \and, \or, \implies, etc.
 hasFlexibleHead
-    :: (MetaOrObject lvl, Functor dom)
-    => PurePattern lvl dom var ann
+    :: (MetaOrObject level, Functor domain)
+    => PurePattern level domain variable annotation
     -> Bool
 hasFlexibleHead (Recursive.project -> _ :< pat) =
     case pat of
@@ -360,14 +384,14 @@ hasFlexibleHead (Recursive.project -> _ :< pat) =
 
 -- | Attempts to modify p to have sort s.
 forceSort
-    ::  ( MetaOrObject lvl
-        , Given (SymbolOrAliasSorts lvl)
-        , SortedVariable var
-        , Traversable dom
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Traversable domain
         )
-    => Sort lvl
-    -> PurePattern lvl dom var ann
-    -> Maybe (PurePattern lvl dom var ann)
+    => Sort level
+    -> PurePattern level domain variable annotation
+    -> Maybe (PurePattern level domain variable annotation)
 forceSort s p
   | getSort p == s = Just p
   | hasRigidHead    p   = Nothing
@@ -376,13 +400,13 @@ forceSort s p
 
 -- | Modify all patterns in a list to have the same sort.
 makeSortsAgree
-    ::  ( MetaOrObject lvl
-        , Given (SymbolOrAliasSorts lvl)
-        , SortedVariable var
-        , Traversable dom
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Traversable domain
         )
-    => [PurePattern lvl dom var ann]
-    -> Maybe [PurePattern lvl dom var ann]
+    => [PurePattern level domain variable annotation]
+    -> Maybe [PurePattern level domain variable annotation]
 makeSortsAgree ps =
     forM ps $ forceSort $
         case asum $ getRigidSort <$> ps of
@@ -390,13 +414,13 @@ makeSortsAgree ps =
           Just a  -> a
 
 getRigidSort
-    ::  ( MetaOrObject lvl
-        , Given (SymbolOrAliasSorts lvl)
-        , SortedVariable var
-        , Traversable dom
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Traversable domain
         )
-    => PurePattern lvl dom var ann
-    -> Maybe (Sort lvl)
+    => PurePattern level domain variable annotation
+    -> Maybe (Sort level)
 getRigidSort p =
     case forceSort predicateSort p of
       Nothing -> Just $ getSort p
@@ -407,14 +431,14 @@ getRigidSort p =
 -- i.e. converts the invalid (x : Int /\ ( x < 3 : Float)) : Bool
 -- to the valid (x : Int /\ (x < 3 : Int)) : Int
 ensureSortAgreement
-    ::  ( MetaOrObject lvl
-        , Given (SymbolOrAliasSorts lvl)
-        , SortedVariable var
-        , Show (PurePattern lvl dom var ())
-        , Traversable dom
+    ::  ( MetaOrObject level
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => PurePattern lvl dom var ann
-    -> PurePattern lvl dom var ann
+    => PurePattern level domain variable annotation
+    -> PurePattern level domain variable annotation
 ensureSortAgreement p =
   case makeSortsAgree $ p ^. partsOf allChildren of
     Just []    -> p & resultSort .~ predicateSort
@@ -440,8 +464,8 @@ ensureSortAgreement p =
 -- Also, in practice, having a flexible sort and being a predicate
 -- are synonymous. But don't quote me on this.
 isObviouslyPredicate
-    :: Functor dom
-    => PurePattern lvl dom var ann
+    :: Functor domain
+    => PurePattern level domain variable annotation
     -> Bool
 isObviouslyPredicate (Recursive.project -> _ :< pat) =
     case pat of
@@ -466,13 +490,13 @@ isObviouslyPredicate (Recursive.project -> _ :< pat) =
 mkAnd
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (PurePattern level dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkAnd andFirst andSecond =
     ensureSortAgreement $ asPurePattern (mempty :< AndPattern and0)
   where
@@ -480,10 +504,10 @@ mkAnd andFirst andSecond =
 
 -- TODO: Should this check for sort agreement?
 mkApp
-    :: (Functor dom, MetaOrObject level, Given (SymbolOrAliasSorts level))
+    :: (Functor domain, MetaOrObject level, Given (SymbolOrAliasSorts level))
     => SymbolOrAlias level
-    -> [PurePattern level dom var ()]
-    -> PurePattern level dom var ()
+    -> [PurePattern level domain variable ()]
+    -> PurePattern level domain variable ()
 mkApp applicationSymbolOrAlias applicationChildren =
     asPurePattern (mempty :< ApplicationPattern application)
   where
@@ -491,8 +515,8 @@ mkApp applicationSymbolOrAlias applicationChildren =
         Application { applicationSymbolOrAlias, applicationChildren }
 
 mkBottom
-    :: (Functor dom, MetaOrObject level)
-    => PurePattern level dom var ()
+    :: (Functor domain, MetaOrObject level)
+    => PurePattern level domain variable ()
 mkBottom =
     asPurePattern (mempty :< BottomPattern bottom)
   where
@@ -501,12 +525,12 @@ mkBottom =
 mkCeil
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show1 dom
-        , Functor dom
+        , SortedVariable variable
+        , Show1 domain
+        , Functor domain
         )
-    => PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkCeil ceilChild =
     asPurePattern (mempty :< CeilPattern ceil)
   where
@@ -518,10 +542,10 @@ mkCeil ceilChild =
             }
 
 mkDomainValue
-    :: (Functor dom, MetaOrObject Object)
+    :: (Functor domain, MetaOrObject Object)
     => Sort Object
-    -> dom (PurePattern Object dom var ())
-    -> PurePattern Object dom var ()
+    -> domain (PurePattern Object domain variable ())
+    -> PurePattern Object domain variable ()
 mkDomainValue domainValueSort domainValueChild =
     asPurePattern (mempty :< DomainValuePattern domainValue)
   where
@@ -530,13 +554,13 @@ mkDomainValue domainValueSort domainValueChild =
 mkEquals
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (PurePattern level dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkEquals equalsFirst equalsSecond =
     ensureSortAgreement $ asPurePattern (mempty :< EqualsPattern equals)
   where
@@ -551,13 +575,13 @@ mkEquals equalsFirst equalsSecond =
 mkExists
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (PurePattern level dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => var level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => variable level
+    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkExists existsVariable existsChild =
     ensureSortAgreement $ asPurePattern (mempty :< ExistsPattern exists)
   where
@@ -566,13 +590,13 @@ mkExists existsVariable existsChild =
 mkFloor
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (var level)
-        , Show1 dom
-        , Traversable dom
+        , SortedVariable variable
+        , Show (variable level)
+        , Show1 domain
+        , Traversable domain
         )
-    => PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkFloor floorChild =
     asPurePattern (mempty :< FloorPattern floor0)
   where
@@ -586,13 +610,13 @@ mkFloor floorChild =
 mkForall
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (PurePattern level dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => var level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => variable level
+    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkForall forallVariable forallChild =
     ensureSortAgreement $ asPurePattern (mempty :< ForallPattern forall)
   where
@@ -601,13 +625,13 @@ mkForall forallVariable forallChild =
 mkIff
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (PurePattern level dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkIff iffFirst iffSecond =
     ensureSortAgreement $ asPurePattern (mempty :< IffPattern iff0)
   where
@@ -616,13 +640,13 @@ mkIff iffFirst iffSecond =
 mkImplies
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (PurePattern level dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkImplies impliesFirst impliesSecond =
     ensureSortAgreement $ asPurePattern (mempty :< ImpliesPattern implies0)
   where
@@ -631,13 +655,13 @@ mkImplies impliesFirst impliesSecond =
 mkIn
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (PurePattern level dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkIn inContainedChild inContainingChild =
     ensureSortAgreement $ asPurePattern (mempty :< InPattern in0)
   where
@@ -652,12 +676,12 @@ mkIn inContainedChild inContainingChild =
 mkNext
     ::  ( MetaOrObject Object
         , Given (SymbolOrAliasSorts Object)
-        , SortedVariable var
-        , Show (PurePattern Object dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern Object domain variable ())
+        , Traversable domain
         )
-    => PurePattern Object dom var ()
-    -> PurePattern Object dom var ()
+    => PurePattern Object domain variable ()
+    -> PurePattern Object domain variable ()
 mkNext nextChild =
     ensureSortAgreement $ asPurePattern (mempty :< NextPattern next)
   where
@@ -666,12 +690,12 @@ mkNext nextChild =
 mkNot
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (PurePattern level dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkNot notChild =
     ensureSortAgreement $ asPurePattern (mempty :< NotPattern not0)
   where
@@ -680,13 +704,13 @@ mkNot notChild =
 mkOr
     ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
-        , SortedVariable var
-        , Show (PurePattern level dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern level domain variable ())
+        , Traversable domain
         )
-    => PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    => PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable ()
 mkOr orFirst orSecond =
     ensureSortAgreement $ asPurePattern (mempty :< OrPattern or0)
   where
@@ -709,27 +733,33 @@ mkRewrites rewritesFirst rewritesSecond =
         Rewrites { rewritesSort = fixmeSort, rewritesFirst, rewritesSecond }
 
 mkTop
-    :: (Functor dom, MetaOrObject level)
-    => PurePattern level dom var ()
+    :: (Functor domain, MetaOrObject level)
+    => PurePattern level domain variable ()
 mkTop =
     asPurePattern (mempty :< TopPattern top)
   where
     top = Top { topSort = predicateSort }
 
 mkVar
-    :: (Functor dom, MetaOrObject level, Given (SymbolOrAliasSorts level))
-    => var level
-    -> PurePattern level dom var ()
+    :: (Functor domain, MetaOrObject level, Given (SymbolOrAliasSorts level))
+    => variable level
+    -> PurePattern level domain variable ()
 mkVar var =
     asPurePattern (mempty :< VariablePattern var)
 
-mkStringLiteral :: Functor dom => String -> PurePattern Meta dom var ()
+mkStringLiteral
+    :: Functor domain
+    => String
+    -> PurePattern Meta domain variable ()
 mkStringLiteral string =
     asPurePattern (mempty :< StringLiteralPattern stringLiteral)
   where
     stringLiteral = StringLiteral string
 
-mkCharLiteral :: Functor dom => Char -> PurePattern Meta dom var ()
+mkCharLiteral
+    :: Functor domain
+    => Char
+    -> PurePattern Meta domain variable ()
 mkCharLiteral char =
     asPurePattern (mempty :< CharLiteralPattern charLiteral)
   where

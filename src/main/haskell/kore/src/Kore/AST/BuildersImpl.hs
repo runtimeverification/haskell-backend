@@ -25,15 +25,15 @@ checking that the sorts are identical where possible, creating a pattern with
 the provided sort otherwise.
 -}
 fillCheckSorts
-    ::  ( Functor dom
-        , Show lvl
-        , Show (var lvl)
-        , Show (Pattern lvl dom var child)
-        , child ~ PurePattern lvl dom var ()
+    ::  ( Functor domain
+        , Show level
+        , Show (variable level)
+        , Show (Pattern level domain variable child)
+        , child ~ PurePattern level domain variable ()
         )
-    => [Sort lvl]
-    -> [PurePatternStub lvl dom var ()]
-    -> [PurePattern lvl dom var ()]
+    => [Sort level]
+    -> [PurePatternStub level domain variable ()]
+    -> [PurePattern level domain variable ()]
 fillCheckSorts [] []         = []
 fillCheckSorts [] _          = error "Not enough sorts!"
 fillCheckSorts _ []          = error "Not enough patterns!"
@@ -44,15 +44,15 @@ that the pattern's sorts is identical if possible, creating a pattern with the
 provided sort otherwise.
 -}
 fillCheckSort
-    ::  ( Functor dom
-        , Show lvl
-        , Show (var lvl)
-        , Show (Pattern lvl dom var child)
-        , child ~ PurePattern lvl dom var ()
+    ::  ( Functor domain
+        , Show level
+        , Show (variable level)
+        , Show (Pattern level domain variable child)
+        , child ~ PurePattern level domain variable ()
         )
-    => Sort lvl
-    -> PurePatternStub lvl dom var ()
-    -> PurePattern lvl dom var ()
+    => Sort level
+    -> PurePatternStub level domain variable ()
+    -> PurePattern level domain variable ()
 fillCheckSort
     desiredSort
     ( SortedPatternStub SortedPattern
@@ -77,16 +77,16 @@ they must have the same sort, and tries to build 'CommonKorePattern's from them
 if possible, otherwise it returns functions that can build 'CommonKorePattern's.
 -}
 fillCheckPairSorts
-    :: Functor dom
-    => PurePatternStub lvl dom var ()
-    -> PurePatternStub lvl dom var ()
+    :: Functor domain
+    => PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
     -> Either
-        ( Sort lvl -> PurePattern lvl dom var ()
-        , Sort lvl -> PurePattern lvl dom var ()
+        ( Sort level -> PurePattern level domain variable ()
+        , Sort level -> PurePattern level domain variable ()
         )
-        ( Sort lvl
-        , PurePattern lvl dom var ()
-        , PurePattern lvl dom var ()
+        ( Sort level
+        , PurePattern level domain variable ()
+        , PurePattern level domain variable ()
         )
 fillCheckPairSorts (UnsortedPatternStub first) (UnsortedPatternStub second) =
     Left
@@ -140,13 +140,13 @@ fillCheckPairSorts
 operators, like @\not@.
 -}
 unaryPattern
-    :: Functor dom
-    => (Sort lvl
-        -> PurePattern lvl dom var ()
-        -> Pattern lvl dom var (PurePattern lvl dom var ())
+    :: Functor domain
+    => (Sort level
+        -> PurePattern level domain variable ()
+        -> Pattern level domain variable (PurePattern level domain variable ())
        )
-    -> PurePatternStub lvl dom var ()
-    -> PurePatternStub lvl dom var ()
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 unaryPattern
     constructor
     ( SortedPatternStub SortedPattern
@@ -166,16 +166,20 @@ unaryPattern constructor (UnsortedPatternStub p) =
 operators where the result sort is different from the operand sort, like \ceil.
 -}
 unarySortedPattern
-    ::  ( Functor dom
-        , MetaOrObject lvl
-        , child ~ PurePattern lvl dom var ()
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ PurePattern level domain variable ()
         , Show child
-        , Show (Pattern lvl dom var child)
+        , Show (Pattern level domain variable child)
         )
-    => (ResultSort lvl -> ChildSort lvl -> child -> Pattern lvl dom var child)
-    -> Maybe (ChildSort lvl)
-    -> PurePatternStub lvl dom var ()
-    -> PurePatternStub lvl dom var ()
+    =>  (  ResultSort level
+        -> ChildSort level
+        -> child
+        -> Pattern level domain variable child
+        )
+    -> Maybe (ChildSort level)
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 unarySortedPattern constructor maybeSort patternStub =
     UnsortedPatternStub
         (\sortS ->
@@ -197,15 +201,15 @@ unarySortedPattern constructor maybeSort patternStub =
 operators, like @\and@.
 -}
 binaryPattern
-    :: Functor dom
-    => (Sort lvl
-        -> PurePattern lvl dom var ()
-        -> PurePattern lvl dom var ()
-        -> Pattern lvl dom var (PurePattern lvl dom var ())
-       )
-    -> PurePatternStub lvl dom var ()
-    -> PurePatternStub lvl dom var ()
-    -> PurePatternStub lvl dom var ()
+    :: Functor domain
+    =>  (  Sort level
+        -> PurePattern level domain variable ()
+        -> PurePattern level domain variable ()
+        -> Pattern level domain variable (PurePattern level domain variable ())
+        )
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 binaryPattern constructor first second =
     case fillCheckPairSorts first second of
         Left (firstPattern, secondPattern) ->
@@ -225,21 +229,21 @@ operators where the result sort is different from the operand sort,
 like \equals.
 -}
 binarySortedPattern
-    ::  ( Functor dom
-        , MetaOrObject lvl
-        , child ~ PurePattern lvl dom var ()
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ PurePattern level domain variable ()
         , Show child
         )
-    =>  (ResultSort lvl
-            -> ChildSort lvl
-            -> child
-            -> child
-            -> Pattern lvl dom var child
+    =>  (  ResultSort level
+        -> ChildSort level
+        -> child
+        -> child
+        -> Pattern level domain variable child
         )
-    -> Maybe (ChildSort lvl)
-    -> PurePatternStub lvl dom var ()
-    -> PurePatternStub lvl dom var ()
-    -> PurePatternStub lvl dom var ()
+    -> Maybe (ChildSort level)
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 binarySortedPattern constructor maybeSort first second =
     case fillCheckPairSorts first second of
         Left (firstPattern, secondPattern) ->
@@ -287,13 +291,14 @@ binarySortedPattern constructor maybeSort first second =
             )
 
 equalsM_
-    ::  ( Functor dom
-        , MetaOrObject lvl
-        , Show (PurePattern lvl dom var ())
-        , stub ~ PurePatternStub lvl dom var ()
+    ::  ( Functor domain
+        , MetaOrObject level
+        , Show (PurePattern level domain variable ())
         )
-    => Maybe (Sort lvl)
-    -> (stub -> stub -> stub)
+    => Maybe (Sort level)
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 equalsM_ s =
     binarySortedPattern
         (\(ResultSort resultSort)
@@ -311,14 +316,15 @@ equalsM_ s =
         (ChildSort <$> s)
 
 inM_
-    ::  ( Functor dom
-        , MetaOrObject lvl
-        , Show (var lvl)
-        , Show (PurePattern lvl dom var ())
-        , stub ~ PurePatternStub lvl dom var ()
+    ::  ( Functor domain
+        , MetaOrObject level
+        , Show (variable level)
+        , Show (PurePattern level domain variable ())
         )
-    =>  Maybe (Sort lvl)
-    -> (stub -> stub -> stub)
+    => Maybe (Sort level)
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 inM_ s =
     binarySortedPattern
         (\(ResultSort resultSort)
@@ -336,16 +342,15 @@ inM_ s =
         (ChildSort <$> s)
 
 ceilM_
-    ::  ( Functor dom
-        , MetaOrObject lvl
-        , child ~ PurePattern lvl dom var ()
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ PurePattern level domain variable ()
         , Show child
-        , Show (Pattern lvl dom var child)
-        , stub ~ PurePatternStub lvl dom var ()
+        , Show (Pattern level domain variable child)
         )
-    => Maybe (Sort lvl)
-    -> stub
-    -> stub
+    => Maybe (Sort level)
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 ceilM_ s =
     unarySortedPattern
         (\(ResultSort resultSort)
@@ -361,16 +366,15 @@ ceilM_ s =
         (ChildSort <$> s)
 
 floorM_
-    ::  ( Functor dom
-        , MetaOrObject lvl
-        , child ~ PurePattern lvl dom var ()
+    ::  ( Functor domain
+        , MetaOrObject level
+        , child ~ PurePattern level domain variable ()
         , Show child
-        , Show (Pattern lvl dom var child)
-        , stub ~ PurePatternStub lvl dom var ()
+        , Show (Pattern level domain variable child)
         )
-    => Maybe (Sort lvl)
-    -> stub
-    -> stub
+    => Maybe (Sort level)
+    -> PurePatternStub level domain variable ()
+    -> PurePatternStub level domain variable ()
 floorM_ s =
     unarySortedPattern
         (\(ResultSort resultSort)

@@ -10,10 +10,10 @@ import           Kore.AST.Pure
                  ( Concrete, Pattern, PurePattern, Variable )
 import qualified Kore.Domain.Builtin as Domain
 
-type StepPattern lvl var = PurePattern lvl Domain.Builtin var ()
+type StepPattern level variable = PurePattern level Domain.Builtin variable ()
 
-type CommonStepPattern lvl = StepPattern lvl Variable
+type CommonStepPattern level = StepPattern level Variable
 
-type ConcreteStepPattern lvl = StepPattern lvl Concrete
+type ConcreteStepPattern level = StepPattern level Concrete
 
-type StepPatternHead lvl var = Pattern lvl Domain.Builtin var
+type StepPatternHead level variable = Pattern level Domain.Builtin variable

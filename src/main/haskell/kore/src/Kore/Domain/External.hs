@@ -32,4 +32,4 @@ instance NFData (External child)
 
 instance Hashable (External child)
 
-type CommonExternalPattern lvl = CommonPurePattern lvl External
+type CommonExternalPattern level = CommonPurePattern level External

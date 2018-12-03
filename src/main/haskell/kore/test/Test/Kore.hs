@@ -260,9 +260,9 @@ domainValueGen
     -> ([Variable level] -> Gen (dom child))
     -> level
     -> Gen (DomainValue level dom child)
-domainValueGen vars childGen lvl =
+domainValueGen vars childGen level =
     DomainValue
-        <$> scale (`div` 2) (sortGen lvl)
+        <$> scale (`div` 2) (sortGen level)
         <*> childGen vars
 
 externalDomainGen :: [Variable level] -> Gen (Domain.Builtin child)

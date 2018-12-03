@@ -36,9 +36,9 @@ import Kore.AST.Pure
 
 -- | The free variables of a pure pattern.
 freePureVariables
-    :: (Foldable dom, Functor dom, Ord (var lvl))
-    => PurePattern lvl dom var ann
-    -> Set (var lvl)
+    :: (Foldable domain, Functor domain, Ord (variable level))
+    => PurePattern level domain variable annotation
+    -> Set (variable level)
 freePureVariables root =
     let (free, ()) =
             Monad.RWS.execRWS
@@ -71,15 +71,15 @@ freePureVariables root =
 
 -- | The free variables of a pattern.
 freeVariables
-    ::  forall t a pat dom var.
-        ( UnifiedPatternInterface pat
-        , Functor (pat dom var)
-        , Foldable dom
-        , OrdMetaOrObject var
-        , Recursive t
-        , Base t ~ CofreeF (pat dom var) a
+    ::  forall patternHead patternType annotation domain variable.
+        ( UnifiedPatternInterface patternHead
+        , Functor (patternHead domain variable)
+        , Foldable domain
+        , OrdMetaOrObject variable
+        , Recursive patternType
+        , Base patternType ~ CofreeF (patternHead domain variable) annotation
         )
-    => t -> Set.Set (Unified var)
+    => patternType -> Set.Set (Unified variable)
 freeVariables root =
     let (free, ()) =
             Monad.RWS.execRWS
@@ -98,9 +98,9 @@ freeVariables root =
         $ Cofree.tailF $ Recursive.project recursive
 
     freeVariables2
-        :: MetaOrObject lvl
-        => Pattern lvl dom var t
-        -> RWS (Set.Set (Unified var)) () (Set.Set (Unified var)) ()
+        :: MetaOrObject level
+        => Pattern level domain variable patternType
+        -> RWS (Set.Set (Unified variable)) () (Set.Set (Unified variable)) ()
     freeVariables2 =
         \case
             VariablePattern v -> unlessM (isBound v) (recordFree v)
@@ -121,15 +121,15 @@ freeVariables root =
 
 -- | The free variables of a pattern.
 allVariables
-    ::  forall t a pat dom var.
-        ( UnifiedPatternInterface pat
-        , Functor (pat dom var)
-        , Foldable dom
-        , OrdMetaOrObject var
-        , Recursive t
-        , Base t ~ CofreeF (pat dom var) a
+    ::  forall patternHead patternType annotation domain variable.
+        ( UnifiedPatternInterface patternHead
+        , Functor (patternHead domain variable)
+        , Foldable domain
+        , OrdMetaOrObject variable
+        , Recursive patternType
+        , Base patternType ~ CofreeF (patternHead domain variable) annotation
         )
-    => t -> Set.Set (Unified var)
+    => patternType -> Set.Set (Unified variable)
 allVariables root =
     State.execState
         (allVariables1 root)
@@ -142,9 +142,9 @@ allVariables root =
         $ Cofree.tailF $ Recursive.project recursive
 
     allVariables2
-        :: MetaOrObject lvl
-        => Pattern lvl dom var t
-        -> State (Set.Set (Unified var)) ()
+        :: MetaOrObject level
+        => Pattern level domain variable patternType
+        -> State (Set.Set (Unified variable)) ()
     allVariables2 =
         \case
             VariablePattern variable -> record variable
@@ -157,9 +157,11 @@ allVariables root =
             p -> mapM_ allVariables1 p
 
 pureMergeVariables
-    :: (Foldable dom, Ord (var lvl))
-    => Base (PurePattern lvl dom var ann) (Set.Set (var lvl))
-    -> Set.Set (var lvl)
+    :: (Foldable domain, Ord (variable level))
+    => Base
+        (PurePattern level domain variable annotation)
+        (Set.Set (variable level))
+    -> Set.Set (variable level)
 pureMergeVariables base =
     case Cofree.tailF base of
         VariablePattern v -> Set.singleton v
@@ -173,6 +175,7 @@ pureMergeVariables base =
 set, regardless of whether they are quantified or not.
 -}
 pureAllVariables
-    :: (Foldable dom, Functor dom, Ord (var lvl))
-    => PurePattern lvl dom var ann -> Set.Set (var lvl)
+    :: (Foldable domain, Functor domain, Ord (variable level))
+    => PurePattern level domain variable annotation
+    -> Set.Set (variable level)
 pureAllVariables = Recursive.fold pureMergeVariables

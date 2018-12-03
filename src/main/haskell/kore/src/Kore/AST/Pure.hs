@@ -60,7 +60,7 @@ import           Kore.AST.Common hiding
 import qualified Kore.AST.Common as Head
 import           Kore.AST.MetaOrObject
 
-{- | The abstract syntax of Kore at a fixed level @lvl@.
+{- | The abstract syntax of Kore at a fixed level @level@.
 
 @dom@ is the type of domain values; see "Kore.Domain.External" and
 "Kore.Domain.Builtin".
@@ -72,120 +72,137 @@ tree. @PurePattern@ is a 'Traversable' 'Comonad' over the type of annotations.
 
 -}
 newtype PurePattern
-    (lvl :: *)
-    (dom :: * -> *)
-    (var :: * -> *)
-    (ann :: *)
+    (level :: *)
+    (domain :: * -> *)
+    (variable :: * -> *)
+    (annotation :: *)
   =
-    PurePattern { getPurePattern :: Cofree (Pattern lvl dom var) ann }
+    PurePattern
+        { getPurePattern :: Cofree (Pattern level domain variable) annotation }
     deriving (Foldable, Functor, Generic, Traversable)
 
 instance
-    ( Eq ann
-    , Eq lvl
-    , Eq (var lvl)
-    , Eq1 dom, Functor dom
+    ( Eq annotation
+    , Eq level
+    , Eq (variable level)
+    , Eq1 domain, Functor domain
     ) =>
-    Eq (PurePattern lvl dom var ann)
+    Eq (PurePattern level domain variable annotation)
   where
     (==) = eqWorker
       where
         eqWorker
-            (Recursive.project -> ann1 :< pat1)
-            (Recursive.project -> ann2 :< pat2)
+            (Recursive.project -> annotation1 :< pat1)
+            (Recursive.project -> annotation2 :< pat2)
           =
-            ann1 == ann2 && liftEq eqWorker pat1 pat2
+            annotation1 == annotation2 && liftEq eqWorker pat1 pat2
 
 instance
-    ( Ord ann
-    , Ord lvl
-    , Ord (var lvl)
-    , Ord1 dom, Functor dom
+    ( Ord annotation
+    , Ord level
+    , Ord (variable level)
+    , Ord1 domain, Functor domain
     ) =>
-    Ord (PurePattern lvl dom var ann)
+    Ord (PurePattern level domain variable annotation)
   where
     compare = compareWorker
       where
         compareWorker
-            (Recursive.project -> ann1 :< pat1)
-            (Recursive.project -> ann2 :< pat2)
+            (Recursive.project -> annotation1 :< pat1)
+            (Recursive.project -> annotation2 :< pat2)
           =
-            compare ann1 ann2 <> liftCompare compareWorker pat1 pat2
+            compare annotation1 annotation2
+            <> liftCompare compareWorker pat1 pat2
 
 deriving instance
-    ( Show ann
-    , Show (var lvl)
-    , Show (dom child)
-    , child ~ Cofree (Pattern lvl dom var) ann
+    ( Show annotation
+    , Show (variable level)
+    , Show (domain child)
+    , child ~ Cofree (Pattern level domain variable) annotation
     ) =>
-    Show (PurePattern lvl dom var ann)
+    Show (PurePattern level domain variable annotation)
 
 instance
-    ( Functor dom
-    , Hashable ann
-    , Hashable (var lvl)
-    , Hashable (dom child)
-    , child ~ PurePattern lvl dom var ann
+    ( Functor domain
+    , Hashable annotation
+    , Hashable (variable level)
+    , Hashable (domain child)
+    , child ~ PurePattern level domain variable annotation
     ) =>
-    Hashable (PurePattern lvl dom var ann)
+    Hashable (PurePattern level domain variable annotation)
   where
-    hashWithSalt salt (Recursive.project -> ann :< pat) =
-        salt `hashWithSalt` ann `hashWithSalt` pat
+    hashWithSalt salt (Recursive.project -> annotation :< pat) =
+        salt `hashWithSalt` annotation `hashWithSalt` pat
 
 instance
-    ( Functor dom
-    , NFData ann
-    , NFData (var lvl)
-    , NFData (dom child)
-    , child ~ PurePattern lvl dom var ann
+    ( Functor domain
+    , NFData annotation
+    , NFData (variable level)
+    , NFData (domain child)
+    , child ~ PurePattern level domain variable annotation
     ) =>
-    NFData (PurePattern lvl dom var ann)
+    NFData (PurePattern level domain variable annotation)
   where
-    rnf (Recursive.project -> ann :< pat) =
-        rnf ann `seq` rnf pat `seq` ()
+    rnf (Recursive.project -> annotation :< pat) =
+        rnf annotation `seq` rnf pat `seq` ()
 
-type instance Base (PurePattern lvl dom var ann) =
-    CofreeF (Pattern lvl dom var) ann
+type instance Base (PurePattern level domain variable annotation) =
+    CofreeF (Pattern level domain variable) annotation
 
-instance Functor dom => Recursive (PurePattern lvl dom var ann) where
+instance
+    Functor domain =>
+    Recursive (PurePattern level domain variable annotation)
+  where
     project (PurePattern embedded) =
         case Recursive.project embedded of
             Compose (Identity projected) -> PurePattern <$> projected
 
-instance Functor dom => Corecursive (PurePattern lvl dom var ann) where
+instance
+    Functor domain =>
+    Corecursive (PurePattern level domain variable annotation)
+  where
     embed projected =
         (PurePattern . Recursive.embed . Compose . Identity)
             (getPurePattern <$> projected)
 
-instance Functor dom => Comonad (PurePattern lvl dom var) where
+instance
+    Functor domain =>
+    Comonad (PurePattern level domain variable)
+  where
     extract (PurePattern a) = extract a
     duplicate (PurePattern a) = PurePattern (extend PurePattern a)
     extend extending (PurePattern a) =
         PurePattern (extend (extending . PurePattern) a)
 
 instance
-    Functor dom =>
-    ComonadCofree (Pattern lvl dom var) (PurePattern lvl dom var)
+    Functor domain =>
+    ComonadCofree
+        (Pattern level domain variable)
+        (PurePattern level domain variable)
   where
     unwrap (PurePattern a) = PurePattern <$> unwrap a
 
 fromPurePattern
-    :: Functor dom
-    => PurePattern lvl dom var ann
-    -> Base (PurePattern lvl dom var ann) (PurePattern lvl dom var ann)
+    :: Functor domain
+    => PurePattern level domain variable annotation
+    -> Base
+        (PurePattern level domain variable annotation)
+        (PurePattern level domain variable annotation)
 fromPurePattern = Recursive.project
 
 asPurePattern
-    :: Functor dom
-    => Base (PurePattern lvl dom var ann) (PurePattern lvl dom var ann)
-    -> PurePattern lvl dom var ann
+    :: Functor domain
+    => Base
+        (PurePattern level domain variable annotation)
+        (PurePattern level domain variable annotation)
+    -> PurePattern level domain variable annotation
 asPurePattern = Recursive.embed
 
--- | A pure pattern at level @lvl@ with variables in the common 'Variable'.
-type CommonPurePattern lvl dom = PurePattern lvl dom Variable
+-- | A pure pattern at level @level@ with variables in the common 'Variable'.
+type CommonPurePattern level domain = PurePattern level domain Variable
 
 -- | A concrete pure pattern (containing no variables) at level @lvl@.
-type ConcretePurePattern lvl dom = PurePattern lvl dom Concrete
+type ConcretePurePattern level domain = PurePattern level domain Concrete
 
 {- | Use the provided traversal to replace all variables in a 'PurePattern'.
 
@@ -198,18 +215,19 @@ See also: 'mapVariables'
 
  -}
 traverseVariables
-    :: forall f lvl dom var1 var2 ann. (Monad f, Traversable dom)
-    => (var1 lvl -> f (var2 lvl))
-    -> PurePattern lvl dom var1 ann
-    -> f (PurePattern lvl dom var2 ann)
+    ::  forall m level variable1 variable2 domain annotation.
+        (Monad m, Traversable domain)
+    => (variable1 level -> m (variable2 level))
+    -> PurePattern level domain variable1 annotation
+    -> m (PurePattern level domain variable2 annotation)
 traverseVariables traversing =
     Recursive.fold traverseVariablesWorker
   where
     traverseVariablesWorker
         :: Base
-            (PurePattern lvl dom var1 ann)
-            (f (PurePattern lvl dom var2 ann))
-        -> f (PurePattern lvl dom var2 ann)
+            (PurePattern level domain variable1 annotation)
+            (m (PurePattern level domain variable2 annotation))
+        -> m (PurePattern level domain variable2 annotation)
     traverseVariablesWorker (a :< pat) =
         reannotate <$> (Head.traverseVariables traversing =<< sequence pat)
       where
@@ -225,10 +243,10 @@ See also: 'traverseVariables'
 
  -}
 mapVariables
-    :: Functor dom
-    => (var1 lvl -> var2 lvl)
-    -> PurePattern lvl dom var1 ann
-    -> PurePattern lvl dom var2 ann
+    :: Functor domain
+    => (variable1 level -> variable2 level)
+    -> PurePattern level domain variable1 annotation
+    -> PurePattern level domain variable2 annotation
 mapVariables mapping =
     Recursive.ana (mapVariablesWorker . Recursive.project)
   where
@@ -237,10 +255,11 @@ mapVariables mapping =
 
 -- | Use the provided mapping to replace all domain values in a 'PurePattern'.
 mapDomainValues
-    :: forall lvl dom1 dom2 var ann. (Functor dom1, Functor dom2)
-    => (forall child. dom1 child -> dom2 child)
-    -> PurePattern lvl dom1 var ann
-    -> PurePattern lvl dom2 var ann
+    ::  forall level domain1 domain2 variable annotation.
+        (Functor domain1, Functor domain2)
+    => (forall child. domain1 child -> domain2 child)
+    -> PurePattern level domain1 variable annotation
+    -> PurePattern level domain2 variable annotation
 mapDomainValues mapping =
     -- Using 'Recursive.unfold' so that the pattern will unfold lazily.
     -- Lazy unfolding allows composing multiple tree transformations without
@@ -262,9 +281,9 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcretePurePattern
-    :: forall lvl dom var ann. Traversable dom
-    => PurePattern lvl dom var ann
-    -> Maybe (ConcretePurePattern lvl dom ann)
+    :: forall level domain variable annotation. Traversable domain
+    => PurePattern level domain variable annotation
+    -> Maybe (ConcretePurePattern level domain annotation)
 asConcretePurePattern = traverseVariables (\case { _ -> Nothing })
 
 {- | Construct a 'PurePattern' from a 'ConcretePurePattern'.
@@ -277,9 +296,9 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcretePurePattern
-    :: forall lvl dom var ann. Functor dom
-    => ConcretePurePattern lvl dom ann
-    -> PurePattern lvl dom var ann
+    :: forall level domain variable annotation. Functor domain
+    => ConcretePurePattern level domain annotation
+    -> PurePattern level domain variable annotation
 fromConcretePurePattern = mapVariables (\case {})
 
 {- | Cast a pure pattern with @'Const' 'Void'@ domain values into any domain.
@@ -289,9 +308,9 @@ trivially because it must contain no domain values.
 
  -}
 castVoidDomainValues
-    :: Functor dom
-    => PurePattern lvl (Const Void) var ann
-    -> PurePattern lvl dom var ann
+    :: Functor domain
+    => PurePattern level (Const Void) variable annotation
+    -> PurePattern level domain variable annotation
 castVoidDomainValues = mapDomainValues (\case {})
 
 {- | Cast a 'Meta'-pure-pattern into any domain.
@@ -301,9 +320,9 @@ domain values.
 
  -}
 castMetaDomainValues
-    :: (Functor dom1, Functor dom2)
-    => PurePattern Meta dom1 var ann
-    -> PurePattern Meta dom2 var ann
+    :: (Functor domain1, Functor domain2)
+    => PurePattern Meta domain1 variable annotation
+    -> PurePattern Meta domain2 variable annotation
 castMetaDomainValues =
     Recursive.ana (castMetaDomainValuesWorker . Recursive.project)
   where
@@ -335,8 +354,12 @@ constant
     :: SymbolOrAlias level -> Pattern level domain variable child
 constant patternHead = apply patternHead []
 
-type PurePatternStub lvl dom var ann =
-    PatternStub lvl dom var (PurePattern lvl dom var ann)
+type PurePatternStub level domain variable annotation =
+    PatternStub
+        level
+        domain
+        variable
+        (PurePattern level domain variable annotation)
 
-type CommonPurePatternStub lvl dom ann =
-    PurePatternStub lvl dom Variable ann
+type CommonPurePatternStub level domain annotation =
+    PurePatternStub level domain Variable annotation

@@ -115,10 +115,10 @@ instance
 
 instance
     ( Hashable child
-    , Hashable (var Meta)
-    , Hashable (var Object)
-    , Hashable (dom child)
-    ) => Hashable (UnifiedPattern dom var child) where
+    , Hashable (variable Meta)
+    , Hashable (variable Object)
+    , Hashable (domain child)
+    ) => Hashable (UnifiedPattern domain variable child) where
     hashWithSalt salt =
         \case
             UnifiedMetaPattern metaP ->
@@ -199,95 +199,106 @@ tree. @KorePattern@ is a 'Traversable' 'Comonad' over the type of annotations.
 
 -}
 newtype KorePattern
-    (dom :: * -> *)
-    (var :: * -> *)
-    (ann :: *)
+    (domain :: * -> *)
+    (variable :: * -> *)
+    (annotation :: *)
   =
-    KorePattern { getKorePattern :: Cofree (UnifiedPattern dom var) ann }
+    KorePattern
+        { getKorePattern :: Cofree (UnifiedPattern domain variable) annotation }
     deriving (Foldable, Functor, Generic, Traversable)
 
 instance
-    ( Eq ann
-    , EqMetaOrObject var
-    , Eq1 dom, Functor dom
+    ( Eq annotation
+    , EqMetaOrObject variable
+    , Eq1 domain, Functor domain
     ) =>
-    Eq (KorePattern dom var ann)
+    Eq (KorePattern domain variable annotation)
   where
     (==) = eqWorker
       where
         eqWorker
-            (Recursive.project -> ann1 :< pat1)
-            (Recursive.project -> ann2 :< pat2)
+            (Recursive.project -> annotation1 :< pat1)
+            (Recursive.project -> annotation2 :< pat2)
           =
-            ann1 == ann2 && liftEq eqWorker pat1 pat2
+            annotation1 == annotation2 && liftEq eqWorker pat1 pat2
 
 instance
-    ( Ord ann
-    , OrdMetaOrObject var
-    , Ord1 dom, Functor dom
+    ( Ord annotation
+    , OrdMetaOrObject variable
+    , Ord1 domain, Functor domain
     ) =>
-    Ord (KorePattern dom var ann)
+    Ord (KorePattern domain variable annotation)
   where
     compare = compareWorker
       where
         compareWorker
-            (Recursive.project -> ann1 :< pat1)
-            (Recursive.project -> ann2 :< pat2)
+            (Recursive.project -> annotation1 :< pat1)
+            (Recursive.project -> annotation2 :< pat2)
           =
-            compare ann1 ann2 <> liftCompare compareWorker pat1 pat2
+            compare annotation1 annotation2
+            <> liftCompare compareWorker pat1 pat2
 
 deriving instance
-    ( Show ann
-    , ShowMetaOrObject var
-    , Show (dom child)
-    , child ~ Cofree (UnifiedPattern dom var) ann
+    ( Show annotation
+    , ShowMetaOrObject variable
+    , Show (domain child)
+    , child ~ Cofree (UnifiedPattern domain variable) annotation
     ) =>
-    Show (KorePattern dom var ann)
+    Show (KorePattern domain variable annotation)
 
 instance
-    ( Functor dom
-    , Hashable ann
-    , Hashable (var Meta)
-    , Hashable (var Object)
-    , Hashable (dom child)
-    , child ~ KorePattern dom var ann
+    ( Functor domain
+    , Hashable annotation
+    , Hashable (variable Meta)
+    , Hashable (variable Object)
+    , Hashable (domain child)
+    , child ~ KorePattern domain variable annotation
     ) =>
-    Hashable (KorePattern dom var ann)
+    Hashable (KorePattern domain variable annotation)
   where
-    hashWithSalt salt (Recursive.project -> ann :< pat) =
-        salt `hashWithSalt` ann `hashWithSalt` pat
+    hashWithSalt salt (Recursive.project -> annotation :< pat) =
+        salt `hashWithSalt` annotation `hashWithSalt` pat
 
 instance
-    ( Functor dom
-    , NFData ann
-    , NFData (var Meta)
-    , NFData (var Object)
-    , NFData (dom child)
-    , child ~ KorePattern dom var ann
+    ( Functor domain
+    , NFData annotation
+    , NFData (variable Meta)
+    , NFData (variable Object)
+    , NFData (domain child)
+    , child ~ KorePattern domain variable annotation
     ) =>
-    NFData (KorePattern dom var ann)
+    NFData (KorePattern domain variable annotation)
   where
-    rnf (Recursive.project -> ann :< pat) =
-        rnf ann `seq` rnf pat `seq` ()
+    rnf (Recursive.project -> annotation :< pat) =
+        rnf annotation `seq` rnf pat `seq` ()
 
-type instance Base (KorePattern dom var ann) =
-    CofreeF (UnifiedPattern dom var) ann
+type instance Base (KorePattern domain variable annotation) =
+    CofreeF (UnifiedPattern domain variable) annotation
 
-instance Functor dom => Recursive (KorePattern dom var ann) where
+instance
+    Functor domain =>
+    Recursive (KorePattern domain variable annotation)
+  where
     project (KorePattern embedded) =
         case Recursive.project embedded of
             Compose (Identity projected) -> KorePattern <$> projected
 
-instance Functor dom => Corecursive (KorePattern dom var ann) where
+instance
+    Functor domain =>
+    Corecursive (KorePattern domain variable annotation)
+  where
     embed projected =
         (KorePattern . Recursive.embed . Compose . Identity)
             (getKorePattern <$> projected)
 
 -- | View an annotated 'Meta' or 'Object' 'Pattern' as a 'KorePattern'
 asKorePattern
-    :: (Functor dom, MetaOrObject lvl)
-    => CofreeF (Pattern lvl dom var) ann (KorePattern dom var ann)
-    -> KorePattern dom var ann
+    :: (Functor domain, MetaOrObject level)
+    => CofreeF
+        (Pattern level domain variable)
+        annotation
+        (KorePattern domain variable annotation)
+    -> KorePattern domain variable annotation
 asKorePattern (ann :< pat) =
     Recursive.embed (ann :< asUnifiedPattern pat)
 
@@ -298,15 +309,15 @@ instance Functor dom => Comonad (KorePattern dom var) where
         KorePattern (extend (extending . KorePattern) a)
 
 instance
-    Functor dom =>
-    ComonadCofree (UnifiedPattern dom var) (KorePattern dom var)
+    Functor domain =>
+    ComonadCofree (UnifiedPattern domain variable) (KorePattern domain variable)
   where
     unwrap (KorePattern a) = KorePattern <$> unwrap a
 
 -- | View a 'Meta' or 'Object' 'Pattern' as a 'KorePattern'
 asCommonKorePattern
-    :: MetaOrObject lvl
-    => Pattern lvl Domain.Builtin Variable CommonKorePattern
+    :: MetaOrObject level
+    => Pattern level Domain.Builtin Variable CommonKorePattern
     -> CommonKorePattern
 asCommonKorePattern pat = asKorePattern (mempty :< pat)
 

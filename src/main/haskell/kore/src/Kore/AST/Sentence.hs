@@ -108,43 +108,45 @@ The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SentenceAlias
-    (lvl :: *)
+    (level :: *)
     (pat :: (* -> *) -> (* -> *) -> * -> *)
-    (dom :: * -> *)
-    (var :: * -> *)
+    (domain :: * -> *)
+    (variable :: * -> *)
   = SentenceAlias
-    { sentenceAliasAlias        :: !(Alias lvl)
-    , sentenceAliasSorts        :: ![Sort lvl]
-    , sentenceAliasResultSort   :: !(Sort lvl)
-    , sentenceAliasLeftPattern  :: !(Pattern lvl dom var (pat dom var ()))
-    , sentenceAliasRightPattern :: !(Pattern lvl dom var (pat dom var ()))
+    { sentenceAliasAlias        :: !(Alias level)
+    , sentenceAliasSorts        :: ![Sort level]
+    , sentenceAliasResultSort   :: !(Sort level)
+    , sentenceAliasLeftPattern
+        :: !(Pattern level domain variable (pat domain variable ()))
+    , sentenceAliasRightPattern
+        :: !(Pattern level domain variable (pat domain variable ()))
     , sentenceAliasAttributes   :: !Attributes
     }
   deriving (Generic)
 
 deriving instance
-    ( Eq (Pattern lvl dom var child)
-    , child ~ pat dom var ()
+    ( Eq (Pattern level domain variable child)
+    , child ~ pat domain variable ()
     ) =>
-    Eq (SentenceAlias lvl pat dom var)
+    Eq (SentenceAlias level pat domain variable)
 
 deriving instance
-    ( Ord (Pattern lvl dom var child)
-    , child ~ pat dom var ()
+    ( Ord (Pattern level domain variable child)
+    , child ~ pat domain variable ()
     ) =>
-    Ord (SentenceAlias lvl pat dom var)
+    Ord (SentenceAlias level pat domain variable)
 
 deriving instance
-    ( Show (Pattern lvl dom var child)
-    , child ~ pat dom var ()
+    ( Show (Pattern level domain variable child)
+    , child ~ pat domain variable ()
     ) =>
-    Show (SentenceAlias lvl pat dom var)
+    Show (SentenceAlias level pat domain variable)
 
 instance
-    ( NFData (Pattern lvl dom var child)
-    , NFData (var lvl)
-    , child ~ pat dom var ()
-    ) => NFData (SentenceAlias lvl pat dom var)
+    ( NFData (Pattern level domain variable child)
+    , NFData (variable level)
+    , child ~ pat domain variable ()
+    ) => NFData (SentenceAlias level pat domain variable)
 
 {-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
 @meta-symbol-declaration@ syntactic categories from the Semantics of K,
@@ -681,63 +683,63 @@ type PureSentence level domain =
     Sentence level (SortVariable level) (PurePattern level) domain Variable
 
 instance
-    ( MetaOrObject lvl
-    , param ~ SortVariable lvl
+    ( MetaOrObject level
+    , sortParam ~ SortVariable level
     ) =>
     AsSentence
-        (Sentence lvl param (PurePattern lvl) dom var)
-        (SentenceAlias lvl (PurePattern lvl) dom var)
+        (Sentence level sortParam (PurePattern level) domain variable)
+        (SentenceAlias level (PurePattern level) domain variable)
   where
     asSentence = SentenceAliasSentence
 
 instance
-    ( MetaOrObject lvl
-    , param ~ SortVariable lvl
+    ( MetaOrObject level
+    , sortParam ~ SortVariable level
     ) =>
     AsSentence
-        (Sentence lvl param (PurePattern lvl) dom var)
-        (SentenceSymbol lvl (PurePattern lvl) dom var)
+        (Sentence level sortParam (PurePattern level) domain variable)
+        (SentenceSymbol level (PurePattern level) domain variable)
   where
     asSentence = SentenceSymbolSentence
 
 instance
-    ( param ~ SortVariable lvl
-    , lvl ~ Meta
+    ( sortParam ~ SortVariable level
+    , level ~ Meta
     ) =>
     AsSentence
-        (Sentence lvl param (PurePattern lvl) dom var)
-        (SentenceImport (PurePattern lvl) dom var)
+        (Sentence level sortParam (PurePattern level) domain variable)
+        (SentenceImport (PurePattern level) domain variable)
   where
     asSentence = SentenceImportSentence
 
 instance
-    ( lvl ~ Meta
-    , param ~ SortVariable lvl
+    ( level ~ Meta
+    , sortParam ~ SortVariable level
     ) =>
     AsSentence
-        (Sentence lvl param (PurePattern lvl) dom var)
-        (SentenceAxiom param (PurePattern lvl) dom var)
+        (Sentence level sortParam (PurePattern level) domain variable)
+        (SentenceAxiom sortParam (PurePattern level) domain variable)
   where
     asSentence = SentenceAxiomSentence
 
 instance
-    ( MetaOrObject lvl
-    , param ~ SortVariable lvl
+    ( MetaOrObject level
+    , sortParam ~ SortVariable level
     ) =>
     AsSentence
-        (Sentence lvl param (PurePattern lvl) dom var)
-        (SentenceSort lvl (PurePattern lvl) dom var)
+        (Sentence level sortParam (PurePattern level) domain variable)
+        (SentenceSort level (PurePattern level) domain variable)
   where
     asSentence = SentenceSortSentence
 
 
 instance
-    ( lvl ~ Object
-    , param ~ SortVariable lvl
+    ( level ~ Object
+    , sortParam ~ SortVariable level
     ) =>
     AsSentence
-        (Sentence lvl param (PurePattern lvl) dom var)
-        (SentenceHook lvl (PurePattern lvl) dom var)
+        (Sentence level sortParam (PurePattern level) domain variable)
+        (SentenceHook level (PurePattern level) domain variable)
   where
     asSentence = SentenceHookSentence
 

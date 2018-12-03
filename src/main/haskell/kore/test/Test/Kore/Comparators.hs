@@ -207,35 +207,37 @@ instance
     printWithExplanation = show
 
 instance
-    ( Show (PurePattern lvl dom var ann)
-    , Show (dom (CofreeT (Pattern lvl dom var) Identity ann))
-    , Eq (dom (CofreeT (Pattern lvl dom var) Identity ann))
-    , Show (var lvl)
-    , Eq (var lvl)
-    , EqualWithExplanation (var lvl)
-    , Show ann
-    , Eq ann
-    , Eq lvl
-    , EqualWithExplanation ann
+    ( Show (PurePattern level domain variable annotation)
+    , Show
+        (domain (CofreeT (Pattern level domain variable) Identity annotation))
+    , Eq (domain (CofreeT (Pattern level domain variable) Identity annotation))
+    , Show (variable level)
+    , Eq (variable level)
+    , EqualWithExplanation (variable level)
+    , Show annotation
+    , Eq annotation
+    , Eq level
+    , EqualWithExplanation annotation
     ) =>
-    EqualWithExplanation (PurePattern lvl dom var ann)
+    EqualWithExplanation (PurePattern level domain variable annotation)
   where
     compareWithExplanation = wrapperCompareWithExplanation
     printWithExplanation = show
 
 instance
-    ( Show (PurePattern lvl dom var ann)
-    , Show (dom (CofreeT (Pattern lvl dom var) Identity ann))
-    , Eq (dom (CofreeT (Pattern lvl dom var) Identity ann))
-    , Show (var lvl)
-    , Eq (var lvl)
-    , EqualWithExplanation (var lvl)
-    , Show ann
-    , Eq ann
-    , Eq lvl
-    , EqualWithExplanation ann
+    ( Show (PurePattern level domain variable annotation)
+    , Show
+        (domain (CofreeT (Pattern level domain variable) Identity annotation))
+    , Eq (domain (CofreeT (Pattern level domain variable) Identity annotation))
+    , Show (variable level)
+    , Eq (variable level)
+    , EqualWithExplanation (variable level)
+    , Show annotation
+    , Eq annotation
+    , Eq level
+    , EqualWithExplanation annotation
     ) =>
-    WrapperEqualWithExplanation (PurePattern lvl dom var ann)
+    WrapperEqualWithExplanation (PurePattern level domain variable annotation)
   where
     wrapperField expected actual =
         EqWrap
@@ -245,35 +247,37 @@ instance
     wrapperConstructorName _ = "PurePattern"
 
 instance
-    ( Show (KorePattern dom var ann)
-    , Show (dom (CofreeT (UnifiedPattern dom var) Identity ann))
-    , Eq (dom (CofreeT (UnifiedPattern dom var) Identity ann))
-    , Show ann
-    , Eq ann
-    , EqualWithExplanation ann
-    , EqualWithExplanation (var Meta)
-    , EqualWithExplanation (var Object)
-    , OrdMetaOrObject var
-    , ShowMetaOrObject var
+    ( Show (KorePattern domain variable annotation)
+    , Show
+        (domain (CofreeT (UnifiedPattern domain variable) Identity annotation))
+    , Eq (domain (CofreeT (UnifiedPattern domain variable) Identity annotation))
+    , Show annotation
+    , Eq annotation
+    , EqualWithExplanation annotation
+    , EqualWithExplanation (variable Meta)
+    , EqualWithExplanation (variable Object)
+    , OrdMetaOrObject variable
+    , ShowMetaOrObject variable
     ) =>
-    EqualWithExplanation (KorePattern dom var ann)
+    EqualWithExplanation (KorePattern domain variable annotation)
   where
     compareWithExplanation = wrapperCompareWithExplanation
     printWithExplanation = show
 
 instance
-    ( Show (KorePattern dom var ann)
-    , Show (dom (CofreeT (UnifiedPattern dom var) Identity ann))
-    , Eq (dom (CofreeT (UnifiedPattern dom var) Identity ann))
-    , Show ann
-    , Eq ann
-    , EqualWithExplanation ann
-    , EqualWithExplanation (var Meta)
-    , EqualWithExplanation (var Object)
-    , OrdMetaOrObject var
-    , ShowMetaOrObject var
+    ( Show (KorePattern domain variable annotation)
+    , Show
+        (domain (CofreeT (UnifiedPattern domain variable) Identity annotation))
+    , Eq (domain (CofreeT (UnifiedPattern domain variable) Identity annotation))
+    , Show annotation
+    , Eq annotation
+    , EqualWithExplanation annotation
+    , EqualWithExplanation (variable Meta)
+    , EqualWithExplanation (variable Object)
+    , OrdMetaOrObject variable
+    , ShowMetaOrObject variable
     ) =>
-    WrapperEqualWithExplanation (KorePattern dom var ann)
+    WrapperEqualWithExplanation (KorePattern domain variable annotation)
   where
     wrapperField expected actual =
         EqWrap

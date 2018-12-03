@@ -27,29 +27,32 @@ import Kore.Substitution.Class
 import Kore.Variables.Free
 
 -- |A very simple substitution represented as a list of pairs
-newtype Substitution var pat = Substitution { getSubstitution :: [(var, pat)] }
+newtype Substitution variable pat =
+    Substitution { getSubstitution :: [(variable, pat)] }
 
 instance
-    ( Foldable dom
-    , Functor dom
-    , OrdMetaOrObject var
-    , MetaOrObject lvl
-    ) => SubstitutionClass
+    ( Foldable domain
+    , Functor domain
+    , OrdMetaOrObject variable
+    , MetaOrObject level
+    ) =>
+    SubstitutionClass
         Substitution
-        (Unified var)
-        (PurePattern lvl dom var ann)
+        (Unified variable)
+        (PurePattern level domain variable annotation)
   where
     substitutionTermsFreeVars =
         foldMap (freeVariables . snd) . getSubstitution
 
 instance
-    ( Foldable dom
-    , Functor dom
-    , OrdMetaOrObject var
-    ) => SubstitutionClass
+    ( Foldable domain
+    , Functor domain
+    , OrdMetaOrObject variable
+    ) =>
+    SubstitutionClass
         Substitution
-        (Unified var)
-        (KorePattern dom var ann)
+        (Unified variable)
+        (KorePattern domain variable annotation)
   where
     substitutionTermsFreeVars =
         foldMap (freeVariables . snd) . getSubstitution

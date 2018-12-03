@@ -1167,9 +1167,9 @@ instance
 
 -- | Use the provided mapping to replace all variables in a 'Pattern' head.
 mapVariables
-    :: (var1 lvl -> var2 lvl)
-    -> Pattern lvl dom var1 child
-    -> Pattern lvl dom var2 child
+    :: (variable1 level -> variable2 level)
+    -> Pattern level domain variable1 child
+    -> Pattern level domain variable2 child
 mapVariables mapping =
     runIdentity . traverseVariables (Identity . mapping)
 {-# INLINE mapVariables #-}
@@ -1177,9 +1177,9 @@ mapVariables mapping =
 -- | Use the provided traversal to replace all variables in a 'Pattern' head.
 traverseVariables
     :: Applicative f
-    => (var1 lvl -> f (var2 lvl))
-    -> Pattern lvl dom var1 child
-    -> f (Pattern lvl dom var2 child)
+    => (variable1 level -> f (variable2 level))
+    -> Pattern level domain variable1 child
+    -> f (Pattern level domain variable2 child)
 traverseVariables traversing =
     \case
         -- Non-trivial cases
@@ -1210,17 +1210,11 @@ traverseVariables traversing =
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
         Forall forallSort <$> traversing forallVariable <*> pure forallChild
 
-{-# SPECIALIZE traverseVariables
-    :: (var1 lvl -> Identity (var2 lvl))
-    -> Pattern lvl dom var1 child
-    -> Identity (Pattern lvl dom var2 child)
-  #-}
-
 -- | Use the provided mapping to replace all domain values in a 'Pattern' head.
 mapDomainValues
-    :: (forall child'. dom1 child' -> dom2 child')
-    -> Pattern lvl dom1 var child
-    -> Pattern lvl dom2 var child
+    :: (forall child'. domain1 child' -> domain2 child')
+    -> Pattern level domain1 variable child
+    -> Pattern level domain2 variable child
 mapDomainValues mapping =
     \case
         -- Non-trivial case
@@ -1257,8 +1251,8 @@ trivially because it must contain no domain values.
 
  -}
 castVoidDomainValues
-    :: Pattern lvl (Const Void) var child
-    -> Pattern lvl dom var child
+    :: Pattern level (Const Void) variable child
+    -> Pattern level domain       variable child
 castVoidDomainValues = mapDomainValues (\case {})
 
 {- | Cast a 'Meta'-'Pattern' head into any domain.
@@ -1268,8 +1262,8 @@ domain values.
 
  -}
 castMetaDomainValues
-    :: Pattern Meta dom1 var child
-    -> Pattern Meta dom2 var child
+    :: Pattern Meta domain1 variable child
+    -> Pattern Meta domain2 variable child
 castMetaDomainValues =
     \case
         AndPattern andP -> AndPattern andP
