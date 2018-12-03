@@ -25,6 +25,7 @@ module Kore.Step.BaseStep
 
 import qualified Control.Arrow as Arrow
 import           Control.Monad.Except
+import qualified Data.Hashable as Hashable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
@@ -36,6 +37,8 @@ import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import           GHC.Generics
+
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
@@ -87,7 +90,6 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
-
 {-| 'StepperConfiguration' represents the configuration to which a rewriting
 axiom is applied.
 
@@ -109,6 +111,9 @@ data StepperConfiguration level = StepperConfiguration
 newtype StepProof (level :: *) (variable :: * -> *) =
     StepProof { getStepProof :: Seq (StepProofAtom level variable) }
   deriving (Eq, Show)
+
+instance Hashable.Hashable (StepProof level variable) where
+    hashWithSalt s _ = Hashable.hashWithSalt s (0 :: Int)
 
 instance Semigroup (StepProof level variable) where
     (<>) (StepProof a) (StepProof b) = StepProof (a <> b)
@@ -136,7 +141,7 @@ data StepProofAtom (level :: *) (variable :: * -> *)
     -- ^ Proof for the remanings that happened during ther proof.
     | StepProofSimplification !(SimplificationProof level)
     -- ^ Proof for the simplification part of a step.
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
 
 {-| 'VariableRenaming' represents a renaming of a variable.
 -}

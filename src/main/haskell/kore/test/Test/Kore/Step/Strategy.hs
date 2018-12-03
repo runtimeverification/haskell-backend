@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 module Test.Kore.Step.Strategy where
 
@@ -7,17 +8,36 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
-import Data.Functor.Identity
-import Numeric.Natural
-import Prelude hiding
-       ( and, const, or, seq )
+import           Data.Functor.Identity
+import           Data.Graph.Inductive.Graph as Graph
+import           Data.Tree
+                 ( Tree (..) )
+import qualified Data.Tree as Tree
+import           Numeric.Natural
+import           Prelude hiding
+                 ( and, const, or, seq )
 
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
+import           Data.Maybe
 import           Kore.Step.Strategy
-                 ( Strategy, Tree (..) )
+                 ( ExecutionGraph (..), Strategy )
 import qualified Kore.Step.Strategy as Strategy
+
+{-| Convert an ExecutionGraph to a Tree, for the sake
+of keeping the old Tree-based unit tests.
+If the ExecutionGraph has a confluence at any point,
+all nodes downstream of it will be duplicated.
+From the point of view of these unit tests this behavior is correct.
+-}
+toTree :: ExecutionGraph config -> Tree config
+toTree (ExecutionGraph root graph _) = Tree.unfoldTree findChildren root
+  where
+    findChildren node =
+        ( fromJust $ Graph.lab graph node
+        , map snd $ filter ((node==) . fst) edges)
+    edges = map (\(a,b,()) -> (a,b)) $ Graph.labEdges graph
 
 data Prim
     = Const Natural
@@ -104,7 +124,7 @@ unlimited = Unlimited
 runStrategy
     :: [Strategy Prim]
     -> Natural
-    -> Tree Natural
+    -> ExecutionGraph Natural
 runStrategy strategy z =
     let
         Identity rs = Strategy.runStrategy transitionPrim strategy z
@@ -153,7 +173,7 @@ prop_Stuck n =
         expect = Node n []
         actual = runStrategy [stuck] n
     in
-        expect === actual
+        expect === toTree actual
 
 prop_Continue :: Natural -> Property
 prop_Continue n =
@@ -161,7 +181,7 @@ prop_Continue n =
         expect = Node n [ Node n [] ]
         actual = runStrategy [continue] n
     in
-        expect === actual
+        expect === toTree actual
 
 test_And :: [TestTree]
 test_And =
@@ -169,14 +189,14 @@ test_And =
         let
             expect = Node 0 [ Node 1 [] ]
             strategy = [and stuck (const 1)]
-            actual = runStrategy strategy 0
+            actual = toTree $ runStrategy strategy 0
         in
             testCase "Stuck on left" (expect @=? actual)
     ,
         let
             expect = Node 0 [ Node 1 [] ]
             strategy = [and (const 1) stuck]
-            actual = runStrategy strategy 0
+            actual = toTree $ runStrategy strategy 0
         in
             testCase "Stuck on right" (expect @=? actual)
     ]
@@ -187,21 +207,22 @@ test_Or =
         let
             expect = Node 0 [ Node 1 [] ]
             strategy = [or throw (const 1)]
-            actual = runStrategy strategy 0
+            actual = toTree $ runStrategy strategy 0
         in
             testCase "Throw on left" (expect @=? actual)
     ,
         let
             expect = Node 0 [ Node 1 [] ]
             strategy = [or (const 1) throw]
-            actual = runStrategy strategy 0
+            actual = toTree $ runStrategy strategy 0
         in
             testCase "Throw on right" (expect @=? actual)
     ]
 
+
 prop_stepLimit :: Integer -> Property
 prop_stepLimit i =
-    (i >= 0) ==> (expect === actual)
+    (i >= 0) ==> (expect === toTree actual)
   where
     n = fromInteger i
     level m = singleton . Node m
@@ -212,7 +233,7 @@ prop_stepLimit i =
 -- | Enumerate values from zero to @n@, then get stuck.
 enumerate
     :: Natural  -- ^ @n@
-    -> Tree Natural
+    -> ExecutionGraph Natural
 enumerate n = runStrategy (Limit.replicate (Limit n) succ_) 0
 
 prop_pickLongest :: Integer -> Property

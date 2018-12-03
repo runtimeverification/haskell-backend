@@ -22,6 +22,7 @@ module Kore.Unification.Substitution
 
 import Control.DeepSeq
        ( NFData )
+import Data.Hashable
 import GHC.Generics
        ( Generic )
 import Prelude hiding
@@ -41,6 +42,9 @@ data Substitution level variable
 
 instance
     (NFData (variable level)) => NFData (Substitution level variable)
+
+instance
+    (Hashable (variable level)) => Hashable (Substitution level variable)
 
 instance Semigroup (Substitution level variable) where
     (Substitution [])             <> (Substitution []) = mempty

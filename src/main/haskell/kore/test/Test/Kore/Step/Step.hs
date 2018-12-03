@@ -77,9 +77,12 @@ rewriteImplies =
 
 expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta Variable)]
 expectTwoAxioms =
-    [
-        ( Predicated
-            { term = Var_ (v1 patternMetaSort)
+    [       ( Predicated
+            { term =
+                Implies_
+                    patternMetaSort
+                    (Var_ $ v1 patternMetaSort)
+                    (Var_ $ v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -89,13 +92,8 @@ expectTwoAxioms =
             , StepProofSimplification SimplificationProof
             ]
         )
-    ,
-        ( Predicated
-            { term =
-                Implies_
-                    patternMetaSort
-                    (Var_ $ v1 patternMetaSort)
-                    (Var_ $ v1 patternMetaSort)
+    ,   ( Predicated
+            { term = Var_ (v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
