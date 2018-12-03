@@ -16,7 +16,7 @@ Definition
                     , sentenceAliasReturnSort =
                         SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                     , sentenceAliasLeftPattern =
-                        ApplicationPattern Application
+                        Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
                                     { symbolOrAliasConstructor = (Id "f" AstLocationNone) :: Id Object
@@ -27,17 +27,23 @@ Definition
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        DomainValuePattern DomainValue
-                            { domainValueSort =
-                                SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                            , domainValueChild =
-                                Domain.BuiltinString PurePattern
-                                    { getPurePattern = CofreeT
-                                        { runCofreeT = Identity
-                                            { runIdentity = () :< StringLiteralPattern (StringLiteral "f")
-                                            }
-                                        }
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
+                                        , domainValueChild =
+                                            Domain.BuiltinString PurePattern
+                                                { getPurePattern = CofreeT
+                                                    { runCofreeT = Identity
+                                                        { runIdentity = () :< StringLiteralPattern (StringLiteral "f")
+                                                        }
+                                                    }
+                                                }
+                                        })
                                     }
+                                }
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

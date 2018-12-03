@@ -3,17 +3,16 @@ module Test.Kore.Parser.Parser (test_koreParser) where
 import Test.Tasty
        ( TestTree, testGroup )
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
-import qualified Data.Functor.Foldable as Recursive
-import           Data.Text
-                 ( Text )
+import Data.Text
+       ( Text )
 
 import           Kore.AST.Builders
                  ( sort_ )
 import           Kore.AST.Kore
 import           Kore.AST.PureToKore
-                 ( patternPureToKore )
 import           Kore.AST.Sentence
+import           Kore.ASTUtils.SmartConstructors hiding
+                 ( resultSort )
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
@@ -805,27 +804,28 @@ sentenceAliasParserTests =
                         }
                     , sentenceAliasSorts = [ sortVariableSort "s2"]
                     , sentenceAliasResultSort = sortVariableSort "s3"
-                    , sentenceAliasLeftPattern = ApplicationPattern Application
+                    , sentenceAliasLeftPattern = Application
                         { applicationSymbolOrAlias =
                             SymbolOrAlias
                                 { symbolOrAliasConstructor = testId "a" :: Id Object
                                 , symbolOrAliasParams = [ sortVariableSort "s1" ]
                                 }
                         , applicationChildren =
-                            [ asCommonKorePattern $ VariablePattern Variable
+                            [ Variable
                                 { variableName = testId "X" :: Id Object
                                 , variableSort = sortVariableSort "s2"
                                 }
                             ]
                         }
-                    , sentenceAliasRightPattern = ApplicationPattern Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "g" :: Id Object
-                                , symbolOrAliasParams = [ ]
-                                }
-                        , applicationChildren = []
-                        }
+                    , sentenceAliasRightPattern =
+                        asCommonKorePattern $ ApplicationPattern Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = testId "g" :: Id Object
+                                    , symbolOrAliasParams = [ ]
+                                    }
+                            , applicationChildren = []
+                            }
                     , sentenceAliasAttributes =
                         Attributes
                             [asCommonKorePattern $
@@ -848,44 +848,46 @@ sentenceAliasParserTests =
                         , sortVariableSort "s4"
                         ]
                     , sentenceAliasResultSort = sortVariableSort "s5"
-                    , sentenceAliasLeftPattern = ApplicationPattern Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "a" :: Id Object
-                                , symbolOrAliasParams =
-                                    [
-                                          sortVariableSort "s1"
-                                        , sortVariableSort "s2"
-                                    ]
-                                }
-                        , applicationChildren =
-                            [ asCommonKorePattern $ VariablePattern Variable
-                                { variableName = testId "X" :: Id Object
-                                , variableSort = sortVariableSort "s3"
-                                }
-                            , asCommonKorePattern $ VariablePattern Variable
-                                { variableName = testId "Y" :: Id Object
-                                , variableSort = sortVariableSort "s4"
-                                }
-                            ]
-                        }
-                    , sentenceAliasRightPattern = ApplicationPattern Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "b" :: Id Object
-                                , symbolOrAliasParams = [ sortVariableSort "s1", sortVariableSort "s2" ]
-                                }
-                        , applicationChildren =
-                            [ asCommonKorePattern $ VariablePattern Variable
-                                { variableName = testId "X" :: Id Object
-                                , variableSort = sortVariableSort "s3"
-                                }
-                            , asCommonKorePattern $ VariablePattern Variable
-                                { variableName = testId "Y" :: Id Object
-                                , variableSort = sortVariableSort "s4"
-                                }
-                            ]
-                        }
+                    , sentenceAliasLeftPattern =
+                        Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = testId "a" :: Id Object
+                                    , symbolOrAliasParams =
+                                        [
+                                            sortVariableSort "s1"
+                                            , sortVariableSort "s2"
+                                        ]
+                                    }
+                            , applicationChildren =
+                                [ Variable
+                                    { variableName = testId "X" :: Id Object
+                                    , variableSort = sortVariableSort "s3"
+                                    }
+                                , Variable
+                                    { variableName = testId "Y" :: Id Object
+                                    , variableSort = sortVariableSort "s4"
+                                    }
+                                ]
+                            }
+                    , sentenceAliasRightPattern =
+                        asCommonKorePattern $ ApplicationPattern Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = testId "b" :: Id Object
+                                    , symbolOrAliasParams = [ sortVariableSort "s1", sortVariableSort "s2" ]
+                                    }
+                            , applicationChildren =
+                                [ asCommonKorePattern $ VariablePattern Variable
+                                    { variableName = testId "X" :: Id Object
+                                    , variableSort = sortVariableSort "s3"
+                                    }
+                                , asCommonKorePattern $ VariablePattern Variable
+                                    { variableName = testId "Y" :: Id Object
+                                    , variableSort = sortVariableSort "s4"
+                                    }
+                                ]
+                            }
                     , sentenceAliasAttributes =
                         Attributes
                             [ asCommonKorePattern $
@@ -905,22 +907,27 @@ sentenceAliasParserTests =
                         }
                     , sentenceAliasSorts = []
                     , sentenceAliasResultSort = sortVariableSort "#Char"
-                    , sentenceAliasLeftPattern  = ApplicationPattern Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "#a" :: Id Meta
-                                , symbolOrAliasParams = [ ]
+                    , sentenceAliasLeftPattern  =
+                        Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor =
+                                        testId "#a" :: Id Meta
+                                    , symbolOrAliasParams = [ ]
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasRightPattern =
+                        (asCommonKorePattern . ApplicationPattern)
+                            Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor =
+                                            testId "#b" :: Id Meta
+                                        , symbolOrAliasParams = [ ]
+                                        }
+                                , applicationChildren = []
                                 }
-                        , applicationChildren = []
-                        }
-                    , sentenceAliasRightPattern = ApplicationPattern Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "#b" :: Id Meta
-                                , symbolOrAliasParams = [ ]
-                                }
-                        , applicationChildren = []
-                        }
                     , sentenceAliasAttributes = Attributes []
                     }
                 :: KoreSentenceAlias Meta)
@@ -945,12 +952,14 @@ sentenceAliasParserTests =
                     , sentenceAliasSorts = []
                     , sentenceAliasResultSort = sortVariableSort "s"
                     , sentenceAliasLeftPattern =
-                        (fmap patternPureToKore . Cofree.tailF . Recursive.project)
-                        (App_ aliasHead [])
+                        Application
+                            { applicationSymbolOrAlias = aliasHead
+                            , applicationChildren = []
+                            }
                     , sentenceAliasRightPattern =
-                        (fmap patternPureToKore . Cofree.tailF . Recursive.project)
-                        (DV_ resultSort
-                            (Domain.BuiltinPattern (StringLiteral_ "f")))
+                        patternPureToKore
+                        $ mkDomainValue resultSort
+                        $ Domain.BuiltinPattern (mkStringLiteral "f")
                     , sentenceAliasAttributes = Attributes []
                     }
                 )
@@ -958,7 +967,7 @@ sentenceAliasParserTests =
         , success
             "alias rewrites{s}(s, s) : s \
             \where rewrites{s}(a : s, b : s) := \\rewrites{s}(a : s, b : s) []"
-            (asSentence
+            (sentencePureToKore $ asSentence
                 (let
                     aliasId :: Id Object
                     aliasId = testId "rewrites"
@@ -969,11 +978,14 @@ sentenceAliasParserTests =
                             { symbolOrAliasConstructor = aliasId
                             , symbolOrAliasParams = [resultSort]
                             }
-                    argument name =
-                        Var_ Variable
+                    var name =
+                        Variable
                             { variableName = testId name
                             , variableSort = resultSort
                             }
+                    argument name = Var_ (var name)
+                    varA = var "a"
+                    varB = var "b"
                     argA = argument "a"
                     argB = argument "b"
                  in SentenceAlias
@@ -984,11 +996,11 @@ sentenceAliasParserTests =
                     , sentenceAliasSorts = [resultSort, resultSort]
                     , sentenceAliasResultSort = resultSort
                     , sentenceAliasLeftPattern =
-                        (fmap patternPureToKore . Cofree.tailF . Recursive.project)
-                        (App_ aliasHead [argA, argB])
-                    , sentenceAliasRightPattern =
-                        (fmap patternPureToKore . Cofree.tailF . Recursive.project)
-                        (Rewrites_ resultSort argA argB)
+                        Application
+                            { applicationSymbolOrAlias = aliasHead
+                            , applicationChildren = [varA, varB]
+                            }
+                    , sentenceAliasRightPattern = Rewrites_ resultSort argA argB
                     , sentenceAliasAttributes = Attributes []
                     }
                 )
@@ -996,7 +1008,7 @@ sentenceAliasParserTests =
         , success
             "alias next{s}(s) : s \
             \where next{s}(a : s) := \\next{s}(a : s) []"
-            (asSentence
+            (sentencePureToKore $ asSentence
                 (let
                     aliasId :: Id Object
                     aliasId = testId "next"
@@ -1007,11 +1019,12 @@ sentenceAliasParserTests =
                             { symbolOrAliasConstructor = aliasId
                             , symbolOrAliasParams = [resultSort]
                             }
-                    arg =
-                        Var_ Variable
+                    var =
+                        Variable
                             { variableName = testId "a"
                             , variableSort = resultSort
                             }
+                    arg = Var_ var
                  in SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
@@ -1020,11 +1033,11 @@ sentenceAliasParserTests =
                     , sentenceAliasSorts = [resultSort]
                     , sentenceAliasResultSort = resultSort
                     , sentenceAliasLeftPattern =
-                        (fmap patternPureToKore . Cofree.tailF . Recursive.project)
-                        (App_ aliasHead [arg])
-                    , sentenceAliasRightPattern =
-                        (fmap patternPureToKore . Cofree.tailF . Recursive.project)
-                        (Next_ resultSort arg)
+                        Application
+                            { applicationSymbolOrAlias  = aliasHead
+                            , applicationChildren = [var]
+                            }
+                    , sentenceAliasRightPattern = Next_ resultSort arg
                     , sentenceAliasAttributes = Attributes []
                     }
                 )

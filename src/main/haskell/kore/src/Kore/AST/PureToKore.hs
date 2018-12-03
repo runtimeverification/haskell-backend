@@ -23,7 +23,6 @@ module Kore.AST.PureToKore
 
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.AST.Kore
@@ -33,14 +32,14 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 
 patternPureToKore
-    :: MetaOrObject level
-    => CommonPurePattern level Domain.Builtin ann
-    -> CommonKorePattern
+    :: (Functor dom, MetaOrObject level)
+    => PurePattern level dom var ann
+    -> KorePattern dom var ann
 patternPureToKore =
     Recursive.unfold patternPureToKoreWorker
   where
-    patternPureToKoreWorker =
-        (mempty :<) . asUnifiedPattern . Cofree.tailF . Recursive.project
+    patternPureToKoreWorker (Recursive.project -> ann :< pat) =
+        ann :< asUnifiedPattern pat
 
 -- |Given a level, this function attempts to extract a pure patten
 -- of this level from a KorePattern.
@@ -78,9 +77,9 @@ extractPurePattern IsObject = \(_ :< pat) ->
 -- FIXME : all of this attribute record syntax stuff
 -- Should be temporary measure
 sentencePureToKore
-    :: MetaOrObject level
-    => PureSentence level Domain.Builtin
-    -> KoreSentence
+    :: (Functor dom, MetaOrObject level)
+    => Sentence level (SortVariable level) (PurePattern level dom var ann)
+    -> UnifiedSentence UnifiedSortVariable (KorePattern dom var ann)
 sentencePureToKore (SentenceAliasSentence sa) =
     asSentence $ aliasSentencePureToKore sa
 sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) =
@@ -105,26 +104,22 @@ sentencePureToKore (SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol a
     constructUnifiedSentence (SentenceHookSentence . SentenceHookedSymbol) $ SentenceSymbol a b c d
 
 aliasSentencePureToKore
-    :: MetaOrObject level
-    => PureSentenceAlias level Domain.Builtin
-    -> KoreSentenceAlias level
-aliasSentencePureToKore msx = msx
-    { sentenceAliasLeftPattern =
-        patternPureToKore <$> sentenceAliasLeftPattern msx
-    , sentenceAliasRightPattern =
-        patternPureToKore <$> sentenceAliasRightPattern msx
-    }
+    :: (Functor dom, MetaOrObject level)
+    => SentenceAlias level (PurePattern level dom var ann)
+    -> SentenceAlias level (KorePattern dom var ann)
+aliasSentencePureToKore = (<$>) patternPureToKore
 
 axiomSentencePureToKore
-    :: MetaOrObject level
-    => PureSentenceAxiom level Domain.Builtin
-    -> KoreSentenceAxiom
-axiomSentencePureToKore msx = msx
-    { sentenceAxiomPattern =
-        patternPureToKore (sentenceAxiomPattern msx)
-    , sentenceAxiomParameters =
-        map asUnified (sentenceAxiomParameters msx)
-    }
+    :: (Functor dom, MetaOrObject level)
+    => SentenceAxiom (SortVariable level) (PurePattern level dom var ann)
+    -> SentenceAxiom UnifiedSortVariable (KorePattern dom var ann)
+axiomSentencePureToKore = unifyAxiomParameters . (<$>) patternPureToKore
+  where
+    unifyAxiomParameters axiom@SentenceAxiom { sentenceAxiomParameters } =
+        axiom
+            { sentenceAxiomParameters =
+                asUnified <$> sentenceAxiomParameters
+            }
 
 modulePureToKore
     :: MetaOrObject level

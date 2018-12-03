@@ -771,15 +771,6 @@ test_lift =
             (liftDefinition simpleKoreDefinition)
         )
     ]
-  where
-    topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
-    topPatObj  = TopPattern $ Top { topSort = simpleSort "s3" }
-    simpleSortActual sort =
-        SortActual
-            { sortActualName = testId sort
-            , sortActualSorts = []
-            }
-    simpleSort sortName = SortActualSort (simpleSortActual sortName)
 
 testLiftUnlift
     :: ( LiftableToMetaML a

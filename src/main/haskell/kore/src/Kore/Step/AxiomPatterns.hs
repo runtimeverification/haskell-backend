@@ -50,7 +50,6 @@ import           Kore.Attribute.Parser
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.ProductionID
 import           Kore.Attribute.Unit
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
@@ -223,7 +222,7 @@ koreSentenceToAxiomPattern level =
 sentenceToAxiomPattern
     :: MetaOrObject level
     => level
-    -> Sentence level' UnifiedSortVariable KorePattern Domain.Builtin Variable
+    -> Sentence level' UnifiedSortVariable CommonKorePattern
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 sentenceToAxiomPattern
     level

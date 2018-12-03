@@ -55,7 +55,6 @@ import           Kore.AST.BuildersImpl
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTHelpers
-import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 
@@ -81,7 +80,7 @@ applyPS
         , Show (Pattern level domain Variable child)
         , child ~ PurePattern level domain Variable ()
         )
-    => s level (PurePattern level) domain Variable
+    => s level (CommonPurePattern level domain ())
     -> [Sort level]
     -> [CommonPurePatternStub level domain ()]
     -> CommonPurePatternStub level domain ()
@@ -116,7 +115,7 @@ applyS
         , Show (Pattern level domain Variable child)
         , child ~ PurePattern level domain Variable ()
         )
-    => s level (PurePattern level) domain Variable
+    => s level (CommonPurePattern level domain ())
     -> [CommonPurePatternStub level domain ()]
     -> CommonPurePatternStub level domain ()
 applyS sentence = applyPS sentence []
@@ -196,41 +195,65 @@ parameterizedSymbol_ name location parameters operandSorts resultSort =
 -- |constructs an unparameterized Alias declaration given the alias name,
 -- operand sorts and result sort.
 alias_
-    :: Text
+    :: Functor domain
+    => Text
     -> AstLocation
-    -> [Sort level]
     -> Sort level
-    -> Pattern level domain Variable (CommonPurePattern level domain ())
-    -> Pattern level domain Variable (CommonPurePattern level domain ())
+    -> [Variable level]
+    -- ^ The left-hand side of the alias: the alias applied to these variables
+    -> CommonPurePattern level domain ()
+    -- ^ The right-hand side of the alias
     -> PureSentenceAlias level domain
 alias_ name location = parameterizedAlias_ name location []
 
 -- |constructs a Alias declaration given alias name, parameters,
 -- operand sorts and result sort.
 parameterizedAlias_
-    :: Text
+    :: Functor domain
+    => Text
     -> AstLocation
     -> [SortVariable level]
-    -> [Sort level]
     -> Sort level
-    -> Pattern level domain Variable (CommonPurePattern level domain ())
-    -> Pattern level domain Variable (CommonPurePattern level domain ())
+    -> [Variable level]
+    -- ^ The left-hand side of the alias: the alias applied to these variables
+    -> CommonPurePattern level domain ()
+    -- ^ The right-hand side of the alias
     -> PureSentenceAlias level domain
-parameterizedAlias_ name location parameters operandSorts resultSort leftPat rightPat =
+parameterizedAlias_
+    name
+    location
+    parameters
+    resultSort
+    leftChildren
+    rightPat
+  =
     SentenceAlias
         { sentenceAliasAlias = Alias
-            { aliasConstructor = Id
-                { getId = name
-                , idLocation = location
-                }
+            { aliasConstructor = identifier
             , aliasParams = parameters
             }
         , sentenceAliasSorts = operandSorts
         , sentenceAliasResultSort = resultSort
-        , sentenceAliasLeftPattern = leftPat
+        , sentenceAliasLeftPattern =
+            Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = identifier
+                        , symbolOrAliasParams =
+                            SortVariableSort <$> parameters
+                        }
+                , applicationChildren = leftChildren
+                }
         , sentenceAliasRightPattern = rightPat
         , sentenceAliasAttributes = Attributes []
         }
+  where
+    identifier =
+        Id
+            { getId = name
+            , idLocation = location
+            }
+    operandSorts = variableSort <$> leftChildren
 
 -- |A 'PatternStub' representing 'Bottom'.
 bottom_ :: CommonPurePatternStub level domain ()
@@ -488,7 +511,8 @@ parameterizedDomainValue_ sort str =
             DomainValuePattern DomainValue
                 { domainValueSort = sort
                 , domainValueChild =
-                    Domain.BuiltinPattern (StringLiteral_ str)
+                    (Domain.BuiltinPattern . asPurePattern . (mempty :<))
+                        (StringLiteralPattern $ StringLiteral str)
                 }
         }
 

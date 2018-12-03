@@ -1395,7 +1395,7 @@ Definition
                             , sortActualSorts = []
                             }
                     , sentenceAliasLeftPattern =
-                        ApplicationPattern Application
+                        Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
                                     { symbolOrAliasConstructor = (Id "zeroInt" AstLocationNone) :: Id Object
@@ -1404,20 +1404,26 @@ Definition
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        DomainValuePattern DomainValue
-                            { domainValueSort =
-                                SortActualSort SortActual
-                                    { sortActualName = (Id "Int" AstLocationNone) :: Id Object
-                                    , sortActualSorts = []
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Domain.BuiltinString PurePattern
+                                                { getPurePattern = CofreeT
+                                                    { runCofreeT = Identity
+                                                        { runIdentity = () :< StringLiteralPattern (StringLiteral "0")
+                                                        }
+                                                    }
+                                                }
+                                        })
                                     }
-                            , domainValueChild =
-                                Domain.BuiltinString PurePattern
-                                    { getPurePattern = CofreeT
-                                        { runCofreeT = Identity
-                                            { runIdentity = () :< StringLiteralPattern (StringLiteral "0")
-                                            }
-                                        }
-                                    }
+                                }
                             }
                     , sentenceAliasAttributes = Attributes []
                     })
@@ -1434,7 +1440,7 @@ Definition
                             , sortActualSorts = []
                             }
                     , sentenceAliasLeftPattern =
-                        ApplicationPattern Application
+                        Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
                                     { symbolOrAliasConstructor = (Id "oneInt" AstLocationNone) :: Id Object
@@ -1443,20 +1449,26 @@ Definition
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        DomainValuePattern DomainValue
-                            { domainValueSort =
-                                SortActualSort SortActual
-                                    { sortActualName = (Id "Int" AstLocationNone) :: Id Object
-                                    , sortActualSorts = []
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Domain.BuiltinString PurePattern
+                                                { getPurePattern = CofreeT
+                                                    { runCofreeT = Identity
+                                                        { runIdentity = () :< StringLiteralPattern (StringLiteral "1")
+                                                        }
+                                                    }
+                                                }
+                                        })
                                     }
-                            , domainValueChild =
-                                Domain.BuiltinString PurePattern
-                                    { getPurePattern = CofreeT
-                                        { runCofreeT = Identity
-                                            { runIdentity = () :< StringLiteralPattern (StringLiteral "1")
-                                            }
-                                        }
-                                    }
+                                }
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

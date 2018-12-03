@@ -32,23 +32,17 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-topPatMeta :: Pattern Meta dom var (pat dom var ())
-topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
-
-topPatObj :: Pattern Object dom var (pat dom var ())
-topPatObj  = TopPattern $ Top { topSort = objectS1 }
-
 objectA :: PureSentenceSymbol Object Domain.Builtin
 objectA = symbol_ "a" AstLocationTest [] objectS1
 
 objectB :: PureSentenceAlias Object Domain.Builtin
-objectB = alias_ "b" AstLocationTest [] objectS1 topPatObj topPatObj
+objectB = alias_ "b" AstLocationTest objectS1 [] (Top_ objectS1)
 
 metaA :: PureSentenceSymbol Meta Domain.Builtin
 metaA = symbol_ "#a" AstLocationTest [] charListMetaSort
 
 metaB :: PureSentenceAlias Meta Domain.Builtin
-metaB = alias_ "#b" AstLocationTest [] charListMetaSort topPatMeta topPatMeta
+metaB = alias_ "#b" AstLocationTest charListMetaSort [] (Top_ charListMetaSort)
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -219,8 +213,24 @@ test_resolvers =
                 { sentenceAliasAttributes = Attributes []
                 , sentenceAliasAlias = sentenceAliasAlias objectB
                 , sentenceAliasSorts = []
-                , sentenceAliasLeftPattern = topPatObj
-                , sentenceAliasRightPattern = topPatObj
+                , sentenceAliasLeftPattern =
+                    Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor =
+                                    aliasConstructor
+                                        (sentenceAliasAlias objectB)
+                                , symbolOrAliasParams =
+                                    (<$>)
+                                        SortVariableSort
+                                        (aliasParams
+                                            $ sentenceAliasAlias objectB
+                                        )
+                                }
+                        , applicationChildren = []
+                        }
+                , sentenceAliasRightPattern =
+                    patternPureToKore (Top_ objectS1)
                 , sentenceAliasResultSort = objectS1
                 }
             ))
@@ -232,8 +242,24 @@ test_resolvers =
                 { sentenceAliasAttributes = Attributes []
                 , sentenceAliasAlias = sentenceAliasAlias metaB
                 , sentenceAliasSorts = []
-                , sentenceAliasLeftPattern = topPatMeta
-                , sentenceAliasRightPattern = topPatMeta
+                , sentenceAliasLeftPattern =
+                    Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor =
+                                    aliasConstructor
+                                        (sentenceAliasAlias metaB)
+                                , symbolOrAliasParams =
+                                    (<$>)
+                                        SortVariableSort
+                                        (aliasParams
+                                            $ sentenceAliasAlias metaB
+                                        )
+                                }
+                        , applicationChildren = []
+                        }
+                , sentenceAliasRightPattern =
+                    patternPureToKore (Top_ charListMetaSort)
                 , sentenceAliasResultSort = charListMetaSort
                 }
             ))

@@ -18,7 +18,7 @@ Definition
                     , sentenceAliasReturnSort =
                         SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                     , sentenceAliasLeftPattern =
-                        ApplicationPattern Application
+                        Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
                                     { symbolOrAliasConstructor = (Id "f" AstLocationNone) :: Id Object
@@ -27,35 +27,33 @@ Definition
                                         ]
                                     }
                             , applicationChildren =
-                                [ KorePattern
-                                    { getKorePattern = CofreeT
-                                        { runCofreeT = Identity
-                                            { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
-                                                { variableName = (Id "a" AstLocationNone) :: Id Object
-                                                , variableSort =
-                                                    SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                                })
-                                            }
-                                        }
+                                [ Variable
+                                    { variableName = (Id "a" AstLocationNone) :: Id Object
+                                    , variableSort =
+                                        SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                                     }
                                 ]
                             }
                     , sentenceAliasRightPattern =
-                        NextPattern Next
-                            { nextSort =
-                                SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                            , nextChild =
-                                KorePattern
-                                    { getKorePattern = CofreeT
-                                        { runCofreeT = Identity
-                                            { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
-                                                { variableName = (Id "a" AstLocationNone) :: Id Object
-                                                , variableSort =
-                                                    SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                                })
-                                            }
-                                        }
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (NextPattern Next
+                                        { nextSort =
+                                            SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
+                                        , nextChild =
+                                            CofreeT
+                                                { runCofreeT = Identity
+                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                        { variableName = (Id "a" AstLocationNone) :: Id Object
+                                                        , variableSort =
+                                                            SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
+                                                        })
+                                                    }
+                                                }
+                                        })
                                     }
+                                }
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

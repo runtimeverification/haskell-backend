@@ -401,6 +401,25 @@ symbolOrAliasPatternRemainderParser childParser x identifier =
         <*> inParenthesesListParser childParser
         )
 
+symbolOrAliasParser
+    :: MetaOrObject level
+    => level
+    -> Parser (SymbolOrAlias level)
+symbolOrAliasParser lvl =
+    SymbolOrAlias
+        <$> idParser lvl
+        <*> inCurlyBracesListParser (sortParser lvl)
+
+applicationParser
+    :: MetaOrObject level
+    => Parser child
+    -> level
+    -> Parser (Application level child)
+applicationParser childParser lvl =
+    Application
+        <$> symbolOrAliasParser lvl
+        <*> inParenthesesListParser childParser
+
 {-|'variableRemainderParser' parses the part after a variable's name and
 constructs it.
 
@@ -827,8 +846,8 @@ koreDefinitionParser :: Parser KoreDefinition
 koreDefinitionParser = definitionParser koreSentenceParser
 
 definitionParser
-    :: Parser (sentence sortParam pat dom var)
-    -> Parser (Definition sentence sortParam pat dom var)
+    :: Parser sentence
+    -> Parser (Definition sentence)
 definitionParser sentenceParser =
     Definition
         <$> attributesParser
@@ -842,8 +861,8 @@ BNF definition fragment:
 @
 -}
 moduleParser
-    :: Parser (sentence sortParam pat dom var)
-    -> Parser (Module sentence sortParam pat dom var)
+    :: Parser sentence
+    -> Parser (Module sentence)
 moduleParser sentenceParser = do
     mlLexemeParser "module"
     name <- moduleNameParser
@@ -987,7 +1006,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 aliasSentenceRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (SentenceAlias level KorePattern Domain.Builtin Variable)
+    -> Parser (SentenceAlias level CommonKorePattern)
 aliasSentenceRemainderParser x
   = do
     aliasSymbol <- (aliasParser x)
@@ -996,9 +1015,9 @@ aliasSentenceRemainderParser x
     resultSort <- sortParser x
     mlLexemeParser "where"
     -- Note: constraints for left pattern checked in verifySentence
-    leftPattern <- leveledPatternParser korePatternParser x
+    leftPattern <- applicationParser (variableParser x) x
     mlLexemeParser ":="
-    rightPattern <- leveledPatternParser korePatternParser x
+    rightPattern <- korePatternParser
     attributes <- attributesParser
     return (SentenceAlias aliasSymbol sorts resultSort leftPattern rightPattern attributes)
 
@@ -1031,8 +1050,8 @@ BNF example:
 Always starts with @{@.
 -}
 axiomSentenceRemainderParser
-    ::  (  SentenceAxiom UnifiedSortVariable KorePattern Domain.Builtin Variable
-        -> Sentence Meta UnifiedSortVariable KorePattern Domain.Builtin Variable
+    ::  (  SentenceAxiom UnifiedSortVariable CommonKorePattern
+        -> Sentence Meta UnifiedSortVariable CommonKorePattern
         )
     -> Parser KoreSentence
 axiomSentenceRemainderParser ctor =

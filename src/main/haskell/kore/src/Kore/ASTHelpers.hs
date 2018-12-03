@@ -44,7 +44,7 @@ pattern from the given sort parameters.
 symbolOrAliasSorts
     :: (SentenceSymbolOrAlias ssoa, MonadError (Error e) m)
     => [Sort level]
-    -> ssoa level pat domain variable
+    -> ssoa level pat
     -> m (ApplicationSorts level)
 symbolOrAliasSorts params sentence = do
     variableToSort <-

@@ -9,11 +9,16 @@ Portability : POSIX
 -}
 module Kore.ASTVerifier.PatternVerifier
     ( verifyPattern
+    , verifyStandalonePattern
     , verifyAliasLeftPattern
+    , verifyFreeVariables
+    , withDeclaredVariables
     , PatternVerifier (..)
     , runPatternVerifier
     , Context (..)
     , DeclaredVariables (..), emptyDeclaredVariables
+    , assertExpectedSort
+    , assertSameSort
     ) where
 
 import           Control.Comonad
@@ -21,6 +26,7 @@ import qualified Control.Monad as Monad
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
+import qualified Data.Foldable as Foldable
 import           Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
@@ -158,51 +164,164 @@ addDeclaredVariable variable@Variable { variableName } =
                         Map.insert variableName variable objectDeclaredVariables
                     }
 
-verifyAliasLeftPattern
-    :: Maybe UnifiedSort
-    -- ^ If present, represents the expected sort of the pattern.
-    -> CommonKorePattern
-    -> PatternVerifier VerifiedKorePattern
-verifyAliasLeftPattern = verifyPattern
-    -- TODO: check that the left pattern is the alias symbol applied to
-    -- non-repeating variables
+{- | Add a new variable to the set of 'DeclaredVariables'.
 
-{-|'verifyPattern' verifies the welformedness of a Kore 'CommonKorePattern'. -}
+The new variable must not already be declared.
+
+ -}
+newDeclaredVariable
+    :: DeclaredVariables
+    -> Unified Variable
+    -> PatternVerifier DeclaredVariables
+newDeclaredVariable declared =
+    \case
+        UnifiedMeta variable@Variable { variableName } -> do
+            let DeclaredVariables { metaDeclaredVariables } = declared
+            case Map.lookup variableName metaDeclaredVariables of
+                Just variable' ->
+                    alreadyDeclared variable variable'
+                Nothing ->
+                    return declared
+                        { metaDeclaredVariables =
+                            Map.insert
+                                variableName
+                                variable
+                                metaDeclaredVariables
+                        }
+        UnifiedObject variable@Variable { variableName } -> do
+            let DeclaredVariables { objectDeclaredVariables } = declared
+            case Map.lookup variableName objectDeclaredVariables of
+                Just variable' ->
+                    alreadyDeclared variable variable'
+                Nothing ->
+                    return declared
+                        { objectDeclaredVariables =
+                            Map.insert
+                                variableName
+                                variable
+                                objectDeclaredVariables
+                        }
+  where
+    alreadyDeclared
+        :: MetaOrObject level
+        => Variable level
+        -> Variable level
+        -> PatternVerifier DeclaredVariables
+    alreadyDeclared variable@Variable { variableName } variable' =
+        koreFailWithLocations [variable', variable]
+            ("Variable '"
+                ++ getIdForError variableName
+                ++ "' was already declared."
+            )
+
+{- | Collect 'DeclaredVariables'.
+
+Each variable in the 'Foldable' collection must be unique.
+
+See also: 'newDeclaredVariable'
+
+ -}
+uniqueDeclaredVariables
+    :: Foldable f
+    => f (Unified Variable)
+    -> PatternVerifier DeclaredVariables
+uniqueDeclaredVariables =
+    Foldable.foldlM newDeclaredVariable emptyDeclaredVariables
+
+{- | Run a 'PatternVerifier' in a particular variable context.
+
+See also: 'verifyStandalonePattern'
+
+ -}
+withDeclaredVariables
+    :: DeclaredVariables
+    -> PatternVerifier a
+    -> PatternVerifier a
+withDeclaredVariables declaredVariables' =
+    Reader.local (\ctx -> ctx { declaredVariables = declaredVariables' })
+
+{- | Verify the left-hand side of an alias definition.
+
+The left-hand side must consist of the alias applied to a non-repeating sequence
+of variables with the same sorts as the alias declaration.
+
+The verified left-hand side is returned with the set of 'DeclaredVariables'. The
+'DeclaredVariables' are used to verify the right-hand side of the alias
+definition.
+
+See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
+
+ -}
+verifyAliasLeftPattern
+    :: forall level. MetaOrObject level
+    => Application level (Variable level)
+    -> PatternVerifier
+        (DeclaredVariables, Application level (Variable level))
+verifyAliasLeftPattern leftPattern = do
+    _ :< verified <- verifyApplication (expectVariable <$> leftPattern)
+    declaredVariables <- uniqueDeclaredVariables (asUnified . fst <$> verified)
+    let verifiedLeftPattern = fst <$> verified
+    return (declaredVariables, verifiedLeftPattern)
+  where
+    expectVariable
+        :: Variable level
+        -> PatternVerifier (Variable level, Unified Valid)
+    expectVariable var = do
+        verifyVariableDeclaration var
+        let valid = Valid { patternSort = variableSort var }
+        return (var, asUnified valid)
+
+{- | Verify that a Kore pattern is well-formed.
+
+This includes verifying that:
+- the pattern has the expected sort (if provided)
+- the sorts of all subterms agree
+- all variables are explicitly quantified
+
+ -}
 verifyPattern
     :: Maybe UnifiedSort
     -- ^ If present, represents the expected sort of the pattern.
     -> CommonKorePattern
     -> PatternVerifier VerifiedKorePattern
-verifyPattern maybeExpectedSort korePattern = do
-    freeVariables1 <- verifyFreeVariables korePattern
-    Reader.local
-        (withFreeVariables freeVariables1)
-        verifyPatternWorker
-  where
-    withFreeVariables declaredVariables ctx@Context { } =
-        ctx { declaredVariables }
-    verifyPatternWorker =
-        Recursive.fold (verifyUnifiedPattern maybeExpectedSort) korePattern
+verifyPattern expectedSort korePattern = do
+    verified <- Recursive.fold verifyUnifiedPattern korePattern
+    assertExpectedSort expectedSort (extract verified)
+    return verified
+
+{- | Verify a Kore pattern with implicitly-quantified variables.
+
+@verifyStandalonePattern@ calls 'verifyPattern', but quantifies all free
+variables of the pattern.
+
+See also: 'verifyPattern', 'verifyFreeVariables', 'withDeclaredVariables'
+
+ -}
+verifyStandalonePattern
+    :: Maybe UnifiedSort
+    -> CommonKorePattern
+    -> PatternVerifier VerifiedKorePattern
+verifyStandalonePattern expectedSort korePattern = do
+    declaredVariables <- verifyFreeVariables korePattern
+    withDeclaredVariables declaredVariables
+        (verifyPattern expectedSort korePattern)
 
 verifyUnifiedPattern
-    :: Maybe UnifiedSort
-    -> Base CommonKorePattern (PatternVerifier VerifiedKorePattern)
+    :: Base CommonKorePattern (PatternVerifier VerifiedKorePattern)
     -> PatternVerifier VerifiedKorePattern
-verifyUnifiedPattern expectedSort (_ :< pat) =
+verifyUnifiedPattern (_ :< pat) =
     case pat of
         UnifiedMetaPattern mpat -> do
-            valid :< vpat <- verifyMetaPattern mpat
-            assertExpectedSort expectedSort valid
+            (asUnified -> valid) :< vpat <- verifyMetaPattern mpat
             return (Recursive.embed $ valid :< UnifiedMetaPattern vpat)
         UnifiedObjectPattern opat -> do
-            valid :< vpat <- verifyObjectPattern opat
-            assertExpectedSort expectedSort valid
+            (asUnified -> valid) :< vpat <- verifyObjectPattern opat
             return (Recursive.embed $ valid :< UnifiedObjectPattern vpat)
 
 verifyMetaPattern
     :: base ~ Pattern Meta Domain.Builtin Variable
     => base (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF base (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF base (Valid Meta) VerifiedKorePattern)
 verifyMetaPattern pat =
     withLocationAndContext pat patternName $ do
         verifyPatternHead pat
@@ -212,7 +331,7 @@ verifyMetaPattern pat =
 verifyObjectPattern
     :: base ~ Pattern Object Domain.Builtin Variable
     => base (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF base (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF base (Valid Object) VerifiedKorePattern)
 verifyObjectPattern pat =
     withLocationAndContext pat patternName $ do
         -- Builtin domains only occur in object-level patterns.
@@ -226,7 +345,7 @@ verifyObjectPattern pat =
 verifyPatternHead
     :: (MetaOrObject level, base ~ Pattern level Domain.Builtin Variable)
     => base (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF base (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF base (Valid level) VerifiedKorePattern)
 verifyPatternHead =
     \case
         AndPattern and' ->
@@ -285,7 +404,7 @@ verifyOperands
     :: (MetaOrObject level, Traversable operator)
     => (forall a. operator a -> Sort level)
     -> operator (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF operator (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF operator (Valid level) VerifiedKorePattern)
 verifyOperands operandSort = \operator -> do
     let patternSort = operandSort operator
         expectedSort = Just (asUnified patternSort)
@@ -295,55 +414,55 @@ verifyOperands operandSort = \operator -> do
             assertExpectedSort expectedSort (extract child)
             return child
     verified <- traverse verifyChildWithSort operator
-    return (asUnified Valid { patternSort } :< verified)
+    return (Valid { patternSort } :< verified)
 {-# INLINE verifyOperands #-}
 
 verifyAnd
     :: (logical ~ And level, MetaOrObject level)
     => logical (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF logical (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF logical (Valid level) VerifiedKorePattern)
 verifyAnd = verifyOperands andSort
 
 verifyOr
     :: (logical ~ Or level, MetaOrObject level)
     => logical (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF logical (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF logical (Valid level) VerifiedKorePattern)
 verifyOr = verifyOperands orSort
 
 verifyIff
     :: (logical ~ Iff level, MetaOrObject level)
     => logical (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF logical (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF logical (Valid level) VerifiedKorePattern)
 verifyIff = verifyOperands iffSort
 
 verifyImplies
     :: (logical ~ Implies level, MetaOrObject level)
     => logical (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF logical (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF logical (Valid level) VerifiedKorePattern)
 verifyImplies = verifyOperands impliesSort
 
 verifyBottom
     :: (logical ~ Bottom level, MetaOrObject level)
     => logical (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF logical (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF logical (Valid level) VerifiedKorePattern)
 verifyBottom = verifyOperands bottomSort
 
 verifyTop
     :: (logical ~ Top level, MetaOrObject level)
     => logical (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF logical (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF logical (Valid level) VerifiedKorePattern)
 verifyTop = verifyOperands topSort
 
 verifyNot
     :: (logical ~ Not level, MetaOrObject level)
     => logical (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF logical (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF logical (Valid level) VerifiedKorePattern)
 verifyNot = verifyOperands notSort
 
 verifyRewrites
     :: logical ~ Rewrites Object
     => logical (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF logical (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF logical (Valid Object) VerifiedKorePattern)
 verifyRewrites = verifyOperands rewritesSort
 
 verifyPredicate
@@ -351,42 +470,42 @@ verifyPredicate
     => (forall a. predicate a -> Sort level)  -- ^ Operand sort
     -> (forall a. predicate a -> Sort level)  -- ^ Result sort
     -> predicate (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF predicate (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF predicate (Valid level) VerifiedKorePattern)
 verifyPredicate operandSort resultSort = \predicate -> do
     let patternSort = resultSort predicate
     verifyPatternSort patternSort
     _ :< verified <- verifyOperands operandSort predicate
-    return (asUnified Valid { patternSort } :< verified)
+    return (Valid { patternSort } :< verified)
 {-# INLINE verifyPredicate #-}
 
 verifyCeil
     :: (predicate ~ Ceil level, MetaOrObject level)
     => predicate (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF predicate (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF predicate (Valid level) VerifiedKorePattern)
 verifyCeil = verifyPredicate ceilOperandSort ceilResultSort
 
 verifyFloor
     :: (predicate ~ Floor level, MetaOrObject level)
     => predicate (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF predicate (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF predicate (Valid level) VerifiedKorePattern)
 verifyFloor = verifyPredicate floorOperandSort floorResultSort
 
 verifyEquals
     :: (predicate ~ Equals level, MetaOrObject level)
     => predicate (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF predicate (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF predicate (Valid level) VerifiedKorePattern)
 verifyEquals = verifyPredicate equalsOperandSort equalsResultSort
 
 verifyIn
     :: (predicate ~ In level, MetaOrObject level)
     => predicate (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF predicate (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF predicate (Valid level) VerifiedKorePattern)
 verifyIn = verifyPredicate inOperandSort inResultSort
 
 verifyNext
     :: operator ~ Next Object
     => operator (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF operator (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF operator (Valid Object) VerifiedKorePattern)
 verifyNext = verifyOperands nextSort
 
 verifyBuiltinPattern
@@ -397,9 +516,10 @@ verifyBuiltinPattern pat = do
     Builtin.runPatternVerifier builtinPatternVerifier lookupSortDeclaration pat
 
 verifyPatternsWithSorts
-    :: [UnifiedSort]
-    -> [PatternVerifier VerifiedKorePattern]
-    -> PatternVerifier [VerifiedKorePattern]
+    :: Comonad pat
+    => [UnifiedSort]
+    -> [PatternVerifier (pat (Unified Valid))]
+    -> PatternVerifier [(pat (Unified Valid))]
 verifyPatternsWithSorts sorts operands = do
     koreFailWhen (declaredOperandCount /= actualOperandCount)
         (  "Expected "
@@ -421,9 +541,9 @@ verifyPatternsWithSorts sorts operands = do
     actualOperandCount = length operands
 
 verifyApplication
-    :: (MetaOrObject level, base ~ Application level)
-    => base (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF base (Unified Valid) VerifiedKorePattern)
+    :: (MetaOrObject level, base ~ Application level, Comonad child)
+    => base (PatternVerifier (child (Unified Valid)))
+    -> PatternVerifier (CofreeF base (Valid level) (child (Unified Valid)))
 verifyApplication application = do
     applicationSorts <- verifySymbolOrAlias applicationSymbolOrAlias
     let ApplicationSorts { applicationSortsOperands } = applicationSorts
@@ -431,7 +551,7 @@ verifyApplication application = do
     verifiedChildren <- verifyPatternsWithSorts operandSorts applicationChildren
     let patternSort = applicationSortsResult applicationSorts
         verified = application { applicationChildren = verifiedChildren }
-    return (asUnified Valid { patternSort } :< verified)
+    return (Valid { patternSort } :< verified)
   where
     Application { applicationSymbolOrAlias } = application
     Application { applicationChildren } = application
@@ -441,7 +561,7 @@ verifyBinder
     => (forall a. binder a -> Sort level)
     -> (forall a. binder a -> Variable level)
     -> binder (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF binder (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF binder (Valid level) VerifiedKorePattern)
 verifyBinder binderSort binderVariable = \binder -> do
     let variable = binderVariable binder
         patternSort = binderSort binder
@@ -460,19 +580,19 @@ verifyBinder binderSort binderVariable = \binder -> do
 verifyExists
     :: (binder ~ Exists level Variable, MetaOrObject level)
     => binder (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF binder (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF binder (Valid level) VerifiedKorePattern)
 verifyExists = verifyBinder existsSort existsVariable
 
 verifyForall
     :: (binder ~ Forall level Variable, MetaOrObject level)
     => binder (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF binder (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF binder (Valid level) VerifiedKorePattern)
 verifyForall = verifyBinder forallSort forallVariable
 
 verifyVariable
     :: (MetaOrObject level, base ~ Const (Variable level))
     => Variable level
-    -> PatternVerifier (CofreeF base (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF base (Valid level) VerifiedKorePattern)
 verifyVariable variable@Variable { variableName, variableSort } = do
     declaredVariable <- lookupDeclaredVariable variableName
     let Variable { variableSort = declaredSort } = declaredVariable
@@ -482,12 +602,12 @@ verifyVariable variable@Variable { variableName, variableSort } = do
         "The declared sort is different."
     let patternSort = variableSort
         verified = Const variable
-    return (asUnified Valid { patternSort } :< verified)
+    return (Valid { patternSort } :< verified)
 
 verifyDomainValue
     :: base ~ DomainValue Object Domain.Builtin
     => base (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF base (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF base (Valid Object) VerifiedKorePattern)
 verifyDomainValue dv@DomainValue { domainValueSort, domainValueChild } = do
     let patternSort = domainValueSort
     verifyPatternSort patternSort
@@ -495,25 +615,25 @@ verifyDomainValue dv@DomainValue { domainValueSort, domainValueChild } = do
         case domainValueChild of
             Domain.BuiltinPattern (StringLiteral_ _) -> sequence dv
             _ -> koreFail "Domain value argument must be a literal string."
-    return (asUnified Valid { patternSort } :< verified)
+    return (Valid { patternSort } :< verified)
 
 verifyStringLiteral
     :: base ~ Const StringLiteral
     => StringLiteral
-    -> PatternVerifier (CofreeF base (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF base (Valid Meta) VerifiedKorePattern)
 verifyStringLiteral str = do
     let patternSort = charListMetaSort
         verified = Const str
-    return (asUnified Valid { patternSort } :< verified)
+    return (Valid { patternSort } :< verified)
 
 verifyCharLiteral
     :: base ~ Const CharLiteral
     => CharLiteral
-    -> PatternVerifier (CofreeF base (Unified Valid) VerifiedKorePattern)
+    -> PatternVerifier (CofreeF base (Valid Meta) VerifiedKorePattern)
 verifyCharLiteral char = do
     let patternSort = charMetaSort
         verified = Const char
-    return (asUnified Valid { patternSort } :< verified)
+    return (Valid { patternSort } :< verified)
 
 verifyVariableDeclaration
     :: MetaOrObject level
@@ -553,7 +673,7 @@ verifySymbolOrAlias symbolOrAlias = do
 applicationSortsFromSymbolOrAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias sa)
     => SymbolOrAlias level
-    -> sa level pat dom variable
+    -> sa level pat
     -> PatternVerifier (ApplicationSorts level)
 applicationSortsFromSymbolOrAliasSentence symbolOrAlias sentence = do
     Context { declaredSortVariables } <- Reader.ask

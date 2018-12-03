@@ -53,7 +53,7 @@ formulaVerifier
     -> Either (Error MLError) ()
 formulaVerifier indexedModule formula = do
     castError $ runPatternVerifier context $ do
-        _ <- verifyPattern Nothing unifiedFormula
+        _ <- verifyStandalonePattern Nothing unifiedFormula
         return ()
   where
     unifiedFormula = patternPureToKore formula

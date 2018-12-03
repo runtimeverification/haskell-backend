@@ -884,7 +884,7 @@ ceilBTAxiom =
 
 
 metaSortDescription
-    :: MetaSortType -> Sentence Meta param pat domain variable
+    :: MetaSortType -> Sentence Meta sortParam patternType
 metaSortDescription sortType =
     SentenceSortSentence SentenceSort
         { sentenceSortName

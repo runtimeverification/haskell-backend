@@ -29,7 +29,7 @@ Definition
                     , sentenceAliasReturnSort =
                         SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                     , sentenceAliasLeftPattern =
-                        ApplicationPattern Application
+                        Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
                                     { symbolOrAliasConstructor = (Id "f" AstLocationNone) :: Id Object
@@ -40,15 +40,21 @@ Definition
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        ApplicationPattern Application
-                            { applicationSymbolOrAlias =
-                                SymbolOrAlias
-                                    { symbolOrAliasConstructor = (Id "g" AstLocationNone) :: Id Object
-                                    , symbolOrAliasParams =
-                                        [ SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
-                                        ]
+                        KorePattern
+                            { getKorePattern = CofreeT
+                                { runCofreeT = Identity
+                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { applicationSymbolOrAlias =
+                                            SymbolOrAlias
+                                                { symbolOrAliasConstructor = (Id "g" AstLocationNone) :: Id Object
+                                                , symbolOrAliasParams =
+                                                    [ SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                                    ]
+                                                }
+                                        , applicationChildren = []
+                                        })
                                     }
-                            , applicationChildren = []
+                                }
                             }
                     , sentenceAliasAttributes = Attributes []
                     })

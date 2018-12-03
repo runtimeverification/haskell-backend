@@ -6,7 +6,9 @@ import Test.Tasty
        ( TestTree, testGroup )
 
 import Kore.AST.Kore
+import Kore.AST.PureToKore
 import Kore.AST.Sentence
+import Kore.ASTUtils.SmartPatterns
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
 
@@ -469,8 +471,17 @@ sortVisibilityTests =
                     }
                 , sentenceAliasSorts = []
                 , sentenceAliasResultSort = sort
-                , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = sort }
-                , sentenceAliasRightPattern = TopPattern $ Top { topSort = sort }
+                , sentenceAliasLeftPattern =
+                    Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor = testId "alias1"
+                                , symbolOrAliasParams = []
+                                }
+                        , applicationChildren = []
+                        }
+                , sentenceAliasRightPattern =
+                    patternPureToKore (Top_ sort)
                 , sentenceAliasAttributes = Attributes []
                 }
             :: KoreSentenceAlias Object)
@@ -483,8 +494,22 @@ sortVisibilityTests =
                     }
                 , sentenceAliasSorts = [sort]
                 , sentenceAliasResultSort = anotherSort
-                , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = sort }
-                , sentenceAliasRightPattern = TopPattern $ Top { topSort = sort }
+                , sentenceAliasLeftPattern =
+                    Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor = testId "alias1"
+                                , symbolOrAliasParams = []
+                                }
+                        , applicationChildren =
+                            [ Variable
+                                { variableSort = sort
+                                , variableName = testId "x"
+                                }
+                            ]
+                        }
+                , sentenceAliasRightPattern =
+                    patternPureToKore (Top_ anotherSort)
                 , sentenceAliasAttributes = Attributes []
                 }
             :: KoreSentenceAlias Object)
@@ -822,20 +847,31 @@ aliasVisibilityTests =
             , applicationChildren = []
             }
         )
-    aliasDeclaration = asSentence
-        (SentenceAlias
-            { sentenceAliasAlias = Alias
-                { aliasConstructor = testId "alias1"
-                , aliasParams = [SortVariable (testId "sv1")]
-                }
-            , sentenceAliasSorts = []
-            , sentenceAliasResultSort =
+    aliasDeclaration =
+        let aliasConstructor = testId "alias1"
+            aliasParams = [SortVariable (testId "sv1")]
+            sentenceAliasResultSort :: Sort Object
+            sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "sv1"))
-            , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = defaultSort }
-            , sentenceAliasRightPattern = TopPattern $ Top { topSort = defaultSort }
-            , sentenceAliasAttributes = Attributes []
-            }
-        :: KoreSentenceAlias Object)
+        in (UnifiedObjectSentence . SentenceAliasSentence)
+            SentenceAlias
+                { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
+                , sentenceAliasSorts = []
+                , sentenceAliasResultSort
+                , sentenceAliasLeftPattern  =
+                    Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor = aliasConstructor
+                                , symbolOrAliasParams =
+                                    SortVariableSort <$> aliasParams
+                                }
+                        , applicationChildren = []
+                        }
+                , sentenceAliasRightPattern =
+                    patternPureToKore (Top_ sentenceAliasResultSort)
+                , sentenceAliasAttributes = Attributes []
+                }
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
     metaAliasPattern = asCommonKorePattern
         ( ApplicationPattern Application
@@ -846,20 +882,31 @@ aliasVisibilityTests =
             , applicationChildren = []
             }
         )
-    metaAliasDeclaration = asSentence
-        (SentenceAlias
-            { sentenceAliasAlias = Alias
-                { aliasConstructor = testId "#alias1"
-                , aliasParams = [SortVariable (testId "#sv1")]
-                }
-            , sentenceAliasSorts = []
-            , sentenceAliasResultSort =
+    metaAliasDeclaration =
+        let aliasConstructor = testId "#alias1"
+            aliasParams = [SortVariable (testId "#sv1")]
+            symbolOrAliasParams = SortVariableSort <$> aliasParams
+            sentenceAliasResultSort :: Sort Meta
+            sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "#sv1"))
-            , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = patternMetaSort }
-            , sentenceAliasRightPattern = TopPattern $ Top { topSort = patternMetaSort }
-            , sentenceAliasAttributes = Attributes []
-            }
-        :: KoreSentenceAlias Meta)
+        in (UnifiedMetaSentence . SentenceAliasSentence)
+            SentenceAlias
+                { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
+                , sentenceAliasSorts = []
+                , sentenceAliasResultSort
+                , sentenceAliasLeftPattern  =
+                    Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor = aliasConstructor
+                                , symbolOrAliasParams
+                                }
+                        , applicationChildren = []
+                        }
+                , sentenceAliasRightPattern =
+                    patternPureToKore (Top_ sentenceAliasResultSort)
+                , sentenceAliasAttributes = Attributes []
+                }
     aliasReferenceInAxiomSentence =
         asKoreAxiomSentence
             SentenceAxiom
@@ -930,22 +977,43 @@ aliasVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
+    aliasReferenceInAliasOrAliasSupportSentences
+        :: [KoreSentence]
     aliasReferenceInAliasOrAliasSupportSentences =
-        asSentence
-            (SentenceAlias
-                { sentenceAliasAlias = Alias
-                    { aliasConstructor = testId "alias2"
-                    , aliasParams = [SortVariable (testId "sv1")]
-                    }
+        let aliasConstructor :: Id Object
+            aliasConstructor = testId "alias2" :: Id Object
+            aliasParams = [SortVariable (testId "sv1")]
+            sentenceAliasResultSort :: Sort Object
+            sentenceAliasResultSort =
+                SortVariableSort (SortVariable (testId "sv1"))
+        in (sentencePureToKore . SentenceAliasSentence)
+            SentenceAlias
+                { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
                 , sentenceAliasSorts =
                     [ SortVariableSort (SortVariable (testId "sv1")) ]
-                , sentenceAliasResultSort =
-                    SortVariableSort (SortVariable (testId "sv1"))
-                , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = defaultSort }
-                , sentenceAliasRightPattern = TopPattern $ Top { topSort = defaultSort }
+                , sentenceAliasResultSort
+                , sentenceAliasLeftPattern  =
+                    Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor = testId "alias2"
+                                , symbolOrAliasParams =
+                                    [ SortVariableSort
+                                        (SortVariable (testId "sv1"))
+                                    ]
+                                }
+                        , applicationChildren =
+                            [ Variable
+                                { variableName = testId "x"
+                                , variableSort =
+                                    SortVariableSort
+                                        (SortVariable (testId "sv1"))
+                                }
+                            ]
+                        }
+                , sentenceAliasRightPattern = Top_ sentenceAliasResultSort
                 , sentenceAliasAttributes = Attributes []
                 }
-            :: KoreSentenceAlias Object)
         : defaultAliasSupportSentences
 
 
@@ -1274,23 +1342,34 @@ nameDuplicationTests =
             , moduleAttributes = Attributes []
             }
     aliasDeclarationModule modName (AliasName aliasName) =
-        Module
+        let sv1 = SortVariable (testId "sv1") :: SortVariable Object
+            aliasConstructor = testId aliasName :: Id Object
+        in Module
             { moduleName = modName
             , moduleSentences =
-                [ asSentence
-                    (SentenceAlias
+                [ (sentencePureToKore . asSentence)
+                    SentenceAlias
                         { sentenceAliasAlias = Alias
-                            { aliasConstructor = testId aliasName
-                            , aliasParams = [SortVariable (testId "sv1")]
+                            { aliasConstructor
+                            , aliasParams = [sv1]
                             }
                         , sentenceAliasSorts = []
-                        , sentenceAliasResultSort =
-                            SortVariableSort (SortVariable (testId "sv1"))
-                        , sentenceAliasLeftPattern = TopPattern $ Top { topSort = simpleSort (SortName "s1") }
-                        , sentenceAliasRightPattern = TopPattern $ Top { topSort = simpleSort (SortName "s1") }
+                        , sentenceAliasResultSort = SortVariableSort sv1
+                        , sentenceAliasLeftPattern =
+                            Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor =
+                                            aliasConstructor
+                                        , symbolOrAliasParams =
+                                            [SortVariableSort sv1]
+                                        }
+                                , applicationChildren = []
+                                }
+                        , sentenceAliasRightPattern =
+                            Top_ $ SortVariableSort sv1
                         , sentenceAliasAttributes = Attributes []
                         }
-                    :: KoreSentenceAlias Object)
                 ]
             , moduleAttributes = Attributes []
             }

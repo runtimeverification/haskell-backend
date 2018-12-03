@@ -23,7 +23,6 @@ import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
@@ -58,12 +57,7 @@ updateAttributes attrs = applyUnifiedSentence updateAttrs updateAttrs
   where
     updateAttrs
         :: MetaOrObject level
-        => Sentence
-            level
-            UnifiedSortVariable
-            KorePattern
-            Domain.Builtin
-            Variable
+        => Sentence level UnifiedSortVariable CommonKorePattern
         -> KoreSentence
     updateAttrs (SentenceSymbolSentence ss) =
         constructUnifiedSentence SentenceSymbolSentence

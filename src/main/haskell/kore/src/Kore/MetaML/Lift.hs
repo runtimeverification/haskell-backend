@@ -328,7 +328,7 @@ liftSymbolDeclaration sd =
 
 symbolOrAliasLiftedDeclaration
     :: SentenceSymbolOrAlias sa
-    => sa Object pat domain variable
+    => sa Object pat
     -> MetaSentenceSymbol
 symbolOrAliasLiftedDeclaration sa = symbolDeclaration
   where
@@ -369,8 +369,13 @@ liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom)
             , equalsFirst       = left
             , equalsSecond      = right
             }
-    left  = liftToMeta (asCommonKorePattern (sentenceAliasLeftPattern as))
-    right = liftToMeta (asCommonKorePattern (sentenceAliasRightPattern as))
+    SentenceAlias { sentenceAliasLeftPattern } = as
+    SentenceAlias { sentenceAliasRightPattern } = as
+    left =
+        liftToMeta
+        $ (asCommonKorePattern . ApplicationPattern)
+        $ fmap (asCommonKorePattern . VariablePattern) sentenceAliasLeftPattern
+    right = liftToMeta sentenceAliasRightPattern
     sortParam = SortVariable (Id "#s" liftedSymbolLocation)
     sortName = (aliasConstructor . sentenceAliasAlias) as
     liftedSymbolLocation = AstLocationLifted (idLocation sortName)
@@ -382,13 +387,13 @@ liftSentence :: KoreSentence -> [MetaSentence]
 liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
 
 liftMetaSentence
-    :: Sentence Meta UnifiedSortVariable KorePattern Domain.Builtin Variable
+    :: Sentence Meta UnifiedSortVariable CommonKorePattern
     -> [MetaSentence]
 liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
         { sentenceAliasAttributes = sentenceAliasAttributes msa
-        , sentenceAliasLeftPattern  = fmap liftToMeta (sentenceAliasLeftPattern msa)
-        , sentenceAliasRightPattern = fmap liftToMeta (sentenceAliasRightPattern msa)
+        , sentenceAliasLeftPattern = sentenceAliasLeftPattern msa
+        , sentenceAliasRightPattern = liftToMeta (sentenceAliasRightPattern msa)
         }
     ]
 liftMetaSentence (SentenceSymbolSentence mss) =
@@ -416,11 +421,11 @@ liftMetaSentence (SentenceImportSentence is) =
     ]
 
 liftMetaSentenceClaimOrAxiom
-    ::  (  forall param pat domain variable
-        .  SentenceAxiom param pat domain variable
-        -> Sentence Meta param pat domain variable
+    ::  (  forall param pat
+        .  SentenceAxiom param pat
+        -> Sentence Meta param pat
         )
-    -> SentenceAxiom (Unified SortVariable) KorePattern Domain.Builtin Variable
+    -> SentenceAxiom (Unified SortVariable) CommonKorePattern
     -> [MetaSentence]
 liftMetaSentenceClaimOrAxiom ctor as =
     [ ctor SentenceAxiom
@@ -459,7 +464,7 @@ liftMetaSentenceClaimOrAxiom ctor as =
                 App_ (provableHead axiomSort) [liftedPattern]
 
 liftObjectSentence
-    :: Sentence Object UnifiedSortVariable KorePattern Domain.Builtin Variable
+    :: Sentence Object UnifiedSortVariable CommonKorePattern
     -> [MetaSentence]
 liftObjectSentence (SentenceAliasSentence osa) =
     let (mas, axiom) = liftAliasDeclaration osa in

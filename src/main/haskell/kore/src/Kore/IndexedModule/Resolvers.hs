@@ -51,7 +51,7 @@ symbolSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceSymbol level KorePattern Domain.Builtin Variable)
+        (atts, SentenceSymbol level CommonKorePattern)
 symbolSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSymbolSentences m
@@ -63,7 +63,7 @@ aliasSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (atts, SentenceAlias level KorePattern Domain.Builtin Variable)
+        (atts, SentenceAlias level CommonKorePattern)
 aliasSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaAliasSentences m
@@ -168,12 +168,12 @@ getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
 imported modules.
 -}
 resolveThing
-    :: (IndexedModule sortParam pat dom var atts
-        -> Map.Map (Id level) (atts, thing level pat dom var))
+    :: (IndexedModule param pat atts
+        -> Map.Map (Id level) (atts, thing level pat))
     -- ^ extracts the map into which to look up the id
-    -> IndexedModule sortParam pat dom var atts
+    -> IndexedModule param pat atts
     -> Id level
-    -> Maybe (atts, thing level pat dom var)
+    -> Maybe (atts, thing level pat)
 resolveThing
     mapExtractor
     indexedModule
@@ -185,12 +185,12 @@ resolveThing
         )
 
 resolveThingInternal
-    :: (Maybe (atts, thing level pat dom var), Set.Set ModuleName)
-    -> (IndexedModule sortParam pat dom var atts
-        -> Map.Map (Id level) (atts, thing level pat dom var))
-    -> IndexedModule sortParam pat dom var atts
+    :: (Maybe (atts, thing level pat), Set.Set ModuleName)
+    -> (IndexedModule param pat atts
+        -> Map.Map (Id level) (atts, thing level pat))
+    -> IndexedModule param pat atts
     -> Id level
-    -> (Maybe (atts, thing level pat dom var), Set.Set ModuleName)
+    -> (Maybe (atts, thing level pat), Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
 resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
     | indexedModuleName indexedModule `Set.member` searchedModules = x
