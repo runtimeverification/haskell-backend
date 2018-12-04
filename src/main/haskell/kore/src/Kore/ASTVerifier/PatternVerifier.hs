@@ -10,6 +10,7 @@ Portability : POSIX
 module Kore.ASTVerifier.PatternVerifier
     ( verifyPattern
     , verifyStandalonePattern
+    , verifyNoPatterns
     , verifyAliasLeftPattern
     , verifyFreeVariables
     , withDeclaredVariables
@@ -305,6 +306,18 @@ verifyStandalonePattern expectedSort korePattern = do
     declaredVariables <- verifyFreeVariables korePattern
     withDeclaredVariables declaredVariables
         (verifyPattern expectedSort korePattern)
+
+{- | Fail if a Kore pattern is found.
+
+@verifyNoPatterns@ is useful to 'traverse' sentence types with phantom pattern
+type variables.
+
+ -}
+verifyNoPatterns
+    :: MonadError (Error VerifyError) m
+    => CommonKorePattern
+    -> m VerifiedKorePattern
+verifyNoPatterns _ = koreFail "Unexpected pattern."
 
 verifyUnifiedPattern
     :: Base CommonKorePattern (PatternVerifier VerifiedKorePattern)

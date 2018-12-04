@@ -59,6 +59,13 @@ module Kore.AST.Sentence
     , KoreDefinition
     , asKoreAxiomSentence
     , asKoreClaimSentence
+    , VerifiedKoreSentenceSymbol
+    , VerifiedKoreSentenceAlias
+    , VerifiedKoreSentenceImport
+    , VerifiedKoreSentenceAxiom
+    , VerifiedKoreSentenceSort
+    , VerifiedKoreSentenceHook
+    , VerifiedKoreSentence
     , Attributes (..)
     ) where
 
@@ -450,25 +457,38 @@ class AsSentence sentenceType s | s -> sentenceType where
 -- 'SentenceAlias'
 type KoreSentenceAlias level = SentenceAlias level CommonKorePattern
 
+type VerifiedKoreSentenceAlias level = SentenceAlias level VerifiedKorePattern
+
 -- |'KoreSentenceSymbol' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceSymbol'
 type KoreSentenceSymbol level = SentenceSymbol level CommonKorePattern
+
+type VerifiedKoreSentenceSymbol level = SentenceSymbol level VerifiedKorePattern
 
 -- |'KoreSentenceImport' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceImport'
 type KoreSentenceImport = SentenceImport CommonKorePattern
 
+type VerifiedKoreSentenceImport = SentenceImport VerifiedKorePattern
+
 -- |'KoreSentenceAxiom' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceAxiom'
 type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable CommonKorePattern
+
+type VerifiedKoreSentenceAxiom =
+    SentenceAxiom UnifiedSortVariable VerifiedKorePattern
 
 -- |'KoreSentenceSort' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceSort'
 type KoreSentenceSort level = SentenceSort level CommonKorePattern
 
+type VerifiedKoreSentenceSort level = SentenceSort level VerifiedKorePattern
+
 -- |'KoreSentenceHook' Kore ('Meta' and 'Object') version of
 -- 'SentenceHook'
 type KoreSentenceHook = SentenceHook CommonKorePattern
+
+type VerifiedKoreSentenceHook = SentenceHook VerifiedKorePattern
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Sentence',
 to allow using toghether both 'Meta' and 'Object' sentences.
@@ -496,6 +516,9 @@ instance
 -- corresponding to the @declaration@ syntactic category
 -- from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 type KoreSentence = UnifiedSentence UnifiedSortVariable CommonKorePattern
+
+type VerifiedKoreSentence =
+    UnifiedSentence UnifiedSortVariable VerifiedKorePattern
 
 constructUnifiedSentence
     ::  forall a level sortParam patternType.
