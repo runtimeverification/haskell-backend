@@ -161,9 +161,11 @@ newSolver config = do
     Config { timeOut } = config
     Config { logic } = config
     Config { executable = exe, arguments = args } = config
+    Config { preludeFile } = config
     SMT { getSMT } = do
         setLogic logic
         setTimeOut timeOut
+        maybe (return ()) setPrelude preludeFile
 
 {- | Shut down a solver.
 
@@ -262,6 +264,12 @@ setLogic :: MonadSMT m => Text -> m ()
 setLogic logic =
     liftSMT $ withSolver $ \solver ->
         SimpleSMT.setLogic solver logic
+
+-- | Set the logic used by the solver.
+setPrelude :: MonadSMT m => FilePath -> m ()
+setPrelude filePath =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.loadFile solver filePath
 
 -- | Run an 'SMT' computation with the given solver.
 withSolver :: (Solver -> IO a) -> SMT a
