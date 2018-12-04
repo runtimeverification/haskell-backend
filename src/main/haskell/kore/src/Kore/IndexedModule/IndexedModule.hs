@@ -23,6 +23,7 @@ module Kore.IndexedModule.IndexedModule
         )
     , KoreImplicitIndexedModule
     , KoreIndexedModule
+    , VerifiedModule
     , indexedModuleRawSentences
     , indexModuleIfNeeded
     , metaNameForObjectSort
@@ -130,6 +131,9 @@ getIndexedSentence = snd
 
 type KoreIndexedModule =
     IndexedModule UnifiedSortVariable CommonKorePattern
+
+type VerifiedModule =
+    IndexedModule UnifiedSortVariable VerifiedKorePattern
 
 instance NFData a => NFData (KoreIndexedModule a)
 

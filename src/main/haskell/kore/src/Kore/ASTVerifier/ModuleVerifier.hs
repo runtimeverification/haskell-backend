@@ -46,7 +46,7 @@ verifyModule
     :: AttributesVerification atts
     -> Builtin.Verifiers
     -> KoreIndexedModule atts
-    -> Either (Error VerifyError) VerifySuccess
+    -> Either (Error VerifyError) (Module VerifiedKoreSentence)
 verifyModule attributesVerification builtinVerifiers indexedModule =
     withContext
         ("module '" ++ getModuleNameForError (indexedModuleName indexedModule) ++ "'")
@@ -54,9 +54,14 @@ verifyModule attributesVerification builtinVerifiers indexedModule =
             verifyAttributes
                 (snd (indexedModuleAttributes indexedModule))
                 attributesVerification
-            SentenceVerifier.verifySentences
-                indexedModule
-                attributesVerification
-                builtinVerifiers
-                (indexedModuleRawSentences indexedModule)
+            moduleSentences <-
+                SentenceVerifier.verifySentences
+                    indexedModule
+                    attributesVerification
+                    builtinVerifiers
+                    (indexedModuleRawSentences indexedModule)
+            return Module { moduleName, moduleSentences, moduleAttributes }
         )
+  where
+    moduleName = indexedModuleName indexedModule
+    (_, moduleAttributes) = indexedModuleAttributes indexedModule

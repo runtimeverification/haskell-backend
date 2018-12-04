@@ -121,18 +121,14 @@ verifySentences
     -> AttributesVerification atts
     -> Builtin.Verifiers
     -> [KoreSentence]
-    -> Either (Error VerifyError) VerifySuccess
-verifySentences
-    indexedModule attributesVerification builtinVerifiers sentences
-  = do
-    mapM_
+    -> Either (Error VerifyError) [VerifiedKoreSentence]
+verifySentences indexedModule attributesVerification builtinVerifiers =
+    traverse
         (verifySentence
             builtinVerifiers
             indexedModule
             attributesVerification
         )
-        sentences
-    verifySuccess
 
 verifySentence
     :: Builtin.Verifiers
