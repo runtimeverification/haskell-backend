@@ -13,6 +13,9 @@ $(DEFINITION): imp.k $(K)
 %.krun: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
+%.kprove: %.k $(DEFINITION) $(K) $(KORE_EXEC)
+	$(KPROVE) $(KPROVE_OPTS) -d . $<
+
 %.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 

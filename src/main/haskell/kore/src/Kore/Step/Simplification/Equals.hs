@@ -354,8 +354,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> MaybeT Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottomMaybe tools substitutionSimplifier first second
-  =
-    give tools $ do
+  = do
         (result, _) <-
             AndTerms.termEquals tools substitutionSimplifier first second
         let Predicated { predicate, substitution } = result

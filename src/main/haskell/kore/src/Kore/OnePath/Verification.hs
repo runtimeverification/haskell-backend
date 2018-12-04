@@ -17,8 +17,6 @@ module Kore.OnePath.Verification
 
 import Control.Monad.Trans.Except
        ( ExceptT, throwE )
-import Data.Default
-       ( def )
 import Numeric.Natural
        ( Natural )
 
@@ -30,8 +28,6 @@ import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkBottom )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -39,14 +35,14 @@ import           Kore.OnePath.Step
                  onePathFollowupStep, transitionRule )
 import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( fromPurePattern )
 import           Kore.Step.ExpandedPattern as Predicated
                  ( Predicated (..) )
 import           Kore.Step.Pattern
@@ -83,7 +79,9 @@ verify
     -- ^ Simplifies normal patterns through, e.g., function evaluation
     -> PredicateSubstitutionSimplifier level Simplifier
     -- ^ Simplifies predicates
-    -> (CommonStepPattern level -> [Strategy (Prim (RewriteRule level))])
+    ->  (  CommonStepPattern level
+        -> [Strategy (Prim (CommonExpandedPattern level) (RewriteRule level))]
+        )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
     -> [(Claim level, Limit Natural)]
@@ -123,16 +121,16 @@ defaultStrategy
     -- The claims that we wnt to prove
     -> [Axiom level]
     -> CommonStepPattern level
-    -> [Strategy (Prim (RewriteRule level))]
+    -> [Strategy (Prim (CommonExpandedPattern level) (RewriteRule level))]
 defaultStrategy
     claims
     axioms
     target
   =
-    onePathFirstStep destinationRemovalRewrite rewrites
+    onePathFirstStep expandedTarget rewrites
     : repeat
         (onePathFollowupStep
-            destinationRemovalRewrite
+            expandedTarget
             coinductiveRewrites
             rewrites
         )
@@ -145,23 +143,17 @@ defaultStrategy
     coinductiveRewrites = map unwrap claims
       where
         unwrap (Claim c) = c
-    destinationRemovalRewrite :: RewriteRule level
-    destinationRemovalRewrite =
-        -- TODO (virgil) : Make the sort for 'right' and 'requires'
-        -- match the sort for 'left'
-        RewriteRule RulePattern
-            { left = target
-            , right = mkBottom
-            , requires = makeTruePredicate
-            , attributes = def
-            }
+    expandedTarget :: CommonExpandedPattern level
+    expandedTarget = ExpandedPattern.fromPurePattern target
 
 verifyClaim
     :: forall level . (MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> StepPatternSimplifier level Variable
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> (CommonStepPattern level -> [Strategy (Prim (RewriteRule level))])
+    ->  (  CommonStepPattern level
+        -> [Strategy (Prim (CommonExpandedPattern level) (RewriteRule level))]
+        )
     -> (Claim level, Limit Natural)
     -> ExceptT
         (CommonExpandedPattern level)

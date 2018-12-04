@@ -606,7 +606,7 @@ ternaryOperator
 
 functionEvaluator
     ::  (forall variable
-        .  Ord (variable Object)
+        .  (Ord (variable Object), Show (variable Object))
         => MetadataTools Object StepperAttributes
         -> StepPatternSimplifier Object variable
         -> Sort Object
@@ -619,7 +619,7 @@ functionEvaluator impl =
     ApplicationFunctionEvaluator evaluator
   where
     evaluator
-        :: Ord (variable Object)
+        :: (Ord (variable Object), Show (variable Object))
         => MetadataTools Object StepperAttributes
         -> PredicateSubstitutionSimplifier level Simplifier
         -> StepPatternSimplifier Object variable

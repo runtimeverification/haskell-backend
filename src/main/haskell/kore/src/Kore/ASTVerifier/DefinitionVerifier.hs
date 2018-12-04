@@ -11,13 +11,14 @@ module Kore.ASTVerifier.DefinitionVerifier
     ( defaultAttributesVerification
     , verifyDefinition
     , verifyAndIndexDefinition
+    , verifyAndIndexDefinitionWithBase
     , verifyImplicitKoreDefinition
     , verifyNormalKoreDefinition
     , AttributesVerification (..)
     ) where
 
 import           Control.Monad
-                 ( foldM, foldM_ )
+                 ( foldM )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy )
@@ -76,24 +77,62 @@ verifyAndIndexDefinition
     -> KoreDefinition
     -> Either (Error VerifyError) (Map.Map ModuleName (KoreIndexedModule atts))
 verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
-    (implicitIndexedModules, implicitIndexedModule, defaultNames) <-
-        indexImplicitModules
+    (indexedModules, _defaultNames) <-
+        verifyAndIndexDefinitionWithBase
+            Nothing
+            attributesVerification
+            builtinVerifiers
+            definition
+    return indexedModules
 
-    foldM_ verifyUniqueNames defaultNames (definitionModules definition)
+{-|Verifies a `KoreDefinition` against a preverified definition, consisting of
+map of indexed modules and a map of defined names.
+
+If verification is successfull, it returns the updated maps op indexed modules
+and defined names.
+-}
+verifyAndIndexDefinitionWithBase
+    :: ParseAttributes atts
+    => Maybe
+        ( Map.Map ModuleName (KoreIndexedModule atts)
+        , Map.Map Text AstLocation
+        )
+    -> AttributesVerification atts
+    -> Builtin.Verifiers
+    -> KoreDefinition
+    -> Either (Error VerifyError)
+        ( Map.Map ModuleName (KoreIndexedModule atts)
+        , Map.Map Text AstLocation
+        )
+verifyAndIndexDefinitionWithBase
+    maybeBaseDefinition
+    attributesVerification
+    builtinVerifiers
+    definition
+  = do
+    (implicitModules, implicitModule, defaultNames) <- indexImplicitModules
+    let
+        (baseIndexedModules, baseNames) =
+            case maybeBaseDefinition of
+                Nothing -> (implicitModules, defaultNames)
+                Just baseDefinition -> baseDefinition
+
+    names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
     indexedModules <-
         castError $ foldM
             (indexModuleIfNeeded
-                implicitIndexedModule
+                implicitModule
                 nameToModule
             )
-            implicitIndexedModules
+            baseIndexedModules
             (definitionModules definition)
     mapM_ (verifyModule attributesVerification builtinVerifiers) (Map.elems indexedModules)
     verifyAttributes
         (definitionAttributes definition)
         attributesVerification
-    return indexedModules
+
+    return (indexedModules, names)
   where
     nameToModule =
         Map.fromList

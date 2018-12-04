@@ -526,6 +526,7 @@ unifyEquals
         , MonadCounter m
         , MetaOrObject level
         , FreshVariable variable
+        , Show (variable level)
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level

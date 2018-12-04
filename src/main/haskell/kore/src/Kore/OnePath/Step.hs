@@ -17,21 +17,28 @@ module Kore.OnePath.Step
     , onePathFollowupStep
     ) where
 
-import Control.Monad.Except
-       ( runExceptT )
-import Data.Foldable
-       ( toList )
-import Data.Hashable
-import Data.Semigroup
-       ( (<>) )
-import GHC.Generics
+import           Control.Monad.Except
+                 ( runExceptT )
+import           Data.Foldable
+                 ( toList )
+import           Data.Hashable
+import           Data.Reflection
+                 ( give )
+import           Data.Semigroup
+                 ( (<>) )
+import qualified Data.Set as Set
+import           GHC.Generics
 
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkAnd, mkCeil, mkExists, mkNot )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( MetadataTools (MetadataTools) )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.BaseStep
@@ -39,8 +46,11 @@ import           Kore.Step.BaseStep
                  simplificationProof, stepWithRule )
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
+import qualified Kore.Step.BaseStep as StepProof
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( CommonExpandedPattern, Predicated (Predicated) )
+import qualified Kore.Step.ExpandedPattern as Predicated
+                 ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
@@ -57,9 +67,13 @@ import qualified Kore.Step.Strategy as Strategy
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
-data Prim rewrite =
+data Prim patt rewrite =
       Simplify
     -- ^ Builtin and function symbol simplification step
+    | RemoveDestination !patt
+    -- ^ Removes the destination from the current pattern.
+    -- see the algorithm in
+    -- https://github.com/kframework/kore/blob/master/docs/2018-11-08-Configuration-Splitting-Simplification.md
     | ApplyWithRemainders ![rewrite]
     -- ^ Daisy-chaining of rules such that each subsequent one uses the
     -- previous rule's remainders.
@@ -119,12 +133,16 @@ instance Hashable patt => Hashable (StrategyPattern patt)
 
 -- | Apply the rewrites in order. The first one is applied on the start pattern,
 -- then each subsequent one is applied on the remainder of the previous one.
-applyWithRemainder :: [rewrite] -> Prim rewrite
+applyWithRemainder :: [rewrite] -> Prim patt rewrite
 applyWithRemainder = ApplyWithRemainders
 
 -- | Apply builtin simplification rewrites and evaluate functions.
-simplify :: Prim rewrite
+simplify :: Prim patt rewrite
 simplify = Simplify
+
+-- | Removes the destination pattern from the current one.
+removeDestination :: patt -> Prim patt rewrite
+removeDestination = RemoveDestination
 
 {- | Transition rule for primitive strategies in 'Prim'.
 
@@ -167,7 +185,7 @@ transitionRule
     -> PredicateSubstitutionSimplifier level Simplifier
     -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions in patterns
-    -> Prim (RewriteRule level)
+    -> Prim (CommonExpandedPattern level) (RewriteRule level)
     -> (StrategyPattern (CommonExpandedPattern level), StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier
@@ -175,10 +193,15 @@ transitionRule
             , StepProof level Variable
             )
         ]
-transitionRule tools substitutionSimplifier simplifier =
+transitionRule
+    tools@MetadataTools { symbolOrAliasSorts }
+    substitutionSimplifier
+    simplifier
+  =
     \case
         Simplify -> transitionSimplify
         ApplyWithRemainders a -> transitionApplyWithRemainders a
+        RemoveDestination d -> transitionRemoveDestination d
   where
     transitionSimplify (RewritePattern config, proof) =
         applySimplify RewritePattern (config, proof)
@@ -207,8 +230,8 @@ transitionRule tools substitutionSimplifier simplifier =
                 , StepProof level Variable
                 )
             ]
-    transitionApplyWithRemainders _ (Bottom, _) = return []
-    transitionApplyWithRemainders _ (Stuck _, _) = return []
+    transitionApplyWithRemainders _ c@(Bottom, _) = return [c]
+    transitionApplyWithRemainders _ c@(Stuck _, _) = return [c]
     transitionApplyWithRemainders _ (RewritePattern config, _)
         | ExpandedPattern.isBottom config = return []
     transitionApplyWithRemainders [] (RewritePattern config, proof) =
@@ -239,6 +262,60 @@ transitionRule tools substitutionSimplifier simplifier =
                             (RewritePattern remainder, combinedProof)
                     return ((wrappedRewritten, proof) : remainderResults)
 
+    transitionRemoveDestination
+        :: (CommonExpandedPattern level)
+        ->  ( StrategyPattern (CommonExpandedPattern level)
+            , StepProof level Variable
+            )
+        -> Simplifier
+            [   ( StrategyPattern (CommonExpandedPattern level)
+                , StepProof level Variable
+                )
+            ]
+    transitionRemoveDestination _ (Bottom, _) = return []
+    transitionRemoveDestination _ (Stuck _, _) = return []
+    transitionRemoveDestination
+        destination
+        (RewritePattern patt@Predicated{term, predicate, substitution}, proof1)
+      = give symbolOrAliasSorts $ do
+        let
+            pattVars = ExpandedPattern.freeEpVariables patt
+            destinationVars = ExpandedPattern.freeEpVariables destination
+            extraVars = Set.difference destinationVars pattVars
+            destinationPatt = ExpandedPattern.toMLPattern destination
+            pattPatt = ExpandedPattern.toMLPattern patt
+            removalPatt =
+                mkNot
+                    (mkMultipleExists
+                        extraVars
+                        (mkCeil
+                            (mkAnd destinationPatt pattPatt)
+                        )
+                    )
+            resultTerm = mkAnd term removalPatt
+            result = Predicated {term = resultTerm, predicate, substitution}
+        (orResult, proof) <-
+            ExpandedPattern.simplify
+                tools substitutionSimplifier simplifier result
+        let
+            finalProof = proof1 <> StepProof.simplificationProof proof
+            patternsWithProofs =
+                (map
+                    (\p ->
+                        ( RewritePattern p
+                        , finalProof
+                        )
+                    )
+                    (ExpandedPattern.extractPatterns orResult)
+                )
+        if null patternsWithProofs
+            then return [(Bottom, finalProof)]
+            else return patternsWithProofs
+
+    mkMultipleExists vars phi =
+        foldl (\patt v -> mkExists v patt) phi vars
+
+
 {-| A strategy for doing the first step of a one-path verification.
 For subsequent steps, use 'onePathFollowupStep'.
 
@@ -249,18 +326,17 @@ Whenever it applies a rewrite, the subsequent rewrites see only the part of the
 pattern to which the initial rewrite wasn't applied.
 -}
 onePathFirstStep
-    :: rewrite
-    -- ^ Rewrite with which to remove the destination we're trying to reach.
-    --
-    -- Note that if this rewrite is of the form @ψ(X, Y) => ⊥@, the remainder
-    -- will be @φ(X) ∧ ¬∃ Y . ψ(X, Y)@.
+    :: patt
+    -- ^ The destination we're trying to reach.
     -> [rewrite]
     -- ^ normal rewrites
-    -> Strategy (Prim rewrite)
-onePathFirstStep destinationRemovalRewrite rewrites =
+    -> Strategy (Prim patt rewrite)
+onePathFirstStep destination rewrites =
     Strategy.sequence
-        [ Strategy.apply
-            (applyWithRemainder (destinationRemovalRewrite : rewrites))
+        [ Strategy.apply simplify
+        , Strategy.apply (removeDestination destination)
+        , Strategy.apply
+            (applyWithRemainder rewrites)
         , Strategy.apply simplify
         ]
 
@@ -275,15 +351,12 @@ Whenever it applies an rewrite, the subsequent rewrites see only the part of the
 pattern to which the rewrite wasn't applied.
 -}
 onePathFollowupStep
-    :: rewrite
-    -- ^ Rewrite with which to remove the destination we're trying to reach.
-    --
-    -- Note that if this rewrite is of the form @ψ(X, Y) => ⊥@, the remainder
-    -- will be @φ(X) ∧ ¬∃ Y . ψ(X, Y)@.
+    :: patt
+    -- ^ The destination we're trying to reach.
     -> [rewrite]
     -- ^ coinductive rewrites
     -> [rewrite]
     -- ^ normal rewrites
-    -> Strategy (Prim rewrite)
+    -> Strategy (Prim patt rewrite)
 onePathFollowupStep destinationRemovalRewrite coinductiveRewrites rewrites =
     onePathFirstStep destinationRemovalRewrite (coinductiveRewrites ++ rewrites)

@@ -11,9 +11,14 @@ Expose concrete execution as a library
 module Kore.Exec
     ( exec
     , search
+    , prove
     ) where
 
 import qualified Control.Arrow as Arrow
+import           Control.Monad.Trans.Except
+                 ( runExceptT )
+import qualified Data.Bifunctor as Bifunctor
+                 ( first )
 import qualified Data.Map.Merge.Strict as Map
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
@@ -27,23 +32,27 @@ import qualified Data.Limit as Limit
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Meta, Object (..), asUnified )
+
 import qualified Kore.Builtin as Builtin
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
+import           Kore.OnePath.Verification
+                 ( Axiom (Axiom), Claim (Claim), defaultStrategy, verify )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  makeTruePredicate, unwrapPredicate )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), extractRewriteAxioms )
+                 RulePattern (RulePattern), extractRewriteAxioms,
+                 extractRewriteClaims )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
                  ( StepProof )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Predicated (..), toMLPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Registry
@@ -237,10 +246,10 @@ makeAxiomsAndSimplifiers
 makeAxiomsAndSimplifiers indexedModule tools =
     do
         functionAxioms <-
-            simplifyFunctionAxioms
+            simplifyFunctionAxioms tools
                 (extractFunctionAxioms Object indexedModule)
         rewriteAxioms <-
-            simplifyRewriteAxioms
+            simplifyRewriteAxioms tools
                 (extractRewriteAxioms Object indexedModule)
         let
             functionEvaluators =
@@ -268,15 +277,38 @@ makeAxiomsAndSimplifiers indexedModule tools =
                 :: PredicateSubstitutionSimplifier Object Simplifier
             substitutionSimplifier =
                 PredicateSubstitution.create tools simplifier
-        return
-            (rewriteAxioms, simplifier, substitutionSimplifier)
+        return (rewriteAxioms, simplifier, substitutionSimplifier)
+
+simplifyFunctionAxioms
+    :: MetadataTools Object StepperAttributes
+    -> Map.Map (Id Object) [EqualityRule Object]
+    -> Simplifier (Map.Map (Id Object) [EqualityRule Object])
+simplifyFunctionAxioms tools = mapM (mapM simplifyEqualityRule)
   where
-    simplifyFunctionAxioms = mapM (mapM simplifyEqualityRule)
     simplifyEqualityRule (EqualityRule rule) =
-        EqualityRule <$> preSimplify emptyPatternSimplifier rule
-    simplifyRewriteAxioms = mapM simplifyRewriteRule
+        EqualityRule <$> preSimplify (emptyPatternSimplifier tools) rule
+
+simplifyRewriteAxioms
+    :: MetadataTools Object StepperAttributes
+    -> [RewriteRule Object]
+    -> Simplifier [RewriteRule Object]
+simplifyRewriteAxioms tools = mapM simplifyRewriteRule
+  where
     simplifyRewriteRule (RewriteRule rule) =
-        RewriteRule <$> preSimplify emptyPatternSimplifier rule
+        RewriteRule <$> preSimplify (emptyPatternSimplifier tools) rule
+
+emptyPatternSimplifier
+    :: MetadataTools Object StepperAttributes
+    -> CommonStepPattern Object
+    -> Simplifier
+        (OrOfExpandedPattern Object Variable, SimplificationProof Object)
+emptyPatternSimplifier tools =
+    ExpandedPattern.simplify
+        tools
+        emptySubstitutionSimplifier
+        emptySimplifier
+    . makeExpandedPattern
+  where
     emptySimplifier
         ::  ( SortedVariable variable
             , Ord (variable Meta)
@@ -289,9 +321,44 @@ makeAxiomsAndSimplifiers indexedModule tools =
     emptySimplifier = Simplifier.create tools Map.empty
     emptySubstitutionSimplifier =
         PredicateSubstitution.create tools emptySimplifier
-    emptyPatternSimplifier =
-        ExpandedPattern.simplify
+
+
+-- | Proving a spec given as a module containing rules to be proven
+prove
+    :: KoreIndexedModule StepperAttributes
+    -- ^ The main module
+    -> KoreIndexedModule StepperAttributes
+    -- ^ The spec module
+    -> Simplifier (Either (CommonStepPattern Object) ())
+prove definitionModule specModule = do
+    let
+        tools = extractMetadataTools definitionModule
+        symbolOrAlias = symbolOrAliasSorts tools
+    axiomsAndSimplifiers <-
+        makeAxiomsAndSimplifiers definitionModule tools
+    let
+        (rewriteAxioms, simplifier, substitutionSimplifier) =
+            axiomsAndSimplifiers
+    specAxioms <-
+        simplifyRewriteAxioms tools
+            (extractRewriteClaims Object specModule)
+    let
+        axioms = fmap Axiom rewriteAxioms
+        claims = fmap Claim specAxioms
+
+    result <- runExceptT
+        $ verify
             tools
-            emptySubstitutionSimplifier
-            emptySimplifier
-        . makeExpandedPattern
+            simplifier
+            substitutionSimplifier
+            (defaultStrategy claims axioms)
+            (fmap makeClaim claims)
+
+    return $
+        Bifunctor.first
+            (give symbolOrAlias toMLPattern)
+            result
+
+  where
+    makeClaim claim = (claim, Unlimited)
+
