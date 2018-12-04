@@ -62,7 +62,7 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -319,7 +319,7 @@ builtinFunctions =
 
  -}
 asPattern
-    :: KoreIndexedModule attrs
+    :: VerifiedModule attrs
     -- ^ indexed module where pattern would appear
     -> Sort Object
     -> Either
@@ -358,7 +358,7 @@ asPattern indexedModule dvSort = do
 
  -}
 asExpandedPattern
-    :: KoreIndexedModule attrs
+    :: VerifiedModule attrs
     -- ^ dictionary of Map constructor symbols
     -> Sort Object
     -> Either
@@ -374,7 +374,7 @@ asExpandedPattern symbols resultSort =
  -}
 lookupSymbolUnit
     :: Sort Object
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolUnit = Builtin.lookupSymbol "SET.unit"
 
@@ -382,7 +382,7 @@ lookupSymbolUnit = Builtin.lookupSymbol "SET.unit"
  -}
 lookupSymbolElement
     :: Sort Object
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolElement = Builtin.lookupSymbol "SET.element"
 
@@ -390,7 +390,7 @@ lookupSymbolElement = Builtin.lookupSymbol "SET.element"
  -}
 lookupSymbolConcat
     :: Sort Object
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolConcat = Builtin.lookupSymbol "SET.concat"
 
@@ -398,7 +398,7 @@ lookupSymbolConcat = Builtin.lookupSymbol "SET.concat"
  -}
 lookupSymbolIn
     :: Sort Object
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolIn = Builtin.lookupSymbol "SET.in"
 
@@ -406,7 +406,7 @@ lookupSymbolIn = Builtin.lookupSymbol "SET.in"
  -}
 lookupSymbolDifference
     :: Sort Object
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolDifference = Builtin.lookupSymbol "SET.difference"
 

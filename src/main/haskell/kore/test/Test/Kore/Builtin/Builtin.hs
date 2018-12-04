@@ -117,7 +117,7 @@ verify
     :: KoreDefinition
     -> Either
         (Kore.Error.Error VerifyError)
-        (Map ModuleName (KoreIndexedModule StepperAttributes))
+        (Map ModuleName (VerifiedModule StepperAttributes))
 verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
   where
     attrVerify = defaultAttributesVerification Proxy
@@ -128,8 +128,8 @@ verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: KoreIndexedModule StepperAttributes
-    -> KoreIndexedModule StepperAttributes
+    :: VerifiedModule StepperAttributes
+    -> VerifiedModule StepperAttributes
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =
@@ -158,15 +158,15 @@ constructorFunctions ixm =
     recurseIntoImports (attrs, attributes, importedModule) =
         (attrs, attributes, constructorFunctions importedModule)
 
-indexedModules :: Map ModuleName (KoreIndexedModule StepperAttributes)
-indexedModules =
+verifiedModules :: Map ModuleName (VerifiedModule StepperAttributes)
+verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-indexedModule :: KoreIndexedModule StepperAttributes
-Just indexedModule = Map.lookup testModuleName indexedModules
+verifiedModule :: VerifiedModule StepperAttributes
+Just verifiedModule = Map.lookup testModuleName verifiedModules
 
 testMetadataTools :: MetadataTools Object StepperAttributes
-testMetadataTools = extractMetadataTools (constructorFunctions indexedModule)
+testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)
 
 testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
 MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts} = testMetadataTools
@@ -175,7 +175,7 @@ testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
 evaluators :: BuiltinAndAxiomsFunctionEvaluatorMap Object
-evaluators = Map.map This $ Builtin.koreEvaluators indexedModule
+evaluators = Map.map This $ Builtin.koreEvaluators verifiedModule
 
 evaluate
     :: MonadSMT m

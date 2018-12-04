@@ -57,7 +57,7 @@ import qualified Kore.Builtin.String as String
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), KoreIndexedModule )
+                 ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
@@ -105,7 +105,7 @@ koreVerifiers =
 
  -}
 koreEvaluators
-    :: KoreIndexedModule StepperAttributes
+    :: VerifiedModule StepperAttributes
     -- ^ Module under which evaluation takes place
     -> Map (Id Object) Builtin.Function
 koreEvaluators = evaluators builtins
@@ -133,14 +133,14 @@ koreEvaluators = evaluators builtins
 evaluators
     :: Map Text Builtin.Function
     -- ^ Builtin functions indexed by name
-    -> KoreIndexedModule StepperAttributes
+    -> VerifiedModule StepperAttributes
     -- ^ Module under which evaluation takes place
     -> Map (Id Object) Builtin.Function
 evaluators builtins indexedModule =
     Map.mapMaybe lookupBuiltins (hookedSymbolAttributes indexedModule)
   where
     hookedSymbolAttributes
-        :: KoreIndexedModule StepperAttributes
+        :: VerifiedModule StepperAttributes
         -> Map (Id Object) StepperAttributes
     hookedSymbolAttributes im =
         Map.union
@@ -150,7 +150,7 @@ evaluators builtins indexedModule =
         justAttributes (attrs, _) = attrs
 
     importHookedSymbolAttributes
-        :: (a, b, KoreIndexedModule StepperAttributes)
+        :: (a, b, VerifiedModule StepperAttributes)
         -> Map (Id Object) StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
@@ -169,7 +169,7 @@ evaluators builtins indexedModule =
 
  -}
 asPattern
-    :: KoreIndexedModule attrs
+    :: VerifiedModule attrs
     -- ^ indexed module defining hooks for builtin domains
     -> Builtin
     -- ^ domain value
@@ -198,7 +198,7 @@ asPattern
  -}
 -- TODO (thomas.tuegel): Transform from Domain.Builtin to Domain.External.
 externalizePattern
-    :: KoreIndexedModule attrs
+    :: VerifiedModule attrs
     -- ^ indexed module defining hooks for builtin domains
     -> CommonStepPattern Object
     -> Either (Error e) (CommonStepPattern Object)

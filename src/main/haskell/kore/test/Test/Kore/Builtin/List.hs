@@ -159,11 +159,11 @@ test_simplify =
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern :: List.Builtin Variable -> CommonStepPattern Object
-Right asPattern = List.asPattern indexedModule listSort
+Right asPattern = List.asPattern verifiedModule listSort
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asExpandedPattern :: List.Builtin Variable -> CommonExpandedPattern Object
-Right asExpandedPattern = List.asExpandedPattern indexedModule listSort
+Right asExpandedPattern = List.asExpandedPattern verifiedModule listSort
 
 -- * Constructors
 

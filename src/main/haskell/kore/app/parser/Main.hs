@@ -25,7 +25,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( VerifiedModule )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Step.StepperAttributes
@@ -127,8 +127,8 @@ main = do
 
 mainModule
     :: ModuleName
-    -> Map.Map ModuleName (KoreIndexedModule StepperAttributes)
-    -> IO (KoreIndexedModule StepperAttributes)
+    -> Map.Map ModuleName (VerifiedModule StepperAttributes)
+    -> IO (VerifiedModule StepperAttributes)
 mainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -169,7 +169,7 @@ mainParse parser fileName = do
 mainVerify
     :: Bool -- ^ whether to check (True) or ignore attributes during verification
     -> KoreDefinition -- ^ Parsed definition to check well-formedness
-    -> IO (Map.Map ModuleName (KoreIndexedModule StepperAttributes))
+    -> IO (Map.Map ModuleName (VerifiedModule StepperAttributes))
 mainVerify willChkAttr definition =
     let attributesVerification =
             if willChkAttr

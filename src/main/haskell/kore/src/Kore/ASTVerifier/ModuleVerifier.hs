@@ -30,7 +30,7 @@ within the module and outside, using the provided name set. -}
 verifyUniqueNames
     :: Map.Map Text AstLocation
     -- ^ Names that are already defined.
-    -> KoreModule
+    -> Module (UnifiedSentence param pat)
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.

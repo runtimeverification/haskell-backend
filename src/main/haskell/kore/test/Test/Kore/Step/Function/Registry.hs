@@ -26,7 +26,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import           Kore.Predicate.Predicate
@@ -191,7 +191,7 @@ testDef = simpleDefinitionFromSentences
                     }
             ]
 
-testIndexedModule :: KoreIndexedModule StepperAttributes
+testIndexedModule :: VerifiedModule StepperAttributes
 testIndexedModule =
     let
         attributesVerification = defaultAttributesVerification Proxy

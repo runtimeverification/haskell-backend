@@ -62,7 +62,7 @@ type SymbolOrAliasSorts level = SymbolOrAlias level -> ApplicationSorts level
 extractMetadataTools
     ::  forall level atts.
         MetaOrObject level
-    => KoreIndexedModule atts
+    => VerifiedModule atts
     -> MetadataTools level atts
 extractMetadataTools m =
   MetadataTools

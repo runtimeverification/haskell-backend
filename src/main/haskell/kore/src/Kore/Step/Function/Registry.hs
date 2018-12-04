@@ -23,9 +23,7 @@ import           Data.Maybe
 import Kore.AST.Kore
 import Kore.AST.Pure
 import Kore.AST.Sentence
-       ( KoreSentenceAxiom, SentenceAxiom (..), asKoreAxiomSentence )
 import Kore.IndexedModule.IndexedModule
-       ( IndexedModule (..), KoreIndexedModule, indexedModulesInScope )
 import Kore.Step.AxiomPatterns
 import Kore.Step.Function.Data
        ( ApplicationFunctionEvaluator (..) )
@@ -40,7 +38,7 @@ extractFunctionAxioms
     ::  forall level.
         MetaOrObject level
     => level
-    -> KoreIndexedModule StepperAttributes
+    -> VerifiedModule StepperAttributes
     -> Map (Id level) [EqualityRule level]
 extractFunctionAxioms level =
     \imod ->
@@ -52,7 +50,7 @@ extractFunctionAxioms level =
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
         :: Map (Id level) [EqualityRule level]
-        -> KoreIndexedModule StepperAttributes
+        -> VerifiedModule StepperAttributes
         -> Map (Id level) [EqualityRule level]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
@@ -64,7 +62,7 @@ extractFunctionAxioms level =
     -- not a function axiom.
     extractSentenceAxiom
         :: Map (Id level) [EqualityRule level]
-        -> (attrs, KoreSentenceAxiom)
+        -> (attrs, VerifiedKoreSentenceAxiom)
         -> Map (Id level) [EqualityRule level]
     extractSentenceAxiom axioms (_, sentence) =
         let
@@ -81,16 +79,12 @@ extractFunctionAxioms level =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
-    ::  ( MetaOrObject level )
+    :: MetaOrObject level
     => level
-    -> SentenceAxiom UnifiedSortVariable CommonKorePattern
+    -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
     -> Maybe (Id level, EqualityRule level)
-axiomToIdAxiomPatternPair
-    level
-    axiom
-  = case koreSentenceToAxiomPattern level
-        (asKoreAxiomSentence axiom)
-    of
+axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
+    case verifiedKoreSentenceToAxiomPattern level axiom of
         Left _ -> Nothing
         Right
             (FunctionAxiomPattern

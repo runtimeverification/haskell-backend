@@ -51,7 +51,7 @@ import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), KoreIndexedModule )
+                 ( IndexedModule (..), VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import           Kore.Parser.Parser
@@ -460,8 +460,8 @@ mainWithOptions
 
 mainModule
     :: ModuleName
-    -> Map.Map ModuleName (KoreIndexedModule StepperAttributes)
-    -> IO (KoreIndexedModule StepperAttributes)
+    -> Map.Map ModuleName (VerifiedModule StepperAttributes)
+    -> IO (VerifiedModule StepperAttributes)
 mainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -488,7 +488,7 @@ mainPatternParse = mainParse fromKorePattern
 -- | IO action that parses a kore pattern from a filename, verifies it,
 -- converts it to a pure patterm, and prints timing information.
 mainPatternParseAndVerify
-    :: KoreIndexedModule StepperAttributes
+    :: VerifiedModule StepperAttributes
     -> String
     -> IO (CommonStepPattern Object)
 mainPatternParseAndVerify indexedModule patternFileName
@@ -498,7 +498,7 @@ mainPatternParseAndVerify indexedModule patternFileName
     return (makePurePattern parsedPattern)
 
 mainParseSearchPattern
-    :: KoreIndexedModule StepperAttributes
+    :: VerifiedModule StepperAttributes
     -> String
     -> IO (CommonExpandedPattern Object)
 mainParseSearchPattern indexedModule patternFileName
@@ -541,14 +541,14 @@ Also prints timing information; see 'mainParse'.
  -}
 verifyDefinitionWithBase
     :: Maybe
-        ( Map.Map ModuleName (KoreIndexedModule StepperAttributes)
+        ( Map.Map ModuleName (VerifiedModule StepperAttributes)
         , Map.Map Text AstLocation
         )
     -- ^ base definition to use for verification
     -> Bool -- ^ whether to check (True) or ignore attributes during verification
     -> KoreDefinition -- ^ Parsed definition to check well-formedness
     -> IO
-        ( Map.Map ModuleName (KoreIndexedModule StepperAttributes)
+        ( Map.Map ModuleName (VerifiedModule StepperAttributes)
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
@@ -583,8 +583,8 @@ makePurePattern pat =
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: KoreIndexedModule StepperAttributes
-    -> KoreIndexedModule StepperAttributes
+    :: VerifiedModule StepperAttributes
+    -> VerifiedModule StepperAttributes
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =

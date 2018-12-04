@@ -9,8 +9,7 @@ import           Data.Limit
                  ( Limit (Unlimited) )
 import qualified Data.Map as Map
 
-import           Kore.AST.MetaOrObject
-                 ( Object (..) )
+import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
@@ -22,17 +21,16 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.Exec
+import           Kore.IndexedModule.IndexedModule
+                 ( IndexedModule (..), VerifiedModule )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Step
                  ( anyRewrite )
 import           Kore.Step.StepperAttributes
-
-import           Kore.AST.Identifier
-import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), KoreIndexedModule )
 import qualified SMT
 
 import           System.FilePath
@@ -130,26 +128,29 @@ execBenchmark root kFile definitionFile mainModuleName test =
         definition <- readFile $ root </> definitionFile
         let
             parsedDefinition = either error id $ fromKore "" definition
-            indexedModules =
+            verifiedModules =
                 either (error . printError) id
                     $ verifyAndIndexDefinition
                         DoNotVerifyAttributes
                         Builtin.koreVerifiers
                         parsedDefinition
-            Just indexedModule =
+            Just verifiedModule =
                 fmap constructorFunctions
-                    $ Map.lookup mainModuleName indexedModules
+                    $ Map.lookup mainModuleName verifiedModules
         pat <- parseProgram
         let
             parsedPattern = either error id $ fromKorePattern "" pat
             purePattern =
                 either (error . printError) id
                     $ patternKoreToPure Object parsedPattern
-        return (indexedModule, purePattern)
-    execution (indexedModule, purePattern) =
+        return (verifiedModule, purePattern)
+    execution
+        :: (VerifiedModule StepperAttributes, CommonStepPattern Object)
+        -> IO (CommonStepPattern Object)
+    execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig
         $ evalSimplifier
-        $ exec indexedModule purePattern Unlimited anyRewrite
+        $ exec verifiedModule purePattern Unlimited anyRewrite
     kompile = myShell $ (kBin </> "kompile")
         ++ " --backend haskell -d " ++ root
         ++ " " ++ (root </> kFile)
@@ -169,8 +170,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: KoreIndexedModule StepperAttributes
-    -> KoreIndexedModule StepperAttributes
+    :: IndexedModule sortParam patternType StepperAttributes
+    -> IndexedModule sortParam patternType StepperAttributes
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =

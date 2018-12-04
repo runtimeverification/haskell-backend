@@ -98,7 +98,7 @@ import           Kore.Error
                  ( Error, MonadError )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule, SortDescription )
+                 ( SortDescription, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -666,7 +666,7 @@ lookupSymbol
     -- ^ builtin name
     -> Sort Object
     -- ^ the hooked sort
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Error e) (SymbolOrAlias Object)
 lookupSymbol builtinName builtinSort indexedModule
   = do

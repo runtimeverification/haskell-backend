@@ -28,7 +28,7 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( VerifiedModule )
 import           Kore.Parser.ParserImpl
 import           Kore.Parser.ParserUtils
 import           Kore.Predicate.Predicate
@@ -331,8 +331,8 @@ parseAxiom str =
 
 extractIndexedModule
     :: Text
-    -> Either (Error a) (Map.Map ModuleName (KoreIndexedModule Attribute.Null))
-    -> KoreIndexedModule Attribute.Null
+    -> Either (Error a) (Map.Map ModuleName (VerifiedModule Attribute.Null))
+    -> VerifiedModule Attribute.Null
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)

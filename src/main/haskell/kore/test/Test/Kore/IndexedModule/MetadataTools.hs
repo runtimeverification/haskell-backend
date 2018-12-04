@@ -110,8 +110,8 @@ testDefinition =
             ]
         }
 
-testIndexedModule :: KoreIndexedModule StepperAttributes
-testIndexedModule =
+testVerifiedModule :: VerifiedModule StepperAttributes
+testVerifiedModule =
     case
         verifyAndIndexDefinition
             DoNotVerifyAttributes
@@ -125,7 +125,7 @@ testIndexedModule =
         Left err -> error (printError err)
 
 metadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
-metadataTools = extractMetadataTools testIndexedModule
+metadataTools = extractMetadataTools testVerifiedModule
 
 test_metadataTools :: [TestTree]
 test_metadataTools =
@@ -219,10 +219,12 @@ testSubsorts =
   where
     test name cond = testCase name (assertBool "" cond)
     testSubsort name list = testCase name . assertEqual "" (Set.fromList list)
-    moduleIndex :: Map.Map ModuleName (KoreIndexedModule Attribute.Null)
-    Right moduleIndex = verifyAndIndexDefinition DoNotVerifyAttributes
-        Builtin.koreVerifiers
-        testSubsortDefinition
+    moduleIndex :: Map.Map ModuleName (VerifiedModule Attribute.Null)
+    Right moduleIndex =
+        verifyAndIndexDefinition
+            DoNotVerifyAttributes
+            Builtin.koreVerifiers
+            testSubsortDefinition
     meta :: MetadataTools Object Attribute.Null
     meta = extractMetadataTools $ moduleIndex Map.! testObjectModuleName
 

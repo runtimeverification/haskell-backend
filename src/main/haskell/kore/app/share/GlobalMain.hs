@@ -41,7 +41,7 @@ import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( VerifiedModule, mapIndexedModulePatterns )
 import qualified Paths_kore as MetaData
                  ( version )
 
@@ -175,11 +175,11 @@ clockSomethingIO description something = do
 
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify
-    :: KoreIndexedModule attrs
+    :: VerifiedModule attrs
     -- ^ Module containing definitions visible in the pattern
     -> CommonKorePattern -- ^ Parsed pattern to check well-formedness
     -> IO ()
-mainPatternVerify indexedModule patt =
+mainPatternVerify verifiedModule patt =
     do
       verifyResult <-
         clockSomething "Verifying the pattern"
@@ -189,6 +189,8 @@ mainPatternVerify indexedModule patt =
         Right _   -> return ()
   where
     Builtin.Verifiers { patternVerifier } = Builtin.koreVerifiers
+    indexedModule =
+        mapIndexedModulePatterns eraseAnnotations verifiedModule
     context =
         PatternVerifier.Context
             { indexedModule = Attribute.Null <$ indexedModule
