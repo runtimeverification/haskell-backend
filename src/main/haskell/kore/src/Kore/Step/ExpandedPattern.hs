@@ -29,6 +29,7 @@ module Kore.Step.ExpandedPattern
     , fromPurePattern
     , toPredicate
     , freeVariables
+    , freeEpVariables
     ) where
 
 import           Control.DeepSeq
@@ -64,7 +65,7 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Free
-                 ( pureAllVariables )
+                 ( freePureVariables, pureAllVariables )
 
 {- | @Predicated@ represents a value conditioned on a predicate.
 
@@ -174,6 +175,25 @@ allVariables
             (\ x y -> x <> pureAllVariables (snd y))
             Set.empty
             sub
+
+-- TODO: This function's name is ridiculous. Refactor and move all
+-- PredicateSubstitution stuff to its own file, which will allow this to be
+-- called just 'freeVariables'.
+{- | Extract the set of free variables from an expanded pattern.
+
+    See also: 'Predicate.freeVariables'.
+-}
+freeEpVariables
+    :: ( MetaOrObject level
+       , Ord (variable level)
+       , Show (variable level)
+       , Given (SymbolOrAliasSorts level)
+       , SortedVariable variable
+       )
+    => ExpandedPattern level variable
+    -> Set.Set (variable level)
+freeEpVariables =
+    freePureVariables . toMLPattern
 
 -- | Erase the @Predicated@ 'term' to yield a 'PredicateSubstitution'.
 erasePredicatedTerm

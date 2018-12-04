@@ -73,11 +73,14 @@ def findElementAndSkipPrefix(startIndex, prefix, line):
 
 def cleanIdLocation(line):
     """Removes the idLocation part of Id structs."""
+    chunks = []
     while True:
         (start, end) = findElementStartingWith(0, ", idLocation =", line)
         if start < 0:
-            return line
-        line = line[:start] + line[end:]
+            chunks.append(line)
+            return "".join(chunks)
+        chunks.append(line[:start])
+        line = line[end:]
 
 def cleanApplication(line):
     """Removes the redundant parts of ApplicationPattern patterns.
@@ -85,14 +88,15 @@ def cleanApplication(line):
     The result will look something like
     "symbol"[arg1, arg2, ...](phi1, phi2, ....)
     """
-    start = 0
+    chunks = []
     while True:
         (start, end) = findElementStartingWith(
-            start,
+            0,
             "Fix (ApplicationPattern",
             line)
         if start < 0:
-            return line
+            chunks.append(line)
+            return "".join(chunks)
         (childrenStart, childrenEnd) = findElementAndSkipPrefix(
             start,
             " applicationChildren = ",
@@ -108,15 +112,13 @@ def cleanApplication(line):
             " symbolOrAliasParams = ",
             line)
         assert symbolParamsStart > 0
-        children = line[childrenStart + 1: childrenEnd - 1]
-        children = "(" + children + ")"
-        line = (
-            line[:start]
-            + line[symbolStart : symbolEnd]
-            + line[symbolParamsStart : symbolParamsEnd]
-            + children
-            + line[end : ]
-            )
+        chunks.append(line[:start])
+        chunks.append(line[symbolStart : symbolEnd])
+        chunks.append("(")
+        chunks.append(
+            cleanApplication(line[childrenStart + 1: childrenEnd - 1]))
+        chunks.append(")")
+        line = line[end : ]
 
 def cleanSort(line):
     """Removes the redundant parts of SortActual sorts.
@@ -124,14 +126,15 @@ def cleanSort(line):
     The result will look something like
     "sort-name"{sort1, sort2, ...}
     """
-    start = 0
+    chunks = []
     while True:
         (start, end) = findElementStartingWith(
-            start,
+            0,
             "SortActualSort (SortActual",
             line)
         if start < 0:
-            return line
+            chunks.append(line)
+            return "".join(chunks)
         (childrenStart, childrenEnd) = findElementAndSkipPrefix(
             start,
             " sortActualSorts = ",
@@ -142,12 +145,10 @@ def cleanSort(line):
             "getId = ",
             line)
         assert symbolStart > 0
-        line = (
-            line[:start]
-            + line[symbolStart : symbolEnd]
-            + line[childrenStart : childrenEnd]
-            + line[end : ]
-            )
+        chunks.append(line[:start])
+        chunks.append(line[symbolStart : symbolEnd])
+        chunks.append(cleanSort(line[childrenStart : childrenEnd]))
+        line = line[end : ]
 
 def cleanVariable(line):
     """Removes the redundant parts of Variables.
@@ -155,14 +156,15 @@ def cleanVariable(line):
     The result will look something like
     "variable-name":sort
     """
-    start = 0
+    chunks = []
     while True:
         (start, end) = findElementStartingWith(
-            start,
+            0,
             "Variable {variableName",
             line)
         if start < 0:
-            return line
+            chunks.append(line)
+            return "".join(chunks)
         (sortStart, sortEnd) = findElementAndSkipPrefix(
             start,
             " variableSort = ",
@@ -173,42 +175,189 @@ def cleanVariable(line):
             "getId = ",
             line)
         assert symbolStart > 0
-        line = (
-            line[:start]
-            + line[symbolStart : symbolEnd]
-            + ":"
-            + line[sortStart : sortEnd]
-            + line[end : ]
-            )
+        chunks.append(line[:start])
+        chunks.append(line[symbolStart : symbolEnd])
+        chunks.append(":")
+        chunks.append(line[sortStart : sortEnd])
+        line = line[end : ]
 
 def cleanBottom(line):
     """Rewrites bottom patterns."""
+    chunks = []
     while True:
         (start, end) = findElementStartingWith(0, "Fix (BottomPattern", line)
         if start < 0:
-            return line
-        line = line[:start] + "⊥" + line[end:]
+            chunks.append(line)
+            return "".join(chunks)
+        chunks.append(line[:start])
+        chunks.append("⊥")
+        line = line[end:]
 
 def cleanTop(line):
     """Rewrites top patterns."""
+    chunks = []
     while True:
         (start, end) = findElementStartingWith(0, "Fix (TopPattern", line)
         if start < 0:
-            return line
-        line = line[:start] + "T" + line[end:]
+            chunks.append(line)
+            return "".join(chunks)
+        chunks.append(line[:start])
+        chunks.append("T")
+        line = line[end:]
 
 def cleanStepProof(line):
     """Removes StepProofs"""
+    chunks = []
     while True:
         (start, end) = findElementStartingWith(0, "StepProof {", line)
         if start < 0:
-            return line
-        line = line[:start] + " proof" + line[end:]
+            chunks.append(line)
+            return "".join(chunks)
+        chunks.append(line[:start])
+        chunks.append(" proof")
+        line = line[end:]
+
+def cleanStringDomainValue(line):
+    """Cleans string domain values"""
+    chunks = []
+    while True:
+        (start, end) = findElementStartingWith(
+            0,
+            "Fix (DomainValuePattern (DomainValue",
+            line)
+        if start < 0:
+            chunks.append(line)
+            return "".join(chunks)
+        (sortStart, sortEnd) = findElementAndSkipPrefix(
+            start,
+            "domainValueSort = ",
+            line)
+        assert sortStart > 0
+        (childStart, childEnd) = findElementAndSkipPrefix(
+            start,
+            "domainValueChild = ",
+            line)
+        assert childStart > 0
+        assert childEnd < end
+        isString = line[childStart:].startswith(
+            "BuiltinPattern (Fix (StringLiteral")
+        if not isString:
+            chunks.append(line[start])
+            line = line[start + 1:]
+            continue
+        (valueStart, valueEnd) = findElementAndSkipPrefix(
+            start,
+            "getStringLiteral = ",
+            line)
+        assert valueStart > 0
+        assert valueEnd <= end
+        chunks.append(line[:start])
+        chunks.append("DomainValue(")
+        chunks.append(line[valueStart : valueEnd])
+        chunks.append(":")
+        chunks.append(line [sortStart : sortEnd])
+        chunks.append(")")
+        line = line[end:]
+
+def cleanStandardPattern(name, line):
+    """Simplifies the (Fix (<name>Pattern(<name>))) part of patterns"""
+    prefix = "Fix (" + name + "Pattern (" + name
+    chunks = []
+    while True:
+        (start, end) = findElementStartingWith(0, prefix, line)
+        if start < 0:
+            chunks.append(line)
+            return "".join(chunks)
+        chunks.append(line[:start])
+        chunks.append(name)
+        chunks.append(
+            cleanStandardPattern(name, line[start + len(prefix) : end - 2]))
+        line = line[end:]
+
+def cleanVariablePattern(line):
+    """Simplifies the (Fix (VariablePattern(...))) part of patterns"""
+    prefix = "Fix (VariablePattern ("
+    chunks = []
+    while True:
+        (start, end) = findElementStartingWith(0, prefix, line)
+        if start < 0:
+            chunks.append(line)
+            return "".join(chunks)
+        chunks.append(line[:start])
+        chunks.append("Variable (")
+        chunks.append(line[start + len(prefix) : end - 1])
+        line = line[end:]
+
+def unescapeSequence(sequence):
+    return (sequence[1:len(sequence) - 1]
+        .replace("Unds", "_")
+        .replace("Plus", "+")
+        .replace("Slsh", "/")
+        .replace("Star", "*")
+        .replace("-LT-", "<")
+        .replace("-GT-", ">")
+        .replace("Eqls", "=")
+        .replace("Pipe", "|")
+        .replace("Hash", "#")
+        .replace("LPar", "(")
+        .replace("RPar", ")")
+        .replace("LBra", "{")
+        .replace("RBra", "}")
+        .replace("Ques", ".")
+        .replace("Stop", ".")
+        .replace("Comm", ",")
+        .replace("SCln", ";")
+    )
+
+def unescapeIdentifier(identifier):
+    nextStart = 0
+    while True:
+        start = identifier.find("'", nextStart)
+        if start < 0:
+            return identifier
+        end = identifier.find("'", start + 1)
+        assert end > 0
+        changed = unescapeSequence(identifier[start:end + 1])
+        identifier = identifier[:start] + changed + identifier[end + 1:]
+        nextStart = start + len(changed)
+
+def cleanIdentifierEscaping(line):
+    """Simplifies things like Lbl'UndsPlus'Int'Unds' to _+Int_"""
+    chunks = []
+    while True:
+        start = line.find('"Lbl')
+        if start < 0:
+            chunks.append(line)
+            return "".join(chunks)
+        end = line.find('"', start + 1)
+        assert end > 0
+        changed = unescapeIdentifier(line[start:end + 1])
+        chunks.append(line[:start])
+        chunks.append(changed)
+        line = line[end + 1:]
+
+def cleanStandardPatterns(line):
+    return cleanStandardPattern("And",
+        cleanStandardPattern("Ceil",
+        cleanStandardPattern("DomainValue",
+        cleanStandardPattern("Equals",
+        cleanStandardPattern("Exists",
+        cleanStandardPattern("Floor",
+        cleanStandardPattern("Forall",
+        cleanStandardPattern("Iff",
+        cleanStandardPattern("Implies",
+        cleanStandardPattern("In",
+        cleanStandardPattern("Next",
+        cleanStandardPattern("Not",
+        cleanStandardPattern("Or",
+        cleanStandardPattern("Rewrites",
+        cleanVariablePattern(line)))))))))))))))
 
 def clean(line):
     """Applies known cleaning algorithms to the line."""
-    return cleanBottom(cleanTop(cleanStepProof(
-        cleanVariable(cleanSort(cleanApplication(cleanIdLocation(line)))))))
+    return cleanBottom(cleanTop(cleanStepProof(cleanIdentifierEscaping(
+        cleanStandardPatterns(cleanStringDomainValue(
+        cleanVariable(cleanSort(cleanApplication(cleanIdLocation(line))))))))))
 
 def printParseLine(indentLevel, maxOpenParenthesis, line):
     """Rudimentary attempts to split a line and indent it."""
