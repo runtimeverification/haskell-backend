@@ -87,7 +87,8 @@ definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
 definedNamesForMetaSentence (SentenceImportSentence _) = []
 definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
 definedNamesForMetaSentence (SentenceClaimSentence _)  = []
-definedNamesForMetaSentence (SentenceSortSentence _)   = []
+definedNamesForMetaSentence (SentenceSortSentence sentenceSort) =
+    [ toUnparameterizedId (sentenceSortName sentenceSort) ]
 
 definedNamesForObjectSentence
     :: Sentence Object sortParam pat dom var -> [UnparameterizedId]

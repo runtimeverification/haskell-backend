@@ -26,6 +26,7 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Common
+import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
@@ -34,8 +35,8 @@ import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.Definitions
-                 ( uncheckedKoreModules )
+import           Kore.Implicit.ImplicitKore
+                 ( uncheckedKoreModule )
 import           Kore.IndexedModule.IndexedModule
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
@@ -153,21 +154,26 @@ indexImplicitModules
         , Map.Map Text AstLocation
         )
 indexImplicitModules = do
-    defaultNames <- foldM verifyUniqueNames sortNames uncheckedKoreModules
-    (indexedModules, defaultModule) <-
-        castError $ foldM
-            indexImplicitModule
-            ( Map.singleton defaultModuleName defaultModuleWithMetaSorts
-            , moduleWithMetaSorts
-            )
-            uncheckedKoreModules
-    return (indexedModules, defaultModule, defaultNames)
+    defaultNames <- verifyUniqueNames Map.empty implicitModule
+    indexedModules <-
+        castError $ indexModuleIfNeeded
+            Nothing
+            modulesByName
+            Map.empty
+            implicitModule
+    defaultModule <- lookupDefaultModule indexedModules
+    return (indexedModules, ImplicitIndexedModule defaultModule, defaultNames)
   where
-    defaultModuleName = ModuleName "Default module"
-    getIndexedModule (ImplicitIndexedModule im) = im
-    defaultModuleWithMetaSorts = getIndexedModule moduleWithMetaSorts
-    (moduleWithMetaSorts, sortNames) =
-        indexedModuleWithMetaSorts defaultModuleName
+    implicitModule = modulePureToKore uncheckedKoreModule
+    implicitModuleName = moduleName implicitModule
+    moduleNameForError = getModuleNameForError implicitModuleName
+    modulesByName = Map.singleton implicitModuleName implicitModule
+    lookupDefaultModule indexedModules =
+        case Map.lookup (moduleName implicitModule) indexedModules of
+            Just defaultModule -> return defaultModule
+            Nothing ->
+                koreFail
+                    ("Missing default module '" ++ moduleNameForError ++ "'.")
 
 {-|'verifyNormalKoreDefinition' is meant to be used only in the
 "Kore.Implicit" package. It verifies the correctness of a definition
