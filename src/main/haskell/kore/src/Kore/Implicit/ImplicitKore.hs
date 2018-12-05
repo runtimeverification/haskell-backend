@@ -902,7 +902,7 @@ uncheckedKoreModule =
     Module
         { moduleName       = ModuleName "kore"
         , moduleSentences  =
-            (metaSortDescription <$> metaSortsListWithString)
+            (metaSortDescription <$> metaSortsList)
 
             ++
             [ asSentence nilCharList, asSentence consCharList

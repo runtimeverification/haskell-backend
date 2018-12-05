@@ -5,11 +5,6 @@ Definition
             { moduleName = ModuleName "kore"
             , moduleSentences =
                 [ MetaSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id "#String" AstLocationNone) :: Id Meta
-                    , sentenceSortParameters = []
-                    , sentenceSortAttributes = Attributes []
-                    })
-                , MetaSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = (Id "#Char" AstLocationNone) :: Id Meta
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []

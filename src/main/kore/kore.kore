@@ -1,6 +1,5 @@
 []
 module kore
-    sort #String{} []
     sort #Char{} []
     sort #Pattern{} []
     sort #Sort{} []

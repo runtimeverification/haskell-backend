@@ -24,6 +24,7 @@ import           Data.Proxy
                  ( Proxy )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Common
 import           Kore.AST.PureToKore
@@ -154,7 +155,7 @@ indexImplicitModules
         , Map.Map Text AstLocation
         )
 indexImplicitModules = do
-    defaultNames <- verifyUniqueNames Map.empty implicitModule
+    defaultNames <- verifyUniqueNames preImplicitNames implicitModule
     indexedModules <-
         castError $ indexModuleIfNeeded
             Nothing
@@ -164,6 +165,12 @@ indexImplicitModules = do
     defaultModule <- lookupDefaultModule indexedModules
     return (indexedModules, ImplicitIndexedModule defaultModule, defaultNames)
   where
+    -- Names which are hard-coded into Kore that do not even appear in the
+    -- implicit definition.
+    preImplicitNames =
+        Map.fromList ((,) <$> names <*> pure AstLocationImplicit)
+      where
+        names = [ Text.pack (show StringSort) ]
     implicitModule = modulePureToKore uncheckedKoreModule
     implicitModuleName = moduleName implicitModule
     moduleNameForError = getModuleNameForError implicitModuleName
