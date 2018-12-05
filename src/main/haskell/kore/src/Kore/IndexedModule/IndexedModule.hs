@@ -233,11 +233,18 @@ name and containing the implicit definitions module.
 indexedModuleWithDefaultImports
     :: Default atts
     => ModuleName
-    -> ImplicitIndexedModule sortParam pat dom var atts
+    -> Maybe (ImplicitIndexedModule sortParam pat dom var atts)
     -> IndexedModule sortParam pat dom var atts
-indexedModuleWithDefaultImports name (ImplicitIndexedModule implicitModule) =
+indexedModuleWithDefaultImports name defaultImport =
     (emptyIndexedModule name)
-        { indexedModuleImports = [(def, Attributes [], implicitModule)] }
+        { indexedModuleImports =
+            case defaultImport of
+                Just (ImplicitIndexedModule implicitModule) ->
+                    [(def, Attributes [], implicitModule)]
+                Nothing ->
+                    []
+        }
+
 
 {-|'indexedModuleWithMetaSorts' provides an 'IndexedModule' with the implicit
 Kore definitions.
@@ -308,7 +315,7 @@ indexImplicitModule
 indexImplicitModule (indexedModules, lastIndexedModule) rawModule = do
     newModules <-
         indexModuleIfNeeded
-            lastIndexedModule
+            (Just lastIndexedModule)
             Map.empty
             indexedModules
             rawModule
@@ -329,7 +336,7 @@ indexModuleIfNeeded
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -- ^ Module containing the implicit Kore definitions
     -> Map.Map ModuleName KoreModule
     -- ^ Map containing all defined modules, used for resolving imports.
@@ -355,7 +362,7 @@ internalIndexModuleIfNeeded
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> Map.Map ModuleName indexed
@@ -408,7 +415,7 @@ indexModuleKoreSentence
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName indexed, indexed)
@@ -423,7 +430,7 @@ indexModuleMetaSentence
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName indexed, indexed)
@@ -557,7 +564,7 @@ indexModuleObjectSentence
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName indexed, indexed)
@@ -723,7 +730,7 @@ indexImportedModule
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> Map.Map ModuleName indexed

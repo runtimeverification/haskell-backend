@@ -122,7 +122,7 @@ verifyAndIndexDefinitionWithBase
     indexedModules <-
         castError $ foldM
             (indexModuleIfNeeded
-                implicitModule
+                (Just implicitModule)
                 nameToModule
             )
             baseIndexedModules
