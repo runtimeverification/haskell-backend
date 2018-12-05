@@ -183,17 +183,17 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
                         , predicate =
                             makeOrPredicate
                                 ( makeAndPredicate
-                                    (makeEqualsPredicate hOfA hOfB)
                                     (makeAndPredicate
                                         (makeAndPredicate
-                                            (makeEqualsPredicate fOfA fOfB)
+                                            (makeAndPredicate
+                                                (makeEqualsPredicate hOfA hOfB)
+                                                (makeEqualsPredicate fOfA fOfB)
+                                            )
                                             (makeCeilPredicate hOfA)
                                         )
-                                        (makeAndPredicate
-                                            (makeEqualsPredicate gOfA gOfB)
-                                            (makeCeilPredicate hOfB)
-                                        )
+                                        (makeEqualsPredicate gOfA gOfB)
                                     )
+                                    (makeCeilPredicate hOfB)
                                 )
                                 (makeAndPredicate
                                     (makeNotPredicate

@@ -155,32 +155,50 @@ test_andSimplification = give mockSymbolOrAliasSorts
                         , substitution = Substitution.wrap [(Mock.z, gOfX)]
                         }
             assertEqualWithExplanation "" expect actual
-            {-
-            TODO(virgil): Uncomment this after substitution merge can handle
-            function equality.
 
-            assertEqualWithExplanation "And substitutions - separate predicate"
-                ExpandedPattern
-                    { term = mkTop
-                    , predicate = makeEqualsPredicate fOfX gOfX
-                    , substitution = [(y, fOfX)]
+        , testCase "And substitutions - multiple terms" $ do
+            let
+                expect =
+                    Predicated
+                        { term = mkAnd (mkAnd Mock.a Mock.b) Mock.c
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+            actual <- evaluatePatterns
+                Predicated
+                    { term = mkAnd Mock.a Mock.b
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
                     }
-                (evaluatePatternsWithAttributes
-                    [ (fSymbol, Mock.functionAttributes)
-                    , (gSymbol, Mock.functionAttributes)
-                    ]
-                    ExpandedPattern
+                Predicated
+                    { term = mkAnd Mock.b Mock.c
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "And substitutions - separate predicate" $ do
+            let
+                expect =
+                    Predicated
                         { term = mkTop
-                        , predicate = makeTruePredicate
-                        , substitution = [(y, fOfX)]
+                        , predicate = makeEqualsPredicate fOfX gOfX
+                        , substitution =
+                            Substitution.unsafeWrap [(Mock.y, fOfX)]
                         }
-                    ExpandedPattern
-                        { term = mkTop
-                        , predicate = makeTruePredicate
-                        , substitution = [(y, gOfX)]
-                        }
-                )
-            -}
+            actual <- evaluatePatterns
+                Predicated
+                    { term = mkTop
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.y, fOfX)]
+                    }
+                Predicated
+                    { term = mkTop
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.y, gOfX)]
+                    }
+            assertEqualWithExplanation "" expect actual
+
         , testCase "And substitutions - failure" $ do
             let expect =
                     Predicated
