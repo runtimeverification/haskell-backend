@@ -9,8 +9,6 @@ Portability : POSIX
 -}
 module Kore.IndexedModule.IndexedModule
     ( ImplicitIndexedModule (ImplicitIndexedModule)
-    , indexImplicitModule
-    , indexedModuleWithMetaSorts
     , IndexedModule
         -- the IndexedModule data constructor not included in the list on
         -- purpose.
@@ -35,8 +33,6 @@ module Kore.IndexedModule.IndexedModule
     , indexedModulesInScope
     ) where
 
-import           Control.Arrow
-                 ( (&&&) )
 import           Control.DeepSeq
                  ( NFData (..) )
 import           Control.Monad
@@ -233,93 +229,17 @@ name and containing the implicit definitions module.
 indexedModuleWithDefaultImports
     :: Default atts
     => ModuleName
-    -> ImplicitIndexedModule sortParam pat dom var atts
+    -> Maybe (ImplicitIndexedModule sortParam pat dom var atts)
     -> IndexedModule sortParam pat dom var atts
-indexedModuleWithDefaultImports name (ImplicitIndexedModule implicitModule) =
+indexedModuleWithDefaultImports name defaultImport =
     (emptyIndexedModule name)
-        { indexedModuleImports = [(def, Attributes [], implicitModule)] }
-
-{-|'indexedModuleWithMetaSorts' provides an 'IndexedModule' with the implicit
-Kore definitions.
--}
-indexedModuleWithMetaSorts
-    :: Default atts
-    => ModuleName
-    ->  ( ImplicitIndexedModule sortParam pat dom var atts
-        , Map.Map Text AstLocation
-        )
-indexedModuleWithMetaSorts name =
-    ( ImplicitIndexedModule (emptyIndexedModule name)
-        { indexedModuleMetaSortDescriptions = msd }
-    , Map.insert
-        (Text.pack $ show StringSort)
-        AstLocationImplicit
-        (Map.fromList
-            (map
-                (getId &&& idLocation)
-                (Set.toList (Map.keysSet msd))
-            )
-        )
-    )
-  where
-    msd = metaSortDescriptions
-
-metaSortDescriptions
-    :: Default atts => Map.Map (Id Meta) (atts, SentenceSort Meta pat dom var)
-metaSortDescriptions = Map.fromList (map metaSortDescription metaSortsList)
-
-metaSortDescription
-    :: Default atts
-    => MetaSortType -> (Id Meta, (atts, SentenceSort Meta pat dom var))
-metaSortDescription sortType =
-    ( sortId
-    , ( def
-      , SentenceSort
-        { sentenceSortName = sortId
-        , sentenceSortParameters = []
-        , sentenceSortAttributes = Attributes []
+        { indexedModuleImports =
+            case defaultImport of
+                Just (ImplicitIndexedModule implicitModule) ->
+                    [(def, Attributes [], implicitModule)]
+                Nothing ->
+                    []
         }
-      )
-    )
-  where
-    sortId = Id
-        { getId = Text.pack (show sortType)
-        , idLocation = AstLocationImplicit
-        }
-
-{-|'indexImplicitModule' indexes a module containing implicit definitions, adds
-it to the map of defined modules and returns the new map together with the
-indexed module.
-
-It imports the module provided as an argument, which means that it contains all
-the symbols defined directly or indirectly in it. This makes it suitable for
-creating a chain of implicit modules, each including its predecessor, with
-the top one containing the symbols defined in all of them.
--}
-indexImplicitModule
-    :: ParseAttributes atts
-    => ( Map.Map ModuleName (KoreIndexedModule atts)
-       , KoreImplicitIndexedModule atts)
-    -> KoreModule
-    -> Either
-        (Error IndexModuleError)
-        ( Map.Map ModuleName (KoreIndexedModule atts)
-        , KoreImplicitIndexedModule atts)
-indexImplicitModule (indexedModules, lastIndexedModule) rawModule = do
-    newModules <-
-        indexModuleIfNeeded
-            lastIndexedModule
-            Map.empty
-            indexedModules
-            rawModule
-    case Map.lookup (moduleName rawModule) newModules of
-        Just m -> return (newModules, ImplicitIndexedModule m)
-        Nothing ->
-            koreFail
-                (  "InternalError: indexed module not found: '"
-                ++ getModuleNameForError (moduleName rawModule)
-                ++ "'"
-                )
 
 
 {-|'indexModuleIfNeeded' transforms a 'Module' into an 'IndexedModule', unless
@@ -329,7 +249,7 @@ indexModuleIfNeeded
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -- ^ Module containing the implicit Kore definitions
     -> Map.Map ModuleName KoreModule
     -- ^ Map containing all defined modules, used for resolving imports.
@@ -355,7 +275,7 @@ internalIndexModuleIfNeeded
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> Map.Map ModuleName indexed
@@ -408,7 +328,7 @@ indexModuleKoreSentence
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName indexed, indexed)
@@ -423,7 +343,7 @@ indexModuleMetaSentence
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName indexed, indexed)
@@ -557,7 +477,7 @@ indexModuleObjectSentence
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName indexed, indexed)
@@ -723,7 +643,7 @@ indexImportedModule
     ::  ( ParseAttributes atts
         , indexed ~ KoreIndexedModule atts
         )
-    => KoreImplicitIndexedModule atts
+    => Maybe (KoreImplicitIndexedModule atts)
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> Map.Map ModuleName indexed

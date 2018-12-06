@@ -4,7 +4,57 @@ Definition
         [ Module
             { moduleName = ModuleName "kore"
             , moduleSentences =
-                [ MetaSentence (SentenceSymbolSentence SentenceSymbol
+                [ MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#Char" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#Sort" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#Symbol" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#Variable" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#CharList" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#PatternList" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#SortList" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#SymbolList" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#VariableList" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = (Id "#nilCharList" AstLocationNone) :: Id Meta

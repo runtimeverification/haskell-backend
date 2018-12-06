@@ -27,10 +27,11 @@ module Kore.Implicit.ImplicitKore
     , symbolDeclaredA
     ) where
 
-import Data.Proxy
-       ( Proxy (..) )
-import Data.Text
-       ( Text )
+import           Data.Proxy
+                 ( Proxy (..) )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import Kore.AST.Builders
 import Kore.AST.Pure
@@ -881,11 +882,29 @@ ceilBTAxiom =
         (ceilBTA [vs, vs'])
         (symbolA [str_ "ceil", sortList_ [vs, vs'], sortList_ [vs], vs'])
 
+
+metaSortDescription
+    :: MetaSortType -> Sentence Meta param pat domain variable
+metaSortDescription sortType =
+    SentenceSortSentence SentenceSort
+        { sentenceSortName
+        , sentenceSortParameters = []
+        , sentenceSortAttributes = Attributes []
+        }
+  where
+    sentenceSortName = Id
+        { getId = Text.pack (show sortType)
+        , idLocation = AstLocationImplicit
+        }
+
 uncheckedKoreModule :: MetaModule
 uncheckedKoreModule =
     Module
         { moduleName       = ModuleName "kore"
         , moduleSentences  =
+            (metaSortDescription <$> metaSortsList)
+
+            ++
             [ asSentence nilCharList, asSentence consCharList
             , asSentence appendCharList
             , asSentence inCharList
