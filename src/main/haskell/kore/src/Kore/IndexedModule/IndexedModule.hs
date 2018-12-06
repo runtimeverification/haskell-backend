@@ -54,6 +54,7 @@ import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Error
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
@@ -66,7 +67,7 @@ import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 
 type SortDescription level dom =
-    SentenceSort level (KorePattern dom Variable ())
+    SentenceSort level (KorePattern dom Variable (Unified Annotation.Null))
 
 data IndexModuleError
 

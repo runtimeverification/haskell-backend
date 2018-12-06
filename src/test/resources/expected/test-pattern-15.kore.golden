@@ -12,13 +12,13 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (RewritesPattern Rewrites
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (RewritesPattern Rewrites
                                         { rewritesSort =
                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                         , rewritesFirst =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                         , variableSort =
                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
@@ -28,7 +28,7 @@ Definition
                                         , rewritesSecond =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                         , variableSort =
                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))

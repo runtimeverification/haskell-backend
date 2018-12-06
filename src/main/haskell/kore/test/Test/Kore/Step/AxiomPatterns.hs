@@ -317,7 +317,7 @@ symbolLeqAInt =
     symbol_ "leqAInt"
         AstLocationTest [sortAInt, sortAInt] sortABool
 
-varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object Domain.Builtin ()
+varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object Domain.Builtin
 varI1 = parameterizedVariable_ sortAInt "VarI1" AstLocationTest
 varI2 = parameterizedVariable_ sortAInt "VarI2" AstLocationTest
 varKRemainder = parameterizedVariable_ sortK "VarDotVar1" AstLocationTest

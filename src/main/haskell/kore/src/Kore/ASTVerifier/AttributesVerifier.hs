@@ -61,7 +61,7 @@ verifyAttributes _ DoNotVerifyAttributes =
 
 verifyAttributePattern
     :: MonadError (Error VerifyError) m
-    => UnifiedPattern dom var (KorePattern dom var ())
+    => UnifiedPattern domain variable (KorePattern domain variable annotation)
     -> m VerifySuccess
 verifyAttributePattern =
     \case

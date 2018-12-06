@@ -21,6 +21,7 @@ import Data.Functor.Identity
 import Numeric.Natural
        ( Natural )
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.OnePath.Step
@@ -1203,6 +1204,22 @@ instance
 instance
     ( EqualWithExplanation (a Meta)
     , EqualWithExplanation (a Object)
+    , ShowMetaOrObject a
+    ) =>
+    SumEqualWithExplanation (Unified a)
+  where
+    sumConstructorPair (UnifiedMeta a1) (UnifiedMeta a2) =
+        SumConstructorSameWithArguments (EqWrap "UnifiedMeta" a1 a2)
+    sumConstructorPair (UnifiedObject a1) (UnifiedObject a2) =
+        SumConstructorSameWithArguments (EqWrap "UnifiedObject" a1 a2)
+    sumConstructorPair u1 u2 =
+        SumConstructorDifferent
+            (printWithExplanation u1)
+            (printWithExplanation u2)
+
+instance
+    ( EqualWithExplanation (a Meta)
+    , EqualWithExplanation (a Object)
     , Show (a Meta)
     , Show (a Object)
     , SumEqualWithExplanation (Unified a)
@@ -1272,4 +1289,8 @@ instance
     => EqualWithExplanation (StrategyPattern patt)
   where
     compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (Annotation.Null level) where
+    compareWithExplanation _ _ = Nothing
     printWithExplanation = show

@@ -30,14 +30,14 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern DomainValue
                                         { domainValueSort =
                                             SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                                         , domainValueChild =
                                             Domain.BuiltinString PurePattern
                                                 { getPurePattern = CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< StringLiteralPattern (StringLiteral "f")
+                                                        { runIdentity = Null :< StringLiteralPattern (StringLiteral "f")
                                                         }
                                                     }
                                                 }

@@ -1124,7 +1124,7 @@ leveledPatternParser patternParser level = do
 purePatternParser
     :: MetaOrObject level
     => level
-    -> Parser (CommonPurePattern level Domain.Builtin ())
+    -> Parser (CommonPurePattern level Domain.Builtin)
 purePatternParser level = do
     patternHead <- leveledPatternParser (purePatternParser level) level
     return $ asPurePattern (mempty :< patternHead)

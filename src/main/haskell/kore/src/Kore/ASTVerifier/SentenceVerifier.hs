@@ -37,7 +37,7 @@ import           Kore.IndexedModule.Resolvers
 unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames
-    :: [KoreSentence]
+    :: [UnifiedSentence param pat]
     -> Map.Map Text AstLocation
     -- ^ Names that are already defined.
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
@@ -71,7 +71,7 @@ verifyUniqueId existing (UnparameterizedId name location) =
   where
     name' = Text.pack name
 
-definedNamesForSentence :: KoreSentence -> [UnparameterizedId]
+definedNamesForSentence :: UnifiedSentence param pat -> [UnparameterizedId]
 definedNamesForSentence =
     applyUnifiedSentence
         definedNamesForMetaSentence

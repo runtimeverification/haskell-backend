@@ -56,6 +56,7 @@ import           Data.Void
 import           GHC.Generics
                  ( Generic )
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Common hiding
                  ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
                  mapVariables, traverseVariables )
@@ -198,10 +199,12 @@ asPurePattern
 asPurePattern = Recursive.embed
 
 -- | A pure pattern at level @level@ with variables in the common 'Variable'.
-type CommonPurePattern level domain = PurePattern level domain Variable
+type CommonPurePattern level domain =
+    PurePattern level domain Variable (Annotation.Null level)
 
 -- | A concrete pure pattern (containing no variables) at level @lvl@.
-type ConcretePurePattern level domain = PurePattern level domain Concrete
+type ConcretePurePattern level domain =
+    PurePattern level domain Concrete (Annotation.Null level)
 
 {- | Use the provided traversal to replace all variables in a 'PurePattern'.
 
@@ -280,9 +283,9 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcretePurePattern
-    :: forall level domain variable annotation. Traversable domain
-    => PurePattern level domain variable annotation
-    -> Maybe (ConcretePurePattern level domain annotation)
+    :: forall level domain variable. Traversable domain
+    => PurePattern level domain variable (Annotation.Null level)
+    -> Maybe (ConcretePurePattern level domain)
 asConcretePurePattern = traverseVariables (\case { _ -> Nothing })
 
 {- | Construct a 'PurePattern' from a 'ConcretePurePattern'.
@@ -295,9 +298,9 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcretePurePattern
-    :: forall level domain variable annotation. Functor domain
-    => ConcretePurePattern level domain annotation
-    -> PurePattern level domain variable annotation
+    :: forall level domain variable. Functor domain
+    => ConcretePurePattern level domain
+    -> PurePattern level domain variable (Annotation.Null level)
 fromConcretePurePattern = mapVariables (\case {})
 
 {- | Cast a pure pattern with @'Const' 'Void'@ domain values into any domain.
@@ -360,5 +363,5 @@ type PurePatternStub level domain variable annotation =
         variable
         (PurePattern level domain variable annotation)
 
-type CommonPurePatternStub level domain annotation =
-    PurePatternStub level domain Variable annotation
+type CommonPurePatternStub level domain =
+    PurePatternStub level domain Variable (Annotation.Null level)

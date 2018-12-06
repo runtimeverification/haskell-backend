@@ -13,6 +13,7 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
@@ -393,7 +394,7 @@ patternGen vars childGen x =
 purePatternGen
     :: forall level. MetaOrObject level
     => level
-    -> Gen (CommonPurePattern level Domain.Builtin ())
+    -> Gen (CommonPurePattern level Domain.Builtin)
 purePatternGen level =
     childGen []
   where
@@ -590,7 +591,7 @@ definitionGen senGen = pure Definition
     <*> scale (`div` 2) attributesGen
     <*> scale (`div` 2) (modulesGen senGen)
 
-metaMLPatternGen :: Gen (MetaMLPattern Variable ())
+metaMLPatternGen :: Gen (MetaMLPattern Variable (Annotation.Null Meta))
 metaMLPatternGen = asPurePattern . (mempty :<) <$> sized metaMLPatternGenWorker
   where
     metaMLPatternGenWorker n

@@ -16,6 +16,7 @@ import Data.Text.Prettyprint.Doc as Doc
 import Data.Text.Prettyprint.Doc.Render.String
 import Data.Void
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
@@ -319,6 +320,9 @@ instance
 
 instance PrettyPrint a => PrettyPrint (Const a b) where
     prettyPrint flags (Const a) = writeOneFieldStruct flags "Const" a
+
+instance PrettyPrint (Annotation.Null level) where
+    prettyPrint _ Annotation.Null = "Null"
 
 instance PrettyPrint child => PrettyPrint (Domain.Builtin child) where
     prettyPrint flags =

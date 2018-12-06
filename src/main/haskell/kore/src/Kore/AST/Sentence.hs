@@ -615,23 +615,23 @@ instance
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level domain =
-    SentenceAxiom (SortVariable level) (CommonPurePattern level domain ())
+    SentenceAxiom (SortVariable level) (CommonPurePattern level domain)
 
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
 type PureSentenceAlias level domain =
-    SentenceAlias level (CommonPurePattern level domain ())
+    SentenceAlias level (CommonPurePattern level domain)
 
 -- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
 type PureSentenceSymbol level domain =
-    SentenceSymbol level (CommonPurePattern level domain ())
+    SentenceSymbol level (CommonPurePattern level domain)
 
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
 type PureSentenceImport level domain =
-    SentenceImport (CommonPurePattern level domain ())
+    SentenceImport (CommonPurePattern level domain)
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level domain =
-    Sentence level (SortVariable level) (CommonPurePattern level domain ())
+    Sentence level (SortVariable level) (CommonPurePattern level domain)
 
 instance
     ( MetaOrObject level

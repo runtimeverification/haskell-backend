@@ -22,6 +22,7 @@ import           Data.List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure as Pure
 import qualified Kore.Domain.Builtin as Domain
 
@@ -44,23 +45,23 @@ alphaEq
         , EqMetaOrObject var
         , OrdMetaOrObject var
         )
-    => PurePattern level Domain.Builtin var ()
-    -> PurePattern level Domain.Builtin var ()
+    => PurePattern level Domain.Builtin var (Annotation.Null level)
+    -> PurePattern level Domain.Builtin var (Annotation.Null level)
     -> Bool
 alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
   where
     project
-        :: PurePattern level Domain.Builtin var ()
+        :: PurePattern level Domain.Builtin var (Annotation.Null level)
         -> Pattern level Domain.Builtin var
-            (PurePattern level Domain.Builtin var ())
+            (PurePattern level Domain.Builtin var (Annotation.Null level))
     project = Cofree.tailF . Recursive.project
 
     alphaEqWorker
         ::  ( Eq (var level)
             , Ord (var level)
             )
-        => PurePattern level Domain.Builtin var ()
-        -> PurePattern level Domain.Builtin var ()
+        => PurePattern level Domain.Builtin var (Annotation.Null level)
+        -> PurePattern level Domain.Builtin var (Annotation.Null level)
         -> Reader ([var level], [var level]) Bool
     alphaEqWorker e1 e2 =
         case (project e1, project e2) of
@@ -275,8 +276,10 @@ alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
 
     compareNext
         :: Ord (var level)
-        => Next Object (PurePattern level Domain.Builtin var ())
-        -> Next Object (PurePattern level Domain.Builtin var ())
+        => Next Object
+            (PurePattern level Domain.Builtin var (Annotation.Null level))
+        -> Next Object
+            (PurePattern level Domain.Builtin var (Annotation.Null level))
         -> Reader ([var level], [var level]) Bool
     compareNext
         Next
@@ -321,8 +324,10 @@ alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
 
     compareRewrites
         :: Ord (var level)
-        => Rewrites Object (PurePattern level Domain.Builtin var ())
-        -> Rewrites Object (PurePattern level Domain.Builtin var ())
+        => Rewrites Object
+            (PurePattern level Domain.Builtin var (Annotation.Null level))
+        -> Rewrites Object
+            (PurePattern level Domain.Builtin var (Annotation.Null level))
         -> Reader ([var level], [var level]) Bool
     compareRewrites
         Rewrites
@@ -373,9 +378,9 @@ alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
     compareDomainValue
         :: (level ~ Object, Ord (var level))
         => DomainValue level Domain.Builtin
-            (PurePattern level Domain.Builtin var ())
+            (PurePattern level Domain.Builtin var (Annotation.Null level))
         -> DomainValue level Domain.Builtin
-            (PurePattern level Domain.Builtin var ())
+            (PurePattern level Domain.Builtin var (Annotation.Null level))
         -> Reader ([var level], [var level]) Bool
     compareDomainValue
         DomainValue
@@ -392,8 +397,10 @@ alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
 
     compareBuiltin
         :: (level ~ Object, Ord (var level))
-        => Domain.Builtin (PurePattern level Domain.Builtin var ())
-        -> Domain.Builtin (PurePattern level Domain.Builtin var ())
+        => Domain.Builtin
+            (PurePattern level Domain.Builtin var (Annotation.Null level))
+        -> Domain.Builtin
+            (PurePattern level Domain.Builtin var (Annotation.Null level))
         -> Reader ([var level], [var level]) Bool
     compareBuiltin dv1 dv2 =
         case (dv1, dv2) of

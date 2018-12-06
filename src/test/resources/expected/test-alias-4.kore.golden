@@ -43,7 +43,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
                                                 { symbolOrAliasConstructor = (Id "g" AstLocationNone) :: Id Object

@@ -23,7 +23,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -32,7 +32,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "BOOL.Bool"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "BOOL.Bool"))
                                                         }
                                                     }
                                                 ]
@@ -66,7 +66,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -75,7 +75,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.Int"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.Int"))
                                                         }
                                                     }
                                                 ]
@@ -115,7 +115,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -124,7 +124,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.bitRange"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.bitRange"))
                                                         }
                                                     }
                                                 ]
@@ -160,7 +160,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -169,7 +169,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.ge"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.ge"))
                                                         }
                                                     }
                                                 ]
@@ -205,7 +205,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -214,7 +214,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.xor"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.xor"))
                                                         }
                                                     }
                                                 ]
@@ -250,7 +250,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -259,7 +259,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.add"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.add"))
                                                         }
                                                     }
                                                 ]
@@ -295,7 +295,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -304,7 +304,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.ne"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.ne"))
                                                         }
                                                     }
                                                 ]
@@ -336,7 +336,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -345,7 +345,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.rand"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.rand"))
                                                         }
                                                     }
                                                 ]
@@ -381,7 +381,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -390,7 +390,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.le"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.le"))
                                                         }
                                                     }
                                                 ]
@@ -422,7 +422,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -431,7 +431,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.log2"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.log2"))
                                                         }
                                                     }
                                                 ]
@@ -467,7 +467,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -476,7 +476,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.and"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.and"))
                                                         }
                                                     }
                                                 ]
@@ -508,7 +508,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -517,7 +517,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.srand"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.srand"))
                                                         }
                                                     }
                                                 ]
@@ -553,7 +553,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -562,7 +562,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.ediv"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.ediv"))
                                                         }
                                                     }
                                                 ]
@@ -602,7 +602,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -611,7 +611,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.powmod"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.powmod"))
                                                         }
                                                     }
                                                 ]
@@ -647,7 +647,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -656,7 +656,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.eq"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.eq"))
                                                         }
                                                     }
                                                 ]
@@ -692,7 +692,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -701,7 +701,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.tmod"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.tmod"))
                                                         }
                                                     }
                                                 ]
@@ -733,7 +733,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -742,7 +742,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.abs"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.abs"))
                                                         }
                                                     }
                                                 ]
@@ -774,7 +774,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -783,7 +783,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.not"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.not"))
                                                         }
                                                     }
                                                 ]
@@ -819,7 +819,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -828,7 +828,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.shl"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.shl"))
                                                         }
                                                     }
                                                 ]
@@ -868,7 +868,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -877,7 +877,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.signExtendBitRange"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.signExtendBitRange"))
                                                         }
                                                     }
                                                 ]
@@ -913,7 +913,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -922,7 +922,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.emod"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.emod"))
                                                         }
                                                     }
                                                 ]
@@ -958,7 +958,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -967,7 +967,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.or"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.or"))
                                                         }
                                                     }
                                                 ]
@@ -1003,7 +1003,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -1012,7 +1012,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.shr"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.shr"))
                                                         }
                                                     }
                                                 ]
@@ -1048,7 +1048,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -1057,7 +1057,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.mul"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.mul"))
                                                         }
                                                     }
                                                 ]
@@ -1093,7 +1093,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -1102,7 +1102,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.gt"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.gt"))
                                                         }
                                                     }
                                                 ]
@@ -1138,7 +1138,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -1147,7 +1147,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.tdiv"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.tdiv"))
                                                         }
                                                     }
                                                 ]
@@ -1183,7 +1183,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -1192,7 +1192,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.min"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.min"))
                                                         }
                                                     }
                                                 ]
@@ -1228,7 +1228,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -1237,7 +1237,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.lt"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.lt"))
                                                         }
                                                     }
                                                 ]
@@ -1273,7 +1273,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -1282,7 +1282,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.sub"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.sub"))
                                                         }
                                                     }
                                                 ]
@@ -1318,7 +1318,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -1327,7 +1327,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.max"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.max"))
                                                         }
                                                     }
                                                 ]
@@ -1363,7 +1363,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -1372,7 +1372,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.pow"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "INT.pow"))
                                                         }
                                                     }
                                                 ]
@@ -1407,7 +1407,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern DomainValue
                                         { domainValueSort =
                                             SortActualSort SortActual
                                                 { sortActualName = (Id "Int" AstLocationNone) :: Id Object
@@ -1417,7 +1417,7 @@ Definition
                                             Domain.BuiltinString PurePattern
                                                 { getPurePattern = CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< StringLiteralPattern (StringLiteral "0")
+                                                        { runIdentity = Null :< StringLiteralPattern (StringLiteral "0")
                                                         }
                                                     }
                                                 }
@@ -1452,7 +1452,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern DomainValue
                                         { domainValueSort =
                                             SortActualSort SortActual
                                                 { sortActualName = (Id "Int" AstLocationNone) :: Id Object
@@ -1462,7 +1462,7 @@ Definition
                                             Domain.BuiltinString PurePattern
                                                 { getPurePattern = CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< StringLiteralPattern (StringLiteral "1")
+                                                        { runIdentity = Null :< StringLiteralPattern (StringLiteral "1")
                                                         }
                                                     }
                                                 }

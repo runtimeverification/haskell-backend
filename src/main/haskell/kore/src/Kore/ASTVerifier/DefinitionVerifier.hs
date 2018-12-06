@@ -236,7 +236,7 @@ indexImplicitModule implicitModule = do
 containing only the 'kore' default module.
 -}
 verifyNormalKoreDefinition
-    :: ParseAttributes atts
+    :: (ParseAttributes atts, Show atts)
     => AttributesVerification atts
     -> Builtin.Verifiers
     -> KoreDefinition

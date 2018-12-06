@@ -111,8 +111,8 @@ It assumes that the pattern has the provided sort.
 quantifyFreeVariables
     :: (Foldable domain, Functor domain, MetaOrObject level)
     => Sort level
-    -> CommonPurePattern level domain ()
-    -> CommonPurePattern level domain ()
+    -> CommonPurePattern level domain
+    -> CommonPurePattern level domain
 quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)
@@ -122,12 +122,12 @@ quantifyFreeVariables s p =
 wrapAndQuantify
     :: Functor domain
     => Sort level
-    -> CommonPurePattern level domain ()
+    -> CommonPurePattern level domain
     -> Variable level
-    -> CommonPurePattern level domain ()
+    -> CommonPurePattern level domain
 wrapAndQuantify s p var =
     asPurePattern
-        (() :< ForallPattern Forall
+        (mempty :< ForallPattern Forall
             { forallSort = s
             , forallVariable = var
             , forallChild = p

@@ -325,11 +325,13 @@ verifyUnifiedPattern
 verifyUnifiedPattern (_ :< pat) =
     case pat of
         UnifiedMetaPattern mpat -> do
-            (asUnified -> valid) :< vpat <- verifyMetaPattern mpat
-            return (Recursive.embed $ valid :< UnifiedMetaPattern vpat)
+            valid :< vpat <- verifyMetaPattern mpat
+            (return . Recursive.embed)
+                (UnifiedMeta valid :< UnifiedMetaPattern vpat)
         UnifiedObjectPattern opat -> do
-            (asUnified -> valid) :< vpat <- verifyObjectPattern opat
-            return (Recursive.embed $ valid :< UnifiedObjectPattern vpat)
+            valid :< vpat <- verifyObjectPattern opat
+            (return . Recursive.embed)
+                (UnifiedObject valid :< UnifiedObjectPattern vpat)
 
 verifyMetaPattern
     :: base ~ Pattern Meta Domain.Builtin Variable

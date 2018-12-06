@@ -27,6 +27,7 @@ module Kore.AST.Kore
     , CommonKorePattern
     , VerifiedKorePattern
     , asKorePattern
+    , eraseAnnotations
     , asCommonKorePattern
     , UnifiedSortVariable
     , UnifiedSort
@@ -62,6 +63,7 @@ import           Data.Hashable
 import           GHC.Generics
                  ( Generic )
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Common hiding
                  ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
@@ -297,11 +299,24 @@ asKorePattern
     :: (Functor domain, MetaOrObject level)
     => CofreeF
         (Pattern level domain variable)
-        annotation
-        (KorePattern domain variable annotation)
-    -> KorePattern domain variable annotation
+        (annotation level)
+        (KorePattern domain variable (Unified annotation))
+    -> KorePattern domain variable (Unified annotation)
 asKorePattern (ann :< pat) =
-    Recursive.embed (ann :< asUnifiedPattern pat)
+    Recursive.embed (asUnified ann :< asUnifiedPattern pat)
+
+-- | Erase the annotations from any 'KorePattern'.
+eraseAnnotations
+    :: Functor domain
+    => KorePattern domain variable erased
+    -> KorePattern domain variable (Unified Annotation.Null)
+eraseAnnotations =
+    Recursive.unfold eraseAnnotationsWorker
+  where
+    eraseAnnotationsWorker (Recursive.project -> _ :< unified) =
+        case unified of
+            UnifiedMetaPattern _ -> UnifiedMeta Annotation.Null :< unified
+            UnifiedObjectPattern _ -> UnifiedObject Annotation.Null :< unified
 
 instance Functor dom => Comonad (KorePattern dom var) where
     extract (KorePattern a) = extract a
@@ -328,7 +343,8 @@ instance UnifiedPatternInterface UnifiedPattern where
 
 -- |'CommonKorePattern' is the instantiation of 'KorePattern' with common
 -- 'Variable's.
-type CommonKorePattern = KorePattern Domain.Builtin Variable ()
+type CommonKorePattern =
+    KorePattern Domain.Builtin Variable (Unified Annotation.Null)
 
 -- | A 'CommonKorePattern' that has passed verification.
 type VerifiedKorePattern = KorePattern Domain.Builtin Variable (Unified Valid)

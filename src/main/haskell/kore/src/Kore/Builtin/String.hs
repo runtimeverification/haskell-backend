@@ -201,7 +201,10 @@ asConcretePattern domainValueSort result =
             , domainValueChild = Domain.BuiltinPattern $ asMetaPattern result
             }
 
-asMetaPattern :: Functor dom => String -> CommonPurePattern Meta dom ()
+asMetaPattern
+    :: Functor domain
+    => String
+    -> CommonPurePattern Meta domain
 asMetaPattern result = StringLiteral_ $ result
 
 asExpandedPattern

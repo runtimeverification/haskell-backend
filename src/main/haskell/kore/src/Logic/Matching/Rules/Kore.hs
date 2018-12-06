@@ -9,10 +9,8 @@ import           Control.Monad.Error.Class
 import qualified Data.Set as Set
 
 import           Kore.AST.Kore
-                 ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Meta (..), Unified (..) )
-import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternPureToKore )
 import           Kore.ASTUtils.SmartPatterns

@@ -95,7 +95,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (ExistsPattern Exists
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ExistsPattern Exists
                                         { existsSort =
                                             SortVariableSort (SortVariable ((Id "R" AstLocationNone) :: Id Object))
                                         , existsVariable =
@@ -112,7 +112,7 @@ Definition
                                         , existsChild =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (EqualsPattern Equals
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (EqualsPattern Equals
                                                         { equalsOperandSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -125,7 +125,7 @@ Definition
                                                         , equalsFirst =
                                                             CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "T" AstLocationNone) :: Id Object
                                                                         , variableSort =
                                                                             SortActualSort SortActual
@@ -140,7 +140,7 @@ Definition
                                                         , equalsSecond =
                                                             CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                                         { applicationSymbolOrAlias =
                                                                             SymbolOrAlias
                                                                                 { symbolOrAliasConstructor = (Id "nil" AstLocationNone) :: Id Object
@@ -170,7 +170,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (ExistsPattern Exists
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ExistsPattern Exists
                                         { existsSort =
                                             SortVariableSort (SortVariable ((Id "R" AstLocationNone) :: Id Object))
                                         , existsVariable =
@@ -187,7 +187,7 @@ Definition
                                         , existsChild =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (EqualsPattern Equals
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (EqualsPattern Equals
                                                         { equalsOperandSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -200,7 +200,7 @@ Definition
                                                         , equalsFirst =
                                                             CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "T" AstLocationNone) :: Id Object
                                                                         , variableSort =
                                                                             SortActualSort SortActual
@@ -215,7 +215,7 @@ Definition
                                                         , equalsSecond =
                                                             CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                                         { applicationSymbolOrAlias =
                                                                             SymbolOrAlias
                                                                                 { symbolOrAliasConstructor = (Id "cons" AstLocationNone) :: Id Object
@@ -226,7 +226,7 @@ Definition
                                                                         , applicationChildren =
                                                                             [ CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                                                         , variableSort =
                                                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
@@ -235,7 +235,7 @@ Definition
                                                                                 }
                                                                             , CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "L" AstLocationNone) :: Id Object
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
@@ -269,7 +269,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (ExistsPattern Exists
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ExistsPattern Exists
                                         { existsSort =
                                             SortVariableSort (SortVariable ((Id "R" AstLocationNone) :: Id Object))
                                         , existsVariable =
@@ -286,7 +286,7 @@ Definition
                                         , existsChild =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (EqualsPattern Equals
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (EqualsPattern Equals
                                                         { equalsOperandSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -299,7 +299,7 @@ Definition
                                                         , equalsFirst =
                                                             CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "T" AstLocationNone) :: Id Object
                                                                         , variableSort =
                                                                             SortActualSort SortActual
@@ -314,7 +314,7 @@ Definition
                                                         , equalsSecond =
                                                             CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                                         { applicationSymbolOrAlias =
                                                                             SymbolOrAlias
                                                                                 { symbolOrAliasConstructor = (Id "append" AstLocationNone) :: Id Object
@@ -325,7 +325,7 @@ Definition
                                                                         , applicationChildren =
                                                                             [ CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "L1" AstLocationNone) :: Id Object
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
@@ -339,7 +339,7 @@ Definition
                                                                                 }
                                                                             , CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "L2" AstLocationNone) :: Id Object
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
@@ -372,7 +372,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (OrPattern Or
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (OrPattern Or
                                         { orSort =
                                             SortActualSort SortActual
                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -383,7 +383,7 @@ Definition
                                         , orFirst =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                         { applicationSymbolOrAlias =
                                                             SymbolOrAlias
                                                                 { symbolOrAliasConstructor = (Id "nil" AstLocationNone) :: Id Object
@@ -398,7 +398,7 @@ Definition
                                         , orSecond =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (ExistsPattern Exists
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ExistsPattern Exists
                                                         { existsSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -415,7 +415,7 @@ Definition
                                                         , existsChild =
                                                             CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (ExistsPattern Exists
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ExistsPattern Exists
                                                                         { existsSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -437,7 +437,7 @@ Definition
                                                                         , existsChild =
                                                                             CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                                                         { applicationSymbolOrAlias =
                                                                                             SymbolOrAlias
                                                                                                 { symbolOrAliasConstructor = (Id "cons" AstLocationNone) :: Id Object
@@ -448,7 +448,7 @@ Definition
                                                                                         , applicationChildren =
                                                                                             [ CofreeT
                                                                                                 { runCofreeT = Identity
-                                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                                                                         , variableSort =
                                                                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
@@ -457,7 +457,7 @@ Definition
                                                                                                 }
                                                                                             , CofreeT
                                                                                                 { runCofreeT = Identity
-                                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                                         { variableName = (Id "L" AstLocationNone) :: Id Object
                                                                                                         , variableSort =
                                                                                                             SortActualSort SortActual
@@ -493,7 +493,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (NotPattern Not
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (NotPattern Not
                                         { notSort =
                                             SortActualSort SortActual
                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -504,7 +504,7 @@ Definition
                                         , notChild =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (AndPattern And
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (AndPattern And
                                                         { andSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -515,7 +515,7 @@ Definition
                                                         , andFirst =
                                                             CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                                         { applicationSymbolOrAlias =
                                                                             SymbolOrAlias
                                                                                 { symbolOrAliasConstructor = (Id "nil" AstLocationNone) :: Id Object
@@ -530,7 +530,7 @@ Definition
                                                         , andSecond =
                                                             CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (ExistsPattern Exists
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ExistsPattern Exists
                                                                         { existsSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -547,7 +547,7 @@ Definition
                                                                         , existsChild =
                                                                             CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (ExistsPattern Exists
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ExistsPattern Exists
                                                                                         { existsSort =
                                                                                             SortActualSort SortActual
                                                                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -569,7 +569,7 @@ Definition
                                                                                         , existsChild =
                                                                                             CofreeT
                                                                                                 { runCofreeT = Identity
-                                                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                                                                         { applicationSymbolOrAlias =
                                                                                                             SymbolOrAlias
                                                                                                                 { symbolOrAliasConstructor = (Id "cons" AstLocationNone) :: Id Object
@@ -580,7 +580,7 @@ Definition
                                                                                                         , applicationChildren =
                                                                                                             [ CofreeT
                                                                                                                 { runCofreeT = Identity
-                                                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                                                                                         , variableSort =
                                                                                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
@@ -589,7 +589,7 @@ Definition
                                                                                                                 }
                                                                                                             , CofreeT
                                                                                                                 { runCofreeT = Identity
-                                                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                                                         { variableName = (Id "L" AstLocationNone) :: Id Object
                                                                                                                         , variableSort =
                                                                                                                             SortActualSort SortActual
@@ -629,7 +629,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (EqualsPattern Equals
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (EqualsPattern Equals
                                         { equalsOperandSort =
                                             SortActualSort SortActual
                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -642,7 +642,7 @@ Definition
                                         , equalsFirst =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                         { applicationSymbolOrAlias =
                                                             SymbolOrAlias
                                                                 { symbolOrAliasConstructor = (Id "append" AstLocationNone) :: Id Object
@@ -653,7 +653,7 @@ Definition
                                                         , applicationChildren =
                                                             [ CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                                         { applicationSymbolOrAlias =
                                                                             SymbolOrAlias
                                                                                 { symbolOrAliasConstructor = (Id "nil" AstLocationNone) :: Id Object
@@ -667,7 +667,7 @@ Definition
                                                                 }
                                                             , CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "L" AstLocationNone) :: Id Object
                                                                         , variableSort =
                                                                             SortActualSort SortActual
@@ -686,7 +686,7 @@ Definition
                                         , equalsSecond =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "L" AstLocationNone) :: Id Object
                                                         , variableSort =
                                                             SortActualSort SortActual
@@ -713,7 +713,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (EqualsPattern Equals
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (EqualsPattern Equals
                                         { equalsOperandSort =
                                             SortActualSort SortActual
                                                 { sortActualName = (Id "List" AstLocationNone) :: Id Object
@@ -726,7 +726,7 @@ Definition
                                         , equalsFirst =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                         { applicationSymbolOrAlias =
                                                             SymbolOrAlias
                                                                 { symbolOrAliasConstructor = (Id "append" AstLocationNone) :: Id Object
@@ -737,7 +737,7 @@ Definition
                                                         , applicationChildren =
                                                             [ CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                                         { applicationSymbolOrAlias =
                                                                             SymbolOrAlias
                                                                                 { symbolOrAliasConstructor = (Id "cons" AstLocationNone) :: Id Object
@@ -748,7 +748,7 @@ Definition
                                                                         , applicationChildren =
                                                                             [ CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                                                         , variableSort =
                                                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
@@ -757,7 +757,7 @@ Definition
                                                                                 }
                                                                             , CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "L0" AstLocationNone) :: Id Object
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
@@ -775,7 +775,7 @@ Definition
                                                                 }
                                                             , CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "L" AstLocationNone) :: Id Object
                                                                         , variableSort =
                                                                             SortActualSort SortActual
@@ -794,7 +794,7 @@ Definition
                                         , equalsSecond =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                         { applicationSymbolOrAlias =
                                                             SymbolOrAlias
                                                                 { symbolOrAliasConstructor = (Id "cons" AstLocationNone) :: Id Object
@@ -805,7 +805,7 @@ Definition
                                                         , applicationChildren =
                                                             [ CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                                         , variableSort =
                                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
@@ -814,7 +814,7 @@ Definition
                                                                 }
                                                             , CofreeT
                                                                 { runCofreeT = Identity
-                                                                    { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                                                         { applicationSymbolOrAlias =
                                                                             SymbolOrAlias
                                                                                 { symbolOrAliasConstructor = (Id "append" AstLocationNone) :: Id Object
@@ -825,7 +825,7 @@ Definition
                                                                         , applicationChildren =
                                                                             [ CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "L0" AstLocationNone) :: Id Object
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
@@ -839,7 +839,7 @@ Definition
                                                                                 }
                                                                             , CofreeT
                                                                                 { runCofreeT = Identity
-                                                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "L" AstLocationNone) :: Id Object
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
