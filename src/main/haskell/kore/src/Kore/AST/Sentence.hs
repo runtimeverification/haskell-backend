@@ -34,7 +34,6 @@ import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
-import           Data.Functor.Foldable.Orphans ()
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain

@@ -51,7 +51,6 @@ import Data.Deriving
        ( deriveEq1, deriveShow1 )
 import Data.Functor.Foldable
 
-import Data.Functor.Foldable.Orphans ()
 import Logic.Matching.Signature
 
 -- | The base functor of patterns
