@@ -401,19 +401,30 @@ instance
     ) =>
     Unparse (SentenceAxiom sortParam pat domain variable)
   where
-    unparse
-        SentenceAxiom
-            { sentenceAxiomParameters
-            , sentenceAxiomPattern
-            , sentenceAxiomAttributes
-            }
-      =
-        fillSep
-            [ "axiom"
-            , parameters sentenceAxiomParameters
-            , unparse sentenceAxiomPattern
-            , unparse sentenceAxiomAttributes
-            ]
+    unparse = unparseAxiom "axiom"
+
+unparseAxiom
+    ::  ( Unparse (pat domain variable ())
+        , Unparse sortParam
+        )
+    => Doc ann
+    -> SentenceAxiom sortParam pat domain variable
+    -> Doc ann
+unparseAxiom
+    label
+    SentenceAxiom
+        { sentenceAxiomParameters
+        , sentenceAxiomPattern
+        , sentenceAxiomAttributes
+        }
+  =
+    fillSep
+        [ label
+        , parameters sentenceAxiomParameters
+        , unparse sentenceAxiomPattern
+        , unparse sentenceAxiomAttributes
+        ]
+
 
 instance Unparse UnifiedSortVariable where
     unparse =
@@ -436,7 +447,8 @@ instance
     ( Unparse (SentenceAlias level pat domain variable)
     , Unparse (SentenceSymbol level pat domain variable)
     , Unparse (SentenceImport pat domain variable)
-    , Unparse (SentenceAxiom sortParam pat domain variable)
+    , Unparse (pat domain variable ())
+    , Unparse sortParam
     , Unparse (SentenceSort level pat domain variable)
     ) =>
     Unparse (Sentence level sortParam pat domain variable)
@@ -446,8 +458,8 @@ instance
             SentenceAliasSentence s -> unparse s
             SentenceSymbolSentence s -> unparse s
             SentenceImportSentence s -> unparse s
-            SentenceAxiomSentence s -> unparse s
-            SentenceClaimSentence s -> unparse s
+            SentenceAxiomSentence s -> unparseAxiom "axiom" s
+            SentenceClaimSentence s -> unparseAxiom "claim" s
             SentenceSortSentence s -> unparse s
             SentenceHookSentence s -> unparse s
 

@@ -88,9 +88,9 @@ sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) =
 sentencePureToKore (SentenceImportSentence (SentenceImport a b)) =
     constructUnifiedSentence SentenceImportSentence $ SentenceImport a b
 sentencePureToKore (SentenceAxiomSentence msx) =
-    asSentence (axiomSentencePureToKore msx)
+    asKoreAxiomSentence $ axiomSentencePureToKore msx
 sentencePureToKore (SentenceClaimSentence msx) =
-    asSentence (axiomSentencePureToKore msx)
+    asKoreClaimSentence $ axiomSentencePureToKore msx
 sentencePureToKore (SentenceSortSentence mss) =
   constructUnifiedSentence SentenceSortSentence mss
     { sentenceSortName = sentenceSortName mss

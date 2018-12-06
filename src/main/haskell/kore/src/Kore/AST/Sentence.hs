@@ -635,13 +635,15 @@ instance
   where
     asSentence = constructUnifiedSentence SentenceImportSentence
 
-instance
-    (param ~ UnifiedSortVariable) =>
-    AsSentence
-        (UnifiedSentence param KorePattern domain variable)
-        (SentenceAxiom param KorePattern domain variable)
-  where
-    asSentence = constructUnifiedSentence SentenceAxiomSentence
+asKoreAxiomSentence
+    :: SentenceAxiom UnifiedSortVariable KorePattern Domain.Builtin Variable
+    -> KoreSentence
+asKoreAxiomSentence = constructUnifiedSentence SentenceAxiomSentence
+
+asKoreClaimSentence
+    :: SentenceAxiom UnifiedSortVariable KorePattern Domain.Builtin Variable
+    -> KoreSentence
+asKoreClaimSentence = constructUnifiedSentence SentenceClaimSentence
 
 instance
     ( MetaOrObject level

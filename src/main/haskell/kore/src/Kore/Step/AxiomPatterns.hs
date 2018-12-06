@@ -169,7 +169,10 @@ extractRewriteAxioms
 extractRewriteAxioms level idxMod =
     extractRewriteAxiomsFrom
         level
-        ( map (asSentence . getIndexedSentence)
+        ( map
+            ( constructUnifiedSentence SentenceAxiomSentence
+            . getIndexedSentence
+            )
         $ indexedModuleAxioms idxMod
         )
 
@@ -184,7 +187,10 @@ extractRewriteClaims
 extractRewriteClaims level idxMod =
     extractRewriteAxiomsFrom
         level
-        ( map (asSentence . getIndexedSentence)
+        ( map
+            ( constructUnifiedSentence SentenceAxiomSentence
+            . getIndexedSentence
+            )
         $ indexedModuleClaims idxMod
         )
 

@@ -97,8 +97,8 @@ testDef = simpleDefinitionFromSentences
             , updateAttributes
                 (Attributes [functionAttribute, constructorAttribute])
                 (simpleObjectSymbolSentence (SymbolName "g") (SortName "S"))
-            , asSentence
-                (SentenceAxiom
+            , asKoreAxiomSentence
+                SentenceAxiom
                     { sentenceAxiomParameters = [asUnified sortVar]
                     , sentenceAxiomAttributes = Attributes []
                     , sentenceAxiomPattern =
@@ -115,9 +115,8 @@ testDef = simpleDefinitionFromSentences
                             :: CommonStepPattern Object)
                         )
                     }
-                ::KoreSentenceAxiom)
-            , asSentence
-                (SentenceAxiom
+            , asKoreAxiomSentence
+                SentenceAxiom
                     { sentenceAxiomParameters = [asUnified sortVar]
                     , sentenceAxiomAttributes = Attributes []
                     , sentenceAxiomPattern =
@@ -134,9 +133,8 @@ testDef = simpleDefinitionFromSentences
                             :: CommonStepPattern Object)
                         )
                     }
-                ::KoreSentenceAxiom)
-            , asSentence
-                (SentenceAxiom
+            , asKoreAxiomSentence
+                SentenceAxiom
                     { sentenceAxiomParameters = [asUnified sortVar]
                     , sentenceAxiomAttributes = Attributes []
                     , sentenceAxiomPattern =
@@ -153,9 +151,8 @@ testDef = simpleDefinitionFromSentences
                             :: CommonStepPattern Object)
                         )
                     }
-                ::KoreSentenceAxiom)
-             , asSentence
-                (SentenceAxiom
+             , asKoreAxiomSentence
+                SentenceAxiom
                     { sentenceAxiomParameters = [asUnified sortVar]
                     , sentenceAxiomAttributes = Attributes []
                     , sentenceAxiomPattern =
@@ -172,9 +169,8 @@ testDef = simpleDefinitionFromSentences
                             :: CommonStepPattern Object)
                         )
                     }
-                ::KoreSentenceAxiom)
-            , asSentence
-                (SentenceAxiom
+            , asKoreAxiomSentence
+                SentenceAxiom
                     { sentenceAxiomParameters = [asUnified sortVar]
                     , sentenceAxiomAttributes = Attributes []
                     , sentenceAxiomPattern =
@@ -183,9 +179,8 @@ testDef = simpleDefinitionFromSentences
                             :: CommonStepPattern Object)
                         )
                     }
-                ::KoreSentenceAxiom)
-            , asSentence
-                (SentenceAxiom
+            , asKoreAxiomSentence
+                SentenceAxiom
                     { sentenceAxiomParameters = [asUnified sortVar]
                     , sentenceAxiomAttributes = Attributes []
                     , sentenceAxiomPattern =
@@ -200,7 +195,6 @@ testDef = simpleDefinitionFromSentences
                             :: CommonStepPattern Object)
                         )
                     }
-                ::KoreSentenceAxiom)
             ]
 
 testIndexedModule :: KoreIndexedModule StepperAttributes

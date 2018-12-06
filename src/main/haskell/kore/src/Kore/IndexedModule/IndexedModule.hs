@@ -163,9 +163,11 @@ indexedModuleRawSentences im =
     map hookSortIfNeeded
         (Map.toList (indexedModuleObjectSortDescriptions im))
     ++
-    map (asSentence . getIndexedSentence) (indexedModuleAxioms im)
+    map (asKoreAxiomSentence . getIndexedSentence)
+        (indexedModuleAxioms im)
     ++
-    map (asSentence . getIndexedSentence) (indexedModuleClaims im)
+    map (asKoreClaimSentence . getIndexedSentence)
+        (indexedModuleClaims im)
     ++
     [ constructUnifiedSentence SentenceImportSentence
       (SentenceImport (indexedModuleName m) attributes)

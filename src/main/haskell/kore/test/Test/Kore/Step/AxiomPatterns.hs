@@ -62,7 +62,7 @@ axiomPatternsUnitTests =
                     }
                 )
                 ( koreSentenceToAxiomPattern Object
-                $ asSentence $ axiomSentencePureToKore
+                $ asKoreAxiomSentence $ axiomSentencePureToKore
                     (axiom_
                         (and_ top_
                             (and_ top_
@@ -92,7 +92,8 @@ axiomPatternsUnitTests =
                                 [ Module
                                     { moduleName = ModuleName "TEST"
                                     , moduleSentences =
-                                        [ asSentence $ axiomSentencePureToKore
+                                        [ asKoreAxiomSentence
+                                          $ axiomSentencePureToKore
                                             (axiom_
                                                 (and_ top_
                                                     (and_ top_
@@ -100,7 +101,8 @@ axiomPatternsUnitTests =
                                                     )
                                                 )
                                             :: PureSentenceAxiom Object Domain.Builtin)
-                                        , asSentence $ axiomSentencePureToKore
+                                        , asKoreAxiomSentence
+                                          $ axiomSentencePureToKore
                                             (axiom_
                                                 (and_ top_
                                                     (and_ top_
@@ -148,8 +150,8 @@ axiomPatternsUnitTests =
             (assertEqual ""
                 (koreFail "Unexpected meta-level pattern")
                 ( koreSentenceToAxiomPattern Object
-                $ asSentence
-                    (SentenceAxiom
+                $ asKoreAxiomSentence
+                    SentenceAxiom
                         { sentenceAxiomPattern =
                             asCommonKorePattern $ RewritesPattern Rewrites
                                 { rewritesSort =
@@ -164,14 +166,13 @@ axiomPatternsUnitTests =
                         , sentenceAxiomParameters = []
                         , sentenceAxiomAttributes = Attributes []
                         }
-                    :: KoreSentenceAxiom)
                 )
             )
         , testCase "(I1:AInt => I2:AInt)::KItem"
             (assertEqual ""
                 (koreFail "Unsupported pattern type in axiom")
                 (koreSentenceToAxiomPattern Object
-                $ asSentence $ axiomSentencePureToKore
+                $ asKoreAxiomSentence $ axiomSentencePureToKore
                     (axiom_
                         (and_ top_
                             (and_ top_
