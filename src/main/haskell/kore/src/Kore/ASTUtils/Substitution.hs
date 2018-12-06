@@ -16,11 +16,10 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Kore.ASTUtils.Substitution
-( subst
-, localSubst
-, freeVars
-)
-where
+    ( subst
+    , localSubst
+    , freeVars
+    ) where
 
 import           Control.Lens
 import           Data.Functor.Classes
