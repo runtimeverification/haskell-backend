@@ -58,11 +58,18 @@ module Kore.Debug
     , traceExceptT
     , traceMaybeT
     , traceNonErrorMonad
+    , applyWhen
     ) where
 
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import Debug.Trace
+
+{-|Applies a function only when the condition is met.  Useful for conditional
+debugging, among other things.
+-}
+applyWhen :: Bool -> (a -> a) -> (a -> a)
+applyWhen b f = if b then f else id
 
 {-|Wraps an 'ExceptT' action for printing debug messages, similar to 'trace'.
 
@@ -113,7 +120,6 @@ traceMaybeT name startValues action = MaybeT $ do
         Just r ->
             endThing name ("result: " ++ show r)
             $ return (Just r)
-
 
 {-|Wraps an 'Either' action for printing debug messages, similar to 'trace'.
 
