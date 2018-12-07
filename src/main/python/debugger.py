@@ -309,8 +309,9 @@ class WindowState:
     def updateHeight(self, window_height):
         """Updates the internal state so that it makes sense within window_height."""
         if self.__selected_line - self.__first_window_line - 1 >= window_height:
-            self.__first_window_line =
+            self.__first_window_line = (
                 self.__selected_line - (window_height - 1)/2
+            )
 
 class WindowPainter:
     """Handles all the details of actually displaying debug information."""
