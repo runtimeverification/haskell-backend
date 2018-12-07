@@ -233,15 +233,25 @@ test_onePathStrategy = give symbolOrAliasSorts
                 , predicate =  -- TODO(virgil): Better and simplification.
                     makeAndPredicate
                         (makeAndPredicate
-                            (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (mkVar Mock.x) Mock.a
+                            (makeAndPredicate
+                                (makeAndPredicate
+                                    (makeNotPredicate
+                                        (makeEqualsPredicate
+                                            (mkVar Mock.x) Mock.a
+                                        )
+                                    )
+                                    (makeNotPredicate
+                                        (makeEqualsPredicate
+                                            (mkVar Mock.x) Mock.b
+                                        )
+                                    )
+                                )
+                                (makeNotPredicate
+                                    (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                                 )
                             )
                             (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (mkVar Mock.x) Mock.b
-                                )
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.b)
                             )
                         )
                         (makeNotPredicate

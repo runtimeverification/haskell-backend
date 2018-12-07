@@ -13,22 +13,11 @@ module Kore.Step.Simplification.And
     , simplifyEvaluated
     ) where
 
-import Data.List
-       ( foldl1', nub )
-import Data.Reflection
-       ( give )
-
 import           Kore.AST.Common
                  ( And (..), SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern And_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -229,28 +218,12 @@ makeEvaluateNonBool
             [firstSubstitution, secondSubstitution, termSubstitution]
     return
         ( Predicated
-            { term = applyAndIdempotence tools termTerm
-            , predicate = applyAndIdempotence tools <$> mergedPredicate
+            { term = termTerm
+            , predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
         , SimplificationProof
         )
-
-applyAndIdempotence
-    ::  ( Eq (variable level)
-        , MetaOrObject level
-        , Show (variable level)
-        , SortedVariable variable
-        )
-    => MetadataTools level StepperAttributes
-    -> StepPattern level variable
-    -> StepPattern level variable
-applyAndIdempotence tools patt =
-    give (MetadataTools.symbolOrAliasSorts tools)
-        (foldl1' mkAnd (nub (children patt)))
-  where
-    children (And_ _ p1 p2) = children p1 ++ children p2
-    children p = [p]
 
 makeTermAnd
     ::  ( MetaOrObject level
