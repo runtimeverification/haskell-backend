@@ -1168,8 +1168,7 @@ $(return [])
 {- dummy top-level splice to make ''Pattern available for lifting -}
 
 instance
-    ( Ord level
-    , Ord (variable level)
+    ( Ord (variable level)
     , Ord1 domain
     ) =>
     Ord1 (Pattern level domain variable)
@@ -1177,8 +1176,7 @@ instance
     liftCompare = $(makeLiftCompare ''Pattern)
 
 instance
-    ( Eq level
-    , Eq (variable level)
+    ( Eq (variable level)
     , Eq1 domain
     ) =>
     Eq1 (Pattern level domain variable)

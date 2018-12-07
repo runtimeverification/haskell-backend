@@ -96,7 +96,6 @@ simplifyCombinedItems =
 simplifyAnds
     ::  forall level variable m unifier.
         ( MetaOrObject level
-        , Eq level
         , Ord (variable level)
         , Show (variable level)
         , OrdMetaOrObject variable
@@ -175,7 +174,6 @@ groupSubstitutionByVariable =
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
     :: ( MetaOrObject level
-       , Eq level
        , Ord (variable level)
        , Show (variable level)
        , OrdMetaOrObject variable
@@ -220,7 +218,6 @@ solveGroupedSubstitution tools substitutionSimplifier var patterns = do
 normalizeSubstitutionDuplication
     :: forall variable level m
     .   ( MetaOrObject level
-        , Eq level
         , Ord (variable level)
         , Show (variable level)
         , OrdMetaOrObject variable
@@ -286,10 +283,7 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
 
 mergePredicateSubstitutionList
     :: ( MetaOrObject level
-       , Eq level
        , Ord (variable level)
-       , Ord (variable Meta)
-       , Ord (variable Object)
        , SortedVariable variable
        , Show (variable level)
        )

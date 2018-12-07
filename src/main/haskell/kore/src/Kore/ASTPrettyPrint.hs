@@ -320,7 +320,7 @@ instance
 instance PrettyPrint a => PrettyPrint (Const a b) where
     prettyPrint flags (Const a) = writeOneFieldStruct flags "Const" a
 
-instance PrettyPrint child => PrettyPrint (Domain.Builtin child) where
+instance PrettyPrint (Domain.Builtin child) where
     prettyPrint flags =
         \case
             Domain.BuiltinPattern str ->
@@ -329,9 +329,8 @@ instance PrettyPrint child => PrettyPrint (Domain.Builtin child) where
             _ -> Builtin.notImplementedInternal
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    , PrettyPrint (domain child)
+    ( PrettyPrint (domain child)
+    , MetaOrObject level
     ) => PrettyPrint (DomainValue level domain child) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
@@ -575,9 +574,7 @@ instance
                 writeOneFieldStruct flags "UnifiedObjectPattern" object
 
 instance
-    ( PrettyPrint ann
-    , PrettyPrint child
-    , PrettyPrint (domain child)
+    ( PrettyPrint child
     , child ~ Cofree (UnifiedPattern domain var) ann
     ) =>
     PrettyPrint (KorePattern domain var ann)
@@ -587,12 +584,11 @@ instance
             [ writeFieldOneLine "getKorePattern" getKorePattern korePattern ]
 
 instance
-    ( MetaOrObject level
-    , Functor domain
-    , PrettyPrint child
-    , PrettyPrint annotation
-    , PrettyPrint (domain child)
-    , child ~ Cofree (Pattern level domain variable) annotation
+    ( PrettyPrint annotation
+    , PrettyPrint (variable level)
+    , PrettyPrint
+        (domain (CofreeT (Pattern level domain variable) Identity annotation))
+    , MetaOrObject level
     ) =>
     PrettyPrint (PurePattern level domain variable annotation)
   where
@@ -628,9 +624,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint (pat domain variable ())
-    ) => PrettyPrint (SentenceSymbol level pat domain variable)
+    MetaOrObject level =>
+    PrettyPrint (SentenceSymbol level pat domain variable)
   where
     prettyPrint _ sa@(SentenceSymbol _ _ _ _) =
         writeStructure
@@ -644,8 +639,7 @@ instance
             ]
 
 instance
-    (PrettyPrint (pat domain variable ())
-    ) => PrettyPrint (SentenceImport pat domain variable)
+    PrettyPrint (SentenceImport pat domain variable)
   where
     prettyPrint _ sa@(SentenceImport _ _) =
         writeStructure
@@ -673,9 +667,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint (pat domain variable ())
-    ) => PrettyPrint (SentenceSort level pat domain variable)
+    MetaOrObject level =>
+    PrettyPrint (SentenceSort level pat domain variable)
   where
     prettyPrint _ sa@(SentenceSort _ _ _) =
         writeStructure
@@ -688,9 +681,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint (pat domain variable ())
-    ) => PrettyPrint (SentenceHook level pat domain variable)
+    MetaOrObject level =>
+    PrettyPrint (SentenceHook level pat domain variable)
   where
     prettyPrint flags (SentenceHookedSymbol s)   =
         writeOneFieldStruct flags "SentenceHookedSymbol" s
@@ -736,10 +728,8 @@ instance
         writeOneFieldStruct flags "ObjectSentence" s
 
 instance
-    (PrettyPrint (sentence sortParam pat domain variable)
-    , PrettyPrint sortParam
-    , PrettyPrint (pat domain variable ())
-    ) => PrettyPrint (Module sentence sortParam pat domain variable)
+    PrettyPrint (sentence sortParam pat domain variable) =>
+    PrettyPrint (Module sentence sortParam pat domain variable)
   where
     prettyPrint _ m@(Module _ _ _) =
         writeStructure
@@ -750,10 +740,8 @@ instance
             ]
 
 instance
-    (PrettyPrint (sentence sortParam pat domain variable)
-    , PrettyPrint sortParam
-    , PrettyPrint (pat domain variable ())
-    ) => PrettyPrint (Definition sentence sortParam pat domain variable)
+    PrettyPrint (sentence sortParam pat domain variable) =>
+    PrettyPrint (Definition sentence sortParam pat domain variable)
   where
     prettyPrint _ d@(Definition _ _) =
         writeStructure

@@ -38,12 +38,7 @@ import qualified Kore.Domain.Builtin as Domain
 -- lowest index if there are multiple occurences of `elem`.
 
 alphaEq
-    ::  ( MetaOrObject level
-        , Eq (var level)
-        , Ord (var level)
-        , EqMetaOrObject var
-        , OrdMetaOrObject var
-        )
+    :: Ord (var level)
     => PurePattern level Domain.Builtin var ()
     -> PurePattern level Domain.Builtin var ()
     -> Bool
@@ -56,9 +51,7 @@ alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
     project = Cofree.tailF . Recursive.project
 
     alphaEqWorker
-        ::  ( Eq (var level)
-            , Ord (var level)
-            )
+        :: Ord (var level)
         => PurePattern level Domain.Builtin var ()
         -> PurePattern level Domain.Builtin var ()
         -> Reader ([var level], [var level]) Bool

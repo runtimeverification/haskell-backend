@@ -285,9 +285,7 @@ maybeTermAnd
 maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
-    ::  ( Eq (variable level)
-        , Eq (variable Meta)
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
@@ -313,9 +311,7 @@ andFunctions =
     forAnd f = f SimplificationType.And
 
 equalsFunctions
-    ::  ( Eq (variable level)
-        , Eq (variable Meta)
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
@@ -341,9 +337,7 @@ equalsFunctions =
     forEquals f = f SimplificationType.Equals
 
 andEqualsFunctions
-    ::  ( Eq (variable level)
-        , Eq (variable Meta)
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
@@ -423,15 +417,7 @@ type TermTransformationOld level variable m =
     -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
 
 maybeTransformTerm
-    ::  ( MetaOrObject level
-        , FreshVariable variable
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable level)
-        , SortedVariable variable
-        , MonadCounter m
-        )
+    :: MonadCounter m
     => [TermTransformationOld level variable m]
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -464,13 +450,7 @@ addToolsArg
 addToolsArg = pure
 
 toExpanded
-    ::
-    ( MetaOrObject level
-    , SortedVariable variable
-    , Show (variable level)
-    , Eq (variable level)
-    )
-    =>   (  MetadataTools level StepperAttributes
+    ::  (  MetadataTools level StepperAttributes
         -> StepPattern level variable
         -> StepPattern level variable
         -> Maybe (StepPattern level variable, SimplificationProof level)
@@ -552,10 +532,7 @@ boolAnd first second =
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
-    ::  ( Eq (variable level)
-        , Eq (variable Object)
-        , MetaOrObject level
-        )
+    :: (Eq (variable level), MetaOrObject level)
     => StepPattern level variable
     -> StepPattern level variable
     -> Maybe (StepPattern level variable, SimplificationProof level)
@@ -773,11 +750,7 @@ when @src1@ is a subsort of @src2@.
 
  -}
 sortInjectionAndEqualsAssumesDifferentHeads
-    ::  forall level variable m .
-        ( Eq (variable Object)
-        , MetaOrObject level
-        , MonadCounter m
-        )
+    :: forall level variable m. MonadCounter m
     => MetadataTools level StepperAttributes
     -> TermSimplifier level variable m
     -> StepPattern level variable
@@ -917,10 +890,7 @@ returns @\\bottom@.
 -- TODO (virgil): This implementation is provisional, we're not sure yet if sort
 -- injection should always clash with constructors. We should clarify this.
 constructorSortInjectionAndEquals
-    ::  ( Eq (variable Object)
-        , MetaOrObject level
-        )
-    => MetadataTools level StepperAttributes
+    :: MetadataTools level StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
     -> Maybe (StepPattern level variable, SimplificationProof level)
@@ -948,10 +918,7 @@ to be different; therefore their conjunction is @\\bottom@.
 
  -}
 constructorAndEqualsAssumesDifferentHeads
-    ::  ( Eq (variable Object)
-        , MetaOrObject level
-        )
-    => MetadataTools level StepperAttributes
+    :: MetadataTools level StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
     -> Maybe (StepPattern level variable, SimplificationProof level)
@@ -974,10 +941,7 @@ sort with constructors.
 
 -}
 domainValueAndConstructorErrors
-    :: ( Eq (variable Object)
-       , MetaOrObject level
-       )
-    => MetadataTools level StepperAttributes
+    :: MetadataTools level StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
     -> Maybe (StepPattern level variable, SimplificationProof level)

@@ -236,8 +236,7 @@ instance EqualWithExplanation a => EqualWithExplanation [a]
             Left _     -> Nothing
             Right errs -> Just ("[" ++ intercalate ", " errs ++ "]")
       where
-        compareUnequalListWithExplanation
-            :: EqualWithExplanation a => [a] -> [a] -> Either () [String]
+        compareUnequalListWithExplanation :: [a] -> [a] -> Either () [String]
         compareUnequalListWithExplanation [] []                = Left ()
         compareUnequalListWithExplanation (expect : es) [] =
             Right

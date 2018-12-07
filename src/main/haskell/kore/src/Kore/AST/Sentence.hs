@@ -341,11 +341,7 @@ deriving instance
 
 instance
     ( NFData (SentenceAlias level pat domain variable)
-    , NFData (SentenceSymbol level pat domain variable)
-    , NFData (SentenceImport pat domain variable)
     , NFData (SentenceAxiom param pat domain variable)
-    , NFData (SentenceSort level pat domain variable)
-    , NFData (SentenceHook level pat domain variable)
     ) =>
     NFData (Sentence level param pat domain variable)
   where
@@ -683,9 +679,7 @@ type PureSentence level domain =
     Sentence level (SortVariable level) (PurePattern level) domain Variable
 
 instance
-    ( MetaOrObject level
-    , sortParam ~ SortVariable level
-    ) =>
+    sortParam ~ SortVariable level =>
     AsSentence
         (Sentence level sortParam (PurePattern level) domain variable)
         (SentenceAlias level (PurePattern level) domain variable)
@@ -693,9 +687,7 @@ instance
     asSentence = SentenceAliasSentence
 
 instance
-    ( MetaOrObject level
-    , sortParam ~ SortVariable level
-    ) =>
+    sortParam ~ SortVariable level =>
     AsSentence
         (Sentence level sortParam (PurePattern level) domain variable)
         (SentenceSymbol level (PurePattern level) domain variable)
@@ -723,9 +715,7 @@ instance
     asSentence = SentenceAxiomSentence
 
 instance
-    ( MetaOrObject level
-    , sortParam ~ SortVariable level
-    ) =>
+    sortParam ~ SortVariable level =>
     AsSentence
         (Sentence level sortParam (PurePattern level) domain variable)
         (SentenceSort level (PurePattern level) domain variable)

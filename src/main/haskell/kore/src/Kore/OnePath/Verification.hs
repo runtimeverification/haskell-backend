@@ -115,9 +115,8 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 defaultStrategy
-    :: forall level
-    .   (MetaOrObject level)
-    => [Claim level]
+    ::  forall level.
+        [Claim level]
     -- The claims that we wnt to prove
     -> [Axiom level]
     -> CommonStepPattern level
@@ -190,4 +189,3 @@ verifyClaim
         StrategyPattern.RewritePattern p : _ -> throwE p
         StrategyPattern.Stuck p : _ -> throwE p
         StrategyPattern.Bottom : _ -> error "Unexpected bottom pattern."
-

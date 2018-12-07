@@ -362,9 +362,8 @@ test_predicate = give mockSymbolOrAliasSorts
 
 makePredicateYieldsWrapPredicate
     ::  ( Given (SymbolOrAliasSorts level)
-        , Eq level
-        , Show level
-        , MetaOrObject level)
+        , MetaOrObject level
+        )
     => String -> CommonStepPattern level -> IO ()
 makePredicateYieldsWrapPredicate msg p =
     assertEqual msg

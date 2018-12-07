@@ -200,24 +200,16 @@ provablySubstitute eq path pat = case getConclusion eq of
         )
     _ -> impossible
 
-eqSymmetry
-    :: Given (SymbolOrAliasSorts Object)
-    => Proof
-    -> Proof
+eqSymmetry :: Proof -> Proof
 eqSymmetry = undefined
 
-eqTransitivity
-    :: Given (SymbolOrAliasSorts Object)
-    => Proof
-    -> Proof
-    -> Proof
+eqTransitivity :: Proof -> Proof -> Proof
 eqTransitivity = undefined
 
 --------------------------------------------------------------------------------
 
 generateVarList
-    :: Given (SymbolOrAliasSorts Object)
-    => [Sort Object]
+    :: [Sort Object]
     -> Text
     -> ([Variable Object], [Term])
 generateVarList sorts name =

@@ -294,12 +294,7 @@ stepWithRuleForUnifier
 
         -- Remap unification and substitution errors into 'StepError'.
         normalizeUnificationOrSubstitutionError
-            ::  ( FreshVariable variable
-                , MetaOrObject level
-                , Ord (variable level)
-                , Show (variable level)
-                )
-            => Set.Set (StepperVariable variable level)
+            :: Set.Set (StepperVariable variable level)
             -> ExceptT
                 (UnificationOrSubstitutionError
                     level
@@ -500,13 +495,8 @@ stepWithRuleForUnifier
     -- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
     -- internally-defined variables.
     stepperVariableToVariableForError
-        :: forall a
-        .   ( FreshVariable variable
-            , MetaOrObject level
-            , Ord (variable level)
-            , Show (variable level)
-            )
-        => Set.Set (StepperVariable variable level)
+        ::  forall a.
+            Set.Set (StepperVariable variable level)
         -> ExceptT (StepError level (StepperVariable variable)) Simplifier a
         -> ExceptT (StepError level variable) Simplifier a
     stepperVariableToVariableForError existingVars = mapExceptT mapper
@@ -835,9 +825,7 @@ configurationVariableToCommon (AxiomVariable a) =
 configurationVariableToCommon (ConfigurationVariable v) = v
 
 replacePatternVariables
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        )
+    :: Ord (variable level)
     => Map.Map (StepperVariable variable level) (StepperVariable variable level)
     -> StepPattern level (StepperVariable variable)
     -> StepPattern level (StepperVariable variable)
@@ -884,8 +872,7 @@ addAxiomVariablesAsConfig
                 vars
 
 removeAxiomVariables
-    :: MetaOrObject level
-    => Substitution level (StepperVariable variable)
+    :: Substitution level (StepperVariable variable)
     -> Substitution level (StepperVariable variable)
 removeAxiomVariables =
     Substitution.wrap

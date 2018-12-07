@@ -146,7 +146,7 @@ sortAgreement2 = dummyEnvironment $
         (mkEquals (Var_ $ var_ "foo" "X") (Var_ $ var_ "bar" "X"))
         (Var_ $ var_ "y" "Y")
 
-varX :: (Given (SymbolOrAliasSorts Object)) => CommonStepPattern Object
+varX :: CommonStepPattern Object
 varX = mkVar $ var_ "x" "X"
 
 sortAgreementManySimplePatterns
@@ -231,21 +231,18 @@ testGetSetIdentity size = dummyEnvironment $ testGroup "getSetIdent" $ do
   pat <- generatePatterns size
   return $ testCase "" $ substitutionGetSetIdentity a b pat
 
-var :: MetaOrObject level => Text -> Variable level
+var :: Text -> Variable level
 var x =
   Variable (noLocationId x) (mkSort "S")
 
-var_ :: MetaOrObject level => Text -> Text -> Variable level
+var_ :: Text -> Text -> Variable level
 var_ x s =
   Variable (noLocationId x) (mkSort s)
 
-dummyEnvironment
-  :: forall r . MetaOrObject Object
-  => (Given (SymbolOrAliasSorts Object) => r)
-  -> r
+dummyEnvironment :: (Given (SymbolOrAliasSorts Object) => r) -> r
 dummyEnvironment = give (dummySymbolOrAliasSorts @Object)
 
-dummySymbolOrAliasSorts :: MetaOrObject level => SymbolOrAliasSorts level
+dummySymbolOrAliasSorts :: SymbolOrAliasSorts level
 dummySymbolOrAliasSorts = const ApplicationSorts
     { applicationSortsOperands = []
     , applicationSortsResult   = mkSort "S"

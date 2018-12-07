@@ -117,8 +117,7 @@ ruleFunctionEvaluator
             (stepperConfiguration app)
             rule
     stepperConfiguration
-        :: MetaOrObject level
-        => Application level (StepPattern level variable)
+        :: Application level (StepPattern level variable)
         -> ExpandedPattern level variable
     stepperConfiguration app' =
         Predicated

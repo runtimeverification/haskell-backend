@@ -42,8 +42,7 @@ testPropertyWithSolver name propt =
     withSolver (testProperty name . propertyWithSolver propt)
 
 testCaseWithSolver
-    :: HasCallStack
-    => TestName
+    :: TestName
     -> (MVar Solver -> Assertion)
     -> TestTree
 testCaseWithSolver name within =

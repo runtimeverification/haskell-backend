@@ -59,8 +59,6 @@ evaluateApplication
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Show (variable Meta)
-        , Show (variable Object)
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns

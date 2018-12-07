@@ -66,8 +66,6 @@ simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
         , Ord (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -114,8 +112,6 @@ makeAndEvaluateApplications
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
         , Ord (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -154,8 +150,6 @@ makeAndEvaluateSymbolApplications
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
         , Ord (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -191,8 +185,6 @@ evaluateApplicationFunction
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
         , Ord (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
@@ -229,7 +221,6 @@ makeExpandedApplication
         , Kore.AST.Common.SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
-        , Ord (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable

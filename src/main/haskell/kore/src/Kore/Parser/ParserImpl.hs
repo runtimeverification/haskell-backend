@@ -137,8 +137,7 @@ Relevant BNF definitions:
 @
 -}
 validateMetaSort
-    :: MetaOrObject level
-    => Id level     -- ^ The sort name
+    :: Id level     -- ^ The sort name
     -> [Sort level] -- ^ The sort arguments
     -> Parser ()
 validateMetaSort identifier [] =

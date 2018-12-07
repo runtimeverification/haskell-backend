@@ -443,8 +443,7 @@ verifyBinder
     binderSort = getBinderPatternSort binder
 
 verifyVariableUsage
-    :: (MetaOrObject level)
-    => Variable level
+    :: Variable level
     -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
@@ -519,8 +518,7 @@ verifyVariableDeclarationUsing declaredSortVariables f v =
         (variableSort v)
 
 findVariableDeclaration
-    :: (MetaOrObject level)
-    => Id level
+    :: Id level
     -> VerifyHelpers level
     -> Either (Error VerifyError) (Variable level)
 findVariableDeclaration variableId verifyHelpers =

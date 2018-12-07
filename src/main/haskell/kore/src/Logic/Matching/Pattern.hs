@@ -121,7 +121,7 @@ wfPatSort (WFPattern (Fix p)) = patternSort p
 
 -- | Check the sorts of one layer of a pattern,
 -- requiring that the subterms are already known to be well-formed
-checkSorts1 :: (IsSignature sig, Eq (Sort sig))
+checkSorts1 :: IsSignature sig
             => SigPatternF sig var (WFPattern sig var)
             -> Maybe (WFPattern sig var)
 checkSorts1 pat = if patOk then Just (WFPattern (Fix (coerce pat))) else Nothing
@@ -136,7 +136,7 @@ checkSorts1 pat = if patOk then Just (WFPattern (Fix (coerce pat))) else Nothing
     childrenSame = all (==patternSort pat) (fmap wfPatSort pat)
 
 -- | Check if a pattern is well-sorted
-checkSorts :: (IsSignature sig, Eq (Sort sig))
+checkSorts :: IsSignature sig
            => SigPattern sig var
            -> Maybe (WFPattern sig var)
 checkSorts pat = cata (sequenceA >=> checkSorts1) pat
@@ -170,7 +170,7 @@ instance FromPattern (Pattern sort label var) sort label var where
 
 instance ToPattern (WFPattern sig var) (Sort sig) (Label sig) var where
     toPattern (WFPattern p) = coerce p
-instance (IsSignature sig, Eq (Sort sig)) =>
+instance IsSignature sig =>
     FromPattern (Maybe (WFPattern sig var)) (Sort sig) (Label sig) var
   where
     fromPattern = sequenceA >=> checkSorts1

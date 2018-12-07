@@ -110,8 +110,7 @@ mockMetadataTools =
     Mock.makeMetadataTools mockSymbolOrAliasSorts [] [] []
 
 evaluate
-    :: (MetaOrObject Object)
-    => MetadataTools Object attrs
+    :: MetadataTools Object attrs
     -> DomainValue Object Domain.Builtin (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate tools domainValue =

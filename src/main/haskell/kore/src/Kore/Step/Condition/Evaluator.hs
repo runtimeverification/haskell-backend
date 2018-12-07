@@ -70,7 +70,6 @@ evaluate
     ::  forall level variable .
         ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
         , Ord (variable level)
         , Show (variable level)
         , Given (MetadataTools level StepperAttributes)
@@ -139,8 +138,6 @@ refutePredicate
        ( Given (MetadataTools level StepperAttributes)
        , MetaOrObject level
        , Ord (variable level)
-       , Show (variable level)
-       , SortedVariable variable
        , MonadSMT m
        )
     => Predicate level variable
@@ -355,7 +352,7 @@ translatePattern sort =
 
 type Translator p = MaybeT (StateT (Map p SExpr) (CounterT SMT))
 
-runTranslator :: Ord p => Translator p a -> MaybeT SMT a
+runTranslator :: Translator p a -> MaybeT SMT a
 runTranslator = Morph.hoist (evalCounterT . flip evalStateT Map.empty)
 
 translateUninterpreted

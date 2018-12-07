@@ -22,8 +22,6 @@ module Test.Kore.Step.MockSymbols where
 -}
 
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( Given )
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 
@@ -40,7 +38,7 @@ import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, SymbolOrAliasSorts )
+                 ( HeadType )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Step.Pattern
@@ -448,302 +446,248 @@ z = Variable (testId "z") testSort
 m :: Variable Object
 m = Variable (testId "m") mapSort
 
-a   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+a   :: StepPattern Object variable
 a = mkApp aSymbol []
 
-aConcrete :: Given (SymbolOrAliasSorts Object) => ConcreteStepPattern Object
+aConcrete :: ConcreteStepPattern Object
 aConcrete = let Just r = asConcretePurePattern a in r
 
 aSort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 aSort0 = mkApp aSort0Symbol []
 
 aSort1
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 aSort1 = mkApp aSort1Symbol []
 
 aSubsort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 aSubsort = mkApp aSubsortSymbol []
 
 aSubSubsort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 aSubSubsort = mkApp aSubSubsortSymbol []
 
 aOtherSort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 aOtherSort = mkApp aOtherSortSymbol []
 
-b   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+b   :: StepPattern Object variable
 b = mkApp bSymbol []
 
-bConcrete :: Given (SymbolOrAliasSorts Object) => ConcreteStepPattern Object
+bConcrete :: ConcreteStepPattern Object
 bConcrete = let Just r = asConcretePurePattern b in r
 
 bSort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 bSort0 = mkApp bSort0Symbol []
 
-c   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+c   :: StepPattern Object variable
 c = mkApp cSymbol []
 
-d   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+d   :: StepPattern Object variable
 d = mkApp dSymbol []
 
-e   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+e   :: StepPattern Object variable
 e = mkApp eSymbol []
 
-f   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
+f   :: StepPattern Object variable -> StepPattern Object variable
 f arg = mkApp fSymbol [arg]
 
-g   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
+g   :: StepPattern Object variable -> StepPattern Object variable
 g arg = mkApp gSymbol [arg]
 
-h   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
+h   :: StepPattern Object variable -> StepPattern Object variable
 h arg = mkApp hSymbol [arg]
 
-cf  :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+cf  :: StepPattern Object variable
 cf = mkApp cfSymbol []
 
 cfSort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 cfSort0 = mkApp cfSort0Symbol []
 
 cfSort1
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 cfSort1 = mkApp cfSort1Symbol []
 
-cg  :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+cg  :: StepPattern Object variable
 cg = mkApp cgSymbol []
 
 cgSort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 cgSort0 = mkApp cgSort0Symbol []
 
-ch  :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+ch  :: StepPattern Object variable
 ch = mkApp chSymbol []
 
 plain00
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 plain00 = mkApp plain00Symbol []
 
 plain00Sort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 plain00Sort0 = mkApp plain00Sort0Symbol []
 
 plain00Subsort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 plain00Subsort = mkApp plain00SubsortSymbol []
 
 plain00SubSubsort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 plain00SubSubsort = mkApp plain00SubSubsortSymbol []
 
 plain10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
+    :: StepPattern Object variable -> StepPattern Object variable
 plain10 arg = mkApp plain10Symbol [arg]
 
 plain11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
+    :: StepPattern Object variable -> StepPattern Object variable
 plain11 arg = mkApp plain11Symbol [arg]
 
 plain20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 plain20 arg1 arg2 = mkApp plain20Symbol [arg1, arg2]
 
 constr10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 constr10 arg = mkApp constr10Symbol [arg]
 
 constr11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 constr11 arg = mkApp constr11Symbol [arg]
 
 constr20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 constr20 arg1 arg2 = mkApp constr20Symbol [arg1, arg2]
 
 function20MapTest
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 function20MapTest arg1 arg2 = mkApp function20MapTestSymbol [arg1, arg2]
 
 functional00
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 functional00 = mkApp functional00Symbol []
 
 functional01
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 functional01 = mkApp functional01Symbol []
 
 functional10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 functional10 arg = mkApp functional10Symbol [arg]
 
 functional11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 functional11 arg = mkApp functional11Symbol [arg]
 
 functional20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 functional20 arg1 arg2 = mkApp functional20Symbol [arg1, arg2]
 
 functional00SubSubSort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
 functional00SubSubSort = mkApp functional00SubSubSortSymbol []
 
 functionalConstr10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 functionalConstr10 arg = mkApp functionalConstr10Symbol [arg]
 
 functionalConstr11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 functionalConstr11 arg = mkApp functionalConstr11Symbol [arg]
 
 functionalConstr20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 functionalConstr20 arg1 arg2 = mkApp functionalConstr20Symbol [arg1, arg2]
 
 functionalTopConstr20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 functionalTopConstr20 arg1 arg2 = mkApp functionalTopConstr20Symbol [arg1, arg2]
 
 functionalTopConstr21
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 functionalTopConstr21 arg1 arg2 = mkApp functionalTopConstr21Symbol [arg1, arg2]
 
 injective10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 injective10 arg = mkApp injective10Symbol [arg]
 
 injective11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 injective11 arg = mkApp injective11Symbol [arg]
 
 sortInjection10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 sortInjection10 arg = mkApp sortInjection10Symbol [arg]
 
 sortInjection11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 sortInjection11 arg = mkApp sortInjection11Symbol [arg]
 
 sortInjection0ToTop
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 sortInjection0ToTop arg = mkApp sortInjection0ToTopSymbol [arg]
 
 sortInjectionSubToTop
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 sortInjectionSubToTop arg = mkApp sortInjectionSubToTopSymbol [arg]
 
 sortInjectionSubSubToTop
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 sortInjectionSubSubToTop arg = mkApp sortInjectionSubSubToTopSymbol [arg]
 
 sortInjectionSubSubToSub
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 sortInjectionSubSubToSub arg = mkApp sortInjectionSubSubToSubSymbol [arg]
 
 sortInjectionOtherToTop
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
 sortInjectionOtherToTop arg = mkApp sortInjectionOtherToTopSymbol [arg]
 
 concatMap
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 concatMap m1 m2 = mkApp concatMapSymbol [m1, m2]
 
 elementMap
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 elementMap m1 m2 = mkApp elementMapSymbol [m1, m2]
 
 concatList
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 concatList l1 l2 = mkApp concatListSymbol [l1, l2]

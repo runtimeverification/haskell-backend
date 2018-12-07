@@ -11,7 +11,6 @@ module Kore.Step.Simplification.Predicate
     ( simplifyPartial
     ) where
 
-import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Top_ )
 import           Kore.Predicate.Predicate
@@ -31,9 +30,7 @@ without trying to reapply the substitution on the predicate.
 TODO(virgil): Make this fully simplify.
 -}
 simplifyPartial
-    ::  ( MetaOrObject level
-        , Show (variable level)
-        )
+    :: Show (variable level)
     => PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -> Predicate level variable

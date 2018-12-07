@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-orphans -Wno-redundant-constraints #-}
 {-|
 Module      : Kore.Building.Patterns
 Description : Builders for the standard Kore patterns, without 'Application'.

@@ -296,7 +296,6 @@ ceilS_
     ::  ( Functor domain
         , MetaOrObject level
         , child ~ CommonPurePattern level domain ()
-        , Show child
         , Show (Pattern level domain Variable child)
         )
     => Sort level
@@ -310,7 +309,6 @@ ceil_
     ::  ( Functor domain
         , MetaOrObject level
         , child ~ CommonPurePattern level domain ()
-        , Show child
         , Show (Pattern level domain Variable child)
         )
     => CommonPurePatternStub level domain ()
@@ -323,7 +321,6 @@ floorS_
     ::  ( Functor domain
         , MetaOrObject level
         , child ~ CommonPurePattern level domain ()
-        , Show child
         , Show (Pattern level domain Variable child)
         )
     => Sort level
@@ -337,7 +334,6 @@ floor_
     ::  ( Functor domain
         , MetaOrObject level
         , child ~ CommonPurePattern level domain ()
-        , Show child
         , Show (Pattern level domain Variable child)
         )
     => CommonPurePatternStub level domain ()
@@ -347,7 +343,7 @@ floor_ = floorM_ Nothing
 -- |Builds a 'PatternStub' representing 'Exists' given a variable and an
 -- operand 'PatternStub'.
 exists_
-    :: (Functor domain, MetaOrObject level)
+    :: Functor domain
     => Variable level
     -> CommonPurePatternStub level domain ()
     -> CommonPurePatternStub level domain ()
@@ -517,7 +513,6 @@ parameterizedAxiom_
         , Functor domain
         , MetaOrObject level
         , child ~ CommonPurePattern level domain ()
-        , Show child
         , Show (Pattern level domain Variable child)
         )
     => [SortVariable level]
@@ -547,7 +542,6 @@ axiom_
         , Functor domain
         , MetaOrObject level
         , child ~ CommonPurePattern level domain ()
-        , Show child
         , Show (Pattern level domain Variable child)
         )
     => CommonPurePatternStub level domain ()

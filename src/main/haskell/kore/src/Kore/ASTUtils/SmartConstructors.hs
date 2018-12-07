@@ -61,8 +61,6 @@ import           Control.Lens hiding
                  ( (:<) )
 import           Control.Monad.State
 import           Data.Foldable
-import           Data.Functor.Classes
-                 ( Show1 )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
 import           Data.Text
@@ -78,8 +76,7 @@ import Kore.IndexedModule.MetadataTools
 -- The smart constructors `mkAnd`, etc also require this context.
 -- Usage: give metadatatools (... computation with Given Metadatatools ..)
 getSort
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
+    ::  ( Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Functor domain
         )
@@ -92,14 +89,12 @@ getSort (Recursive.project -> _ :< pat) =
 -- But we don't know yet where it's going to be attached.
 -- No particular way to avoid this, unfortunately.
 -- This will probably happen often during proof routines.
-predicateSort
-    :: MetaOrObject level
-    => Sort level
+predicateSort :: Sort level
 predicateSort = mkSort "PREDICATE"
 
 patternLens
     ::  forall f level domain variable1 variable2 annotation.
-        (Applicative f, MetaOrObject level, Traversable domain)
+        (Applicative f, Traversable domain)
     => (Sort level -> f (Sort level))  -- ^ Operand sorts
     -> (Sort level -> f (Sort level))  -- ^ Result sorts
     -> (variable1 level -> f (variable2 level))  -- ^ Variables
@@ -159,8 +154,7 @@ patternLens
             <*> lensChild ceilChild
 
     patternLensDomainValue
-        :: level ~ Object
-        => DomainValue level domain
+        :: DomainValue level domain
             (PurePattern level domain variable1 annotation)
         -> f
             (DomainValue level domain
@@ -270,7 +264,7 @@ patternLens
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc.
 inputSort
-    :: (MetaOrObject level, Traversable domain)
+    :: Traversable domain
     => Traversal' (PurePattern level domain variable annotation) (Sort level)
 inputSort        f = patternLens f    pure pure pure
 
@@ -287,14 +281,14 @@ inputSort        f = patternLens f    pure pure pure
 -- Note that a few constructors like App and StringLiteral
 -- lack a result sort in the AST.
 resultSort
-    :: (MetaOrObject level, Traversable domain)
+    :: Traversable domain
     => Traversal' (PurePattern level domain variable annotation) (Sort level)
 resultSort = \f -> patternLens pure f pure pure
 
 -- | Points to the bound variable in Forall/Exists,
 -- and also the Variable in VariablePattern
 variable
-    :: (MetaOrObject level, Traversable domain)
+    :: Traversable domain
     => Traversal'
         (PurePattern level domain variable annotation)
         (variable level)
@@ -303,14 +297,14 @@ variable = \f -> patternLens pure pure f pure
 -- | All sub-expressions which are 'Pattern's.
 -- Use partsOf allChildren to get a lens to a List.
 allChildren
-    :: (MetaOrObject level, Traversable domain)
+    :: Traversable domain
     => Traversal'
         (PurePattern level domain variable annotation)
         (PurePattern level domain variable annotation)
 allChildren = patternLens pure pure pure
 
 changeVar
-    :: (MetaOrObject level, Applicative f, Traversable domain)
+    :: (Applicative f, Traversable domain)
     => (variable1 level -> f (variable2 level))
     ->  (  PurePattern level domain variable1 annotation
         -> f (PurePattern level domain variable2 annotation)
@@ -350,7 +344,7 @@ inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 -- single uniquely determined sort,
 -- which we can't change.
 hasRigidHead
-    :: (MetaOrObject level, Functor domain)
+    :: Functor domain
     => PurePattern level domain variable annotation
     -> Bool
 hasRigidHead (Recursive.project -> _ :< pat) =
@@ -369,7 +363,7 @@ hasRigidHead (Recursive.project -> _ :< pat) =
 -- must match the sort of of its subexpressions:
 -- \and, \or, \implies, etc.
 hasFlexibleHead
-    :: (MetaOrObject level, Functor domain)
+    :: Functor domain
     => PurePattern level domain variable annotation
     -> Bool
 hasFlexibleHead (Recursive.project -> _ :< pat) =
@@ -504,7 +498,7 @@ mkAnd andFirst andSecond =
 
 -- TODO: Should this check for sort agreement?
 mkApp
-    :: (Functor domain, MetaOrObject level, Given (SymbolOrAliasSorts level))
+    :: Functor domain
     => SymbolOrAlias level
     -> [PurePattern level domain variable ()]
     -> PurePattern level domain variable ()
@@ -514,19 +508,15 @@ mkApp applicationSymbolOrAlias applicationChildren =
     application =
         Application { applicationSymbolOrAlias, applicationChildren }
 
-mkBottom
-    :: (Functor domain, MetaOrObject level)
-    => PurePattern level domain variable ()
+mkBottom :: Functor domain => PurePattern level domain variable ()
 mkBottom =
     asPurePattern (mempty :< BottomPattern bottom)
   where
     bottom = Bottom { bottomSort = predicateSort }
 
 mkCeil
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
+    ::  ( Given (SymbolOrAliasSorts level)
         , SortedVariable variable
-        , Show1 domain
         , Functor domain
         )
     => PurePattern level domain variable ()
@@ -542,7 +532,7 @@ mkCeil ceilChild =
             }
 
 mkDomainValue
-    :: (Functor domain, MetaOrObject Object)
+    :: Functor domain
     => Sort Object
     -> domain (PurePattern Object domain variable ())
     -> PurePattern Object domain variable ()
@@ -588,11 +578,8 @@ mkExists existsVariable existsChild =
     exists = Exists { existsSort = fixmeSort, existsVariable, existsChild }
 
 mkFloor
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
+    ::  ( Given (SymbolOrAliasSorts level)
         , SortedVariable variable
-        , Show (variable level)
-        , Show1 domain
         , Traversable domain
         )
     => PurePattern level domain variable ()
@@ -674,8 +661,7 @@ mkIn inContainedChild inContainingChild =
             }
 
 mkNext
-    ::  ( MetaOrObject Object
-        , Given (SymbolOrAliasSorts Object)
+    ::  ( Given (SymbolOrAliasSorts Object)
         , SortedVariable variable
         , Show (PurePattern Object domain variable ())
         , Traversable domain
@@ -717,8 +703,7 @@ mkOr orFirst orSecond =
     or0 = Or { orSort = fixmeSort, orFirst, orSecond }
 
 mkRewrites
-    ::  ( MetaOrObject Object
-        , Given (SymbolOrAliasSorts Object)
+    ::  ( Given (SymbolOrAliasSorts Object)
         , SortedVariable var
         , Show (PurePattern Object dom var ())
         , Traversable dom
@@ -732,16 +717,14 @@ mkRewrites rewritesFirst rewritesSecond =
     rewrites0 =
         Rewrites { rewritesSort = fixmeSort, rewritesFirst, rewritesSecond }
 
-mkTop
-    :: (Functor domain, MetaOrObject level)
-    => PurePattern level domain variable ()
+mkTop :: Functor domain => PurePattern level domain variable ()
 mkTop =
     asPurePattern (mempty :< TopPattern top)
   where
     top = Top { topSort = predicateSort }
 
 mkVar
-    :: (Functor domain, MetaOrObject level, Given (SymbolOrAliasSorts level))
+    :: Functor domain
     => variable level
     -> PurePattern level domain variable ()
 mkVar var =
@@ -766,15 +749,14 @@ mkCharLiteral char =
     charLiteral = CharLiteral char
 
 mkSort
-  :: MetaOrObject level
-  => Text
+  :: Text
   -> Sort level
 mkSort name =
     SortActualSort $ SortActual (noLocationId name) []
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s
-varS :: MetaOrObject level => Text -> Sort level -> Variable level
+varS :: Text -> Sort level -> Variable level
 varS x s =
     Variable (noLocationId x) s
 
@@ -782,12 +764,11 @@ varS x s =
 -- "mult" `symS` [s, s]
 -- Since the return sort is only found in MetadataTools, this is
 -- mostly useful for testing.
-symS :: MetaOrObject level => Text -> [Sort level] -> SymbolOrAlias level
+symS :: Text -> [Sort level] -> SymbolOrAlias level
 symS x s =
     SymbolOrAlias (noLocationId x) s
 
 -- | Placeholder. Should never appear in output of 'mk' funcs
 fixmeSort
-    :: MetaOrObject level
-    => Sort level
+    :: Sort level
 fixmeSort = mkSort "FIXME"

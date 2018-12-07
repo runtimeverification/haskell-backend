@@ -42,8 +42,7 @@ Right now this does not do any actual simplification.
 TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Given (SymbolOrAliasSorts Object)
         , Show (variable Object)
         , Ord (variable Object)
@@ -61,8 +60,7 @@ simplify
     simplifyEvaluatedRewrites first second
 
 simplifyEvaluatedRewrites
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Given (SymbolOrAliasSorts Object)
         , Show (variable Object)
         , Ord (variable Object)
@@ -76,8 +74,7 @@ simplifyEvaluatedRewrites first second =
         (OrOfExpandedPattern.toExpandedPattern second)
 
 makeEvaluateRewrites
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Given (SymbolOrAliasSorts Object)
         , Show (variable Object)
         , Ord (variable Object)

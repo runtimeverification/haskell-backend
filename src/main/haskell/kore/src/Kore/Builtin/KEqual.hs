@@ -151,12 +151,7 @@ evalKEq true false tools substitutionSimplifier _ pat =
         ep2 = ExpandedPattern.fromPurePattern t2
 
 evalKIte
-    ::  forall variable
-    .   ( FreshVariable variable
-        , OrdMetaOrObject variable
-        , SortedVariable variable
-        , ShowMetaOrObject variable
-        )
+    :: forall variable. OrdMetaOrObject variable
     => MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
     -> StepPatternSimplifier Object variable

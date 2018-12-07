@@ -468,7 +468,7 @@ mockMetadataTools =
         Mock.headTypeMapping
         Mock.subsorts
 
-testSort :: forall level. MetaOrObject level => Sort level
+testSort :: Sort level
 testSort =
     case mkBottom :: CommonStepPattern level of
         Bottom_ sort -> sort

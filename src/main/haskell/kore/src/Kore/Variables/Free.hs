@@ -73,7 +73,6 @@ freePureVariables root =
 freeVariables
     ::  forall patternHead patternType annotation domain variable.
         ( UnifiedPatternInterface patternHead
-        , Functor (patternHead domain variable)
         , Foldable domain
         , OrdMetaOrObject variable
         , Recursive patternType
@@ -123,7 +122,6 @@ freeVariables root =
 allVariables
     ::  forall patternHead patternType annotation domain variable.
         ( UnifiedPatternInterface patternHead
-        , Functor (patternHead domain variable)
         , Foldable domain
         , OrdMetaOrObject variable
         , Recursive patternType

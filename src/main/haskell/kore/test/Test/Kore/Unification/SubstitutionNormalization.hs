@@ -176,7 +176,7 @@ runNormalizeSubstitution substitution =
     . runExceptT
     $ normalizeSubstitution mockMetadataTools (Substitution.wrap substitution)
 
-mockSymbolOrAliasSorts :: MetaOrObject level => SymbolOrAliasSorts level
+mockSymbolOrAliasSorts :: SymbolOrAliasSorts level
 mockSymbolOrAliasSorts = const ApplicationSorts
     { applicationSortsOperands = []
     , applicationSortsResult   =
@@ -184,7 +184,7 @@ mockSymbolOrAliasSorts = const ApplicationSorts
             { getSortVariable = noLocationId "S" }
     }
 
-mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
+mockMetadataTools :: MetadataTools level StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.functionalAttributes
     , symbolOrAliasType = const HeadType.Symbol

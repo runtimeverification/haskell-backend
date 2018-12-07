@@ -362,15 +362,12 @@ isSymbolElement = Builtin.isSymbol "LIST.element"
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable m p expanded proof.
-        ( OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Ord (variable level)
+    ::  forall level variable m p expanded proof.
+        ( Ord (variable level)
         , Show (variable level)
         , SortedVariable variable
         , MonadCounter m
         , MetaOrObject level
-        , FreshVariable variable
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level

@@ -116,11 +116,10 @@ searchGraph Config { searchType, bound } match executionGraph = do
 matchWith
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
         , FreshVariable variable
         , Ord (variable level)
-        , OrdMetaOrObject variable
         , Show (variable level)
+        , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         )
     => MetadataTools level StepperAttributes

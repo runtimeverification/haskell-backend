@@ -380,7 +380,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
  -}
 
 runStrategy
-    :: forall m prim config . (Monad m, Show config, Hashable config)
+    :: forall m prim config . (Monad m, Hashable config)
     => (prim -> config -> m [config])
     -- ^ Primitive strategy rule
     -> [Strategy prim]

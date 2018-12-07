@@ -866,7 +866,6 @@ testLiftUnlift
     :: ( LiftableToMetaML a
        , UnliftableFromMetaML a
        , Eq a
-       , Show a
        , PrettyPrint a
        , HasCallStack
        )

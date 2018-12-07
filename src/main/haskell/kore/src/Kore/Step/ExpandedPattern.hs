@@ -236,7 +236,7 @@ toMLPattern
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
 -}
-bottom :: MetaOrObject level => ExpandedPattern level variable
+bottom :: ExpandedPattern level variable
 bottom =
     Predicated
         { term      = mkBottom
@@ -247,7 +247,7 @@ bottom =
 {-|'top' is an expanded pattern that has a top condition and that
 should become Top when transformed to a ML pattern.
 -}
-top :: MetaOrObject level => ExpandedPattern level variable
+top :: ExpandedPattern level variable
 top =
     Predicated
         { term      = mkTop
@@ -284,10 +284,7 @@ isBottom _ = False
   See also: 'makeTruePredicate', 'pure'
 
  -}
-fromPurePattern
-    :: MetaOrObject level
-    => StepPattern level variable
-    -> ExpandedPattern level variable
+fromPurePattern :: StepPattern level variable -> ExpandedPattern level variable
 fromPurePattern term =
     case term of
         Bottom_ _ -> bottom
@@ -298,10 +295,10 @@ fromPurePattern term =
                 , substitution = mempty
                 }
 
-topPredicate :: MetaOrObject level => PredicateSubstitution level variable
+topPredicate :: PredicateSubstitution level variable
 topPredicate = top $> ()
 
-bottomPredicate :: MetaOrObject level => PredicateSubstitution level variable
+bottomPredicate :: PredicateSubstitution level variable
 bottomPredicate = bottom $> ()
 
 {- | Transform a predicate and substitution into a predicate only.

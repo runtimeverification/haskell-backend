@@ -706,8 +706,7 @@ assertTermEqualsGeneric tools expectPure first second =
             actualPure
   where
     termToExpandedPattern
-        :: MetaOrObject level
-        => CommonStepPattern level
+        :: CommonStepPattern level
         -> CommonExpandedPattern level
     termToExpandedPattern (Bottom_ _) =
         Predicated.bottom
@@ -718,8 +717,7 @@ assertTermEqualsGeneric tools expectPure first second =
             , substitution = mempty
             }
     predSubstToExpandedPattern
-        :: MetaOrObject level
-        => CommonPredicateSubstitution level
+        :: CommonPredicateSubstitution level
         -> CommonExpandedPattern level
     predSubstToExpandedPattern
         Predicated {predicate = PredicateFalse}

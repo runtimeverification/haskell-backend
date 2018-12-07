@@ -1,5 +1,5 @@
  -- to avoid warnings that constraints (AsAst CommonKorePattern p) can be simplified
-{-# OPTIONS_GHC -fno-warn-simplifiable-class-constraints #-}
+{-# OPTIONS_GHC -fno-warn-simplifiable-class-constraints -Wno-redundant-constraints #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 

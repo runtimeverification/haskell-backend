@@ -299,24 +299,21 @@ test_onePathVerification = give symbolOrAliasSorts
             Mock.subsorts
 
 simpleAxiom
-    :: MetaOrObject level
-    => CommonStepPattern level
+    :: CommonStepPattern level
     -> CommonStepPattern level
     -> OnePath.Axiom level
 simpleAxiom left right =
     OnePath.Axiom $ simpleRewrite left right
 
 simpleClaim
-    :: MetaOrObject level
-    => CommonStepPattern level
+    :: CommonStepPattern level
     -> CommonStepPattern level
     -> OnePath.Claim level
 simpleClaim left right =
     OnePath.Claim $ simpleRewrite left right
 
 simpleRewrite
-    :: MetaOrObject level
-    => CommonStepPattern level
+    :: CommonStepPattern level
     -> CommonStepPattern level
     -> RewriteRule level
 simpleRewrite left right =

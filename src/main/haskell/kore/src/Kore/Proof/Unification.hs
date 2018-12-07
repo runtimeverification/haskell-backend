@@ -105,10 +105,7 @@ instance Hashable UnificationError
 
 -- | Returns False if the eq x = t fails the occurs check,
 -- i.e. returns False iff x appears in t.
-occursCheck
-    :: Given (SymbolOrAliasSorts Object)
-    => Proof
-    -> Bool
+occursCheck :: Proof -> Bool
 occursCheck eq = case getConclusion eq of
     Equals_ _ _ (Var_ v) rhs -> not $ S.member v (freeVars rhs)
     _                        -> impossible
@@ -139,6 +136,3 @@ flipEqn eq = case getConclusion eq of
       provablySubstitute eq [0] (useRule $ EqualityIntro a)
       -- i.e. substitute a=b in the first position of a=a to get b=a
     _ -> impossible
-
-
-

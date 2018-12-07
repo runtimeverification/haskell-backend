@@ -148,9 +148,7 @@ instance
 instance Unparse Void where
     unparse = \case {}
 
-instance
-    Unparse child => Unparse (Domain.Builtin child)
-  where
+instance Unparse (Domain.Builtin child) where
     unparse =
         \case
             Domain.BuiltinPattern child -> unparse child
@@ -422,9 +420,6 @@ instance Unparse UnifiedSortVariable where
             UnifiedObject sv -> unparse sv
 
 instance
-    ( Unparse (SentenceSort level pat domain variable)
-    , Unparse (SentenceSymbol level pat domain variable)
-    ) =>
     Unparse (SentenceHook level pat domain variable)
   where
     unparse =
@@ -433,11 +428,11 @@ instance
             SentenceHookedSymbol a -> "hooked-" <> unparse a
 
 instance
-    ( Unparse (SentenceAlias level pat domain variable)
-    , Unparse (SentenceSymbol level pat domain variable)
-    , Unparse (SentenceImport pat domain variable)
-    , Unparse (SentenceAxiom sortParam pat domain variable)
-    , Unparse (SentenceSort level pat domain variable)
+    ( Unparse sortParam
+    , Unparse child
+    , Unparse (domain child)
+    , Unparse (variable level)
+    , child ~ pat domain variable ()
     ) =>
     Unparse (Sentence level sortParam pat domain variable)
   where

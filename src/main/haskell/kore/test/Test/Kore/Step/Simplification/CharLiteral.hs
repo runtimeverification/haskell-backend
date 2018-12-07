@@ -45,8 +45,7 @@ test_charLiteralSimplification =
     ]
 
 evaluate
-    ::  ( MetaOrObject Meta)
-    => CharLiteral
+    :: CharLiteral
     -> CommonOrOfExpandedPattern Meta
 evaluate charLiteral =
     case simplify charLiteral of

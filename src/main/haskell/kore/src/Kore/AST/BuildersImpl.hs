@@ -7,6 +7,10 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
+
+-- TODO (thomas.tuegel): Fix withSort to eliminate this:
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Kore.AST.BuildersImpl where
 
 import           Control.Comonad.Trans.Cofree
@@ -45,8 +49,6 @@ provided sort otherwise.
 -}
 fillCheckSort
     ::  ( Functor domain
-        , Show level
-        , Show (variable level)
         , Show (Pattern level domain variable child)
         , child ~ PurePattern level domain variable ()
         )
@@ -169,7 +171,6 @@ unarySortedPattern
     ::  ( Functor domain
         , MetaOrObject level
         , child ~ PurePattern level domain variable ()
-        , Show child
         , Show (Pattern level domain variable child)
         )
     =>  (  ResultSort level
@@ -318,7 +319,6 @@ equalsM_ s =
 inM_
     ::  ( Functor domain
         , MetaOrObject level
-        , Show (variable level)
         , Show (PurePattern level domain variable ())
         )
     => Maybe (Sort level)
@@ -345,7 +345,6 @@ ceilM_
     ::  ( Functor domain
         , MetaOrObject level
         , child ~ PurePattern level domain variable ()
-        , Show child
         , Show (Pattern level domain variable child)
         )
     => Maybe (Sort level)
@@ -369,7 +368,6 @@ floorM_
     ::  ( Functor domain
         , MetaOrObject level
         , child ~ PurePattern level domain variable ()
-        , Show child
         , Show (Pattern level domain variable child)
         )
     => Maybe (Sort level)

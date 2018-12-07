@@ -107,7 +107,7 @@ pairVariablesToSorts variables sorts
 It assumes that the pattern has the provided sort.
 -}
 quantifyFreeVariables
-    :: (Foldable domain, Functor domain, MetaOrObject level)
+    :: (Foldable domain, Functor domain)
     => Sort level
     -> CommonPurePattern level domain ()
     -> CommonPurePattern level domain ()

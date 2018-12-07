@@ -192,10 +192,6 @@ makeEvaluateNoFreeVarInSubstitution
         , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
         )
     => variable level
     -> ExpandedPattern level variable
@@ -244,14 +240,7 @@ makeEvaluateNoFreeVarInSubstitution
 
 substituteTermPredicate
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
-        , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , FreshVariable variable
         )
     => StepPattern level variable

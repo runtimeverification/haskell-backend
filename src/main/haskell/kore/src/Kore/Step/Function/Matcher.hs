@@ -482,16 +482,12 @@ matchNonVarToPattern tools substitutionSimplifier first second
                 }
 
 checkVariableEscape
-    :: ( MetaOrObject level
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Ord (variable Object)
-        , Ord (variable Meta)
+    ::  ( MetaOrObject level
         , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
-        , Eq (variable level)
         , Ord (variable level)
-        , Show (variable level))
+        , Show (variable level)
+        )
     => [variable level]
     -> PredicateSubstitution level variable
     -> PredicateSubstitution level variable

@@ -84,7 +84,6 @@ substitute
         , SubstitutionClass subst (Unified var) (f ann)
         , MonadCounter m
         , Traversable dom
-        , Traversable (pat dom var)
         , OrdMetaOrObject var
         , FreshVariable var
         , Corecursive (f ann)

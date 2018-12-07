@@ -9,7 +9,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Control.DeepSeq
-       ( NFData, deepseq )
+       ( deepseq )
 import Control.Exception
        ( ErrorCall (..), catch )
 import Control.Monad.Except
@@ -763,9 +763,7 @@ mockMetaMetadataTools =
 
 match
     :: forall level .
-        ( MetaOrObject level
-        , NFData (CommonPredicateSubstitution level)
-        )
+        MetaOrObject level
     => MetadataTools level StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level

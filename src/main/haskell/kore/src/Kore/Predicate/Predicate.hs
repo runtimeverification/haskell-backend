@@ -297,10 +297,9 @@ makeInPredicate first second =
 predicate.
 -}
 makeCeilPredicate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
+    ::  ( Given (SymbolOrAliasSorts level)
         , SortedVariable variable
-        , Show (variable level))
+        )
     => StepPattern level variable
     -> Predicate level variable
 makeCeilPredicate patt =
@@ -310,10 +309,9 @@ makeCeilPredicate patt =
 predicate.
 -}
 makeFloorPredicate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
+    ::  ( Given (SymbolOrAliasSorts level)
         , SortedVariable variable
-        , Show (variable level))
+        )
     => StepPattern level variable
     -> Predicate level variable
 makeFloorPredicate patt =
@@ -351,17 +349,13 @@ makeForallPredicate v (GenericPredicate p) =
 
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
-makeTruePredicate
-    ::  (MetaOrObject level)
-    => Predicate level variable
+makeTruePredicate :: Predicate level variable
 makeTruePredicate =
     GenericPredicate mkTop
 
 {-| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
 -}
-makeFalsePredicate
-    ::  (MetaOrObject level)
-    => Predicate level variable
+makeFalsePredicate :: Predicate level variable
 makeFalsePredicate =
     GenericPredicate mkBottom
 
@@ -434,7 +428,7 @@ allVariables = pureAllVariables . unwrapPredicate
 {- | Extract the set of free variables from a @Predicate@.
 -}
 freeVariables
-    :: (MetaOrObject level , Ord (variable level))
+    :: Ord (variable level)
     => Predicate level variable
     -> Set (variable level)
 freeVariables = freePureVariables . unwrapPredicate

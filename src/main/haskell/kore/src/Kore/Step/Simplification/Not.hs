@@ -138,7 +138,6 @@ makeTermNot
         , SortedVariable variable
         , Given (SymbolOrAliasSorts level)
         , Show (variable level)
-        , Ord (variable level)
         )
     => StepPattern level variable
     -> StepPattern level variable

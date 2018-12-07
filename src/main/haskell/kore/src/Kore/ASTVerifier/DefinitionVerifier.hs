@@ -141,8 +141,7 @@ verifyAndIndexDefinitionWithBase
             (map (\m -> (moduleName m, m)) (definitionModules definition))
 
 defaultAttributesVerification
-    :: ParseAttributes atts
-    => Proxy atts
+    :: Proxy atts
     -> AttributesVerification atts
 defaultAttributesVerification = VerifyAttributes
 

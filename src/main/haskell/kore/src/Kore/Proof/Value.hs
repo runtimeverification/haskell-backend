@@ -19,7 +19,8 @@ module Kore.Proof.Value
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Data.Deriving
-                 ( deriveEq1, deriveOrd1, deriveShow1 )
+                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
+import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix (..) )
 import qualified Data.Functor.Foldable as Recursive
@@ -55,9 +56,16 @@ deriving instance Functor (ValueF level)
 deriving instance Foldable (ValueF level)
 deriving instance Traversable (ValueF level)
 
-deriveEq1 ''ValueF
-deriveOrd1 ''ValueF
-deriveShow1 ''ValueF
+$(return [])
+
+instance Eq1 (ValueF level) where
+    liftEq = $(makeLiftEq ''ValueF)
+
+instance Ord1 (ValueF level) where
+    liftCompare = $(makeLiftCompare ''ValueF)
+
+instance Show1 (ValueF level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''ValueF)
 
 type Value level = Fix (ValueF level)
 

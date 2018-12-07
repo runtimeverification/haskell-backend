@@ -128,8 +128,8 @@ normalizeSubstitution tools substitution =
         normalizeSortedSubstitution'
 
 checkCircularVariableDependency
-    :: (MetaOrObject level, Eq (variable level))
-    =>  MetadataTools level StepperAttributes
+    :: Eq (variable level)
+    => MetadataTools level StepperAttributes
     -> [(variable level, StepPattern level variable)]
     -> [variable level]
     -> Either (SubstitutionError level variable) ()
@@ -142,8 +142,7 @@ checkCircularVariableDependency tools substitution vars =
         vars
 
 checkThatApplicationUsesConstructors
-    :: (MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    :: MetadataTools level StepperAttributes
     -> checkError
     -> Maybe (StepPattern level variable)
     -> Either checkError ()
@@ -158,8 +157,7 @@ checkThatApplicationUsesConstructors _ _ Nothing =
     error "This should not be reachable"
 
 checkApplicationConstructor
-    :: (MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    :: MetadataTools level StepperAttributes
     -> checkError
     -> Base (StepPattern level variable) ()
     -> Either checkError ()
@@ -216,9 +214,7 @@ normalizeSortedSubstitution
                 ((asUnified var, substitutedVarPattern) : substitution)
 
 extractVariables
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        )
+    :: Ord (variable level)
     => [(variable level, StepPattern level variable)]
     -> Set (variable level)
 extractVariables unification =
@@ -232,9 +228,7 @@ extractVariables unification =
     pattern.
  -}
 getDependencies
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        )
+    :: Ord (variable level)
     => Set (variable level)  -- ^ interesting variables
     -> variable level  -- ^ substitution variable
     -> StepPattern level variable  -- ^ substitution pattern

@@ -433,8 +433,7 @@ evaluate metadataTools functionIdToEvaluator patt =
     substitutionSimplifier =
         PredicateSubstitution.create metadataTools patternSimplifier
     patternSimplifier
-        ::  ( MetaOrObject level
-            , SortedVariable variable
+        ::  ( SortedVariable variable
             , Ord (variable level)
             , Show (variable level)
             , Ord (variable Meta)

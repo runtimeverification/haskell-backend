@@ -438,9 +438,7 @@ instance (Show child, EqualWithExplanation child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Bottom level child)
-  where
+instance EqualWithExplanation (Bottom level child) where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
@@ -645,19 +643,21 @@ instance
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance (EqualWithExplanation child, Eq child, Show child)
+instance (Eq child, Show child)
     => EqualWithExplanation (Implies level child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
-    (EqualWithExplanation child, Eq child, Show child)
+    (Eq child, Show child)
     => EqualWithExplanation (In level child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
-    (EqualWithExplanation child, Eq child, Show child)
+    (Eq child, Show child)
     => EqualWithExplanation (Next level child)
   where
     compareWithExplanation = rawCompareWithExplanation
@@ -716,7 +716,7 @@ instance
     printWithExplanation = show
 
 instance
-    (EqualWithExplanation child, Eq child, Show child)
+    (Eq child, Show child)
     => EqualWithExplanation (Rewrites level child)
   where
     compareWithExplanation = rawCompareWithExplanation
@@ -729,10 +729,8 @@ instance EqualWithExplanation CharLiteral
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance
-    (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Top level child)
-  where
+
+instance EqualWithExplanation (Top level child) where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
@@ -1061,7 +1059,7 @@ instance
 
 instance
     ( EqualWithExplanation (variable level)
-    , Eq level, Show level
+    , Eq level
     , Eq (variable level), Show (variable level)
     )
     => EqualWithExplanation (Predicate level variable)
@@ -1201,9 +1199,7 @@ instance
             (printWithExplanation p2)
 
 instance
-    ( EqualWithExplanation (a Meta)
-    , EqualWithExplanation (a Object)
-    , Show (a Meta)
+    ( Show (a Meta)
     , Show (a Object)
     , SumEqualWithExplanation (Unified a)
     )

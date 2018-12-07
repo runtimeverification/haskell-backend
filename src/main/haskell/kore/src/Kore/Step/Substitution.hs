@@ -59,7 +59,6 @@ import           Kore.Variables.Fresh
 normalize
     :: forall level variable m .
         ( level ~ Object
-        , Monad m
         , MonadCounter m
         , MetaOrObject level
         , FreshVariable variable

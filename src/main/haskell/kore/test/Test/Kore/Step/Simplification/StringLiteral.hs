@@ -44,10 +44,7 @@ test_stringLiteralSimplification =
         )
     ]
 
-evaluate
-    ::  ( MetaOrObject Meta)
-    => StringLiteral
-    -> CommonOrOfExpandedPattern Meta
+evaluate :: StringLiteral -> CommonOrOfExpandedPattern Meta
 evaluate stringLiteral =
     case simplify stringLiteral of
         (result, _proof) -> result

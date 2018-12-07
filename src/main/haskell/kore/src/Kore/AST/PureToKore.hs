@@ -56,9 +56,7 @@ patternKoreToPure level =
     Recursive.fold (extractPurePattern $ isMetaOrObject $ toProxy level)
 
 extractPurePattern
-    ::  ( MetaOrObject level
-        , result ~ Either (Error a) (CommonPurePattern level Domain.Builtin ())
-        )
+    :: result ~ Either (Error a) (CommonPurePattern level Domain.Builtin ())
     => IsMetaOrObject level
     -> Base CommonKorePattern result
     -> result

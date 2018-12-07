@@ -336,8 +336,7 @@ test_onePathStrategy = give symbolOrAliasSorts
 
 
 simpleRewrite
-    :: MetaOrObject level
-    => CommonStepPattern level
+    :: CommonStepPattern level
     -> CommonStepPattern level
     -> RewriteRule level
 simpleRewrite left right =
