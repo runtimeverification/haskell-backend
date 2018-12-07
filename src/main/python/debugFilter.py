@@ -7,80 +7,331 @@ any kore pattern displayed with 'show'.
 
 Example usage:
 cat debug.txt | ./debugFilter.py
+
+It is especially useful when used with 'debugger.py'
 """
+import cProfile
+import re
 import sys
+
+class Structure:
+    """Tree-like representation for debug output lines.
+
+    A node has a title and some children.
+
+    It uses (,) as delimiters.
+    """
+    def __init__(self, txt, children):
+        self.__text = txt
+        self.__children = children
+
+    def __str__(self):
+        return "".join(self._chunks([]))
+
+    def _chunks(self, chunks):
+        chunks.append(self.__text)
+        if not self.__children:
+            return
+        chunks.append("(")
+        first = True
+        for p in self.__children:
+            if first:
+                first = False
+            else:
+                chunks.append(",")
+            p._chunks(chunks)
+        chunks.append(")")
+        return chunks
+
+    def size(self):
+        """Child count."""
+        return len(self.__children)
+
+    def child(self, index):
+        """Returns the child with the given index."""
+        return self.__children[index]
+
+    def text(self):
+        """Returns the title node."""
+        return self.__text
+
+    def children(self):
+        """Returns the children collection."""
+        return self.__children
+
+    def replaceWith(self, node):
+        """Replaces the self contents with the given node."""
+        self.__text = node.__text
+        self.__children = node.__children
+
+    def removeSubnode(self, path):
+        """Removes the subnode identified by path.
+
+        The path elements should match a chain of descendant titles,
+        starting with a child of the current node. Returns the last descendant
+        in the chain.
+
+        Matching means that the path element occurs as a substring in the title.
+        """
+        assert path
+        node = self
+        pindex = 0
+        while True:
+            for index in xrange(0, len(node.__children)):
+                child = node.__children[index]
+                if child.text().find(path[pindex]) >= 0:
+                    if pindex == len(path) - 1:
+                        del self.__children[index]
+                        return
+                    node = child
+                    pindex += 1
+                    break
+            assert False
+
+    def getSubnode(self, path):
+        """Finds the subnode identified by path.
+
+        The path elements should match a chain of descendant titles,
+        starting with a child of the current node. Returns the last descendant
+        in the chain.
+
+        Matching means that the path element occurs as a substring in the title.
+        """
+        assert path
+        node = self
+        pindex = 0
+        while pindex < len(path):
+            found = False
+            for index in xrange(0, len(node.__children)):
+                child = node.__children[index]
+                if child.text().find(path[pindex]) >= 0:
+                    node = child
+                    pindex += 1
+                    found = True
+                    break
+            assert found, str(pindex) + " " + str(path) + " " + str(node)
+        return node
+
+    def hasChild(self, name):
+        """Whether the current node has a child with the given title.
+
+        Matching means that the path element occurs as a substring in the title.
+        """
+        for child in self.__children:
+            if child.text().find(name) >= 0:
+                return True
+        return False
+
+class Line:
+    """The root node of a debug tree.
+
+    Also handles parsing and serialization.
+    """
+    __open_re = re.compile(r"\(|\[|\{")
+    __close_re = re.compile(r"\)|\]|\}")
+    __comma_re = re.compile(r",")
+
+    def __init__(self, line):
+        lineChunks = [c for c in Line.__split(line) if c]
+        self.__parsed = []
+        index = 0
+        while index < len(lineChunks):
+            (newIndex, parsed) = Line.__parse(lineChunks, index)
+            self.__parsed.append(parsed)
+            assert index < newIndex
+            index = newIndex
+
+    @staticmethod
+    def __split(line):
+        return Line.__splitWithRe(Line.__open_re, "(",
+            Line.__splitWithRe(Line.__close_re, ")",
+                Line.__splitWithRe(Line.__comma_re, ",", [line])))
+
+    @staticmethod
+    def __splitWithRe(regexp, joiner, chunks):
+        def split():
+            for c in chunks:
+                first = True
+                for s in regexp.split(c):
+                    if not first:
+                        yield joiner
+                    else:
+                        first = False
+                    yield s
+        return list(split())
+
+    @staticmethod
+    def __parse(chunks, index):
+        if chunks[index] == "(":
+            title = ""
+        else:
+            title = chunks[index]
+            index += 1
+        if index == len(chunks):
+            return (index, Structure(title, []))
+        children = []
+        if chunks[index] == "(":
+            index += 1
+            if index == len(chunks):
+                return (index, Structure(title, []))
+
+            if chunks[index] == ")":
+                children.append(Structure("", []))
+                index = index + 1
+            else:
+                while chunks[index] != ")":
+                    (index, child) = Line.__parse(chunks, index)
+                    children.append(child)
+                    if index >= len(chunks):
+                        break
+                    if chunks[index] == ",":
+                        index += 1
+                if index < len(chunks):
+                    assert chunks[index] == ")"
+                    index = index + 1
+        return (index, Structure(title, children))
+
+    def __str__(self):
+        return "".join(self._chunks([]))
+
+    def _chunks(self, chunks):
+        first = True
+        for p in self.__parsed:
+            if first:
+                first = False
+            else:
+                chunks.append(",")
+            p._chunks(chunks)
+        return chunks
+
+    def find(self, path, iterator):
+        """Finds a node matched by the given path.
+
+        A node matches a path if the node matches the first element of the
+        path, with a chain of descendants matching the reminder of the path.
+
+        A node matches a path element if its title is equal to the element.
+        As exceptions, the first node matches if the path element is a suffix,
+        the last node matches if the path element is a prefix.
+        """
+        if iterator is None:
+            iterator = Iterator(self)
+        element = iterator.element()
+        while iterator.isValid():
+            if self.__match(element, path, 0):
+                return True
+            element = iterator.next()
+        return False
+
+    def __match(self, element, path, index):
+        if index >= len(path):
+            return True
+
+        if index == 0:
+            if not element.text().endswith(path[index]):
+                return False
+        elif index == len(path) - 1:
+            if not element.text().startswith(path[index]):
+                return False
+        else:
+            if not element.text() == path[index]:
+                return False
+
+        for i in xrange(0, element.size()):
+            if self.__match(element.child(i), path, index + 1):
+                return True
+        return False
+
+    def size(self):
+        """Returns the number of children."""
+        return len(self.__parsed)
+
+    def child(self, index):
+        """Returns the child with the given index."""
+        return self.__parsed[index]
+
+    def text(self):
+        """Default implementation to match the same interface as 'Structure'."""
+        return ""
 
 def printLine (indentLevel, line):
     """Displays a text using the given indentation."""
-    print("    " * indentLevel + line)
+    print("    " * indentLevel + str(line))
 
-def findElementEnd(start, line):
-    """Finds an element's end given its start.
+class IteratorElement:
+    """Helper for iterating over a debug tree.
 
-    Assumes a correctly parenthesized expression, with elements separated
-    by commas.
+    Stops first at the root, then at each child.
     """
-    end = start
-    openBraces = 0
-    while end < len(line) and openBraces >= 0:
-        if line[end] in "({[":
-            openBraces += 1
-        elif line[end] in ")}]":
-            if openBraces == 0:
-                return end
-            openBraces -= 1
-            if openBraces == 0:
-                return end + 1
-        elif line[end] == ",":
-            if openBraces == 0:
-                return end
-        end+= 1
-    return end
+    def __init__(self, structure):
+        self.__structure = structure
+        self.__index = 0
+        self.__child = None
+        self.__isValid = True
 
-def findElementStartingWith(startIndex, prefix, line):
-    """Finds an element's position given a prefix and a start index.
+    def next(self):
+        """Advances the iterator to the next child.
 
-    Assumes a correctly parenthesized expression, with elements separated
-    by commas. Assumes that an expression with parenthesis ends at the last
-    closed one.
+        Returns the child, or 'None' if the iteration ended.
+        """
+        self.__isValid = False
+        if self.__index >= self.__structure.size():
+            return None
+        self.__child = self.__structure.child(self.__index)
+        self.__index += 1
+        return self.__child
 
-    The prefix may include the preceding comma.
+    def element(self):
+        """Returns the iterator's main node."""
+        if not self.__isValid:
+            return None
+        return self.__structure
 
-    Returns (-1, -1) if no such element was found.
+
+class Iterator:
+    """Iterates over a debug tree.
+
+    Also stops at intermediate nodes, not only at leaves.
     """
-    start = line.find(prefix, startIndex)
-    if start < 0:
-        return (-1, -1)
-    end = findElementEnd(start + 1, line)
-    assert end > start
-    return (start, end)
+    def __init__(self, structure):
+        self.__elements = [IteratorElement(structure)]
 
-def findElementAndSkipPrefix(startIndex, prefix, line):
-    """Finds an element's position given a prefix and a start index.
+    def next(self):
+        """Advances the iterator.
 
-    Assumes a correctly parenthesized expression, with elements separated
-    by commas.
+        Returns the newly reached node, or 'None' if the iteration ended.
+        """
+        while self.__elements:
+            retv = self.__elements[-1].next()
+            if retv:
+                self.__elements.append(IteratorElement(retv))
+                return retv
+            del self.__elements[-1]
+        if not self.__elements:
+            return None
 
-    The prefix may include the preceding comma.
+    def element(self):
+        """Returns the current node."""
+        if not self.__elements:
+            return None
+        return self.__elements[-1].element()
 
-    Returns (-1, -1) if no such element was found. The return poosition does
-    not include the prefix.
-    """
-    (start, end) = findElementStartingWith(startIndex, prefix, line)
-    if start < 0:
-        return (-1, -1)
-    return (start + len(prefix), end)
+    def isValid(self):
+        """Whether the iteration ended."""
+        return len(self.__elements) > 0
+
+    def __str__(self):
+        elements = [str(e) for e in self.__elements]
+        return "idx[" + ",".join(elements) + "]"
+
 
 def cleanIdLocation(line):
     """Removes the idLocation part of Id structs."""
-    chunks = []
+    iterator = Iterator(line)
     while True:
-        (start, end) = findElementStartingWith(0, ", idLocation =", line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        chunks.append(line[:start])
-        line = line[end:]
+        if not line.find(["Id ", " idLocation = AstLocationFile "], iterator):
+            return line
+        iterator.element().removeSubnode(["idLocation"])
 
 def cleanApplication(line):
     """Removes the redundant parts of ApplicationPattern patterns.
@@ -88,37 +339,29 @@ def cleanApplication(line):
     The result will look something like
     "symbol"[arg1, arg2, ...](phi1, phi2, ....)
     """
-    chunks = []
-    while True:
-        (start, end) = findElementStartingWith(
-            0,
-            "Fix (ApplicationPattern",
-            line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        (childrenStart, childrenEnd) = findElementAndSkipPrefix(
-            start,
-            " applicationChildren = ",
-            line)
-        assert childrenStart > 0
-        (symbolStart, symbolEnd) = findElementAndSkipPrefix(
-            start,
-            "getId = ",
-            line)
-        assert symbolStart > 0
-        (symbolParamsStart, symbolParamsEnd) = findElementAndSkipPrefix(
-            start,
-            " symbolOrAliasParams = ",
-            line)
-        assert symbolParamsStart > 0
-        chunks.append(line[:start])
-        chunks.append(line[symbolStart : symbolEnd])
-        chunks.append("(")
-        chunks.append(
-            cleanApplication(line[childrenStart + 1: childrenEnd - 1]))
-        chunks.append(")")
-        line = line[end : ]
+    it = Iterator(line)
+    while line.find(["CofreeT ", "Identity ", " :< ApplicationPattern"], it):
+        app = it.element().getSubnode(
+            ["Identity ", "ApplicationPattern", "Application"])
+        symbol = app.getSubnode(["applicationSymbolOrAlias"])
+        children = app.getSubnode(["applicationChildren"])
+        name = symbol.getSubnode(["symbolOrAliasConstructor", "getId"])
+        sorts = symbol.getSubnode(["symbolOrAliasParams"])
+        nameText = name.text()[8:]
+        if sorts.size():
+            result = Structure(
+                nameText,
+                [ Structure("", sorts.children())
+                , Structure("", children.children())
+                ]
+            )
+        else:
+            result = Structure(
+                nameText,
+                children.children()
+            )
+        it.element().replaceWith(result)
+    return line
 
 def cleanSort(line):
     """Removes the redundant parts of SortActual sorts.
@@ -126,29 +369,19 @@ def cleanSort(line):
     The result will look something like
     "sort-name"{sort1, sort2, ...}
     """
-    chunks = []
-    while True:
-        (start, end) = findElementStartingWith(
-            0,
-            "SortActualSort (SortActual",
-            line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        (childrenStart, childrenEnd) = findElementAndSkipPrefix(
-            start,
-            " sortActualSorts = ",
-            line)
-        assert childrenStart > 0
-        (symbolStart, symbolEnd) = findElementAndSkipPrefix(
-            start,
-            "getId = ",
-            line)
-        assert symbolStart > 0
-        chunks.append(line[:start])
-        chunks.append(line[symbolStart : symbolEnd])
-        chunks.append(cleanSort(line[childrenStart : childrenEnd]))
-        line = line[end : ]
+    it = Iterator(line)
+    while line.find(["SortActualSort ", "SortActual"], it):
+        sort = it.element().getSubnode(["SortActual"])
+        sorts = sort.getSubnode(["sortActualSorts"])
+        name = sort.getSubnode(["sortActualName", "getId"])
+
+        nameText = name.text()[8:]
+        result = Structure(
+            nameText,
+            sorts.children()
+        )
+        it.element().replaceWith(result)
+    return line
 
 def cleanVariable(line):
     """Removes the redundant parts of Variables.
@@ -156,139 +389,90 @@ def cleanVariable(line):
     The result will look something like
     "variable-name":sort
     """
-    chunks = []
-    while True:
-        (start, end) = findElementStartingWith(
-            0,
-            "Variable {variableName",
-            line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        (sortStart, sortEnd) = findElementAndSkipPrefix(
-            start,
-            " variableSort = ",
-            line)
-        assert sortStart > 0
-        (symbolStart, symbolEnd) = findElementAndSkipPrefix(
-            start,
-            "getId = ",
-            line)
-        assert symbolStart > 0
-        chunks.append(line[:start])
-        chunks.append(line[symbolStart : symbolEnd])
-        chunks.append(":")
-        chunks.append(line[sortStart : sortEnd])
-        line = line[end : ]
+    it = Iterator(line)
+    while line.find(["Variable ", "variableName"], it):
+        sort = it.element().getSubnode(["variableSort"])
+        name = it.element().getSubnode(["variableName", "getId"])
 
-def cleanBottom(line):
-    """Rewrites bottom patterns."""
-    chunks = []
-    while True:
-        (start, end) = findElementStartingWith(0, "Fix (BottomPattern", line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        chunks.append(line[:start])
-        chunks.append("⊥")
-        line = line[end:]
-
-def cleanTop(line):
-    """Rewrites top patterns."""
-    chunks = []
-    while True:
-        (start, end) = findElementStartingWith(0, "Fix (TopPattern", line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        chunks.append(line[:start])
-        chunks.append("T")
-        line = line[end:]
-
-def cleanStepProof(line):
-    """Removes StepProofs"""
-    chunks = []
-    while True:
-        (start, end) = findElementStartingWith(0, "StepProof {", line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        chunks.append(line[:start])
-        chunks.append(" proof")
-        line = line[end:]
+        nameText = name.text()[8:]
+        result = Structure(
+            nameText + ":",
+            [sort]
+        )
+        it.element().replaceWith(result)
+    return line
 
 def cleanStringDomainValue(line):
     """Cleans string domain values"""
-    chunks = []
-    while True:
-        (start, end) = findElementStartingWith(
-            0,
-            "Fix (DomainValuePattern (DomainValue",
-            line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        (sortStart, sortEnd) = findElementAndSkipPrefix(
-            start,
-            "domainValueSort = ",
-            line)
-        assert sortStart > 0
-        (childStart, childEnd) = findElementAndSkipPrefix(
-            start,
-            "domainValueChild = ",
-            line)
-        assert childStart > 0
-        assert childEnd < end
-        isString = line[childStart:].startswith(
-            "BuiltinPattern (Fix (StringLiteral")
-        if not isString:
-            chunks.append(line[start])
-            line = line[start + 1:]
-            continue
-        (valueStart, valueEnd) = findElementAndSkipPrefix(
-            start,
-            "getStringLiteral = ",
-            line)
-        assert valueStart > 0
-        assert valueEnd <= end
-        chunks.append(line[:start])
-        chunks.append("DomainValue(")
-        chunks.append(line[valueStart : valueEnd])
-        chunks.append(":")
-        chunks.append(line [sortStart : sortEnd])
-        chunks.append(")")
-        line = line[end:]
+    it = Iterator(line)
+    while line.find(
+            ["CofreeT ", "Identity ", " :< DomainValuePattern ",
+                "DomainValue ", " domainValueChild = BuiltinPattern ",
+                "PurePattern ", "getPurePattern = CofreeT ", "Identity ",
+                " :< StringLiteralPattern "], it):
+        dv = it.element().getSubnode(
+            ["Identity ", " :< DomainValuePattern ", "DomainValue "]
+        )
+        sort = dv.getSubnode(["domainValueSort"])
+        value = dv.getSubnode(
+            ["domainValueChild", "PurePattern", "getPurePattern",
+                "Identity", "StringLiteralPattern", "StringLiteral",
+                "getStringLiteral"
+            ]
+        )
+
+        valueText = value.text()[len("getStringLiteral = "):]
+        result = Structure(
+            valueText + ":",
+            [sort]
+        )
+        it.element().replaceWith(result)
+    return line
+
+def cleanStepProof(line):
+    """Removes StepProofs"""
+    it = Iterator(line)
+    while line.find(["StepProof "], it):
+        it.element().replaceWith(Structure("proof", []))
+    return line
+
+def cleanBottom(line):
+    """Rewrites bottom patterns."""
+    it = Iterator(line)
+    while line.find(["CofreeT ", "Identity ", " :< BottomPattern "], it):
+        it.element().replaceWith(Structure("⊥", []))
+    return line
+
+def cleanTop(line):
+    """Rewrites top patterns."""
+    it = Iterator(line)
+    while line.find(["CofreeT ", "Identity ", " :< TopPattern "], it):
+        it.element().replaceWith(Structure("T", []))
+    return line
 
 def cleanStandardPattern(name, line):
-    """Simplifies the (Fix (<name>Pattern(<name>))) part of patterns"""
-    prefix = "Fix (" + name + "Pattern (" + name
-    chunks = []
-    while True:
-        (start, end) = findElementStartingWith(0, prefix, line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        chunks.append(line[:start])
-        chunks.append(name)
-        chunks.append(
-            cleanStandardPattern(name, line[start + len(prefix) : end - 2]))
-        line = line[end:]
+    """Simplifies the redundant part of patterns"""
+    patternName = " :< " + name + "Pattern "
+
+    it = Iterator(line)
+    while line.find(["CofreeT ", "Identity ", patternName, name], it):
+        node = it.element().getSubnode(["Identity ", patternName, name])
+        it.element().replaceWith(node)
+    return line
 
 def cleanVariablePattern(line):
-    """Simplifies the (Fix (VariablePattern(...))) part of patterns"""
-    prefix = "Fix (VariablePattern ("
-    chunks = []
-    while True:
-        (start, end) = findElementStartingWith(0, prefix, line)
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        chunks.append(line[:start])
-        chunks.append("Variable (")
-        chunks.append(line[start + len(prefix) : end - 1])
-        line = line[end:]
+    """Simplifies the Cofree part of variables."""
+    it = Iterator(line)
+    while line.find(["CofreeT ", "Identity ", " :< VariablePattern "], it):
+        node = it.element().getSubnode(["Identity ", " :< VariablePattern "])
+        it.element().replaceWith(Structure("Variable ", [node.child(0)]))
+    return line
 
 def unescapeSequence(sequence):
+    """ Unescapes strings into their original representation.
+
+    Assumes that unescaping can be freely applied on the entire string.
+    """
     return (sequence[1:len(sequence) - 1]
         .replace("Unds", "_")
         .replace("Plus", "+")
@@ -310,6 +494,7 @@ def unescapeSequence(sequence):
     )
 
 def unescapeIdentifier(identifier):
+    """Unescapes a K identifier from its Kore representation."""
     nextStart = 0
     while True:
         start = identifier.find("'", nextStart)
@@ -323,20 +508,29 @@ def unescapeIdentifier(identifier):
 
 def cleanIdentifierEscaping(line):
     """Simplifies things like Lbl'UndsPlus'Int'Unds' to _+Int_"""
-    chunks = []
-    while True:
-        start = line.find('"Lbl')
-        if start < 0:
-            chunks.append(line)
-            return "".join(chunks)
-        end = line.find('"', start + 1)
-        assert end > 0
-        changed = unescapeIdentifier(line[start:end + 1])
-        chunks.append(line[:start])
-        chunks.append(changed)
-        line = line[end + 1:]
+    it = Iterator(line)
+    while it.isValid():
+        txt = it.element().text()
+        start = txt.find('"Lbl')
+        if start >= 0:
+            chunks = []
+            prevStart = 0
+            while start >= 0:
+                chunks.append(txt[:start])
+                end = txt.find('"', start + 1)
+                assert end > 0
+                chunks.append(unescapeIdentifier(txt[start:end + 1]))
+                prevStart = end + 1
+                start = txt.find('"Lbl', prevStart)
+            chunks.append(txt[prevStart:])
+            it.element().replaceWith(
+                Structure("".join(chunks), it.element().children()))
+        it.next()
+    return line
 
 def cleanStandardPatterns(line):
+    """Simpler representation for all patterns without special handling.
+    """
     return cleanStandardPattern("And",
         cleanStandardPattern("Ceil",
         cleanStandardPattern("DomainValue",
@@ -355,56 +549,35 @@ def cleanStandardPatterns(line):
 
 def clean(line):
     """Applies known cleaning algorithms to the line."""
-    return cleanBottom(cleanTop(cleanStepProof(cleanIdentifierEscaping(
-        cleanStandardPatterns(cleanStringDomainValue(
-        cleanVariable(cleanSort(cleanApplication(cleanIdLocation(line))))))))))
+    return (
+        cleanIdentifierEscaping( # 28 s
+            cleanBottom(
+                cleanTop(  # 31 s
+                    cleanStandardPatterns(  # 29 s
+                        cleanSort(  # 40 sec
+                            cleanVariable(  # 44 sec
+                                cleanStringDomainValue( # 53 sec
+                                    cleanApplication(  # 34 sec
+                                        cleanIdLocation(  # 27 sec
+                                            cleanStepProof( # 24 s (from 53)
+                                                line  # 17 sec
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
 
-def printParseLine(indentLevel, maxOpenParenthesis, line):
-    """Rudimentary attempts to split a line and indent it."""
-    index = 0
-    openParenthesis = 0
-    lastPrinted = 0
-    while index < len(line):
-        if line[index] == "(":
-            if openParenthesis < maxOpenParenthesis:
-                printLine(indentLevel, line[lastPrinted:index + 1])
-                lastPrinted = index + 1
-                indentLevel += 2
-            openParenthesis += 1
-        elif line[index] == ")":
-            if openParenthesis <= maxOpenParenthesis:
-                if lastPrinted < index:
-                    printLine(indentLevel, line[lastPrinted:index])
-                lastPrinted = index + 1
-                indentLevel -= 2
-                printLine(indentLevel, ")")
-            openParenthesis -= 1
-        elif line[index] == ",":
-            if openParenthesis <= maxOpenParenthesis:
-                printLine(indentLevel, line[lastPrinted:index + 1])
-                lastPrinted = index + 1
-        index += 1
-    if lastPrinted < len(line):
-        printLine(indentLevel, line[lastPrinted:])
+def main(argv):
+    sys.setrecursionlimit(4000)
+    for line in sys.stdin:
+        print clean(Line(line[:len(line) - 1]))
 
-def printArgumentLine(indentLevel, line):
-    printParseLine(indentLevel, 1, line)
-
-def parseAndDisplay(line, indentLevel):
-    """Indents lines."""
-    if line.startswith("starting "):
-        printArgumentLine(indentLevel, line)
-        indentLevel += 1
-    elif line.startswith("ending "):
-        indentLevel -= 1
-        printArgumentLine(indentLevel, line)
-    else:
-        printLine(indentLevel, line)
-    return indentLevel
-
-indentLevel = 0
-
-for line in sys.stdin:
-    indentLevel = parseAndDisplay(
-        clean(line[:len(line) - 1]),
-        indentLevel)
+if __name__ == "__main__":
+    #cProfile.run('main(sys.argv[1:])')
+    main(sys.argv[1:])
