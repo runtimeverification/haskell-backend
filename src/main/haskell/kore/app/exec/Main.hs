@@ -83,6 +83,7 @@ import qualified SMT
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, mainGlobal )
 
+
 {-
 Main module to run kore-exec
 TODO: add command line argument tab-completion
@@ -206,7 +207,6 @@ data KoreExecOptions = KoreExecOptions
     , mainModuleName      :: !ModuleName
     -- ^ The name of the main module in the definition
     , smtTimeOut          :: !SMT.TimeOut
-    , smtPrelude          :: !(Maybe FilePath)
     , stepLimit           :: !(Limit Natural)
     , strategy
         :: !([RewriteRule Object] -> Strategy (Prim (RewriteRule Object)))
@@ -247,13 +247,6 @@ parseKoreExecOptions =
             <> long "smt-timeout"
             <> help "Timeout for calls to the SMT solver, in milliseconds"
             <> value defaultTimeOut
-            )
-        <*> optional
-            ( strOption
-                ( metavar "SMT_PRELUDE"
-                <> long "smt-prelude"
-                <> help "Path to the SMT prelude file"
-                )
             )
         <*> parseStepLimit
         <*> parseStrategy
@@ -374,7 +367,6 @@ mainWithOptions
         , outputFileName
         , mainModuleName
         , smtTimeOut
-        , smtPrelude
         , stepLimit
         , strategy
         , koreSearchOptions
@@ -383,9 +375,7 @@ mainWithOptions
   = do
         let smtConfig =
                 SMT.defaultConfig
-                    { SMT.timeOut = smtTimeOut
-                    , SMT.preludeFile = smtPrelude
-                    }
+                    { SMT.timeOut = smtTimeOut }
         parsedDefinition <- parseDefinition definitionFileName
         indexedDefinition@(indexedModules, _) <-
             verifyDefinitionWithBase
