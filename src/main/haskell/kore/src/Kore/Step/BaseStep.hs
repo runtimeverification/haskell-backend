@@ -56,6 +56,8 @@ import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
+import qualified Kore.Step.Condition.Evaluator as Predicate
+                 ( refutePredicate )
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
@@ -454,6 +456,9 @@ stepWithRuleForUnifier
     let
         orElse :: a -> a -> a
         p1 `orElse` p2 = if Predicate.isFalse condition then p2 else p1
+    isRemainderPredicateSat <-
+        give tools
+            $ Predicate.refutePredicate remainderPredicate
     return
         ( StepResult
             { rewrittenPattern = Predicated
@@ -484,6 +489,8 @@ stepWithRuleForUnifier
                        \for hints on how to fix:"
                     ++ show axiomLeftRaw
                     )
+                else if isRemainderPredicateSat == Just False
+                then ExpandedPattern.bottom
                 else Predicated
                     { term = initialTerm
                     , predicate = remainderPredicate

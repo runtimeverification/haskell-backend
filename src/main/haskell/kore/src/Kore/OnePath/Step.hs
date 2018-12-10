@@ -39,6 +39,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (MetadataTools) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.BaseStep
@@ -47,6 +49,8 @@ import           Kore.Step.BaseStep
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
 import qualified Kore.Step.BaseStep as StepProof
+import qualified Kore.Step.Condition.Evaluator as Predicate
+                 ( refutePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
 import qualified Kore.Step.ExpandedPattern as Predicated
@@ -277,7 +281,7 @@ transitionRule
     transitionRemoveDestination
         destination
         (RewritePattern patt@Predicated{term, predicate, substitution}, proof1)
-      = give symbolOrAliasSorts $ do
+      = give tools $ give symbolOrAliasSorts $ do
         let
             pattVars = ExpandedPattern.freeEpVariables patt
             destinationVars = ExpandedPattern.freeEpVariables destination
@@ -298,16 +302,31 @@ transitionRule
             ExpandedPattern.simplify
                 tools substitutionSimplifier simplifier result
         let
+            unfilteredOrPatterns = ExpandedPattern.extractPatterns orResult
+            refuteIfPossible
+                expanded@Predicated {predicate=expandedPredicate}
+              = do
+                truthValue <- Predicate.refutePredicate expandedPredicate
+                case truthValue of
+                    Just True ->
+                        return expanded
+                            {Predicated.predicate = makeTruePredicate}
+                    Just False ->
+                        return ExpandedPattern.bottom
+                    Nothing -> return expanded
+        refutedOrPatterns <- mapM refuteIfPossible unfilteredOrPatterns
+        let
+            filteredOrPatterns =
+                filter (not . ExpandedPattern.isBottom) refutedOrPatterns
             finalProof = proof1 <> StepProof.simplificationProof proof
             patternsWithProofs =
-                (map
+                map
                     (\p ->
                         ( RewritePattern p
                         , finalProof
                         )
                     )
-                    (ExpandedPattern.extractPatterns orResult)
-                )
+                    filteredOrPatterns
         if null patternsWithProofs
             then return [(Bottom, finalProof)]
             else return patternsWithProofs

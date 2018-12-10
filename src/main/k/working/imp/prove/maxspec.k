@@ -10,11 +10,11 @@ module MAXSPEC
 
   rule
     <k>
-if (a <= b)
-{ max = b; }
-else
-{ max = a; }
-=> .K
+        if (a <= b)
+        { max = b; }
+        else
+        { max = a; }
+        => .K
     </k>
     <state>
     a |-> A:Int
@@ -22,5 +22,20 @@ else
     max |-> (_ => A)
     </state>
     requires A >Int B
+
+  rule
+    <k>
+        if (a <= b)
+        { max = b; }
+        else
+        { max = a; }
+        => .K
+    </k>
+    <state>
+    a |-> A:Int
+    b |-> B:Int
+    max |-> (_ => B)
+    </state>
+    requires notBool(A >Int B)
 
 endmodule
