@@ -249,25 +249,18 @@ isSortInjection_ =
 
 -- | Is a symbol not simplifiable?
 --
--- sigma is non-simplifiable if whenever phi1..phin are constructor-like
--- patterns, sigma(phi1, .., phin) can only be equal to patterns that contain
--- sigma in one or more terms, and all the variables in phi1..phin occur under
--- sigma symbols.
---
--- We extend this to sets of symbols that are non-simplifiable together,
--- i.e. sigma(phi1, .., phin) can only be equal to
--- patterns that contain symbols of the set in one or more terms, and all the
--- variables in phi1..phin occur under
--- symbols in the set.
+-- sigma is non-simplifiable if whenever we have the following
+-- * Context[y] is not simplifiable to a pattern without y
+-- * sigma(..., x, ...) != bottom
+-- then Context[sigma(..., x, ...)] cannot be simplified to either x or
+-- something that does not contain x as a free variable.
 --
 -- Note that constructors and sort injection are natural candidates for
--- non-simplifiable patterns. However, for a given constructor c(x),
--- one could define a non-constructor symbol f(x) with the equation f(x) = c(x),
--- which means that c, by itself, could be replaced with f, so we need to
--- consider sets which are simplifiable together.
+-- non-simplifiable patterns. Builtins like 'element' (for sets, lists and maps)
+-- are also good candidates for non-simplifiable symbols.
 --
--- Builtins like `concat` and `element` (for sets, lists and maps) are also
--- good candidates for non-simplifiable symbols.
+-- Builtins like 'concat' need an additional condition, i.e. that the arguments
+-- are not .Map.
 isNonSimplifiable_
     :: Given (MetadataTools level StepperAttributes)
     => SymbolOrAlias level

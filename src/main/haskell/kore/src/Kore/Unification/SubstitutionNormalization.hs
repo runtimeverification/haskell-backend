@@ -89,15 +89,15 @@ normalizeSubstitution tools substitution =
             (getDependencies interestingVariables)
             variableToPattern
 
-    constructorDependencies :: Map (variable level) (Set (variable level))
-    constructorDependencies =
+    nonSimplifiableDependencies :: Map (variable level) (Set (variable level))
+    nonSimplifiableDependencies =
         Map.mapWithKey
-            (getConstructorDependencies tools interestingVariables)
+            (getNonSimplifiableDependencies tools interestingVariables)
             variableToPattern
 
     -- | Do a `topologicalSort` of variables using the `dependencies` Map.
     -- Topological cycles with non-ctors are returned as Left errors.
-    -- Constructor cycles are returned as Right Nothing.
+    -- Non-simplifiable cycles are returned as Right Nothing.
     topologicalSortConverted
         :: Either
             (SubstitutionError level variable)
@@ -105,12 +105,15 @@ normalizeSubstitution tools substitution =
     topologicalSortConverted =
         case topologicalSort (Set.toList <$> allDependencies) of
             Left (ToplogicalSortCycles vars) ->
-                case topologicalSort (Set.toList <$> constructorDependencies) of
-                    Left (ToplogicalSortCycles _constructorVars) ->
+                case nonSimplifiableSortResult of
+                    Left (ToplogicalSortCycles _vars) ->
                         Right Nothing
                     Right _ ->
                         Left (NonCtorCircularVariableDependency vars)
             Right result -> Right $ Just result
+      where
+        nonSimplifiableSortResult =
+            topologicalSort (Set.toList <$> nonSimplifiableDependencies)
 
     sortedSubstitution
         :: [variable level]
@@ -204,14 +207,14 @@ getDependencies interesting var p@(Recursive.project -> _ :< h) =
         VariablePattern v | v == var -> Set.empty
         _ -> Set.intersection interesting (freePureVariables p)
 
-{- | Calculate the dependencies of a substitution that have only constructors
-     above.
+{- | Calculate the dependencies of a substitution that have only
+     non-simplifiable symbols above.
 
     Calculate the interesting dependencies of a substitution. The interesting
     dependencies are interesting variables that are free in the substitution
     pattern.
  -}
-getConstructorDependencies
+getNonSimplifiableDependencies
     ::  ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -221,21 +224,21 @@ getConstructorDependencies
     -> variable level  -- ^ substitution variable
     -> StepPattern level variable  -- ^ substitution pattern
     -> Set (variable level)
-getConstructorDependencies
+getNonSimplifiableDependencies
     tools interesting var p@(Recursive.project -> _ :< h)
   =
     case h of
         VariablePattern v | v == var -> Set.empty
-        _ -> Recursive.fold (constructorsAbove tools interesting) p
+        _ -> Recursive.fold (nonSimplifiableAbove tools interesting) p
 
-constructorsAbove
+nonSimplifiableAbove
     :: forall variable level .
         (MetaOrObject level, Ord (variable level), Show (variable level))
     => MetadataTools level StepperAttributes
     -> Set (variable level)
     -> Base (StepPattern level variable) (Set (variable level))
     -> Set (variable level)
-constructorsAbove tools interesting p =
+nonSimplifiableAbove tools interesting p =
     case Cofree.tailF p of
         VariablePattern v ->
             if v `Set.member` interesting then Set.singleton v else Set.empty
