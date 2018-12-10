@@ -44,8 +44,7 @@ koreFailWithLocations locations errorMessage =
 containing the provided locations whenever the provided flag is true.
 -}
 koreFailWithLocationsWhen
-    :: MonadError (Error e) m
-    => AstWithLocation astWithLocation
+    :: (AstWithLocation astWithLocation, MonadError (Error e) m)
     => Bool
     -> [astWithLocation]
     -> String
