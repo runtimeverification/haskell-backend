@@ -33,6 +33,8 @@ import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import qualified SMT
 
+import           System.Directory
+                 ( removeFile )
 import           System.FilePath
                  ( takeFileName, (</>) )
 import qualified System.Process as Proc
@@ -120,7 +122,7 @@ execBenchmark
     -> FilePath
     -> Benchmark
 execBenchmark root kFile definitionFile mainModuleName test =
-    env setUp $ bench name . nfIO . execution
+    envWithCleanup setUp cleanUp $ bench name . nfIO . execution
   where
     name = takeFileName test
     setUp = do
@@ -154,10 +156,12 @@ execBenchmark root kFile definitionFile mainModuleName test =
     kompile = myShell $ (kBin </> "kompile")
         ++ " --backend haskell -d " ++ root
         ++ " " ++ (root </> kFile)
-    parseProgram =
-        let kastArgs = ["-d", root, "--kore", (root </> test)]
-            kastProc = Proc.proc (kBin </> "kast") kastArgs
-        in  Proc.readCreateProcess (quiet kastProc) ""
+    patternKoreFile = (root </> test) ++ ".kore"
+    parseProgram = do
+        myShell $ (kBin </> "krun")
+            ++ " -d " ++ root ++ " --dry-run " ++ (root </> test)
+        readFile patternKoreFile
+    cleanUp _ = removeFile patternKoreFile
     quiet p = p { Proc.std_out = Proc.NoStream, Proc.std_err = Proc.NoStream }
     myShell command = do
         (_, _, _, ph) <- Proc.createProcess $ quiet $ Proc.shell command
