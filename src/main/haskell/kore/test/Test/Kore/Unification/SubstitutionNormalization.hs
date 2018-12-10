@@ -33,7 +33,10 @@ import           Kore.Unification.SubstitutionNormalization
 import           Kore.Variables.Fresh
 
 import           Test.Kore
+import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Tasty.HUnit.Extensions
 
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =
@@ -156,6 +159,30 @@ test_substitutionNormalization =
                     ]
                 )
             )
+    , testCase "Constructor cycle"
+        (assertEqualWithExplanation ""
+            (Right [])
+            (runNormalizeSubstitutionObject
+                [ (Mock.x, Mock.constr10 (mkVar Mock.x))
+                ]
+            )
+        )
+    , testCase "Constructor with side function cycle"
+        (assertEqualWithExplanation ""
+            (Right [])
+            (runNormalizeSubstitutionObject
+                [ (Mock.x, Mock.constr20 (Mock.f (mkVar Mock.x)) (mkVar Mock.x))
+                ]
+            )
+        )
+    , testCase "Constructor with function cycle"
+        (assertEqualWithExplanation ""
+            (Left (NonCtorCircularVariableDependency [Mock.x]))
+            (runNormalizeSubstitutionObject
+                [ (Mock.x, Mock.constr10 (Mock.f (mkVar Mock.x)))
+                ]
+            )
+        )
     ]
   where
     v1 :: Sort level -> Variable level
@@ -175,6 +202,28 @@ runNormalizeSubstitution substitution =
     . evalCounter
     . runExceptT
     $ normalizeSubstitution mockMetadataTools (Substitution.wrap substitution)
+
+runNormalizeSubstitutionObject
+    :: [(Variable Object, StepPattern Object Variable)]
+    -> Either
+        (SubstitutionError Object Variable)
+        [(Variable Object, StepPattern Object Variable)]
+runNormalizeSubstitutionObject substitution =
+    fmap (Substitution.unwrap . Predicated.substitution)
+    . evalCounter
+    . runExceptT
+    $ normalizeSubstitution mockMetadataToolsO (Substitution.wrap substitution)
+  where
+    mockSymbolOrAliasSortsO :: SymbolOrAliasSorts Object
+    mockSymbolOrAliasSortsO =
+        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+    mockMetadataToolsO :: MetadataTools Object StepperAttributes
+    mockMetadataToolsO =
+        Mock.makeMetadataTools
+            mockSymbolOrAliasSortsO
+            Mock.attributesMapping
+            Mock.headTypeMapping
+            Mock.subsorts
 
 mockSymbolOrAliasSorts :: MetaOrObject level => SymbolOrAliasSorts level
 mockSymbolOrAliasSorts = const ApplicationSorts

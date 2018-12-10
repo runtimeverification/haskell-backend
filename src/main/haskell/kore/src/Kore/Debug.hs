@@ -58,6 +58,7 @@ module Kore.Debug
     , traceExceptT
     , traceMaybeT
     , traceNonErrorMonad
+    , traceFunction
     , applyWhen
     ) where
 
@@ -170,6 +171,25 @@ traceNonErrorMonad name startValues action =
         endThing name ("result: " ++ show result)
             $ return result
 
+
+{-|Wraps a function for printing debug messages, similar to 'Debug.trace'.
+
+It prints the name and the start values before evaluating the function,
+and the function result after.
+-}
+traceFunction
+    :: (Show a)
+    => String
+    -- ^ function name
+    -> String
+    -- ^ Extra debugging info (usually the inputs)
+    -> a
+    -- function result
+    -> a
+traceFunction name startValues result =
+    startThing name startValues
+    $ endThing name ("result: " ++ show result)
+    $ result
 
 startThing :: String -> String -> a -> a
 startThing name startValues =

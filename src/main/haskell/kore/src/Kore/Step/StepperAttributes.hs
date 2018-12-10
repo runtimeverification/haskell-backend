@@ -28,6 +28,8 @@ module Kore.Step.StepperAttributes
     , lensInjective, Injective (..)
     , injectiveAttribute
     , isInjective_, isInjective
+    -- * Non-simplifiable symbols
+    , isNonSimplifiable_, isNonSimplifiable
     -- * Sort injection symbols
     , lensSortInjection, SortInjection (..)
     , sortInjectionAttribute
@@ -244,3 +246,39 @@ isSortInjection_
     -> Bool
 isSortInjection_ =
     isSortInjection . sortInjection . symAttributes given
+
+-- | Is a symbol not simplifiable?
+--
+-- sigma is non-simplifiable if whenever phi1..phin are constructor-like
+-- patterns, sigma(phi1, .., phin) can only be equal to patterns that contain
+-- sigma in one or more terms, and all the variables in phi1..phin occur under
+-- sigma symbols.
+--
+-- We extend this to sets of symbols that are non-simplifiable together,
+-- i.e. sigma(phi1, .., phin) can only be equal to
+-- patterns that contain symbols of the set in one or more terms, and all the
+-- variables in phi1..phin occur under
+-- symbols in the set.
+--
+-- Note that constructors and sort injection are natural candidates for
+-- non-simplifiable patterns. However, for a given constructor c(x),
+-- one could define a non-constructor symbol f(x) with the equation f(x) = c(x),
+-- which means that c, by itself, could be replaced with f, so we need to
+-- consider sets which are simplifiable together.
+--
+-- Builtins like `concat` and `element` (for sets, lists and maps) are also
+-- good candidates for non-simplifiable symbols.
+isNonSimplifiable_
+    :: Given (MetadataTools level StepperAttributes)
+    => SymbolOrAlias level
+    -> Bool
+isNonSimplifiable_ = isNonSimplifiable . symAttributes given
+
+-- | Is a symbol non-simplifiable?
+isNonSimplifiable :: StepperAttributes -> Bool
+isNonSimplifiable = do
+    -- TODO(virgil): Add a 'non-simplifiable' attribute so that we can include
+    -- more symbols here (e.g. Map.concat)
+    Constructor isConstructor' <- constructor
+    SortInjection isSortInjection' <- sortInjection
+    return (isSortInjection' || isConstructor')
