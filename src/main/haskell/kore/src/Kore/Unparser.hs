@@ -28,7 +28,7 @@ import           Data.Void
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
-import qualified Kore.Builtin as Builtin
+import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Domain.External as Domain
 import           Kore.Parser.CString
