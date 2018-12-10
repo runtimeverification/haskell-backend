@@ -401,15 +401,6 @@ symbolOrAliasPatternRemainderParser childParser x identifier =
         <*> inParenthesesListParser childParser
         )
 
-symbolOrAliasParser
-    :: MetaOrObject level
-    => level
-    -> Parser (SymbolOrAlias level)
-symbolOrAliasParser lvl =
-    SymbolOrAlias
-        <$> idParser lvl
-        <*> inCurlyBracesListParser (sortParser lvl)
-
 applicationParser
     :: MetaOrObject level
     => Parser child
@@ -417,7 +408,7 @@ applicationParser
     -> Parser (Application level child)
 applicationParser childParser lvl =
     Application
-        <$> symbolOrAliasParser lvl
+        <$> headParser lvl
         <*> inParenthesesListParser childParser
 
 {-|'variableRemainderParser' parses the part after a variable's name and
@@ -527,9 +518,10 @@ headParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (SymbolOrAlias level)
-headParser x = do
-    identifier <- idParser x
-    (SymbolOrAlias identifier <$> inCurlyBracesListParser (sortParser x))
+headParser lvl =
+    SymbolOrAlias
+        <$> idParser lvl
+        <*> inCurlyBracesListParser (sortParser lvl)
 
 {-|'koreVariableOrTermPatternParser' parses a variable pattern or an
 application one.
