@@ -28,6 +28,8 @@ module Kore.Step.StepperAttributes
     , lensInjective, Injective (..)
     , injectiveAttribute
     , isInjective_, isInjective
+    -- * Non-simplifiable symbols
+    , isNonSimplifiable_, isNonSimplifiable
     -- * Sort injection symbols
     , lensSortInjection, SortInjection (..)
     , sortInjectionAttribute
@@ -244,3 +246,32 @@ isSortInjection_
     -> Bool
 isSortInjection_ =
     isSortInjection . sortInjection . symAttributes given
+
+-- | Is a symbol not simplifiable?
+--
+-- sigma is non-simplifiable if whenever we have the following
+-- * Context[y] is not simplifiable to a pattern without y
+-- * sigma(..., x, ...) != bottom
+-- then Context[sigma(..., x, ...)] cannot be simplified to either x or
+-- something that does not contain x as a free variable.
+--
+-- Note that constructors and sort injection are natural candidates for
+-- non-simplifiable patterns. Builtins like 'element' (for sets, lists and maps)
+-- are also good candidates for non-simplifiable symbols.
+--
+-- Builtins like 'concat' need an additional condition, i.e. that the arguments
+-- are not .Map.
+isNonSimplifiable_
+    :: Given (MetadataTools level StepperAttributes)
+    => SymbolOrAlias level
+    -> Bool
+isNonSimplifiable_ = isNonSimplifiable . symAttributes given
+
+-- | Is a symbol non-simplifiable?
+isNonSimplifiable :: StepperAttributes -> Bool
+isNonSimplifiable = do
+    -- TODO(virgil): Add a 'non-simplifiable' attribute so that we can include
+    -- more symbols here (e.g. Map.concat)
+    Constructor isConstructor' <- constructor
+    SortInjection isSortInjection' <- sortInjection
+    return (isSortInjection' || isConstructor')

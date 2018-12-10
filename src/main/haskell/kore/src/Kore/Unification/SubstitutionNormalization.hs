@@ -13,14 +13,8 @@ module Kore.Unification.SubstitutionNormalization
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Control.Monad
-                 ( (>=>) )
 import           Control.Monad.Except
                  ( ExceptT (..) )
-import           Data.Foldable
-                 ( traverse_ )
-import           Data.Functor.Foldable
-                 ( Recursive )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
@@ -42,7 +36,7 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes, isConstructor_ )
+                 ( StepperAttributes, isNonSimplifiable_ )
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
@@ -89,25 +83,37 @@ normalizeSubstitution tools substitution =
     variableToPattern :: Map (variable level) (StepPattern level variable)
     variableToPattern = Map.fromList rawSubstitution
 
-    dependencies :: Map (variable level) (Set (variable level))
-    dependencies =
+    allDependencies :: Map (variable level) (Set (variable level))
+    allDependencies =
         Map.mapWithKey
             (getDependencies interestingVariables)
             variableToPattern
 
+    nonSimplifiableDependencies :: Map (variable level) (Set (variable level))
+    nonSimplifiableDependencies =
+        Map.mapWithKey
+            (getNonSimplifiableDependencies tools interestingVariables)
+            variableToPattern
+
     -- | Do a `topologicalSort` of variables using the `dependencies` Map.
     -- Topological cycles with non-ctors are returned as Left errors.
-    -- Constructor cycles are returned as Right Nothing.
+    -- Non-simplifiable cycles are returned as Right Nothing.
     topologicalSortConverted
         :: Either
             (SubstitutionError level variable)
             (Maybe [variable level])
     topologicalSortConverted =
-        case topologicalSort (Set.toList <$> dependencies) of
-            Left (ToplogicalSortCycles vars) -> do
-                checkCircularVariableDependency tools rawSubstitution vars
-                Right Nothing
+        case topologicalSort (Set.toList <$> allDependencies) of
+            Left (ToplogicalSortCycles vars) ->
+                case nonSimplifiableSortResult of
+                    Left (ToplogicalSortCycles _vars) ->
+                        Right Nothing
+                    Right _ ->
+                        Left (NonCtorCircularVariableDependency vars)
             Right result -> Right $ Just result
+      where
+        nonSimplifiableSortResult =
+            topologicalSort (Set.toList <$> nonSimplifiableDependencies)
 
     sortedSubstitution
         :: [variable level]
@@ -126,49 +132,6 @@ normalizeSubstitution tools substitution =
     maybeToBottom = maybe
         (return Predicated.bottomPredicate)
         normalizeSortedSubstitution'
-
-checkCircularVariableDependency
-    :: (MetaOrObject level, Eq (variable level))
-    =>  MetadataTools level StepperAttributes
-    -> [(variable level, StepPattern level variable)]
-    -> [variable level]
-    -> Either (SubstitutionError level variable) ()
-checkCircularVariableDependency tools substitution vars =
-    traverse_
-        ( checkThatApplicationUsesConstructors
-            tools (NonCtorCircularVariableDependency vars)
-        . (`lookup` substitution)
-        )
-        vars
-
-checkThatApplicationUsesConstructors
-    :: (MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> checkError
-    -> Maybe (StepPattern level variable)
-    -> Either checkError ()
-checkThatApplicationUsesConstructors tools err (Just t) =
-    cataM (checkApplicationConstructor tools err) t
-  where
-    cataM
-        :: (Traversable (Base t), Recursive t, Monad m)
-        => (Base t x -> m x) -> t -> m x
-    cataM = Recursive.fold . (sequence >=>)
-checkThatApplicationUsesConstructors _ _ Nothing =
-    error "This should not be reachable"
-
-checkApplicationConstructor
-    :: (MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> checkError
-    -> Base (StepPattern level variable) ()
-    -> Either checkError ()
-checkApplicationConstructor tools err =
-    \case
-        _ :< ApplicationPattern (Application h _)
-          | give tools isConstructor_ h -> return ()
-          | otherwise -> Left err
-        _ -> return ()
 
 variableToSubstitution
     :: (Ord (variable level), Show (variable level))
@@ -243,3 +206,49 @@ getDependencies interesting var p@(Recursive.project -> _ :< h) =
     case h of
         VariablePattern v | v == var -> Set.empty
         _ -> Set.intersection interesting (freePureVariables p)
+
+{- | Calculate the dependencies of a substitution that have only
+     non-simplifiable symbols above.
+
+    Calculate the interesting dependencies of a substitution. The interesting
+    dependencies are interesting variables that are free in the substitution
+    pattern.
+ -}
+getNonSimplifiableDependencies
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        , Show (variable level)
+        )
+    => MetadataTools level StepperAttributes
+    -> Set (variable level)  -- ^ interesting variables
+    -> variable level  -- ^ substitution variable
+    -> StepPattern level variable  -- ^ substitution pattern
+    -> Set (variable level)
+getNonSimplifiableDependencies
+    tools interesting var p@(Recursive.project -> _ :< h)
+  =
+    case h of
+        VariablePattern v | v == var -> Set.empty
+        _ -> Recursive.fold (nonSimplifiableAbove tools interesting) p
+
+nonSimplifiableAbove
+    :: forall variable level .
+        (MetaOrObject level, Ord (variable level), Show (variable level))
+    => MetadataTools level StepperAttributes
+    -> Set (variable level)
+    -> Base (StepPattern level variable) (Set (variable level))
+    -> Set (variable level)
+nonSimplifiableAbove tools interesting p =
+    case Cofree.tailF p of
+        VariablePattern v ->
+            if v `Set.member` interesting then Set.singleton v else Set.empty
+        ExistsPattern Exists {existsVariable = v} -> Set.delete v dependencies
+        ForallPattern Forall {forallVariable = v} -> Set.delete v dependencies
+        ApplicationPattern Application { applicationSymbolOrAlias } ->
+            if give tools $ isNonSimplifiable_ applicationSymbolOrAlias
+                then dependencies
+                else Set.empty
+        _ -> dependencies
+  where
+    dependencies :: Set (variable level)
+    dependencies = foldl Set.union Set.empty p
