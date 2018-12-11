@@ -16,8 +16,11 @@ import           Control.Exception
 import           Data.List
                  ( nub, partition )
 import qualified Data.Map as Map
+import           Data.Maybe
+                 ( isJust )
 import           Data.Reflection
                  ( give )
+import qualified Data.Text as Text
 import           Data.These
                  ( these )
 
@@ -46,7 +49,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes, isSortInjection_ )
+                 ( Hook (..), StepperAttributes (..), isSortInjection_ )
 import           Kore.Variables.Fresh
 
 {-| 'evaluateApplication' - evaluates functions on an application pattern.
@@ -90,6 +93,12 @@ evaluateApplication
         Nothing
           | give tools isSortInjection_ appHead ->
             evaluateSortInjection tools unchangedOr app
+          | Just hook <- getAppHookString
+          , not(null symbolIdToEvaluator) ->
+            error
+                (   "Attempting to evaluate unimplemented hooked operation "
+                ++  hook ++ ".\nSymbol: " ++ show (getId symbolId)
+                )
           | otherwise ->
             return unchanged
         Just builtinOrAxiomEvaluators ->
@@ -100,7 +109,15 @@ evaluateApplication
                     do
                     (result, proof) <- applyEvaluator app builtinEvaluator
                     case result of
-                        AttemptedFunction.NotApplicable ->
+                        AttemptedFunction.NotApplicable
+                          | isAppConcrete
+                          , Just hook <- getAppHookString ->
+                            error
+                                (   "Expecting hook " ++ hook
+                                ++  " to reduce concrete pattern\n\t"
+                                ++ show app
+                                )
+                          | otherwise ->
                             evaluateWithFunctionAxioms axiomEvaluators
                         AttemptedFunction.Applied pat -> return (pat, proof)
                 )
@@ -116,12 +133,13 @@ evaluateApplication
     unwrapApplied (AttemptedFunction.Applied term, _proof) = term
     unwrapApplied _ = error "Can only unwrap 'Applied' terms."
 
+    appPurePattern = asPurePattern (mempty :< ApplicationPattern app)
+
     unchangedPatt =
         case childrenPredicateSubstitution of
             Predicated { predicate, substitution } ->
                 Predicated
-                    { term         =
-                        asPurePattern (mempty :< ApplicationPattern app)
+                    { term         = appPurePattern
                     , predicate    = predicate
                     , substitution = substitution
                     }
@@ -147,6 +165,10 @@ evaluateApplication
                 True
             (AttemptedFunction.Applied thing, _) ->
                 not (OrOfExpandedPattern.isFalse thing)
+
+    isAppConcrete = isJust (asConcretePurePattern appPurePattern)
+    getAppHookString =
+        Text.unpack <$> (getHook . hook . symAttributes tools) appHead
 
     evaluateWithFunctionAxioms evaluators = do
         results <- mapM (applyEvaluator app) evaluators
