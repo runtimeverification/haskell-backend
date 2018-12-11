@@ -40,6 +40,8 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Implicit.ImplicitKore
                  ( uncheckedKoreModule )
+import           Kore.Implicit.ImplicitSorts
+                 ( predicateSortActual )
 import           Kore.IndexedModule.IndexedModule
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
@@ -220,7 +222,12 @@ indexImplicitModule implicitModule = do
     preImplicitNames =
         Map.fromList ((,) <$> names <*> pure AstLocationImplicit)
       where
-        names = [ Text.pack (show StringSort) ]
+        names =
+            [ Text.pack (show StringSort)
+            -- Reserved for internal use.
+            -- See TODO PREDICATE in Kore.ASTUtils.SmartConstructors
+            , getId (sortActualName predicateSortActual)
+            ]
     implicitModuleName = moduleName implicitModule
     moduleNameForError = getModuleNameForError implicitModuleName
     modulesByName = Map.singleton implicitModuleName implicitModule

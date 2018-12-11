@@ -30,6 +30,8 @@ import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import qualified Kore.Builtin as Builtin
 import           Kore.Exec
+import           Kore.Implicit.ImplicitSorts
+                 ( predicateSort )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Predicate.Predicate
@@ -176,11 +178,6 @@ extractSearchResults =
                 (extractSearchResults first)
                 (extractSearchResults second)
         _ -> Nothing
-  where
-    predicateSort = SortActualSort SortActual
-        { sortActualName = "PREDICATE"
-        , sortActualSorts = []
-        }
 
 verifiedMyModule :: KoreModule -> VerifiedModule StepperAttributes
 verifiedMyModule module_ = indexedModule

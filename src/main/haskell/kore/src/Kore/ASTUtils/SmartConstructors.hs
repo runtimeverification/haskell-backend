@@ -71,8 +71,8 @@ import           Data.Text
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.MLPatterns
 import           Kore.AST.Pure
+import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
-
 
 -- | Gets the sort of of a pattern, taking the Metadatatools implicitly
 -- from the context.
@@ -88,15 +88,6 @@ getSort
     -> Sort level
 getSort (Recursive.project -> _ :< pat) =
     getPatternResultSort given pat
-
--- | Placeholder sort for when we construct a new predicate
--- But we don't know yet where it's going to be attached.
--- No particular way to avoid this, unfortunately.
--- This will probably happen often during proof routines.
-predicateSort
-    :: MetaOrObject level
-    => Sort level
-predicateSort = mkSort "PREDICATE"
 
 patternLens
     ::  forall f level domain variable1 variable2 annotation.
@@ -788,7 +779,5 @@ symS x s =
     SymbolOrAlias (noLocationId x) s
 
 -- | Placeholder. Should never appear in output of 'mk' funcs
-fixmeSort
-    :: MetaOrObject level
-    => Sort level
-fixmeSort = mkSort "FIXME"
+fixmeSort :: Sort level
+fixmeSort = mkSort "_FIXME"

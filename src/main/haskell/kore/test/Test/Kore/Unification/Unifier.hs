@@ -35,7 +35,7 @@ import           Kore.AST.Sentence
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkSort, mkVar )
+                 ( mkVar, predicateSort )
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
@@ -79,7 +79,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 bottomPredicate :: CommonPurePatternStub Object Domain.Builtin
-bottomPredicate = withSort (mkSort "PREDICATE") bottom_
+bottomPredicate = withSort predicateSort bottom_
 
 applyInj
     :: Sort Object
