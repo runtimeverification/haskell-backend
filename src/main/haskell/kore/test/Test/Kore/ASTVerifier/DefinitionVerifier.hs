@@ -225,7 +225,7 @@ simpleSymbolSentence (SymbolName name) (SortName sort) =
 
 simpleAxiomSentence :: CommonKorePattern -> KoreSentence
 simpleAxiomSentence unifiedPattern =
-    asSentence
+    asKoreAxiomSentence
         (SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = unifiedPattern
@@ -419,7 +419,7 @@ symbolSentenceWithSortParameters
 axiomSentenceWithSortParameters
     :: CommonKorePattern -> [UnifiedSortVariable] -> KoreSentence
 axiomSentenceWithSortParameters unifiedPattern parameters =
-    asSentence
+    asKoreAxiomSentence
         (SentenceAxiom
             { sentenceAxiomParameters = parameters
             , sentenceAxiomPattern = unifiedPattern
@@ -433,7 +433,7 @@ axiomSentenceWithAttributes
     -> [CommonKorePattern]
     -> KoreSentence
 axiomSentenceWithAttributes parameters unifiedPattern attributes =
-    asSentence
+    asKoreAxiomSentence
         (SentenceAxiom
             { sentenceAxiomParameters = parameters
             , sentenceAxiomPattern = unifiedPattern

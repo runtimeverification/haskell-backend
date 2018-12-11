@@ -337,14 +337,13 @@ sortVisibilityTests =
             , sortActualSorts = [ sort ]
             } :: Sort Object
     sortReferenceInSortSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( TopPattern Top { topSort = sortReferenceInSort } )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     sortReferenceInSortSupportingSentences =
         [ asSentence
             (SentenceSort
@@ -355,24 +354,22 @@ sortVisibilityTests =
             :: KoreSentenceSort Object)
         ]
     sortReferenceInTopPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = topSortPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     metaSortReferenceInTopPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = metaTopSortPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     sortReferenceInExistsPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( ExistsPattern Exists
@@ -391,10 +388,9 @@ sortVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     sortReferenceInAndPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( AndPattern And
@@ -405,10 +401,9 @@ sortVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     sortReferenceInNextPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( NextPattern Next
@@ -418,10 +413,9 @@ sortVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     sortReferenceInPatternInPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( NextPattern Next
@@ -438,7 +432,6 @@ sortVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     sortReferenceInPatternInPatternSupportingSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSentenceSymbolResultSortSentence =
@@ -498,8 +491,8 @@ sortVisibilityTests =
     sortReferenceInSentenceAliasSortsSupportSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSymbolOrAliasSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( ApplicationPattern Application
@@ -512,7 +505,6 @@ sortVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     sortReferenceInSymbolOrAliasSupportSentences =
         [ asSentence
             (SentenceSymbol
@@ -654,24 +646,22 @@ symbolVisibilityTests =
             }
         :: KoreSentenceSymbol Meta)
     symbolReferenceInAxiomSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = symbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     metaSymbolReferenceInAxiomSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = metaSymbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     symbolReferenceInAndPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( AndPattern And
@@ -682,10 +672,9 @@ symbolVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     symbolReferenceInExistsPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( ExistsPattern Exists
@@ -699,10 +688,9 @@ symbolVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     symbolReferenceInNextPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( NextPattern Next
@@ -712,10 +700,9 @@ symbolVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     symbolReferenceInSymbolOrAliasSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( ApplicationPattern Application
@@ -728,7 +715,6 @@ symbolVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     symbolReferenceInSymbolOrAliasSupportSentences =
         asSentence
             (SentenceSymbol
@@ -875,24 +861,22 @@ aliasVisibilityTests =
             }
         :: KoreSentenceAlias Meta)
     aliasReferenceInAxiomSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = aliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     metaAliasReferenceInAxiomSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = metaAliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     aliasReferenceInAndPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( AndPattern And
@@ -903,10 +887,9 @@ aliasVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     aliasReferenceInExistsPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( ExistsPattern Exists
@@ -920,10 +903,9 @@ aliasVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     aliasReferenceInNextPatternSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( NextPattern Next
@@ -933,10 +915,9 @@ aliasVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     aliasReferenceInAliasOrAliasSentence =
-        asSentence
-            (SentenceAxiom
+        asKoreAxiomSentence
+            SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = asCommonKorePattern
                     ( ApplicationPattern Application
@@ -949,7 +930,6 @@ aliasVisibilityTests =
                     )
                 , sentenceAxiomAttributes = Attributes []
                 }
-            :: KoreSentenceAxiom)
     aliasReferenceInAliasOrAliasSupportSentences =
         asSentence
             (SentenceAlias

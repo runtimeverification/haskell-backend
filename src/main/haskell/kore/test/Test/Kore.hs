@@ -558,7 +558,10 @@ koreSentenceGen = oneof
         <$> sentenceSymbolGen Object
     , constructUnifiedSentence SentenceImportSentence
         <$> sentenceImportGen
-    , asSentence <$> sentenceAxiomGen unifiedSortVariableGen korePatternGen
+    , asKoreAxiomSentence
+        <$> sentenceAxiomGen unifiedSortVariableGen korePatternGen
+    , asKoreClaimSentence
+        <$> sentenceAxiomGen unifiedSortVariableGen korePatternGen
     , constructUnifiedSentence SentenceSortSentence
         <$> sentenceSortGen Object
     , constructUnifiedSentence (SentenceHookSentence . SentenceHookedSort)

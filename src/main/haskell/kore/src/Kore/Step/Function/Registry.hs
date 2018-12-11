@@ -23,7 +23,7 @@ import           Data.Maybe
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
-                 ( AsSentence (..), KoreSentenceAxiom, SentenceAxiom (..) )
+                 ( KoreSentenceAxiom, SentenceAxiom (..), asKoreAxiomSentence )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), KoreIndexedModule,
@@ -90,7 +90,9 @@ axiomToIdAxiomPatternPair
 axiomToIdAxiomPatternPair
     level
     axiom
-  = case koreSentenceToAxiomPattern level (asSentence axiom) of
+  = case koreSentenceToAxiomPattern level
+        (asKoreAxiomSentence axiom)
+    of
         Left _ -> Nothing
         Right
             (FunctionAxiomPattern

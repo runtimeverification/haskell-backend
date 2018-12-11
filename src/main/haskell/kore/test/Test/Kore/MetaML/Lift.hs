@@ -792,7 +792,7 @@ test_lift =
                 }
             ]
             (liftSentence
-                (constructUnifiedSentence SentenceAxiomSentence $ SentenceAxiom
+                (asKoreAxiomSentence $ SentenceAxiom
                     { sentenceAxiomParameters =
                         [ UnifiedObject (SortVariable (testId "a"))
                         , UnifiedMeta (SortVariable (testId "#a"))
@@ -827,7 +827,7 @@ test_lift =
                 }
             ]
             (liftSentence
-                (asSentence SentenceAxiom
+                (asKoreAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = [] :: [UnifiedSortVariable]
                     , sentenceAxiomPattern = unifiedStringPattern
                     , sentenceAxiomAttributes =
