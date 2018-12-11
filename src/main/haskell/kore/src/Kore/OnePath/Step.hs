@@ -205,7 +205,8 @@ transitionRule
   where
     transitionSimplify (RewritePattern config, proof) =
         applySimplify RewritePattern (config, proof)
-    transitionSimplify c@(Stuck _, _) = return [c]
+    transitionSimplify (Stuck config, proof) =
+        applySimplify Stuck (config, proof)
     transitionSimplify c@(Bottom, _) = return [c]
 
     applySimplify wrapper (config, proof) =
@@ -218,7 +219,9 @@ transitionRule
                 prove config' = (config', proof'')
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = ExpandedPattern.filterOr configs
-            return (prove <$> map wrapper (toList nonEmptyConfigs))
+            if null nonEmptyConfigs
+                then return [(Bottom, proof'')]
+                else return (prove <$> map wrapper (toList nonEmptyConfigs))
 
     transitionApplyWithRemainders
         :: [RewriteRule level]
