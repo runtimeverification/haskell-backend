@@ -46,7 +46,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
-                 ( StepperAttributes, isSortInjection_ )
+                 ( StepperAttributes (..), isSortInjection_, isHooked_ )
 import           Kore.Variables.Fresh
 
 {-| 'evaluateApplication' - evaluates functions on an application pattern.
@@ -90,6 +90,13 @@ evaluateApplication
         Nothing
           | give tools isSortInjection_ appHead ->
             evaluateSortInjection tools unchangedOr app
+          | give tools isHooked_ appHead && not(null symbolIdToEvaluator) ->
+            error
+                (   "Attempting to evaluate unimplemented hooked operation"
+                ++ (show $ hook (symAttributes tools appHead))
+                ++ "\nSymbol: "
+                ++  show appHead
+                )
           | otherwise ->
             return unchanged
         Just builtinOrAxiomEvaluators ->

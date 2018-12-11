@@ -37,6 +37,7 @@ module Kore.Step.StepperAttributes
     -- * Hooked symbols
     , lensHook, Hook (..)
     , hookAttribute
+    , isHooked_, isHooked
     -- * SMT symbols
     , smtlib, Smtlib (..)
     , smtlibAttribute
@@ -52,6 +53,8 @@ import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( (>=>) )
 import           Data.Default
+import           Data.Maybe
+                 ( isJust )
 import           Data.Reflection
                  ( Given, given )
 import           GHC.Generics
@@ -275,3 +278,30 @@ isNonSimplifiable = do
     Constructor isConstructor' <- constructor
     SortInjection isSortInjection' <- sortInjection
     return (isSortInjection' || isConstructor')
+
+{- | Is the symbol hooked?
+
+A symbol is hooked if it is given the @hook@ attribute.
+
+See also: 'isHooked', 'hookAttribute'
+
+ -}
+isHooked_
+    :: Given (MetadataTools level StepperAttributes)
+    => SymbolOrAlias level
+    -> Bool
+isHooked_ = isHooked . symAttributes given
+
+{- | Is the symbol injective?
+
+A symbol is injective if it is given the @injective@ attribute, the
+@constructor@ attribute, or the @sortInjection@ attribute.
+
+See also: 'injectiveAttribute', 'constructorAttribute', 'sortInjectionAttribute'
+
+ -}
+isHooked :: StepperAttributes -> Bool
+isHooked = do
+    Hook hook' <- hook
+    return (isJust hook')
+
