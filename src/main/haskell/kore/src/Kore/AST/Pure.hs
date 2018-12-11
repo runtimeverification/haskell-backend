@@ -12,6 +12,7 @@ module Kore.AST.Pure
     , ConcretePurePattern
     , asPurePattern
     , fromPurePattern
+    , eraseAnnotations
     , traverseVariables
     , mapVariables
     , asConcretePurePattern
@@ -207,6 +208,13 @@ asPurePattern
         (PurePattern level domain variable annotation)
     -> PurePattern level domain variable annotation
 asPurePattern = Recursive.embed
+
+-- | Erase the annotations from any 'PurePattern'.
+eraseAnnotations
+    :: Functor domain
+    => PurePattern level domain variable erased
+    -> PurePattern level domain variable (Annotation.Null level)
+eraseAnnotations = (<$) Annotation.Null
 
 -- | A pure pattern at level @level@ with variables in the common 'Variable'.
 type CommonPurePattern level domain =
