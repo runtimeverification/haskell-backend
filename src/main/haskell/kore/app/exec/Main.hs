@@ -446,8 +446,9 @@ mainWithOptions
                         (\pat -> (ExitFailure 1, pat))
                         (\_ -> (ExitSuccess, Pattern.mkTop))
                     <$> prove
-                        indexedModule
-                        specIndexedModule
+                            stepLimit
+                            indexedModule
+                            specIndexedModule
         let
             finalExternalPattern =
                 either (error . printError) id
