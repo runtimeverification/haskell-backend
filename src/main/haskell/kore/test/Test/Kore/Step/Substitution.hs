@@ -326,6 +326,7 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
             mockSymbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
+            Mock.sortAttributesMapping
             []
 
     normalize
