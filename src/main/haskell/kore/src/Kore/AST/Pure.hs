@@ -301,9 +301,9 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcretePurePattern
-    :: forall level domain variable. Traversable domain
-    => PurePattern level domain variable (Annotation.Null level)
-    -> Maybe (ConcretePurePattern level domain)
+    :: forall level domain variable annotation. Traversable domain
+    => PurePattern level domain variable annotation
+    -> Maybe (PurePattern level domain Concrete annotation)
 asConcretePurePattern = traverseVariables (\case { _ -> Nothing })
 
 {- | Construct a 'PurePattern' from a 'ConcretePurePattern'.
@@ -316,9 +316,9 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcretePurePattern
-    :: forall level domain variable. Functor domain
-    => ConcretePurePattern level domain
-    -> PurePattern level domain variable (Annotation.Null level)
+    :: forall level domain variable annotation. Functor domain
+    => PurePattern level domain Concrete annotation
+    -> PurePattern level domain variable annotation
 fromConcretePurePattern = mapVariables (\case {})
 
 {- | Cast a pure pattern with @'Const' 'Void'@ domain values into any domain.
