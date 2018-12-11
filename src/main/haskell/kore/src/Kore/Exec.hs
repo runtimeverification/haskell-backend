@@ -325,12 +325,13 @@ emptyPatternSimplifier tools =
 
 -- | Proving a spec given as a module containing rules to be proven
 prove
-    :: KoreIndexedModule StepperAttributes
+    :: Limit Natural
+    -> KoreIndexedModule StepperAttributes
     -- ^ The main module
     -> KoreIndexedModule StepperAttributes
     -- ^ The spec module
     -> Simplifier (Either (CommonStepPattern Object) ())
-prove definitionModule specModule = do
+prove limit definitionModule specModule = do
     let
         tools = extractMetadataTools definitionModule
         symbolOrAlias = symbolOrAliasSorts tools
@@ -360,5 +361,5 @@ prove definitionModule specModule = do
             result
 
   where
-    makeClaim claim = (claim, Unlimited)
+    makeClaim claim = (claim, limit)
 
