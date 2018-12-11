@@ -34,13 +34,14 @@ makeMetadataTools
     :: SymbolOrAliasSorts level
     -> [(SymbolOrAlias level, StepperAttributes)]
     -> [(SymbolOrAlias level, HeadType)]
+    -> [(Sort level, StepperAttributes)]
     -> [(Sort level, Sort level)]
     -> MetadataTools level StepperAttributes
-makeMetadataTools symbolOrAliasSorts attr headTypes isSubsortOf =
+makeMetadataTools symbolOrAliasSorts attr headTypes sortTypes isSubsortOf =
     MetadataTools
         { symAttributes = attributesFunction attr
         , symbolOrAliasType = headTypeFunction headTypes
-        , sortAttributes = const functionAttributes
+        , sortAttributes = functionAttributesFunction sortTypes
         , symbolOrAliasSorts = symbolOrAliasSorts
         -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
         -- 'isSubsortOf' only work with direct (non-transitive) relationships.
@@ -66,6 +67,12 @@ headTypeFunction
     -> SymbolOrAlias level
     -> HeadType
 headTypeFunction = caseBasedFunction
+
+functionAttributesFunction
+    :: [(Sort level, StepperAttributes)]
+    -> Sort level
+    -> StepperAttributes
+functionAttributesFunction = caseBasedFunction
 
 caseBasedFunction
     :: (Eq a, Show a)

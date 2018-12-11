@@ -466,6 +466,7 @@ mockMetadataTools =
         mockSymbolOrAliasSorts
         Mock.attributesMapping
         Mock.headTypeMapping
+        Mock.sortAttributesMapping
         Mock.subsorts
 
 testSort :: forall level. MetaOrObject level => Sort level

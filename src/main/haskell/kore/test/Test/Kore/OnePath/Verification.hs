@@ -296,6 +296,7 @@ test_onePathVerification = give symbolOrAliasSorts
             symbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
+            Mock.sortAttributesMapping
             Mock.subsorts
 
 simpleAxiom

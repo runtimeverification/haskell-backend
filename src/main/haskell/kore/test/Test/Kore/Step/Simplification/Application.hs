@@ -428,7 +428,11 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
         Mock.makeSymbolOrAliasSorts symbolOrAliasSortsMapping
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymbolOrAliasSorts attributesMapping headTypeMapping []
+            mockSymbolOrAliasSorts
+            attributesMapping
+            headTypeMapping
+            []
+            []
 
 makeApplication
     :: (MetaOrObject level, Ord (variable level))

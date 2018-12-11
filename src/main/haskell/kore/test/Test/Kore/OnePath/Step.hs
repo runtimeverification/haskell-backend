@@ -31,8 +31,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
-                 makeTruePredicate )
+                 ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
+                 makeNotPredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
@@ -321,6 +321,31 @@ test_onePathStrategy = give symbolOrAliasSorts
             , _actual3
             , _actual4
             ]
+    , testCase "Stuck pattern simplification" $ do
+        -- Target: 1
+        -- Coinductive axioms: none
+        -- Normal axiom: x => 1 if x<2
+        -- Start pattern: 0
+        [ _actual ] <-
+            runOnePathSteps
+                metadataTools
+                (Limit 2)
+                (ExpandedPattern.fromPurePattern (Mock.builtinInt 0))
+                (Mock.builtinInt 1)
+                []
+                [ conditionalRewrite
+                    (mkVar Mock.xInt)
+                    (Mock.builtinInt 1)
+                    (makeEqualsPredicate
+                        (Mock.lessInt
+                            (mkVar Mock.xInt) (Mock.builtinInt 2)
+                        )
+                        (Mock.builtinBool True)
+                    )
+                ]
+        assertEqualWithExplanation ""
+            Bottom
+            _actual
     ]
   where
     symbolOrAliasSorts :: SymbolOrAliasSorts Object
@@ -332,8 +357,8 @@ test_onePathStrategy = give symbolOrAliasSorts
             symbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
+            Mock.sortAttributesMapping
             Mock.subsorts
-
 
 simpleRewrite
     :: MetaOrObject level
@@ -345,6 +370,20 @@ simpleRewrite left right =
         { left = left
         , right = right
         , requires = makeTruePredicate
+        , attributes = def
+        }
+
+conditionalRewrite
+    :: MetaOrObject level
+    => CommonStepPattern level
+    -> CommonStepPattern level
+    -> CommonPredicate level
+    -> RewriteRule level
+conditionalRewrite left right condition =
+    RewriteRule RulePattern
+        { left = left
+        , right = right
+        , requires = condition
         , attributes = def
         }
 

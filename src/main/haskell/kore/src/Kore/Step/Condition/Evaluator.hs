@@ -315,7 +315,7 @@ translateApplication
         { applicationSymbolOrAlias
         , applicationChildren
         }
-    =
+  =
     case getSmtlib (symAttributes smtTools applicationSymbolOrAlias) of
         Nothing -> empty
         Just sExpr ->

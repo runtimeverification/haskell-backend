@@ -1041,6 +1041,7 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
             mockSymbolOrAliasSortsR
             Mock.attributesMapping
             Mock.headTypeMapping
+            Mock.sortAttributesMapping
             Mock.subsorts
 
 mockStepperAttributes :: SymbolOrAlias Meta -> StepperAttributes

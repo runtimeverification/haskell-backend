@@ -223,6 +223,7 @@ runNormalizeSubstitutionObject substitution =
             mockSymbolOrAliasSortsO
             Mock.attributesMapping
             Mock.headTypeMapping
+            Mock.sortAttributesMapping
             Mock.subsorts
 
 mockSymbolOrAliasSorts :: MetaOrObject level => SymbolOrAliasSorts level
