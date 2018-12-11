@@ -412,9 +412,9 @@ sigmaSymbol = SymbolOrAlias
 
 metaSigma
     :: Functor dom
-    => CommonPurePattern Meta dom ()
-    -> CommonPurePattern Meta dom ()
-    -> CommonPurePattern Meta dom ()
+    => CommonPurePattern Meta dom
+    -> CommonPurePattern Meta dom
+    -> CommonPurePattern Meta dom
 metaSigma p1 p2 = App_ sigmaSymbol [p1, p2]
 
 
@@ -426,8 +426,8 @@ fSymbol = SymbolOrAlias
 
 metaF
     :: Functor dom
-    => CommonPurePattern Meta dom ()
-    -> CommonPurePattern Meta dom ()
+    => CommonPurePattern Meta dom
+    -> CommonPurePattern Meta dom
 metaF p = App_ fSymbol [p]
 
 
@@ -439,8 +439,8 @@ gSymbol = SymbolOrAlias
 
 metaG
     :: Functor dom
-    => CommonPurePattern Meta dom ()
-    -> CommonPurePattern Meta dom ()
+    => CommonPurePattern Meta dom
+    -> CommonPurePattern Meta dom
 metaG p = App_ gSymbol [p]
 
 
@@ -452,8 +452,8 @@ hSymbol = SymbolOrAlias
 
 metaH
     :: Functor dom
-    => CommonPurePattern Meta dom ()
-    -> CommonPurePattern Meta dom ()
+    => CommonPurePattern Meta dom
+    -> CommonPurePattern Meta dom
 metaH p = App_ hSymbol [p]
 
 runStep

@@ -96,10 +96,10 @@ sort = implicitSymbol "#sort" [stringMetaSort, sortListMetaSort] sortMetaSort
 sortA
     ::  ( Functor domain
         , Show (Pattern Meta domain Variable child)
-        , child ~ CommonPurePattern Meta domain ()
+        , child ~ CommonPurePattern Meta domain
         )
-    => [CommonPurePatternStub Meta domain ()]
-    -> CommonPurePatternStub Meta domain ()
+    => [CommonPurePatternStub Meta domain]
+    -> CommonPurePatternStub Meta domain
 sortA = applyS sort
 
 symbol =
@@ -884,7 +884,7 @@ ceilBTAxiom =
 
 
 metaSortDescription
-    :: MetaSortType -> Sentence Meta param pat domain variable
+    :: MetaSortType -> Sentence Meta sortParam patternType
 metaSortDescription sortType =
     SentenceSortSentence SentenceSort
         { sentenceSortName

@@ -347,11 +347,11 @@ test_concretizeKeysAxiom =
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set.Builtin -> CommonStepPattern Object
-Right asPattern = Set.asPattern indexedModule setSort
+Right asPattern = Set.asPattern verifiedModule setSort
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object
-Right asExpandedPattern = Set.asExpandedPattern indexedModule setSort
+Right asExpandedPattern = Set.asExpandedPattern verifiedModule setSort
 
 -- * Constructors
 

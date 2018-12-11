@@ -12,7 +12,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (FloorPattern Floor
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (FloorPattern Floor
                                         { floorOperandSort =
                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                         , floorResultSort =
@@ -20,7 +20,7 @@ Definition
                                         , floorChild =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                         , variableSort =
                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))

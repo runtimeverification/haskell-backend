@@ -12,9 +12,10 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Text as Text
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.AST.Kore
+import Kore.AST.PureToKore
 import Kore.AST.Sentence
+import Kore.ASTUtils.SmartPatterns
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
 
@@ -547,8 +548,8 @@ unfilteredTestExamplesForSort
                             aliasName
                             sort
                             sortVariables
-                            (TopPattern $ Top sort)
-                            (TopPattern $ Top sort) )
+                            (patternPureToKore $ Top_ sort)
+                        )
                     : additionalSentences
                     )
             }
@@ -574,8 +575,8 @@ unfilteredTestExamplesForSort
                             sort
                             additionalSort
                             sortVariables
-                            (TopPattern $ Top sort)
-                            (TopPattern $ Top sort) )
+                            (patternPureToKore $ Top_ additionalSort)
+                        )
                     : additionalSentences
                     )
             }

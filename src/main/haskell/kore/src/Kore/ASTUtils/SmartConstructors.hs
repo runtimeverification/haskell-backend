@@ -68,9 +68,10 @@ import           Data.Reflection
 import           Data.Text
                  ( Text )
 
-import Kore.AST.MLPatterns
-import Kore.AST.Pure
-import Kore.IndexedModule.MetadataTools
+import qualified Kore.Annotation.Null as Annotation
+import           Kore.AST.MLPatterns
+import           Kore.AST.Pure
+import           Kore.IndexedModule.MetadataTools
 
 
 -- | Gets the sort of of a pattern, taking the Metadatatools implicitly
@@ -494,9 +495,9 @@ mkAnd
         , Show (PurePattern level domain variable ())
         , Traversable domain
         )
-    => PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkAnd andFirst andSecond =
     ensureSortAgreement $ asPurePattern (mempty :< AndPattern and0)
   where
@@ -506,8 +507,8 @@ mkAnd andFirst andSecond =
 mkApp
     :: (Functor domain, MetaOrObject level, Given (SymbolOrAliasSorts level))
     => SymbolOrAlias level
-    -> [PurePattern level domain variable ()]
-    -> PurePattern level domain variable ()
+    -> [PurePattern level domain variable (Annotation.Null level)]
+    -> PurePattern level domain variable (Annotation.Null level)
 mkApp applicationSymbolOrAlias applicationChildren =
     asPurePattern (mempty :< ApplicationPattern application)
   where
@@ -516,7 +517,7 @@ mkApp applicationSymbolOrAlias applicationChildren =
 
 mkBottom
     :: (Functor domain, MetaOrObject level)
-    => PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
 mkBottom =
     asPurePattern (mempty :< BottomPattern bottom)
   where
@@ -529,8 +530,8 @@ mkCeil
         , Show1 domain
         , Functor domain
         )
-    => PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkCeil ceilChild =
     asPurePattern (mempty :< CeilPattern ceil)
   where
@@ -544,8 +545,8 @@ mkCeil ceilChild =
 mkDomainValue
     :: (Functor domain, MetaOrObject Object)
     => Sort Object
-    -> domain (PurePattern Object domain variable ())
-    -> PurePattern Object domain variable ()
+    -> domain (PurePattern Object domain variable (Annotation.Null Object))
+    -> PurePattern Object domain variable (Annotation.Null Object)
 mkDomainValue domainValueSort domainValueChild =
     asPurePattern (mempty :< DomainValuePattern domainValue)
   where
@@ -558,9 +559,9 @@ mkEquals
         , Show (PurePattern level domain variable ())
         , Traversable domain
         )
-    => PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkEquals equalsFirst equalsSecond =
     ensureSortAgreement $ asPurePattern (mempty :< EqualsPattern equals)
   where
@@ -580,8 +581,8 @@ mkExists
         , Traversable domain
         )
     => variable level
-    -> PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkExists existsVariable existsChild =
     ensureSortAgreement $ asPurePattern (mempty :< ExistsPattern exists)
   where
@@ -595,8 +596,8 @@ mkFloor
         , Show1 domain
         , Traversable domain
         )
-    => PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkFloor floorChild =
     asPurePattern (mempty :< FloorPattern floor0)
   where
@@ -615,8 +616,8 @@ mkForall
         , Traversable domain
         )
     => variable level
-    -> PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkForall forallVariable forallChild =
     ensureSortAgreement $ asPurePattern (mempty :< ForallPattern forall)
   where
@@ -629,9 +630,9 @@ mkIff
         , Show (PurePattern level domain variable ())
         , Traversable domain
         )
-    => PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkIff iffFirst iffSecond =
     ensureSortAgreement $ asPurePattern (mempty :< IffPattern iff0)
   where
@@ -644,9 +645,9 @@ mkImplies
         , Show (PurePattern level domain variable ())
         , Traversable domain
         )
-    => PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkImplies impliesFirst impliesSecond =
     ensureSortAgreement $ asPurePattern (mempty :< ImpliesPattern implies0)
   where
@@ -659,9 +660,9 @@ mkIn
         , Show (PurePattern level domain variable ())
         , Traversable domain
         )
-    => PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkIn inContainedChild inContainingChild =
     ensureSortAgreement $ asPurePattern (mempty :< InPattern in0)
   where
@@ -680,8 +681,8 @@ mkNext
         , Show (PurePattern Object domain variable ())
         , Traversable domain
         )
-    => PurePattern Object domain variable ()
-    -> PurePattern Object domain variable ()
+    => PurePattern Object domain variable (Annotation.Null Object)
+    -> PurePattern Object domain variable (Annotation.Null Object)
 mkNext nextChild =
     ensureSortAgreement $ asPurePattern (mempty :< NextPattern next)
   where
@@ -694,8 +695,8 @@ mkNot
         , Show (PurePattern level domain variable ())
         , Traversable domain
         )
-    => PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkNot notChild =
     ensureSortAgreement $ asPurePattern (mempty :< NotPattern not0)
   where
@@ -708,9 +709,9 @@ mkOr
         , Show (PurePattern level domain variable ())
         , Traversable domain
         )
-    => PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
-    -> PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
+    -> PurePattern level domain variable (Annotation.Null level)
 mkOr orFirst orSecond =
     ensureSortAgreement $ asPurePattern (mempty :< OrPattern or0)
   where
@@ -719,13 +720,13 @@ mkOr orFirst orSecond =
 mkRewrites
     ::  ( MetaOrObject Object
         , Given (SymbolOrAliasSorts Object)
-        , SortedVariable var
-        , Show (PurePattern Object dom var ())
-        , Traversable dom
+        , SortedVariable variable
+        , Show (PurePattern Object domain variable ())
+        , Traversable domain
         )
-    => PurePattern Object dom var ()
-    -> PurePattern Object dom var ()
-    -> PurePattern Object dom var ()
+    => PurePattern Object domain variable (Annotation.Null Object)
+    -> PurePattern Object domain variable (Annotation.Null Object)
+    -> PurePattern Object domain variable (Annotation.Null Object)
 mkRewrites rewritesFirst rewritesSecond =
     ensureSortAgreement $ asPurePattern (mempty :< RewritesPattern rewrites0)
   where
@@ -734,7 +735,7 @@ mkRewrites rewritesFirst rewritesSecond =
 
 mkTop
     :: (Functor domain, MetaOrObject level)
-    => PurePattern level domain variable ()
+    => PurePattern level domain variable (Annotation.Null level)
 mkTop =
     asPurePattern (mempty :< TopPattern top)
   where
@@ -743,14 +744,14 @@ mkTop =
 mkVar
     :: (Functor domain, MetaOrObject level, Given (SymbolOrAliasSorts level))
     => variable level
-    -> PurePattern level domain variable ()
+    -> PurePattern level domain variable (Annotation.Null level)
 mkVar var =
     asPurePattern (mempty :< VariablePattern var)
 
 mkStringLiteral
     :: Functor domain
     => String
-    -> PurePattern Meta domain variable ()
+    -> PurePattern Meta domain variable (Annotation.Null Meta)
 mkStringLiteral string =
     asPurePattern (mempty :< StringLiteralPattern stringLiteral)
   where
@@ -759,7 +760,7 @@ mkStringLiteral string =
 mkCharLiteral
     :: Functor domain
     => Char
-    -> PurePattern Meta domain variable ()
+    -> PurePattern Meta domain variable (Annotation.Null Meta)
 mkCharLiteral char =
     asPurePattern (mempty :< CharLiteralPattern charLiteral)
   where

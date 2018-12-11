@@ -23,7 +23,6 @@ module Kore.AST.PureToKore
 
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.AST.Kore
@@ -33,14 +32,14 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 
 patternPureToKore
-    :: MetaOrObject level
-    => CommonPurePattern level Domain.Builtin ann
-    -> CommonKorePattern
+    :: (Functor domain, MetaOrObject level)
+    => PurePattern level domain variable (annotation level)
+    -> KorePattern domain variable (Unified annotation)
 patternPureToKore =
     Recursive.unfold patternPureToKoreWorker
   where
-    patternPureToKoreWorker =
-        (mempty :<) . asUnifiedPattern . Cofree.tailF . Recursive.project
+    patternPureToKoreWorker (Recursive.project -> ann :< pat) =
+        asUnified ann :< asUnifiedPattern pat
 
 -- |Given a level, this function attempts to extract a pure patten
 -- of this level from a KorePattern.
@@ -48,39 +47,52 @@ patternPureToKore =
 -- 'error' any part of the pattern if of a different level.
 -- For lifting functions see "Kore.MetaML.Lift".
 patternKoreToPure
-    :: MetaOrObject level
+    :: (MetaOrObject level, Traversable domain)
     => level
-    -> CommonKorePattern
-    -> Either (Error a) (CommonPurePattern level Domain.Builtin ())
+    -> KorePattern domain variable (Unified annotation)
+    -> Either (Error a) (PurePattern level domain variable (annotation level))
 patternKoreToPure level =
     Recursive.fold (extractPurePattern $ isMetaOrObject $ toProxy level)
 
 extractPurePattern
     ::  ( MetaOrObject level
-        , result ~ Either (Error a) (CommonPurePattern level Domain.Builtin ())
+        , Traversable domain
+        , result ~ PurePattern level domain variable (annotation level)
         )
     => IsMetaOrObject level
-    -> Base CommonKorePattern result
-    -> result
-extractPurePattern IsMeta = \(_ :< pat) ->
+    -> Base
+        (KorePattern domain variable (Unified annotation))
+        (Either (Error e) result)
+    -> Either (Error e) result
+extractPurePattern IsMeta = \(ann :< pat) ->
     case pat of
-        UnifiedMetaPattern meta ->
-            Recursive.embed . (mempty :<) <$> sequence meta
+        UnifiedMetaPattern mpat ->
+            case ann of
+                UnifiedMeta mann ->
+                    Recursive.embed . (mann :<) <$> sequence mpat
+                UnifiedObject _ ->
+                    koreFail "Unexpected object-level annotation"
         UnifiedObjectPattern _ ->
             koreFail "Unexpected object-level pattern"
-extractPurePattern IsObject = \(_ :< pat) ->
+extractPurePattern IsObject = \(ann :< pat) ->
     case pat of
-        UnifiedObjectPattern object ->
-            Recursive.embed . (mempty :<) <$> sequence object
+        UnifiedObjectPattern opat ->
+            case ann of
+                UnifiedObject oann ->
+                    Recursive.embed . (oann :<) <$> sequence opat
+                UnifiedMeta _ ->
+                    koreFail "Unexpected meta-level annotation"
         UnifiedMetaPattern _ ->
             koreFail "Unexpected meta-level pattern"
 
 -- FIXME : all of this attribute record syntax stuff
 -- Should be temporary measure
 sentencePureToKore
-    :: MetaOrObject level
-    => PureSentence level Domain.Builtin
-    -> KoreSentence
+    :: (Functor domain, MetaOrObject level)
+    => Sentence level (SortVariable level)
+        (PurePattern level domain variable (annotation level))
+    -> UnifiedSentence UnifiedSortVariable
+        (KorePattern domain variable (Unified annotation))
 sentencePureToKore (SentenceAliasSentence sa) =
     asSentence $ aliasSentencePureToKore sa
 sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) =
@@ -105,26 +117,25 @@ sentencePureToKore (SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol a
     constructUnifiedSentence (SentenceHookSentence . SentenceHookedSymbol) $ SentenceSymbol a b c d
 
 aliasSentencePureToKore
-    :: MetaOrObject level
-    => PureSentenceAlias level Domain.Builtin
-    -> KoreSentenceAlias level
-aliasSentencePureToKore msx = msx
-    { sentenceAliasLeftPattern =
-        patternPureToKore <$> sentenceAliasLeftPattern msx
-    , sentenceAliasRightPattern =
-        patternPureToKore <$> sentenceAliasRightPattern msx
-    }
+    :: (Functor domain, MetaOrObject level)
+    => SentenceAlias level
+        (PurePattern level domain variable (annotation level))
+    -> SentenceAlias level (KorePattern domain variable (Unified annotation))
+aliasSentencePureToKore = (<$>) patternPureToKore
 
 axiomSentencePureToKore
-    :: MetaOrObject level
-    => PureSentenceAxiom level Domain.Builtin
-    -> KoreSentenceAxiom
-axiomSentencePureToKore msx = msx
-    { sentenceAxiomPattern =
-        patternPureToKore (sentenceAxiomPattern msx)
-    , sentenceAxiomParameters =
-        map asUnified (sentenceAxiomParameters msx)
-    }
+    :: (Functor domain, MetaOrObject level)
+    => SentenceAxiom (SortVariable level)
+        (PurePattern level domain variable (annotation level))
+    -> SentenceAxiom UnifiedSortVariable
+        (KorePattern domain variable (Unified annotation))
+axiomSentencePureToKore = unifyAxiomParameters . (<$>) patternPureToKore
+  where
+    unifyAxiomParameters axiom@SentenceAxiom { sentenceAxiomParameters } =
+        axiom
+            { sentenceAxiomParameters =
+                asUnified <$> sentenceAxiomParameters
+            }
 
 modulePureToKore
     :: MetaOrObject level

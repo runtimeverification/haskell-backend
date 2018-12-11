@@ -10,10 +10,7 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
-import           Kore.AST.Common
-                 ( CharLiteral (..), DomainValue (..), Sort (..),
-                 SortActual (..), StringLiteral (..) )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkCharLiteral, mkOr, mkStringLiteral, mkVar )
 import qualified Kore.Domain.Builtin as Domain
@@ -26,7 +23,6 @@ import           Kore.Step.PatternAttributesError
                  ( FunctionError (..), FunctionalError (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-
 
 import           Test.Kore
                  ( testId )

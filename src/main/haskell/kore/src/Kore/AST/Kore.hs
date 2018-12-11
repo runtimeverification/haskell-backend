@@ -23,9 +23,11 @@ Please refer to Section 9 (The Kore Language) of the
 {-# LANGUAGE TemplateHaskell #-}
 
 module Kore.AST.Kore
-    ( CommonKorePattern
-    , KorePattern (..)
+    ( KorePattern (..)
+    , CommonKorePattern
+    , VerifiedKorePattern
     , asKorePattern
+    , eraseAnnotations
     , asCommonKorePattern
     , UnifiedSortVariable
     , UnifiedSort
@@ -35,7 +37,10 @@ module Kore.AST.Kore
     -- * Re-exports
     , Base, CofreeF (..)
     , module Kore.AST.Common
+    , module Kore.AST.Identifier
     , module Kore.AST.MetaOrObject
+    , module Kore.Annotation.Valid
+    , module Kore.Sort
     ) where
 
 import           Control.Comonad
@@ -58,11 +63,15 @@ import           Data.Hashable
 import           GHC.Generics
                  ( Generic )
 
+import qualified Kore.Annotation.Null as Annotation
+import           Kore.Annotation.Valid
 import           Kore.AST.Common hiding
                  ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
                  mapVariables, traverseVariables )
+import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Sort
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
 allow using toghether both 'Meta' and 'Object' patterns.
@@ -208,8 +217,7 @@ newtype KorePattern
     deriving (Foldable, Functor, Generic, Traversable)
 
 instance
-    ( Eq annotation
-    , EqMetaOrObject variable
+    ( EqMetaOrObject variable
     , Eq1 domain, Functor domain
     ) =>
     Eq (KorePattern domain variable annotation)
@@ -217,14 +225,13 @@ instance
     (==) = eqWorker
       where
         eqWorker
-            (Recursive.project -> annotation1 :< pat1)
-            (Recursive.project -> annotation2 :< pat2)
+            (Recursive.project -> _ :< pat1)
+            (Recursive.project -> _ :< pat2)
           =
-            annotation1 == annotation2 && liftEq eqWorker pat1 pat2
+            liftEq eqWorker pat1 pat2
 
 instance
-    ( Ord annotation
-    , OrdMetaOrObject variable
+    ( OrdMetaOrObject variable
     , Ord1 domain, Functor domain
     ) =>
     Ord (KorePattern domain variable annotation)
@@ -232,23 +239,20 @@ instance
     compare = compareWorker
       where
         compareWorker
-            (Recursive.project -> annotation1 :< pat1)
-            (Recursive.project -> annotation2 :< pat2)
+            (Recursive.project -> _ :< pat1)
+            (Recursive.project -> _ :< pat2)
           =
-            compare annotation1 annotation2
-            <> liftCompare compareWorker pat1 pat2
+            liftCompare compareWorker pat1 pat2
 
 deriving instance
     ( Show annotation
     , ShowMetaOrObject variable
-    , Show (domain child)
-    , child ~ Cofree (UnifiedPattern domain variable) annotation
+    , Show1 domain
     ) =>
     Show (KorePattern domain variable annotation)
 
 instance
     ( Functor domain
-    , Hashable annotation
     , Hashable (variable Meta)
     , Hashable (variable Object)
     , Hashable (domain child)
@@ -256,8 +260,7 @@ instance
     ) =>
     Hashable (KorePattern domain variable annotation)
   where
-    hashWithSalt salt (Recursive.project -> annotation :< pat) =
-        salt `hashWithSalt` annotation `hashWithSalt` pat
+    hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
 
 instance
     ( Functor domain
@@ -296,11 +299,24 @@ asKorePattern
     :: (Functor domain, MetaOrObject level)
     => CofreeF
         (Pattern level domain variable)
-        annotation
-        (KorePattern domain variable annotation)
-    -> KorePattern domain variable annotation
+        (annotation level)
+        (KorePattern domain variable (Unified annotation))
+    -> KorePattern domain variable (Unified annotation)
 asKorePattern (ann :< pat) =
-    Recursive.embed (ann :< asUnifiedPattern pat)
+    Recursive.embed (asUnified ann :< asUnifiedPattern pat)
+
+-- | Erase the annotations from any 'KorePattern'.
+eraseAnnotations
+    :: Functor domain
+    => KorePattern domain variable erased
+    -> KorePattern domain variable (Unified Annotation.Null)
+eraseAnnotations =
+    Recursive.unfold eraseAnnotationsWorker
+  where
+    eraseAnnotationsWorker (Recursive.project -> _ :< unified) =
+        case unified of
+            UnifiedMetaPattern _ -> UnifiedMeta Annotation.Null :< unified
+            UnifiedObjectPattern _ -> UnifiedObject Annotation.Null :< unified
 
 instance Functor dom => Comonad (KorePattern dom var) where
     extract (KorePattern a) = extract a
@@ -327,7 +343,11 @@ instance UnifiedPatternInterface UnifiedPattern where
 
 -- |'CommonKorePattern' is the instantiation of 'KorePattern' with common
 -- 'Variable's.
-type CommonKorePattern = KorePattern Domain.Builtin Variable ()
+type CommonKorePattern =
+    KorePattern Domain.Builtin Variable (Unified Annotation.Null)
+
+-- | A 'CommonKorePattern' that has passed verification.
+type VerifiedKorePattern = KorePattern Domain.Builtin Variable (Unified Valid)
 
 type UnifiedSortVariable = Unified SortVariable
 type UnifiedSort = Unified Sort

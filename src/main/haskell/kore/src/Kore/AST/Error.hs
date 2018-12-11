@@ -25,11 +25,10 @@ module Kore.AST.Error
 import Data.List
        ( intercalate )
 
-import           Kore.AST.AstWithLocation
-import           Kore.AST.Kore
-import           Kore.AST.Sentence
-import qualified Kore.Domain.Builtin as Domain
-import           Kore.Error
+import Kore.AST.AstWithLocation
+import Kore.AST.Kore
+import Kore.AST.Sentence
+import Kore.Error
 
 {-|'koreFailWithLocations' produces an error result with a context containing
 the provided locations. -}
@@ -45,8 +44,11 @@ koreFailWithLocations locations errorMessage =
 containing the provided locations whenever the provided flag is true.
 -}
 koreFailWithLocationsWhen
-    :: AstWithLocation astWithLocation
-    => Bool -> [astWithLocation] -> String -> Either (Error a) ()
+    :: (AstWithLocation astWithLocation, MonadError (Error e) m)
+    => Bool
+    -> [astWithLocation]
+    -> String
+    -> m ()
 koreFailWithLocationsWhen condition locations errorMessage =
     withLocationsContext locations (koreFailWhen condition errorMessage)
 
@@ -81,7 +83,7 @@ withLocationAndContext location message =
  -}
 withSentenceSymbolContext
     :: MonadError (Error e) m
-    => KoreSentenceSymbol level
+    => SentenceSymbol level patternType
     -> m a
     -> m a
 withSentenceSymbolContext
@@ -93,7 +95,7 @@ withSentenceSymbolContext
 {- | Identify and locate the given alias declaration in the error context.
  -}
 withSentenceAliasContext
-    :: KoreSentenceAlias level
+    :: SentenceAlias level patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceAliasContext
@@ -105,7 +107,7 @@ withSentenceAliasContext
 {- | Identify and locate the given axiom declaration in the error context.
  -}
 withSentenceAxiomContext
-    :: KoreSentenceAxiom
+    :: SentenceAxiom sortParam patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceAxiomContext _ = withContext "axiom declaration"
@@ -113,7 +115,7 @@ withSentenceAxiomContext _ = withContext "axiom declaration"
 {- | Identify and locate the given claim declaration in the error context.
  -}
 withSentenceClaimContext
-    :: KoreSentenceAxiom
+    :: SentenceAxiom sortParam patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceClaimContext _ = withContext "claim declaration"
@@ -121,7 +123,7 @@ withSentenceClaimContext _ = withContext "claim declaration"
 {- | Identify and locate the given sort declaration in the error context.
  -}
 withSentenceSortContext
-    :: KoreSentenceSort level
+    :: SentenceSort level patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceSortContext
@@ -133,7 +135,7 @@ withSentenceSortContext
 {- | Identify and locate the given hooked declaration in the error context.
  -}
 withSentenceHookContext
-    :: KoreSentenceHook
+    :: SentenceHook patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceHookContext =
@@ -150,7 +152,7 @@ withSentenceHookContext =
 {- | Locate the given import declaration in the error context.
  -}
 withSentenceImportContext
-    :: KoreSentenceImport
+    :: SentenceImport patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceImportContext _ = \go -> go
@@ -158,12 +160,7 @@ withSentenceImportContext _ = \go -> go
 {- | Identify and  locate the given sentence in the error context.
  -}
 withSentenceContext
-    :: Sentence
-        level
-        UnifiedSortVariable
-        KorePattern
-        Domain.Builtin
-        Variable
+    :: Sentence level sortParam patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceContext =

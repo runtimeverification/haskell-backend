@@ -16,11 +16,10 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Kore.ASTUtils.Substitution
-( subst
-, localSubst
-, freeVars
-)
-where
+    ( subst
+    , localSubst
+    , freeVars
+    ) where
 
 import           Control.Lens
 import           Data.Functor.Classes
@@ -38,14 +37,13 @@ import Kore.ASTUtils.SmartPatterns
 -- Here `phi_1` is the old pattern that disappears
 -- and `phi_2` is the new pattern that replaces it.
 subst
-    ::  ( Traversable dom
+    ::  ( Eq1 domain, Traversable domain
         , MetaOrObject level
-        , Eq1 dom
         )
-    => CommonPurePattern level dom ()
-    -> CommonPurePattern level dom ()
-    -> CommonPurePattern level dom ()
-    -> CommonPurePattern level dom ()
+    => CommonPurePattern level domain
+    -> CommonPurePattern level domain
+    -> CommonPurePattern level domain
+    -> CommonPurePattern level domain
 subst old new = \case
     Forall_ s1 v p -> handleBinder old new Forall_ s1 v p
     Exists_ s1 v p -> handleBinder old new Exists_ s1 v p
@@ -68,8 +66,8 @@ handleBinder old new binder s1 v p
         [Variable (Id (name <> (Text.pack . show) n) loc) sort | n <- [(0::Integer)..] ]
 
 freeVars
-    :: (MetaOrObject level, Traversable dom)
-    => CommonPurePattern level dom ()
+    :: (MetaOrObject level, Traversable domain)
+    => CommonPurePattern level domain
     -> S.Set (Variable level)
 freeVars = \case
     Forall_ s1 v p -> S.delete v $ freeVars p
@@ -82,10 +80,12 @@ freeVars = \case
 -- substituting at an arbitrary set of eligible positions,
 -- but it doesn't matter in practice.
 localSubst
-    :: (Eq1 dom, MetaOrObject level, Traversable dom)
-    => CommonPurePattern level dom ()
-    -> CommonPurePattern level dom ()
+    ::  ( Eq1 domain, Traversable domain
+        , MetaOrObject level
+        )
+    => CommonPurePattern level domain
+    -> CommonPurePattern level domain
     -> [Int]
-    -> CommonPurePattern level dom ()
-    -> CommonPurePattern level dom ()
+    -> CommonPurePattern level domain
+    -> CommonPurePattern level domain
 localSubst a b path pat = localInPattern path (subst a b) pat

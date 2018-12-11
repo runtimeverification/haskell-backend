@@ -138,7 +138,7 @@ substituteM subst p
                 binderPatternSubstitutePreprocess subst ann f
             var@(VariablePattern v) ->
                 return $ case lookup (asUnified v) subst of
-                    Just up -> ann <$ up
+                    Just up -> up
                     Nothing -> Recursive.embed (ann :< unifyPattern var)
             other ->
                 (<$>)

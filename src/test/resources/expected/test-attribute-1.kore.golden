@@ -12,7 +12,7 @@ Definition
                             [ KorePattern
                                 { getKorePattern = CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = () :< UnifiedObjectPattern (ApplicationPattern Application
+                                        { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
@@ -21,7 +21,7 @@ Definition
                                             , applicationChildren =
                                                 [ CofreeT
                                                     { runCofreeT = Identity
-                                                        { runIdentity = () :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "Nat"))
+                                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "Nat"))
                                                         }
                                                     }
                                                 ]

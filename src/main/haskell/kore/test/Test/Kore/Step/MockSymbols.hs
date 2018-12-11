@@ -28,8 +28,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
-                 ( Id (..), Sort (..), SortActual (..), SymbolOrAlias (..),
-                 Variable (..) )
+                 ( SymbolOrAlias (..), Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( asConcretePurePattern )
@@ -43,6 +42,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( HeadType, SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
+import           Kore.Sort
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
 

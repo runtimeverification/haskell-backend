@@ -19,5 +19,5 @@ newtype VerifySuccess = VerifySuccess ()
     deriving (Eq, Show)
 
 {-| 'verifySuccess' helper for signaling verification success. -}
-verifySuccess :: Either (Error VerifyError) VerifySuccess
-verifySuccess = Right (VerifySuccess ())
+verifySuccess :: MonadError (Error VerifyError) m => m VerifySuccess
+verifySuccess = return (VerifySuccess ())

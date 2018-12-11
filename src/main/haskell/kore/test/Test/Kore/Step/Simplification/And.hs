@@ -8,9 +8,7 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
-import           Kore.AST.Common
-                 ( And (..), Sort (..) )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( getSort, mkAnd, mkBottom, mkTop, mkVar )
 import           Kore.ASTUtils.SmartPatterns

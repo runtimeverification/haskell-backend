@@ -9,19 +9,17 @@ import           Control.Monad.Error.Class
 import qualified Data.Set as Set
 
 import           Kore.AST.Kore
-                 ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Meta (..), Unified (..) )
-import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternPureToKore )
 import           Kore.ASTUtils.SmartPatterns
-import           Kore.ASTVerifier.PatternVerifier
-                 ( verifyPattern )
+import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import qualified Kore.Attribute.Null as Attribute
 import           Kore.Error
                  ( Error, castError, koreFail, koreFailWhen, withContext )
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( VerifiedModule, mapIndexedModulePatterns )
 import           Kore.MetaML.AST
                  ( CommonMetaPattern, metaFreeVariables )
 import           Kore.Substitution.Class
@@ -48,21 +46,26 @@ type Rule = MLRule Symbol Var Formula
 
 -- To get an indexed module one can use `verifyAndIndexDefinition`
 formulaVerifier
-    :: KoreIndexedModule atts
+    :: VerifiedModule atts
     -> CommonMetaPattern
     -> Either (Error MLError) ()
-formulaVerifier indexedModule formula = do
-    castError
-        (verifyPattern
-            mempty -- Kore.Builtin.Verifiers: don't validate builtin patterns
-            indexedModule
-            (sortVariables unifiedFormula)
-            Nothing
-            unifiedFormula
-        )
-    return ()
+formulaVerifier verifiedModule formula = do
+    castError $ runPatternVerifier context $ do
+        _ <- verifyStandalonePattern Nothing unifiedFormula
+        return ()
   where
     unifiedFormula = patternPureToKore formula
+    indexedModule =
+        mapIndexedModulePatterns eraseAnnotations verifiedModule
+    context =
+        PatternVerifier.Context
+            { indexedModule = Attribute.Null <$ indexedModule
+            , declaredSortVariables = sortVariables unifiedFormula
+            , builtinPatternVerifier =
+                -- Do not validate builtin patterns.
+                mempty
+            , declaredVariables = emptyDeclaredVariables
+            }
 
 -- TODO(virgil): Check that symbols and not aliases are used in a few places
 -- like checkSingvar

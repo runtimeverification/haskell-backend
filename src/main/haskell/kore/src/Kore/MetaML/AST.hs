@@ -23,6 +23,7 @@ import           Data.Set
                  ( Set )
 import qualified Data.Text as Text
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
@@ -55,7 +56,7 @@ type MetaDefinition = PureDefinition Meta Domain.Builtin
 
 -- |'CommonMetaPattern' is the instantiation of 'MetaPattern' with common
 -- 'Variable's.
-type CommonMetaPattern = MetaMLPattern Variable ()
+type CommonMetaPattern = MetaMLPattern Variable (Annotation.Null Meta)
 
 asCommonMetaPattern
     :: Pattern Meta Domain.Builtin Variable CommonMetaPattern
@@ -78,8 +79,8 @@ nilSortListHead = groundHead "#nilSortList" AstLocationImplicit
 consSortListHead :: SymbolOrAlias Meta
 consSortListHead = groundHead "#consSortList" AstLocationImplicit
 
-nilSortListMetaPattern :: MetaMLPattern v ()
-nilSortListMetaPattern = asPurePattern $ () :< constant nilSortListHead
+nilSortListMetaPattern :: MetaMLPattern v (Annotation.Null Meta)
+nilSortListMetaPattern = asPurePattern $ mempty :< constant nilSortListHead
 
 nilPatternListHead :: SymbolOrAlias Meta
 nilPatternListHead = groundHead "#nilPatternList" AstLocationImplicit
@@ -87,8 +88,9 @@ nilPatternListHead = groundHead "#nilPatternList" AstLocationImplicit
 consPatternListHead :: SymbolOrAlias Meta
 consPatternListHead = groundHead "#consPatternList" AstLocationImplicit
 
-nilPatternListMetaPattern :: MetaMLPattern v ()
-nilPatternListMetaPattern = asPurePattern $ () :< constant nilPatternListHead
+nilPatternListMetaPattern :: MetaMLPattern v (Annotation.Null Meta)
+nilPatternListMetaPattern =
+    asPurePattern $ mempty :< constant nilPatternListHead
 
 variableHead :: SymbolOrAlias Meta
 variableHead = groundHead "#variable" AstLocationImplicit

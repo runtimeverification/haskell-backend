@@ -29,7 +29,8 @@ import qualified Data.Text as Text
 
 import Control.Monad.Counter
 import Kore.AST.Common
-       ( AstLocation (..), Id (..), Variable (..) )
+       ( Variable (..) )
+import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
 
 {- | A 'FreshVariable' can be freshened in a 'MonadCounter'.

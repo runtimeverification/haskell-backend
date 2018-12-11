@@ -333,7 +333,7 @@ simpleEvaluator
         )
 simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
 simpleEvaluator ((from, to) : ps) app
-  | from == embed (() :< ApplicationPattern app) =
+  | from == embed (mempty :< ApplicationPattern app) =
     return
         ( Applied
             (OrOfExpandedPattern.make

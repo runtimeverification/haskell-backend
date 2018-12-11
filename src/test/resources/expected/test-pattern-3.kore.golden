@@ -12,13 +12,13 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (AndPattern And
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (AndPattern And
                                         { andSort =
                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                         , andFirst =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                         , variableSort =
                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
@@ -28,7 +28,7 @@ Definition
                                         , andSecond =
                                             CofreeT
                                                 { runCofreeT = Identity
-                                                    { runIdentity = () :< UnifiedObjectPattern (VariablePattern Variable
+                                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
                                                         , variableSort =
                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))

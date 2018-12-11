@@ -29,8 +29,8 @@ import Test.Kore
 
 extractPurePattern
     :: MetaOrObject level
-    => CommonPurePatternStub level Domain.Builtin ()
-    -> CommonPurePattern level Domain.Builtin ()
+    => CommonPurePatternStub level Domain.Builtin
+    -> CommonPurePattern level Domain.Builtin
 extractPurePattern (SortedPatternStub sp) =
     asPurePattern $ mempty :< sortedPatternPattern sp
 extractPurePattern (UnsortedPatternStub ups) =
@@ -88,7 +88,7 @@ test_mlPattern =
                     undefinedHeadSort
                     (StringLiteralPattern (StringLiteral "Hello!")
                         :: Pattern Meta Domain.Builtin Variable
-                            (CommonPurePattern Meta Domain.Builtin ())
+                            (CommonPurePattern Meta Domain.Builtin)
                     )
                 )
             )
@@ -99,7 +99,7 @@ test_mlPattern =
                     undefinedHeadSort
                     (CharLiteralPattern (CharLiteral 'h')
                         :: Pattern Meta Domain.Builtin Variable
-                            (CommonPurePattern Meta Domain.Builtin ())
+                            (CommonPurePattern Meta Domain.Builtin)
                     )
                 )
             )

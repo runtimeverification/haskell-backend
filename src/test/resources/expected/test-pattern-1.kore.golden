@@ -12,7 +12,7 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = () :< UnifiedObjectPattern (TopPattern (Top (SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object)))))
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (TopPattern (Top (SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object)))))
                                     }
                                 }
                             }

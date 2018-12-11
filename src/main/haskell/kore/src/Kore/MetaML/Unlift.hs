@@ -48,7 +48,7 @@ class UnliftableFromMetaML mixed where
 
 isImplicitHead
     :: SentenceSymbolOrAlias s
-    => s level (PurePattern level) domain Variable
+    => s level (CommonPurePattern level domain)
     -> SymbolOrAlias level
     -> Bool
 isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])

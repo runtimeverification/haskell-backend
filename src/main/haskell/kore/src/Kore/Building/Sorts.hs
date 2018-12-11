@@ -22,14 +22,17 @@ module Kore.Building.Sorts
     , MetaSortVariable1 (MetaSortVariable1)
     , asMetaSortVariable
     , ObjectSortVariable1 (ObjectSortVariable1)
+    -- * Re-exports
+    , module Kore.Sort
     ) where
 
 import qualified Data.Text as Text
 
-import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Building.AsAst
 import Kore.Implicit.ImplicitSorts
+import Kore.Sort hiding
+       ( MetaBasicSortType (..), MetaSortType (..) )
 
 type AsSort level = AsAst (Sort level)
 type MetaSort = AsSort Meta

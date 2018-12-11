@@ -16,6 +16,7 @@ import Kore.Proof.FunctionalityAxioms
 import Kore.Proof.LineBasedProof
 import Kore.Proof.Proof
 import Kore.Proof.Unification
+import Kore.Sort
 
 test_exampleProofs :: TestTree
 test_exampleProofs = testGroup "exampleProofs" $

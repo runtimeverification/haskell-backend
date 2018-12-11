@@ -10,10 +10,10 @@ Portability : POSIX
 
 module Kore.Implicit.ImplicitSorts where
 
-import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Implicit.ImplicitSortsImpl
 import Kore.MetaML.AST
+import Kore.Sort
 
 -- TODO(virgil-serbanuta): Add tests for "defined but not used" symbols
 charMetaSort     :: Sort Meta

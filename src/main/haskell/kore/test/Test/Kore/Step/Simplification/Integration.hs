@@ -19,8 +19,7 @@ import qualified Data.Sequence as Seq
 import           Data.These
                  ( These (..) )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Domain.Builtin as Domain

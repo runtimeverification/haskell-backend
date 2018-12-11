@@ -10,9 +10,9 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor.Const
                  ( Const )
 import           Data.Hashable
-import           Data.Map.Strict
+import           Data.Map
                  ( Map )
-import qualified Data.Map.Strict as Map
+import qualified Data.Map as Map
 import           Data.Sequence
                  ( Seq )
 import           Data.Set
@@ -25,10 +25,10 @@ import           GHC.Generics
 import Kore.AST.Pure
 
 data Builtin child
-    = BuiltinPattern !(CommonPurePattern Meta (Const Void) ())
-    | BuiltinMap !(Map (ConcretePurePattern Object Builtin ()) child)
+    = BuiltinPattern !(CommonPurePattern Meta (Const Void))
+    | BuiltinMap !(Map (ConcretePurePattern Object Builtin) child)
     | BuiltinList !(Seq child)
-    | BuiltinSet !(Set (ConcretePurePattern Object Builtin ()))
+    | BuiltinSet !(Set (ConcretePurePattern Object Builtin))
     deriving (Foldable, Functor, Generic, Traversable)
 
 deriving instance Eq child => Eq (Builtin child)

@@ -73,7 +73,7 @@ test_astPrettyPrint =
             "PurePattern\n\
             \    { getPurePattern = CofreeT\n\
             \        { runCofreeT = Identity\n\
-            \            { runIdentity = () :< TopPattern (Top (SortActualSort SortActual\n\
+            \            { runIdentity = Null :< TopPattern (Top (SortActualSort SortActual\n\
             \                { sortActualName = (Id \"#Char\" AstLocationNone) :: Id Meta\n\
             \                , sortActualSorts = []\n\
             \                }))\n\

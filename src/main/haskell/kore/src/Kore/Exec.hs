@@ -33,9 +33,10 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Meta, Object (..), asUnified )
 
+import           Kore.AST.Identifier
 import qualified Kore.Builtin as Builtin
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import           Kore.OnePath.Verification
@@ -84,7 +85,7 @@ import           Kore.Variables.Fresh
 
 -- | Concrete execution
 exec
-    :: KoreIndexedModule StepperAttributes
+    :: VerifiedModule StepperAttributes
     -- ^ The main module
     -> CommonStepPattern Object
     -- ^ The input pattern
@@ -109,7 +110,7 @@ exec indexedModule purePattern stepLimit strategy =
 
 -- | Concrete execution search
 search
-    :: KoreIndexedModule StepperAttributes
+    :: VerifiedModule StepperAttributes
     -- ^ The main module
     -> CommonStepPattern Object
     -- ^ The input pattern
@@ -123,14 +124,14 @@ search
     -- ^ The bound on the number of search matches and the search type
     -> Simplifier (CommonStepPattern Object)
 search
-    indexedModule
+    verifiedModule
     purePattern
     stepLimit
     strategy
     searchPattern
     searchConfig
   =
-    setUpConcreteExecution indexedModule purePattern stepLimit strategy execute
+    setUpConcreteExecution verifiedModule purePattern stepLimit strategy execute
   where
     execute metadataTools simplifier substitutionSimplifier executionGraph = do
         let
@@ -152,7 +153,7 @@ search
 -- | Provide a MetadataTools, simplifier, subsitution simplifier, and execution
 -- tree to the callback.
 setUpConcreteExecution
-    :: KoreIndexedModule StepperAttributes
+    :: VerifiedModule StepperAttributes
     -- ^ The main module
     -> CommonStepPattern Object
     -- ^ The input pattern
@@ -163,15 +164,21 @@ setUpConcreteExecution
     -> (MetadataTools Object StepperAttributes
         -> StepPatternSimplifier Object Variable
         -> PredicateSubstitutionSimplifier Object Simplifier
-        -> ExecutionGraph (CommonExpandedPattern Object, StepProof Object Variable)
+        -> ExecutionGraph
+            (CommonExpandedPattern Object, StepProof Object Variable)
         -> Simplifier a)
     -- ^ Callback to do the execution
     -> Simplifier a
-setUpConcreteExecution indexedModule purePattern stepLimit strategy execute = do
-    let
-        metadataTools = extractMetadataTools indexedModule
+setUpConcreteExecution
+    verifiedModule
+    purePattern
+    stepLimit
+    strategy
+    execute
+  = do
+    let metadataTools = extractMetadataTools verifiedModule
     axiomsAndSimplifiers <-
-        makeAxiomsAndSimplifiers indexedModule metadataTools
+        makeAxiomsAndSimplifiers verifiedModule metadataTools
     let
         (rewriteAxioms, simplifier, substitutionSimplifier) =
             axiomsAndSimplifiers
@@ -236,21 +243,21 @@ preSimplify
         }
 
 makeAxiomsAndSimplifiers
-    :: KoreIndexedModule StepperAttributes
+    :: VerifiedModule StepperAttributes
     -> MetadataTools Object StepperAttributes
     -> Simplifier
         ( [RewriteRule Object]
         , StepPatternSimplifier Object Variable
         , PredicateSubstitutionSimplifier Object Simplifier
         )
-makeAxiomsAndSimplifiers indexedModule tools =
+makeAxiomsAndSimplifiers verifiedModule tools =
     do
         functionAxioms <-
             simplifyFunctionAxioms tools
-                (extractFunctionAxioms Object indexedModule)
+                (extractFunctionAxioms Object verifiedModule)
         rewriteAxioms <-
             simplifyRewriteAxioms tools
-                (extractRewriteAxioms Object indexedModule)
+                (extractRewriteAxioms Object verifiedModule)
         let
             functionEvaluators =
                 axiomPatternsToEvaluators functionAxioms
@@ -260,7 +267,7 @@ makeAxiomsAndSimplifiers indexedModule tools =
                     (Map.mapMissing (const That))
                     (Map.zipWithMatched (const These))
                     -- builtin functions
-                    (Builtin.koreEvaluators indexedModule)
+                    (Builtin.koreEvaluators verifiedModule)
                     -- user-defined functions
                     functionEvaluators
             simplifier
@@ -326,9 +333,9 @@ emptyPatternSimplifier tools =
 -- | Proving a spec given as a module containing rules to be proven
 prove
     :: Limit Natural
-    -> KoreIndexedModule StepperAttributes
+    -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> KoreIndexedModule StepperAttributes
+    -> VerifiedModule StepperAttributes
     -- ^ The spec module
     -> Simplifier (Either (CommonStepPattern Object) ())
 prove limit definitionModule specModule = do
@@ -362,4 +369,3 @@ prove limit definitionModule specModule = do
 
   where
     makeClaim claim = (claim, limit)
-

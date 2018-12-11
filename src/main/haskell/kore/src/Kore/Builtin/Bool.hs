@@ -40,9 +40,8 @@ import           Data.Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-                 ( Meta, Object )
+import qualified Kore.Annotation.Null as Annotation
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
@@ -121,7 +120,10 @@ asPattern
 asPattern resultSort =
     DV_ resultSort . Domain.BuiltinPattern . asMetaPattern
 
-asMetaPattern :: Functor dom => Bool -> PurePattern Meta dom var ()
+asMetaPattern
+    :: Functor domain
+    => Bool
+    -> PurePattern Meta domain variable (Annotation.Null Meta)
 asMetaPattern True = StringLiteral_ "true"
 asMetaPattern False = StringLiteral_ "false"
 

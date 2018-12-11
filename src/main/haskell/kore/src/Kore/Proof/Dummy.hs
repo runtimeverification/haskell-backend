@@ -33,10 +33,10 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
+import Kore.ASTUtils.SmartConstructors
 import Kore.IndexedModule.MetadataTools
        ( SymbolOrAliasSorts )
-
-import Kore.ASTUtils.SmartConstructors
+import Kore.Sort
 
 var :: MetaOrObject level => Text -> Variable level
 var x = x `varS` defaultSort

@@ -50,8 +50,7 @@ import qualified Data.Sequence as Seq
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -60,7 +59,7 @@ import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
@@ -277,7 +276,7 @@ builtinFunctions =
 
  -}
 asPattern
-    :: KoreIndexedModule attrs
+    :: VerifiedModule attrs
     -- ^ indexed module where pattern would appear
     -> Sort Object
     -> Either (Kore.Error e)
@@ -300,7 +299,7 @@ asPattern indexedModule dvSort = do
 
  -}
 asExpandedPattern
-    :: KoreIndexedModule attrs
+    :: VerifiedModule attrs
     -- ^ dictionary of Map constructor symbols
     -> Sort Object
     -> Either (Kore.Error e)
@@ -312,7 +311,7 @@ asExpandedPattern symbols resultSort =
  -}
 lookupSymbolUnit
     :: Sort Object
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolUnit = Builtin.lookupSymbol "LIST.unit"
 
@@ -320,7 +319,7 @@ lookupSymbolUnit = Builtin.lookupSymbol "LIST.unit"
  -}
 lookupSymbolElement
     :: Sort Object
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolElement = Builtin.lookupSymbol "LIST.element"
 
@@ -328,7 +327,7 @@ lookupSymbolElement = Builtin.lookupSymbol "LIST.element"
  -}
 lookupSymbolConcat
     :: Sort Object
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolConcat = Builtin.lookupSymbol "LIST.concat"
 
@@ -336,7 +335,7 @@ lookupSymbolConcat = Builtin.lookupSymbol "LIST.concat"
  -}
 lookupSymbolGet
     :: Sort Object
-    -> KoreIndexedModule attrs
+    -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolGet = Builtin.lookupSymbol "LIST.get"
 

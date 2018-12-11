@@ -11,8 +11,10 @@ import Data.Text
        ( Text )
 
 import           Kore.AST.Kore
+import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Null as Attribute
@@ -164,25 +166,22 @@ simpleSortSentence (SortName name) =
 simpleMetaAliasSentence :: AliasName -> SortName -> KoreSentence
 simpleMetaAliasSentence alias sort =
     asSentence
-        (simpleAliasSentence alias sort l r ::KoreSentenceAlias Meta)
+        (simpleAliasSentence alias sort r :: KoreSentenceAlias Meta)
   where
-    l = TopPattern $ Top { topSort = patternMetaSort }
-    r = TopPattern $ Top { topSort = patternMetaSort }
+    r = patternPureToKore $ Top_ (simpleSort sort :: Sort Meta)
 
 simpleObjectAliasSentence :: AliasName -> SortName -> KoreSentence
 simpleObjectAliasSentence alias sort =
-   asSentence (simpleAliasSentence alias sort l r ::KoreSentenceAlias Object)
+   asSentence (simpleAliasSentence alias sort r :: KoreSentenceAlias Object)
    where
-    l = TopPattern $ Top { topSort = simpleSort sort }
-    r = TopPattern $ Top { topSort = simpleSort sort }
+    r = patternPureToKore $ Top_ (simpleSort sort :: Sort Object)
 
 simpleAliasSentence
     :: AliasName
     -> SortName
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> CommonKorePattern
     -> KoreSentenceAlias level
-simpleAliasSentence (AliasName name) (SortName sort) l r =
+simpleAliasSentence (AliasName name) (SortName sort) r =
     SentenceAlias
         { sentenceAliasAlias = Alias
             { aliasConstructor = testId name
@@ -194,7 +193,15 @@ simpleAliasSentence (AliasName name) (SortName sort) l r =
                 { sortActualName = testId sort
                 , sortActualSorts = []
                 }
-        , sentenceAliasLeftPattern = l
+        , sentenceAliasLeftPattern =
+            Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId name
+                        , symbolOrAliasParams = []
+                        }
+                , applicationChildren = []
+                }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
         }
@@ -264,8 +271,18 @@ aliasSentenceWithSort (AliasName name) sort =
                 }
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
-            , sentenceAliasLeftPattern = TopPattern $ Top { topSort = patternMetaSort }
-            , sentenceAliasRightPattern = TopPattern $ Top { topSort = patternMetaSort }
+            , sentenceAliasLeftPattern =
+                Application
+                    { applicationSymbolOrAlias =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = testId name
+                            , symbolOrAliasParams = []
+                            }
+                    , applicationChildren = []
+                    }
+            , sentenceAliasRightPattern =
+                asCommonKorePattern
+                $ TopPattern Top { topSort = patternMetaSort }
             , sentenceAliasAttributes =
                 Attributes [] :: Attributes
             }
@@ -283,8 +300,17 @@ metaAliasSentenceWithSortParameters
                 }
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
-            , sentenceAliasLeftPattern = TopPattern $ Top { topSort = patternMetaSort }
-            , sentenceAliasRightPattern = TopPattern $ Top { topSort = patternMetaSort }
+            , sentenceAliasLeftPattern =
+                Application
+                    { applicationSymbolOrAlias =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = testId name
+                            , symbolOrAliasParams =
+                                SortVariableSort <$> parameters
+                            }
+                    , applicationChildren = []
+                    }
+            , sentenceAliasRightPattern = patternPureToKore $ Top_ sort
             , sentenceAliasAttributes = Attributes []
             }::KoreSentenceAlias Meta
         )
@@ -294,12 +320,9 @@ aliasSentenceWithSortParameters
     :: AliasName
     -> SortName
     -> [SortVariable level]
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> CommonKorePattern
     -> KoreSentenceAlias level
-aliasSentenceWithSortParameters
-    (AliasName name) (SortName sort) parameters l r
-  =
+aliasSentenceWithSortParameters (AliasName name) (SortName sort) parameters r =
     SentenceAlias
         { sentenceAliasAlias = Alias
             { aliasConstructor = testId name
@@ -311,21 +334,33 @@ aliasSentenceWithSortParameters
                 { sortActualName = testId sort
                 , sortActualSorts = []
                 }
-        , sentenceAliasLeftPattern = l
+        , sentenceAliasLeftPattern =
+            Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId name
+                        , symbolOrAliasParams = SortVariableSort <$> parameters
+                        }
+                , applicationChildren = []
+                }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
         }
 
 sentenceAliasWithSortArgument
-    :: AliasName
+    :: MetaOrObject level
+    => AliasName
     -> Sort level
     -> Sort level
     -> [SortVariable level]
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> CommonKorePattern
     -> KoreSentenceAlias level
 sentenceAliasWithSortArgument
-    (AliasName name) sortArgument resultSort parameters l r
+    (AliasName name)
+    sortArgument
+    resultSort
+    parameters
+    r
   =
     SentenceAlias
         { sentenceAliasAlias = Alias
@@ -334,7 +369,21 @@ sentenceAliasWithSortArgument
             }
         , sentenceAliasSorts = [sortArgument]
         , sentenceAliasResultSort = resultSort
-        , sentenceAliasLeftPattern = l
+        , sentenceAliasLeftPattern =
+            Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId name
+                        , symbolOrAliasParams =
+                            SortVariableSort <$> parameters
+                        }
+                , applicationChildren =
+                    [ Variable
+                        { variableName = testId "x"
+                        , variableSort = sortArgument
+                        }
+                    ]
+                }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
         }
@@ -344,8 +393,8 @@ sentenceAliasWithAttributes
     -> [SortVariable level]
     -> Sort level
     -> [CommonKorePattern]
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> Application level (Variable level)
+    -> CommonKorePattern
     -> KoreSentenceAlias level
 sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
     SentenceAlias
@@ -445,12 +494,9 @@ sentenceAliasWithResultSort
     :: AliasName
     -> Sort level
     -> [SortVariable level]
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> CommonKorePattern
     -> KoreSentenceAlias level
-sentenceAliasWithResultSort
-    (AliasName name) sort parameters l r
-  =
+sentenceAliasWithResultSort (AliasName name) sort parameters r =
     SentenceAlias
         { sentenceAliasAlias = Alias
             { aliasConstructor = testId name
@@ -458,7 +504,16 @@ sentenceAliasWithResultSort
             }
         , sentenceAliasSorts = []
         , sentenceAliasResultSort = sort
-        , sentenceAliasLeftPattern = l
+        , sentenceAliasLeftPattern =
+            Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId name
+                        , symbolOrAliasParams =
+                            SortVariableSort <$> parameters
+                        }
+                , applicationChildren = []
+                }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
         }
@@ -502,37 +557,42 @@ symbolSentenceWithArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort Object -> [Sort Object] -> KoreSentence
+    :: AliasName -> Sort Object -> [Variable Object] -> KoreSentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
         b
         c
-        (TopPattern $ Top { topSort = b })
-        (TopPattern $ Top { topSort = b })
+        (asCommonKorePattern . TopPattern $ Top { topSort = b })
 
 aliasSentenceWithArguments
     :: MetaOrObject level
     => AliasName
     -> Sort level
-    -> [Sort level]
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
-    -> Pattern level Domain.Builtin Variable CommonKorePattern
+    -> [Variable level]
+    -> CommonKorePattern
     -> KoreSentence
-aliasSentenceWithArguments
-    (AliasName name) sort operandSorts l r
-  = constructUnifiedSentence SentenceAliasSentence $
+aliasSentenceWithArguments (AliasName name) sort operands r =
+    constructUnifiedSentence SentenceAliasSentence $
         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = testId name
                 , aliasParams = []
                 }
-            , sentenceAliasSorts = operandSorts
+            , sentenceAliasSorts =
+                variableSort <$> operands
             , sentenceAliasResultSort = sort
-            , sentenceAliasLeftPattern = l
+            , sentenceAliasLeftPattern =
+                Application
+                    { applicationSymbolOrAlias =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = testId name
+                            , symbolOrAliasParams = []
+                            }
+                    , applicationChildren = operands
+                    }
             , sentenceAliasRightPattern = r
-            , sentenceAliasAttributes =
-                Attributes [] :: Attributes
+            , sentenceAliasAttributes = Attributes []
             }
 
 simpleSortActual :: SortName -> SortActual level

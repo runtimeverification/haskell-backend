@@ -16,7 +16,7 @@ import qualified Data.Map as Map
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Common
+import           Kore.AST.Kore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
@@ -30,7 +30,7 @@ within the module and outside, using the provided name set. -}
 verifyUniqueNames
     :: Map.Map Text AstLocation
     -- ^ Names that are already defined.
-    -> KoreModule
+    -> Module (UnifiedSentence param pat)
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
@@ -46,7 +46,7 @@ verifyModule
     :: AttributesVerification atts
     -> Builtin.Verifiers
     -> KoreIndexedModule atts
-    -> Either (Error VerifyError) VerifySuccess
+    -> Either (Error VerifyError) (Module VerifiedKoreSentence)
 verifyModule attributesVerification builtinVerifiers indexedModule =
     withContext
         ("module '" ++ getModuleNameForError (indexedModuleName indexedModule) ++ "'")
@@ -54,9 +54,14 @@ verifyModule attributesVerification builtinVerifiers indexedModule =
             verifyAttributes
                 (snd (indexedModuleAttributes indexedModule))
                 attributesVerification
-            SentenceVerifier.verifySentences
-                indexedModule
-                attributesVerification
-                builtinVerifiers
-                (indexedModuleRawSentences indexedModule)
+            moduleSentences <-
+                SentenceVerifier.verifySentences
+                    indexedModule
+                    attributesVerification
+                    builtinVerifiers
+                    (indexedModuleRawSentences indexedModule)
+            return Module { moduleName, moduleSentences, moduleAttributes }
         )
+  where
+    moduleName = indexedModuleName indexedModule
+    (_, moduleAttributes) = indexedModuleAttributes indexedModule

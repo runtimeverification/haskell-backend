@@ -21,7 +21,7 @@ import GHC.Generics
 import Kore.AST.Pure
 
 newtype External child =
-    External { getExternal :: CommonPurePattern Meta (Const Void) () }
+    External { getExternal :: CommonPurePattern Meta (Const Void) }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 deriveEq1 ''External

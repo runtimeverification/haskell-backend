@@ -15,7 +15,7 @@ import           Data.Maybe
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
-                 ( Sort, SymbolOrAlias (..) )
+                 ( SymbolOrAlias (..) )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
 import           Kore.Attribute.Constructor
@@ -28,6 +28,8 @@ import           Kore.IndexedModule.MetadataTools
                  SymbolOrAliasSorts )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Sort
+                 ( Sort )
 import           Kore.Step.StepperAttributes
 
 makeMetadataTools

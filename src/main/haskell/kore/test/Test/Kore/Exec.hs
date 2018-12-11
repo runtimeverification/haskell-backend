@@ -31,7 +31,7 @@ import           Kore.Attribute.Functional
 import qualified Kore.Builtin as Builtin
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
+                 ( VerifiedModule )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -56,11 +56,11 @@ test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
   where
     actual = SMT.runSMT SMT.defaultConfig $ evalSimplifier $ exec
-        indexedModule
+        verifiedModule
         inputPattern
         Unlimited
         anyRewrite
-    indexedModule = indexedMyModule Module
+    verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
             [ asSentence $ mySortDecl
@@ -94,7 +94,7 @@ test_search =
     actual searchType = do
         let
             simplifier = search
-                indexedModule
+                verifiedModule
                 inputPattern
                 Unlimited
                 allRewrites
@@ -103,7 +103,7 @@ test_search =
         finalPattern <- SMT.runSMT SMT.defaultConfig $ evalSimplifier simplifier
         let Just results = extractSearchResults finalPattern
         return results
-    indexedModule = indexedMyModule Module
+    verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
             [ asSentence $ mySortDecl
@@ -182,8 +182,8 @@ extractSearchResults =
         , sortActualSorts = []
         }
 
-indexedMyModule :: KoreModule -> KoreIndexedModule StepperAttributes
-indexedMyModule module_ = indexedModule
+verifiedMyModule :: KoreModule -> VerifiedModule StepperAttributes
+verifiedMyModule module_ = indexedModule
   where
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules
     Right indexedModules = verifyAndIndexDefinition

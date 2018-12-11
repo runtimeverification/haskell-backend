@@ -322,14 +322,7 @@ instance
 instance Unparse Attributes where
     unparse = attributes . getAttributes
 
-instance
-    ( Unparse (variable level)
-    , Unparse child
-    , Unparse (domain child)
-    , child ~ pat domain variable ()
-    ) =>
-    Unparse (SentenceAlias level pat domain variable)
-  where
+instance Unparse patternType => Unparse (SentenceAlias level patternType) where
     unparse
         SentenceAlias
             { sentenceAliasAlias
@@ -352,7 +345,7 @@ instance
             , unparse sentenceAliasAttributes
             ]
 
-instance Unparse (SentenceSymbol level pat domain variable) where
+instance Unparse (SentenceSymbol level patternType) where
     unparse
         SentenceSymbol
             { sentenceSymbolSymbol
@@ -372,7 +365,7 @@ instance Unparse (SentenceSymbol level pat domain variable) where
 instance Unparse ModuleName where
     unparse = pretty . getModuleName
 
-instance Unparse (SentenceImport pat domain variable) where
+instance Unparse (SentenceImport patternType) where
     unparse
         SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
       =
@@ -381,7 +374,7 @@ instance Unparse (SentenceImport pat domain variable) where
             , unparse sentenceImportAttributes
             ]
 
-instance Unparse (SentenceSort level pat domain variable) where
+instance Unparse (SentenceSort level patternType) where
     unparse
         SentenceSort
             { sentenceSortName
@@ -396,19 +389,17 @@ instance Unparse (SentenceSort level pat domain variable) where
             ]
 
 instance
-    ( Unparse (pat domain variable ())
-    , Unparse sortParam
-    ) =>
-    Unparse (SentenceAxiom sortParam pat domain variable)
+    (Unparse sortParam, Unparse patternType) =>
+    Unparse (SentenceAxiom sortParam patternType)
   where
     unparse = unparseAxiom "axiom"
 
 unparseAxiom
-    ::  ( Unparse (pat domain variable ())
+    ::  ( Unparse patternType
         , Unparse sortParam
         )
     => Doc ann
-    -> SentenceAxiom sortParam pat domain variable
+    -> SentenceAxiom sortParam patternType
     -> Doc ann
 unparseAxiom
     label
@@ -432,26 +423,15 @@ instance Unparse UnifiedSortVariable where
             UnifiedMeta sv -> unparse sv
             UnifiedObject sv -> unparse sv
 
-instance
-    ( Unparse (SentenceSort level pat domain variable)
-    , Unparse (SentenceSymbol level pat domain variable)
-    ) =>
-    Unparse (SentenceHook level pat domain variable)
-  where
+instance Unparse (SentenceHook patternType) where
     unparse =
         \case
             SentenceHookedSort a -> "hooked-" <> unparse a
             SentenceHookedSymbol a -> "hooked-" <> unparse a
 
 instance
-    ( Unparse (SentenceAlias level pat domain variable)
-    , Unparse (SentenceSymbol level pat domain variable)
-    , Unparse (SentenceImport pat domain variable)
-    , Unparse (pat domain variable ())
-    , Unparse sortParam
-    , Unparse (SentenceSort level pat domain variable)
-    ) =>
-    Unparse (Sentence level sortParam pat domain variable)
+    (Unparse sortParam, Unparse patternType) =>
+    Unparse (Sentence level sortParam patternType)
   where
      unparse =
         \case
@@ -463,22 +443,16 @@ instance
             SentenceSortSentence s -> unparse s
             SentenceHookSentence s -> unparse s
 
-
 instance
-    ( Unparse (Sentence Meta sortParam pat domain variable)
-    , Unparse (Sentence Object sortParam pat domain variable)
-    ) =>
-    Unparse (UnifiedSentence sortParam pat domain variable)
+    (Unparse sortParam, Unparse patternType) =>
+    Unparse (UnifiedSentence sortParam patternType)
   where
     unparse =
         \case
             UnifiedMetaSentence sentence -> unparse sentence
             UnifiedObjectSentence sentence -> unparse sentence
 
-instance
-    Unparse (sentence sortParam pat domain variable) =>
-    Unparse (Module sentence sortParam pat domain variable)
-  where
+instance Unparse sentence => Unparse (Module sentence) where
     unparse
         Module { moduleName, moduleSentences, moduleAttributes }
       =
@@ -491,10 +465,7 @@ instance
             , Just (unparse moduleAttributes)
             ]
 
-instance
-    Unparse (sentence sortParam pat domain variable) =>
-    Unparse (Definition sentence sortParam pat domain variable)
-  where
+instance Unparse sentence => Unparse (Definition sentence) where
     unparse Definition { definitionAttributes, definitionModules } =
         vsep (unparse definitionAttributes : map unparse definitionModules)
 

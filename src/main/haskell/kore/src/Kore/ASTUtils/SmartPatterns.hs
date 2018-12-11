@@ -39,135 +39,136 @@ module Kore.ASTUtils.SmartPatterns
 
 import qualified Data.Functor.Foldable as Recursive
 
-import Kore.AST.Pure
+import qualified Kore.Annotation.Null as Annotation
+import           Kore.AST.Pure
 
 pattern And_
     :: Functor dom
     => Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern App_
     :: Functor dom
     => SymbolOrAlias level
-    -> [PurePattern level dom var ()]
-    -> PurePattern level dom var ()
+    -> [PurePattern level dom var (Annotation.Null level)]
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Bottom_
     :: Functor dom
     => Sort level
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Ceil_
     :: Functor dom
     => Sort level
     -> Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern DV_
   :: Functor dom => (level ~ Object) =>
      Sort level
-  -> dom (PurePattern level dom var ())
-  -> PurePattern level dom var ()
+  -> dom (PurePattern level dom var (Annotation.Null level))
+  -> PurePattern level dom var (Annotation.Null level)
 
 pattern Equals_
     :: Functor dom
     => Sort level
     -> Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Exists_
     :: Functor dom
     => Sort level
     -> var level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Floor_
     :: Functor dom
     => Sort level
     -> Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Forall_
     :: Functor dom
     => Sort level
     -> var level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Iff_
     :: Functor dom
     => Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Implies_
     :: Functor dom
     => Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern In_
     :: Functor dom
     => Sort level
     -> Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Next_
     :: Functor dom => (level ~ Object) =>
        Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Not_
     :: Functor dom
     => Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Or_
     :: Functor dom
     => Sort level
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Rewrites_
   :: Functor dom => (level ~ Object) =>
      Sort level
-  -> PurePattern level dom var ()
-  -> PurePattern level dom var ()
-  -> PurePattern level dom var ()
+  -> PurePattern level dom var (Annotation.Null level)
+  -> PurePattern level dom var (Annotation.Null level)
+  -> PurePattern level dom var (Annotation.Null level)
 
 pattern Top_
     :: Functor dom
     => Sort level
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern Var_
     :: Functor dom
     => var level
-    -> PurePattern level dom var ()
+    -> PurePattern level dom var (Annotation.Null level)
 
 pattern StringLiteral_
   :: Functor dom => (level ~ Meta)
   => String
-  -> PurePattern level dom var ()
+  -> PurePattern level dom var (Annotation.Null level)
 
 pattern CharLiteral_
   :: Functor dom => (level ~ Meta)
   => Char
-  -> PurePattern level dom var ()
+  -> PurePattern level dom var (Annotation.Null level)
 
 -- No way to make multiline pragma?
 -- NOTE: If you add a case to the AST type, add another synonym here.
@@ -349,7 +350,10 @@ pattern Var_ variable <-
     Var_ variable =
         (asPurePattern . (:<) mempty) (VariablePattern variable)
 
-pattern V :: Functor dom => var level -> PurePattern level dom var ()
+pattern V
+    :: Functor dom
+    => var level
+    -> PurePattern level dom var (Annotation.Null level)
 pattern V x = Var_ x
 
 pattern StringLiteral_ str <-

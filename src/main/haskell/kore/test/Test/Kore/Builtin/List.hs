@@ -12,8 +12,7 @@ import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import qualified Kore.ASTUtils.SmartConstructors as Kore
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.List as List
@@ -160,11 +159,11 @@ test_simplify =
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern :: List.Builtin Variable -> CommonStepPattern Object
-Right asPattern = List.asPattern indexedModule listSort
+Right asPattern = List.asPattern verifiedModule listSort
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asExpandedPattern :: List.Builtin Variable -> CommonExpandedPattern Object
-Right asExpandedPattern = List.asExpandedPattern indexedModule listSort
+Right asExpandedPattern = List.asExpandedPattern verifiedModule listSort
 
 -- * Constructors
 

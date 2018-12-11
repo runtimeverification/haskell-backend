@@ -8,30 +8,40 @@ module GlobalMain
     , enableDisableFlag
     , clockSomething
     , clockSomethingIO
+    , mainPatternVerify
     ) where
 
-import Control.Exception
-       ( evaluate )
-import Control.Monad
-       ( when )
-import Data.Semigroup
-       ( (<>) )
-import Data.Time.Format
-       ( defaultTimeLocale, formatTime )
-import Data.Time.LocalTime
-       ( ZonedTime, getZonedTime )
-import Data.Version
-       ( showVersion )
-import Development.GitRev
-       ( gitBranch, gitCommitDate, gitHash )
-import Options.Applicative
-       ( InfoMod, Parser, argument, disabled, execParser, flag, flag', help,
-       helper, hidden, info, internal, long, (<**>), (<|>) )
-import System.Clock
-       ( Clock (Monotonic), diffTimeSpec, getTime )
-import System.IO
-       ( hPutStrLn, stderr )
+import           Control.Exception
+                 ( evaluate )
+import           Control.Monad
+                 ( when )
+import           Data.Semigroup
+                 ( (<>) )
+import qualified Data.Set as Set
+import           Data.Time.Format
+                 ( defaultTimeLocale, formatTime )
+import           Data.Time.LocalTime
+                 ( ZonedTime, getZonedTime )
+import           Data.Version
+                 ( showVersion )
+import           Development.GitRev
+                 ( gitBranch, gitCommitDate, gitHash )
+import           Options.Applicative
+                 ( InfoMod, Parser, argument, disabled, execParser, flag,
+                 flag', help, helper, hidden, info, internal, long, (<**>),
+                 (<|>) )
+import           System.Clock
+                 ( Clock (Monotonic), diffTimeSpec, getTime )
+import           System.IO
+                 ( hPutStrLn, stderr )
 
+import           Kore.AST.Kore
+import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Builtin as Builtin
+import           Kore.Error
+import           Kore.IndexedModule.IndexedModule
+                 ( VerifiedModule, mapIndexedModulePatterns )
 import qualified Paths_kore as MetaData
                  ( version )
 
@@ -162,3 +172,29 @@ clockSomethingIO description something = do
     end   <- getTime Monotonic
     hPutStrLn stderr $ description ++" "++ show (diffTimeSpec end start)
     return x
+
+-- | Verify that a Kore pattern is well-formed and print timing information.
+mainPatternVerify
+    :: VerifiedModule attrs
+    -- ^ Module containing definitions visible in the pattern
+    -> CommonKorePattern -- ^ Parsed pattern to check well-formedness
+    -> IO ()
+mainPatternVerify verifiedModule patt =
+    do
+      verifyResult <-
+        clockSomething "Verifying the pattern"
+            (runPatternVerifier context $ verifyStandalonePattern Nothing patt)
+      case verifyResult of
+        Left err1 -> error (printError err1)
+        Right _   -> return ()
+  where
+    Builtin.Verifiers { patternVerifier } = Builtin.koreVerifiers
+    indexedModule =
+        mapIndexedModulePatterns eraseAnnotations verifiedModule
+    context =
+        PatternVerifier.Context
+            { indexedModule = Attribute.Null <$ indexedModule
+            , declaredSortVariables = Set.empty
+            , declaredVariables = emptyDeclaredVariables
+            , builtinPatternVerifier = patternVerifier
+            }

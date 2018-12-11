@@ -18,8 +18,7 @@ import Test.Tasty.QuickCheck as QC
 import Data.Reflection
        ( give )
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
+import Kore.AST.Pure
 import Kore.ASTUtils.AlphaCompare
 import Kore.ASTUtils.SmartConstructors
 import Kore.IndexedModule.MetadataTools

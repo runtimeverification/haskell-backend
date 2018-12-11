@@ -32,27 +32,24 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Error
-                 ( koreFailWithLocations )
-import           Kore.AST.Kore
-import           Kore.AST.Sentence hiding
-                 ( Alias (..), Symbol (..) )
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..), symbolOrAliasSorts )
-import qualified Kore.Domain.Builtin as Domain
-import           Kore.Error
-                 ( Error, koreFail, printError )
-import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), KoreIndexedModule, SortDescription,
-                 getIndexedSentence, indexedModulesInScope )
+import Kore.AST.Error
+       ( koreFailWithLocations )
+import Kore.AST.Kore
+import Kore.AST.Sentence hiding
+       ( Alias (..), Symbol (..) )
+import Kore.ASTHelpers
+       ( ApplicationSorts (..), symbolOrAliasSorts )
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+       ( IndexedModule (..), getIndexedSentence, indexedModulesInScope )
 
 symbolSentencesMap
     :: MetaOrObject level
     => a level
-    -> KoreIndexedModule atts
+    -> IndexedModule sortParam patternType atts
     -> Map.Map
         (Id level)
-        (atts, SentenceSymbol level KorePattern Domain.Builtin Variable)
+        (atts, SentenceSymbol level patternType)
 symbolSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSymbolSentences m
@@ -61,10 +58,8 @@ symbolSentencesMap a m =
 aliasSentencesMap
     :: MetaOrObject level
     => a level
-    -> KoreIndexedModule atts
-    -> Map.Map
-        (Id level)
-        (atts, SentenceAlias level KorePattern Domain.Builtin Variable)
+    -> IndexedModule sortParam patternType atts
+    -> Map.Map (Id level) (atts, SentenceAlias level patternType)
 aliasSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaAliasSentences m
@@ -73,10 +68,8 @@ aliasSentencesMap a m =
 sortSentencesMap
     :: MetaOrObject level
     => a level
-    -> KoreIndexedModule atts
-    -> Map.Map
-        (Id level)
-        (atts, SortDescription level Domain.Builtin)
+    -> IndexedModule sortParam patternType atts
+    -> Map.Map (Id level) (atts, SentenceSort level patternType)
 sortSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSortDescriptions m
@@ -87,7 +80,8 @@ sortSentencesMap a m =
 -- specified by the head to obtain the corresponding 'ApplicationSorts'.
 getHeadApplicationSorts
     :: MetaOrObject level
-    => KoreIndexedModule atts  -- ^module representing a verified definition
+    => IndexedModule sortParam patternType atts
+    -- ^ Module representing an indexed definition
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> ApplicationSorts level
 getHeadApplicationSorts m patternHead =
@@ -117,7 +111,8 @@ getHeadApplicationSorts m patternHead =
 -- but rather just change the types
 getHeadAttributes
     :: MetaOrObject level
-    => KoreIndexedModule atts  -- ^module representing a verified definition
+    => IndexedModule sortParam patternType atts
+    -- ^ module representing an indexed definition
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> atts
 getHeadAttributes m patternHead =
@@ -139,7 +134,8 @@ data HeadType
 -- |Given a KoreIndexedModule and a head, retrieves the head type.
 getHeadType
     :: MetaOrObject level
-    => KoreIndexedModule atts  -- ^module representing a verified definition
+    => IndexedModule sortParam patternType atts
+    -- ^ Module representing an indexed definition
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> HeadType
 getHeadType m patternHead =
@@ -155,7 +151,7 @@ getHeadType m patternHead =
 
 getSortAttributes
     :: MetaOrObject level
-    => KoreIndexedModule atts
+    => IndexedModule sortParam patternType atts
     -> Sort level
     -> atts
 getSortAttributes m (SortActualSort (SortActual sortId _)) =
@@ -169,12 +165,13 @@ getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
 imported modules.
 -}
 resolveThing
-    :: (IndexedModule sortParam pat dom var atts
-        -> Map.Map (Id level) (atts, thing level pat dom var))
+    ::  (  IndexedModule sortParam patternType atts
+        -> Map.Map (Id level) (atts, result)
+        )
     -- ^ extracts the map into which to look up the id
-    -> IndexedModule sortParam pat dom var atts
+    -> IndexedModule sortParam patternType atts
     -> Id level
-    -> Maybe (atts, thing level pat dom var)
+    -> Maybe (atts, result)
 resolveThing
     mapExtractor
     indexedModule
@@ -186,12 +183,13 @@ resolveThing
         )
 
 resolveThingInternal
-    :: (Maybe (atts, thing level pat dom var), Set.Set ModuleName)
-    -> (IndexedModule sortParam pat dom var atts
-        -> Map.Map (Id level) (atts, thing level pat dom var))
-    -> IndexedModule sortParam pat dom var atts
+    :: (Maybe (atts, result), Set.Set ModuleName)
+    ->  (  IndexedModule sortParam patternType atts
+        -> Map.Map (Id level) (atts, result)
+        )
+    -> IndexedModule sortParam patternType atts
     -> Id level
-    -> (Maybe (atts, thing level pat dom var), Set.Set ModuleName)
+    -> (Maybe (atts, result), Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
 resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
     | indexedModuleName indexedModule `Set.member` searchedModules = x
@@ -222,53 +220,56 @@ resolveThingInternal
 also searching in the imported modules.
 -}
 resolveSymbol
-    :: MetaOrObject level
-    => KoreIndexedModule atts
+    :: (MetaOrObject level, MonadError (Error e) m)
+    => IndexedModule sortParam patternType atts
     -> Id level
-    -> Either (Error e) (atts, KoreSentenceSymbol level)
+    -> m (atts, SentenceSymbol level patternType)
 resolveSymbol m headId =
     case resolveThing (symbolSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
             koreFailWithLocations
                 [headId]
                 ("Symbol '" ++ getIdForError headId ++  "' not defined.")
-        Just result -> Right result
+        Just result ->
+            return result
 
 {-|'resolveAlias' looks up a symbol id in an 'IndexedModule',
 also searching in the imported modules.
 -}
 resolveAlias
-    :: MetaOrObject level
-    => KoreIndexedModule atts
+    :: (MetaOrObject level, MonadError (Error e) m)
+    => IndexedModule param pat atts
     -> Id level
-    -> Either (Error e) (atts, KoreSentenceAlias level)
+    -> m (atts, SentenceAlias level pat)
 resolveAlias m headId =
     case resolveThing (aliasSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
             koreFailWithLocations
                 [headId]
                 ("Alias '" ++ getIdForError headId ++  "' not defined.")
-        Just result -> Right result
+        Just result ->
+            return result
 
 
 {-|'resolveSort' looks up a sort id in an 'IndexedModule',
 also searching in the imported modules.
 -}
 resolveSort
-    :: MetaOrObject level
-    => KoreIndexedModule atts
+    :: (MetaOrObject level, MonadError (Error e) m)
+    => IndexedModule sortParam patternType atts
     -> Id level
-    -> Either (Error e) (atts, SortDescription level Domain.Builtin)
+    -> m (atts, SentenceSort level patternType)
 resolveSort m sortId =
     case resolveThing (sortSentencesMap (Proxy :: Proxy level)) m sortId of
         Nothing ->
             koreFailWithLocations
                 [sortId]
                 ("Sort '" ++ getIdForError sortId ++  "' not declared.")
-        Just sortDescription -> Right sortDescription
+        Just sortDescription ->
+            return sortDescription
 
 resolveHook
-    :: KoreIndexedModule atts
+    :: IndexedModule sortParam patternType atts
     -> Text
     -> Sort Object
     -> Either (Error e) (Id Object)
@@ -281,7 +282,7 @@ resolveHook indexedModule builtinName builtinSort =
         involvesSort indexedModule builtinSort (SymbolOrAlias name [])
 
 involvesSort
-    :: KoreIndexedModule atts
+    :: IndexedModule sortParam patternType atts
     -> Sort Object
     -> SymbolOrAlias Object
     -> Bool
@@ -311,7 +312,7 @@ resolveHookHandler builtinName results =
         squotes str = "'" ++ str ++ "'"
 
 resolveHooks
-    :: KoreIndexedModule atts
+    :: IndexedModule sortParam patternType atts
     -> Text
     -> Set (Id Object)
 resolveHooks indexedModule builtinName =
@@ -328,10 +329,10 @@ resolveHooks indexedModule builtinName =
  -}
 findIndexedSort
     :: MetaOrObject level
-    => KoreIndexedModule atts
+    => IndexedModule sortParam patternType atts
     -- ^ indexed module
     -> Id level
     -- ^ sort identifier
-    -> Either (Error e) (SortDescription level Domain.Builtin)
+    -> Either (Error e) (SentenceSort level patternType)
 findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)

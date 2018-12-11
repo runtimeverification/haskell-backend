@@ -6,11 +6,13 @@ module Kore.Step.Pattern
     , module Kore.AST.Pure
     ) where
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
                  ( Concrete, Pattern, PurePattern, Variable )
 import qualified Kore.Domain.Builtin as Domain
 
-type StepPattern level variable = PurePattern level Domain.Builtin variable ()
+type StepPattern level variable =
+    PurePattern level Domain.Builtin variable (Annotation.Null level)
 
 type CommonStepPattern level = StepPattern level Variable
 

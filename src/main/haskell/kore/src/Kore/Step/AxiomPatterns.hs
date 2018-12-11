@@ -23,6 +23,7 @@ module Kore.Step.AxiomPatterns
     , isNormalRule
     , QualifiedAxiomPattern (..)
     , AxiomPatternError (..)
+    , verifiedKoreSentenceToAxiomPattern
     , koreSentenceToAxiomPattern
     , extractRewriteAxioms
     , extractRewriteClaims
@@ -50,7 +51,6 @@ import           Kore.Attribute.Parser
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.ProductionID
 import           Kore.Attribute.Unit
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
@@ -163,7 +163,7 @@ isNormalRule RulePattern { attributes } =
 extractRewriteAxioms
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
-    -> KoreIndexedModule atts
+    -> VerifiedModule attributes
     -- ^'IndexedModule' containing the definition
     -> [RewriteRule level]
 extractRewriteAxioms level idxMod =
@@ -173,7 +173,7 @@ extractRewriteAxioms level idxMod =
             ( constructUnifiedSentence SentenceAxiomSentence
             . getIndexedSentence
             )
-        $ indexedModuleAxioms idxMod
+            (indexedModuleAxioms idxMod)
         )
 
 -- | Extracts all 'RewriteRule' claims matching a given @level@ from
@@ -181,7 +181,7 @@ extractRewriteAxioms level idxMod =
 extractRewriteClaims
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
-    -> KoreIndexedModule atts
+    -> VerifiedModule atts
     -- ^'IndexedModule' containing the definition
     -> [RewriteRule level]
 extractRewriteClaims level idxMod =
@@ -191,22 +191,33 @@ extractRewriteClaims level idxMod =
             ( constructUnifiedSentence SentenceAxiomSentence
             . getIndexedSentence
             )
-        $ indexedModuleClaims idxMod
+            (indexedModuleClaims idxMod)
         )
-
 
 extractRewriteAxiomsFrom
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
-    -> [KoreSentence]
+    -> [VerifiedKoreSentence]
     -- ^ List of sentences to extract axiom patterns from
     -> [RewriteRule level]
 extractRewriteAxiomsFrom level sentences =
     [ axiomPat | RewriteAxiomPattern axiomPat <-
         rights $ map
-            (koreSentenceToAxiomPattern level)
+            (verifiedKoreSentenceToAxiomPattern level)
             sentences
     ]
+
+-- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
+-- a given 'KoreSentence'.
+verifiedKoreSentenceToAxiomPattern
+    :: MetaOrObject level
+    => level
+    -> VerifiedKoreSentence
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+verifiedKoreSentenceToAxiomPattern level sentence =
+    case eraseAnnotations <$> sentence of
+        UnifiedMetaSentence meta -> sentenceToAxiomPattern level meta
+        UnifiedObjectSentence object -> sentenceToAxiomPattern level object
 
 -- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
 -- a given 'KoreSentence'.
@@ -223,7 +234,7 @@ koreSentenceToAxiomPattern level =
 sentenceToAxiomPattern
     :: MetaOrObject level
     => level
-    -> Sentence level' UnifiedSortVariable KorePattern Domain.Builtin Variable
+    -> Sentence level' UnifiedSortVariable CommonKorePattern
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 sentenceToAxiomPattern
     level
@@ -234,7 +245,8 @@ sentenceToAxiomPattern
     )
   = do
     attributes <-
-        Attribute.Parser.liftParser (parseAttributes sentenceAxiomAttributes)
+        Attribute.Parser.liftParser
+        $ parseAttributes sentenceAxiomAttributes
     case patternKoreToPure level sentenceAxiomPattern of
         Right pat -> patternToAxiomPattern attributes pat
         Left err  -> Left err

@@ -33,8 +33,7 @@ import           Data.Proxy
 import           Data.Reflection
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTHelpers
                  ( ApplicationSorts (applicationSortsOperands) )
 import           Kore.Attribute.Hook

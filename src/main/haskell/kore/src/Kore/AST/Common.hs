@@ -25,130 +25,27 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Kore.AST.Common where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Deriving
-                 ( deriveEq1, deriveOrd1, deriveShow1, makeLiftCompare,
-                 makeLiftEq, makeLiftShowsPrec )
-import           Data.Functor.Classes
-import           Data.Functor.Const
-                 ( Const )
-import           Data.Functor.Identity
-                 ( Identity (..) )
-import           Data.Hashable
-import           Data.Proxy
-import           Data.String
-                 ( IsString (..) )
-import           Data.Text
-                 ( Text )
-import qualified Data.Text as Text
-import           Data.Void
-                 ( Void )
-import           GHC.Generics
-                 ( Generic )
+import Control.DeepSeq
+       ( NFData (..) )
+import Data.Deriving
+       ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
+import Data.Function
+       ( on )
+import Data.Functor.Classes
+import Data.Functor.Const
+       ( Const )
+import Data.Functor.Identity
+       ( Identity (..) )
+import Data.Hashable
+import Data.Proxy
+import Data.Void
+       ( Void )
+import GHC.Generics
+       ( Generic )
 
-import Data.Functor.Foldable.Orphans ()
+import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
-
-{-| 'FileLocation' represents a position in a source file.
--}
-data FileLocation = FileLocation
-    { fileName :: FilePath
-    , line     :: Int
-    , column   :: Int
-    }
-    deriving (Eq, Show, Generic)
-
-instance Hashable FileLocation
-instance NFData FileLocation
-
-{-| 'AstLocation' represents the origin of an AST node.
-
-Its representation may change, e.g. the `AstLocationFile` branch could become a
-range instead of a single character position. You should treat the entire
-AstLocation as much as possible as an opaque token, i.e. hopefully only
-the kore parsing code and pretty printing code below would access
-the AstLocationFile branch.
--}
-data AstLocation
-    = AstLocationNone
-    | AstLocationImplicit
-    | AstLocationGeneratedVariable
-    | AstLocationTest
-    | AstLocationFile FileLocation
-    | AstLocationLifted AstLocation
-    | AstLocationUnknown
-    -- ^ This should not be used and should be eliminated in further releases
-    deriving (Eq, Show, Generic)
-
-instance Hashable AstLocation
-instance NFData AstLocation
-
-{-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
-(sort of) user friendly.
--}
-prettyPrintAstLocation :: AstLocation -> String
-prettyPrintAstLocation AstLocationNone = "<unknown location>"
-prettyPrintAstLocation AstLocationImplicit = "<implicitly defined entity>"
-prettyPrintAstLocation AstLocationGeneratedVariable =
-    "<variable generated internally>"
-prettyPrintAstLocation AstLocationTest = "<test data>"
-prettyPrintAstLocation
-    (AstLocationFile FileLocation
-        { fileName = name
-        , line = line'
-        , column = column'
-        }
-    )
-    = name ++ " " ++ show line' ++ ":" ++ show column'
-prettyPrintAstLocation (AstLocationLifted location) =
-    "<lifted(" ++ prettyPrintAstLocation location ++ ")>"
-prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
-
-{-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
-syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-We may chage the Id's representation in the future so one should treat it as
-an opaque entity as much as possible.
-
-Note that Id comparison ignores the AstLocation.
--}
-data Id level = Id
-    { getId      :: !Text
-    , idLocation :: !AstLocation
-    }
-    deriving (Show, Generic)
-
-instance Ord (Id level) where
-    compare first@(Id _ _) second@(Id _ _) =
-        compare (getId first) (getId second)
-
-{-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
-instance Eq (Id level) where
-    first == second = compare first second == EQ
-
-instance Hashable (Id level)
-
-instance NFData (Id level)
-
-instance IsString (Id level) where
-    fromString = noLocationId . fromString
-
-{-| 'noLocationId' creates an Id without a source location. While there are some
-narrow cases where this makes sense, you should really consider other options
-(including adding a new entry to the `AstLocation` data definition).
--}
-noLocationId :: Text -> Id level
-noLocationId value = Id
-    { getId = value
-    , idLocation = AstLocationNone
-    }
-
-getIdForError :: Id level -> String
-getIdForError = Text.unpack . getId
+import Kore.Sort
 
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
@@ -186,113 +83,6 @@ data SymbolOrAlias level = SymbolOrAlias
 instance Hashable (SymbolOrAlias level)
 
 instance NFData (SymbolOrAlias level)
-
-{-|'SortVariable' corresponds to the @object-sort-variable@ and
-@meta-sort-variable@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-newtype SortVariable level = SortVariable
-    { getSortVariable  :: Id level }
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable (SortVariable level)
-
-instance NFData (SortVariable level)
-
-{-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
-@object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-data SortActual level = SortActual
-    { sortActualName  :: !(Id level)
-    , sortActualSorts :: ![Sort level]
-    }
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable (SortActual level)
-
-instance NFData (SortActual level)
-
-{-|'Sort' corresponds to the @object-sort@ and
-@meta-sort@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-data Sort level
-    = SortVariableSort !(SortVariable level)
-    | SortActualSort !(SortActual level)
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable (Sort level)
-
-instance NFData (Sort level)
-
-{-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
-from the Semantics of K, Section 9.1.2 (Sorts).
-
-Ths is not represented directly in the AST, we're using the string
-representation instead.
--}
-data MetaBasicSortType
-    = CharSort
-    | PatternSort
-    | SortSort
-    | SymbolSort
-    | VariableSort
-    | UserSort String -- arbitrary MetaSort
-    deriving(Generic)
-
-instance Hashable MetaBasicSortType
-
-data MetaSortType
-    = MetaBasicSortType MetaBasicSortType
-    | MetaListSortType MetaBasicSortType
-    | StringSort
-    deriving(Generic)
-
-instance Hashable MetaSortType
-
-metaBasicSortsList :: [MetaBasicSortType]
-metaBasicSortsList =
-    [ CharSort
-    , PatternSort
-    , SortSort
-    , SymbolSort
-    , VariableSort
-    ]
-
-metaSortsList :: [MetaSortType]
-metaSortsList =
-    map MetaBasicSortType metaBasicSortsList
-    ++ map MetaListSortType metaBasicSortsList
-
-metaSortsListWithString :: [MetaSortType]
-metaSortsListWithString = StringSort : metaSortsList
-
-metaBasicSortTypeString :: MetaBasicSortType -> String
-metaBasicSortTypeString CharSort        = "Char"
-metaBasicSortTypeString PatternSort     = "Pattern"
-metaBasicSortTypeString SortSort        = "Sort"
-metaBasicSortTypeString SymbolSort      = "Symbol"
-metaBasicSortTypeString VariableSort    = "Variable"
-metaBasicSortTypeString (UserSort name) =  name
-
-metaSortTypeString :: MetaSortType -> String
-metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
-metaSortTypeString (MetaListSortType s)  =
-    metaBasicSortTypeString s ++ "List"
-metaSortTypeString StringSort            = "String"
-
-instance Show MetaSortType where
-    show sortType = '#' : metaSortTypeString sortType
 
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
@@ -409,14 +199,30 @@ This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
 data And level child = And
     { andSort   :: !(Sort level)
-    , andFirst  :: !child
-    , andSecond :: !child
+    , andFirst  :: child
+    , andSecond :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''And
-deriveOrd1 ''And
-deriveShow1 ''And
+$(return [])
+
+instance Eq1 (And level) where
+    liftEq = $(makeLiftEq ''And)
+
+instance Ord1 (And level) where
+    liftCompare = $(makeLiftCompare ''And)
+
+instance Show1 (And level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''And)
+
+instance Eq child => Eq (And level child) where
+    (==) = eq1
+
+instance Ord child => Ord (And level child) where
+    compare = compare1
+
+instance Show child => Show (And level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (And level child)
 
@@ -433,13 +239,29 @@ This represents the σ(φ1, ..., φn) symbol patterns in Matching Logic.
 -}
 data Application level child = Application
     { applicationSymbolOrAlias :: !(SymbolOrAlias level)
-    , applicationChildren      :: ![child]
+    , applicationChildren      :: [child]
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Application
-deriveOrd1 ''Application
-deriveShow1 ''Application
+$(return [])
+
+instance Eq1 (Application level) where
+    liftEq = $(makeLiftEq ''Application)
+
+instance Ord1 (Application level) where
+    liftCompare = $(makeLiftCompare ''Application)
+
+instance Show1 (Application level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Application)
+
+instance Eq child => Eq (Application level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Application level child) where
+    compare = compare1
+
+instance Show child => Show (Application level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Application level child)
 
@@ -456,12 +278,25 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
-newtype Bottom level child = Bottom { bottomSort :: Sort level}
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+newtype Bottom level child = Bottom { bottomSort :: Sort level }
+    deriving (Functor, Foldable, Show, Traversable, Generic)
 
-deriveEq1 ''Bottom
-deriveOrd1 ''Bottom
-deriveShow1 ''Bottom
+$(return [])
+
+instance Eq1 (Bottom level) where
+    liftEq = $(makeLiftEq ''Bottom)
+
+instance Ord1 (Bottom level) where
+    liftCompare = $(makeLiftCompare ''Bottom)
+
+instance Show1 (Bottom level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Bottom)
+
+instance Eq (Bottom level child) where
+    (==) = on (==) bottomSort
+
+instance Ord (Bottom level child) where
+    compare = on compare bottomSort
 
 instance Hashable (Bottom level child)
 
@@ -483,13 +318,29 @@ This represents the ⌈ceilPattern⌉ Matching Logic construct.
 data Ceil level child = Ceil
     { ceilOperandSort :: !(Sort level)
     , ceilResultSort  :: !(Sort level)
-    , ceilChild       :: !child
+    , ceilChild       :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Ceil
-deriveOrd1 ''Ceil
-deriveShow1 ''Ceil
+$(return [])
+
+instance Eq1 (Ceil level) where
+    liftEq = $(makeLiftEq ''Ceil)
+
+instance Ord1 (Ceil level) where
+    liftCompare = $(makeLiftCompare ''Ceil)
+
+instance Show1 (Ceil level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Ceil)
+
+instance Eq child => Eq (Ceil level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Ceil level child) where
+    compare = compare1
+
+instance Show child => Show (Ceil level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Ceil level child)
 
@@ -514,11 +365,27 @@ data DomainValue level domain child = DomainValue
     { domainValueSort  :: !(Sort level)
     , domainValueChild :: !(domain child)
     }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+    deriving (Foldable, Functor, Generic, Traversable)
 
-deriveEq1 ''DomainValue
-deriveOrd1 ''DomainValue
-deriveShow1 ''DomainValue
+$(return [])
+
+instance Eq1 domain => Eq1 (DomainValue level domain) where
+    liftEq = $(makeLiftEq ''DomainValue)
+
+instance Ord1 domain => Ord1 (DomainValue level domain) where
+    liftCompare = $(makeLiftCompare ''DomainValue)
+
+instance Show1 domain => Show1 (DomainValue level domain) where
+    liftShowsPrec = $(makeLiftShowsPrec ''DomainValue)
+
+instance (Eq1 domain, Eq child) => Eq (DomainValue level domain child) where
+    (==) = eq1
+
+instance (Ord1 domain, Ord child) => Ord (DomainValue level domain child) where
+    compare = compare1
+
+instance (Show1 dom, Show child) => Show (DomainValue lvl dom child) where
+    showsPrec = showsPrec1
 
 instance Hashable (domain child) => Hashable (DomainValue level domain child)
 
@@ -540,14 +407,30 @@ This represents the 'equalsFirst = equalsSecond' Matching Logic construct.
 data Equals level child = Equals
     { equalsOperandSort :: !(Sort level)
     , equalsResultSort  :: !(Sort level)
-    , equalsFirst       :: !child
-    , equalsSecond      :: !child
+    , equalsFirst       :: child
+    , equalsSecond      :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Equals
-deriveOrd1 ''Equals
-deriveShow1 ''Equals
+$(return [])
+
+instance Eq1 (Equals level) where
+    liftEq = $(makeLiftEq ''Equals)
+
+instance Ord1 (Equals level) where
+    liftCompare = $(makeLiftCompare ''Equals)
+
+instance Show1 (Equals level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Equals)
+
+instance Eq child => Eq (Equals level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Equals level child) where
+    compare = compare1
+
+instance Show child => Show (Equals level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Equals level child)
 
@@ -567,33 +450,33 @@ This represents the '∃existsVariable(existsChild)' Matching Logic construct.
 data Exists level v child = Exists
     { existsSort     :: !(Sort level)
     , existsVariable :: !(v level)
-    , existsChild    :: !child
+    , existsChild    :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-instance (Ord (Sort level), Ord (v level)) => Ord1 (Exists level v) where
-    liftCompare liftedCompare a b =
-        (existsSort a `compare` existsSort b)
-        <> (existsVariable a `compare` existsVariable b)
-        <> (existsChild a) `liftedCompare` (existsChild b)
+$(return [])
 
-instance (Eq (Sort level), Eq (v level)) => Eq1 (Exists level v) where
-    liftEq liftedEq a b =
-        (existsSort a == existsSort b)
-        && (existsVariable a == existsVariable b)
-        && liftedEq (existsChild a) (existsChild b)
+instance Eq (var lvl) => Eq1 (Exists lvl var) where
+    liftEq = $(makeLiftEq ''Exists)
 
-instance (Show (Sort level), Show (v level)) => Show1 (Exists level v) where
-    liftShowsPrec liftedShowsPrec _ _ e =
-        showString "Exists { "
-        . showString "existsSort = " . shows (existsSort e)
-        . showString ", existsVariable = " . shows (existsVariable e)
-        . showString ", existsChild = " . liftedShowsPrec 0 (existsChild e)
-        . showString " }"
+instance Ord (var lvl) => Ord1 (Exists lvl var) where
+    liftCompare = $(makeLiftCompare ''Exists)
 
-instance (Hashable child, Hashable (v level)) => Hashable (Exists level v child)
+instance Show (var lvl) => Show1 (Exists lvl var) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Exists)
 
-instance (NFData child, NFData (var level)) => NFData (Exists level var child)
+instance (Eq child, Eq (var lvl)) => Eq (Exists lvl var child) where
+    (==) = eq1
+
+instance (Ord child, Ord (var lvl)) => Ord (Exists lvl var child) where
+    compare = compare1
+
+instance (Show child, Show (var lvl)) => Show (Exists lvl var child) where
+    showsPrec = showsPrec1
+
+instance (Hashable child, Hashable (var lvl)) => Hashable (Exists lvl var child)
+
+instance (NFData child, NFData (var lvl)) => NFData (Exists lvl var child)
 
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -611,13 +494,29 @@ This represents the '⌊floorPattern⌋' Matching Logic construct.
 data Floor level child = Floor
     { floorOperandSort :: !(Sort level)
     , floorResultSort  :: !(Sort level)
-    , floorChild       :: !child
+    , floorChild       :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Floor
-deriveOrd1 ''Floor
-deriveShow1 ''Floor
+$(return [])
+
+instance Eq1 (Floor level) where
+    liftEq = $(makeLiftEq ''Floor)
+
+instance Ord1 (Floor level) where
+    liftCompare = $(makeLiftCompare ''Floor)
+
+instance Show1 (Floor level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Floor)
+
+instance Eq child => Eq (Floor level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Floor level child) where
+    compare = compare1
+
+instance Show child => Show (Floor level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Floor level child)
 
@@ -637,33 +536,33 @@ This represents the '∀forallVariable(forallChild)' Matching Logic construct.
 data Forall level v child = Forall
     { forallSort     :: !(Sort level)
     , forallVariable :: !(v level)
-    , forallChild    :: !child
+    , forallChild    :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-instance (Ord (Sort level), Ord (v level)) => Ord1 (Forall level v) where
-    liftCompare liftedCompare a b =
-        (forallSort a `compare` forallSort b)
-        <> (forallVariable a `compare` forallVariable b)
-        <> (forallChild a) `liftedCompare` (forallChild b)
+$(return [])
 
-instance (Eq (Sort level), Eq (v level)) => Eq1 (Forall level v) where
-    liftEq liftedEq a b =
-        (forallSort a == forallSort b)
-        && (forallVariable a == forallVariable b)
-        && liftedEq (forallChild a) (forallChild b)
+instance Eq (var lvl) => Eq1 (Forall lvl var) where
+    liftEq = $(makeLiftEq ''Forall)
 
-instance (Show (Sort level), Show (v level)) => Show1 (Forall level v) where
-    liftShowsPrec liftedShowsPrec _ _ e =
-        showString "Forall { "
-        . showString "forallSort = " . shows (forallSort e)
-        . showString ", forallVariable = " . shows (forallVariable e)
-        . showString ", forallChild = " . liftedShowsPrec 0 (forallChild e)
-        . showString " }"
+instance Ord (var lvl) => Ord1 (Forall lvl var) where
+    liftCompare = $(makeLiftCompare ''Forall)
 
-instance (Hashable child, Hashable (v level)) => Hashable (Forall level v child)
+instance Show (var lvl) => Show1 (Forall lvl var) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Forall)
 
-instance (NFData child, NFData (v level)) => NFData (Forall level v child)
+instance (Eq child, Eq (var lvl)) => Eq (Forall lvl var child) where
+    (==) = eq1
+
+instance (Ord child, Ord (var lvl)) => Ord (Forall lvl var child) where
+    compare = compare1
+
+instance (Show child, Show (var lvl)) => Show (Forall lvl var child) where
+    showsPrec = showsPrec1
+
+instance (Hashable child, Hashable (var lvl)) => Hashable (Forall lvl var child)
+
+instance (NFData child, NFData (var lvl)) => NFData (Forall lvl var child)
 
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -678,14 +577,30 @@ This represents the 'iffFirst ⭤ iffSecond' Matching Logic construct.
 -}
 data Iff level child = Iff
     { iffSort   :: !(Sort level)
-    , iffFirst  :: !child
-    , iffSecond :: !child
+    , iffFirst  :: child
+    , iffSecond :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Iff
-deriveOrd1 ''Iff
-deriveShow1 ''Iff
+$(return [])
+
+instance Eq1 (Iff level) where
+    liftEq = $(makeLiftEq ''Iff)
+
+instance Ord1 (Iff level) where
+    liftCompare = $(makeLiftCompare ''Iff)
+
+instance Show1 (Iff level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Iff)
+
+instance Eq child => Eq (Iff level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Iff level child) where
+    compare = compare1
+
+instance Show child => Show (Iff level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Iff level child)
 
@@ -704,14 +619,30 @@ This represents the 'impliesFirst ⭢ impliesSecond' Matching Logic construct.
 -}
 data Implies level child = Implies
     { impliesSort   :: !(Sort level)
-    , impliesFirst  :: !child
-    , impliesSecond :: !child
+    , impliesFirst  :: child
+    , impliesSecond :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Implies
-deriveOrd1 ''Implies
-deriveShow1 ''Implies
+$(return [])
+
+instance Eq1 (Implies level) where
+    liftEq = $(makeLiftEq ''Implies)
+
+instance Ord1 (Implies level) where
+    liftCompare = $(makeLiftCompare ''Implies)
+
+instance Show1 (Implies level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Implies)
+
+instance Eq child => Eq (Implies level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Implies level child) where
+    compare = compare1
+
+instance Show child => Show (Implies level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Implies level child)
 
@@ -736,19 +667,34 @@ two patterns have a non-empty intersection.
 data In level child = In
     { inOperandSort     :: !(Sort level)
     , inResultSort      :: !(Sort level)
-    , inContainedChild  :: !child
-    , inContainingChild :: !child
+    , inContainedChild  :: child
+    , inContainingChild :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''In
-deriveOrd1 ''In
-deriveShow1 ''In
+$(return [])
+
+instance Eq1 (In level) where
+    liftEq = $(makeLiftEq ''In)
+
+instance Ord1 (In level) where
+    liftCompare = $(makeLiftCompare ''In)
+
+instance Show1 (In level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''In)
+
+instance Eq child => Eq (In level child) where
+    (==) = eq1
+
+instance Ord child => Ord (In level child) where
+    compare = compare1
+
+instance Show child => Show (In level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (In level child)
 
 instance NFData child => NFData (In level child)
-
 
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -763,13 +709,29 @@ This represents the '∘ nextChild' Matching Logic construct.
 -}
 data Next level child = Next
     { nextSort  :: !(Sort level)
-    , nextChild :: !child
+    , nextChild :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Next
-deriveOrd1 ''Next
-deriveShow1 ''Next
+$(return [])
+
+instance Eq1 (Next level) where
+    liftEq = $(makeLiftEq ''Next)
+
+instance Ord1 (Next level) where
+    liftCompare = $(makeLiftCompare ''Next)
+
+instance Show1 (Next level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Next)
+
+instance Eq child => Eq (Next level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Next level child) where
+    compare = compare1
+
+instance Show child => Show (Next level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Next level child)
 
@@ -788,13 +750,29 @@ This represents the '¬ notChild' Matching Logic construct.
 -}
 data Not level child = Not
     { notSort  :: !(Sort level)
-    , notChild :: !child
+    , notChild :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Not
-deriveOrd1 ''Not
-deriveShow1 ''Not
+$(return [])
+
+instance Eq1 (Not level) where
+    liftEq = $(makeLiftEq ''Not)
+
+instance Ord1 (Not level) where
+    liftCompare = $(makeLiftCompare ''Not)
+
+instance Show1 (Not level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Not)
+
+instance Eq child => Eq (Not level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Not level child) where
+    compare = compare1
+
+instance Show child => Show (Not level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Not level child)
 
@@ -813,14 +791,30 @@ This represents the 'orFirst ∨ orSecond' Matching Logic construct.
 -}
 data Or level child = Or
     { orSort   :: !(Sort level)
-    , orFirst  :: !child
-    , orSecond :: !child
+    , orFirst  :: child
+    , orSecond :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Or
-deriveOrd1 ''Or
-deriveShow1 ''Or
+$(return [])
+
+instance Eq1 (Or level) where
+    liftEq = $(makeLiftEq ''Or)
+
+instance Ord1 (Or level) where
+    liftCompare = $(makeLiftCompare ''Or)
+
+instance Show1 (Or level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Or)
+
+instance Eq child => Eq (Or level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Or level child) where
+    compare = compare1
+
+instance Show child => Show (Or level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Or level child)
 
@@ -840,14 +834,30 @@ This represents the 'rewritesFirst ⇒ rewritesSecond' Matching Logic construct.
 
 data Rewrites level child = Rewrites
     { rewritesSort   :: !(Sort level)
-    , rewritesFirst  :: !child
-    , rewritesSecond :: !child
+    , rewritesFirst  :: child
+    , rewritesSecond :: child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, Generic)
 
-deriveEq1 ''Rewrites
-deriveOrd1 ''Rewrites
-deriveShow1 ''Rewrites
+$(return [])
+
+instance Eq1 (Rewrites level) where
+    liftEq = $(makeLiftEq ''Rewrites)
+
+instance Ord1 (Rewrites level) where
+    liftCompare = $(makeLiftCompare ''Rewrites)
+
+instance Show1 (Rewrites level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Rewrites)
+
+instance Eq child => Eq (Rewrites level child) where
+    (==) = eq1
+
+instance Ord child => Ord (Rewrites level child) where
+    compare = compare1
+
+instance Show child => Show (Rewrites level child) where
+    showsPrec = showsPrec1
 
 instance Hashable child => Hashable (Rewrites level child)
 
@@ -865,11 +875,24 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
 newtype Top level child = Top { topSort :: Sort level}
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Show, Traversable, Generic)
 
-deriveEq1 ''Top
-deriveOrd1 ''Top
-deriveShow1 ''Top
+$(return [])
+
+instance Eq1 (Top level) where
+    liftEq = $(makeLiftEq ''Top)
+
+instance Ord1 (Top level) where
+    liftCompare = $(makeLiftCompare ''Top)
+
+instance Show1 (Top level) where
+    liftShowsPrec = $(makeLiftShowsPrec ''Top)
+
+instance Eq (Top level child) where
+    (==) = on (==) topSort
+
+instance Ord (Top level child) where
+    compare = on compare topSort
 
 instance Hashable (Top level child)
 
@@ -1023,19 +1046,19 @@ instance
 deriving instance
     ( Eq child
     , Eq (variable level)
-    , Eq (domain child)
+    , Eq1 domain
     ) => Eq (Pattern level domain variable child)
 
 deriving instance
     ( Show child
     , Show (variable level)
-    , Show (domain child)
+    , Show1 domain
     ) => Show (Pattern level domain variable child)
 
 deriving instance
     ( Ord child
     , Ord (variable level)
-    , Ord (domain child)
+    , Ord1 domain
     ) => Ord (Pattern level domain variable child)
 
 deriving instance Functor domain => Functor (Pattern level domain variable)

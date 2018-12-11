@@ -12,9 +12,7 @@ import           Data.Reflection
                  ( give )
 import qualified Data.Sequence as Seq
 
-import           Kore.AST.Common
-                 ( DomainValue (..), Sort (..) )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom, mkDomainValue, mkStringLiteral )
 import           Kore.ASTUtils.SmartPatterns

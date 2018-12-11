@@ -55,6 +55,7 @@ import           GHC.Integer.Logarithms
                  ( integerLog2# )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.Bool as Bool
@@ -212,7 +213,10 @@ asConcretePattern
 asConcretePattern domainValueSort result =
     DV_ domainValueSort (Domain.BuiltinPattern $ asMetaPattern result)
 
-asMetaPattern :: Functor dom => Integer -> PurePattern Meta dom var ()
+asMetaPattern
+    :: Functor domain
+    => Integer
+    -> PurePattern Meta domain variable (Annotation.Null Meta)
 asMetaPattern result = StringLiteral_ $ show result
 
 asExpandedPattern

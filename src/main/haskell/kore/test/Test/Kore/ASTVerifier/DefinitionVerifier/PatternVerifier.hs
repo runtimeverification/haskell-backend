@@ -11,6 +11,7 @@ import qualified Data.List as List
 
 import           Kore.AST.AstWithLocation
 import           Kore.AST.Kore
+import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Attribute.Hook as Attribute.Hook
@@ -187,7 +188,6 @@ test_patternVerifier =
             "Expecting sort 'anotherSort2{}' but got 'ObjectSort{}'.")
         (ErrorStack
             [ "\\exists 'ObjectVariable' (<test data>)"
-            , "variable 'ObjectVariable' (<test data>)"
             , "(<test data>, <test data>)"
             ]
         )
@@ -206,7 +206,6 @@ test_patternVerifier =
             "Expecting sort '#Variable{}' but got '#CharList{}'.")
         (ErrorStack
             [ "\\exists '#MetaVariable' (<test data>)"
-            , "variable '#MetaVariable' (<test data>)"
             , "(<test data>, <test data>)"
             ]
         )
@@ -438,9 +437,7 @@ test_patternVerifier =
         (ExpectedErrorMessage
             "Expecting sort '#Char{}' but got '#CharList{}'.")
         (ErrorStack
-            [ "<string> (<unknown location>)"
-            , "(<test data>, <implicitly defined entity>)"
-            ]
+            [ "(<test data>, <implicitly defined entity>)" ]
         )
         (StringLiteralPattern (StringLiteral "MetaString"))
         (NamePrefix "#dummy")
@@ -623,7 +620,13 @@ test_patternVerifier =
     objectAliasNameAsSymbol = SymbolName "ObjectAlias"
     objectAliasSentence =
         objectAliasSentenceWithArguments
-            objectAliasName objectSort [anotherObjectSort2]
+            objectAliasName
+            objectSort
+            [ Variable
+                { variableName = testId "x"
+                , variableSort = anotherObjectSort2
+                }
+            ]
     objectSortVariable = sortVariable @Object "ObjectSortVariable"
     objectSortVariableSort :: Sort Object
     objectSortVariableSort = sortVariableSort "ObjectSortVariable"
@@ -1032,20 +1035,32 @@ patternsInAllContexts
                 , sentenceSymbolAttributes =
                     Attributes []
                 }
+    aliasSentence :: KoreSentence
     aliasSentence =
-        constructUnifiedSentence
-            SentenceAliasSentence
+        let aliasConstructor = testId rawAliasName
+            aliasParams = [SortVariable (testId rawSortVariableName)]
+        in (sentencePureToKore . SentenceAliasSentence)
             SentenceAlias
-                { sentenceAliasAlias = Alias
-                    { aliasConstructor = testId rawAliasName
-                    , aliasParams = [SortVariable (testId rawSortVariableName)]
-                    }
+                { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
                 , sentenceAliasSorts = [symbolAliasSort]
                 , sentenceAliasResultSort = anotherSort
-                , sentenceAliasLeftPattern = TopPattern $ Top anotherSort
-                , sentenceAliasRightPattern = TopPattern $ Top anotherSort
-                , sentenceAliasAttributes =
-                    Attributes []
+                , sentenceAliasLeftPattern =
+                    Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor = aliasConstructor
+                                , symbolOrAliasParams =
+                                    SortVariableSort <$> aliasParams
+                                }
+                        , applicationChildren =
+                            [ Variable
+                                { variableName = testId "x"
+                                , variableSort = symbolAliasSort
+                                }
+                            ]
+                        }
+                , sentenceAliasRightPattern = Top_ anotherSort
+                , sentenceAliasAttributes = Attributes []
                 }
 
 genericPatternInPatterns

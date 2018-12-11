@@ -27,7 +27,9 @@ module Kore.AST.Pure
     -- * Re-exports
     , Base, CofreeF (..)
     , module Kore.AST.Common
+    , module Kore.AST.Identifier
     , module Kore.AST.MetaOrObject
+    , module Kore.Sort
     ) where
 
 import           Control.Comonad
@@ -54,11 +56,14 @@ import           Data.Void
 import           GHC.Generics
                  ( Generic )
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Common hiding
                  ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
                  mapVariables, traverseVariables )
 import qualified Kore.AST.Common as Head
+import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
+import           Kore.Sort
 
 {- | The abstract syntax of Kore at a fixed level @level@.
 
@@ -82,8 +87,7 @@ newtype PurePattern
     deriving (Foldable, Functor, Generic, Traversable)
 
 instance
-    ( Eq annotation
-    , Eq level
+    ( Eq level
     , Eq (variable level)
     , Eq1 domain, Functor domain
     ) =>
@@ -92,14 +96,13 @@ instance
     (==) = eqWorker
       where
         eqWorker
-            (Recursive.project -> annotation1 :< pat1)
-            (Recursive.project -> annotation2 :< pat2)
+            (Recursive.project -> _ :< pat1)
+            (Recursive.project -> _ :< pat2)
           =
-            annotation1 == annotation2 && liftEq eqWorker pat1 pat2
+            liftEq eqWorker pat1 pat2
 
 instance
-    ( Ord annotation
-    , Ord level
+    ( Ord level
     , Ord (variable level)
     , Ord1 domain, Functor domain
     ) =>
@@ -108,31 +111,28 @@ instance
     compare = compareWorker
       where
         compareWorker
-            (Recursive.project -> annotation1 :< pat1)
-            (Recursive.project -> annotation2 :< pat2)
+            (Recursive.project -> _ :< pat1)
+            (Recursive.project -> _ :< pat2)
           =
-            compare annotation1 annotation2
-            <> liftCompare compareWorker pat1 pat2
+            liftCompare compareWorker pat1 pat2
 
 deriving instance
     ( Show annotation
     , Show (variable level)
-    , Show (domain child)
+    , Show1 domain
     , child ~ Cofree (Pattern level domain variable) annotation
     ) =>
     Show (PurePattern level domain variable annotation)
 
 instance
     ( Functor domain
-    , Hashable annotation
     , Hashable (variable level)
     , Hashable (domain child)
     , child ~ PurePattern level domain variable annotation
     ) =>
     Hashable (PurePattern level domain variable annotation)
   where
-    hashWithSalt salt (Recursive.project -> annotation :< pat) =
-        salt `hashWithSalt` annotation `hashWithSalt` pat
+    hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
 
 instance
     ( Functor domain
@@ -199,10 +199,12 @@ asPurePattern
 asPurePattern = Recursive.embed
 
 -- | A pure pattern at level @level@ with variables in the common 'Variable'.
-type CommonPurePattern level domain = PurePattern level domain Variable
+type CommonPurePattern level domain =
+    PurePattern level domain Variable (Annotation.Null level)
 
 -- | A concrete pure pattern (containing no variables) at level @lvl@.
-type ConcretePurePattern level domain = PurePattern level domain Concrete
+type ConcretePurePattern level domain =
+    PurePattern level domain Concrete (Annotation.Null level)
 
 {- | Use the provided traversal to replace all variables in a 'PurePattern'.
 
@@ -281,9 +283,9 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcretePurePattern
-    :: forall level domain variable annotation. Traversable domain
-    => PurePattern level domain variable annotation
-    -> Maybe (ConcretePurePattern level domain annotation)
+    :: forall level domain variable. Traversable domain
+    => PurePattern level domain variable (Annotation.Null level)
+    -> Maybe (ConcretePurePattern level domain)
 asConcretePurePattern = traverseVariables (\case { _ -> Nothing })
 
 {- | Construct a 'PurePattern' from a 'ConcretePurePattern'.
@@ -296,9 +298,9 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcretePurePattern
-    :: forall level domain variable annotation. Functor domain
-    => ConcretePurePattern level domain annotation
-    -> PurePattern level domain variable annotation
+    :: forall level domain variable. Functor domain
+    => ConcretePurePattern level domain
+    -> PurePattern level domain variable (Annotation.Null level)
 fromConcretePurePattern = mapVariables (\case {})
 
 {- | Cast a pure pattern with @'Const' 'Void'@ domain values into any domain.
@@ -361,5 +363,5 @@ type PurePatternStub level domain variable annotation =
         variable
         (PurePattern level domain variable annotation)
 
-type CommonPurePatternStub level domain annotation =
-    PurePatternStub level domain Variable annotation
+type CommonPurePatternStub level domain =
+    PurePatternStub level domain Variable (Annotation.Null level)

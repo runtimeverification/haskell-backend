@@ -326,8 +326,8 @@ fSymbol = SymbolOrAlias
     }
 
 metaF
-    :: CommonPurePattern Meta dom ()
-    -> Application Meta (CommonPurePattern Meta dom ())
+    :: CommonPurePattern Meta domain
+    -> Application Meta (CommonPurePattern Meta domain)
 metaF p = Application fSymbol [p]
 
 
@@ -338,8 +338,8 @@ gSymbol = SymbolOrAlias
     }
 
 metaG
-    :: CommonPurePattern Meta dom ()
-    -> Application Meta (CommonPurePattern Meta dom ())
+    :: CommonPurePattern Meta domain
+    -> Application Meta (CommonPurePattern Meta domain)
 metaG p = Application gSymbol [p]
 
 hSymbol :: SymbolOrAlias Meta
@@ -349,8 +349,8 @@ hSymbol = SymbolOrAlias
     }
 
 metaH
-    :: CommonPurePattern Meta dom ()
-    -> Application Meta (CommonPurePattern Meta dom ())
+    :: CommonPurePattern Meta domain
+    -> Application Meta (CommonPurePattern Meta domain)
 metaH p = Application hSymbol [p]
 
 
@@ -361,15 +361,15 @@ sigmaSymbol = SymbolOrAlias
     }
 
 metaSigma
-    :: CommonPurePattern Meta dom ()
-    -> CommonPurePattern Meta dom ()
-    -> Application Meta (CommonPurePattern Meta dom ())
+    :: CommonPurePattern Meta domain
+    -> CommonPurePattern Meta domain
+    -> Application Meta (CommonPurePattern Meta domain)
 metaSigma p1 p2 = Application sigmaSymbol [p1, p2]
 
 asApplication
-    :: Functor dom
-    => Application Meta (CommonPurePattern Meta dom ())
-    -> CommonPurePattern Meta dom ()
+    :: Functor domain
+    => Application Meta (CommonPurePattern Meta domain)
+    -> CommonPurePattern Meta domain
 asApplication = asPurePattern . (mempty :<) . ApplicationPattern
 
 evaluateWithAxiom

@@ -14,9 +14,7 @@ module Kore.Step.Simplification.Simplifier
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Common
-                 ( Id, SortedVariable )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Function.Data
