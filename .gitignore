@@ -30,3 +30,4 @@ tags
 src/main/haskell/stack.yaml
 .dir-locals.el
 *.prof
+.kprove-*
