@@ -31,8 +31,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SymbolOrAliasSorts )
 import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
-                 makeTruePredicate )
+                 ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
+                 makeNotPredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
@@ -321,6 +321,43 @@ test_onePathStrategy = give symbolOrAliasSorts
             , _actual3
             , _actual4
             ]
+    , testCase "Axiom with requires" $ do
+        -- Target: a
+        -- Coinductive axiom: n/a
+        -- Normal axiom: constr10(b) => a | f(b) == c
+        -- Start pattern: constr10(b)
+        -- Expected: a | f(b) == c
+        [ _actual1, _actual2 ] <- runOnePathSteps
+            metadataTools
+            (Limit 2)
+            (ExpandedPattern.fromPurePattern
+                (Mock.functionalConstr10 Mock.b)
+            )
+            Mock.a
+            []
+            [ rewriteWithPredicate
+                (Mock.functionalConstr10 Mock.b)
+                Mock.a
+                $ makeEqualsPredicate
+                    Mock.c
+                    $ Mock.f Mock.b
+            ]
+        assertEqualWithExplanation ""
+            [ Stuck $ Predicated
+                { term = Mock.functionalConstr10 Mock.b
+                , predicate =
+                    makeNotPredicate
+                        $ makeEqualsPredicate
+                            Mock.c
+                            $ Mock.f Mock.b
+                , substitution = mempty
+                }
+            , Bottom
+            ]
+            [ _actual1
+            , _actual2
+            ]
+
     ]
   where
     symbolOrAliasSorts :: SymbolOrAliasSorts Object
@@ -345,6 +382,20 @@ simpleRewrite left right =
         { left = left
         , right = right
         , requires = makeTruePredicate
+        , attributes = def
+        }
+
+rewriteWithPredicate
+    :: MetaOrObject level
+    => CommonStepPattern level
+    -> CommonStepPattern level
+    -> CommonPredicate level
+    -> RewriteRule level
+rewriteWithPredicate left right predicate =
+    RewriteRule RulePattern
+        { left = left
+        , right = right
+        , requires = predicate
         , attributes = def
         }
 
