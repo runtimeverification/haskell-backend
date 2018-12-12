@@ -37,7 +37,7 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.Pattern
 
 import Test.Kore
-       ( sortVariableSort, testId )
+       ( testId )
 import Test.Kore.AST.MLPatterns
        ( extractPurePattern )
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -144,28 +144,6 @@ axiomPatternsUnitTests =
                                 ]
                             }
                     )
-                )
-            )
-        , testCase "\"a\" => \"b\""
-            (assertEqual ""
-                (koreFail "Unexpected meta-level pattern")
-                ( koreSentenceToAxiomPattern Object
-                $ asKoreAxiomSentence
-                    SentenceAxiom
-                        { sentenceAxiomPattern =
-                            asCommonKorePattern $ RewritesPattern Rewrites
-                                { rewritesSort =
-                                    sortVariableSort "s"
-                                , rewritesFirst =
-                                    asCommonKorePattern $
-                                        StringLiteralPattern (StringLiteral "a")
-                                , rewritesSecond =
-                                    asCommonKorePattern $
-                                        StringLiteralPattern (StringLiteral "b")
-                                }
-                        , sentenceAxiomParameters = []
-                        , sentenceAxiomAttributes = Attributes []
-                        }
                 )
             )
         , testCase "(I1:AInt => I2:AInt)::KItem"
