@@ -9,8 +9,6 @@ Stability   : experimental
 Portability : portable
 -}
 
--- {-# OPTIONS_GHC -Wno-name-shadowing #-}
-
 module Kore.ASTUtils.SmartConstructors
     ( -- * Utility functions for dealing with sorts
       getSort
@@ -91,7 +89,7 @@ getSort (Recursive.project -> _ :< pat) =
 
 patternLens
     ::  forall f level domain variable1 variable2 annotation.
-        (Applicative f, MetaOrObject level, Traversable domain)
+        (Applicative f, Traversable domain)
     => (Sort level -> f (Sort level))  -- ^ Operand sorts
     -> (Sort level -> f (Sort level))  -- ^ Result sorts
     -> (variable1 level -> f (variable2 level))  -- ^ Variables
@@ -279,7 +277,7 @@ inputSort        f = patternLens f    pure pure pure
 -- Note that a few constructors like App and StringLiteral
 -- lack a result sort in the AST.
 resultSort
-    :: (MetaOrObject level, Traversable domain)
+    :: Traversable domain
     => Traversal' (PurePattern level domain variable annotation) (Sort level)
 resultSort = \f -> patternLens pure f pure pure
 
@@ -295,7 +293,7 @@ variable = \f -> patternLens pure pure f pure
 -- | All sub-expressions which are 'Pattern's.
 -- Use partsOf allChildren to get a lens to a List.
 allChildren
-    :: (MetaOrObject level, Traversable domain)
+    :: Traversable domain
     => Traversal'
         (PurePattern level domain variable annotation)
         (PurePattern level domain variable annotation)
@@ -342,7 +340,7 @@ inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 -- single uniquely determined sort,
 -- which we can't change.
 hasRigidHead
-    :: (MetaOrObject level, Functor domain)
+    :: Functor domain
     => PurePattern level domain variable annotation
     -> Bool
 hasRigidHead (Recursive.project -> _ :< pat) =
@@ -361,7 +359,7 @@ hasRigidHead (Recursive.project -> _ :< pat) =
 -- must match the sort of of its subexpressions:
 -- \and, \or, \implies, etc.
 hasFlexibleHead
-    :: (MetaOrObject level, Functor domain)
+    :: Functor domain
     => PurePattern level domain variable annotation
     -> Bool
 hasFlexibleHead (Recursive.project -> _ :< pat) =
@@ -757,12 +755,8 @@ mkCharLiteral char =
   where
     charLiteral = CharLiteral char
 
-mkSort
-  :: MetaOrObject level
-  => Text
-  -> Sort level
-mkSort name =
-    SortActualSort $ SortActual (noLocationId name) []
+mkSort :: Text -> Sort level
+mkSort name = SortActualSort $ SortActual (noLocationId name) []
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s
