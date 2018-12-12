@@ -66,6 +66,8 @@ module Kore.AST.Sentence
     , VerifiedKoreSentenceSort
     , VerifiedKoreSentenceHook
     , VerifiedKoreSentence
+    , VerifiedKoreModule
+    , VerifiedKoreDefinition
     , Attributes (..)
     ) where
 
@@ -519,6 +521,10 @@ type KoreSentence = UnifiedSentence UnifiedSortVariable CommonKorePattern
 
 type VerifiedKoreSentence =
     UnifiedSentence UnifiedSortVariable VerifiedKorePattern
+
+type VerifiedKoreModule = Module VerifiedKoreSentence
+
+type VerifiedKoreDefinition = Definition VerifiedKoreSentence
 
 constructUnifiedSentence
     ::  forall a level sortParam patternType.
