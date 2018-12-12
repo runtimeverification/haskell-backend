@@ -72,6 +72,8 @@ import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Sort
+import           Template.Tools
+                 ( newDefinitionGroup )
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
 allow using toghether both 'Meta' and 'Object' patterns.
@@ -85,7 +87,8 @@ data UnifiedPattern domain variable child where
         :: !(Pattern Object domain variable child)
         -> UnifiedPattern domain variable child
 
-$(return [])  -- Begin a new definition group where UnifiedPattern is in scope.
+$newDefinitionGroup
+-- Begin a new definition group where UnifiedPattern is in scope.
 
 instance
     ( NFData (Pattern Meta domain variable child)
