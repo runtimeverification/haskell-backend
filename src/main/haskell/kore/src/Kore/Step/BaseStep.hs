@@ -52,6 +52,8 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Proof.Functional
                  ( FunctionalProof (..) )
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
@@ -87,6 +89,7 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
+
 {-| 'StepperConfiguration' represents the configuration to which a rewriting
 axiom is applied.
 
@@ -107,7 +110,9 @@ data StepperConfiguration level = StepperConfiguration
  -}
 newtype StepProof (level :: *) (variable :: * -> *) =
     StepProof { getStepProof :: Seq (StepProofAtom level variable) }
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance Reflectable (variable level) => Reflectable (StepProof level variable)
 
 instance Hashable.Hashable (StepProof level variable) where
     hashWithSalt s _ = Hashable.hashWithSalt s (0 :: Int)
@@ -140,13 +145,21 @@ data StepProofAtom (level :: *) (variable :: * -> *)
     -- ^ Proof for the simplification part of a step.
     deriving (Show, Eq, Generic)
 
+instance
+    Reflectable (variable level) => Reflectable (StepProofAtom level variable)
+
 {-| 'VariableRenaming' represents a renaming of a variable.
 -}
 data VariableRenaming level variable = VariableRenaming
     { variableRenamingOriginal :: StepperVariable variable level
     , variableRenamingRenamed  :: StepperVariable variable level
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
+
+
+instance
+    Reflectable (variable level)
+    => Reflectable (VariableRenaming level variable)
 
 {-| 'StepperVariable' wraps a variable in a variable-like type, distinguishing
 variables by source.
@@ -154,7 +167,7 @@ variables by source.
 data StepperVariable variable level
     = AxiomVariable (Variable level)
     | ConfigurationVariable (variable level)
-    deriving (Show, Ord, Eq)
+    deriving (Show, Ord, Eq, Generic)
 
 instance
     SortedVariable variable
@@ -176,6 +189,9 @@ instance
     freshVariableWith (ConfigurationVariable a) n =
         ConfigurationVariable $ freshVariableWith a n
 
+instance
+    Reflectable (variable level) => Reflectable (StepperVariable variable level)
+
 {-! The result of applying an axiom to a pattern. Contains the rewritten
 pattern (if any) and the unrewritten part of the original pattern.
 -}
@@ -186,7 +202,9 @@ data StepResult level variable =
         , remainder :: !(ExpandedPattern level variable)
         -- ^ The unrewritten part of the original pattern
         }
-    deriving (Eq, Show)
+    deriving (Eq, Generic, Show)
+
+instance Reflectable (variable level) => Reflectable (StepResult level variable)
 
 {-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
 stepProofSumName :: StepProofAtom variable level -> String

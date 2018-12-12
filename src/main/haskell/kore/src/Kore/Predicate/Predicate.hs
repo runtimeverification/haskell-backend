@@ -63,6 +63,8 @@ import           Kore.Error
                  ( Error, koreFail )
 import           Kore.IndexedModule.MetadataTools
                  ( SymbolOrAliasSorts )
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Step.Pattern
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -88,6 +90,8 @@ instance TopBottom patt
   where
     isTop (GenericPredicate patt) = isTop patt
     isBottom (GenericPredicate patt) = isBottom patt
+
+instance Reflectable pat => Reflectable (GenericPredicate pat)
 
 {-| 'Predicate' is a user-visible representation for predicates.
 -}

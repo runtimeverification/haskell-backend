@@ -29,6 +29,8 @@ import Prelude hiding
        ( null )
 
 import Kore.AST.Pure as Pure
+import Kore.Reflect
+       ( Reflectable )
 import Kore.Step.Pattern
        ( StepPattern )
 import Kore.TopBottom
@@ -52,6 +54,9 @@ instance TopBottom (Substitution level variable)
   where
     isTop = null
     isBottom _ = False
+
+instance
+    Reflectable (variable level) => Reflectable (Substitution level variable)
 
 instance Semigroup (Substitution level variable) where
     (Substitution [])             <> (Substitution []) = mempty

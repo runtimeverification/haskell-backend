@@ -51,7 +51,6 @@ import           Kore.Step.Strategy
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock

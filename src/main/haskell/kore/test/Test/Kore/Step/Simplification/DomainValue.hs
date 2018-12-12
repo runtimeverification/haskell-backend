@@ -35,7 +35,6 @@ import           Kore.Step.Simplification.DomainValue
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions

@@ -43,11 +43,14 @@ import Data.Void
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.Identifier
-import Kore.AST.MetaOrObject
-import Kore.Sort
-import Template.Tools
-       ( newDefinitionGroup )
+import           Kore.AST.Identifier
+import           Kore.AST.MetaOrObject
+import           Kore.Reflect
+                 ( Reflectable (..) )
+import qualified Kore.Reflect as Reflect
+import           Kore.Sort
+import           Template.Tools
+                 ( newDefinitionGroup )
 
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
@@ -59,6 +62,8 @@ instance Hashable StringLiteral
 
 instance NFData StringLiteral
 
+instance Reflectable StringLiteral
+
 {-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
@@ -68,6 +73,8 @@ newtype CharLiteral = CharLiteral { getCharLiteral :: Char }
 instance Hashable CharLiteral
 
 instance NFData CharLiteral
+
+instance Reflectable CharLiteral
 
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
@@ -86,6 +93,8 @@ instance Hashable (SymbolOrAlias level)
 
 instance NFData (SymbolOrAlias level)
 
+instance Reflectable (SymbolOrAlias level)
+
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -103,6 +112,8 @@ instance Hashable (Variable level)
 
 instance NFData (Variable level)
 
+instance Reflectable (Variable level)
+
 {- | @Concrete level@ is a variable occuring in a concrete pattern.
 
     Concrete patterns do not contain variables, so this is an uninhabited type
@@ -117,6 +128,8 @@ data Concrete level
 instance Hashable (Concrete level)
 
 instance NFData (Concrete level)
+
+instance Reflectable (Concrete level)
 
 {-| 'SortedVariable' is a variable which has a sort.
 -}
@@ -230,6 +243,8 @@ instance Hashable child => Hashable (And level child)
 
 instance NFData child => NFData (And level child)
 
+instance Reflectable child => Reflectable (And level child)
+
 {-|'Application' corresponds to the @head(pattern-list)@ branches of the
 @object-pattern@ and @meta-pattern@ syntactic categories from
 the Semantics of K, Section 9.1.4 (Patterns).
@@ -269,6 +284,8 @@ instance Hashable child => Hashable (Application level child)
 
 instance NFData child => NFData (Application level child)
 
+instance Reflectable child => Reflectable (Application level child)
+
 {-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -303,6 +320,8 @@ instance Ord (Bottom level child) where
 instance Hashable (Bottom level child)
 
 instance NFData (Bottom level child)
+
+instance Reflectable (Bottom level child)
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -347,6 +366,8 @@ instance Show child => Show (Ceil level child) where
 instance Hashable child => Hashable (Ceil level child)
 
 instance NFData child => NFData (Ceil level child)
+
+instance Reflectable child => Reflectable (Ceil level child)
 
 {-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
 syntactic category, which are not yet in the Semantics of K document,
@@ -393,6 +414,9 @@ instance Hashable (domain child) => Hashable (DomainValue level domain child)
 
 instance NFData (domain child) => NFData (DomainValue level domain child)
 
+instance Reflectable (domain child)
+    => Reflectable (DomainValue level domain child)
+
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -438,6 +462,8 @@ instance Hashable child => Hashable (Equals level child)
 
 instance NFData child => NFData (Equals level child)
 
+instance Reflectable child => Reflectable (Equals level child)
+
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -479,6 +505,9 @@ instance (Show child, Show (var lvl)) => Show (Exists lvl var child) where
 instance (Hashable child, Hashable (var lvl)) => Hashable (Exists lvl var child)
 
 instance (NFData child, NFData (var lvl)) => NFData (Exists lvl var child)
+
+instance (Reflectable child, Reflectable (var lvl))
+    => Reflectable (Exists lvl var child)
 
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -524,6 +553,8 @@ instance Hashable child => Hashable (Floor level child)
 
 instance NFData child => NFData (Floor level child)
 
+instance Reflectable child => Reflectable (Floor level child)
+
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -565,6 +596,9 @@ instance (Show child, Show (var lvl)) => Show (Forall lvl var child) where
 instance (Hashable child, Hashable (var lvl)) => Hashable (Forall lvl var child)
 
 instance (NFData child, NFData (var lvl)) => NFData (Forall lvl var child)
+
+instance (Reflectable child, Reflectable (var lvl))
+    => Reflectable (Forall lvl var child)
 
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -608,6 +642,8 @@ instance Hashable child => Hashable (Iff level child)
 
 instance NFData child => NFData (Iff level child)
 
+instance Reflectable child => Reflectable (Iff level child)
+
 {-|'Implies' corresponds to the @\implies@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -649,6 +685,8 @@ instance Show child => Show (Implies level child) where
 instance Hashable child => Hashable (Implies level child)
 
 instance NFData child => NFData (Implies level child)
+
+instance Reflectable child => Reflectable (Implies level child)
 
 {-|'In' corresponds to the @\in@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -698,6 +736,8 @@ instance Hashable child => Hashable (In level child)
 
 instance NFData child => NFData (In level child)
 
+instance Reflectable child => Reflectable (In level child)
+
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
@@ -738,6 +778,8 @@ instance Show child => Show (Next level child) where
 instance Hashable child => Hashable (Next level child)
 
 instance NFData child => NFData (Next level child)
+
+instance Reflectable child => Reflectable (Next level child)
 
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -780,6 +822,8 @@ instance Hashable child => Hashable (Not level child)
 
 instance NFData child => NFData (Not level child)
 
+instance Reflectable child => Reflectable (Not level child)
+
 {-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -821,6 +865,8 @@ instance Show child => Show (Or level child) where
 instance Hashable child => Hashable (Or level child)
 
 instance NFData child => NFData (Or level child)
+
+instance Reflectable child => Reflectable (Or level child)
 
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -865,6 +911,8 @@ instance Hashable child => Hashable (Rewrites level child)
 
 instance NFData child => NFData (Rewrites level child)
 
+instance Reflectable child => Reflectable (Rewrites level child)
+
 {-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -899,6 +947,8 @@ instance Ord (Top level child) where
 instance Hashable (Top level child)
 
 instance NFData (Top level child)
+
+instance Reflectable child => Reflectable (Top level child)
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -1062,6 +1112,38 @@ deriving instance
     , Ord (variable level)
     , Ord1 domain
     ) => Ord (Pattern level domain variable child)
+
+instance
+    ( Reflectable (domain child)
+    , Reflectable (variable level)
+    , Reflectable child
+    )
+    => Reflectable (Pattern level domain variable child)
+  where
+    reflect (AndPattern p) = Reflect.mkSum "AndPattern" [reflect p]
+    reflect (ApplicationPattern p) =
+        Reflect.mkSum "ApplicationPattern" [reflect p]
+    reflect (BottomPattern p) = Reflect.mkSum "BottomPattern" [reflect p]
+    reflect (CeilPattern p) = Reflect.mkSum "CeilPattern" [reflect p]
+    reflect (DomainValuePattern p) =
+        Reflect.mkSum "DomainValuePattern" [reflect p]
+    reflect (EqualsPattern p) = Reflect.mkSum "EqualsPattern" [reflect p]
+    reflect (ExistsPattern p) = Reflect.mkSum "ExistsPattern" [reflect p]
+    reflect (FloorPattern p) = Reflect.mkSum "FloorPattern" [reflect p]
+    reflect (ForallPattern p) = Reflect.mkSum "ForallPattern" [reflect p]
+    reflect (IffPattern p) = Reflect.mkSum "IffPattern" [reflect p]
+    reflect (ImpliesPattern p) = Reflect.mkSum "ImpliesPattern" [reflect p]
+    reflect (InPattern p) = Reflect.mkSum "InPattern" [reflect p]
+    reflect (NextPattern p) = Reflect.mkSum "NextPattern" [reflect p]
+    reflect (NotPattern p) = Reflect.mkSum "NotPattern" [reflect p]
+    reflect (OrPattern p) = Reflect.mkSum "OrPattern" [reflect p]
+    reflect (RewritesPattern p) = Reflect.mkSum "RewritesPattern" [reflect p]
+    reflect (StringLiteralPattern p) =
+        Reflect.mkSum "StringLiteralPattern" [reflect p]
+    reflect (CharLiteralPattern p) =
+        Reflect.mkSum "CharLiteralPattern" [reflect p]
+    reflect (TopPattern p) = Reflect.mkSum "TopPattern" [reflect p]
+    reflect (VariablePattern p) = Reflect.mkSum "VariablePattern" [reflect p]
 
 deriving instance Functor domain => Functor (Pattern level domain variable)
 

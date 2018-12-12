@@ -3,6 +3,8 @@ module Test.Kore.Step.ExpandedPattern (test_expandedPattern) where
 import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
+import           GHC.Generics
+                 ( Generic )
 
 import Test.Tasty
        ( TestTree )
@@ -19,12 +21,13 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), allVariables, mapVariables, toMLPattern )
 import           Kore.Step.Pattern
 import qualified Kore.Unification.Substitution as Substitution
 
-import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
 test_expandedPattern :: [TestTree]
@@ -124,38 +127,19 @@ test_expandedPattern =
     ]
 
 newtype V level = V Integer
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Generic, Ord)
 newtype W level = W String
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Generic, Ord)
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVariable
 
-instance SumEqualWithExplanation (V level)
-  where
-    sumConstructorPair (V a1) (V a2) =
-        SumConstructorSameWithArguments
-            (EqWrap "V" a1 a2)
-
-instance EqualWithExplanation (V level)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
+instance Reflectable (V level)
 
 instance SortedVariable W where
     sortedVariableSort _ = sortVariable
 
-instance SumEqualWithExplanation (W level)
-  where
-    sumConstructorPair (W a1) (W a2) =
-        SumConstructorSameWithArguments
-            (EqWrap "W" (EWEString a1) (EWEString a2))
-
-instance EqualWithExplanation (W level)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
+instance Reflectable (W level)
 
 showVar :: V level -> W level
 showVar (V i) = W (show i)

@@ -9,7 +9,11 @@ module Kore.Step.Error
 import           Data.Bifunctor
                  ( first )
 import qualified Data.Set as Set
+import           GHC.Generics
+                 ( Generic )
 
+import Kore.Reflect
+       ( Reflectable )
 import Kore.Unification.Error
 
 {-| 'StepError' represents the various error cases encountered while executing
@@ -18,7 +22,9 @@ a single step.
 data StepError level variable
     = StepErrorUnification UnificationError
     | StepErrorSubstitution (SubstitutionError level variable)
-    deriving (Show, Eq)
+    deriving (Eq, Generic, Show)
+
+instance Reflectable (variable level) => Reflectable (StepError level variable)
 
 {-| 'substitutionErrorVariables' extracts all variables in a
 'SubstitutionError' as a set.

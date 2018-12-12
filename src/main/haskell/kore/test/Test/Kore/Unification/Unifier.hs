@@ -26,6 +26,8 @@ import           Data.Reflection
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Builders
 import           Kore.AST.MLPatterns
@@ -49,6 +51,8 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( makeEqualsPredicate )
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -73,7 +77,6 @@ import           Test.Kore
 import           Test.Kore.AST.MLPatterns
                  ( extractPurePattern )
 import           Test.Kore.ASTVerifier.DefinitionVerifier
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 bottomPredicate :: CommonPurePatternStub Object Domain.Builtin
@@ -318,7 +321,7 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
-            [(unificationProblem term1 term2)]
+            [unificationProblem term1 term2]
     let
         subst'' =
             subst'
@@ -345,7 +348,7 @@ andSimplifyFailure term1 term2 err = do
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
-            [(unificationProblem term1 term2)]
+            [unificationProblem term1 term2]
     assertEqualWithPrinter show "" expect actual
 
 andSimplifyException
@@ -368,7 +371,7 @@ andSimplifyException message term1 term2 exceptionMessage =
                 $ simplifyAnds
                     tools
                     (Mock.substitutionSimplifier tools)
-                    [(unificationProblem term1 term2)]
+                    [unificationProblem term1 term2]
             _ <- evaluate var
             assertFailure "This evaluation should fail"
         handler (ErrorCall s) =
@@ -417,7 +420,7 @@ unificationProcedureSuccess
 
 test_unification :: [TestTree]
 test_unification =
-    [ testCase "Constant" $ do
+    [ testCase "Constant" $
         andSimplifySuccess
             (UnificationTerm aA)
             (UnificationTerm aA)
@@ -425,7 +428,7 @@ test_unification =
             []
             makeTruePredicate
             EmptyUnificationProof
-    , testCase "Variable" $ do
+    , testCase "Variable" $
         andSimplifySuccess
             (UnificationTerm x)
             (UnificationTerm aA)
@@ -433,7 +436,7 @@ test_unification =
             [("x", aA)]
             makeTruePredicate
             EmptyUnificationProof
-    , testCase "one level" $ do
+    , testCase "one level" $
         andSimplifySuccess
             (UnificationTerm (applyS f [x]))
             (UnificationTerm (applyS f [aA]))
@@ -441,7 +444,7 @@ test_unification =
             [("x", aA)]
             makeTruePredicate
             EmptyUnificationProof
-    , testCase "equal non-constructor patterns" $ do
+    , testCase "equal non-constructor patterns" $
         andSimplifySuccess
             (UnificationTerm a2A)
             (UnificationTerm a2A)
@@ -449,7 +452,7 @@ test_unification =
             []
             makeTruePredicate
             EmptyUnificationProof
-    , testCase "variable + non-constructor pattern" $ do
+    , testCase "variable + non-constructor pattern" $
         andSimplifySuccess
             (UnificationTerm a2A)
             (UnificationTerm x)
@@ -457,7 +460,7 @@ test_unification =
             [("x", a2A)]
             makeTruePredicate
             EmptyUnificationProof
-    , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3" $ do
+    , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3" $
         andSimplifySuccess
             (UnificationTerm (applyS ef [ex1, applyS eh [ex1], ex2]))
             (UnificationTerm (applyS ef [applyS eg [ex3], ex4, ex3]))
@@ -470,7 +473,7 @@ test_unification =
             ]
             makeTruePredicate
             EmptyUnificationProof
-    , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $ do
+    , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $
         andSimplifySuccess
 
             (UnificationTerm
@@ -486,7 +489,7 @@ test_unification =
             ]
             makeTruePredicate
             EmptyUnificationProof
-    , testCase "times(times(a, y), x) = times(x, times(y, a))" $ do
+    , testCase "times(times(a, y), x) = times(x, times(y, a))" $
         andSimplifySuccess
             (UnificationTerm (applyS expBin [applyS expBin [expA, expY], expX]))
             (UnificationTerm (applyS expBin [expX, applyS expBin [expY, expA]]))
@@ -536,7 +539,7 @@ test_unification =
          )
          EmptyUnificationProof
     , testGroup "inj unification tests" injUnificationTests
-    , testCase "Unmatching constants is bottom" $ do
+    , testCase "Unmatching constants is bottom" $
         andSimplifySuccess
             (UnificationTerm aA)
             (UnificationTerm a1A)
@@ -544,7 +547,7 @@ test_unification =
             []
             makeFalsePredicate
             EmptyUnificationProof
-    , testCase "Unmatching domain values is bottom" $ do
+    , testCase "Unmatching domain values is bottom" $
         andSimplifySuccess
             (UnificationTerm dv1)
             (UnificationTerm dv2)
@@ -560,7 +563,7 @@ test_unification =
         (UnificationTerm dv1)
         (UnificationTerm aA)
         "Cannot handle DomainValue and Constructor"
-    , testCase "Unmatching domain value + nonconstructor constant" $ do
+    , testCase "Unmatching domain value + nonconstructor constant" $
         andSimplifySuccess
             (UnificationTerm dv1)
             (UnificationTerm a2A)
@@ -568,7 +571,7 @@ test_unification =
             []
             (makeEqualsPredicate dv1 a2A)
             EmptyUnificationProof
-    , testCase "Unmatching nonconstructor constant + domain value" $ do
+    , testCase "Unmatching nonconstructor constant + domain value" $
         andSimplifySuccess
             (UnificationTerm a2A)
             (UnificationTerm dv1)
@@ -576,12 +579,12 @@ test_unification =
             []
             (makeEqualsPredicate a2A dv1)
             EmptyUnificationProof
-    , testCase "non-functional pattern" $ do
+    , testCase "non-functional pattern" $
         andSimplifyFailure
             (UnificationTerm x)
             (UnificationTerm a3A)
             UnsupportedPatterns
-    , testCase "non-constructor symbolHead right" $ do
+    , testCase "non-constructor symbolHead right" $
         andSimplifySuccess
             (UnificationTerm aA)
             (UnificationTerm a2A)
@@ -589,7 +592,7 @@ test_unification =
             []
             (makeEqualsPredicate aA a2A)
             EmptyUnificationProof
-    , testCase "non-constructor symbolHead left" $ do
+    , testCase "non-constructor symbolHead left" $
         andSimplifySuccess
             (UnificationTerm a2A)
             (UnificationTerm aA)
@@ -597,7 +600,7 @@ test_unification =
             []
             (makeEqualsPredicate a2A aA)
             EmptyUnificationProof
-    , testCase "nested a=a1 is bottom" $ do
+    , testCase "nested a=a1 is bottom" $
         andSimplifySuccess
             (UnificationTerm (applyS f [aA]))
             (UnificationTerm (applyS f [a1A]))
@@ -624,27 +627,19 @@ test_unification =
 
 test_unsupportedConstructs :: TestTree
 test_unsupportedConstructs =
-    testCase "Unsupported constructs" $ do
+    testCase "Unsupported constructs" $
         andSimplifyFailure
             (UnificationTerm (applyS f [aA]))
             (UnificationTerm (applyS f [implies_ aA (next_ a1A)]))
             UnsupportedPatterns
 
 newtype V level = V Integer
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
 newtype W level = W String
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
 
-instance EqualWithExplanation (V level)
-  where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
-instance EqualWithExplanation (W level)
-  where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
+instance Reflectable (V level)
+instance Reflectable (W level)
 
 showVar :: V level -> W level
 showVar (V i) = W (show i)
@@ -666,7 +661,7 @@ sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))
 
 injUnificationTests :: [TestTree]
 injUnificationTests =
-    [ testCase "Injected Variable" $ do
+    [ testCase "Injected Variable" $
         andSimplifySuccess
             (UnificationTerm (applyInj s1 s2 x))
             (UnificationTerm (applyInj s1 s2 aA))
@@ -674,7 +669,7 @@ injUnificationTests =
             [("x", aA)]
             makeTruePredicate
             EmptyUnificationProof
-    , testCase "Variable" $ do
+    , testCase "Variable" $
         andSimplifySuccess
             (UnificationTerm xs2)
             (UnificationTerm (applyInj s1 s2 aA))
@@ -718,7 +713,7 @@ injUnificationTests =
             [("x", aA)]
             makeTruePredicate
             EmptyUnificationProof
-    , testCase "constant vs injection is bottom" $ do
+    , testCase "constant vs injection is bottom" $
         andSimplifySuccess
             (UnificationTerm aA)
             (UnificationTerm (applyInj s2 s1 xs2))
@@ -740,7 +735,7 @@ injUnificationTests =
             []
             makeFalsePredicate
             EmptyUnificationProof
-    , testCase "unmatching injections" $ do
+    , testCase "unmatching injections" $
         andSimplifySuccess
             -- TODO(traiansf): this should succeed if s1 < s2 < s3
             (UnificationTerm (applyInj s1 s3 aA))

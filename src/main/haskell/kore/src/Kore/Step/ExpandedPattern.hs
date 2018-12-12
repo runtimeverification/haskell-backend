@@ -60,6 +60,8 @@ import           Kore.Predicate.Predicate
                  makeAndPredicate, makeFalsePredicate, makeTruePredicate,
                  substitutionToPredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Step.Pattern
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -88,6 +90,10 @@ data Predicated level variable child = Predicated
     , substitution :: !(Substitution level variable)
     }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+
+instance
+    (Reflectable (variable level), Reflectable child)
+    => Reflectable (Predicated level variable child)
 
 instance
     (Hashable child

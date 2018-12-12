@@ -33,7 +33,6 @@ import           Kore.Unification.SubstitutionNormalization
 import           Kore.Variables.Fresh
 
 import           Test.Kore
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -87,7 +86,7 @@ test_substitutionNormalization =
             )
         )
     , let
-        var1 =  (v1 patternMetaSort)
+        var1 = v1 patternMetaSort
       in
         testCase "Simplest cycle"
             (assertEqual ""
@@ -95,8 +94,8 @@ test_substitutionNormalization =
                 (runNormalizeSubstitution [(var1, mkVar $ v1 patternMetaSort)])
             )
     , let
-        var1 =  (v1 patternMetaSort)
-        varx1 =  (x1 patternMetaSort)
+        var1 = v1 patternMetaSort
+        varx1 = x1 patternMetaSort
       in
         testCase "Cycle with extra substitution"
             (assertEqual ""
@@ -108,7 +107,7 @@ test_substitutionNormalization =
                 )
             )
     , let
-        var1 =  (v1 patternMetaSort)
+        var1 = v1 patternMetaSort
       in
         testCase "Function cycle"
             (assertEqual ""
@@ -121,8 +120,8 @@ test_substitutionNormalization =
                 )
             )
     , let
-        var1 =  (v1 patternMetaSort)
-        varx1 =  (x1 patternMetaSort)
+        var1 = v1 patternMetaSort
+        varx1 = x1 patternMetaSort
       in
         testCase "Length 2 cycle"
             (assertEqual ""
@@ -134,8 +133,8 @@ test_substitutionNormalization =
                 )
             )
     , let
-        var1 =  (v1 patternMetaSort)
-        varx1 =  (x1 patternMetaSort)
+        var1 = v1 patternMetaSort
+        varx1 = x1 patternMetaSort
       in
         testCase "Cycle with 'and'"
             (assertEqual ""
@@ -147,8 +146,8 @@ test_substitutionNormalization =
                 )
             )
     , let
-        var1 =  (v1 patternMetaSort)
-        varx1 =  (x1 patternMetaSort)
+        var1 = v1 patternMetaSort
+        varx1 = x1 patternMetaSort
       in
         testCase "Length 2 non-ctor cycle"
             (assertEqual ""

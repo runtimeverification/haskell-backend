@@ -41,7 +41,6 @@ import           Test.Kore.Builtin.Int
                  ( genConcreteIntegerPattern, genInteger, genIntegerPattern )
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
-import           Test.Kore.Comparators ()
 import           Test.Kore.Step.Condition.Evaluator
                  ( genSortedVariable )
 import           Test.SMT

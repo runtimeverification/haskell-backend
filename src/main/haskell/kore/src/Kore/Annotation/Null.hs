@@ -14,6 +14,10 @@ import Data.Hashable
 import GHC.Generics
        ( Generic )
 
+import Kore.Reflect
+       ( Reflectable )
+
+
 {- | @Null@ is an empty pattern annotation
  -}
 data Null level = Null
@@ -29,3 +33,5 @@ instance Semigroup (Null level) where
 instance Monoid (Null level) where
     mempty = Null
     mappend = (<>)
+
+instance Reflectable (Null level)

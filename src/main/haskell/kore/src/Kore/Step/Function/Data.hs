@@ -20,6 +20,8 @@ module Kore.Step.Function.Data
 import qualified Data.Map.Strict as Map
 import           Data.These
                  ( These )
+import           GHC.Generics
+                 ( Generic )
 
 import Kore.AST.Common
        ( Application, SortedVariable, Variable )
@@ -27,6 +29,8 @@ import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
+import Kore.Reflect
+       ( Reflectable )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import Kore.Step.Pattern
@@ -104,7 +108,11 @@ cases where the function can't be fully evaluated.
 data AttemptedFunction level variable
     = NotApplicable
     | Applied !(OrOfExpandedPattern level variable)
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
+
+instance
+    Reflectable (variable level)
+    => Reflectable (AttemptedFunction level variable)
 
 {-| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
 following the same pattern as the other `Common*` types.

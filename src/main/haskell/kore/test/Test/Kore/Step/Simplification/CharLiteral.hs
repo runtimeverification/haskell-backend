@@ -23,7 +23,6 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.CharLiteral
                  ( simplify )
 
-import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
 test_charLiteralSimplification :: [TestTree]

@@ -3,20 +3,17 @@ module Test.Tasty.HUnit.Extensions where
 import Test.Tasty.HUnit
        ( assertBool, assertFailure )
 
-import           Control.Exception
-                 ( SomeException, catch, evaluate )
-import           Control.Monad
-import           Data.CallStack
-import qualified Data.Foldable as Foldable
-import           Data.Functor.Classes
-import           Data.Functor.Foldable
-import           Data.List
-                 ( intercalate, isInfixOf )
-import           Data.Sequence
-                 ( Seq )
-import           Data.Set
-                 ( Set )
-import qualified Data.Set as Set
+import Control.Exception
+       ( SomeException, catch, evaluate )
+import Control.Monad
+import Data.CallStack
+import Data.Functor.Foldable
+import Data.List
+       ( intercalate, isInfixOf )
+
+import           Kore.Reflect
+                 ( Reflectable (reflect) )
+import qualified Kore.Reflect as Reflect
 
 assertEqualWithPrinter
     :: (Eq a, HasCallStack)
@@ -117,252 +114,125 @@ formatDiffForExplanation :: String -> String -> String
 formatDiffForExplanation expected actual =
     "\n    " ++ expected ++"\n***vs***\n    " ++ actual ++ "\n"
 
-compareListWithExplanation :: [EqWrap] -> Maybe String
-compareListWithExplanation l =
-    case foldl compareListElement (Right []) l of
+instance Reflectable a => EqualWithExplanation a where
+    compareWithExplanation thing1 thing2 =
+        compareReflectable (reflect thing1) (reflect thing2)
+    printWithExplanation = Reflect.printData . reflect
+
+compareReflectable
+    :: Reflect.RecursiveData -> Reflect.RecursiveData -> Maybe String
+compareReflectable
+    (Fix (Reflect.Sum Reflect.ProductElement {name = name1, values = values1}))
+    (Fix (Reflect.Sum Reflect.ProductElement {name = name2, values = values2}))
+  | name1 == name2 = do -- Maybe monad
+    err <- compareList "" "" values1 values2
+    return ("(" ++ name1 ++ " " ++ err ++ ")")
+  | otherwise =
+    Just (formatDiffForExplanation name1 name2)
+compareReflectable
+    (Fix (Reflect.Struct name1 values1))
+    (Fix (Reflect.Struct name2 values2))
+  | name1 == name2 = do -- Maybe monad
+    err <- compareStructList values1 values2
+    return (name1 ++ " {" ++ err ++ "}")
+  | otherwise =
+    error ("Expected the same name, got " ++ show [name1, name2])
+compareReflectable
+    (Fix (Reflect.Value value1))
+    (Fix (Reflect.Value value2))
+  | value1 == value2 = Nothing
+  | otherwise = Just (formatDiffForExplanation value1 value2)
+compareReflectable
+    (Fix (Reflect.List values1))
+    (Fix (Reflect.List values2))
+  = compareList "[" "]" values1 values2
+compareReflectable
+    (Fix (Reflect.Tuple values1))
+    (Fix (Reflect.Tuple values2))
+  = compareList "(" ")" values1 values2
+
+compareReflectable expected actual
+  | expected == actual =
+    error
+        (  "We should not reach this line with equal data: "
+        ++ show expected
+        )
+  | otherwise =
+    Just
+        (formatDiffForExplanation
+            (Reflect.printData expected) (Reflect.printData actual)
+        )
+
+compareStructList
+    :: [Reflect.NamedElement Reflect.RecursiveData]
+    -> [Reflect.NamedElement Reflect.RecursiveData]
+    -> Maybe String
+compareStructList l1 l2
+  | length l1 == length l2 =
+    case foldl compareStructListElement (Right []) (zip l1 l2) of
         Right _   -> Nothing
         Left diff -> Just (intercalate ", " (reverse diff))
-  where
-    compareListElement
-        :: Either [String] [String]
-        -> EqWrap
-        -> Either [String] [String]
-    compareListElement (Left diff) _ =
-        Left ("..." : diff)
-    compareListElement (Right same) (EqWrap prefix x y) =
-        case compareWithExplanation x y of
-            Just diff -> Left ((prefix ++ " " ++ diff) : same)
-            Nothing   -> Right ("..." : same)
+  | otherwise =
+    error
+        (  "expected same length lists, but got "
+        ++ show [length l1, length l2]
+        )
 
-rawCompareWithExplanation :: (Eq a, Show a) => a -> a -> Maybe String
-rawCompareWithExplanation expected actual =
-    if expected /= actual
-        then Just $ formatDiffForExplanation (show expected) (show actual)
-        else Nothing
-
-instance (EqualWithExplanation a1, EqualWithExplanation a2)
-    => EqualWithExplanation (a1, a2)
-  where
-    compareWithExplanation (a, b) (c, d) =
-        case compareListWithExplanation [EqWrap "" a c, EqWrap "" b d] of
-            Just err -> Just ("(" ++ err ++ ")")
-            Nothing  -> Nothing
-    printWithExplanation (a, b) =
-        "(" ++ printWithExplanation a ++ ", " ++ printWithExplanation b ++ ")"
-
-instance
-    ( EqualWithExplanation a1
-    , EqualWithExplanation a2
-    , EqualWithExplanation a3
+compareStructListElement
+    :: Either [String] [String]
+    ->  ( Reflect.NamedElement Reflect.RecursiveData
+        , Reflect.NamedElement Reflect.RecursiveData
+        )
+    -> Either [String] [String]
+compareStructListElement (Left diff) _ =
+    Left ("..." : diff)
+compareStructListElement
+    (Right same)
+    ( Reflect.NamedElement {name = name1, value = value1}
+    , Reflect.NamedElement {name = name2, value = value2}
     )
-    => EqualWithExplanation (a1, a2, a3)
-  where
-    compareWithExplanation (a, b, c) (d, e, f) =
-        case
-            compareListWithExplanation
-                [EqWrap "" a d, EqWrap "" b e, EqWrap "" c f]
-        of
-            Just err -> Just ("(" ++ err ++ ")")
-            Nothing  -> Nothing
-    printWithExplanation (a, b, c) =
-        "(" ++ printWithExplanation a
-        ++ ", " ++ printWithExplanation b
-        ++ ", " ++ printWithExplanation c
-        ++ ")"
+  | name1 == name2 =
+    case compareReflectable value1 value2 of
+        Just diff -> Left ((name1 ++ "=(" ++ diff ++ ")") : same)
+        Nothing   -> Right ("..." : same)
+  | otherwise = error
+    ("expecting the same field name, but got " ++ show [name1, name2])
 
-instance (EqualWithExplanation a1, EqualWithExplanation a2)
-    => SumEqualWithExplanation (Either a1 a2)
-  where
-    sumConstructorPair (Right a1) (Right a2) =
-        SumConstructorSameWithArguments (EqWrap "Right" a1 a2)
-    sumConstructorPair a1@(Right _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
+compareList
+    :: String -> String
+    -> [Reflect.RecursiveData]
+    -> [Reflect.RecursiveData]
+    -> Maybe String
+compareList start end expected actual =
+    case compareUnequalList expected actual of
+        Left _     -> Nothing
+        Right errs -> Just (start ++ intercalate ", " errs ++ end)
 
-    sumConstructorPair (Left a1) (Left a2) =
-        SumConstructorSameWithArguments (EqWrap "Left" a1 a2)
-    sumConstructorPair a1@(Left _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance (EqualWithExplanation a1, EqualWithExplanation a2)
-    => EqualWithExplanation (Either a1 a2)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-
-    printWithExplanation (Right a) = "Right (" ++ printWithExplanation a ++ ")"
-    printWithExplanation (Left a)  = "Left (" ++ printWithExplanation a ++ ")"
-
-instance (EqualWithExplanation a)
-    => SumEqualWithExplanation (Maybe a)
-  where
-    sumConstructorPair (Just a1) (Just a2) =
-        SumConstructorSameWithArguments (EqWrap "Just" a1 a2)
-    sumConstructorPair a1@(Just _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair Nothing Nothing =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@Nothing a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance (EqualWithExplanation a)
-    => EqualWithExplanation (Maybe a)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-
-    printWithExplanation (Just a) = "Just (" ++ printWithExplanation a ++ ")"
-    printWithExplanation Nothing  = "Nothing"
-
-newtype EWEString = EWEString String
-
-instance EqualWithExplanation EWEString
-  where
-    compareWithExplanation (EWEString s1) (EWEString s2) =
-        rawCompareWithExplanation s1 s2
-    printWithExplanation (EWEString s) = show s
-
-instance EqualWithExplanation Integer
-  where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
-instance EqualWithExplanation a => EqualWithExplanation [a]
-  where
-    compareWithExplanation expected actual =
-        case compareUnequalListWithExplanation expected actual of
-            Left _     -> Nothing
-            Right errs -> Just ("[" ++ intercalate ", " errs ++ "]")
-      where
-        compareUnequalListWithExplanation
-            :: EqualWithExplanation a => [a] -> [a] -> Either () [String]
-        compareUnequalListWithExplanation [] []                = Left ()
-        compareUnequalListWithExplanation (expect : es) [] =
-            Right
-                [ formatDiffForExplanation
-                    (printWithExplanation expect
-                        ++ intercalate ", " (map (const "...") es))
-                    "<nothing>"
-                ]
-        compareUnequalListWithExplanation [] (act : as) =
-            Right
-                [ formatDiffForExplanation
-                    "<nothing>"
-                    (printWithExplanation act
-                        ++ intercalate ", " (map (const "...") as))
-                ]
-        compareUnequalListWithExplanation (expect : es) (act : as) =
-            case compareWithExplanation expect act of
-                Just diff ->
-                    Right [diff, "..."]
-                Nothing -> do
-                    diff <- compareUnequalListWithExplanation es as
-                    return ("..." : diff)
-
-    printWithExplanation a =
-        "[" ++ intercalate ", " (map printWithExplanation a) ++ "]"
-
-instance EqualWithExplanation a => EqualWithExplanation (Seq a) where
-    compareWithExplanation expected actual =
-        compareWithExplanation (Foldable.toList expected) (Foldable.toList actual)
-
-    printWithExplanation = printWithExplanation . Foldable.toList
-
-instance EqualWithExplanation a => EqualWithExplanation (Set a) where
-    compareWithExplanation expected actual =
-        compareWithExplanation (Set.toList expected) (Set.toList actual)
-
-    printWithExplanation = printWithExplanation . Set.toList
-
-instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
-    => WrapperEqualWithExplanation (Fix thing)
-  where
-    wrapperField (Fix a) (Fix b) = EqWrap "" a b
-    wrapperConstructorName _ = "Fix"
-
-instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
-    => EqualWithExplanation (Fix thing)
-  where
-    compareWithExplanation = wrapperCompareWithExplanation
-    printWithExplanation = show
-
-data StructEWEField struct = StructEWEField
-    { structEWEFieldName :: String
-    , structEWEFieldGetter
-        :: struct
-        -> struct
-        -> (forall field . EqualWithExplanation field => (field, field))
-    }
-{-| 'StructEqualWithExplanation' is a helper class for declaring structs
-as instances of 'EqualWithExplanation'
--}
-class EqualWithExplanation struct => StructEqualWithExplanation struct where
-    structFieldsWithNames :: struct -> struct -> [EqWrap]
-    structConstructorName :: struct -> String
-    structCompareWithExplanation :: struct -> struct -> Maybe String
-    structCompareWithExplanation expected actual
-        | expectedConstructor /= actualConstructor
-      = error
-            (  "Different constructor names! '"
-            ++ expectedConstructor
-            ++ "' vs '" ++ actualConstructor ++ "'"
+compareUnequalList
+    :: [Reflect.RecursiveData]
+    -> [Reflect.RecursiveData]
+    -> Either () [String]
+compareUnequalList [] [] = Left ()
+compareUnequalList (expect : es) [] =
+    Right
+        [ formatDiffForExplanation
+            (  Reflect.printData expect
+            ++ intercalate ", " (map (const "...") es)
             )
-      where
-        expectedConstructor = structConstructorName expected
-        actualConstructor = structConstructorName actual
-    structCompareWithExplanation expected actual =
-        case
-            compareListWithExplanation
-                (structFieldsWithNames expected actual)
-        of
-            Just err ->
-                Just (structConstructorName expected ++ " {" ++ err ++ "}")
-            Nothing  -> Nothing
-
-class EqualWithExplanation struct => WrapperEqualWithExplanation struct where
-    wrapperField :: struct -> struct -> EqWrap
-    wrapperConstructorName :: struct -> String
-    wrapperCompareWithExplanation :: struct -> struct -> Maybe String
-    wrapperCompareWithExplanation expected actual
-        | expectedConstructor /= actualConstructor
-      = error
-            (  "Different constructor names! '"
-            ++ expectedConstructor
-            ++ "' vs '" ++ actualConstructor ++ "'"
+            "<nothing>"
+        ]
+compareUnequalList [] (act : as) =
+    Right
+        [ formatDiffForExplanation
+            "<nothing>"
+            (  Reflect.printData act
+            ++ intercalate ", " (map (const "...") as)
             )
-      where
-        expectedConstructor = wrapperConstructorName expected
-        actualConstructor = wrapperConstructorName actual
-    wrapperCompareWithExplanation expected actual =
-        case
-            compareListWithExplanation [wrapperField expected actual]
-        of
-            Just err ->
-                Just (wrapperConstructorName expected ++ " (" ++ err ++ ")")
-            Nothing  -> Nothing
-
-data SumConstructor
-    = SumConstructorDifferent String String
-    | SumConstructorSameNoArguments
-    | SumConstructorSameWithArguments EqWrap
-{-| 'SumEqualWithExplanation' is a helper class for declaring sum types
-as instances of 'EqualWithExplanation'
--}
-class EqualWithExplanation sum => SumEqualWithExplanation sum where
-    sumConstructorPair :: sum -> sum -> SumConstructor
-    sumCompareWithExplanation :: sum -> sum -> Maybe String
-    sumCompareWithExplanation expected actual =
-        case sumConstructorPair expected actual of
-            SumConstructorDifferent expectedConstructor actualConstructor ->
-                Just
-                    (formatDiffForExplanation
-                        expectedConstructor
-                        actualConstructor
-                    )
-            SumConstructorSameNoArguments -> Nothing
-            SumConstructorSameWithArguments eqWrap ->
-                case compareListWithExplanation [eqWrap] of
-                    Just err -> Just ("(" ++ err ++ ")")
-                    Nothing  -> Nothing
+        ]
+compareUnequalList (expect : es) (act : as) =
+    case compareReflectable expect act of
+        Just diff ->
+            Right [diff, "..."]
+        Nothing -> do
+            diff <- compareUnequalList es as
+            return ("..." : diff)

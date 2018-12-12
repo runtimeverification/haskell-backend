@@ -18,7 +18,6 @@ import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Top
                  ( simplify )
 
-import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
 test_topSimplification :: [TestTree]

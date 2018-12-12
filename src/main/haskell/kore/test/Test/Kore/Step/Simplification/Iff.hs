@@ -32,7 +32,6 @@ import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
 import qualified Kore.Unification.Substitution as Substitution
 
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock

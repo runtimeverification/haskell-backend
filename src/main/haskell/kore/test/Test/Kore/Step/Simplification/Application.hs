@@ -50,7 +50,6 @@ import qualified SMT
 
 import           Test.Kore
                  ( testId )
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( constructorFunctionalAttributes, functionAttributes,
                  makeMetadataTools, makeSymbolOrAliasSorts )

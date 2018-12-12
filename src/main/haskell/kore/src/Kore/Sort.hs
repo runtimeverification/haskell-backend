@@ -31,6 +31,8 @@ import GHC.Generics
        ( Generic )
 
 import Kore.AST.Identifier
+import Kore.Reflect
+       ( Reflectable )
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
@@ -46,6 +48,8 @@ newtype SortVariable level = SortVariable
 instance Hashable (SortVariable level)
 
 instance NFData (SortVariable level)
+
+instance Reflectable (SortVariable level)
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -64,6 +68,8 @@ instance Hashable (SortActual level)
 
 instance NFData (SortActual level)
 
+instance Reflectable (SortActual level)
+
 {-|'Sort' corresponds to the @object-sort@ and
 @meta-sort@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
@@ -79,6 +85,8 @@ data Sort level
 instance Hashable (Sort level)
 
 instance NFData (Sort level)
+
+instance Reflectable (Sort level)
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).

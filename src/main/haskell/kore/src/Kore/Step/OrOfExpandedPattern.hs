@@ -38,6 +38,8 @@ import           Data.List
 import           Data.Reflection
                  ( Given )
 import qualified Data.Set as Set
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
                  ( SortedVariable, Variable )
@@ -48,6 +50,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -60,7 +64,8 @@ import           Kore.TopBottom
 TODO(virgil): Make this a list-like monad, many things would be nicer.
 -}
 newtype MultiOr child = MultiOr [child]
-    deriving (Applicative, Eq, Foldable, Functor, Monad, Show, Traversable)
+    deriving
+        (Applicative, Eq, Foldable, Functor, Generic, Monad, Show, Traversable)
 
 instance TopBottom child => TopBottom (MultiOr child)
   where
@@ -71,6 +76,8 @@ instance TopBottom child => TopBottom (MultiOr child)
 
 type OrOfPredicated level variable term =
     MultiOr (Predicated level variable term)
+
+instance Reflectable child => Reflectable (MultiOr child)
 
 {-| 'OrOfExpandedPattern' is a 'MultiOr' of 'ExpandedPatterns', which is the
 most common case.

@@ -32,6 +32,11 @@ import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
+import           Kore.Reflect
+                 ( Reflectable (..) )
+import qualified Kore.Reflect as Reflect
+
+
 {-| 'FileLocation' represents a position in a source file.
 -}
 data FileLocation = FileLocation
@@ -43,6 +48,7 @@ data FileLocation = FileLocation
 
 instance Hashable FileLocation
 instance NFData FileLocation
+instance Reflectable FileLocation
 
 {-| 'AstLocation' represents the origin of an AST node.
 
@@ -65,6 +71,7 @@ data AstLocation
 
 instance Hashable AstLocation
 instance NFData AstLocation
+instance Reflectable AstLocation
 
 {-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
 (sort of) user friendly.
@@ -118,6 +125,19 @@ instance NFData (Id level)
 
 instance IsString (Id level) where
     fromString = noLocationId . fromString
+
+instance Reflectable (Id level)
+  where
+    reflect id0@(Id _ _) =
+        case id0 of
+            Id {getId} ->
+                Reflect.mkStruct
+                    "Id"
+                    [ ("getId", reflect getId)
+                    -- Using the actual location is rarely useful and usually
+                    -- makes things worse.
+                    , ("idLocation", reflect AstLocationNone)
+                    ]
 
 {-| 'noLocationId' creates an Id without a source location. While there are some
 narrow cases where this makes sense, you should really consider other options

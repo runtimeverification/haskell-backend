@@ -41,7 +41,6 @@ import           Kore.Unification.Unifier
 import qualified SMT
 
 import           Test.Kore
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Tasty.HUnit.Extensions

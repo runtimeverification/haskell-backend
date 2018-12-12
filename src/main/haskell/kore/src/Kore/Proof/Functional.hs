@@ -12,8 +12,13 @@ module Kore.Proof.Functional
     , TotalProof (..)
     ) where
 
+import GHC.Generics
+       ( Generic )
+
 import           Kore.AST.Common
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Reflect
+                 ( Reflectable )
 
 -- |'FunctionalProof' is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
@@ -36,7 +41,10 @@ data FunctionalProof level variable
     -- ^A string literal is the repeated application of functional constructors.
     | FunctionalCharLiteral CharLiteral
     -- ^A char literal is a functional constructor without arguments.
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance
+    Reflectable (variable level) => Reflectable (FunctionalProof level variable)
 
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
@@ -50,7 +58,10 @@ data FunctionProof level variable
     -- ^ A functional component is also function-like.
     | FunctionHead (SymbolOrAlias level)
     -- ^Head of a partial function.
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance
+    Reflectable (variable level) => Reflectable (FunctionProof level variable)
 
 -- |'TotalProof' is used for providing arguments that a pattern is
 -- total/not bottom.  Currently we only support arguments stating that a
@@ -63,4 +74,7 @@ data TotalProof level variable
     -- ^A functional component is also total.
     | TotalHead (SymbolOrAlias level)
     -- ^Head of a total symbol.
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance
+    Reflectable (variable level) => Reflectable (TotalProof level variable)

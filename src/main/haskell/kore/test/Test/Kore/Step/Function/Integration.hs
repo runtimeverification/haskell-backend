@@ -55,7 +55,6 @@ import           Kore.Variables.Fresh
                  ( FreshVariable, freshVariableFromVariable )
 import qualified SMT
 
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock

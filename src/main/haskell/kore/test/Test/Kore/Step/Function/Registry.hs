@@ -49,7 +49,6 @@ import           Kore.Step.StepperAttributes
 import qualified SMT
 
 import           Test.Kore.ASTVerifier.DefinitionVerifier
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 updateAttributes :: Attributes -> KoreSentence -> KoreSentence

@@ -21,8 +21,6 @@ import Kore.Error
        ( Error )
 import Kore.Step.StepperAttributes
 
-import Test.Kore.Comparators ()
-
 parse
     :: [CommonKorePattern]
     -> Either (Error ParseError) StepperAttributes

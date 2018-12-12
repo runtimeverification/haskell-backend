@@ -19,26 +19,38 @@ module Kore.Unification.Error
     ) where
 
 import qualified Data.Set as Set
+import           GHC.Generics
+                 ( Generic )
 
 import Kore.AST.Common
+import Kore.Reflect
+       ( Reflectable )
 import Kore.Sort
 
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError level variable
     = UnificationError UnificationError
     | SubstitutionError (SubstitutionError level variable)
-    deriving (Eq, Show)
+    deriving (Eq, Generic, Show)
+
+instance
+    Reflectable (variable level)
+    => Reflectable (UnificationOrSubstitutionError level variable)
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
-data UnificationError = UnsupportedPatterns deriving (Eq, Show)
+data UnificationError = UnsupportedPatterns deriving (Eq, Generic, Show)
+
+instance Reflectable UnificationError
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason level
     = HeadClash (SymbolOrAlias level)
     | DomainValueClash String
     | SortInjectionClash (Sort level) (Sort level)
-    deriving (Eq, Show)
+    deriving (Eq, Generic, Show)
+
+instance Reflectable (ClashReason level)
 
 {-| 'SubstitutionError' specifies the various error cases related to
 substitutions.
@@ -46,7 +58,11 @@ substitutions.
 newtype SubstitutionError level variable
     = NonCtorCircularVariableDependency [variable level]
     -- ^the circularity path may pass through non-constructors: maybe solvable.
-    deriving (Eq, Show)
+    deriving (Eq, Generic, Show)
+
+instance
+    Reflectable (variable level)
+    => Reflectable (SubstitutionError level variable)
 
 {-| 'substitutionErrorVariables' extracts all variables in a
 'SubstitutionError' as a set.

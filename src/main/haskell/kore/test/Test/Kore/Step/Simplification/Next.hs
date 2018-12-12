@@ -26,7 +26,6 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Next
                  ( simplify )
 
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock

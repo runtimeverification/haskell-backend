@@ -23,6 +23,8 @@ import           GHC.Generics
                  ( Generic )
 
 import Kore.AST.Pure
+import Kore.Reflect
+       ( Reflectable )
 
 data Builtin child
     = BuiltinPattern !(CommonPurePattern Meta (Const Void))
@@ -54,3 +56,5 @@ instance Hashable child => Hashable (Builtin child) where
                 salt `hashWithSalt` (3::Int) `hashWithSalt` set
 
 instance NFData child => NFData (Builtin child)
+
+instance Reflectable child => Reflectable (Builtin child)

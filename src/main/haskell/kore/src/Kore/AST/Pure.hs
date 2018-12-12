@@ -63,6 +63,8 @@ import           Kore.AST.Common hiding
 import qualified Kore.AST.Common as Head
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Sort
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -87,6 +89,12 @@ newtype PurePattern
     PurePattern
         { getPurePattern :: Cofree (Pattern level domain variable) annotation }
     deriving (Foldable, Functor, Generic, Traversable)
+
+instance
+    ( Reflectable (variable level)
+    , Reflectable (domain (Cofree (Pattern level domain variable) annotation))
+    , Reflectable annotation
+    ) => Reflectable (PurePattern level domain variable annotation)
 
 instance
     ( Eq level

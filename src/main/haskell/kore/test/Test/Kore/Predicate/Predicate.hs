@@ -28,7 +28,6 @@ import           Kore.Step.Pattern
 import qualified Kore.Unification.Substitution as Substitution
 
 import Test.Kore
-import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
 test_predicate :: [TestTree]

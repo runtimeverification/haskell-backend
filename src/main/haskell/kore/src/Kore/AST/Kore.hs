@@ -71,6 +71,8 @@ import           Kore.AST.Common hiding
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Sort
 import           Template.Tools
                  ( newDefinitionGroup )
@@ -86,6 +88,14 @@ data UnifiedPattern domain variable child where
     UnifiedObjectPattern
         :: !(Pattern Object domain variable child)
         -> UnifiedPattern domain variable child
+  deriving (Generic)
+
+instance
+    ( Reflectable (variable Meta), Reflectable (variable Object)
+    , Reflectable child
+    , Reflectable (domain child)
+    ) => Reflectable (UnifiedPattern domain variable child)
+
 
 $newDefinitionGroup
 -- Begin a new definition group where UnifiedPattern is in scope.
@@ -218,6 +228,12 @@ newtype KorePattern
     KorePattern
         { getKorePattern :: Cofree (UnifiedPattern domain variable) annotation }
     deriving (Foldable, Functor, Generic, Traversable)
+
+instance
+    ( Reflectable (variable Meta), Reflectable (variable Object)
+    , Reflectable (domain (Cofree (UnifiedPattern domain variable) annotation))
+    , Reflectable annotation
+    ) => Reflectable (KorePattern domain variable annotation)
 
 instance
     ( EqMetaOrObject variable

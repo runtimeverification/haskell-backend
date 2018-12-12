@@ -39,6 +39,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (MetadataTools) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.BaseStep
@@ -130,6 +132,8 @@ data StrategyPattern patt
   deriving (Show, Eq, Ord, Generic)
 
 instance Hashable patt => Hashable (StrategyPattern patt)
+
+instance Reflectable patt => Reflectable (StrategyPattern patt)
 
 -- | Apply the rewrites in order. The first one is applied on the start pattern,
 -- then each subsequent one is applied on the remainder of the previous one.
@@ -266,7 +270,7 @@ transitionRule
                     return ((wrappedRewritten, proof) : remainderResults)
 
     transitionRemoveDestination
-        :: (CommonExpandedPattern level)
+        :: CommonExpandedPattern level
         ->  ( StrategyPattern (CommonExpandedPattern level)
             , StepProof level Variable
             )
@@ -303,14 +307,13 @@ transitionRule
         let
             finalProof = proof1 <> StepProof.simplificationProof proof
             patternsWithProofs =
-                (map
+                map
                     (\p ->
                         ( RewritePattern p
                         , finalProof
                         )
                     )
                     (ExpandedPattern.extractPatterns orResult)
-                )
         if null patternsWithProofs
             then return [(Bottom, finalProof)]
             else return patternsWithProofs

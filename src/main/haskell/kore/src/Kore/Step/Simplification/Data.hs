@@ -21,11 +21,15 @@ module Kore.Step.Simplification.Data
 
 import           Control.Monad.Reader
 import qualified Control.Monad.Trans as Monad.Trans
+import           GHC.Generics
+                 ( Generic )
 
 import Kore.AST.Common
        ( SortedVariable, Variable )
 import Kore.AST.MetaOrObject
        ( Meta, MetaOrObject, Object )
+import Kore.Reflect
+       ( Reflectable )
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution )
 import Kore.Step.OrOfExpandedPattern
@@ -44,7 +48,9 @@ data SimplificationType = And | Equals
 simplification of a MetaMLPattern was correct.
 -}
 data SimplificationProof level = SimplificationProof
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
+
+instance Reflectable (SimplificationProof level)
 
 newtype Simplifier a = Simplifier { getSimplifier :: CounterT SMT a }
     deriving (Applicative, Functor, Monad)

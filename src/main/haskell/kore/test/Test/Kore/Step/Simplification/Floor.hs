@@ -37,7 +37,6 @@ import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
                  ( testId )
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeSymbolOrAliasSorts )
 import           Test.Tasty.HUnit.Extensions

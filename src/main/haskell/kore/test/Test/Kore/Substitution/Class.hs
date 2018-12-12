@@ -7,7 +7,6 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import Test.Kore
-import Test.Kore.Comparators ()
 import Test.Kore.Substitution
 import Test.Tasty.HUnit.Extensions
 

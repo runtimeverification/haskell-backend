@@ -12,9 +12,15 @@ module Kore.Unification.Data
     ( UnificationProof (..)
     ) where
 
+import GHC.Generics
+       ( Generic )
+
+
 import Kore.AST.Pure
 import Kore.Proof.Functional
        ( FunctionalProof (..) )
+import Kore.Reflect
+       ( Reflectable )
 import Kore.Step.Pattern
 
 -- |'UnificationProof' is meant to represent proof term stubs for various
@@ -60,7 +66,11 @@ data UnificationProof level variable
     -- ((x = t1) /\ (t1 = t2)) = (x = (t1 /\ (t1 = t2)))
     -- then, applying Proposition 5.24(3), this further gets to
     -- (x = (t1 /\ t2))
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance
+    Reflectable (variable level)
+    => Reflectable (UnificationProof level variable)
 
 instance Semigroup (UnificationProof level variable) where
     (<>) proof1 proof2 = CombinedUnificationProof [proof1, proof2]

@@ -49,7 +49,6 @@ import           Kore.Step.StepperAttributes
 import qualified SMT
 
 import Test.Kore
-import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 
 test_exec :: TestTree

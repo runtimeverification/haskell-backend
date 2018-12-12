@@ -36,7 +36,6 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSimplifiers as Mock

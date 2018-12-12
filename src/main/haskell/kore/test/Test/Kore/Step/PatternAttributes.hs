@@ -9,6 +9,8 @@ import Test.Tasty.HUnit
 
 import Data.Reflection
        ( give )
+import GHC.Generics
+       ( Generic )
 
 import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartConstructors
@@ -17,6 +19,8 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, SymbolOrAliasSorts )
 import           Kore.Proof.Functional
+import           Kore.Reflect
+                 ( Reflectable )
 import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributes
 import           Kore.Step.PatternAttributesError
@@ -26,7 +30,6 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore
                  ( testId )
-import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools, makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as MockSymbols
@@ -35,7 +38,9 @@ import           Test.Tasty.HUnit.Extensions
 
 newtype LevelInt level = LevelInt Int
 newtype LevelString level = LevelString String
-    deriving (Show, Eq)
+    deriving (Show, Generic, Eq)
+
+instance Reflectable (LevelString level)
 
 levelShow :: LevelInt level -> LevelString level
 levelShow (LevelInt i) = LevelString (show i)
