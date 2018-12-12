@@ -26,8 +26,6 @@ module Kore.Builtin
     , asPattern
     , externalizePattern
     , asMetaPattern
-    -- * Errors
-    , notImplementedInternal
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
@@ -39,8 +37,6 @@ import           Data.Semigroup
                  ( (<>) )
 import           Data.Text
                  ( Text )
-import           GHC.Stack
-                 ( HasCallStack )
 
 import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
@@ -48,6 +44,8 @@ import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import           Kore.Builtin.Error
+                 ( notImplementedInternal )
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Builtin.List as List
@@ -226,8 +224,3 @@ asMetaPattern =
         Domain.BuiltinMap _ -> notImplementedInternal
         Domain.BuiltinList _ -> notImplementedInternal
         Domain.BuiltinSet _ -> notImplementedInternal
-
-{- | Throw an error for operations not implemented for internal domain values.
- -}
-notImplementedInternal :: HasCallStack => a
-notImplementedInternal = error "Not implemented for internal domain values"

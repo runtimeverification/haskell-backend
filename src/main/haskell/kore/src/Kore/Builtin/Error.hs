@@ -12,6 +12,7 @@ pattern verifier has admitted an invalid builtin domain expression.
 module Kore.Builtin.Error
     ( verifierBug
     , wrongArity
+    , notImplementedInternal
     ) where
 
 import GHC.Stack
@@ -35,3 +36,8 @@ verifierBug msg =
  -}
 wrongArity :: HasCallStack => String -> a
 wrongArity ctx = verifierBug (ctx ++ ": Wrong number of arguments")
+
+{- | Throw an error for operations not implemented for internal domain values.
+ -}
+notImplementedInternal :: HasCallStack => a
+notImplementedInternal = error "Not implemented for internal domain values"
