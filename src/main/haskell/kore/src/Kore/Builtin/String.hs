@@ -250,6 +250,11 @@ string2BaseKey = "STRING.string2base"
 string2BaseKeyT :: Text
 string2BaseKeyT = "STRING.string2base"
 
+chrKey :: String
+chrKey = "STRING.chr"
+chrKeyT :: Text
+chrKeyT = "STRING.chr"
+
 evalSubstr :: Builtin.Function
 evalSubstr = Builtin.functionEvaluator evalSubstr0
   where
@@ -380,6 +385,27 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
                 . fmap fst . listToMaybe . readSigned readDec
                 $ _str
 
+evalChr :: Builtin.Function
+evalChr = Builtin.functionEvaluator evalChr0
+    where
+    evalChr0
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
+    evalChr0 _ _ resultSort arguments =
+        Builtin.getAttemptedFunction $ do
+            let _n =
+                    case arguments of
+                        [_n] -> _n
+                        _    -> Builtin.wrongArity lengthKey
+            _n <- Int.expectBuiltinInt chrKey _n
+            Builtin.appliedFunction
+                . asExpandedPattern resultSort
+                $ [ toEnum (fromIntegral _n) ] 
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -392,6 +418,7 @@ builtinFunctions =
     , (findKeyT, evalFind)
     , (string2BaseKeyT, evalString2Base)
     , (string2IntKeyT, evalString2Int)
+    , (chrKeyT, evalChr)
     ]
   where
     comparator name op =
