@@ -34,6 +34,7 @@ module Kore.AST.Sentence
     , SentenceHook (..)
     , Sentence (..)
     , sentenceAttributes
+    , eraseSentenceAnnotations
     , AsSentence (..)
     , Module (..)
     , getModuleNameForError
@@ -48,6 +49,7 @@ module Kore.AST.Sentence
     , UnifiedSentence (..)
     , constructUnifiedSentence
     , applyUnifiedSentence
+    , eraseUnifiedSentenceAnnotations
     , KoreSentenceSymbol
     , KoreSentenceAlias
     , KoreSentenceImport
@@ -83,8 +85,9 @@ import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
-import Kore.AST.Kore
-import Kore.AST.Pure
+import qualified Kore.Annotation.Null as Annotation
+import           Kore.AST.Kore as Kore
+import           Kore.AST.Pure as Pure
 
 {-|'Symbol' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -373,6 +376,19 @@ sentenceAttributes =
                     SentenceSymbol { sentenceSymbolAttributes } ->
                         sentenceSymbolAttributes
 
+-- | Erase the pattern annotations within a 'Sentence'.
+eraseSentenceAnnotations
+    :: Functor domain
+    => Sentence
+        level
+        sortParam
+        (PurePattern level domain variable erased)
+    -> Sentence
+        level
+        sortParam
+        (PurePattern level domain variable (Annotation.Null level))
+eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
+
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
 'Attributes'.
 
@@ -546,6 +562,17 @@ applyUnifiedSentence metaT objectT =
     \case
         UnifiedMetaSentence metaS -> metaT metaS
         UnifiedObjectSentence objectS -> objectT objectS
+
+-- | Erase the pattern annotations within a 'UnifiedSentence'.
+eraseUnifiedSentenceAnnotations
+    :: Functor domain
+    => UnifiedSentence
+        sortParam
+        (KorePattern domain variable erased)
+    -> UnifiedSentence
+        sortParam
+        (KorePattern domain variable (Unified Annotation.Null))
+eraseUnifiedSentenceAnnotations sentence = Kore.eraseAnnotations <$> sentence
 
 -- |'KoreModule' fully instantiates 'Module' to correspond to the second, third,
 -- and forth non-terminals of the @definition@ syntactic category from the
