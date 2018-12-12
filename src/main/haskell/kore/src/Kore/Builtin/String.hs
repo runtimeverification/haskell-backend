@@ -37,6 +37,8 @@ import           Control.Error
                  ( MaybeT )
 import           Control.Monad
                  ( void )
+import           Data.Char
+                 ( chr )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.List
                  ( findIndex, isPrefixOf, tails )
@@ -404,7 +406,7 @@ evalChr = Builtin.functionEvaluator evalChr0
             _n <- Int.expectBuiltinInt chrKey _n
             Builtin.appliedFunction
                 . asExpandedPattern resultSort
-                $ [ toEnum (fromIntegral _n) ] 
+                $ [ chr (fromIntegral _n) ]
 
 {- | Implement builtin function evaluation.
  -}
