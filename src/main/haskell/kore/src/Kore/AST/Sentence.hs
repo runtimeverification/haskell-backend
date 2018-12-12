@@ -384,7 +384,7 @@ data Module (sentence :: *) =
         , moduleSentences  :: ![sentence]
         , moduleAttributes :: !Attributes
         }
-    deriving (Eq, Generic, Show)
+    deriving (Eq, Functor, Foldable, Generic, Show, Traversable)
 
 instance Hashable sentence => Hashable (Module sentence)
 
@@ -404,7 +404,7 @@ data Definition (sentence :: *) =
         { definitionAttributes :: !Attributes
         , definitionModules    :: ![Module sentence]
         }
-    deriving (Eq, Generic, Show)
+    deriving (Eq, Functor, Foldable, Generic, Show, Traversable)
 
 instance Hashable sentence => Hashable (Definition sentence)
 
