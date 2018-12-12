@@ -286,6 +286,7 @@ mockMetadataTools =
         mockSymbolOrAliasSorts
         Mock.attributesMapping
         Mock.headTypeMapping
+        Mock.sortAttributesMapping
         Mock.subsorts
 
 runSimplifier

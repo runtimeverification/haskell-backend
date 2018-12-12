@@ -778,6 +778,7 @@ mockMetadataTools =
         mockSymbolOrAliasSorts
         Mock.attributesMapping
         Mock.headTypeMapping
+        Mock.sortAttributesMapping
         Mock.subsorts
 
 mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
@@ -785,7 +786,7 @@ mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
 
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools =
-    Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] []
+    Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] [] []
 
 testSort :: Sort Object
 testSort =

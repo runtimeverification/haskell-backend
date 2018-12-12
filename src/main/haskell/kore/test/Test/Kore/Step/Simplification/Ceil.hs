@@ -418,6 +418,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             mockSymbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
+            Mock.sortAttributesMapping
             Mock.subsorts
     asConcrete p =
         let Just r = asConcretePurePattern p in r

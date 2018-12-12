@@ -21,6 +21,8 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
+import           Data.Char
+                 ( toLower )
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given )
@@ -45,6 +47,7 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
 import           Kore.Sort
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
+import qualified SimpleSMT as SMT
 
 import           Test.Kore
                  ( testId )
@@ -146,6 +149,10 @@ elementMapId :: Id level
 elementMapId = testId "elementMap"
 concatMapId :: Id level
 concatMapId = testId "concatMap"
+lessIntId :: Id level
+lessIntId = testId "lessIntId"
+greaterEqIntId :: Id level
+greaterEqIntId = testId "greaterEqIntId"
 
 elemListId :: Id level
 elemListId = testId "elemList"
@@ -422,6 +429,16 @@ concatMapSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = concatMapId
     , symbolOrAliasParams      = []
     }
+lessIntSymbol :: SymbolOrAlias level
+lessIntSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = lessIntId
+    , symbolOrAliasParams      = []
+    }
+greaterEqIntSymbol :: SymbolOrAlias level
+greaterEqIntSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = greaterEqIntId
+    , symbolOrAliasParams      = []
+    }
 
 elemListSymbol :: SymbolOrAlias level
 elemListSymbol = SymbolOrAlias
@@ -447,6 +464,8 @@ z :: Variable Object
 z = Variable (testId "z") testSort
 m :: Variable Object
 m = Variable (testId "m") mapSort
+xInt :: Variable Object
+xInt = Variable (testId "xInt") intSort
 
 a   :: Given (SymbolOrAliasSorts Object)
     => StepPattern Object variable
@@ -733,6 +752,20 @@ concatMap
     -> StepPattern Object variable
     -> StepPattern Object variable
 concatMap m1 m2 = mkApp concatMapSymbol [m1, m2]
+
+lessInt
+    :: Given (SymbolOrAliasSorts Object)
+    => StepPattern Object variable
+    -> StepPattern Object variable
+    -> StepPattern Object variable
+lessInt i1 i2 = mkApp lessIntSymbol [i1, i2]
+
+greaterEqInt
+    :: Given (SymbolOrAliasSorts Object)
+    => StepPattern Object variable
+    -> StepPattern Object variable
+    -> StepPattern Object variable
+greaterEqInt i1 i2 = mkApp greaterEqIntSymbol [i1, i2]
 
 elementMap
     :: Given (SymbolOrAliasSorts Object)
@@ -1080,6 +1113,18 @@ symbolOrAliasSortsMapping =
             , applicationSortsResult = listSort
             }
         )
+    ,   ( lessIntSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [intSort, intSort]
+            , applicationSortsResult = boolSort
+            }
+        )
+    ,   ( greaterEqIntSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [intSort, intSort]
+            , applicationSortsResult = boolSort
+            }
+        )
     ]
 
 attributesMapping :: [(SymbolOrAlias Object, StepperAttributes)]
@@ -1251,6 +1296,18 @@ attributesMapping =
         )
     ,   ( concatListSymbol
         , Mock.functionalAttributes { hook = Hook (Just "LIST.concat") }
+        )
+    ,   ( lessIntSymbol
+        , Mock.functionalAttributes
+            { hook = Hook (Just "INT.lt")
+            , smtlib = Smtlib (Just (SMT.Atom "<"))
+            }
+        )
+    ,   ( greaterEqIntSymbol
+        , Mock.functionalAttributes
+            { hook = Hook (Just "INT.ge")
+            , smtlib = Smtlib (Just (SMT.Atom ">="))
+            }
         )
     ]
 
@@ -1424,6 +1481,52 @@ headTypeMapping =
     ,   ( concatListSymbol
         , HeadType.Symbol
         )
+    ,   ( lessIntSymbol
+        , HeadType.Symbol
+        )
+    ,   ( greaterEqIntSymbol
+        , HeadType.Symbol
+        )
+    ]
+
+sortAttributesMapping :: [(Sort Object, StepperAttributes)]
+sortAttributesMapping =
+    [   ( testSort
+        , Mock.defaultAttributes
+        )
+    ,   ( testSort0
+        , Mock.defaultAttributes
+        )
+    ,   ( testSort1
+        , Mock.defaultAttributes
+        )
+    ,   ( topSort
+        , Mock.defaultAttributes
+        )
+    ,   ( subSort
+        , Mock.defaultAttributes
+        )
+    ,   ( subSubSort
+        , Mock.defaultAttributes
+        )
+    ,   ( otherSort
+        , Mock.defaultAttributes
+        )
+    ,   ( mapSort
+        , Mock.defaultAttributes { hook = Hook (Just "MAP.Map") }
+        )
+    ,   ( listSort
+        , Mock.defaultAttributes { hook = Hook (Just "LIST.List") }
+        )
+    ,   ( setSort
+        , Mock.defaultAttributes { hook = Hook (Just "SET.Set") }
+        )
+    ,   ( intSort
+        , Mock.defaultAttributes { hook = Hook (Just "INT.Int") }
+        )
+    ,   ( boolSort
+        , Mock.defaultAttributes { hook = Hook (Just "BOOL.Bool") }
+        )
     ]
 
 testSort :: Sort Object
@@ -1482,10 +1585,31 @@ mapSort =
         , sortActualSorts = []
         }
 
+setSort :: Sort Object
+setSort =
+    SortActualSort SortActual
+        { sortActualName  = testId "mapSort"
+        , sortActualSorts = []
+        }
+
 listSort :: Sort Object
 listSort =
     SortActualSort SortActual
         { sortActualName  = testId "listSort"
+        , sortActualSorts = []
+        }
+
+intSort :: Sort Object
+intSort =
+    SortActualSort SortActual
+        { sortActualName  = testId "intSort"
+        , sortActualSorts = []
+        }
+
+boolSort :: Sort Object
+boolSort =
+    SortActualSort SortActual
+        { sortActualName  = testId "boolSort"
         , sortActualSorts = []
         }
 
@@ -1511,4 +1635,20 @@ builtinList = mkDomainValue listSort . Domain.BuiltinList . Seq.fromList
 builtinSet
     :: [ConcreteStepPattern Object]
     -> StepPattern Object variable
-builtinSet = mkDomainValue listSort . Domain.BuiltinSet . Set.fromList
+builtinSet = mkDomainValue setSort . Domain.BuiltinSet . Set.fromList
+
+builtinInt
+    :: Int
+    -> StepPattern Object variable
+builtinInt =
+    mkDomainValue intSort . Domain.BuiltinPattern . mkStringLiteral . show
+
+builtinBool
+    :: Bool
+    -> StepPattern Object variable
+builtinBool =
+    mkDomainValue boolSort
+    . Domain.BuiltinPattern
+    . mkStringLiteral
+    . map toLower
+    . show
