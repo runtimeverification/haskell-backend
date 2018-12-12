@@ -146,8 +146,8 @@ builtinFunctions =
     , ("BOOL.eq", binaryOperator "BOOL.eq" (==))
     , ("BOOL.not", unaryOperator "BOOL.not" not)
     , ("BOOL.implies", binaryOperator "BOOL.implies" implies)
-    , ("BOOL.andThen", Builtin.notImplemented)
-    , ("BOOL.orElse", Builtin.notImplemented)
+--    , ("BOOL.andThen", Builtin.notImplemented)
+--    , ("BOOL.orElse", Builtin.notImplemented)
     ]
   where
     unaryOperator = Builtin.unaryOperator parse asExpandedPattern

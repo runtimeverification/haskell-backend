@@ -240,15 +240,15 @@ builtinFunctions =
     Map.fromList
     [
       -- TODO (thomas.tuegel): Implement bit ranges.
-      ("INT.bitRange", Builtin.notImplemented)
-    , ("INT.signExtendBitRange", Builtin.notImplemented)
+--      ("INT.bitRange", Builtin.notImplemented)
+--    , ("INT.signExtendBitRange", Builtin.notImplemented)
 
       -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
       -- implement rand and srand.
-    , ("INT.rand", Builtin.notImplemented)
-    , ("INT.srand", Builtin.notImplemented)
+--    , ("INT.rand", Builtin.notImplemented)
+--    , ("INT.srand", Builtin.notImplemented)
 
-    , comparator "INT.gt" (>)
+      comparator "INT.gt" (>)
     , comparator "INT.ge" (>=)
     , comparator "INT.eq" (==)
     , comparator "INT.le" (<=)
@@ -266,7 +266,7 @@ builtinFunctions =
     , unaryOperator "INT.abs" abs
 
       -- TODO (thomas.tuegel): Implement division.
-    , ("INT.ediv", Builtin.notImplemented)
+--    , ("INT.ediv", Builtin.notImplemented)
     , partialBinaryOperator "INT.emod" emod
     , partialBinaryOperator "INT.tdiv" tdiv
     , partialBinaryOperator "INT.tmod" tmod
