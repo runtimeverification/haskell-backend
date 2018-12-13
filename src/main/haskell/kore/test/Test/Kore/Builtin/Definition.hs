@@ -3,13 +3,14 @@ module Test.Kore.Builtin.Definition where
 import Data.Text
        ( Text )
 
-import Kore.AST.Kore
-import Kore.AST.Sentence
-import Kore.Attribute.Constructor
-import Kore.Attribute.Functional
-import Kore.Attribute.Hook
-import Kore.Attribute.Injective
-import Kore.Attribute.Smtlib
+import           Kore.AST.Kore
+import           Kore.AST.Sentence
+import           Kore.Attribute.Constructor
+import           Kore.Attribute.Functional
+import           Kore.Attribute.Hook
+import           Kore.Attribute.Injective
+import           Kore.Attribute.Smtlib
+import qualified Kore.Builtin.Set as Set
 
 import Test.Kore
 
@@ -194,19 +195,22 @@ pairSymbol lSort rSort =
 -- ** Set
 
 unitSetSymbol :: SymbolOrAlias Object
-unitSetSymbol = builtinSymbol "unitSet"
+unitSetSymbol = builtinSymbol Set.unitKeyT
 
 elementSetSymbol :: SymbolOrAlias Object
-elementSetSymbol = builtinSymbol "elementSet"
+elementSetSymbol = builtinSymbol Set.elementKeyT
 
 concatSetSymbol :: SymbolOrAlias Object
-concatSetSymbol = builtinSymbol "concatSet"
+concatSetSymbol = builtinSymbol Set.concatKeyT
 
 inSetSymbol :: SymbolOrAlias Object
-inSetSymbol = builtinSymbol "inSet"
+inSetSymbol = builtinSymbol Set.inKeyT
 
 differenceSetSymbol :: SymbolOrAlias Object
-differenceSetSymbol = builtinSymbol "differenceSet"
+differenceSetSymbol = builtinSymbol Set.differenceKeyT
+
+toListSetSymbol :: SymbolOrAlias Object
+toListSetSymbol = builtinSymbol Set.toListKeyT
 
 -- ** String
 
@@ -832,36 +836,42 @@ setModule =
         , moduleSentences =
             [ importKoreModule intModuleName
             , importKoreModule boolModuleName
+            , importKoreModule listModuleName
             , setSortDecl
             , hookedSymbolDecl
                 unitSetSymbol
                 setSort
                 []
-                [hookAttribute "SET.unit"]
+                [hookAttribute Set.unitKey]
             , hookedSymbolDecl
                 elementSetSymbol
                 setSort
                 [intSort]
-                [ hookAttribute "SET.element"
+                [ hookAttribute Set.elementKey
                 , functionalAttribute
                 ]
             , hookedSymbolDecl
                 concatSetSymbol
                 setSort
                 [setSort, setSort]
-                [ hookAttribute "SET.concat"
+                [ hookAttribute Set.concatKey
                 , functionalAttribute
                 ]
             , hookedSymbolDecl
                 inSetSymbol
                 boolSort
                 [intSort, setSort]
-                [hookAttribute "SET.in"]
+                [hookAttribute Set.inKey]
             , hookedSymbolDecl
                 differenceSetSymbol
                 setSort
                 [setSort, setSort]
-                [hookAttribute "SET.difference"]
+                [hookAttribute Set.differenceKey]
+            , hookedSymbolDecl
+                toListSetSymbol
+                listSort
+                [setSort]
+                [hookAttribute Set.toListKey]
             ]
         }
 

@@ -10,6 +10,7 @@ import qualified Control.Monad as Monad
 import qualified Data.Default as Default
 import           Data.Reflection
                  ( give )
+import qualified Data.Sequence as Seq
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -39,6 +40,7 @@ import           Test.Kore.Builtin.Definition
 import           Test.Kore.Builtin.Int
                  ( genConcreteIntegerPattern, genInteger, genIntegerPattern )
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Builtin.List as Test.List
 import           Test.Kore.Comparators ()
 import           Test.Kore.Step.Condition.Evaluator
                  ( genSortedVariable )
@@ -149,6 +151,24 @@ test_difference =
                 predicate = mkEquals patSet3 patDifference
             expect <- evaluate patSet3
             (===) expect =<< evaluate patDifference
+            (===) ExpandedPattern.top =<< evaluate predicate
+        )
+
+test_toList :: TestTree
+test_toList =
+    testPropertyWithSolver
+        "SET.set2list is set2list"
+        (do
+            set1 <- forAll genSetConcreteIntegerPattern
+            let set2 =
+                    fmap fromConcretePurePattern
+                    . Seq.fromList . Set.toList $ set1
+                patSet2 = Test.List.asPattern set2
+                patToList =
+                    App_ toListSetSymbol [ asPattern set1 ]
+                predicate = mkEquals patSet2 patToList
+            expect <- evaluate patSet2
+            (===) expect =<< evaluate patToList
             (===) ExpandedPattern.top =<< evaluate predicate
         )
 

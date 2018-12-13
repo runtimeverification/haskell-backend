@@ -16,10 +16,12 @@ builtin modules.
  -}
 module Kore.Builtin.List
     ( sort
+    , assertSort
     , sortDeclVerifiers
     , symbolVerifiers
     , builtinFunctions
     , Builtin
+    , returnList
     , asPattern
     , asExpandedPattern
       -- * Symbols
