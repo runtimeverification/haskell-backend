@@ -46,6 +46,7 @@ module Kore.AST.Sentence
     , PureSentence
     , PureModule
     , PureDefinition
+    , VerifiedPureSentence
     , UnifiedSentence (..)
     , constructUnifiedSentence
     , applyUnifiedSentence
@@ -88,6 +89,7 @@ import           GHC.Generics
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Kore as Kore
 import           Kore.AST.Pure as Pure
+import qualified Kore.Domain.Builtin as Domain
 
 {-|'Symbol' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -665,6 +667,17 @@ type PureSentenceImport level domain =
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level domain =
     Sentence level (SortVariable level) (CommonPurePattern level domain)
+
+{- | A 'PureSentence' which has passed verification.
+
+The contained patterns are annotated by 'Valid'.
+
+ -}
+type VerifiedPureSentence level =
+    Sentence
+        level
+        (SortVariable level)
+        (PurePattern level Domain.Builtin Variable (Valid level))
 
 instance
     ( MetaOrObject level
