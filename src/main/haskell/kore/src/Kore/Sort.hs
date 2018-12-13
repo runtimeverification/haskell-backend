@@ -13,6 +13,7 @@ module Kore.Sort
     ( SortVariable (..)
     , SortActual (..)
     , Sort (..)
+    , substituteSortVariables
     -- * Meta-sorts
     , MetaSortType (..)
     , MetaBasicSortType (..)
@@ -23,12 +24,13 @@ module Kore.Sort
     , module Kore.AST.Identifier
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Hashable
-       ( Hashable )
-import GHC.Generics
-       ( Generic )
+import           Control.DeepSeq
+                 ( NFData )
+import           Data.Hashable
+                 ( Hashable )
+import qualified Data.Map.Strict as Map
+import           GHC.Generics
+                 ( Generic )
 
 import Kore.AST.Identifier
 
@@ -80,6 +82,28 @@ instance Hashable (Sort level)
 
 instance NFData (Sort level)
 
+{- | Substitute sort variables in a 'Sort'.
+
+Sort variables that are not in the substitution are not changed.
+
+ -}
+substituteSortVariables
+    :: Map.Map (SortVariable level) (Sort level)
+    -- ^ Sort substitution
+    -> Sort level
+    -> Sort level
+substituteSortVariables substitution sort =
+    case sort of
+        SortVariableSort var ->
+            case Map.lookup var substitution of
+                Just sort' -> sort'
+                Nothing -> sort
+        SortActualSort sortActual@SortActual { sortActualSorts } ->
+            SortActualSort sortActual
+                { sortActualSorts =
+                    substituteSortVariables substitution <$> sortActualSorts
+                }
+
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
 
@@ -93,7 +117,7 @@ data MetaBasicSortType
     | SymbolSort
     | VariableSort
     | UserSort String -- arbitrary MetaSort
-    deriving(Generic)
+    deriving (Generic)
 
 instance Hashable MetaBasicSortType
 

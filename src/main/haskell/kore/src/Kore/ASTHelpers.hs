@@ -26,7 +26,8 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import Kore.AST.Pure
+import Kore.AST.Pure hiding
+       ( substituteSortVariables )
 import Kore.AST.Sentence
 import Kore.Error
 import Kore.Variables.Free
