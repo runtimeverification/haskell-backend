@@ -229,6 +229,8 @@ ltKeyT = "STRING.lt"
 plusKeyT :: Text
 plusKeyT = "STRING.concat"
 
+string2IntKey :: String
+string2IntKey = "STRING.string2int"
 string2IntKeyT :: Text
 string2IntKeyT = "STRING.string2int"
 
@@ -347,7 +349,7 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
             let (_str, _base) =
                     case arguments of
                         [_str, _base] -> (_str, _base)
-                        _             -> Builtin.wrongArity findKey
+                        _             -> Builtin.wrongArity string2BaseKey
             _str  <- expectBuiltinString string2BaseKey _str
             _base <- Int.expectBuiltinInt string2BaseKey _base
             readN <- case _base of
@@ -378,8 +380,8 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
             let _str =
                     case arguments of
                         [_str] -> _str
-                        _      -> Builtin.wrongArity findKey
-            _str <- expectBuiltinString findKey _str
+                        _      -> Builtin.wrongArity string2IntKey
+            _str <- expectBuiltinString string2IntKey _str
             Builtin.appliedFunction
                 . maybe
                     ExpandedPattern.bottom
@@ -402,7 +404,7 @@ evalChr = Builtin.functionEvaluator evalChr0
             let _n =
                     case arguments of
                         [_n] -> _n
-                        _    -> Builtin.wrongArity lengthKey
+                        _    -> Builtin.wrongArity chrKey
             _n <- Int.expectBuiltinInt chrKey _n
             Builtin.appliedFunction
                 . asExpandedPattern resultSort

@@ -30,6 +30,19 @@ module Kore.Builtin.Set
     , lookupSymbolConcat
     , lookupSymbolIn
     , lookupSymbolDifference
+      -- * Keys
+    , unitKey
+    , unitKeyT
+    , elementKey
+    , elementKeyT
+    , concatKey
+    , concatKeyT
+    , inKey
+    , inKeyT
+    , differenceKey
+    , differenceKeyT
+    , toListKey
+    , toListKeyT
       -- * Unification
     , unifyEquals
     ) where
@@ -47,6 +60,7 @@ import           Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( give )
+import qualified Data.Sequence as Seq
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -59,6 +73,7 @@ import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
@@ -114,20 +129,23 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( "SET.concat"
+    [ ( concatKeyT
       , Builtin.verifySymbol assertSort [assertSort , assertSort]
       )
-    , ( "SET.element"
+    , ( elementKeyT
       , Builtin.verifySymbol assertSort [anySort]
       )
-    , ( "SET.unit"
+    , ( unitKeyT
       , Builtin.verifySymbol assertSort []
       )
-    , ( "SET.in"
+    , ( inKeyT
       , Builtin.verifySymbol Bool.assertSort [anySort, assertSort]
       )
-    , ( "SET.difference"
+    , ( differenceKeyT
       , Builtin.verifySymbol assertSort [assertSort, assertSort]
+      )
+    , ( toListKeyT
+      , Builtin.verifySymbol List.assertSort [assertSort]
       )
     ]
   where
@@ -183,7 +201,7 @@ evalElement =
             [_elem] -> do
                 _elem <- Builtin.expectNormalConcreteTerm tools _elem
                 returnSet resultSort (Set.singleton _elem)
-            _ -> Builtin.wrongArity "SET.element"
+            _ -> Builtin.wrongArity elementKey
         )
 
 evalIn :: Builtin.Function
@@ -203,9 +221,9 @@ evalIn =
             let (_elem, _set) =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
-                        _ -> Builtin.wrongArity "SET.in"
+                        _ -> Builtin.wrongArity inKey
             _elem <- Builtin.expectNormalConcreteTerm tools _elem
-            _set <- expectBuiltinSet "SET.in" tools _set
+            _set <- expectBuiltinSet inKey tools _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Set.member _elem _set)
         )
@@ -219,13 +237,13 @@ evalUnit =
     evalUnit0 _ _ resultSort =
         \case
             [] -> returnSet resultSort Set.empty
-            _ -> Builtin.wrongArity "SET.unit"
+            _ -> Builtin.wrongArity unitKey
 
 evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    ctx = "SET.concat"
+    ctx = concatKey
     evalConcat0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -265,7 +283,7 @@ evalDifference :: Builtin.Function
 evalDifference =
     Builtin.functionEvaluator evalDifference0
   where
-    ctx = "SET.difference"
+    ctx = differenceKey
     evalDifference0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -294,16 +312,40 @@ evalDifference =
             rightIdentity <|> bothConcrete
         )
 
+evalToList :: Builtin.Function
+evalToList = Builtin.functionEvaluator evalToList0
+  where
+    evalToList0
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
+    evalToList0 tools _ resultSort arguments =
+        Builtin.getAttemptedFunction $ do
+            let _set =
+                        case arguments of
+                            [_set] -> _set
+                            _      -> Builtin.wrongArity toListKey
+            _set <- expectBuiltinSet toListKey tools _set
+            List.returnList resultSort
+                . fmap Kore.fromConcretePurePattern
+                . Seq.fromList
+                . Set.toList
+                $ _set
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ ("SET.concat", evalConcat)
-        , ("SET.element", evalElement)
-        , ("SET.unit", evalUnit)
-        , ("SET.in", evalIn)
-        , ("SET.difference", evalDifference)
+        [ (concatKeyT, evalConcat)
+        , (elementKeyT, evalElement)
+        , (unitKeyT, evalUnit)
+        , (inKeyT, evalIn)
+        , (differenceKeyT, evalDifference)
+        , (toListKeyT, evalToList)
         ]
 
 {- | Render a 'Set' as a domain value pattern of the given sort.
@@ -370,13 +412,43 @@ asExpandedPattern symbols resultSort =
     asExpandedPattern0 = \asPattern0 builtin ->
         ExpandedPattern.fromPurePattern $ asPattern0 builtin
 
+concatKey :: String
+concatKey = "SET.concat"
+concatKeyT :: Text
+concatKeyT = "SET.concat"
+
+elementKey :: String
+elementKey = "SET.element"
+elementKeyT :: Text
+elementKeyT = "SET.element"
+
+unitKey :: String
+unitKey = "SET.unit"
+unitKeyT :: Text
+unitKeyT = "SET.unit"
+
+inKey :: String
+inKey = "SET.in"
+inKeyT :: Text
+inKeyT = "SET.in"
+
+differenceKey :: String
+differenceKey = "SET.difference"
+differenceKeyT :: Text
+differenceKeyT = "SET.difference"
+
+toListKey :: String
+toListKey = "SET.set2list"
+toListKeyT :: Text
+toListKeyT = "SET.set2list"
+
 {- | Find the symbol hooked to @SET.unit@ in an indexed module.
  -}
 lookupSymbolUnit
     :: Sort Object
     -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol "SET.unit"
+lookupSymbolUnit = Builtin.lookupSymbol unitKeyT
 
 {- | Find the symbol hooked to @SET.element@ in an indexed module.
  -}
@@ -384,7 +456,7 @@ lookupSymbolElement
     :: Sort Object
     -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbol "SET.element"
+lookupSymbolElement = Builtin.lookupSymbol elementKeyT
 
 {- | Find the symbol hooked to @SET.concat@ in an indexed module.
  -}
@@ -392,7 +464,7 @@ lookupSymbolConcat
     :: Sort Object
     -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol "SET.concat"
+lookupSymbolConcat = Builtin.lookupSymbol concatKeyT
 
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
@@ -400,7 +472,7 @@ lookupSymbolIn
     :: Sort Object
     -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolIn = Builtin.lookupSymbol "SET.in"
+lookupSymbolIn = Builtin.lookupSymbol inKeyT
 
 {- | Find the symbol hooked to @SET.difference@ in an indexed module.
  -}
@@ -408,7 +480,7 @@ lookupSymbolDifference
     :: Sort Object
     -> VerifiedModule attrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolDifference = Builtin.lookupSymbol "SET.difference"
+lookupSymbolDifference = Builtin.lookupSymbol differenceKeyT
 
 {- | Check if the given symbol is hooked to @SET.concat@.
  -}
@@ -416,7 +488,7 @@ isSymbolConcat
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolConcat = Builtin.isSymbol "SET.concat"
+isSymbolConcat = Builtin.isSymbol concatKeyT
 
 {- | Check if the given symbol is hooked to @SET.element@.
  -}
@@ -424,7 +496,7 @@ isSymbolElement
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolElement = Builtin.isSymbol "SET.element"
+isSymbolElement = Builtin.isSymbol elementKeyT
 
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 
