@@ -15,9 +15,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-import           Kore.ASTUtils.SmartPatterns
-import           Kore.IndexedModule.MetadataTools
+import           Kore.AST.Valid
 import           Kore.Parser.LexemeImpl
                  ( idFirstChars, idOtherChars )
 import           Kore.Predicate.Predicate
@@ -33,8 +31,9 @@ import           Test.Kore
                  ( testId )
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
 import           Test.Kore.Builtin.Builtin
-                 ( testMetadataTools, testSubstitutionSimplifier,
-                 testSymbolOrAliasSorts )
+                 ( testMetadataTools, testSubstitutionSimplifier )
+import           Test.Kore.Builtin.Definition
+                 ( boolSort, intSort )
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Builtin.Int
 import           Test.Kore.Predicate.Predicate ()
@@ -63,9 +62,7 @@ genSortedVariable
     -> Gen (Variable level)
 genSortedVariable sort = Variable <$> genId <*> pure sort
 
-genPredicate
-    :: Given (SymbolOrAliasSorts Object)
-    => Gen (Predicate Object Variable)
+genPredicate :: Gen (Predicate Object Variable)
 genPredicate =
     Gen.recursive
         Gen.choice
@@ -117,7 +114,7 @@ test_andNegation =
         "\\and{_}(φ, \not{_}(φ)) === \\bottom"
         property
   where
-    property = give testSymbolOrAliasSorts $ do
+    property = do
         predicate <- forAll genPredicate
         actual <-
             evaluate
@@ -138,7 +135,7 @@ evaluate
     -> PropertyT SMT (PredicateSubstitution Object Variable)
 evaluate predicate =
     (<$>) fst
-    $ give testMetadataTools $ give testSymbolOrAliasSorts
+    $ give testMetadataTools
     $ Trans.lift
     $ evalSimplifier
     $ Evaluator.evaluate
@@ -150,7 +147,7 @@ evaluate predicate =
 -- Refute Int predicates
 
 vInt :: Text -> CommonStepPattern Object
-vInt s = V (varS s Builtin.intSort)
+vInt s = mkVar (varS s Builtin.intSort)
 
 a, b, c :: CommonStepPattern Object
 a = vInt "a"
@@ -158,7 +155,7 @@ b = vInt "b"
 c = vInt "c"
 
 vBool :: Text -> CommonStepPattern Object
-vBool s = V (varS s Builtin.boolSort)
+vBool s = mkVar (varS s Builtin.boolSort)
 
 p, q :: CommonStepPattern Object
 p = vBool "p"
@@ -168,10 +165,10 @@ add, sub, mul, div
     :: CommonStepPattern Object
     -> CommonStepPattern Object
     -> CommonStepPattern Object
-add i j = App_ Builtin.addIntSymbol  [i, j]
-sub i j = App_ Builtin.subIntSymbol  [i, j]
-mul i j = App_ Builtin.mulIntSymbol  [i, j]
-div i j = App_ Builtin.tdivIntSymbol [i, j]
+add i j = mkApp intSort Builtin.addIntSymbol  [i, j]
+sub i j = mkApp intSort Builtin.subIntSymbol  [i, j]
+mul i j = mkApp intSort Builtin.mulIntSymbol  [i, j]
+div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
 
 assertRefuted :: CommonPredicate Object -> Assertion
 assertRefuted prop = give testMetadataTools $ do
@@ -182,38 +179,35 @@ assertRefuted prop = give testMetadataTools $ do
 unit_1 :: Assertion
 unit_1 =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern True)
-        (App_ Builtin.andBoolSymbol
-            [ App_ Builtin.ltIntSymbol [a, Builtin.Int.intLiteral 0]
-            , App_ Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
+        (mkApp boolSort Builtin.andBoolSymbol
+            [ mkApp boolSort Builtin.ltIntSymbol [a, Builtin.Int.intLiteral 0]
+            , mkApp boolSort Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
             ]
         )
 
 unit_2 :: Assertion
 unit_2 =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern True)
-        (App_ Builtin.andBoolSymbol
-            [ App_ Builtin.ltIntSymbol [a `add` a, a `add` b]
-            , App_ Builtin.ltIntSymbol [b `add` b, a `add` b]
+        (mkApp boolSort Builtin.andBoolSymbol
+            [ mkApp boolSort Builtin.ltIntSymbol [a `add` a, a `add` b]
+            , mkApp boolSort Builtin.ltIntSymbol [b `add` b, a `add` b]
             ]
         )
 
 unit_3 :: Assertion
 unit_3 =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.impliesBoolSymbol
-            [ App_ Builtin.ltIntSymbol [a, b]
-            , App_ Builtin.impliesBoolSymbol
-                [ App_ Builtin.ltIntSymbol [b, c]
-                , App_ Builtin.ltIntSymbol [a, c]
+        (mkApp boolSort Builtin.impliesBoolSymbol
+            [ mkApp boolSort Builtin.ltIntSymbol [a, b]
+            , mkApp boolSort Builtin.impliesBoolSymbol
+                [ mkApp boolSort Builtin.ltIntSymbol [b, c]
+                , mkApp boolSort Builtin.ltIntSymbol [a, c]
                 ]
             ]
         )
@@ -221,10 +215,9 @@ unit_3 =
 unit_4 :: Assertion
 unit_4 =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern True)
-        (App_ Builtin.eqIntSymbol
+        (mkApp boolSort Builtin.eqIntSymbol
             [ add
                 (Builtin.Int.intLiteral 1)
                 (Builtin.Int.intLiteral 2 `mul` a)
@@ -235,15 +228,14 @@ unit_4 =
 unit_5 :: Assertion
 unit_5 =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.impliesBoolSymbol
-            [ App_ Builtin.eqIntSymbol
+        (mkApp boolSort Builtin.impliesBoolSymbol
+            [ mkApp boolSort Builtin.eqIntSymbol
                 [ Builtin.Int.intLiteral 0 `sub` (a `mul` a)
                 , b `mul` b
                 ]
-            , App_ Builtin.eqIntSymbol [a, Builtin.Int.intLiteral 0]
+            , mkApp boolSort Builtin.eqIntSymbol [a, Builtin.Int.intLiteral 0]
             ]
         )
 
@@ -251,13 +243,12 @@ unit_5 =
 unit_div :: Assertion
 unit_div =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.impliesBoolSymbol
-            [ App_ Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
-            , App_ Builtin.ltIntSymbol
-                [ App_ Builtin.tdivIntSymbol [a, Builtin.Int.intLiteral 2]
+        (mkApp boolSort Builtin.impliesBoolSymbol
+            [ mkApp boolSort Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
+            , mkApp boolSort Builtin.ltIntSymbol
+                [ mkApp boolSort Builtin.tdivIntSymbol [a, Builtin.Int.intLiteral 2]
                 , a
                 ]
             ]
@@ -266,11 +257,10 @@ unit_div =
 unit_mod :: Assertion
 unit_mod =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.eqIntSymbol
-            [ App_ Builtin.tmodIntSymbol
+        (mkApp boolSort Builtin.eqIntSymbol
+            [ mkApp boolSort Builtin.tmodIntSymbol
                 [ a `mul` Builtin.Int.intLiteral 2
                 , Builtin.Int.intLiteral 2
                 ]
@@ -281,12 +271,11 @@ unit_mod =
 unit_pierce :: Assertion
 unit_pierce =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.impliesBoolSymbol
-            [ App_ Builtin.impliesBoolSymbol
-                [ App_ Builtin.impliesBoolSymbol [ p, q ]
+        (mkApp boolSort Builtin.impliesBoolSymbol
+            [ mkApp boolSort Builtin.impliesBoolSymbol
+                [ mkApp boolSort Builtin.impliesBoolSymbol [ p, q ]
                 , p
                 ]
             , p
@@ -296,15 +285,14 @@ unit_pierce =
 unit_demorgan :: Assertion
 unit_demorgan =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern False)
-        (App_ Builtin.eqBoolSymbol
-            [ App_ Builtin.notBoolSymbol
-                [ App_ Builtin.orBoolSymbol [p, q] ]
-            , App_ Builtin.andBoolSymbol
-                [ App_ Builtin.notBoolSymbol [p]
-                , App_ Builtin.notBoolSymbol [q]
+        (mkApp boolSort Builtin.eqBoolSymbol
+            [ mkApp boolSort Builtin.notBoolSymbol
+                [ mkApp boolSort Builtin.orBoolSymbol [p, q] ]
+            , mkApp boolSort Builtin.andBoolSymbol
+                [ mkApp boolSort Builtin.notBoolSymbol [p]
+                , mkApp boolSort Builtin.notBoolSymbol [q]
                 ]
             ]
         )
@@ -312,19 +300,17 @@ unit_demorgan =
 unit_true :: Assertion
 unit_true =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeNotPredicate makeTruePredicate
 
 unit_false :: Assertion
 unit_false =
     assertRefuted
-    $ give testSymbolOrAliasSorts
     $ makeNotPredicate
     $ makeEqualsPredicate
         (Builtin.Bool.asPattern True)
-        (App_ Builtin.eqBoolSymbol
-            [ App_ Builtin.notBoolSymbol [p]
-            , App_ Builtin.impliesBoolSymbol
+        (mkApp boolSort Builtin.eqBoolSymbol
+            [ mkApp boolSort Builtin.notBoolSymbol [p]
+            , mkApp boolSort Builtin.impliesBoolSymbol
                 [ p
                 , Builtin.Bool.asPattern False
                 ]

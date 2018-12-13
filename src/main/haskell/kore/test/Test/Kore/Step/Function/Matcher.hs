@@ -14,19 +14,12 @@ import Control.Exception
        ( ErrorCall (..), catch )
 import Control.Monad.Except
        ( ExceptT, runExceptT )
-import Data.Reflection
-       ( give )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkBottom, mkCeil, mkCharLiteral, mkDomainValue,
-                 mkEquals, mkExists, mkFloor, mkForall, mkIff, mkImplies, mkIn,
-                 mkNext, mkNot, mkOr, mkRewrites, mkStringLiteral, mkTop,
-                 mkVar )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
@@ -54,13 +47,13 @@ import           Test.Kore
                  ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_matcherEqualHeads :: [TestTree]
-test_matcherEqualHeads = give mockSymbolOrAliasSorts
+test_matcherEqualHeads =
     [ testCase "And" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
@@ -137,9 +130,10 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
     , testCase "Bottom" $ do
         let expect = Just $ OrOfExpandedPattern.make [Predicated.topPredicate]
         actual <-
-            match mockMetadataTools
-                mkBottom
-                mkBottom
+            match
+                mockMetadataTools
+                mkBottom_
+                mkBottom_
         assertEqualWithExplanation "" expect actual
 
     , testCase "Ceil" $ do
@@ -152,8 +146,8 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                 ]
         actual <-
             match mockMetadataTools
-                (mkCeil (Mock.plain10 (mkVar Mock.x)))
-                (mkCeil (Mock.plain10 Mock.a))
+                (mkCeil_ (Mock.plain10 (mkVar Mock.x)))
+                (mkCeil_ (Mock.plain10 Mock.a))
         assertEqualWithExplanation "" expect actual
 
     , testCase "CharLiteral" $ do
@@ -169,10 +163,14 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         actual <-
             match mockMetadataTools
                 (mkDomainValue Mock.testSort1
-                    (Domain.BuiltinPattern  (mkStringLiteral "10"))
+                    $ Domain.BuiltinPattern
+                    $ eraseAnnotations
+                    $ mkStringLiteral "10"
                 )
                 (mkDomainValue Mock.testSort1
-                    (Domain.BuiltinPattern (mkStringLiteral "10"))
+                    $ Domain.BuiltinPattern
+                    $ eraseAnnotations
+                    $ mkStringLiteral "10"
                 )
         assertEqualWithExplanation "" expect actual
 
@@ -186,8 +184,8 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                 ]
         actual <-
             match mockMetadataTools
-                (mkEquals (Mock.plain10 Mock.a) (mkVar Mock.x))
-                (mkEquals (Mock.plain10 Mock.a) Mock.b)
+                (mkEquals_ (Mock.plain10 Mock.a) (mkVar Mock.x))
+                (mkEquals_ (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
 
     , testCase "Exists" $ do
@@ -214,8 +212,8 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                 ]
         actual <-
             match mockMetadataTools
-                (mkFloor (Mock.plain10 (mkVar Mock.x)))
-                (mkFloor (Mock.plain10 Mock.a))
+                (mkFloor_ (Mock.plain10 (mkVar Mock.x)))
+                (mkFloor_ (Mock.plain10 Mock.a))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Forall" $ do
@@ -270,8 +268,8 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
                 ]
         actual <-
             match mockMetadataTools
-                (mkIn (Mock.plain10 Mock.a) (mkVar Mock.x))
-                (mkIn (Mock.plain10 Mock.a) Mock.b)
+                (mkIn_ (Mock.plain10 Mock.a) (mkVar Mock.x))
+                (mkIn_ (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
 
     , testCase "Next" $ do
@@ -342,8 +340,8 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
         let expect = Just $ OrOfExpandedPattern.make [Predicated.topPredicate]
         actual <-
             match mockMetadataTools
-                mkTop
-                mkTop
+                mkTop_
+                mkTop_
         assertEqualWithExplanation "" expect actual
 
     , testCase "Variable (quantified)" $ do
@@ -372,7 +370,7 @@ test_matcherEqualHeads = give mockSymbolOrAliasSorts
     ]
 
 test_matcherVariableFunction :: [TestTree]
-test_matcherVariableFunction = give mockSymbolOrAliasSorts
+test_matcherVariableFunction =
     [ testCase "Functional" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
@@ -537,7 +535,7 @@ test_matcherVariableFunction = give mockSymbolOrAliasSorts
     ]
 
 test_matcherNonVarToPattern :: [TestTree]
-test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
+test_matcherNonVarToPattern =
     [ testCase "no-var - no-var" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
@@ -603,7 +601,7 @@ test_matcherNonVarToPattern = give mockSymbolOrAliasSorts
     ]
 
 test_matcherMergeSubresults :: [TestTree]
-test_matcherMergeSubresults = give mockSymbolOrAliasSorts
+test_matcherMergeSubresults =
     [ testCase "And" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
@@ -660,8 +658,11 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                 ]
         actual <-
             match mockMetadataTools
-                (mkEquals (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
-                (mkEquals    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
+                (mkEquals_
+                    (mkVar Mock.x)
+                    (Mock.constr20 Mock.cf (mkVar Mock.y))
+                )
+                (mkEquals_    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Iff" $ do
@@ -720,8 +721,8 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
                 ]
         actual <-
             match mockMetadataTools
-                (mkIn (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
-                (mkIn    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
+                (mkIn_ (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
+                (mkIn_    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Or" $ do
@@ -784,23 +785,16 @@ test_matcherMergeSubresults = give mockSymbolOrAliasSorts
     ]
 
 
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts =
-    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
-        mockSymbolOrAliasSorts
         Mock.attributesMapping
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
 
-mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
-mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools =
-    Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] [] []
+mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
 
 match
     :: forall level .

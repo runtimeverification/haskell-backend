@@ -27,6 +27,7 @@ module Kore.Implicit.ImplicitKore
     , symbolDeclaredA
     ) where
 
+import           Data.Functor.Classes
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Text
@@ -95,6 +96,7 @@ sort = implicitSymbol "#sort" [stringMetaSort, sortListMetaSort] sortMetaSort
 
 sortA
     ::  ( Functor domain
+        , Show1 domain
         , Show (Pattern Meta domain Variable child)
         , child ~ CommonPurePattern Meta domain
         )

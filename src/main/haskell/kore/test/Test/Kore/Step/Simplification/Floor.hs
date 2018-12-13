@@ -7,18 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( Given, give )
-
 import           Kore.AST.Pure
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkApp, mkBottom, mkOr, mkTop )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Bottom_ )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
                  makeTruePredicate )
@@ -35,12 +25,12 @@ import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
 import qualified Kore.Unification.Substitution as Substitution
 
-import           Test.Kore
-                 ( testId )
-import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeSymbolOrAliasSorts )
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore
+       ( testId )
+import Test.Kore.Comparators ()
+import Test.Kore.Step.MockSymbols
+       ( testSort )
+import Test.Tasty.HUnit.Extensions
 
 test_floorSimplification :: [TestTree]
 test_floorSimplification =
@@ -49,14 +39,13 @@ test_floorSimplification =
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
-                    , predicate = give mockSymbolOrAliasSorts $
-                        makeFloorPredicate (mkOr a b)
+                    { term = mkTop_
+                    , predicate = makeFloorPredicate (mkOr a b)
                     , substitution = mempty
                     }
                 ]
             )
-            (give mockSymbolOrAliasSorts $ evaluate
+            (evaluate
                 (makeFloor
                     [aExpanded, bExpanded]
                 )
@@ -69,7 +58,7 @@ test_floorSimplification =
                 (OrOfExpandedPattern.make
                     [ ExpandedPattern.top ]
                 )
-                (give mockSymbolOrAliasSorts $ evaluate
+                (evaluate
                     (makeFloor
                         [ExpandedPattern.top]
                     )
@@ -79,7 +68,7 @@ test_floorSimplification =
                 (OrOfExpandedPattern.make
                     []
                 )
-                (give mockSymbolOrAliasSorts $ evaluate
+                (evaluate
                     (makeFloor
                         []
                     )
@@ -92,7 +81,7 @@ test_floorSimplification =
                 (OrOfExpandedPattern.make
                     [ ExpandedPattern.top ]
                 )
-                (give mockSymbolOrAliasSorts $ makeEvaluate
+                (makeEvaluate
                     (ExpandedPattern.top :: CommonExpandedPattern Object)
                 )
             -- floor(bottom) = bottom
@@ -100,7 +89,7 @@ test_floorSimplification =
                 (OrOfExpandedPattern.make
                     []
                 )
-                (give mockSymbolOrAliasSorts $ makeEvaluate
+                (makeEvaluate
                     (ExpandedPattern.bottom :: CommonExpandedPattern Object)
                 )
         )
@@ -110,16 +99,16 @@ test_floorSimplification =
         (assertEqualWithExplanation "floor(top)"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate =
-                        give mockSymbolOrAliasSorts $ makeAndPredicate
+                        makeAndPredicate
                             (makeFloorPredicate a)
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.wrap [(x, fOfB)]
                     }
                 ]
             )
-            (give mockSymbolOrAliasSorts $ makeEvaluate
+            (makeEvaluate
                 Predicated
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
@@ -149,11 +138,13 @@ test_floorSimplification =
         , symbolOrAliasParams      = []
         }
     x = Variable (testId "x") testSort
-    a = give mockSymbolOrAliasSorts $ mkApp aSymbol []
-    b = give mockSymbolOrAliasSorts $ mkApp bSymbol []
-    fOfA = give mockSymbolOrAliasSorts $ mkApp fSymbol [a]
-    fOfB = give mockSymbolOrAliasSorts $ mkApp fSymbol [b]
-    gOfA = give mockSymbolOrAliasSorts $ mkApp gSymbol [a]
+    a :: CommonStepPattern Object
+    a = mkApp testSort aSymbol []
+    b :: CommonStepPattern Object
+    b = mkApp testSort bSymbol []
+    fOfA = mkApp testSort fSymbol [a]
+    fOfB = mkApp testSort fSymbol [b]
+    gOfA = mkApp testSort gSymbol [a]
     aExpanded = Predicated
         { term = a
         , predicate = makeTruePredicate
@@ -164,33 +155,6 @@ test_floorSimplification =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    symbolOrAliasSortsMapping =
-        [   ( aSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = []
-                , applicationSortsResult = testSort
-                }
-            )
-        ,   ( bSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = []
-                , applicationSortsResult = testSort
-                }
-            )
-        ,   ( fSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = [testSort]
-                , applicationSortsResult = testSort
-                }
-            )
-        ,   ( gSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = [testSort]
-                , applicationSortsResult = testSort
-                }
-            )
-        ]
-    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts symbolOrAliasSortsMapping
 
 makeFloor
     :: Ord (variable Object)
@@ -203,16 +167,8 @@ makeFloor patterns =
         , floorChild       = OrOfExpandedPattern.make patterns
         }
 
-testSort :: Sort Object
-testSort =
-    case mkBottom :: CommonStepPattern Object of
-        Bottom_ sort -> sort
-        _ -> error "unexpected"
-
 evaluate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
-        )
+    :: MetaOrObject level
     => Floor level (CommonOrOfExpandedPattern level)
     -> CommonOrOfExpandedPattern level
 evaluate floor' =
@@ -221,9 +177,7 @@ evaluate floor' =
 
 
 makeEvaluate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
-        )
+    :: MetaOrObject level
     => CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 makeEvaluate child =

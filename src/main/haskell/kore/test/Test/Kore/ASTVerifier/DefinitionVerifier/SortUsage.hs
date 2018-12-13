@@ -15,7 +15,8 @@ import qualified Data.Text as Text
 import Kore.AST.Kore
 import Kore.AST.PureToKore
 import Kore.AST.Sentence
-import Kore.ASTUtils.SmartPatterns
+import Kore.AST.Valid
+       ( mkTop )
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
 
@@ -29,11 +30,11 @@ data TestFlag
 
 data AdditionalTestConfiguration
     = SkipTest
-    | AdditionalSentences [KoreSentence]
+    | AdditionalSentences [VerifiedKoreSentence]
 
 data TestConfiguration level = TestConfiguration
     { testConfigurationDescription :: !String
-    , testConfigurationAdditionalSentences :: ![KoreSentence]
+    , testConfigurationAdditionalSentences :: ![VerifiedKoreSentence]
     , testConfigurationAdditionalSortVariables :: ![SortVariable level]
     , testConfigurationCaseBasedConfiguration
         :: ![([TestFlag], AdditionalTestConfiguration)]
@@ -48,7 +49,7 @@ data FailureConfiguration level
 
 data FlaggedTestData = FlaggedTestData
     { flaggedTestDataFlags    :: ![TestFlag]
-    , flaggedTestDataTestData :: !([KoreSentence] -> TestData)
+    , flaggedTestDataTestData :: !([VerifiedKoreSentence] -> TestData)
     }
 
 test_sortUsage :: [TestTree]
@@ -198,7 +199,7 @@ test_sortUsage =
                         , sentenceSortAttributes =
                             Attributes []
                         }
-                    :: KoreSentenceSort Object)
+                    :: VerifiedKoreSentenceSort Object)
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -230,7 +231,7 @@ test_sortUsage =
                         , sentenceSortAttributes =
                             Attributes []
                         }
-                    :: KoreSentenceSort Object)
+                    :: VerifiedKoreSentenceSort Object)
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -321,7 +322,9 @@ testsForObjectSort
         addSentenceToTestConfiguration additionalSortSentence
 
 addSentenceToTestConfiguration
-    :: KoreSentence -> TestConfiguration level -> TestConfiguration level
+    :: VerifiedKoreSentence
+    -> TestConfiguration level
+    -> TestConfiguration level
 addSentenceToTestConfiguration
     sentence
     configuration@TestConfiguration
@@ -516,8 +519,8 @@ unfilteredTestExamplesForSort
     -> SortActualThatIsDeclared level
     -> [SortVariable level]
     -> NamePrefix
-    -> (KoreSentenceAlias level -> KoreSentence)
-    -> (KoreSentenceSymbol level -> KoreSentence)
+    -> (VerifiedKoreSentenceAlias level -> VerifiedKoreSentence)
+    -> (VerifiedKoreSentenceSymbol level -> VerifiedKoreSentence)
     -> [FlaggedTestData]
 unfilteredTestExamplesForSort
     _x
@@ -548,7 +551,7 @@ unfilteredTestExamplesForSort
                             aliasName
                             sort
                             sortVariables
-                            (patternPureToKore $ Top_ sort)
+                            (patternPureToKore $ mkTop sort)
                         )
                     : additionalSentences
                     )
@@ -575,7 +578,7 @@ unfilteredTestExamplesForSort
                             sort
                             additionalSort
                             sortVariables
-                            (patternPureToKore $ Top_ additionalSort)
+                            (patternPureToKore $ mkTop additionalSort)
                         )
                     : additionalSentences
                     )
@@ -679,6 +682,7 @@ unfilteredTestExamplesForSort
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
                         ( applicationUnifiedPatternWithParams
+                            additionalSort
                             (SymbolName rawAliasName)
                             [sort]
                         )
@@ -735,7 +739,8 @@ unfilteredTestExamplesForObjectSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        ( applicationUnifiedPatternWithParams
+                        (applicationUnifiedPatternWithParams
+                            resultSort
                             (SymbolName "a")
                             [ SortActualSort SortActual
                                 { sortActualName =
@@ -747,12 +752,7 @@ unfilteredTestExamplesForObjectSort
                         (map asUnified sortVariables)
                     : symbolSentenceWithResultSort
                         (SymbolName "a")
-                        (SortActualSort SortActual
-                            { sortActualName = testId differentAdditionalSortRawName
-                            , sortActualSorts =
-                                [ objectVariableSort sortVariableName1 ]
-                            }
-                        )
+                        resultSort
                         [sortVariable @Object sortVariableName1]
                     : sortSentenceWithSortParameters
                         differentAdditionalSortName
@@ -769,3 +769,9 @@ unfilteredTestExamplesForObjectSort
     differentAdditionalSortRawName = additionalSortRawName <> "1"
     differentAdditionalSortName = SortName differentAdditionalSortRawName
     defaultErrorMessage = "Replace this with a real error message."
+    resultSort =
+        SortActualSort SortActual
+            { sortActualName = testId differentAdditionalSortRawName
+            , sortActualSorts =
+                [ objectVariableSort sortVariableName1 ]
+            }

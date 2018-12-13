@@ -12,18 +12,8 @@ module Kore.Step.Simplification.Floor
     , makeEvaluateFloor
     ) where
 
-import Data.Reflection
-       ( Given )
-
-import           Kore.AST.Common
-                 ( Floor (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkTop )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Top_ )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
 import           Kore.Step.ExpandedPattern
@@ -35,6 +25,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'Floor' of 'OrOfExpandedPattern'.
 
@@ -50,7 +41,7 @@ floor(a and b) = floor(a) and floor(b).
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
+        , Unparse (variable level)
         , Show (variable level)
         , Ord (variable level)
         )
@@ -66,9 +57,9 @@ simplify
 simplifyEvaluatedFloor
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
+        , Unparse (variable level)
         )
     => OrOfExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -86,9 +77,9 @@ See 'simplify' for details.
 makeEvaluateFloor
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
+        , Unparse (variable level)
         )
     => ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -103,9 +94,9 @@ makeEvaluateFloor child
 makeEvaluateNonBoolFloor
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
+        , Unparse (variable level)
         )
     => ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -122,7 +113,7 @@ makeEvaluateNonBoolFloor
   =
     ( OrOfExpandedPattern.make
         [ Predicated
-            { term = mkTop
+            { term = mkTop_
             , predicate = makeAndPredicate (makeFloorPredicate term) predicate
             , substitution = substitution
             }

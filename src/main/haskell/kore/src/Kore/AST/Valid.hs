@@ -13,51 +13,57 @@ patterns. Unlike the @SmartConstructors@, this module does not require
  -}
 
 module Kore.AST.Valid
-    ( -- * Utility functions for dealing with sorts
+    (
+    -- * Utility functions for dealing with sorts
       getSort
     , forceSort
     , predicateSort
+    , localInPattern
+    , inPath
+    , isObviouslyPredicate
     -- * Pure Kore pattern constructors
     , mkAnd
     , mkApp
-    , applyAlias
-    , applyAlias_
-    , applySymbol
-    , applySymbol_
     , mkBottom
-    , mkBottom_
     , mkCeil
-    , mkCeil_
     , mkDomainValue
     , mkEquals
-    , mkEquals_
     , mkExists
     , mkFloor
-    , mkFloor_
     , mkForall
     , mkIff
     , mkImplies
     , mkIn
-    , mkIn_
     , mkNext
     , mkNot
     , mkOr
     , mkRewrites
     , mkTop
-    , mkTop_
     , mkVar
     , mkStringLiteral
     , mkCharLiteral
     , mkSort
     , varS
     , symS
+    -- * Predicate constructors
+    , mkBottom_
+    , mkCeil_
+    , mkEquals_
+    , mkFloor_
+    , mkIn_
+    , mkTop_
     -- * Sentence constructors
-    , mkAlias'
     , mkAlias
-    , mkAxiom'
+    , mkAlias_
     , mkAxiom
-    , mkSymbol'
+    , mkAxiom_
     , mkSymbol
+    , mkSymbol_
+    -- * Application constructors
+    , applyAlias
+    , applyAlias_
+    , applySymbol
+    , applySymbol_
     -- * Pattern synonyms
     , pattern And_
     , pattern App_
@@ -80,6 +86,8 @@ module Kore.AST.Valid
     , pattern V
     , pattern StringLiteral_
     , pattern CharLiteral_
+    -- * Re-exports
+    , module Kore.Annotation.Valid
     ) where
 
 import           Control.Applicative
@@ -94,10 +102,9 @@ import           Data.Text
 import           Data.These
 
 import           Kore.Annotation.Valid
+import           Kore.AST.Lens
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
-import           Kore.ASTUtils.SmartConstructors
-                 ( predicateSort )
 import           Kore.Implicit.ImplicitSorts
 import           Kore.Unparser
                  ( Unparse, renderDefault, unparseToString )
@@ -310,7 +317,7 @@ sortSubstitution variables sorts =
 
 The provided sort parameters must match the declaration.
 
-See also: 'mkApp', 'applyAlias_', 'applySymbol'
+See also: 'mkApp', 'applyAlias_', 'applySymbol', 'mkAlias'
 
  -}
 applyAlias
@@ -380,7 +387,7 @@ applyAlias_ sentence = applyAlias sentence []
 
 The provided sort parameters must match the declaration.
 
-See also: 'mkApp', 'applySymbol_'
+See also: 'mkApp', 'applySymbol_', 'mkSymbol'
 
  -}
 applySymbol
@@ -505,6 +512,8 @@ mkCeil_
     -> PurePattern level domain variable (Valid level)
 mkCeil_ = mkCeil predicateSort
 
+{- | Construct a 'DomainValue' pattern.
+ -}
 mkDomainValue
     :: Functor domain
     => Sort Object
@@ -546,8 +555,8 @@ mkEquals equalsResultSort = makeSortsAgree mkEquals'Worker
 
 {- | Construct a 'Equals' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use 'mkEquals'
-instead.
+This should not be used outside "Kore.Predicate.Predicate"; please use
+'mkEquals' instead.
 
 See also: 'mkEquals'
 
@@ -562,6 +571,8 @@ mkEquals_
     -> pattern'
 mkEquals_ = mkEquals predicateSort
 
+{- | Construct an 'Exists' pattern.
+ -}
 mkExists
     :: Traversable domain
     => variable level
@@ -605,6 +616,8 @@ mkFloor_
     -> PurePattern level domain variable (Valid level)
 mkFloor_ = mkFloor predicateSort
 
+{- | Construct a 'Forall' pattern.
+ -}
 mkForall
     :: Traversable domain
     => variable level
@@ -617,6 +630,8 @@ mkForall forallVariable forallChild =
     forallSort = getSort forallChild
     forall = Forall { forallSort, forallVariable, forallChild }
 
+{- | Construct an 'Iff' pattern.
+ -}
 mkIff
     ::  ( Traversable domain
         , pattern' ~ PurePattern level domain variable (Valid level)
@@ -633,6 +648,8 @@ mkIff = makeSortsAgree mkIffWorker
         valid = Valid { patternSort = iffSort }
         iff' = Iff { iffSort, iffFirst, iffSecond }
 
+{- | Construct an 'Implies' pattern.
+ -}
 mkImplies
     ::  ( Traversable domain
         , pattern' ~ PurePattern level domain variable (Valid level)
@@ -695,6 +712,8 @@ mkIn_
     -> pattern'
 mkIn_ = mkIn predicateSort
 
+{- | Construct a 'Next' pattern.
+ -}
 mkNext
     :: Traversable domain
     => PurePattern Object domain variable (Valid Object)
@@ -706,6 +725,8 @@ mkNext nextChild =
     nextSort = getSort nextChild
     next = Next { nextSort, nextChild }
 
+{- | Construct a 'Not' pattern.
+ -}
 mkNot
     :: Traversable domain
     => PurePattern level domain variable (Valid level)
@@ -717,6 +738,8 @@ mkNot notChild =
     notSort = getSort notChild
     not' = Not { notSort, notChild }
 
+{- | Construct an 'Or' pattern.
+ -}
 mkOr
     ::  ( Traversable domain
         , pattern' ~ PurePattern level domain variable (Valid level)
@@ -733,6 +756,8 @@ mkOr = makeSortsAgree mkOrWorker
         valid = Valid { patternSort = orSort }
         or' = Or { orSort, orFirst, orSecond }
 
+{- | Construct a 'Rewrites' pattern.
+ -}
 mkRewrites
     ::  ( Traversable domain
         , pattern' ~ PurePattern Object domain variable (Valid Object)
@@ -777,8 +802,10 @@ mkTop_
     => PurePattern level domain variable (Valid level)
 mkTop_ = mkTop predicateSort
 
+{- | Construct a variable pattern.
+ -}
 mkVar
-    :: (Functor domain, MetaOrObject level, SortedVariable variable)
+    :: (Functor domain, SortedVariable variable)
     => variable level
     -> PurePattern level domain variable (Valid level)
 mkVar var =
@@ -786,6 +813,8 @@ mkVar var =
   where
     valid = Valid { patternSort = sortedVariableSort var }
 
+{- | Construct a 'StringLiteral' pattern.
+ -}
 mkStringLiteral
     :: Functor domain
     => String
@@ -796,6 +825,8 @@ mkStringLiteral string =
     valid = Valid { patternSort = stringMetaSort }
     stringLiteral = StringLiteral string
 
+{- | Construct a 'CharLiteral' pattern.
+ -}
 mkCharLiteral
     :: Functor domain
     => Char
@@ -806,8 +837,8 @@ mkCharLiteral char =
     valid = Valid { patternSort = charMetaSort }
     charLiteral = CharLiteral char
 
-mkSort :: Text -> Sort level
-mkSort name = SortActualSort $ SortActual (noLocationId name) []
+mkSort :: Id level -> Sort level
+mkSort name = SortActualSort $ SortActual name []
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s
@@ -823,29 +854,34 @@ symS :: MetaOrObject level => Text -> [Sort level] -> SymbolOrAlias level
 symS x s =
     SymbolOrAlias (noLocationId x) s
 
-mkAxiom'
-    ::  ( patternType ~ PurePattern level domain variable (Valid level)
-        , sortParam ~ SortVariable level
-        )
+{- | Construct an axiom declaration with the given parameters and pattern.
+ -}
+mkAxiom
+    :: patternType ~ PurePattern level domain variable (Valid level)
     => [sortParam]
     -> patternType
     -> SentenceAxiom sortParam patternType
-mkAxiom' sentenceAxiomParameters sentenceAxiomPattern =
+mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
     SentenceAxiom
         { sentenceAxiomParameters
         , sentenceAxiomPattern
         , sentenceAxiomAttributes = Attributes []
         }
 
-mkAxiom
-    ::  ( patternType ~ PurePattern level domain variable (Valid level)
-        , sortParam ~ SortVariable level
-        )
+{- | Construct an axiom declaration with no parameters.
+
+See also: 'mkAxiom'
+
+ -}
+mkAxiom_
+    :: patternType ~ PurePattern level domain variable (Valid level)
     => patternType
     -> SentenceAxiom sortParam patternType
-mkAxiom = mkAxiom' []
+mkAxiom_ = mkAxiom []
 
-mkSymbol'
+{- | Construct a symbol declaration with the given parameters and sorts.
+ -}
+mkSymbol
     ::  ( patternType ~ PurePattern level domain variable (Valid level)
         , sortParam ~ SortVariable level
         )
@@ -854,7 +890,7 @@ mkSymbol'
     -> [Sort level]
     -> Sort level
     -> SentenceSymbol level patternType
-mkSymbol' symbolConstructor symbolParams argumentSorts resultSort =
+mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
         { sentenceSymbolSymbol =
             Symbol
@@ -862,11 +898,16 @@ mkSymbol' symbolConstructor symbolParams argumentSorts resultSort =
                 , symbolParams
                 }
         , sentenceSymbolSorts = argumentSorts
-        , sentenceSymbolResultSort = resultSort
+        , sentenceSymbolResultSort = resultSort'
         , sentenceSymbolAttributes = Attributes []
         }
 
-mkSymbol
+{- | Construct a symbol declaration with no parameters.
+
+See also: 'mkSymbol'
+
+ -}
+mkSymbol_
     ::  ( patternType ~ PurePattern level domain variable (Valid level)
         , sortParam ~ SortVariable level
         )
@@ -874,9 +915,11 @@ mkSymbol
     -> [Sort level]
     -> Sort level
     -> SentenceSymbol level patternType
-mkSymbol symbolConstructor = mkSymbol' symbolConstructor []
+mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
 
-mkAlias'
+{- | Construct an alias declaration with the given parameters and sorts.
+ -}
+mkAlias
     ::  ( patternType ~ PurePattern level domain Variable (Valid level)
         , sortParam ~ SortVariable level
         )
@@ -886,7 +929,7 @@ mkAlias'
     -> [Variable level]
     -> patternType
     -> SentenceAlias level patternType
-mkAlias' aliasConstructor aliasParams resultSort arguments right =
+mkAlias aliasConstructor aliasParams resultSort' arguments right =
     SentenceAlias
         { sentenceAliasAlias =
             Alias
@@ -894,7 +937,7 @@ mkAlias' aliasConstructor aliasParams resultSort arguments right =
                 , aliasParams
                 }
         , sentenceAliasSorts = argumentSorts
-        , sentenceAliasResultSort = resultSort
+        , sentenceAliasResultSort = resultSort'
         , sentenceAliasLeftPattern =
             Application
                 { applicationSymbolOrAlias =
@@ -911,7 +954,12 @@ mkAlias' aliasConstructor aliasParams resultSort arguments right =
   where
     argumentSorts = variableSort <$> arguments
 
-mkAlias
+{- | Construct an alias declaration with no parameters.
+
+See also: 'mkAlias'
+
+ -}
+mkAlias_
     ::  ( patternType ~ PurePattern level domain Variable (Valid level)
         , sortParam ~ SortVariable level
         )
@@ -920,7 +968,7 @@ mkAlias
     -> [Variable level]
     -> patternType
     -> SentenceAlias level patternType
-mkAlias aliasConstructor = mkAlias' aliasConstructor []
+mkAlias_ aliasConstructor = mkAlias aliasConstructor []
 
 pattern And_
     :: Functor dom

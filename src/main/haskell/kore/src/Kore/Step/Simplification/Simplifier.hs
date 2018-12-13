@@ -25,6 +25,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 create
@@ -32,10 +33,9 @@ create
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes

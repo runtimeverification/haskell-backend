@@ -14,8 +14,6 @@ import           Data.List
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
-import           Data.Reflection
-                 ( give )
 import           Numeric.Natural
                  ( Natural )
 
@@ -25,10 +23,9 @@ import qualified Data.Limit as Limit
 import           Kore.AST.Common
                  ( Variable (..) )
 import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar )
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts )
+                 ( MetadataTools (..) )
 import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
@@ -58,7 +55,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_onePathStrategy :: [TestTree]
-test_onePathStrategy = give symbolOrAliasSorts
+test_onePathStrategy =
     [ testCase "Runs zero steps" $ do
         -- Target: a
         -- Coinductive axiom: a => b
@@ -384,13 +381,9 @@ test_onePathStrategy = give symbolOrAliasSorts
             _actual
     ]
   where
-    symbolOrAliasSorts :: SymbolOrAliasSorts Object
-    symbolOrAliasSorts =
-        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     metadataTools :: MetadataTools Object StepperAttributes
     metadataTools =
         Mock.makeMetadataTools
-            symbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
             Mock.sortAttributesMapping

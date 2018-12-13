@@ -412,8 +412,8 @@ test_lift =
                 { domainValueSort =
                     SortVariableSort (SortVariable (testId "Int"))
                 , domainValueChild =
-                    Domain.BuiltinPattern
-                        (castMetaDomainValues metaStringPattern)
+                    (Domain.BuiltinPattern . castMetaDomainValues)
+                        (mempty <$ metaStringPattern)
                 }
             )
         :: CommonKorePattern)

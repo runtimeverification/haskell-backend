@@ -10,16 +10,13 @@ import Test.Tasty.HUnit
 import           Data.Functor.Foldable
                  ( embed )
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( give )
 import           Data.These
                  ( These (That) )
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar )
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -46,12 +43,12 @@ import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_predicateSubstitutionSimplification :: [TestTree]
-test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
+test_predicateSubstitutionSimplification =
     [ testCase "Identity for top and bottom" $ do
         actualBottom <- runSimplifier Map.empty Predicated.bottomPredicate
         assertEqualWithExplanation ""
@@ -276,14 +273,9 @@ test_predicateSubstitutionSimplification = give mockSymbolOrAliasSorts
         assertEqualWithExplanation "" expect actual
     ]
 
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts =
-    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
-
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
-        mockSymbolOrAliasSorts
         Mock.attributesMapping
         Mock.headTypeMapping
         Mock.sortAttributesMapping
@@ -327,15 +319,15 @@ simpleEvaluator
         , ShowMetaOrObject variable
         )
     => [(StepPattern Object variable, StepPattern Object variable)]
-    -> Application Object (StepPattern Object variable)
+    -> CofreeF (Application Object) (Valid Object) (StepPattern Object variable)
     -> Simplifier
         [   ( AttemptedFunction Object variable
             , SimplificationProof Object
             )
         ]
 simpleEvaluator [] _ = return [(NotApplicable, SimplificationProof)]
-simpleEvaluator ((from, to) : ps) app
-  | from == embed (mempty :< ApplicationPattern app) =
+simpleEvaluator ((from, to) : ps) validApp@(valid :< app)
+  | from == embed (valid :< ApplicationPattern app) =
     return
         [   ( Applied
                 (OrOfExpandedPattern.make
@@ -345,4 +337,4 @@ simpleEvaluator ((from, to) : ps) app
             )
         ]
   | otherwise =
-    simpleEvaluator ps app
+    simpleEvaluator ps validApp

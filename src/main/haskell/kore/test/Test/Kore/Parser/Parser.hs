@@ -9,11 +9,10 @@ import Data.Text
 import           Kore.AST.Builders
                  ( sort_ )
 import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
-import           Kore.ASTUtils.SmartConstructors hiding
-                 ( resultSort )
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
 import           Kore.Parser.ParserImpl
@@ -465,9 +464,12 @@ domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
+            $ Kore.AST.Kore.eraseAnnotations
             $ patternPureToKore
-            $ DV_ (sortVariableSort "s1")
-            $ Domain.BuiltinPattern (StringLiteral_ "a")
+            $ mkDomainValue (sortVariableSort "s1")
+            $ Domain.BuiltinPattern
+            $ Kore.AST.Pure.eraseAnnotations
+            $ mkStringLiteral "a"
         , FailureWithoutMessage
             [ ""
             , "\\dv{s1, s2}(\"a\")"
@@ -933,8 +935,7 @@ sentenceAliasParserTests =
                 :: KoreSentenceAlias Meta)
             )
         , success "alias f{s}() : s where f{s}() := \\dv{s}(\"f\") []"
-            (asSentence
-                (let
+            (   let
                     aliasId :: Id Object
                     aliasId = testId "f"
                     sortVar = sortVariable "s"
@@ -944,7 +945,7 @@ sentenceAliasParserTests =
                             { symbolOrAliasConstructor = aliasId
                             , symbolOrAliasParams = [resultSort]
                             }
-                 in SentenceAlias
+                in asSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
                         , aliasParams = [sortVar]
@@ -957,18 +958,19 @@ sentenceAliasParserTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        patternPureToKore
+                        Kore.AST.Kore.eraseAnnotations
+                        $ patternPureToKore
                         $ mkDomainValue resultSort
-                        $ Domain.BuiltinPattern (mkStringLiteral "f")
+                        $ Domain.BuiltinPattern
+                        $ Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral "f"
                     , sentenceAliasAttributes = Attributes []
                     }
-                )
             )
         , success
             "alias rewrites{s}(s, s) : s \
             \where rewrites{s}(a : s, b : s) := \\rewrites{s}(a : s, b : s) []"
-            (sentencePureToKore $ asSentence
-                (let
+            (   let
                     aliasId :: Id Object
                     aliasId = testId "rewrites"
                     sortVar = sortVariable "s"
@@ -983,12 +985,12 @@ sentenceAliasParserTests =
                             { variableName = testId name
                             , variableSort = resultSort
                             }
-                    argument name = Var_ (var name)
+                    argument name = mkVar (var name)
                     varA = var "a"
                     varB = var "b"
                     argA = argument "a"
                     argB = argument "b"
-                 in SentenceAlias
+                in asSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
                         , aliasParams = [sortVar]
@@ -1000,16 +1002,17 @@ sentenceAliasParserTests =
                             { applicationSymbolOrAlias = aliasHead
                             , applicationChildren = [varA, varB]
                             }
-                    , sentenceAliasRightPattern = Rewrites_ resultSort argA argB
+                    , sentenceAliasRightPattern =
+                        Kore.AST.Kore.eraseAnnotations
+                        $ patternPureToKore
+                        $ mkRewrites argA argB
                     , sentenceAliasAttributes = Attributes []
                     }
-                )
             )
         , success
             "alias next{s}(s) : s \
             \where next{s}(a : s) := \\next{s}(a : s) []"
-            (sentencePureToKore $ asSentence
-                (let
+            (   let
                     aliasId :: Id Object
                     aliasId = testId "next"
                     sortVar = sortVariable "s"
@@ -1024,8 +1027,8 @@ sentenceAliasParserTests =
                             { variableName = testId "a"
                             , variableSort = resultSort
                             }
-                    arg = Var_ var
-                 in SentenceAlias
+                    arg = mkVar var
+                in asSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
                         , aliasParams = [sortVar]
@@ -1037,10 +1040,12 @@ sentenceAliasParserTests =
                             { applicationSymbolOrAlias  = aliasHead
                             , applicationChildren = [var]
                             }
-                    , sentenceAliasRightPattern = Next_ resultSort arg
+                    , sentenceAliasRightPattern =
+                        Kore.AST.Kore.eraseAnnotations
+                        $ patternPureToKore
+                        $ mkNext arg
                     , sentenceAliasAttributes = Attributes []
                     }
-                )
             )
         , FailureWithoutMessage
             [ ""

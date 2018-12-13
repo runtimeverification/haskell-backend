@@ -10,16 +10,12 @@ import Test.Tasty.HUnit
 import           Control.Error
                  ( MaybeT (..) )
 import qualified Control.Error as Error
-import           Data.Reflection
-                 ( give )
 
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkBottom, mkCharLiteral, mkDomainValue,
-                 mkStringLiteral, mkTop, mkVar )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -38,13 +34,13 @@ import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_andTermsSimplification :: [TestTree]
-test_andTermsSimplification = give mockSymbolOrAliasSorts
+test_andTermsSimplification =
     [ testGroup "Predicates"
         [ testCase "\\and{s}(f{}(a), \\top{s}())" $ do
             let expected =
@@ -53,7 +49,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            actual <- simplifyUnify mockMetadataTools fOfA mkTop
+            actual <- simplifyUnify mockMetadataTools fOfA mkTop_
             assertEqualWithExplanation "" (expected, Just expected) actual
 
         , testCase "\\and{s}(\\top{s}(), f{}(a))" $ do
@@ -63,7 +59,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            actual <- simplifyUnify mockMetadataTools mkTop fOfA
+            actual <- simplifyUnify mockMetadataTools mkTop_ fOfA
             assertEqualWithExplanation "" (expected, Just expected) actual
 
         , testCase "\\and{s}(f{}(a), \\bottom{s}())" $ do
@@ -71,7 +67,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                     ( ExpandedPattern.bottom
                     , Just ExpandedPattern.bottom
                     )
-            actual <- simplifyUnify mockMetadataTools fOfA mkBottom
+            actual <- simplifyUnify mockMetadataTools fOfA mkBottom_
             assertEqualWithExplanation "" expect actual
 
         , testCase "\\and{s}(\\bottom{s}(), f{}(a))" $ do
@@ -82,7 +78,8 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
             actual <-
                 simplifyUnify
                     mockMetadataTools
-                    mkBottom fOfA
+                    mkBottom_
+                    fOfA
             assertEqualWithExplanation "" expect actual
         ]
 
@@ -385,7 +382,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
             assertEqualWithExplanation "" expect actual
         ]
 
-    , give mockMetaSymbolOrAliasSorts $ testGroup "string literal and"
+    , testGroup "string literal and"
         [ testCase "equal values" $ do
             let expect =
                     let
@@ -415,7 +412,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
             assertEqualWithExplanation "" expect actual
         ]
 
-    , give mockMetaSymbolOrAliasSorts $ testGroup "char literal and"
+    , testGroup "char literal and"
         [ testCase "equal values" $ do
             let expect =
                     let
@@ -705,7 +702,7 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
                 term4 = Mock.builtinList [Mock.a, Mock.b]
                 expect =
                     Just Predicated
-                        { term = Mock.builtinList [Mock.a, mkBottom]
+                        { term = Mock.builtinList [Mock.a, mkBottom_]
                         , predicate = makeFalsePredicate
                         , substitution = mempty
                         }
@@ -740,57 +737,50 @@ test_andTermsSimplification = give mockSymbolOrAliasSorts
     ]
 
 fOfA :: CommonStepPattern Object
-fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
+fOfA = Mock.f Mock.a
 
 fOfB :: CommonStepPattern Object
-fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
+fOfB = Mock.f Mock.b
 
 gOfA :: CommonStepPattern Object
-gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
+gOfA = Mock.g Mock.a
 
 plain0OfA :: CommonStepPattern Object
-plain0OfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
+plain0OfA = Mock.plain10 Mock.a
 
 plain1OfA :: CommonStepPattern Object
-plain1OfA = give mockSymbolOrAliasSorts $ Mock.plain11 Mock.a
+plain1OfA = Mock.plain11 Mock.a
 
 plain0OfB :: CommonStepPattern Object
-plain0OfB = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.b
+plain0OfB = Mock.plain10 Mock.b
 
 plain1OfB :: CommonStepPattern Object
-plain1OfB = give mockSymbolOrAliasSorts $ Mock.plain11 Mock.b
-
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts =
-    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
-
-mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
-mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
+plain1OfB = Mock.plain11 Mock.b
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
-        mockSymbolOrAliasSorts
         Mock.attributesMapping
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
 
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools =
-    Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] [] []
+mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
 
 aDomainValue :: CommonStepPattern Object
 aDomainValue =
-    give mockSymbolOrAliasSorts
-        $ mkDomainValue  Mock.testSort
-        $ Domain.BuiltinPattern (mkStringLiteral "a")
+    mkDomainValue  Mock.testSort
+        $ Domain.BuiltinPattern
+        $ eraseAnnotations
+        $ mkStringLiteral "a"
 
 bDomainValue :: CommonStepPattern Object
 bDomainValue =
-    give mockSymbolOrAliasSorts
-        $ mkDomainValue Mock.testSort
-        $ Domain.BuiltinPattern (mkStringLiteral "b")
+    mkDomainValue Mock.testSort
+        $ Domain.BuiltinPattern
+        $ eraseAnnotations
+        $ mkStringLiteral "b"
 
 simplifyUnify
     :: MetaOrObject level

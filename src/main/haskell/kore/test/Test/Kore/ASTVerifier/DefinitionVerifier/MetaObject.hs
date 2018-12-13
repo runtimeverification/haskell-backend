@@ -19,10 +19,13 @@ test_metaObject =
         (simpleDefinitionFromSentences
             (ModuleName "test")
             [ simpleAxiomSentence
-                (asCommonKorePattern
-                    (notPattern
-                        (updateAstLocation patternMetaSort AstLocationTest)
-                        (asCommonKorePattern (topPattern objectSort))
+                ((<$)
+                    (asUnified Valid { patternSort = patternMetaSort })
+                    (asCommonKorePattern
+                        (notPattern
+                            (updateAstLocation patternMetaSort AstLocationTest)
+                            (asCommonKorePattern (topPattern objectSort))
+                        )
                     )
                 )
             , objectSortSentence
@@ -43,10 +46,13 @@ test_metaObject =
         (simpleDefinitionFromSentences
             (ModuleName "test")
             [ simpleAxiomSentence
-                (asCommonKorePattern
-                    (notPattern
-                        (updateAstLocation charMetaSort AstLocationTest)
-                        (asCommonKorePattern (topPattern objectSort))
+                ((<$)
+                    (asUnified Valid { patternSort = charMetaSort })
+                    (asCommonKorePattern
+                        (notPattern
+                            (updateAstLocation charMetaSort AstLocationTest)
+                            (asCommonKorePattern (topPattern objectSort))
+                        )
                     )
                 )
             , objectSortSentence
@@ -56,13 +62,16 @@ test_metaObject =
         (simpleDefinitionFromSentences
             (ModuleName "test")
             [ simpleAxiomSentence
-                (asCommonKorePattern
-                    (notPattern
-                        objectSort
-                        (asCommonKorePattern
-                            (topPattern
-                                (updateAstLocation
-                                    patternMetaSort AstLocationTest
+                ((<$)
+                    (asUnified Valid { patternSort = objectSort })
+                    (asCommonKorePattern
+                        (notPattern
+                            objectSort
+                            (asCommonKorePattern
+                                (topPattern
+                                    (updateAstLocation
+                                        patternMetaSort AstLocationTest
+                                    )
                                 )
                             )
                         )
@@ -87,13 +96,16 @@ test_metaObject =
         (simpleDefinitionFromSentences
             (ModuleName "test")
             [ simpleAxiomSentence
-                (asCommonKorePattern
-                    (notPattern
-                        objectSort
-                        (asCommonKorePattern
-                            (topPattern
-                                (updateAstLocation
-                                    charMetaSort AstLocationTest)
+                ((<$)
+                    (asUnified Valid { patternSort = objectSort })
+                    (asCommonKorePattern
+                        (notPattern
+                            objectSort
+                            (asCommonKorePattern
+                                (topPattern
+                                    (updateAstLocation
+                                        charMetaSort AstLocationTest)
+                                )
                             )
                         )
                     )

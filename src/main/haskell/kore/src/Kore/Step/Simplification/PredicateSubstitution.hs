@@ -19,7 +19,6 @@ import           Data.List
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( Meta, MetaOrObject, Object, Unified, asUnified )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern
@@ -39,6 +38,7 @@ import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -50,11 +50,10 @@ create
         .   ( FreshVariable variable0
             , MetaOrObject level
             , Ord (variable0 level)
-            , Ord (variable0 Meta)
-            , Ord (variable0 Object)
+            , OrdMetaOrObject variable0
             , Show (variable0 level)
-            , Show (variable0 Meta)
-            , Show (variable0 Object)
+            , ShowMetaOrObject variable0
+            , Unparse (variable0 level)
             , SortedVariable variable0
             )
         => StepPatternSimplifier level variable0
@@ -71,12 +70,11 @@ substitution-predicate.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
@@ -84,11 +82,10 @@ simplify
         .   ( FreshVariable variable0
             , MetaOrObject level
             , Ord (variable0 level)
-            , Ord (variable0 Meta)
-            , Ord (variable0 Object)
+            , OrdMetaOrObject variable0
             , Show (variable0 level)
-            , Show (variable0 Meta)
-            , Show (variable0 Object)
+            , ShowMetaOrObject variable0
+            , Unparse (variable0 level)
             , SortedVariable variable0
             )
         => StepPatternSimplifier level variable0

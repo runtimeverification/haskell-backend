@@ -15,21 +15,21 @@ module Kore.Step.ExpandedPattern
     , CommonExpandedPattern
     , PredicateSubstitution
     , CommonPredicateSubstitution
-    , allVariables
+    , Kore.Step.ExpandedPattern.allVariables
     , erasePredicatedTerm
     , bottom
     , isBottom
     , isTop
-    , mapVariables
+    , Kore.Step.ExpandedPattern.mapVariables
     , predicateSubstitutionToExpandedPattern
     , substitutionToPredicate
     , toMLPattern
     , top
     , topPredicate
     , bottomPredicate
-    , fromPurePattern
+    , Kore.Step.ExpandedPattern.fromPurePattern
     , toPredicate
-    , freeVariables
+    , Kore.Step.ExpandedPattern.freeVariables
     , freeEpVariables
     ) where
 
@@ -37,36 +37,25 @@ import           Control.DeepSeq
                  ( NFData )
 import           Data.Functor
                  ( ($>) )
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Hashable
 import           Data.Monoid
                  ( (<>) )
-import           Data.Reflection
-                 ( Given )
 import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.MetaOrObject
-import           Kore.AST.Pure hiding
-                 ( fromPurePattern, mapVariables )
-import qualified Kore.AST.Pure as Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkBottom, mkTop )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Bottom_, pattern Top_ )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
-import           Kore.Predicate.Predicate
-                 ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
-                 makeAndPredicate, makeFalsePredicate, makeTruePredicate,
-                 substitutionToPredicate, unwrapPredicate )
-import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Annotation.Valid
+import           Kore.AST.Pure
+import           Kore.AST.Valid
+import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Free
                  ( freePureVariables, pureAllVariables )
 
@@ -102,9 +91,9 @@ instance
 instance
     ( MetaOrObject level
     , SortedVariable variable
-    , Show (variable level)
     , Eq (variable level)
-    , Given (SymbolOrAliasSorts level)
+    , Show (variable level)
+    , Unparse (variable level)
     ) =>
     Applicative (Predicated level variable)
   where
@@ -157,7 +146,7 @@ mapVariables
     Predicated { term, predicate, substitution }
   =
     Predicated
-        { term = Pure.mapVariables variableMapper term
+        { term = Kore.AST.Pure.mapVariables variableMapper term
         , predicate = Predicate.mapVariables variableMapper predicate
         , substitution =
             Substitution.mapVariables variableMapper substitution
@@ -167,7 +156,7 @@ mapVariables
 from an ExpandedPattern.
 -}
 allVariables
-    ::  Ord (variable level)
+    :: (Ord (variable level), Unparse (variable level))
     => ExpandedPattern level variable
     -> Set.Set (variable level)
 allVariables
@@ -198,7 +187,7 @@ freeEpVariables
     :: ( MetaOrObject level
        , Ord (variable level)
        , Show (variable level)
-       , Given (SymbolOrAliasSorts level)
+       , Unparse (variable level)
        , SortedVariable variable
        )
     => ExpandedPattern level variable
@@ -215,11 +204,13 @@ erasePredicatedTerm = (<$) ()
 {-|'toMLPattern' converts an ExpandedPattern to a StepPattern.
 -}
 toMLPattern
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
+    ::  forall level variable.
+        ( MetaOrObject level
         , SortedVariable variable
         , Eq (variable level)
-        , Show (variable level))
+        , Show (variable level)
+        , Unparse (variable level)
+        )
     => ExpandedPattern level variable -> StepPattern level variable
 toMLPattern
     Predicated { term, predicate, substitution }
@@ -230,19 +221,21 @@ toMLPattern
   where
     -- TODO: Most likely I defined this somewhere.
     simpleAnd
-        ::  ( MetaOrObject level
-            , Given (SymbolOrAliasSorts level)
-            , SortedVariable variable
-            , Show (variable level))
-        => StepPattern level variable
+        :: StepPattern level variable
         -> Predicate level variable
         -> StepPattern level variable
-    simpleAnd (Top_ _)      predicate'     = unwrapPredicate predicate'
-    simpleAnd patt          PredicateTrue  = patt
-    simpleAnd b@(Bottom_ _) _              = b
-    simpleAnd _             PredicateFalse = mkBottom
-    simpleAnd pattern1      predicate'     =
-        mkAnd pattern1 (unwrapPredicate predicate')
+    simpleAnd pattern'@(Recursive.project -> valid :< projected) =
+        \case
+            PredicateTrue -> pattern'
+            PredicateFalse -> mkBottom patternSort
+            predicate' ->
+                case projected of
+                    TopPattern _ ->
+                        fromPredicate patternSort predicate'
+                    BottomPattern _ -> pattern'
+                    _ -> mkAnd pattern' (fromPredicate patternSort predicate')
+      where
+        Valid { patternSort } = valid
 
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
@@ -250,7 +243,7 @@ should become Bottom when transformed to a ML pattern.
 bottom :: MetaOrObject level => ExpandedPattern level variable
 bottom =
     Predicated
-        { term      = mkBottom
+        { term      = mkBottom_
         , predicate = makeFalsePredicate
         , substitution = mempty
         }
@@ -261,7 +254,7 @@ should become Top when transformed to a ML pattern.
 top :: MetaOrObject level => ExpandedPattern level variable
 top =
     Predicated
-        { term      = mkTop
+        { term      = mkTop_
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -278,9 +271,9 @@ fromPurePattern
     :: MetaOrObject level
     => StepPattern level variable
     -> ExpandedPattern level variable
-fromPurePattern term =
-    case term of
-        Bottom_ _ -> bottom
+fromPurePattern term@(Recursive.project -> _ :< projected) =
+    case projected of
+        BottomPattern _ -> bottom
         _ ->
             Predicated
                 { term
@@ -301,10 +294,10 @@ bottomPredicate = bottom $> ()
 -}
 toPredicate
     :: ( MetaOrObject level
-       , Given (SymbolOrAliasSorts level)
        , SortedVariable variable
        , Eq (variable level)
        , Show (variable level)
+       , Unparse (variable level)
        )
     => PredicateSubstitution level variable
     -> Predicate level variable
@@ -322,7 +315,7 @@ freeVariables
     :: ( MetaOrObject level
        , Ord (variable level)
        , Show (variable level)
-       , Given (SymbolOrAliasSorts level)
+       , Unparse (variable level)
        , SortedVariable variable
        )
     => PredicateSubstitution level variable
@@ -333,4 +326,4 @@ predicateSubstitutionToExpandedPattern
     :: MetaOrObject level
     => PredicateSubstitution level variable
     -> ExpandedPattern level variable
-predicateSubstitutionToExpandedPattern = fmap (const mkTop)
+predicateSubstitutionToExpandedPattern = (<$) mkTop_

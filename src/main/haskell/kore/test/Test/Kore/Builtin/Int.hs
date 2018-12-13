@@ -18,9 +18,8 @@ import           GHC.Integer.GMP.Internals
 import           GHC.Integer.Logarithms
                  ( integerLog2# )
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
@@ -52,7 +51,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asExpandedPattern $ impl a
-        actual <- evaluate $ App_ symb (asPattern <$> [a])
+        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -70,7 +69,7 @@ testBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asExpandedPattern $ impl a b
-        actual <- evaluate $ App_ symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -88,7 +87,7 @@ testComparison symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = Test.Bool.asExpandedPattern $ impl a b
-        actual <- evaluate $ App_ symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -105,7 +104,7 @@ testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a
-        actual <- evaluate $ App_ symb (asPattern <$> [a])
+        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -123,7 +122,7 @@ testPartialBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a b
-        actual <- evaluate $ App_ symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -141,7 +140,7 @@ testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a 0
-        actual <- evaluate $ App_ symb (asPattern <$> [a, 0])
+        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, 0])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -160,7 +159,7 @@ testPartialTernary symb impl =
         b <- forAll genInteger
         c <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a b c
-        actual <- evaluate $ App_ symb (asPattern <$> [a, b, c])
+        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, b, c])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -330,4 +329,4 @@ testInt
     -> [CommonStepPattern Object]
     -> CommonExpandedPattern Object
     -> TestTree
-testInt = testSymbolWithSolver evaluate
+testInt name = testSymbolWithSolver evaluate name intSort

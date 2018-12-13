@@ -121,7 +121,8 @@ main = do
             when willVerify $ do
                 indexedModule <-
                     mainModule (ModuleName mainModuleName) indexedModules
-                mainPatternVerify indexedModule parsedPattern
+                _ <- mainPatternVerify indexedModule parsedPattern
+                return ()
             when willPrintPattern $
                 putStrLn (prettyPrintToString parsedPattern)
 

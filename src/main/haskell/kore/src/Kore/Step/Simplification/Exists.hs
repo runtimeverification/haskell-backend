@@ -13,17 +13,12 @@ module Kore.Step.Simplification.Exists
     ) where
 
 import qualified Control.Arrow as Arrow
-import           Data.Reflection
-                 ( Given )
 import qualified Data.Set as Set
 
-import           Kore.AST.Common
-                 ( Exists (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkExists )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeExistsPredicate, makeTruePredicate,
                  unwrapPredicate )
@@ -49,6 +44,7 @@ import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Free
                  ( freePureVariables )
 import           Kore.Variables.Fresh
@@ -75,15 +71,13 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -104,15 +98,13 @@ simplify
 
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -140,15 +132,13 @@ See 'simplify' for detailed documentation.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -189,13 +179,11 @@ makeEvaluate
 makeEvaluateNoFreeVarInSubstitution
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         )
     => variable level
     -> ExpandedPattern level variable
@@ -244,15 +232,12 @@ makeEvaluateNoFreeVarInSubstitution
 
 substituteTermPredicate
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => StepPattern level variable
     -> Predicate level variable

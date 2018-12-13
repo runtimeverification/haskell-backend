@@ -5,12 +5,14 @@ import Data.Text
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
+import           Kore.AST.Valid
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Injective
 import           Kore.Attribute.Smtlib
 import qualified Kore.Builtin.Set as Set
+import           Kore.Step.Pattern
 
 import Test.Kore
 
@@ -182,6 +184,51 @@ inKeysMapSymbol = builtinSymbol "inKeysMap"
 
 keysMapSymbol :: SymbolOrAlias Object
 keysMapSymbol = builtinSymbol "keysMap"
+
+unitMap :: CommonStepPattern Object
+unitMap = mkApp mapSort unitMapSymbol []
+
+updateMap
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+updateMap map' key value =
+    mkApp mapSort updateMapSymbol [map', key, value]
+
+lookupMap
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+lookupMap map' key =
+    mkApp intSort lookupMapSymbol [map', key]
+
+elementMap
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+elementMap key value =
+    mkApp mapSort elementMapSymbol [key, value]
+
+concatMap
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+concatMap map1 map2 =
+    mkApp mapSort concatMapSymbol [map1, map2]
+
+inKeysMap
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+inKeysMap key map' =
+    mkApp boolSort inKeysMapSymbol [key, map']
+
+keysMap
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+keysMap map' =
+    mkApp setSort keysMapSymbol [map']
 
 -- ** Pair
 

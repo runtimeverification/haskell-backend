@@ -38,19 +38,12 @@ import           Control.DeepSeq
                  ( NFData )
 import           Data.List
                  ( foldl' )
-import           Data.Reflection
-                 ( Given )
 import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
-                 ( SortedVariable, Variable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkOr )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -59,6 +52,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.TopBottom
                  ( TopBottom (..) )
+import           Kore.Unparser
 
 {-| 'MultiOr' is a Matching logic or of its children
 
@@ -441,10 +435,10 @@ an 'ExpandedPattern'.
 -}
 toExpandedPattern
     ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         )
     => OrOfExpandedPattern level variable -> ExpandedPattern level variable
 toExpandedPattern (MultiOr []) = ExpandedPattern.bottom

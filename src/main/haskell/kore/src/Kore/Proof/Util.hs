@@ -20,10 +20,6 @@ i.e. poor man's HOL
 {-# LANGUAGE AllowAmbiguousTypes       #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
-{-# OPTIONS_GHC -Wno-unused-matches    #-}
-{-# OPTIONS_GHC -Wno-name-shadowing    #-}
-{-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
-
 module Kore.Proof.Util
     (
     -- * General deduction tools
@@ -50,36 +46,30 @@ module Kore.Proof.Util
     , generateVarList
     ) where
 
-import           Data.Reflection
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
 import Kore.AST.Pure
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
-import Kore.IndexedModule.MetadataTools
+import Kore.AST.Valid
 import Kore.Proof.Proof
 
 modusPonensN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Proof]
+    :: [Proof]
     -> Proof
     -> Proof
 modusPonensN as b =
-    foldl (\b a -> useRule $ ModusPonens a b) b as
+    foldl (\b' a -> useRule $ ModusPonens a b') b as
 
 mkImpliesN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Term]
+    :: [Term]
     -> Term
     -> Term
 mkImpliesN as b =
-    foldr (\a b -> a `mkImplies` b) b as
+    foldr mkImplies b as
 
 tryDischarge
-    :: Given (SymbolOrAliasSorts Object)
-    => Proof
+    :: Proof
     -> Proof
     -> Proof
 tryDischarge a b =
@@ -90,8 +80,7 @@ tryDischarge a b =
             b' = getConclusion b
 
 tryDischargeN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Proof]
+    :: [Proof]
     -> Proof
     -> Proof
 tryDischargeN as b = foldr tryDischarge b as
@@ -99,16 +88,14 @@ tryDischargeN as b = foldr tryDischarge b as
 --------------------------------------------------------------------------------
 
 mkForallN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Var]
+    :: [Var]
     -> Term
     -> Term
 mkForallN vars pat =
     foldr mkForall pat vars
 
 forallIntroN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Var]
+    :: [Var]
     -> Proof
     -> Proof
 forallIntroN vars pat =
@@ -116,8 +103,7 @@ forallIntroN vars pat =
 
 
 forallElimN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Term]
+    :: [Term]
     -> Proof
     -> Proof
 forallElimN args pat =
@@ -126,16 +112,14 @@ forallElimN args pat =
 --------------------------------------------------------------------------------
 
 mkExistsN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Var]
+    :: [Var]
     -> Term
     -> Term
 mkExistsN vars pat =
     foldr mkExists pat vars
 
 existsIntroN
-    :: Given (SymbolOrAliasSorts Object)
-    => [(Var, Term)]
+    :: [(Var, Term)]
     -> Proof
     -> Proof
 existsIntroN terms pat =
@@ -144,22 +128,19 @@ existsIntroN terms pat =
 --------------------------------------------------------------------------------
 
 mkAndN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Term]
+    :: [Term]
     -> Term
-mkAndN [] = mkTop
+mkAndN [] = mkTop_
 mkAndN es = foldr1 mkAnd es
 
 andIntroN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Proof]
+    :: [Proof]
     -> Proof
 andIntroN [] = useRule TopIntro
 andIntroN ps = foldr1 (\a b -> useRule $ AndIntro a b) ps
 
 andElimN
-    :: Given (SymbolOrAliasSorts Object)
-    => Proof
+    :: Proof
     -> [Proof]
 andElimN p = case getConclusion p of
     And_ _ _ _ ->
@@ -169,18 +150,14 @@ andElimN p = case getConclusion p of
 
 --------------------------------------------------------------------------------
 
-mkOrN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Term]
-    -> Term
-mkOrN [] = mkBottom
+mkOrN :: [Term] -> Term
+mkOrN [] = mkBottom_
 mkOrN es = foldr1 mkOr es
 
 --------------------------------------------------------------------------------
 
 provablySubstitute
-    :: Given (SymbolOrAliasSorts Object)
-    => Proof
+    :: Proof
     -> Path
     -> Proof
     -> Proof
@@ -200,14 +177,12 @@ provablySubstitute eq path pat = case getConclusion eq of
     _ -> impossible
 
 eqSymmetry
-    :: Given (SymbolOrAliasSorts Object)
-    => Proof
+    :: Proof
     -> Proof
 eqSymmetry = undefined
 
 eqTransitivity
-    :: Given (SymbolOrAliasSorts Object)
-    => Proof
+    :: Proof
     -> Proof
     -> Proof
 eqTransitivity = undefined
@@ -215,8 +190,7 @@ eqTransitivity = undefined
 --------------------------------------------------------------------------------
 
 generateVarList
-    :: Given (SymbolOrAliasSorts Object)
-    => [Sort Object]
+    :: [Sort Object]
     -> Text
     -> ([Variable Object], [Term])
 generateVarList sorts name =
@@ -225,5 +199,5 @@ generateVarList sorts name =
             (\n sort -> varS (name <> (Text.pack . show) n) sort)
             [(1::Int)..]
             sorts
-        vars' = map Var_ vars
+        vars' = map mkVar vars
     in (vars, vars')

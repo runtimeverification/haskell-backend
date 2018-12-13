@@ -11,18 +11,10 @@ module Kore.Step.Simplification.In
     (simplify
     ) where
 
-import Data.Reflection
-       ( give )
-
-import           Kore.AST.Common
-                 ( In (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkTop )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeInPredicate )
 import           Kore.Step.ExpandedPattern
@@ -38,6 +30,7 @@ import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unparser
 
 {-|'simplify' simplifies an 'In' pattern with 'OrOfExpandedPattern'
 children.
@@ -54,8 +47,9 @@ TODO(virgil): It does not have yet a special case for children with top terms.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> In level (OrOfExpandedPattern level variable)
@@ -74,8 +68,9 @@ simplify
 simplifyEvaluatedIn
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> OrOfExpandedPattern level variable
@@ -105,8 +100,9 @@ simplifyEvaluatedIn tools first second
 makeEvaluateIn
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level variable
@@ -119,30 +115,29 @@ makeEvaluateIn tools first second
     Ceil.makeEvaluate tools first
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
     (OrOfExpandedPattern.make [], SimplificationProof)
-  | otherwise = makeEvaluateNonBoolIn tools first second
+  | otherwise = makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
-    => MetadataTools level StepperAttributes
-    -> ExpandedPattern level variable
+    => ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluateNonBoolIn tools patt1 patt2 =
+makeEvaluateNonBoolIn patt1 patt2 =
     ( OrOfExpandedPattern.make
         [ Predicated
-            { term = mkTop
-            , predicate = give symbolOrAliasSorts $ makeInPredicate
-                -- TODO: Wrap in 'contained' and 'container'.
-                (ExpandedPattern.toMLPattern patt1)
-                (ExpandedPattern.toMLPattern patt2)
+            { term = mkTop_
+            , predicate =
+                makeInPredicate
+                    -- TODO: Wrap in 'contained' and 'container'.
+                    (ExpandedPattern.toMLPattern patt1)
+                    (ExpandedPattern.toMLPattern patt2)
             , substitution = mempty
             }
         ]
     , SimplificationProof
     )
-  where
-    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools

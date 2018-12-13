@@ -8,18 +8,13 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( give )
 import qualified Data.Sequence as Seq
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkBottom, mkDomainValue, mkStringLiteral )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Bottom_ )
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -29,7 +24,6 @@ import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.Pattern
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 import           Kore.Step.StepperAttributes
@@ -37,12 +31,13 @@ import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import           Test.Kore.Step.MockSymbols
+                 ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_domainValueSimplification :: [TestTree]
 test_domainValueSimplification =
-    give mockSymbolOrAliasSorts
     [ testCase "DomainValue evaluates to DomainValue"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
@@ -50,7 +45,10 @@ test_domainValueSimplification =
                     { term =
                         mkDomainValue
                             testSort
-                            (Domain.BuiltinPattern (mkStringLiteral "a"))
+                            (Domain.BuiltinPattern
+                                $ eraseAnnotations
+                                $ mkStringLiteral "a"
+                            )
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -60,7 +58,10 @@ test_domainValueSimplification =
                 mockMetadataTools
                 (DomainValue
                     testSort
-                    (Domain.BuiltinPattern (mkStringLiteral "a"))
+                    (Domain.BuiltinPattern
+                        $ eraseAnnotations
+                        $ mkStringLiteral "a"
+                    )
                 )
             )
         )
@@ -94,18 +95,8 @@ test_domainValueSimplification =
   where
     bottom = OrOfExpandedPattern.make [ExpandedPattern.bottom]
 
-testSort :: Sort Object
-testSort =
-    case mkBottom :: CommonStepPattern Object of
-        Bottom_ sort -> sort
-        _ -> error "unexpected"
-
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
-
 mockMetadataTools :: MetadataTools Object StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools mockSymbolOrAliasSorts [] [] [] []
+mockMetadataTools = Mock.makeMetadataTools [] [] [] []
 
 evaluate
     :: (MetaOrObject Object)

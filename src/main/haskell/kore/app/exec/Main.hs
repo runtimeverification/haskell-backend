@@ -13,8 +13,6 @@ import           Data.Maybe
                  ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
-import           Data.Reflection
-                 ( give )
 import           Data.Semigroup
                  ( (<>) )
 import qualified Data.Set as Set
@@ -35,13 +33,12 @@ import           System.IO
 import           Data.Limit
                  ( Limit (..) )
 import           Kore.AST.Kore
-                 ( CommonKorePattern )
+                 ( CommonKorePattern, VerifiedKorePattern )
 import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
-import qualified Kore.ASTUtils.SmartConstructors as Pattern
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification,
@@ -52,8 +49,6 @@ import           Kore.Error
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), extractMetadataTools )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Predicate.Predicate
@@ -341,7 +336,7 @@ externalizeFreshVars pat = Recursive.fold renameFreshLocal pat
         -> CommonStepPattern level
     renameFreshLocal (_ :< VariablePattern v@(Variable {variableName}))
       | name `Set.member` freshVarsIds =
-        Var_ v {
+        mkVar v {
             variableName = variableName
                 { getId =
                     freshPrefix <> Text.filter (/= '_') name
@@ -451,7 +446,7 @@ mainWithOptions
                 Just specIndexedModule ->
                     either
                         (\pat -> (ExitFailure 1, pat))
-                        (\_ -> (ExitSuccess, Pattern.mkTop))
+                        (\_ -> (ExitSuccess, mkTop_))
                     <$> prove
                             stepLimit
                             indexedModule
@@ -502,22 +497,15 @@ mainPatternParseAndVerify
     :: VerifiedModule StepperAttributes
     -> String
     -> IO (CommonStepPattern Object)
-mainPatternParseAndVerify indexedModule patternFileName
-  = do
+mainPatternParseAndVerify indexedModule patternFileName = do
     parsedPattern <- mainPatternParse patternFileName
-    mainPatternVerify indexedModule parsedPattern
-    return (makePurePattern parsedPattern)
+    makePurePattern <$> mainPatternVerify indexedModule parsedPattern
 
 mainParseSearchPattern
     :: VerifiedModule StepperAttributes
     -> String
     -> IO (CommonExpandedPattern Object)
-mainParseSearchPattern indexedModule patternFileName
-  = do
-    let
-        metadataTools :: MetadataTools Object StepperAttributes
-        metadataTools = extractMetadataTools indexedModule
-        MetadataTools { symbolOrAliasSorts } = metadataTools
+mainParseSearchPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     case purePattern of
         And_ _ term predicateTerm -> return
@@ -525,7 +513,7 @@ mainParseSearchPattern indexedModule patternFileName
                 { term
                 , predicate =
                     either (error . printError) id
-                        (give symbolOrAliasSorts makePredicate predicateTerm)
+                        (makePredicate predicateTerm)
                 , substitution = mempty
                 }
         _ -> error "Unexpected non-conjunctive pattern"
@@ -581,7 +569,7 @@ verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
         Right indexedDefinition -> return indexedDefinition
 
 makePurePattern
-    :: CommonKorePattern
+    :: VerifiedKorePattern
     -> CommonStepPattern Object
 makePurePattern pat =
     case patternKoreToPure Object pat of

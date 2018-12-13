@@ -3,15 +3,8 @@ module Test.Kore.Proof.Value where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Functor.Foldable as Recursive
-import           Data.Reflection
-                 ( give )
-
-import           Kore.AST.MLPatterns
 import           Kore.AST.Pure
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
-import qualified Kore.ASTUtils.SmartConstructors as Kore
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( HeadType, MetadataTools )
@@ -50,47 +43,34 @@ test_pairDomainValue =
     ]
 
 unit_fun :: Assertion
-unit_fun = assertNotValue (mkApp funSymbol [onePattern])
-
-mkApp
-    :: SymbolOrAlias Object
-    -> [StepPattern Object var]
-    -> StepPattern Object var
-mkApp = give symbolOrAliasSorts Kore.mkApp
+unit_fun =
+    assertNotValue (mkApp intSort funSymbol [onePattern])
 
 mkInj :: CommonStepPattern Object -> CommonStepPattern Object
-mkInj input@(Recursive.project -> _ :< projected) =
-    mkApp (injSymbol inputSort supSort) [input]
-  where
-    inputSort = getPatternResultSort symbolOrAliasSorts projected
+mkInj input =
+    mkApp supSort (injSymbol (getSort input) supSort) [input]
 
 mkPair
     :: CommonStepPattern Object
     -> CommonStepPattern Object
     -> CommonStepPattern Object
-mkPair a@(Recursive.project -> _ :< projected) b =
-    mkApp (pairSymbol inputSort) [a, b]
+mkPair a b =
+    mkApp (pairSort inputSort') (pairSymbol inputSort') [a, b]
   where
-    inputSort = getPatternResultSort symbolOrAliasSorts projected
-
-mkDomainValue
-    :: Sort Object
-    -> Domain.Builtin (StepPattern Object var)
-    -> StepPattern Object var
-mkDomainValue = give symbolOrAliasSorts Kore.mkDomainValue
+    inputSort' = getSort a
 
 unitPattern :: CommonStepPattern Object
-unitPattern = mkApp unitSymbol []
+unitPattern = mkApp unitSort unitSymbol []
 
 onePattern :: CommonStepPattern Object
 onePattern =
-    (mkDomainValue intSort . Domain.BuiltinPattern)
-        (Kore.mkStringLiteral "1")
+    (mkDomainValue intSort . Domain.BuiltinPattern . eraseAnnotations)
+        (mkStringLiteral "1")
 
 zeroPattern :: CommonStepPattern Object
 zeroPattern =
-    (mkDomainValue intSort . Domain.BuiltinPattern)
-        (Kore.mkStringLiteral "1")
+    (mkDomainValue intSort . Domain.BuiltinPattern . eraseAnnotations)
+        (mkStringLiteral "1")
 
 unitSort :: Sort Object
 unitSort =
@@ -134,22 +114,6 @@ funSymbol =
         , symbolOrAliasParams = []
         }
 
-symbolOrAliasSorts :: SymbolOrAlias Object -> ApplicationSorts Object
-symbolOrAliasSorts =
-    Mock.makeSymbolOrAliasSorts
-        [ (unitSymbol, ApplicationSorts [] unitSort)
-        , (injSymbol subSort supSort, ApplicationSorts [subSort] supSort)
-        , (injSymbol unitSort supSort, ApplicationSorts [unitSort] supSort)
-        , (injSymbol supSort supSort, ApplicationSorts [supSort] supSort)
-        , ( pairSymbol unitSort
-          , ApplicationSorts [unitSort, unitSort] (pairSort unitSort)
-          )
-        , ( pairSymbol intSort
-          , ApplicationSorts [intSort, intSort] (pairSort intSort)
-          )
-        , (funSymbol, ApplicationSorts [intSort] intSort)
-        ]
-
 subSort :: Sort level
 subSort = (SortVariableSort . SortVariable) (testId "sub")
 
@@ -181,7 +145,6 @@ symbolOrAliasType =
 tools :: MetadataTools Object StepperAttributes
 tools =
     Mock.makeMetadataTools
-        symbolOrAliasSorts
         symbolOrAliasAttrs
         symbolOrAliasType
         []
@@ -195,8 +158,8 @@ assertValue purePattern =
   where
     concretePattern = asConcretePurePattern purePattern
     roundTrip patt = do
-        value <- Value.fromConcretePurePattern tools patt
-        return (Value.asConcretePurePattern value)
+        value <- Value.fromConcreteStepPattern tools patt
+        return (Value.asConcreteStepPattern value)
 
 testValue :: TestName -> CommonStepPattern Object -> TestTree
 testValue name = testCase name . assertValue
@@ -205,6 +168,6 @@ assertNotValue :: CommonStepPattern Object -> Assertion
 assertNotValue purePattern =
     assertEqual "Unexpected normalized pattern"
         Nothing
-        (concretePattern >>= Value.fromConcretePurePattern tools)
+        (concretePattern >>= Value.fromConcreteStepPattern tools)
   where
     concretePattern = asConcretePurePattern purePattern

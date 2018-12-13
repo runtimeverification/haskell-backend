@@ -9,7 +9,7 @@ import GHC.Stack
        ( HasCallStack )
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import qualified Kore.Builtin.String as String
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
@@ -37,7 +37,7 @@ testComparison name impl symb =
             a <- forAll genString
             b <- forAll genString
             let expect = Test.Bool.asExpandedPattern (impl a b)
-            actual <- evaluate $ App_ symb (asPattern <$> [a, b])
+            actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a, b])
             (===) expect actual
         )
 
@@ -94,12 +94,12 @@ test_substr =
 
 test_length :: [TestTree]
 test_length =
-    [ testString
+    [ Test.Int.testInt
         "length simple"
         lengthStringSymbol
         [asPattern "foobar"]
         (Test.Int.asExpandedPattern 6)
-    , testString
+    , Test.Int.testInt
         "length zero"
         lengthStringSymbol
         [asPattern ""]
@@ -108,32 +108,32 @@ test_length =
 
 test_find :: [TestTree]
 test_find =
-    [ testString
+    [ Test.Int.testInt
         "find simple"
         findStringSymbol
         [asPattern "foobar", asPattern "foobar", Test.Int.asPattern 0]
         (Test.Int.asExpandedPattern 0)
-    , testString
+    , Test.Int.testInt
         "find subpattern"
         findStringSymbol
         [asPattern "foobar", asPattern "bar", Test.Int.asPattern 0]
         (Test.Int.asExpandedPattern 3)
-    , testString
+    , Test.Int.testInt
         "find empty pattern"
         findStringSymbol
         [asPattern "foobar", asPattern "", Test.Int.asPattern 0]
         (Test.Int.asExpandedPattern 0)
-    , testString
+    , Test.Int.testInt
         "find negative index"
         findStringSymbol
         [asPattern "foobar", asPattern "foobar", Test.Int.asPattern (-1)]
         (Test.Int.asExpandedPattern 0)
-    , testString
+    , Test.Int.testInt
         "find after end of string"
         findStringSymbol
         [asPattern "foobar", asPattern "bar", Test.Int.asPattern 10]
         (Test.Int.asExpandedPattern (-1))
-    , testString
+    , Test.Int.testInt
         "find pattern that does not exist"
         findStringSymbol
         [asPattern "foobar", asPattern "nope", Test.Int.asPattern 0]
@@ -143,96 +143,96 @@ test_find =
 test_string2Base :: [TestTree]
 test_string2Base =
     -- Decimal
-    [ testString
+    [ Test.Int.testInt
         "string2Base decimal simple"
         string2BaseStringSymbol
         [asPattern "42", Test.Int.asPattern 10]
         (Test.Int.asExpandedPattern 42)
-    , testString
+    , Test.Int.testInt
         "string2Base decimal negative"
         string2BaseStringSymbol
         [asPattern "-42", Test.Int.asPattern 10]
         (Test.Int.asExpandedPattern (-42))
-    , testString
+    , Test.Int.testInt
         "string2Base decimal is bottom"
         string2BaseStringSymbol
         [asPattern "-42.3", Test.Int.asPattern 10]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base decimal empty string is bottom"
         string2BaseStringSymbol
         [asPattern "", Test.Int.asPattern 10]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base decimal non-number is bottom"
         string2BaseStringSymbol
         [asPattern "foobar", Test.Int.asPattern 10]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base decimal from hex is bottom"
         string2BaseStringSymbol
         [asPattern "baad", Test.Int.asPattern 10]
         bottom
 
     -- Octal
-    , testString
+    , Test.Int.testInt
         "string2Base octal simple"
         string2BaseStringSymbol
         [asPattern "42", Test.Int.asPattern 8]
         (Test.Int.asExpandedPattern 34)
-    , testString
+    , Test.Int.testInt
         "string2Base octal negative is bottom"
         string2BaseStringSymbol
         [asPattern "-42", Test.Int.asPattern 8]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base octal is bottom"
         string2BaseStringSymbol
         [asPattern "-42.3", Test.Int.asPattern 8]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base octal empty string is bottom"
         string2BaseStringSymbol
         [asPattern "", Test.Int.asPattern 8]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base octal non-number is bottom"
         string2BaseStringSymbol
         [asPattern "foobar", Test.Int.asPattern 8]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base octal from hex is bottom"
         string2BaseStringSymbol
         [asPattern "baad", Test.Int.asPattern 8]
         bottom
 
     -- Hexadecimal
-    , testString
+    , Test.Int.testInt
         "string2Base hex simple"
         string2BaseStringSymbol
         [asPattern "42", Test.Int.asPattern 16]
         (Test.Int.asExpandedPattern 66)
-    , testString
+    , Test.Int.testInt
         "string2Base hex negative is bottom"
         string2BaseStringSymbol
         [asPattern "-42", Test.Int.asPattern 16]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base hex is bottom"
         string2BaseStringSymbol
         [asPattern "-42.3", Test.Int.asPattern 16]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base hex empty string is bottom"
         string2BaseStringSymbol
         [asPattern "", Test.Int.asPattern 16]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base hex non-number is bottom"
         string2BaseStringSymbol
         [asPattern "foobar", Test.Int.asPattern 16]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Base hex from hex is bottom"
         string2BaseStringSymbol
         [asPattern "baad", Test.Int.asPattern 16]
@@ -241,32 +241,32 @@ test_string2Base =
 
 test_string2Int :: [TestTree]
 test_string2Int =
-    [ testString
+    [ Test.Int.testInt
         "string2Base decimal simple"
         string2IntStringSymbol
         [asPattern "42"]
         (Test.Int.asExpandedPattern 42)
-    , testString
+    , Test.Int.testInt
         "string2Int decimal negative"
         string2IntStringSymbol
         [asPattern "-42"]
         (Test.Int.asExpandedPattern (-42))
-    , testString
+    , Test.Int.testInt
         "string2Int decimal is bottom"
         string2IntStringSymbol
         [asPattern "-42.3"]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Int decimal empty string is bottom"
         string2IntStringSymbol
         [asPattern ""]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Int decimal non-number is bottom"
         string2IntStringSymbol
         [asPattern "foobar"]
         bottom
-    , testString
+    , Test.Int.testInt
         "string2Int decimal from hex is bottom"
         string2IntStringSymbol
         [asPattern "baad"]
@@ -300,4 +300,4 @@ testString
     -> [CommonStepPattern Object]
     -> CommonExpandedPattern Object
     -> TestTree
-testString = testSymbolWithSolver evaluate
+testString name = testSymbolWithSolver evaluate name stringSort

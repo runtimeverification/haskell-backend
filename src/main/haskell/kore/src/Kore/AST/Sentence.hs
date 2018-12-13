@@ -650,23 +650,27 @@ instance
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level domain =
-    SentenceAxiom (SortVariable level) (CommonPurePattern level domain)
+    SentenceAxiom
+        (SortVariable level)
+        (PurePattern level domain Variable (Annotation.Null level))
 
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
 type PureSentenceAlias level domain =
-    SentenceAlias level (CommonPurePattern level domain)
+    SentenceAlias level (PurePattern level domain Variable (Annotation.Null level))
 
 -- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
 type PureSentenceSymbol level domain =
-    SentenceSymbol level (CommonPurePattern level domain)
+    SentenceSymbol level (PurePattern level domain Variable (Annotation.Null level))
 
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
 type PureSentenceImport level domain =
-    SentenceImport (CommonPurePattern level domain)
+    SentenceImport (PurePattern level domain Variable (Annotation.Null level))
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level domain =
-    Sentence level (SortVariable level) (CommonPurePattern level domain)
+    Sentence level
+        (SortVariable level)
+        (PurePattern level domain Variable (Annotation.Null level))
 
 {- | A 'PureSentence' which has passed verification.
 

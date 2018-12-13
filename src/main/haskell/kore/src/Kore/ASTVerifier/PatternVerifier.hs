@@ -43,8 +43,8 @@ import           Data.Text.Prettyprint.Doc.Render.String
 import           Kore.AST.Error
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
+import           Kore.AST.Valid
 import           Kore.ASTHelpers
-import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute

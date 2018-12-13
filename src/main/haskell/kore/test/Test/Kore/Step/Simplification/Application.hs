@@ -6,22 +6,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( give )
 import           Data.These
                  ( These (That) )
 
 import           Kore.AST.Pure
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkApp, mkBottom )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Bottom_ )
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -48,41 +39,41 @@ import           Kore.Variables.Fresh
                  ( freshVariableFromVariable )
 import qualified SMT
 
-import           Test.Kore
-                 ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( constructorFunctionalAttributes, functionAttributes,
-                 makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import           Test.Kore.Step.MockSymbols
+                 ( testSort )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Kore.Step.Simplifier
                  ( mockSimplifier )
 import           Test.Tasty.HUnit.Extensions
 
 test_applicationSimplification :: [TestTree]
-test_applicationSimplification = give mockSymbolOrAliasSorts
+test_applicationSimplification =
     [ testCase "Application - or distribution" $ do
         -- sigma(a or b, c or d) =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
         let expect =
                 OrOfExpandedPattern.make
                     [ Predicated
-                        { term = mkApp sigmaSymbol [a, c]
+                        { term = Mock.sigma Mock.a Mock.c
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     , Predicated
-                        { term = mkApp sigmaSymbol [a, d]
+                        { term = Mock.sigma Mock.a Mock.d
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     , Predicated
-                        { term = mkApp sigmaSymbol [b, c]
+                        { term = Mock.sigma Mock.b Mock.c
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     ,  Predicated
-                        { term = mkApp sigmaSymbol [b, d]
+                        { term = Mock.sigma Mock.b Mock.d
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
@@ -93,7 +84,8 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                 (mockSimplifier [])
                 Map.empty
                 (makeApplication
-                    sigmaSymbol
+                    testSort
+                    Mock.sigmaSymbol
                     [ [aExpanded, bExpanded]
                     , [cExpanded, dExpanded]
                     ]
@@ -109,7 +101,8 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                 (mockSimplifier [])
                 Map.empty
                 (makeApplication
-                    sigmaSymbol
+                    testSort
+                    Mock.sigmaSymbol
                     [ [aExpanded, bExpanded]
                     , []
                     ]
@@ -124,7 +117,7 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                 mockMetadataTools
                 (mockSimplifier [])
                 (Map.singleton
-                    fId
+                    Mock.fId
                     (That
                         [ ApplicationFunctionEvaluator
                             (const $ const $ const $ const $ return
@@ -137,7 +130,8 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                     )
                 )
                 (makeApplication
-                    fSymbol
+                    testSort
+                    Mock.fSymbol
                     [[aExpanded]]
                 )
         assertEqualWithExplanation "" expect actual
@@ -151,14 +145,14 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
             let expect =
                     OrOfExpandedPattern.make
                         [ Predicated
-                            { term = mkApp sigmaSymbol [a, b]
+                            { term = Mock.sigma Mock.a Mock.b
                             , predicate =
                                 makeAndPredicate
                                     (makeEqualsPredicate fOfA fOfB)
                                     (makeEqualsPredicate gOfA gOfB)
                             , substitution = Substitution.unsafeWrap
-                                [ (x, fOfA)
-                                , (y, gOfA)
+                                [ (Mock.x, fOfA)
+                                , (Mock.y, gOfA)
                                 ]
                             }
                         ]
@@ -168,17 +162,20 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                     (mockSimplifier [])
                     Map.empty
                     (makeApplication
-                        sigmaSymbol
+                        testSort
+                        Mock.sigmaSymbol
                         [   [ Predicated
-                                { term = a
+                                { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
-                                , substitution = Substitution.wrap [ (x, fOfA) ]
+                                , substitution =
+                                    Substitution.wrap [ (Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Predicated
-                                { term = b
+                                { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
-                                , substitution = Substitution.wrap [ (y, gOfA) ]
+                                , substitution =
+                                    Substitution.wrap [ (Mock.y, gOfA) ]
                                 }
                             ]
                         ]
@@ -195,7 +192,7 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
             let expect =
                     OrOfExpandedPattern.make
                         [ Predicated
-                            { term = mkApp fSymbol [a]
+                            { term = fOfA
                             , predicate =
                                 makeAndPredicate
                                     (makeEqualsPredicate fOfA gOfA)
@@ -204,9 +201,9 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                                         (makeEqualsPredicate gOfA gOfB)
                                     )
                             , substitution = Substitution.unsafeWrap
-                                [ (freshVariableFromVariable z 1, gOfB)
-                                , (x, fOfA)
-                                , (y, gOfA)
+                                [ (freshVariableFromVariable Mock.z 1, gOfB)
+                                , (Mock.x, fOfA)
+                                , (Mock.y, gOfA)
                                 ]
                             }
                         ]
@@ -215,16 +212,17 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                     mockMetadataTools
                     (mockSimplifier [])
                     (Map.singleton
-                        sigmaId
+                        Mock.sigmaId
                         (That
                             [ ApplicationFunctionEvaluator
                                 (const $ const $ const $ const $ do
-                                    let zvar = freshVariableFromVariable z 1
+                                    let zvar =
+                                            freshVariableFromVariable Mock.z 1
                                     return
                                         [( AttemptedFunction.Applied
                                             (OrOfExpandedPattern.make
                                                 [ Predicated
-                                                    { term = mkApp fSymbol [a]
+                                                    { term = fOfA
                                                     , predicate =
                                                         makeEqualsPredicate
                                                             fOfA
@@ -242,17 +240,20 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                         )
                     )
                     (makeApplication
-                        sigmaSymbol
+                        testSort
+                        Mock.sigmaSymbol
                         [   [ Predicated
-                                { term = a
+                                { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
-                                , substitution = Substitution.wrap [ (x, fOfA) ]
+                                , substitution =
+                                    Substitution.wrap [ (Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Predicated
-                                { term = b
+                                { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
-                                , substitution = Substitution.wrap [ (y, gOfA) ]
+                                , substitution =
+                                    Substitution.wrap [ (Mock.y, gOfA) ]
                                 }
                             ]
                         ]
@@ -261,194 +262,67 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
         ]
     ]
   where
-    fId = Id "f" AstLocationTest
-    gId = Id "g" AstLocationTest
-    sigmaId = Id "sigma" AstLocationTest
-    aSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "a" AstLocationTest
-        , symbolOrAliasParams      = []
-        }
-    bSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "b" AstLocationTest
-        , symbolOrAliasParams      = []
-        }
-    cSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "c" AstLocationTest
-        , symbolOrAliasParams      = []
-        }
-    dSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "d" AstLocationTest
-        , symbolOrAliasParams      = []
-        }
-    fSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = fId
-        , symbolOrAliasParams      = []
-        }
-    gSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = gId
-        , symbolOrAliasParams      = []
-        }
-    sigmaSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = sigmaId
-        , symbolOrAliasParams      = []
-        }
-    x = Variable (testId "x") testSort
-    y = Variable (testId "y") testSort
-    z = Variable (testId "z") testSort
+    fOfA, fOfB :: StepPattern Object variable
+    fOfA = Mock.f Mock.a
+    fOfB = Mock.f Mock.b
 
-    a = give mockSymbolOrAliasSorts $ mkApp aSymbol []
-    b = give mockSymbolOrAliasSorts $ mkApp bSymbol []
-    c = give mockSymbolOrAliasSorts $ mkApp cSymbol []
-    d = give mockSymbolOrAliasSorts $ mkApp dSymbol []
-    fOfA :: StepPattern Object variable
-    fOfA = give mockSymbolOrAliasSorts $ mkApp fSymbol [a]
-    fOfB = give mockSymbolOrAliasSorts $ mkApp fSymbol [b]
-    gOfA :: StepPattern Object variable
-    gOfA = give mockSymbolOrAliasSorts $ mkApp gSymbol [a]
-    gOfB :: StepPattern Object variable
-    gOfB = give mockSymbolOrAliasSorts $ mkApp gSymbol [b]
+    gOfA, gOfB :: StepPattern Object variable
+    gOfA = Mock.g Mock.a
+    gOfB = Mock.g Mock.b
+
     aExpanded = Predicated
-        { term = a
+        { term = Mock.a
         , predicate = makeTruePredicate
         , substitution = mempty
         }
     bExpanded = Predicated
-        { term = b
+        { term = Mock.b
         , predicate = makeTruePredicate
         , substitution = mempty
         }
     cExpanded = Predicated
-        { term = c
+        { term = Mock.c
         , predicate = makeTruePredicate
         , substitution = mempty
         }
     dExpanded = Predicated
-        { term = d
+        { term = Mock.d
         , predicate = makeTruePredicate
         , substitution = mempty
         }
+
     gOfAExpanded :: ExpandedPattern Object variable
     gOfAExpanded = Predicated
         { term = gOfA
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    symbolOrAliasSortsMapping =
-        [   ( aSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = []
-                , applicationSortsResult = testSort
-                }
-            )
-        ,   ( bSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = []
-                , applicationSortsResult = testSort
-                }
-            )
-        ,   ( cSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = []
-                , applicationSortsResult = testSort
-                }
-            )
-        ,   ( dSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = []
-                , applicationSortsResult = testSort
-                }
-            )
-        ,   ( fSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = [testSort]
-                , applicationSortsResult = testSort
-                }
-            )
-        ,   ( gSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = [testSort]
-                , applicationSortsResult = testSort
-                }
-            )
-        ,   ( sigmaSymbol
-            , ApplicationSorts
-                { applicationSortsOperands = [testSort, testSort]
-                , applicationSortsResult = testSort
-                }
-            )
-        ]
-    attributesMapping =
-        [   ( aSymbol
-            , Mock.constructorFunctionalAttributes
-            )
-        ,   ( bSymbol
-            , Mock.constructorFunctionalAttributes
-            )
-        ,   ( cSymbol
-            , Mock.constructorFunctionalAttributes
-            )
-        ,   ( dSymbol
-            , Mock.constructorFunctionalAttributes
-            )
-        ,   ( fSymbol
-            , Mock.functionAttributes
-            )
-        ,   ( gSymbol
-            , Mock.functionAttributes
-            )
-        ,   ( sigmaSymbol
-            , Mock.constructorFunctionalAttributes
-            )
-        ]
-    headTypeMapping =
-        [   ( aSymbol
-            , HeadType.Symbol
-            )
-        ,   ( bSymbol
-            , HeadType.Symbol
-            )
-        ,   ( cSymbol
-            , HeadType.Symbol
-            )
-        ,   ( dSymbol
-            , HeadType.Symbol
-            )
-        ,   ( fSymbol
-            , HeadType.Symbol
-            )
-        ,   ( gSymbol
-            , HeadType.Symbol
-            )
-        ,   ( sigmaSymbol
-            , HeadType.Symbol
-            )
-        ]
-    mockSymbolOrAliasSorts =
-        Mock.makeSymbolOrAliasSorts symbolOrAliasSortsMapping
+
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymbolOrAliasSorts
-            attributesMapping
-            headTypeMapping
-            []
-            []
+            Mock.attributesMapping
+            Mock.headTypeMapping
+            Mock.sortAttributesMapping
+            Mock.subsorts
 
 makeApplication
-    :: (MetaOrObject level, Ord (variable level))
-    => SymbolOrAlias level
+    :: (MetaOrObject level, Ord (variable level), HasCallStack)
+    => Sort level
+    -> SymbolOrAlias level
     -> [[ExpandedPattern level variable]]
-    -> Application level (OrOfExpandedPattern level variable)
-makeApplication symbol patterns =
-    Application
-        { applicationSymbolOrAlias = symbol
-        , applicationChildren = map OrOfExpandedPattern.make patterns
-        }
-
-testSort :: Sort Object
-testSort =
-    case mkBottom :: CommonStepPattern Object of
-        Bottom_ sort -> sort
-        _ -> error "unexpected"
+    -> CofreeF
+        (Application level)
+        (Valid level)
+        (OrOfExpandedPattern level variable)
+makeApplication patternSort symbol patterns =
+    (:<)
+        valid
+        Application
+            { applicationSymbolOrAlias = symbol
+            , applicationChildren = map OrOfExpandedPattern.make patterns
+            }
+  where
+    valid = Valid { patternSort }
 
 evaluate
     ::  ( MetaOrObject level)
@@ -457,7 +331,10 @@ evaluate
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Application level (CommonOrOfExpandedPattern level)
+    -> CofreeF
+        (Application level)
+        (Valid level)
+        (CommonOrOfExpandedPattern level)
     -> IO (CommonOrOfExpandedPattern level)
 evaluate
     tools

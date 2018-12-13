@@ -34,8 +34,7 @@ import           Data.Reflection
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (applicationSortsOperands) )
+import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Smtlib
 import qualified Kore.Builtin.Bool as Builtin.Bool
@@ -55,6 +54,7 @@ import           Kore.Step.Simplification.Data
                  StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
+import           Kore.Unparser
 import           SMT
                  ( MonadSMT, Result (..), SExpr (..), SMT )
 import qualified SMT
@@ -69,9 +69,9 @@ evaluate
     ::  forall level variable .
         ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , Given (MetadataTools level StepperAttributes)
         )
     => PredicateSubstitutionSimplifier level Simplifier
@@ -87,7 +87,7 @@ evaluate
     substitutionSimplifier
     (StepPatternSimplifier simplifier)
     predicate
-  = give symbolOrAliasSorts $ do
+  = do
     (simplified, _proof) <-
         simplifier substitutionSimplifier (unwrapPredicate predicate)
     refute <-
@@ -101,16 +101,13 @@ evaluate
                 _ -> OrOfExpandedPattern.toExpandedPattern simplified
         (subst, _proof) = asPredicateSubstitution simplified'
     return (subst, SimplificationProof)
-  where
-    MetadataTools { symbolOrAliasSorts } =
-        given :: MetadataTools level StepperAttributes
 
 asPredicateSubstitution
     ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         )
     => ExpandedPattern level variable
     -> (PredicateSubstitution level variable, SimplificationProof level)
@@ -326,9 +323,7 @@ translateApplication
     smtTools :: MetadataTools Object Smtlib
     smtTools = StepperAttributes.smtlib <$> given
 
-    applicationChildrenSorts =
-        applicationSortsOperands
-        $ symbolOrAliasSorts smtTools applicationSymbolOrAlias
+    applicationChildrenSorts = getSort <$> applicationChildren
 
 translatePattern
     :: forall p variable.

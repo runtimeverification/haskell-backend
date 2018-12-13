@@ -8,17 +8,16 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Top
                  ( simplify )
 
 import Test.Kore.Comparators ()
+import Test.Kore.Step.MockSymbols
+       ( testSort )
 import Test.Tasty.HUnit.Extensions
 
 test_topSimplification :: [TestTree]
@@ -33,12 +32,6 @@ test_topSimplification =
             )
         )
     ]
-
-testSort :: Sort Object
-testSort =
-    case mkTop :: CommonStepPattern Object of
-        Top_ sort -> sort
-        _ -> error "unexpected"
 
 evaluate
     ::  ( MetaOrObject level)

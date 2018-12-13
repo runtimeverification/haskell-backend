@@ -1,46 +1,27 @@
 module Test.Kore.Step.OrOfExpandedPattern where
 
-import Test.Tasty.QuickCheck
+import           Hedgehog
+                 ( Property, (===) )
+import qualified Hedgehog
 
 import Kore.AST.MetaOrObject
-import Kore.Predicate.Predicate
-import Kore.Step.ExpandedPattern
 import Kore.Step.OrOfExpandedPattern
 
 import Test.Kore
 
-expandedPatternGen
-    :: MetaOrObject level
-    => level
-    -> Gen (CommonExpandedPattern level)
-expandedPatternGen level = do
-    term <- stepPatternGen level
-    return Predicated
-        { term
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-
-orOfExpandedPatternGen
-    :: MetaOrObject level
-    => level
-    -> Gen (CommonOrOfExpandedPattern level)
-orOfExpandedPatternGen level =
-    filterOr . MultiOr <$> listOf (expandedPatternGen level)
-
 -- | Check that 'merge' preserves the @\\or@-idempotency condition.
-prop_mergeIdemOr :: Gen Property
-prop_mergeIdemOr = do
-    ors <- orOfExpandedPatternGen Object
-    return (merge ors ors === ors)
+hprop_mergeIdemOr :: Property
+hprop_mergeIdemOr = Hedgehog.property $ do
+    ors <- Hedgehog.forAll (standaloneGen $ orOfExpandedPatternGen @Object)
+    merge ors ors === ors
 
-prop_makeIdemOr :: Gen Property
-prop_makeIdemOr = do
-    pat <- expandedPatternGen Object
-    return (make [pat, pat] === make [pat])
+hprop_makeIdemOr :: Property
+hprop_makeIdemOr = Hedgehog.property $ do
+    pat <- Hedgehog.forAll (standaloneGen $ expandedPatternGen @Object)
+    make [pat, pat] === make [pat]
 
-prop_flattenIdemOr :: Gen Property
-prop_flattenIdemOr = do
-    ors <- orOfExpandedPatternGen Object
+hprop_flattenIdemOr :: Property
+hprop_flattenIdemOr = Hedgehog.property $ do
+    ors <- Hedgehog.forAll (standaloneGen $ orOfExpandedPatternGen @Object)
     let nested = MultiOr [ors, ors]
-    return (flatten nested === ors)
+    flatten nested === ors

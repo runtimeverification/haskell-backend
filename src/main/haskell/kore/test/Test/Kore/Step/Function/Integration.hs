@@ -8,17 +8,14 @@ import Test.Tasty.HUnit
 import           Data.Default
                  ( def )
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( give )
 import           Data.These
                  ( These (..) )
 
 import           Kore.AST.Pure hiding
                  ( mapVariables )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkOr, mkVar )
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts )
+                 ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
@@ -51,18 +48,19 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable, freshVariableFromVariable )
 import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_functionIntegration :: [TestTree]
-test_functionIntegration = give mockSymbolOrAliasSorts
+test_functionIntegration =
     [ testCase "Simple evaluation" $ do
         let expect =
                 Predicated
@@ -410,7 +408,7 @@ mockEvaluator
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
-    -> Application level (StepPattern level variable)
+    -> CofreeF (Application level) (Valid level) (StepPattern level variable)
     -> Simplifier
         [(AttemptedFunction level variable, SimplificationProof level)]
 mockEvaluator evaluation _ _ _ _ =
@@ -441,20 +439,15 @@ evaluate metadataTools functionIdToEvaluator patt =
             , Ord (variable Object)
             , Show (variable Meta)
             , Show (variable Object)
+            , Unparse (variable level)
             , FreshVariable variable
             )
         => StepPatternSimplifier level variable
-    patternSimplifier =
-        Simplifier.create metadataTools functionIdToEvaluator
-
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts =
-    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+    patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
-        mockSymbolOrAliasSorts
         Mock.attributesMapping
         Mock.headTypeMapping
         Mock.sortAttributesMapping

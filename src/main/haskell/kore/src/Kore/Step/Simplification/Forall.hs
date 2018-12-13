@@ -12,16 +12,8 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
-import Data.Reflection
-       ( Given )
-
-import           Kore.AST.Common
-                 ( Forall (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkForall )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -33,6 +25,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fmapWithPairs, isFalse, isTrue )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Unparser
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -54,9 +47,9 @@ the pattern except for the top/bottom cases.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => Forall level variable (OrOfExpandedPattern level variable)
     ->  ( OrOfExpandedPattern level variable
@@ -70,9 +63,9 @@ simplify
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => variable level
     -> OrOfExpandedPattern level variable
@@ -96,9 +89,9 @@ See 'simplify' for detailed documentation.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Eq (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => variable level
     -> ExpandedPattern level variable

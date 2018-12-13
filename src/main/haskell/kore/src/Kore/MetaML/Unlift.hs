@@ -29,6 +29,8 @@ import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( SentenceSymbolOrAlias (..) )
+import           Kore.AST.Valid
+                 ( mkStringLiteral )
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitKore
@@ -265,9 +267,11 @@ unliftDomainValuePattern [rSort, rChild] =
         domainValueSort <- unliftFromMeta (unliftResultOriginal rSort)
         domainValueChild <-
             case Recursive.project (unliftResultOriginal rChild) of
-                ann :< StringLiteralPattern lit ->
-                    (pure . Domain.BuiltinPattern . asPurePattern)
-                        (ann :< StringLiteralPattern lit)
+                _ :< StringLiteralPattern (StringLiteral lit) ->
+                    pure
+                        $ Domain.BuiltinPattern
+                        $ Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral lit
                 _ ->
                     Nothing
         pure

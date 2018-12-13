@@ -12,20 +12,27 @@ module Kore.Proof.Value
     ( ValueF (..)
     , Value
     , fromPattern
-    , fromConcretePurePattern
+    , fromConcreteStepPattern
     , asPattern
-    , asConcretePurePattern
+    , asConcreteStepPattern
     ) where
 
+import           Control.Comonad.Trans.Cofree
+                 ( Cofree )
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Data.Deriving
-                 ( deriveEq1, deriveOrd1, deriveShow1 )
+import qualified Data.Deriving as Deriving
+import           Data.Functor.Classes
+import           Data.Functor.Compose
 import           Data.Functor.Foldable
-                 ( Fix (..) )
+                 ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
+import           Data.Functor.Identity
 import           Data.Reflection
                  ( give )
+import           GHC.Generics
+                 ( Generic )
 
+import           Kore.Annotation.Valid
 import           Kore.AST.Pure
                  ( CofreeF (..), Object, Pattern (..) )
 import qualified Kore.AST.Pure as Pattern
@@ -55,11 +62,32 @@ deriving instance Functor (ValueF level)
 deriving instance Foldable (ValueF level)
 deriving instance Traversable (ValueF level)
 
-deriveEq1 ''ValueF
-deriveOrd1 ''ValueF
-deriveShow1 ''ValueF
+$(return [])
 
-type Value level = Fix (ValueF level)
+instance Eq1 (ValueF level) where
+    liftEq = $(Deriving.makeLiftEq ''ValueF)
+
+instance Ord1 (ValueF level) where
+    liftCompare = $(Deriving.makeLiftCompare ''ValueF)
+
+instance Show1 (ValueF level) where
+    liftShowsPrec = $(Deriving.makeLiftShowsPrec ''ValueF)
+
+newtype Value (level :: *) =
+    Value { getValue :: Cofree (ValueF level) (Valid level) }
+    deriving (Eq, Generic, Ord, Show)
+
+type instance Base (Value level) = CofreeF (ValueF level) (Valid level)
+
+instance Recursive (Value level) where
+    project (Value embedded) =
+        case Recursive.project embedded of
+            Compose (Identity projected) -> Value <$> projected
+
+instance Corecursive (Value level) where
+    embed projected =
+        (Value . Recursive.embed . Compose . Identity)
+            (getValue <$> projected)
 
 {- | Project a sort injection head to @Nothing@.
 
@@ -68,10 +96,10 @@ type Value level = Fix (ValueF level)
     been fully applied.
  -}
 eraseSortInjection :: Value level -> Maybe (Value level)
-eraseSortInjection val =
-    case Recursive.project val of
-        Constructor _ -> Just val
-        DomainValue _ -> Just val
+eraseSortInjection (Recursive.project -> ann :< value) =
+    case value of
+        Constructor _ -> (Just . Recursive.embed) (ann :< value)
+        DomainValue _ -> (Just . Recursive.embed) (ann :< value)
         SortInjection _ -> Nothing
 
 {- | Embed the normalized pattern head if its children are normal values.
@@ -81,21 +109,22 @@ eraseSortInjection val =
  -}
 fromPattern
     :: MetadataTools level StepperAttributes
-    -> StepPatternHead level Concrete (Maybe (Value level))
+    -> Base (ConcreteStepPattern level) (Maybe (Value level))
     -> Maybe (Value level)
-fromPattern tools =
-    \case
+fromPattern tools (ann :< pat) =
+    case pat of
         ApplicationPattern
             appP@Pattern.Application
                 { applicationSymbolOrAlias = symbolOrAlias }
           | isConstructor symbolOrAlias ->
             -- The constructor application is normal if all its children are
             -- normal.
-            Fix . Constructor <$> sequence appP
+            Recursive.embed . (ann :<) . Constructor <$> sequence appP
           | isSortInjection symbolOrAlias ->
             -- The sort injection application is normal if all its children are
             -- normal and none are sort injections.
-            Fix . SortInjection <$> traverse (>>= eraseSortInjection) appP
+            Recursive.embed . (ann :<) . SortInjection
+                <$> traverse (>>= eraseSortInjection) appP
         DomainValuePattern dvP ->
             -- A domain value is not technically a constructor, but it is
             -- constructor-like for builtin domains, at least from the
@@ -104,37 +133,37 @@ fromPattern tools =
             -- assumption that domain values are concrete. We should remove
             -- BuiltinPattern and always run the stepper with internal
             -- representations only.
-            Fix . DomainValue <$> sequence dvP
+            Recursive.embed . (ann :<) . DomainValue <$> sequence dvP
         _ -> Nothing
   where
     isConstructor = give tools isConstructor_
     isSortInjection = give tools isSortInjection_
 
-{- | View a 'ConcretePurePattern' as a normalized value.
+{- | View a 'ConcreteStepPattern' as a normalized value.
 
-    The pattern is considered normalized if it is a domain value, a constructor,
-    or a sort injection applied only to normalized value.
+The pattern is considered normalized if it is a domain value, a constructor, or
+a sort injection applied only to normalized value.
 
-    See also: 'fromPattern'
+See also: 'fromPattern'
 
  -}
-fromConcretePurePattern
+fromConcreteStepPattern
     :: MetadataTools level StepperAttributes
     -> ConcreteStepPattern level
     -> Maybe (Value level)
-fromConcretePurePattern tools =
-    Recursive.fold (fromPattern tools . Cofree.tailF)
+fromConcreteStepPattern tools =
+    Recursive.fold (fromPattern tools)
 
 {- | Project a 'Value' to a concrete 'Pattern' head.
  -}
-asPattern :: Value level -> StepPatternHead level Concrete (Value level)
-asPattern val =
-    case Recursive.project val of
-        Constructor appP -> ApplicationPattern appP
-        SortInjection appP -> ApplicationPattern appP
-        DomainValue dvP -> DomainValuePattern dvP
+asPattern :: Value level -> Base (ConcreteStepPattern level) (Value level)
+asPattern (Recursive.project -> ann :< val) =
+    case val of
+        Constructor appP -> ann :< ApplicationPattern appP
+        SortInjection appP -> ann :< ApplicationPattern appP
+        DomainValue dvP -> ann :< DomainValuePattern dvP
 
-{- | View a normalized value as a 'ConcretePurePattern'.
+{- | View a normalized value as a 'ConcreteStepPattern'.
  -}
-asConcretePurePattern :: Value level -> ConcreteStepPattern level
-asConcretePurePattern = Recursive.unfold ((:<) mempty . asPattern)
+asConcreteStepPattern :: Value level -> ConcreteStepPattern level
+asConcreteStepPattern = Recursive.unfold asPattern

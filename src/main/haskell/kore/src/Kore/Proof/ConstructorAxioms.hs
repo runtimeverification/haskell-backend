@@ -8,25 +8,14 @@ Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes       #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-
-{-# OPTIONS_GHC -Wno-unused-matches    #-}
-{-# OPTIONS_GHC -Wno-name-shadowing    #-}
-
-
 module Kore.Proof.ConstructorAxioms
     ( generateInjectivityAxiom
     , generateNoConfusionAxiom
     , generateCoveringAxiom
     ) where
 
-import Data.Reflection
-
 import Kore.AST.Pure
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
-import Kore.IndexedModule.MetadataTools
+import Kore.AST.Valid
 import Kore.Proof.Proof
 import Kore.Proof.Util
 
@@ -37,41 +26,39 @@ import Kore.Proof.Util
 -- x_1 = y_1 /\ x_2 = y_2 /\ ... /\ x_n = y_n
 -- where x_i, y_i : s_i
 generateInjectivityAxiom
-    :: Given (SymbolOrAliasSorts Object)
-    => SymbolOrAlias Object
+    :: SymbolOrAlias Object
     -> Sort Object
     -> [Sort Object]
     -> Term
-generateInjectivityAxiom head resultSort childrenSorts =
+generateInjectivityAxiom head' resultSort childrenSorts =
     let (xVars, xVars') = generateVarList childrenSorts "x"
         (yVars, yVars') = generateVarList childrenSorts "y"
         fxEqfy =
-            mkApp head xVars'
-            `mkEquals`
-            mkApp head yVars'
-        xsEqys = mkAndN $ zipWith mkEquals xVars' yVars'
+            mkEquals_
+                (mkApp resultSort head' xVars')
+                (mkApp resultSort head' yVars')
+        xsEqys = mkAndN $ zipWith mkEquals_ xVars' yVars'
     in mkForallN xVars $ mkForallN yVars $ (fxEqfy `mkImplies` xsEqys)
 
 -- | No confusion: two different constructors cannot generate the same term.
 -- `not (f(x_1,...,x_n) = g(y_1,...,y_m))`
 generateNoConfusionAxiom
-    :: Given (SymbolOrAliasSorts Object)
-    => SymbolOrAlias Object
+    :: Sort Object
+    -> SymbolOrAlias Object
     -> [Sort Object]
+    -> Sort Object
     -> SymbolOrAlias Object
     -> [Sort Object]
     -> Term
-generateNoConfusionAxiom h1 c1 h2 c2 =
+generateNoConfusionAxiom s1 h1 c1 s2 h2 c2 =
     let (_, xVars') = generateVarList c1 "x"
         (_, yVars') = generateVarList c2 "y"
-    in mkNot $ mkEquals
-         (mkApp h1 xVars')
-         (mkApp h2 yVars')
-
+    in mkNot $ mkEquals_
+         (mkApp s1 h1 xVars')
+         (mkApp s2 h2 yVars')
 
 generateCoveringAxiom
-    :: Given (SymbolOrAliasSorts Object)
-    => Sort Object
+    :: Sort Object
     -> [(SymbolOrAlias Object, [Sort Object])]
     -> Term
 generateCoveringAxiom sort cons =
@@ -80,6 +67,6 @@ generateCoveringAxiom sort cons =
         v = varS "v" sort
         itIsThisConstructor (h, cs) =
             mkExistsN vars
-          $ V v `mkEquals` mkApp h vars'
+          $ mkVar v `mkEquals_` mkApp sort h vars'
           where
             (vars, vars') = generateVarList cs "x"

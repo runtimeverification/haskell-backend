@@ -11,24 +11,17 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Control.Monad.Counter
-                 ( MonadCounter )
-import           Control.Monad.Except
-                 ( ExceptT (..) )
-import qualified Data.Functor.Foldable as Recursive
-import           Data.Reflection
-                 ( give )
+import Control.Monad.Counter
+       ( MonadCounter )
+import Control.Monad.Except
+       ( ExceptT (..) )
 
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.MLPatterns
-                 ( getPatternResultSort )
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate )
 import           Kore.Step.ExpandedPattern
@@ -52,6 +45,7 @@ import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError (..) )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -64,6 +58,7 @@ unificationProcedure
     ::  ( SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , MetaOrObject level
@@ -104,20 +99,12 @@ unificationProcedure tools substitutionSimplifier p1 p2
             ( OrOfExpandedPattern.make
                 [ Predicated
                     { term = ()
-                    , predicate =
-                        give symbolOrAliasSorts
-                        $ makeAndPredicate predicate pred'
+                    , predicate = makeAndPredicate predicate pred'
                     , substitution
                     }
                 ]
             , EmptyUnificationProof
             )
   where
-      symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
-      resultSort =
-          getPatternResultSort symbolOrAliasSorts
-          . Cofree.tailF
-          . Recursive.project
-
-      p1Sort = resultSort p1
-      p2Sort = resultSort p2
+      p1Sort = getSort p1
+      p2Sort = getSort p2

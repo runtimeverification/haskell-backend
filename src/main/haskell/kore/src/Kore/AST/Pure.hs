@@ -10,6 +10,7 @@ module Kore.AST.Pure
     ( PurePattern (..)
     , CommonPurePattern
     , ConcretePurePattern
+    , ParsedPurePattern
     , asPurePattern
     , fromPurePattern
     , eraseAnnotations
@@ -25,6 +26,7 @@ module Kore.AST.Pure
     -- * Pattern stubs
     , PurePatternStub
     , CommonPurePatternStub
+    , applyUnsortedPurePatternStub
     -- * Re-exports
     , Base, CofreeF (..)
     , module Control.Comonad
@@ -59,6 +61,7 @@ import           GHC.Generics
                  ( Generic )
 
 import qualified Kore.Annotation.Null as Annotation
+import           Kore.Annotation.Valid
 import           Kore.AST.Common hiding
                  ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
                  mapVariables, traverseVariables )
@@ -223,7 +226,11 @@ type CommonPurePattern level domain =
 
 -- | A concrete pure pattern (containing no variables) at level @lvl@.
 type ConcretePurePattern level domain =
-    PurePattern level domain Concrete (Annotation.Null level)
+    PurePattern level domain Concrete (Valid level)
+
+-- | A pure pattern which has only been parsed and lacks 'Valid' annotations.
+type ParsedPurePattern level domain =
+    PurePattern level domain Variable (Annotation.Null level)
 
 {- | Use the provided traversal to replace all variables in a 'PurePattern'.
 
@@ -384,3 +391,17 @@ type PurePatternStub level domain variable annotation =
 
 type CommonPurePatternStub level domain =
     PurePatternStub level domain Variable (Annotation.Null level)
+
+{- | Construct a 'PurePattern' by applying a sort to an unsorted stub.
+ -}
+applyUnsortedPurePatternStub
+    ::  ( Functor domain
+        , result ~ PurePattern level domain variable (Annotation.Null level)
+        )
+    => (Sort level -> Pattern level domain variable result)
+    -- ^ Unsorted pattern stub
+    -> Sort level
+    -- ^ Target sort
+    -> result
+applyUnsortedPurePatternStub stub patternSort =
+    asPurePattern (mempty :< stub patternSort)

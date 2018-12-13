@@ -11,16 +11,11 @@ module Kore.Step.Simplification.DomainValue
     ( simplify
     ) where
 
-import Data.Reflection
-       ( Given, give )
-
-import           Kore.AST.Common
-                 ( DomainValue (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts )
+                 ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.OrOfExpandedPattern
@@ -29,12 +24,15 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.
 -}
 simplify
-    :: ( Ord (variable Object), Show (variable Object)
+    :: ( Ord (variable Object)
+       , Show (variable Object)
+       , Unparse (variable Object)
        , SortedVariable variable
        )
     => MetadataTools Object attrs
@@ -42,21 +40,19 @@ simplify
     -> ( OrOfExpandedPattern Object variable
        , SimplificationProof Object
        )
-simplify
-    MetadataTools { symbolOrAliasSorts }
-    DomainValue { domainValueSort, domainValueChild }
-  =
+simplify _ DomainValue { domainValueSort, domainValueChild } =
     ( OrOfExpandedPattern.filterOr
         (do
-            child <- give symbolOrAliasSorts simplifyBuiltin domainValueChild
-            return (DV_ domainValueSort <$> child)
+            child <- simplifyBuiltin domainValueChild
+            return (mkDomainValue domainValueSort <$> child)
         )
     , SimplificationProof
     )
 
 simplifyBuiltin
-    :: ( Eq (variable Object), Show (variable Object)
-       , Given (SymbolOrAliasSorts Object)
+    :: ( Eq (variable Object)
+       , Show (variable Object)
+       , Unparse (variable Object)
        , SortedVariable variable
        )
     => Domain.Builtin (OrOfExpandedPattern Object variable)

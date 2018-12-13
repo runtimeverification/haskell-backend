@@ -1,6 +1,5 @@
 module Test.Kore.IndexedModule.MockMetadataTools
     ( makeMetadataTools
-    , makeSymbolOrAliasSorts
     , constructorFunctionalAttributes
     , constructorAttributes
     , defaultAttributes
@@ -16,16 +15,13 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Common
                  ( SymbolOrAlias (..) )
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Injective
 import           Kore.Attribute.SortInjection
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, MetadataTools (MetadataTools),
-                 SymbolOrAliasSorts )
+                 ( HeadType, MetadataTools (MetadataTools) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Sort
@@ -33,18 +29,16 @@ import           Kore.Sort
 import           Kore.Step.StepperAttributes
 
 makeMetadataTools
-    :: SymbolOrAliasSorts level
-    -> [(SymbolOrAlias level, StepperAttributes)]
+    :: [(SymbolOrAlias level, StepperAttributes)]
     -> [(SymbolOrAlias level, HeadType)]
     -> [(Sort level, StepperAttributes)]
     -> [(Sort level, Sort level)]
     -> MetadataTools level StepperAttributes
-makeMetadataTools symbolOrAliasSorts attr headTypes sortTypes isSubsortOf =
+makeMetadataTools attr headTypes sortTypes isSubsortOf =
     MetadataTools
         { symAttributes = attributesFunction attr
         , symbolOrAliasType = headTypeFunction headTypes
         , sortAttributes = functionAttributesFunction sortTypes
-        , symbolOrAliasSorts = symbolOrAliasSorts
         -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
         -- 'isSubsortOf' only work with direct (non-transitive) relationships.
         -- For now, we can manually add the relationships for tests.
@@ -52,11 +46,6 @@ makeMetadataTools symbolOrAliasSorts attr headTypes sortTypes isSubsortOf =
         , subsorts = \sort ->
             Set.fromList . fmap snd . filter ((==) sort . fst) $ isSubsortOf
         }
-
-makeSymbolOrAliasSorts
-    :: [(SymbolOrAlias level, ApplicationSorts level)]
-    -> SymbolOrAlias level -> ApplicationSorts level
-makeSymbolOrAliasSorts = caseBasedFunction
 
 attributesFunction
     :: [(SymbolOrAlias level, StepperAttributes)]

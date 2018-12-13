@@ -1,7 +1,6 @@
 module Test.Kore.Step.MockSimplifiers where
 
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkTop )
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -32,7 +31,7 @@ substitutionSimplifier tools =
                 return
                     ( OrOfExpandedPattern.make
                         [ Predicated
-                            { term = mkTop
+                            { term = mkTop_
                             , predicate = Predicate.wrapPredicate p
                             , substitution = mempty
                             }

@@ -31,18 +31,21 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
+
 {-| 'mergeWithPredicateSubstitution' ands the given predicate/substitution
 to the given Or.
 -}
 mergeWithPredicateSubstitution
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns

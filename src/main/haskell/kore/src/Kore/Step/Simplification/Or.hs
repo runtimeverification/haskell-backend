@@ -12,16 +12,9 @@ module Kore.Step.Simplification.Or
     , simplify
     ) where
 
-import Data.Reflection
-       ( Given )
+import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.AST.Common
-                 ( Or (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Top_ )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.ExpandedPattern
@@ -33,6 +26,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 
 {-|'simplify' simplifies an 'Or' pattern with 'OrOfExpandedPattern'
 children by merging the two children.
@@ -40,9 +34,9 @@ children by merging the two children.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => Or level (OrOfExpandedPattern level variable)
     ->  ( OrOfExpandedPattern level variable
@@ -63,9 +57,9 @@ See 'simplify' for detailed documentation.
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
@@ -89,9 +83,9 @@ simplifyEvaluated first second =
 halfSimplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => ExpandedPattern level variable
     -> OrOfExpandedPattern level variable
@@ -100,11 +94,12 @@ halfSimplifyEvaluated
         )
 halfSimplifyEvaluated
     first@Predicated
-        { term = Top_ _
+        { term = term1
         , predicate = firstPredicate
         , substitution = (Substitution.unwrap -> [])
         }
     second
+  | (Recursive.project -> _ :< TopPattern _) <- term1
   =
     case OrOfExpandedPattern.extractPatterns second of
         [] ->
@@ -112,7 +107,7 @@ halfSimplifyEvaluated
             , SimplificationProof
             )
         ( Predicated
-            { term, predicate, substitution}
+            { term = term2, predicate, substitution}
          : patts
          ) ->
             let
@@ -121,7 +116,7 @@ halfSimplifyEvaluated
             in
                 ( OrOfExpandedPattern.make
                     ( Predicated
-                        { term = term
+                        { term = term2
                         , predicate = mergedPredicate
                         , substitution = substitution
                         }

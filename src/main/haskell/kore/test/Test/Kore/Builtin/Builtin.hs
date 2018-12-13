@@ -25,8 +25,7 @@ import           GHC.Stack
 
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
-import qualified Kore.ASTUtils.SmartConstructors as Kore
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
@@ -34,8 +33,7 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts,
-                 extractMetadataTools )
+                 ( MetadataTools (..), extractMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
@@ -68,7 +66,8 @@ mkPair
     -> CommonStepPattern Object
     -> CommonStepPattern Object
     -> CommonStepPattern Object
-mkPair lSort rSort l r = App_ (pairSymbol lSort rSort) [l, r]
+mkPair lSort rSort l r =
+    mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
 
 substitutionSimplifier
     :: MetadataTools level StepperAttributes
@@ -81,7 +80,7 @@ substitutionSimplifier tools =
                 return
                     ( OrOfExpandedPattern.make
                         [ Predicated
-                            { term = Kore.mkTop
+                            { term = mkTop_
                             , predicate = Predicate.wrapPredicate p
                             , substitution = mempty
                             }
@@ -101,6 +100,8 @@ testSymbolWithSolver
     -- ^ evaluator function for the builtin
     -> String
     -- ^ test name
+    -> Sort Object
+    -- ^ symbol result sort
     -> SymbolOrAlias Object
     -- ^ symbol being tested
     -> [p]
@@ -108,10 +109,12 @@ testSymbolWithSolver
     -> expanded
     -- ^ expected result
     -> TestTree
-testSymbolWithSolver eval title symbol args expected =
+testSymbolWithSolver eval title resultSort symbol args expected =
     testCaseWithSolver title $ \solver -> do
-        actual <- runReaderT (SMT.getSMT $ eval $ App_ symbol args) solver
+        actual <- runReaderT (SMT.getSMT eval') solver
         assertEqual "" expected actual
+  where
+    eval' = eval $ mkApp resultSort symbol args
 
 -- -------------------------------------------------------------
 -- * Evaluation
@@ -170,9 +173,6 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)
-
-testSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-MetadataTools { symbolOrAliasSorts = testSymbolOrAliasSorts} = testMetadataTools
 
 testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools

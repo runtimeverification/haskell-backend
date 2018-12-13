@@ -33,9 +33,7 @@ import           Prelude hiding
                  ( concat )
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkApp, mkBottom, mkTop )
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
@@ -74,6 +72,7 @@ import           Kore.Step.Substitution
 import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 data SimplificationTarget = AndT | EqualsT | BothT
@@ -100,6 +99,7 @@ termEquals
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -120,6 +120,7 @@ termEqualsAnd
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -145,20 +146,20 @@ termEqualsAnd tools substitutionSimplifier =
         fromMaybe equalsPredicate <$> runMaybeT maybeTermEqualsAndChild
       where
         equalsPredicate =
-            give (MetadataTools.symbolOrAliasSorts tools)
-                ( Predicated
-                    { term = mkTop
-                    , predicate = makeEqualsPredicate first second
-                    , substitution = mempty
-                    }
-                , SimplificationProof
-                )
+            ( Predicated
+                { term = mkTop_
+                , predicate = makeEqualsPredicate first second
+                , substitution = mempty
+                }
+            , SimplificationProof
+            )
 
 maybeTermEquals
     ::  ( MetaOrObject level
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -193,6 +194,7 @@ termUnification
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -236,6 +238,7 @@ termAnd
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -260,7 +263,6 @@ termAnd tools substitutionSimplifier =
         fromMaybe andPattern <$> runMaybeT maybeTermAnd'
       where
         andPattern =
-            give (MetadataTools.symbolOrAliasSorts tools)
                 ( ExpandedPattern.fromPurePattern (mkAnd first second)
                 , SimplificationProof
                 )
@@ -272,6 +274,7 @@ maybeTermAnd
         , ShowMetaOrObject variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , SortedVariable variable
         , MonadCounter m
         )
@@ -285,17 +288,14 @@ maybeTermAnd
 maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
-    ::  ( Eq (variable level)
-        , Eq (variable Meta)
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , ShowMetaOrObject variable
+        , Unparse (variable level)
         , SortedVariable variable
         )
     => [TermTransformationOld level variable m]
@@ -313,17 +313,14 @@ andFunctions =
     forAnd f = f SimplificationType.And
 
 equalsFunctions
-    ::  ( Eq (variable level)
-        , Eq (variable Meta)
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , ShowMetaOrObject variable
+        , Unparse (variable level)
         , SortedVariable variable
         )
     => [TermTransformationOld level variable m]
@@ -342,16 +339,14 @@ equalsFunctions =
 
 andEqualsFunctions
     ::  ( Eq (variable level)
-        , Eq (variable Meta)
         , FreshVariable variable
         , MetaOrObject level
         , MonadCounter m
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , ShowMetaOrObject variable
+        , Unparse (variable level)
         , SortedVariable variable
         )
     => [(SimplificationTarget, TermTransformation level variable m)]
@@ -568,8 +563,9 @@ equalAndEquals _ _ = empty
 bottomTermEquals
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> StepPattern level variable
@@ -585,9 +581,8 @@ bottomTermEquals
     (predicate, _proof) ->
         return
             ( Predicated
-                { term = mkTop
-                , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
-                    makeNotPredicate predicate
+                { term = mkTop_
+                , predicate = makeNotPredicate predicate
                 , substitution = mempty
                 }
             , SimplificationProof
@@ -602,8 +597,9 @@ See also: 'bottomTermEquals'
 termBottomEquals
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> StepPattern level variable
@@ -619,8 +615,9 @@ See also: 'isFunctionPattern'
 variableFunctionAndEquals
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
@@ -677,8 +674,9 @@ See also: 'variableFunctionAndEquals'
 functionVariableAndEquals
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
@@ -705,6 +703,7 @@ equalInjectiveHeadsAndEquals
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -721,7 +720,7 @@ equalInjectiveHeadsAndEquals
     tools
     substitutionSimplifier
     termMerger
-    (App_ firstHead firstChildren)
+    firstPattern@(App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
   | isFirstInjective && isSecondInjective && firstHead == secondHead =
     Monad.Trans.lift $ do
@@ -742,8 +741,11 @@ equalInjectiveHeadsAndEquals
                 merged
         return
             ( Predicated
-                { term = give (MetadataTools.symbolOrAliasSorts tools) $
-                    mkApp firstHead (map (ExpandedPattern.term . fst) children)
+                { term =
+                    mkApp
+                        (getSort firstPattern)
+                        firstHead
+                        (ExpandedPattern.term . fst <$> children)
                 , predicate = mergedPredicate
                 , substitution = mergedSubstitution
                 }
@@ -895,13 +897,13 @@ sortInjectionAndEqualsAssumesDifferentHeads
         -> StepPattern level variable
         -> StepPattern level variable
     sortInjection originSort destinationSort term =
-        give (MetadataTools.symbolOrAliasSorts tools)
-            $ mkApp
-                SymbolOrAlias
-                    { symbolOrAliasConstructor = firstConstructor
-                    , symbolOrAliasParams = [originSort, destinationSort]
-                    }
-                [term]
+        mkApp
+            destinationSort
+            SymbolOrAlias
+                { symbolOrAliasConstructor = firstConstructor
+                , symbolOrAliasParams = [originSort, destinationSort]
+                }
+            [term]
     firstSubsorts = subsorts firstOrigin
     secondSubsorts = subsorts secondOrigin
     sortIntersection = Set.intersection firstSubsorts secondSubsorts
@@ -917,7 +919,7 @@ returns @\\bottom@.
 -- TODO (virgil): This implementation is provisional, we're not sure yet if sort
 -- injection should always clash with constructors. We should clarify this.
 constructorSortInjectionAndEquals
-    ::  ( Eq (variable Object)
+    ::  ( Eq (variable level)
         , MetaOrObject level
         )
     => MetadataTools level StepperAttributes
@@ -930,7 +932,7 @@ constructorSortInjectionAndEquals
     (App_ secondHead _)
   | isConstructorSortInjection =
     assert (firstHead /= secondHead) $
-        return (mkBottom, SimplificationProof)
+        return (mkBottom_, SimplificationProof)
   where
     -- Are we asked to unify a constructor with a sort injection?
     isConstructorSortInjection =
@@ -948,7 +950,7 @@ to be different; therefore their conjunction is @\\bottom@.
 
  -}
 constructorAndEqualsAssumesDifferentHeads
-    ::  ( Eq (variable Object)
+    ::  ( Eq (variable level)
         , MetaOrObject level
         )
     => MetadataTools level StepperAttributes
@@ -961,7 +963,7 @@ constructorAndEqualsAssumesDifferentHeads
     (App_ secondHead _)
   | isConstructor firstHead && isConstructor secondHead =
     assert (firstHead /= secondHead) $
-        return (mkBottom, SimplificationProof)
+        return (mkBottom_, SimplificationProof)
   where
     isConstructor = give tools StepperAttributes.isConstructor_
 constructorAndEqualsAssumesDifferentHeads _ _ _ = empty
@@ -974,7 +976,7 @@ sort with constructors.
 
 -}
 domainValueAndConstructorErrors
-    :: ( Eq (variable Object)
+    :: ( Eq (variable level)
        , MetaOrObject level
        )
     => MetadataTools level StepperAttributes
@@ -1015,7 +1017,7 @@ domainValueAndEqualsAssumesDifferent
     second@(DV_ _ (Domain.BuiltinPattern _))
   =
     assert (first /= second) $
-        return (mkBottom, SimplificationProof)
+        return (mkBottom_, SimplificationProof)
 domainValueAndEqualsAssumesDifferent _ _ = empty
 
 {-| Unify two literal strings.
@@ -1036,7 +1038,7 @@ stringLiteralAndEqualsAssumesDifferent
     second@(StringLiteral_ _)
   =
     assert (first /= second) $
-        return (mkBottom, SimplificationProof)
+        return (mkBottom_, SimplificationProof)
 stringLiteralAndEqualsAssumesDifferent _ _ = empty
 
 {-| Unify two literal characters.
@@ -1057,7 +1059,7 @@ charLiteralAndEqualsAssumesDifferent
     second@(CharLiteral_ _)
   =
     assert (first /= second) $
-        return (mkBottom, SimplificationProof)
+        return (mkBottom_, SimplificationProof)
 charLiteralAndEqualsAssumesDifferent _ _ = empty
 
 {- | Unify any two function patterns.
@@ -1067,8 +1069,10 @@ The function patterns are unified by creating an @\\equals@ predicate.
 -}
 functionAnd
     ::  ( MetaOrObject level
-        , Show (variable level)
         , SortedVariable variable
+        , Eq (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> StepPattern level variable
@@ -1085,8 +1089,7 @@ functionAnd
             -- Ceil predicate not needed since first being
             -- bottom will make the entire term bottom. However,
             -- one must be careful to not just drop the term.
-            , predicate = give (MetadataTools.symbolOrAliasSorts tools) $
-                makeEqualsPredicate first second
+            , predicate = makeEqualsPredicate first second
             , substitution = mempty
             }
         , SimplificationProof

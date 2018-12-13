@@ -15,10 +15,9 @@ import Data.Text
 
 import Kore.AST.Builders
 import Kore.AST.Pure
-import Kore.MetaML.AST
 
 vf, vL, vphi, vphi1, vphi2, vphi3, vphii, vpsi, vR, vS, vS', vs, vs1, vs2, vs3
-    , vs', vsigma, vu, v1, v2, vx, vx' :: MetaPatternStub
+    , vs', vsigma, vu, v1, v2, vx, vx' :: CommonPurePatternStub Meta domain
 
 implicitUnparameterizedVariable :: Text -> CommonPurePatternStub level domain
 implicitUnparameterizedVariable name =

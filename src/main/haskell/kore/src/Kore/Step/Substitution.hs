@@ -20,15 +20,11 @@ import Control.Monad.Except
        ( ExceptT, lift, runExceptT, withExceptT )
 import Data.Foldable
        ( fold )
-import Data.Reflection
-       ( give )
 
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeMultipleAndPredicate )
@@ -53,6 +49,7 @@ import           Kore.Unification.SubstitutionNormalization
                  ( normalizeSubstitution )
 import           Kore.Unification.UnifierImpl
                  ( normalizeSubstitutionDuplication )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 -- | Normalize the substitution and predicate of 'expanded'.
@@ -66,16 +63,17 @@ normalize
         , SortedVariable variable
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> ExpandedPattern level variable
     -> m ( ExpandedPattern level variable )
 normalize
-    tools@MetadataTools{ symbolOrAliasSorts }
+    tools
     substitutionSimplifier
     Predicated { term, predicate, substitution }
-  = give symbolOrAliasSorts $ do
+  = do
     x <- runExceptT $
         normalizeSubstitutionAfterMerge
             tools
@@ -99,6 +97,7 @@ normalizeSubstitutionAfterMerge
     ::  ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -133,7 +132,7 @@ normalizeSubstitutionAfterMerge
         } <- normalizeSubstitution' duplicationSubstitution
 
     let
-        mergedPredicate = give symbolOrAliasSorts $
+        mergedPredicate =
             makeMultipleAndPredicate
                 [predicate, duplicationPredicate, normalizePredicate]
 
@@ -150,7 +149,6 @@ normalizeSubstitutionAfterMerge
         , proof
         )
   where
-    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     normalizeSubstitutionDuplication' =
         normalizeSubstitutionDuplication tools wrappedSimplifier
     normalizeSubstitution' =
@@ -171,6 +169,7 @@ hs-boot: Please remember to update the hs-boot file when changing the signature.
 -}
 mergePredicatesAndSubstitutions
     :: ( Show (variable level)
+       , Unparse (variable level)
        , SortedVariable variable
        , MetaOrObject level
        , Ord (variable level)
@@ -197,7 +196,7 @@ mergePredicatesAndSubstitutions
         Left _ ->
             let
                 mergedPredicate =
-                    give (symbolOrAliasSorts tools) $ makeMultipleAndPredicate
+                    makeMultipleAndPredicate
                         (  predicates
                         ++ map substitutionToPredicate substitutions
                         )
@@ -217,6 +216,7 @@ mergePredicatesAndSubstitutionsExcept
        , SortedVariable variable
        , MetaOrObject level
        , Ord (variable level)
+       , Unparse (variable level)
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , FreshVariable variable
@@ -237,9 +237,7 @@ mergePredicatesAndSubstitutionsExcept
   = do
     let
         mergedSubstitution = fold substitutions
-        mergedPredicate =
-            give (symbolOrAliasSorts tools) $
-                makeMultipleAndPredicate predicates
+        mergedPredicate = makeMultipleAndPredicate predicates
     (Predicated {predicate, substitution}, _proof) <-
         normalizeSubstitutionAfterMerge tools substitutionSimplifier
             Predicated
@@ -260,6 +258,7 @@ normalizePredicatedSubstitution
     ::  ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -273,10 +272,10 @@ normalizePredicatedSubstitution
          , UnificationProof level variable
          )
 normalizePredicatedSubstitution
-    tools@MetadataTools{ symbolOrAliasSorts }
+    tools
     substitutionSimplifier
     Predicated { term, predicate, substitution }
-  = give symbolOrAliasSorts $ do
+  = do
     x <- runExceptT $
             normalizeSubstitutionAfterMerge
                 tools

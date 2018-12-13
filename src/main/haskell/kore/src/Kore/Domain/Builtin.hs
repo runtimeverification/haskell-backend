@@ -22,13 +22,16 @@ import           Data.Void
 import           GHC.Generics
                  ( Generic )
 
+import Kore.Annotation.Valid
 import Kore.AST.Pure
 
+type Key = PurePattern Object Builtin Concrete (Valid Object)
+
 data Builtin child
-    = BuiltinPattern !(CommonPurePattern Meta (Const Void))
-    | BuiltinMap !(Map (ConcretePurePattern Object Builtin) child)
+    = BuiltinPattern !(ParsedPurePattern Meta (Const Void))
+    | BuiltinMap !(Map Key child)
     | BuiltinList !(Seq child)
-    | BuiltinSet !(Set (ConcretePurePattern Object Builtin))
+    | BuiltinSet !(Set Key)
     deriving (Foldable, Functor, Generic, Traversable)
 
 deriving instance Eq child => Eq (Builtin child)

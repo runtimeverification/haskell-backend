@@ -21,20 +21,11 @@ import Data.List
        ( foldl' )
 import Data.Maybe
        ( fromMaybe )
-import Data.Reflection
-       ( give )
 
-import           Kore.AST.Common
-                 ( Equals (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkTop )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Top_ )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeAndPredicate,
                  makeEqualsPredicate, makeNotPredicate )
@@ -70,6 +61,7 @@ import qualified Kore.Step.Simplification.Or as Or
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrOfExpandedPattern's.
@@ -150,8 +142,9 @@ Equals(a and b, b and a) will not be evaluated to Top.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -176,8 +169,9 @@ simplify
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -206,10 +200,9 @@ simplifyEvaluated tools substitutionSimplifier first second
                 makeEvaluateFunctionalOr
                     tools substitutionSimplifier secondP firstPatterns
         _ ->
-            give (MetadataTools.symbolOrAliasSorts tools)
-                $ makeEvaluate tools substitutionSimplifier
-                    (OrOfExpandedPattern.toExpandedPattern first)
-                    (OrOfExpandedPattern.toExpandedPattern second)
+            makeEvaluate tools substitutionSimplifier
+                (OrOfExpandedPattern.toExpandedPattern first)
+                (OrOfExpandedPattern.toExpandedPattern second)
   where
     firstPatterns = OrOfExpandedPattern.extractPatterns first
     secondPatterns = OrOfExpandedPattern.extractPatterns second
@@ -219,8 +212,9 @@ makeEvaluateFunctionalOr
     :: forall variable level .
         ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -235,11 +229,9 @@ makeEvaluateFunctionalOr tools substitutionSimplifier first seconds = do
     let
         (firstCeil, _proof0) = Ceil.makeEvaluate tools first
         secondCeils = map (dropProof . Ceil.makeEvaluate tools) seconds
-        (firstNotCeil, _proof1) = give sortTools $
-            Not.simplifyEvaluated firstCeil
-        secondNotCeils = give sortTools $
-            map (dropProof . Not.simplifyEvaluated) secondCeils
-        oneNotBottom = give sortTools $
+        (firstNotCeil, _proof1) = Not.simplifyEvaluated firstCeil
+        secondNotCeils = map (dropProof . Not.simplifyEvaluated) secondCeils
+        oneNotBottom =
             foldl'
                 (dropProofFold Or.simplifyEvaluated)
                 (OrOfExpandedPattern.make [])
@@ -266,7 +258,6 @@ makeEvaluateFunctionalOr tools substitutionSimplifier first seconds = do
         , SimplificationProof
         )
   where
-    sortTools = MetadataTools.symbolOrAliasSorts tools
     dropProof :: (a, SimplificationProof level) -> a
     dropProof = fst
     dropProofFold :: (a -> b -> (a, SimplificationProof level)) -> a -> b -> a
@@ -287,8 +278,7 @@ makeEvaluateFunctionalOr tools substitutionSimplifier first seconds = do
             makeEvaluateTermsAssumesNoBottom
                 tools substitutionSimplifier firstTerm secondTerm
         let
-            (result, _proof) =
-                give sortTools $ Implies.simplifyEvaluated secondCeil equality
+            (result, _proof) = Implies.simplifyEvaluated secondCeil equality
         return result
 
 {-| evaluates an 'Equals' given its two 'ExpandedPattern' children.
@@ -298,8 +288,9 @@ See 'simplify' for detailed documentation.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -311,7 +302,7 @@ makeEvaluate
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
-    tools
+    _
     _
     first@Predicated
         { term = Top_ _ }
@@ -319,8 +310,7 @@ makeEvaluate
         { term = Top_ _ }
   =
     let
-        (result, _proof) = give (MetadataTools.symbolOrAliasSorts tools )
-            $ Iff.makeEvaluate first second
+        (result, _proof) = Iff.makeEvaluate first second
     in
         return (result, SimplificationProof)
 makeEvaluate
@@ -357,18 +347,16 @@ makeEvaluate
             Ceil.makeEvaluate tools
                 first
                     { term =
-                        if termsAreEqual then mkTop else firstTerm
+                        if termsAreEqual then mkTop_ else firstTerm
                     }
         (secondCeil, _proof2) =
             Ceil.makeEvaluate tools
                 second
                     { term =
-                        if termsAreEqual then mkTop else secondTerm
+                        if termsAreEqual then mkTop_ else secondTerm
                     }
-        (firstCeilNegation, _proof3) =
-            give symbolOrAliasSorts $ Not.simplifyEvaluated firstCeil
-        (secondCeilNegation, _proof4) =
-            give symbolOrAliasSorts $ Not.simplifyEvaluated secondCeil
+        (firstCeilNegation, _proof3) = Not.simplifyEvaluated firstCeil
+        (secondCeilNegation, _proof4) = Not.simplifyEvaluated secondCeil
     (termEquality, _proof) <-
         makeEvaluateTermsAssumesNoBottom
             tools substitutionSimplifier firstTerm secondTerm
@@ -379,12 +367,9 @@ makeEvaluate
         And.simplifyEvaluated tools substitutionSimplifier firstCeil secondCeil
     (equalityAnd, _proof) <-
         And.simplifyEvaluated tools substitutionSimplifier termEquality ceilAnd
-    let
-        (finalOr, _proof) =
-            give symbolOrAliasSorts $ Or.simplifyEvaluated equalityAnd negationAnd
+    let (finalOr, _proof) = Or.simplifyEvaluated equalityAnd negationAnd
     return (finalOr, SimplificationProof)
   where
-    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it
@@ -392,8 +377,9 @@ makeEvaluate
 makeEvaluateTermsAssumesNoBottom
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -422,9 +408,8 @@ makeEvaluateTermsAssumesNoBottom
     def =
         (OrOfExpandedPattern.make
             [ Predicated
-                { term = mkTop
-                , predicate = give (MetadataTools.symbolOrAliasSorts tools)
-                    $ makeEqualsPredicate firstTerm secondTerm
+                { term = mkTop_
+                , predicate = makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
                 }
             ]
@@ -437,8 +422,9 @@ makeEvaluateTermsAssumesNoBottomMaybe
     :: forall level variable .
         ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -471,8 +457,9 @@ See 'simplify' for detailed documentation.
 makeEvaluateTermsToPredicateSubstitution
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -490,7 +477,7 @@ makeEvaluateTermsToPredicateSubstitution
         ( OrOfExpandedPattern.make [Predicated.topPredicate]
         , SimplificationProof
         )
-  | otherwise = give symbolOrAliasSorts $ do
+  | otherwise = do
     result <-
         runMaybeT
         $ AndTerms.termEquals
@@ -530,5 +517,3 @@ makeEvaluateTermsToPredicateSubstitution
                     )
                 , SimplificationProof
                 )
-  where
-    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools

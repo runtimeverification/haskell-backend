@@ -63,6 +63,17 @@ renderDefault = renderString . layoutPretty defaultLayoutOptions
 instance Unparse (Id level) where
     unparse = pretty . getId
 
+instance
+    ( Unparse (thing Object)
+    , Unparse (thing Meta)
+    ) =>
+    Unparse (Unified thing)
+  where
+    unparse =
+        \case
+            UnifiedMeta meta -> unparse meta
+            UnifiedObject object -> unparse object
+
 instance Unparse StringLiteral where
     unparse = dquotes . fromString . escapeCString . getStringLiteral
 
@@ -422,12 +433,6 @@ unparseAxiom
         , unparse sentenceAxiomAttributes
         ]
 
-
-instance Unparse UnifiedSortVariable where
-    unparse =
-        \case
-            UnifiedMeta sv -> unparse sv
-            UnifiedObject sv -> unparse sv
 
 instance Unparse (SentenceHook patternType) where
     unparse =

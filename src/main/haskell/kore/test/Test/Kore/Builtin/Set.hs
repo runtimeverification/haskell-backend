@@ -8,16 +8,13 @@ import           Test.Tasty
 
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
-import           Data.Reflection
-                 ( give )
 import qualified Data.Sequence as Seq
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
-import qualified Kore.ASTUtils.SmartConstructors as Kore
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate as Predicate
@@ -63,9 +60,15 @@ test_getUnit =
         "in{}(_, unit{}() === \\dv{Bool{}}(\"false\")"
         (do
             patKey <- forAll genIntegerPattern
-            let patIn = App_ inSetSymbol [ patKey, App_ unitSetSymbol [] ]
+            let patIn =
+                    mkApp
+                        boolSort
+                        inSetSymbol
+                        [ patKey
+                        , mkApp setSort unitSetSymbol []
+                        ]
                 patFalse = Test.Bool.asPattern False
-                predicate = mkEquals patFalse patIn
+                predicate = mkEquals_ patFalse patIn
             (===) (Test.Bool.asExpandedPattern False) =<< evaluate patIn
             (===) ExpandedPattern.top =<< evaluate predicate
         )
@@ -76,10 +79,10 @@ test_inElement =
         "in{}(x, element{}(x)) === \\dv{Bool{}}(\"true\")"
         (do
             patKey <- forAll genIntegerPattern
-            let patIn = App_ inSetSymbol [ patKey, patElement ]
-                patElement = App_ elementSetSymbol [ patKey ]
+            let patIn = mkApp boolSort inSetSymbol [ patKey, patElement ]
+                patElement = mkApp setSort elementSetSymbol [ patKey ]
                 patTrue = Test.Bool.asPattern True
-                predicate = mkEquals patIn patTrue
+                predicate = mkEquals_ patIn patTrue
             (===) (Test.Bool.asExpandedPattern True) =<< evaluate patIn
             (===) ExpandedPattern.top =<< evaluate predicate
         )
@@ -91,11 +94,11 @@ test_inConcat =
         (do
             elem' <- forAll genConcreteIntegerPattern
             values <- forAll genSetConcreteIntegerPattern
-            let patIn = App_ inSetSymbol [ patElem , patSet ]
+            let patIn = mkApp boolSort inSetSymbol [ patElem , patSet ]
                 patSet = asPattern $ Set.insert elem' values
                 patElem = fromConcretePurePattern elem'
                 patTrue = Test.Bool.asPattern True
-                predicate = mkEquals patTrue patIn
+                predicate = mkEquals_ patTrue patIn
             (===) (Test.Bool.asExpandedPattern True) =<< evaluate patIn
             (===) ExpandedPattern.top =<< evaluate predicate
         )
@@ -106,11 +109,13 @@ test_concatUnit =
         "concat{}(unit{}(), xs) === concat{}(xs, unit{}()) === xs"
         (do
             patValues <- forAll genSetPattern
-            let patUnit = App_ unitSetSymbol []
-                patConcat1 = App_ concatSetSymbol [ patUnit, patValues ]
-                patConcat2 = App_ concatSetSymbol [ patValues, patUnit ]
-                predicate1 = mkEquals patValues patConcat1
-                predicate2 = mkEquals patValues patConcat2
+            let patUnit = mkApp setSort unitSetSymbol []
+                patConcat1 =
+                    mkApp setSort concatSetSymbol [ patUnit, patValues ]
+                patConcat2 =
+                    mkApp setSort concatSetSymbol [ patValues, patUnit ]
+                predicate1 = mkEquals_ patValues patConcat1
+                predicate2 = mkEquals_ patValues patConcat2
             expect <- evaluate patValues
             (===) expect =<< evaluate patConcat1
             (===) expect =<< evaluate patConcat2
@@ -126,11 +131,11 @@ test_concatAssociates =
             patSet1 <- forAll genSetPattern
             patSet2 <- forAll genSetPattern
             patSet3 <- forAll genSetPattern
-            let patConcat12 = App_ concatSetSymbol [ patSet1, patSet2 ]
-                patConcat23 = App_ concatSetSymbol [ patSet2, patSet3 ]
-                patConcat12_3 = App_ concatSetSymbol [ patConcat12, patSet3 ]
-                patConcat1_23 = App_ concatSetSymbol [ patSet1, patConcat23 ]
-                predicate = mkEquals patConcat12_3 patConcat1_23
+            let patConcat12 = mkApp setSort concatSetSymbol [ patSet1, patSet2 ]
+                patConcat23 = mkApp setSort concatSetSymbol [ patSet2, patSet3 ]
+                patConcat12_3 = mkApp setSort concatSetSymbol [ patConcat12, patSet3 ]
+                patConcat1_23 = mkApp setSort concatSetSymbol [ patSet1, patConcat23 ]
+                predicate = mkEquals_ patConcat12_3 patConcat1_23
             concat12_3 <- evaluate patConcat12_3
             concat1_23 <- evaluate patConcat1_23
             (===) concat12_3 concat1_23
@@ -147,8 +152,11 @@ test_difference =
             let set3 = Set.difference set1 set2
                 patSet3 = asPattern set3
                 patDifference =
-                    App_ differenceSetSymbol [ asPattern set1, asPattern set2 ]
-                predicate = mkEquals patSet3 patDifference
+                    mkApp
+                        setSort
+                        differenceSetSymbol
+                        [ asPattern set1, asPattern set2 ]
+                predicate = mkEquals_ patSet3 patDifference
             expect <- evaluate patSet3
             (===) expect =<< evaluate patDifference
             (===) ExpandedPattern.top =<< evaluate predicate
@@ -165,8 +173,11 @@ test_toList =
                     . Seq.fromList . Set.toList $ set1
                 patSet2 = Test.List.asPattern set2
                 patToList =
-                    App_ toListSetSymbol [ asPattern set1 ]
-                predicate = mkEquals patSet2 patToList
+                    mkApp
+                        listSort
+                        toListSetSymbol
+                        [ asPattern set1 ]
+                predicate = mkEquals_ patSet2 patToList
             expect <- evaluate patSet2
             (===) expect =<< evaluate patToList
             (===) ExpandedPattern.top =<< evaluate predicate
@@ -206,8 +217,8 @@ asSymbolicPattern result
         foldr1 applyConcat (applyElement <$> Set.toAscList result)
   where
     applyUnit = mkDomainValue setSort $ Domain.BuiltinSet Set.empty
-    applyElement key = App_ elementSetSymbol [key]
-    applyConcat set1 set2 = App_ concatSetSymbol [set1, set2]
+    applyElement key = mkApp setSort elementSetSymbol [key]
+    applyConcat set1 set2 = mkApp setSort concatSetSymbol [set1, set2]
 
 {- | Check that unifying a concrete set with itself results in the same set
  -}
@@ -215,10 +226,10 @@ test_unifyConcreteIdem :: TestTree
 test_unifyConcreteIdem =
     testPropertyWithSolver
         "unify concrete set with itself"
-        (give testSymbolOrAliasSorts $ do
+        (do
             patSet <- forAll genSetPattern
             let patAnd = mkAnd patSet patSet
-                predicate = mkEquals patSet patAnd
+                predicate = mkEquals_ patSet patAnd
             expect <- evaluate patSet
             (===) expect =<< evaluate patAnd
             (===) ExpandedPattern.top =<< evaluate predicate
@@ -228,7 +239,7 @@ test_unifyConcreteDistinct :: TestTree
 test_unifyConcreteDistinct =
     testPropertyWithSolver
         "(dis)unify two distinct sets"
-        (give testSymbolOrAliasSorts $ do
+        (do
             set1 <- forAll genSetConcreteIntegerPattern
             patElem <- forAll genConcreteIntegerPattern
             Monad.when (Set.member patElem set1) discard
@@ -236,7 +247,7 @@ test_unifyConcreteDistinct =
                 patSet1 = asPattern set1
                 patSet2 = asPattern set2
                 conjunction = mkAnd patSet1 patSet2
-                predicate = mkEquals patSet1 conjunction
+                predicate = mkEquals_ patSet1 conjunction
             (===) ExpandedPattern.bottom =<< evaluate conjunction
             (===) ExpandedPattern.bottom =<< evaluate predicate
         )
@@ -245,7 +256,7 @@ test_unifyFramingVariable :: TestTree
 test_unifyFramingVariable =
     testPropertyWithSolver
         "unify a concrete set and a framed set"
-        (give testSymbolOrAliasSorts $ do
+        (do
             framedElem <- forAll genConcreteIntegerPattern
             concreteSet <-
                 (<$>)
@@ -255,9 +266,9 @@ test_unifyFramingVariable =
             let framedSet = Set.singleton framedElem
                 patConcreteSet = asPattern concreteSet
                 patFramedSet =
-                    App_ concatSetSymbol
+                    mkApp setSort concatSetSymbol
                         [ asPattern framedSet
-                        , Var_ frameVar
+                        , mkVar frameVar
                         ]
                 remainder = Set.delete framedElem concreteSet
             let
@@ -380,42 +391,6 @@ builtinSet :: Set.Builtin -> CommonStepPattern Object
 builtinSet = Set.builtinSet setSort
 
 -- * Constructors
-
-mkBottom :: CommonStepPattern Object
-mkBottom = Kore.mkBottom
-
-mkEquals
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
-mkEquals = give testSymbolOrAliasSorts Kore.mkEquals
-
-mkAnd
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
-mkAnd = give testSymbolOrAliasSorts Kore.mkAnd
-
-mkTop :: CommonStepPattern Object
-mkTop = Kore.mkTop
-
-mkVar :: Variable Object -> CommonStepPattern Object
-mkVar = give testSymbolOrAliasSorts Kore.mkVar
-
-mkDomainValue
-    :: Sort Object
-    -> Domain.Builtin (CommonStepPattern Object)
-    -> CommonStepPattern Object
-mkDomainValue = give testSymbolOrAliasSorts Kore.mkDomainValue
-
-mkImplies
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
-mkImplies = give testSymbolOrAliasSorts Kore.mkImplies
-
-mkNot :: CommonStepPattern Object -> CommonStepPattern Object
-mkNot = give testSymbolOrAliasSorts Kore.mkNot
 
 mkIntVar :: Id Object -> CommonStepPattern Object
 mkIntVar variableName =

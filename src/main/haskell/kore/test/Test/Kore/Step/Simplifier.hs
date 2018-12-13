@@ -3,9 +3,8 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkTop )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate, wrapPredicate )
 import           Kore.Step.ExpandedPattern
@@ -49,7 +48,7 @@ mockPredicateSimplifier values =
     StepPatternSimplifier
         (mockSimplifierHelper
             (\patt -> Predicated
-                { term = mkTop
+                { term = mkTop_
                 , predicate = wrapPredicate patt
                 , substitution = mempty
                 }

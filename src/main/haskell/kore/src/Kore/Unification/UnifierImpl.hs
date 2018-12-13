@@ -24,13 +24,9 @@ import           Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import           Data.List
                  ( foldl', groupBy, partition, sortBy )
-import           Data.Reflection
-                 ( give )
 
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -47,6 +43,7 @@ import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -99,6 +96,7 @@ simplifyAnds
         , Eq level
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -178,6 +176,7 @@ solveGroupedSubstitution
        , Eq level
        , Ord (variable level)
        , Show (variable level)
+       , Unparse (variable level)
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , SortedVariable variable
@@ -223,6 +222,7 @@ normalizeSubstitutionDuplication
         , Eq level
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -246,7 +246,7 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
             )
         else do
             (predSubst, proof') <-
-                mergePredicateSubstitutionList tools
+                mergePredicateSubstitutionList
                 <$> mapM
                     (uncurry
                         $ solveGroupedSubstitution tools substitutionSimplifier
@@ -257,10 +257,10 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
                     $ (Substitution.wrap $ concat singletonSubstitutions)
                         <> Predicated.substitution predSubst
             let
-                pred' = give symbolOrAliasSorts
-                    $ Predicate.makeAndPredicate
-                    (Predicated.predicate predSubst)
-                    (Predicated.predicate finalSubst)
+                pred' =
+                    Predicate.makeAndPredicate
+                        (Predicated.predicate predSubst)
+                        (Predicated.predicate finalSubst)
             return
                 ( Predicated
                     { term = ()
@@ -273,7 +273,6 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
                     ]
                 )
   where
-    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     groupedSubstitution = groupSubstitutionByVariable $ Substitution.unwrap subst
     isSingleton [_] = True
     isSingleton _   = False
@@ -288,30 +287,26 @@ mergePredicateSubstitutionList
     :: ( MetaOrObject level
        , Eq level
        , Ord (variable level)
-       , Ord (variable Meta)
-       , Ord (variable Object)
+       , OrdMetaOrObject variable
        , SortedVariable variable
        , Show (variable level)
+       , Unparse (variable level)
        )
-    => MetadataTools level StepperAttributes
-    -> [(PredicateSubstitution level variable, UnificationProof level variable)]
+    => [(PredicateSubstitution level variable, UnificationProof level variable)]
     -> (PredicateSubstitution level variable, UnificationProof level variable)
-mergePredicateSubstitutionList _ [] =
+mergePredicateSubstitutionList [] =
     ( Predicated.topPredicate
     , EmptyUnificationProof
     )
-mergePredicateSubstitutionList tools (p:ps) =
+mergePredicateSubstitutionList (p:ps) =
     foldl' mergePredicateSubstitutions p ps
   where
-    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     mergePredicateSubstitutions
         ( Predicated { predicate = p1, substitution = s1 }, proofs)
         ( Predicated { predicate = p2, substitution = s2 }, proof) =
         ( Predicated
             { term = ()
-            , predicate =
-                give symbolOrAliasSorts
-                $ Predicate.makeAndPredicate p1 p2
+            , predicate = Predicate.makeAndPredicate p1 p2
             , substitution = s1 <> s2
             }
         , proofs <> proof

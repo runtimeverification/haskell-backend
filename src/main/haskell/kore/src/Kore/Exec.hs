@@ -21,8 +21,6 @@ import qualified Data.Bifunctor as Bifunctor
                  ( first )
 import qualified Data.Map.Merge.Strict as Map
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( give )
 import           Data.These
                  ( These (..) )
 
@@ -80,6 +78,7 @@ import           Kore.Substitution.Class
                  ( substitute )
 import qualified Kore.Substitution.List as ListSubstitution
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -103,10 +102,9 @@ exec indexedModule purePattern stepLimit strategy =
         -> PredicateSubstitutionSimplifier Object Simplifier
         -> ExecutionGraph (CommonExpandedPattern Object, StepProof Object Variable)
         -> Simplifier (CommonStepPattern Object)
-    execute metadataTools _ _ executionGraph =
-        give (symbolOrAliasSorts metadataTools) $ do
-            let (finalConfig, _) = pickLongest executionGraph
-            return (ExpandedPattern.toMLPattern finalConfig)
+    execute _ _ _ executionGraph = do
+        let (finalConfig, _) = pickLongest executionGraph
+        return (ExpandedPattern.toMLPattern finalConfig)
 
 -- | Concrete execution search
 search
@@ -148,9 +146,8 @@ search
             solutions =
                 concatMap OrOfExpandedPattern.extractPatterns solutionsLists
             orPredicate =
-                give (symbolOrAliasSorts metadataTools)
-                $ makeMultipleOrPredicate
-                $ fmap Predicated.toPredicate solutions
+                makeMultipleOrPredicate
+                    (Predicated.toPredicate <$> solutions)
         return (unwrapPredicate orPredicate)
 
 -- | Provide a MetadataTools, simplifier, subsitution simplifier, and execution
@@ -279,6 +276,7 @@ makeAxiomsAndSimplifiers verifiedModule tools =
                     , Ord (variable Object)
                     , Show (variable Meta)
                     , Show (variable Object)
+                    , Unparse (variable Object)
                     , FreshVariable variable
                     )
                 => StepPatternSimplifier Object variable
@@ -325,6 +323,7 @@ emptyPatternSimplifier tools =
             , Ord (variable Object)
             , Show (variable Meta)
             , Show (variable Object)
+            , Unparse (variable Object)
             , FreshVariable variable
             )
         => StepPatternSimplifier Object variable
@@ -344,7 +343,6 @@ prove
 prove limit definitionModule specModule = do
     let
         tools = extractMetadataTools definitionModule
-        symbolOrAlias = symbolOrAliasSorts tools
     axiomsAndSimplifiers <-
         makeAxiomsAndSimplifiers definitionModule tools
     let
@@ -365,10 +363,7 @@ prove limit definitionModule specModule = do
             (defaultStrategy claims axioms)
             (fmap makeClaim claims)
 
-    return $
-        Bifunctor.first
-            (give symbolOrAlias toMLPattern)
-            result
+    return $ Bifunctor.first toMLPattern result
 
   where
     makeClaim claim = (claim, limit)

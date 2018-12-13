@@ -59,8 +59,6 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( give )
 import qualified Data.Sequence as Seq
 import           Data.Set
                  ( Set )
@@ -69,7 +67,7 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure as Kore
-import           Kore.ASTUtils.SmartPatterns as Kore
+import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Bool as Bool
@@ -81,8 +79,6 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -98,6 +94,8 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( normalize )
+import           Kore.Unparser
+                 ( Unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -172,7 +170,7 @@ expectBuiltinSet ctx tools _set =
     do
         _set <- Builtin.expectNormalConcreteTerm tools _set
         case _set of
-            Kore.DV_ _ domain ->
+            DV_ _ domain ->
                 case domain of
                     Domain.BuiltinSet set -> return set
                     _ ->
@@ -359,7 +357,7 @@ construct an externally-valid pattern.
 
  -}
 builtinSet :: Sort Object -> Builtin -> StepPattern Object variable
-builtinSet resultSort = DV_ resultSort . Domain.BuiltinSet
+builtinSet resultSort = mkDomainValue resultSort . Domain.BuiltinSet
 
 {- | Render a 'Set' as a domain value pattern of the given sort.
 
@@ -384,21 +382,21 @@ asPattern indexedModule dvSort = do
     symbolUnit <- lookupSymbolUnit dvSort indexedModule
     let
         applyUnit :: StepPattern Object variable
-        applyUnit = App_ symbolUnit []
+        applyUnit = mkApp dvSort symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
     let
         applyElement
             :: ConcreteStepPattern Object
             -> StepPattern Object variable
         applyElement elem' =
-            App_ symbolElement [Kore.fromConcretePurePattern elem']
+            mkApp dvSort symbolElement [Kore.fromConcretePurePattern elem']
     symbolConcat <- lookupSymbolConcat dvSort indexedModule
     let
         applyConcat
             :: StepPattern Object variable
             -> StepPattern Object variable
             -> StepPattern Object variable
-        applyConcat set1 set2 = Kore.App_ symbolConcat [set1, set2]
+        applyConcat set1 set2 = mkApp dvSort symbolConcat [set1, set2]
     let
         asPattern0
             :: Builtin -> StepPattern Object variable
@@ -524,6 +522,7 @@ unifyEquals
     :: forall level variable m p expanded proof.
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
+        , Unparse (variable level)
         , MonadCounter m
         , MetaOrObject level
         , FreshVariable variable
@@ -538,7 +537,7 @@ unifyEquals
     -> (p -> p -> MaybeT m (expanded, proof))
 unifyEquals
     simplificationType
-    tools@(MetadataTools.MetadataTools { symbolOrAliasSorts })
+    tools
     substitutionSimplifier
     unifyEqualsChildren
   =
@@ -552,7 +551,7 @@ unifyEquals
         :: (level ~ Object, Traversable t)
         => t (Predicated level variable a)
         -> Predicated level variable (t a)
-    propagatePredicates = give symbolOrAliasSorts sequenceA
+    propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
     unifyEquals0
@@ -576,10 +575,10 @@ unifyEquals
                 [x@(Var_ _), DV_ _ (Domain.BuiltinSet set2)] ->
                     unifyEqualsFramed resultSort set1 set2 x
                 _ ->
-                    give symbolOrAliasSorts
-                        (Builtin.unifyEqualsUnsolved
-                            simplificationType dv1 app2
-                        )
+                    Builtin.unifyEqualsUnsolved
+                        simplificationType
+                        dv1
+                        app2
            )
       | isSymbolElement hookTools symbol2 =
         Monad.Trans.lift
@@ -587,7 +586,7 @@ unifyEquals
                 [ key2 ] ->
                     -- The key is not concrete yet, or SET.element would
                     -- have evaluated to a domain value.
-                    unifyEqualsElement set1 symbol2 key2
+                    unifyEqualsElement resultSort set1 symbol2 key2
                 _ ->
                     Builtin.wrongArity "SET.element"
             )
@@ -612,9 +611,8 @@ unifyEquals
         return (ExpandedPattern.bottom, SimplificationProof)
       where
         unified =
-            (<$>)
-                (DV_ resultSort . Domain.BuiltinSet)
-                (give symbolOrAliasSorts pure set1)
+            (pure . mkDomainValue resultSort . Domain.BuiltinSet)
+                set1
 
     -- | Unify one concrete set with one framed concrete set.
     unifyEqualsFramed
@@ -640,20 +638,23 @@ unifyEquals
       | otherwise =
         return (ExpandedPattern.bottom, SimplificationProof)
       where
-        asBuiltinDomainSet = DV_ resultSort . Domain.BuiltinSet
+        asBuiltinDomainSet = mkDomainValue resultSort . Domain.BuiltinSet
 
     unifyEqualsElement
         :: forall k . (level ~ Object, k ~ ConcreteStepPattern Object)
-        => Set k  -- ^ concrete set
+        => Sort level
+        -> Set k  -- ^ concrete set
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
         -> m (expanded, proof)
-    unifyEqualsElement set1 element' key2 =
+    unifyEqualsElement resultSort set1 element' key2 =
         case Set.toList set1 of
             [Kore.fromConcretePurePattern -> key1] ->
-                give symbolOrAliasSorts $ do
+                do
                     (key, _) <- unifyEqualsChildren key1 key2
-                    let result = App_ element' <$> propagatePredicates [key]
+                    let result =
+                            mkApp resultSort element'
+                                <$> propagatePredicates [key]
                     return (result, SimplificationProof)
             _ ->
                 -- Cannot unify a non-element Set with an element Set.

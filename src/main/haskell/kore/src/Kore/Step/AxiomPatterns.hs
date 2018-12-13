@@ -41,7 +41,7 @@ import           Kore.AST.Kore
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.AST.Sentence
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.Attribute.Assoc
 import           Kore.Attribute.Comm
 import           Kore.Attribute.HeatCool
@@ -214,8 +214,8 @@ verifiedKoreSentenceToAxiomPattern
     => level
     -> VerifiedKoreSentence
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
-verifiedKoreSentenceToAxiomPattern level sentence =
-    case eraseAnnotations <$> sentence of
+verifiedKoreSentenceToAxiomPattern level =
+    \case
         UnifiedMetaSentence meta -> sentenceToAxiomPattern level meta
         UnifiedObjectSentence object -> sentenceToAxiomPattern level object
 
@@ -224,7 +224,7 @@ verifiedKoreSentenceToAxiomPattern level sentence =
 koreSentenceToAxiomPattern
     :: MetaOrObject level
     => level
-    -> KoreSentence
+    -> VerifiedKoreSentence
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 koreSentenceToAxiomPattern level =
     \case
@@ -234,7 +234,7 @@ koreSentenceToAxiomPattern level =
 sentenceToAxiomPattern
     :: MetaOrObject level
     => level
-    -> Sentence level' UnifiedSortVariable CommonKorePattern
+    -> Sentence level' UnifiedSortVariable VerifiedKorePattern
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
 sentenceToAxiomPattern
     level

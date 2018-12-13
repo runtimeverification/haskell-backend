@@ -16,7 +16,9 @@ import           Data.Proxy
 import qualified Data.Text as Text
 
 import           Kore.AST.Kore
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Pure
+import           Kore.AST.Valid
+                 ( mkStringLiteral )
 import           Kore.Building.AsAst
 import           Kore.Building.Sorts
 import qualified Kore.Domain.Builtin as Domain
@@ -195,7 +197,10 @@ instance
     asProperPattern (ObjectDomainValue sort child) =
         DomainValuePattern DomainValue
             { domainValueSort = asAst sort
-            , domainValueChild = Domain.BuiltinPattern (StringLiteral_ literal)
+            , domainValueChild =
+                Domain.BuiltinPattern
+                $ Kore.AST.Pure.eraseAnnotations
+                $ mkStringLiteral literal
             }
       where
         externalChild :: CommonKorePattern

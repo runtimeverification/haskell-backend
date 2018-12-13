@@ -26,11 +26,12 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import Kore.AST.Pure hiding
-       ( substituteSortVariables )
-import Kore.AST.Sentence
-import Kore.Error
-import Kore.Variables.Free
+import qualified Kore.Annotation.Null as Annotation
+import           Kore.AST.Pure hiding
+                 ( substituteSortVariables )
+import           Kore.AST.Sentence
+import           Kore.Error
+import           Kore.Variables.Free
 
 
 data ApplicationSorts level = ApplicationSorts
@@ -112,8 +113,8 @@ It assumes that the pattern has the provided sort.
 quantifyFreeVariables
     :: (Foldable domain, Functor domain, MetaOrObject level)
     => Sort level
-    -> CommonPurePattern level domain
-    -> CommonPurePattern level domain
+    -> PurePattern level domain Variable (Annotation.Null level)
+    -> PurePattern level domain Variable (Annotation.Null level)
 quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)

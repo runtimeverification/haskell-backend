@@ -15,20 +15,11 @@ module Kore.Step.Simplification.And
 
 import Data.List
        ( foldl1', nub )
-import Data.Reflection
-       ( give )
 
-import           Kore.AST.Common
-                 ( And (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern And_ )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -47,6 +38,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'And' of 'OrOfExpandedPattern'.
@@ -88,8 +80,9 @@ Also, we have
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -118,8 +111,9 @@ See 'simplify' for details.
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -160,8 +154,9 @@ See the comment for 'simplify' to find more details.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -185,8 +180,9 @@ makeEvaluate
 makeEvaluateNonBool
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -229,8 +225,8 @@ makeEvaluateNonBool
             [firstSubstitution, secondSubstitution, termSubstitution]
     return
         ( Predicated
-            { term = applyAndIdempotence tools termTerm
-            , predicate = applyAndIdempotence tools <$> mergedPredicate
+            { term = applyAndIdempotence termTerm
+            , predicate = applyAndIdempotence <$> mergedPredicate
             , substitution = mergedSubstitution
             }
         , SimplificationProof
@@ -240,14 +236,13 @@ applyAndIdempotence
     ::  ( Eq (variable level)
         , MetaOrObject level
         , Show (variable level)
+        , Unparse (variable level)
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => StepPattern level variable
     -> StepPattern level variable
-    -> StepPattern level variable
-applyAndIdempotence tools patt =
-    give (MetadataTools.symbolOrAliasSorts tools)
-        (foldl1' mkAnd (nub (children patt)))
+applyAndIdempotence patt =
+    foldl1' mkAnd (nub (children patt))
   where
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]
@@ -257,6 +252,7 @@ makeTermAnd
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable

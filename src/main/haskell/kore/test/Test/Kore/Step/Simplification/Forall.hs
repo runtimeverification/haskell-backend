@@ -7,14 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( Given, give )
-
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkApp, mkCeil, mkEquals, mkForall, mkVar )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -30,13 +24,11 @@ import qualified Kore.Step.Simplification.Forall as Forall
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_forallSimplification :: [TestTree]
-test_forallSimplification = give mockSymbolOrAliasSorts
+test_forallSimplification =
     [ testCase "Forall - or distribution"
         -- forall(a or b) = forall(a) or forall(b)
         (assertEqualWithExplanation ""
@@ -110,12 +102,12 @@ test_forallSimplification = give mockSymbolOrAliasSorts
                     mkForall Mock.x
                         (mkAnd
                             (mkAnd
-                                (mkApp Mock.fSymbol [mkVar Mock.x])
-                                (mkCeil (Mock.h (mkVar Mock.x)))
+                                (Mock.f $ mkVar Mock.x)
+                                (mkCeil_ (Mock.h (mkVar Mock.x)))
                             )
                             (mkAnd
-                                (mkEquals (mkVar Mock.x) gOfA)
-                                (mkEquals (mkVar Mock.y) fOfA)
+                                (mkEquals_ (mkVar Mock.x) gOfA)
+                                (mkEquals_ (mkVar Mock.y) fOfA)
                             )
                         )
                 , predicate = makeTruePredicate
@@ -124,7 +116,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
             (makeEvaluate
                 Mock.x
                 Predicated
-                    { term = mkApp Mock.fSymbol [mkVar Mock.x]
+                    { term = Mock.f $ mkVar Mock.x
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution =
                         Substitution.wrap [(Mock.x, gOfA), (Mock.y, fOfA)]
@@ -136,7 +128,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation "forall with substitution"
             Predicated
                 { term =
-                    mkForall Mock.x (mkAnd fOfA (mkCeil gOfA))
+                    mkForall Mock.x (mkAnd fOfA (mkCeil_ gOfA))
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -153,7 +145,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
         -- forall x . (t(x) and p and s)
         (assertEqualWithExplanation "forall on term"
             Predicated
-                { term = mkForall Mock.x (mkAnd fOfX (mkCeil gOfA))
+                { term = mkForall Mock.x (mkAnd fOfX (mkCeil_ gOfA))
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -172,7 +164,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
         --    if t, s do not depend on x.
         (assertEqualWithExplanation "forall on predicate"
             Predicated
-                { term = mkForall Mock.x (mkAnd fOfA (mkCeil fOfX))
+                { term = mkForall Mock.x (mkAnd fOfA (mkCeil_ fOfX))
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -192,8 +184,8 @@ test_forallSimplification = give mockSymbolOrAliasSorts
                 { term =
                     mkForall Mock.x
                         (mkAnd
-                            (mkAnd fOfX (mkEquals fOfX gOfA))
-                            (mkEquals (mkVar Mock.y) hOfA)
+                            (mkAnd fOfX (mkEquals_ fOfX gOfA))
+                            (mkEquals_ (mkVar Mock.y) hOfA)
                         )
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -217,7 +209,7 @@ test_forallSimplification = give mockSymbolOrAliasSorts
             (makeEvaluate
                 Mock.x
                 ExpandedPattern
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
                     , substitution = [(Mock.x, gOfA)]
                     }
@@ -226,12 +218,12 @@ test_forallSimplification = give mockSymbolOrAliasSorts
         -}
     ]
   where
-    fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
-    fOfX = give mockSymbolOrAliasSorts $ Mock.f (mkVar Mock.x)
-    gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
-    hOfA = give mockSymbolOrAliasSorts $ Mock.h Mock.a
-    something1OfX = give mockSymbolOrAliasSorts $ Mock.plain10 (mkVar Mock.x)
-    something2OfX = give mockSymbolOrAliasSorts $ Mock.plain11 (mkVar Mock.x)
+    fOfA = Mock.f Mock.a
+    fOfX = Mock.f (mkVar Mock.x)
+    gOfA = Mock.g Mock.a
+    hOfA = Mock.h Mock.a
+    something1OfX = Mock.plain10 (mkVar Mock.x)
+    something2OfX = Mock.plain11 (mkVar Mock.x)
     something1OfXExpanded = Predicated
         { term = something1OfX
         , predicate = makeTruePredicate
@@ -242,7 +234,6 @@ test_forallSimplification = give mockSymbolOrAliasSorts
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
 makeForall
     :: Ord (variable Object)
@@ -264,18 +255,14 @@ testSort =
         }
 
 evaluate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
-        )
+    :: MetaOrObject level
     => Forall level Variable (CommonOrOfExpandedPattern level)
     -> CommonOrOfExpandedPattern level
 evaluate forall =
     fst $ Forall.simplify forall
 
 makeEvaluate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
-        )
+    :: MetaOrObject level
     => Variable level
     -> CommonExpandedPattern level
     -> CommonExpandedPattern level

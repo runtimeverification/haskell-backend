@@ -11,9 +11,7 @@ Portability : portable
 module Kore.IndexedModule.MetadataTools
     ( HeadType (..)
     , MetadataTools (..)
-    , SymbolOrAliasSorts
     , extractMetadataTools
-    , getResultSort
     ) where
 
 import           Data.Graph
@@ -26,8 +24,6 @@ import qualified Data.Set as Set
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.ASTHelpers
-       ( ApplicationSorts (..) )
 import Kore.Attribute.Subsort
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
@@ -42,8 +38,6 @@ data MetadataTools level attributes = MetadataTools
     -- ^ whether a symbol or alias is a symbol
     , sortAttributes :: Sort level -> attributes
     -- ^ get the attributes of a sort
-    , symbolOrAliasSorts :: SymbolOrAliasSorts level
-    -- ^ get the signature of a symbol or alias
     , isSubsortOf :: Sort level -> Sort level -> Bool
     {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
        including when @a@ equals @b@. -}
@@ -51,8 +45,6 @@ data MetadataTools level attributes = MetadataTools
     -- ^ get the subsorts for a sort
     }
   deriving Functor
-
-type SymbolOrAliasSorts level = SymbolOrAlias level -> ApplicationSorts level
 
 -- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
 -- 'KoreIndexedModule'.  The metadata tools are functions yielding information
@@ -69,7 +61,6 @@ extractMetadataTools m =
     { symAttributes = getHeadAttributes m
     , symbolOrAliasType = getHeadType m
     , sortAttributes = getSortAttributes m
-    , symbolOrAliasSorts  = getHeadApplicationSorts m
     , isSubsortOf = checkSubsort
     , subsorts = case isMetaOrObject @level [] of
             IsMeta   -> Set.singleton
@@ -109,9 +100,3 @@ extractMetadataTools m =
                           path sortGraph supId subId
                 realCheckSubsort _ _ = False
             in realCheckSubsort
-
-{- | Look up the result sort of a symbol or alias
- -}
-getResultSort :: MetadataTools level attrs -> SymbolOrAlias level -> Sort level
-getResultSort tools symbol =
-    applicationSortsResult (symbolOrAliasSorts tools symbol)

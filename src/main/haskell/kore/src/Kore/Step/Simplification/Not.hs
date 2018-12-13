@@ -13,18 +13,10 @@ module Kore.Step.Simplification.Not
     , simplifyEvaluated
     ) where
 
-import Data.Reflection
-       ( Given )
+import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.AST.Common
-                 ( Not (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkBottom, mkNot, mkTop )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Bottom_, pattern Top_ )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -38,6 +30,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Unparser
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrOfExpandedPattern'
 child.
@@ -51,9 +44,9 @@ Right now this uses the following:
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => Not level (OrOfExpandedPattern level variable)
     ->  ( OrOfExpandedPattern level variable
@@ -72,9 +65,9 @@ See 'simplify' for details.
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => OrOfExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -104,9 +97,9 @@ See 'simplify' for details.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -120,7 +113,7 @@ makeEvaluate
             , substitution = mempty
             }
         , Predicated
-            { term = mkTop
+            { term = mkTop_
             , predicate =
                 makeNotPredicate
                     (makeAndPredicate
@@ -136,15 +129,16 @@ makeEvaluate
 makeTermNot
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => StepPattern level variable
     -> StepPattern level variable
-makeTermNot (Bottom_ _) = mkTop
-makeTermNot (Top_ _) = mkBottom
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not
-makeTermNot term = mkNot term
+makeTermNot term@(Recursive.project -> _ :< projected)
+  | BottomPattern _ <- projected = mkTop (getSort term)
+  | TopPattern _ <- projected = mkBottom (getSort term)
+  | otherwise = mkNot term
