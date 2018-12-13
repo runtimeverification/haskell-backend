@@ -27,6 +27,7 @@ module Kore.AST.Pure
     , CommonPurePatternStub
     -- * Re-exports
     , Base, CofreeF (..)
+    , module Control.Comonad
     , module Kore.AST.Common
     , module Kore.AST.Identifier
     , module Kore.AST.MetaOrObject
