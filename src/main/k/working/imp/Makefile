@@ -38,10 +38,17 @@ all_tests := \
 k_tests := \
 	impossible-branch.search.final \
 	sum
+prove_tests := \
+	add-spec \
+	max-spec \
+	sum-spec \
 
 test: $(foreach test, $(all_tests), tests/$(test).test)
 
-test-k: $(foreach test, $(k_tests), tests/$(test).test)
+test-k: $(foreach test, $(k_tests), tests/$(test).test) \
+	test-prove
+
+test-prove: $(foreach test, $(prove_tests), prove/$(test).kprove)
 
 golden: $(foreach test, $(all_tests), tests/$(test).output.golden)
 

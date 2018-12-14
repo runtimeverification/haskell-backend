@@ -1,7 +1,7 @@
 /*
 */
 
-module MAXSPEC
+module MAX-SPEC
   imports IMP
 
   syntax Id ::= "a" [token]

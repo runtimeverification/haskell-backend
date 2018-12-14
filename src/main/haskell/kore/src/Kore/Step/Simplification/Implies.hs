@@ -8,7 +8,8 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Implies
-    (simplify
+    ( simplify
+    , simplifyEvaluated
     ) where
 
 import Data.Reflection
@@ -68,10 +69,14 @@ simplify
         , impliesSecond = second
         }
   =
-    simplifyEvaluatedImplies first second
+    simplifyEvaluated first second
 
+{-| simplifies an Implies given its two 'OrOfExpandedPattern' children.
+
+See 'simplify' for details.
+-}
 -- TODO: Maybe transform this to (not a) \/ b
-simplifyEvaluatedImplies
+simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Given (SymbolOrAliasSorts level)
@@ -81,7 +86,7 @@ simplifyEvaluatedImplies
     => OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluatedImplies first second
+simplifyEvaluated first second
   | OrOfExpandedPattern.isTrue first =
     (second, SimplificationProof)
   | OrOfExpandedPattern.isFalse first =
