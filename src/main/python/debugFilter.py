@@ -272,7 +272,7 @@ def cleanApplication(line):
     "symbol"[arg1, arg2, ...](phi1, phi2, ....)
     """
     it = Iterator(line)
-    while line.find(["CofreeT ", "Identity ", " :< ApplicationPattern"], it):
+    while line.find(["CofreeT ", "Identity ", "Null :< ApplicationPattern"], it):
         app = it.element().getSubnode(
             ["Identity ", "ApplicationPattern", "Application"])
         symbol = app.getSubnode(["applicationSymbolOrAlias"])
@@ -338,12 +338,12 @@ def cleanStringDomainValue(line):
     """Cleans string domain values"""
     it = Iterator(line)
     while line.find(
-            ["CofreeT ", "Identity ", " :< DomainValuePattern ",
+            ["CofreeT ", "Identity ", "Null :< DomainValuePattern ",
                 "DomainValue ", " domainValueChild = BuiltinPattern ",
                 "PurePattern ", "getPurePattern = CofreeT ", "Identity ",
-                " :< StringLiteralPattern "], it):
+                "Null :< StringLiteralPattern "], it):
         dv = it.element().getSubnode(
-            ["Identity ", " :< DomainValuePattern ", "DomainValue "]
+            ["Identity ", "Null :< DomainValuePattern ", "DomainValue "]
         )
         sort = dv.getSubnode(["domainValueSort"])
         value = dv.getSubnode(
@@ -371,20 +371,20 @@ def cleanStepProof(line):
 def cleanBottom(line):
     """Rewrites bottom patterns."""
     it = Iterator(line)
-    while line.find(["CofreeT ", "Identity ", " :< BottomPattern "], it):
+    while line.find(["CofreeT ", "Identity ", "Null :< BottomPattern "], it):
         it.element().replaceWith(Structure("⊥", []))
     return line
 
 def cleanTop(line):
     """Rewrites top patterns."""
     it = Iterator(line)
-    while line.find(["CofreeT ", "Identity ", " :< TopPattern "], it):
+    while line.find(["CofreeT ", "Identity ", "Null :< TopPattern "], it):
         it.element().replaceWith(Structure("T", []))
     return line
 
 def cleanStandardPattern(name, line):
     """Simplifies the redundant part of patterns"""
-    patternName = " :< " + name + "Pattern "
+    patternName = "Null :< " + name + "Pattern "
 
     it = Iterator(line)
     while line.find(["CofreeT ", "Identity ", patternName, name], it):
@@ -395,8 +395,8 @@ def cleanStandardPattern(name, line):
 def cleanVariablePattern(line):
     """Simplifies the Cofree part of variables."""
     it = Iterator(line)
-    while line.find(["CofreeT ", "Identity ", " :< VariablePattern "], it):
-        node = it.element().getSubnode(["Identity ", " :< VariablePattern "])
+    while line.find(["CofreeT ", "Identity ", "Null :< VariablePattern "], it):
+        node = it.element().getSubnode(["Identity ", "Null :< VariablePattern "])
         it.element().replaceWith(Structure("Variable ", [node.child(0)]))
     return line
 
@@ -545,6 +545,7 @@ def main(argv):
     sys.setrecursionlimit(4000)
     for line in sys.stdin:
         print clean(Line(line[:len(line) - 1]))
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     #cProfile.run('main(sys.argv[1:])')
