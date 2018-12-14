@@ -1,7 +1,7 @@
 /*
 */
 
-module ADDSPEC
+module ADD-SPEC
   imports IMP
 
   syntax Id ::= "sum" [token]

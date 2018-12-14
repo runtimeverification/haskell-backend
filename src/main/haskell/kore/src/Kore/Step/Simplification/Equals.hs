@@ -15,6 +15,10 @@ module Kore.Step.Simplification.Equals
 
 import Control.Error
        ( MaybeT (..) )
+import Control.Monad
+       ( foldM )
+import Data.List
+       ( foldl' )
 import Data.Maybe
        ( fromMaybe )
 import Data.Reflection
@@ -38,11 +42,14 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, toExpandedPattern )
+                 ( extractPatterns, make, merge, toExpandedPattern )
 import           Kore.Step.Pattern
+import           Kore.Step.RecursiveAttributes
+                 ( isFunctionPattern )
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -54,6 +61,8 @@ import           Kore.Step.Simplification.Data
                  Simplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
+import qualified Kore.Step.Simplification.Implies as Implies
+                 ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.Not as Not
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.Or as Or
@@ -69,6 +78,20 @@ This uses the following simplifications
 (t = term, s = substitution, p = predicate):
 
 * Equals(a, a) = true
+* Equals(phi, psi1 or psi2 or ... or psin), when phi is functional
+    = or
+        ( not ceil (phi) and not ceil(psi1) and ... and not ceil (psin)
+        , and
+            ( ceil(phi)
+            , ceil(psi1) or ceil(psi2) or  ... or ceil(psin)
+            , or
+                ( ceil(psi1) and phi == psi1)
+                , ceil(psi2) and phi == psi2)
+                ...
+                , ceil(psin) and phi == psin)
+                )
+            )
+        )
 * Equals(t1 and t2) = ceil(t1 and t2) or (not ceil(t1) and not ceil(t2))
     if t1 and t2 are functions.
 * Equals(t1 and p1 and s1, t2 and p2 and s2) =
@@ -176,6 +199,14 @@ simplifyEvaluated tools substitutionSimplifier first second
       of
         ([firstP], [secondP]) ->
             makeEvaluate tools substitutionSimplifier firstP secondP
+        ([firstP], _)
+            | isFunctionPredicated firstP ->
+                makeEvaluateFunctionalOr
+                    tools substitutionSimplifier firstP secondPatterns
+        (_, [secondP])
+            | isFunctionPredicated secondP ->
+                makeEvaluateFunctionalOr
+                    tools substitutionSimplifier secondP firstPatterns
         _ ->
             give (MetadataTools.symbolOrAliasSorts tools)
                 $ makeEvaluate tools substitutionSimplifier
@@ -184,6 +215,83 @@ simplifyEvaluated tools substitutionSimplifier first second
   where
     firstPatterns = OrOfExpandedPattern.extractPatterns first
     secondPatterns = OrOfExpandedPattern.extractPatterns second
+    isFunctionPredicated Predicated {term} = isFunctionPattern tools term
+
+makeEvaluateFunctionalOr
+    :: forall variable level .
+        ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> ExpandedPattern level variable
+    -> [ExpandedPattern level variable]
+    -> Simplifier
+        (OrOfExpandedPattern level variable, SimplificationProof level)
+makeEvaluateFunctionalOr tools substitutionSimplifier first seconds = do
+    let
+        (firstCeil, _proof0) = Ceil.makeEvaluate tools first
+        secondCeils = map (dropProof . Ceil.makeEvaluate tools) seconds
+        (firstNotCeil, _proof1) = give sortTools $
+            Not.simplifyEvaluated firstCeil
+        secondNotCeils = give sortTools $
+            map (dropProof . Not.simplifyEvaluated) secondCeils
+        oneNotBottom = give sortTools $
+            foldl'
+                (dropProofFold Or.simplifyEvaluated)
+                (OrOfExpandedPattern.make [])
+                secondCeils
+    allAreBottom <-
+        foldM
+            (dropProofFoldM
+                (And.simplifyEvaluated tools substitutionSimplifier)
+            )
+            (OrOfExpandedPattern.make [ExpandedPattern.top])
+            (firstNotCeil : secondNotCeils)
+    firstEqualsSeconds <-
+        mapM
+            (makeEvaluateEqualsIfSecondNotBottom first)
+            (zip seconds secondCeils)
+    oneIsNotBottomEquals <- foldM
+        (dropProofFoldM
+            (And.simplifyEvaluated tools substitutionSimplifier)
+        )
+        firstCeil
+        (oneNotBottom : firstEqualsSeconds)
+    return
+        ( OrOfExpandedPattern.merge allAreBottom oneIsNotBottomEquals
+        , SimplificationProof
+        )
+  where
+    sortTools = MetadataTools.symbolOrAliasSorts tools
+    dropProof :: (a, SimplificationProof level) -> a
+    dropProof = fst
+    dropProofFold :: (a -> b -> (a, SimplificationProof level)) -> a -> b -> a
+    dropProofFold f x y = dropProof (f x y)
+    dropProofM :: Simplifier (a, SimplificationProof level) -> Simplifier a
+    dropProofM = fmap dropProof
+    dropProofFoldM
+        :: (a -> b -> Simplifier (a, SimplificationProof level))
+        -> a
+        -> b
+        -> Simplifier a
+    dropProofFoldM f x y = dropProofM (f x y)
+    makeEvaluateEqualsIfSecondNotBottom
+        Predicated {term = firstTerm}
+        (Predicated {term = secondTerm}, secondCeil)
+      = do
+        (equality, _) <-
+            makeEvaluateTermsAssumesNoBottom
+                tools substitutionSimplifier firstTerm secondTerm
+        let
+            (result, _proof) =
+                give sortTools $ Implies.simplifyEvaluated secondCeil equality
+        return result
 
 {-| evaluates an 'Equals' given its two 'ExpandedPattern' children.
 

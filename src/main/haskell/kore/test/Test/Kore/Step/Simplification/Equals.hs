@@ -23,8 +23,9 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
-                 makeEqualsPredicate, makeIffPredicate, makeNotPredicate,
-                 makeOrPredicate, makeTruePredicate )
+                 makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
+                 makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
+                 makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, CommonPredicateSubstitution,
                  Predicated (..) )
@@ -141,6 +142,79 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
                         ]
                     }
         assertEqualWithExplanation "" expect actual
+
+    , testCase "f vs g or h" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkTop
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ makeCeilPredicate Mock.cf
+                                , makeOrPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    (makeCeilPredicate Mock.ch)
+                                , makeImpliesPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    (makeEqualsPredicate Mock.cf Mock.cg)
+                                , makeImpliesPredicate
+                                    (makeCeilPredicate Mock.ch)
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                ]
+                        , substitution = mempty
+                        }
+                    ,  Predicated
+                        { term = mkTop
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ makeNotPredicate $ makeCeilPredicate Mock.cf
+                                , makeNotPredicate $ makeCeilPredicate Mock.cg
+                                , makeNotPredicate $ makeCeilPredicate Mock.ch
+                                ]
+                        , substitution = mempty
+                        }
+                    ]
+            first =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = Mock.cf
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    ]
+            second =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = Mock.cg
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    , Predicated
+                        { term = Mock.ch
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    ]
+        actual1 <-
+            evaluateOr
+                mockMetadataTools
+                Equals
+                    { equalsOperandSort = testSort
+                    , equalsResultSort = testSort
+                    , equalsFirst = first
+                    , equalsSecond = second
+                    }
+        assertEqualWithExplanation "f vs g or h" expect actual1
+        actual2 <-
+            evaluateOr
+                mockMetadataTools
+                Equals
+                    { equalsOperandSort = testSort
+                    , equalsResultSort = testSort
+                    , equalsFirst = second
+                    , equalsSecond = first
+                    }
+        assertEqualWithExplanation "g or h or f" expect actual2
     ]
 
 test_equalsSimplification_ExpandedPatterns :: [TestTree]
