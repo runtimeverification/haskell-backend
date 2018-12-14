@@ -33,12 +33,17 @@ myFunc value = reflect value
 -}
 module Kore.Reflect
     ( Data (..)
-    , NamedElement (..)
     , ProductElement (..)
     , RecursiveData
     , Reflectable (..)
+    , mkDeleted
+    , mkList
+    , mkRawStruct
     , mkStruct
+    , mkStructField
     , mkSum
+    , mkTuple
+    , mkValue
     , printData
     ) where
 
@@ -75,22 +80,11 @@ import           Numeric.Natural
 import           Text.Show.Deriving
                  ( deriveShow1 )
 
-{-| An reflected element that has a name and a single value, e.g. a struct
-field value.
--}
-data NamedElement v = NamedElement {name :: !String, value :: !v}
-    deriving (Show, Eq, Generic)
-
-deriveEq1 ''NamedElement
-deriveShow1 ''NamedElement
-
-instance Hashable v => Hashable (NamedElement v)
-
 {-| A reflected element that has a name and any number of values,
 including none, e.g. product types.
 -}
 data ProductElement v = ProductElement {name :: !String, values :: ![v]}
-    deriving (Show, Eq, Generic)
+    deriving (Eq, Functor, Generic, Show)
 
 deriveEq1 ''ProductElement
 deriveShow1 ''ProductElement
@@ -116,7 +110,8 @@ with the value of question marks depending on the v parameter.
 data Data v
     = Sum !(ProductElement v)
     -- ^ Represents a value of the form (Name childValue1 ... childValue_n)
-    | Struct !String ![NamedElement v]
+    | Struct !(ProductElement v)
+    | StructField !String !v
     -- ^ Represents struct value.
     | Value !String
     -- ^ Represents a leaf value, i.e. one without children
@@ -124,7 +119,9 @@ data Data v
     -- ^ Represents a list of values
     | Tuple ![v]
     -- ^ Represents a tuple of values
-    deriving (Show, Eq, Generic)
+    | Deleted
+    -- ^ Represents data that was deleted.
+    deriving (Eq, Functor, Generic, Show)
 
 deriveEq1 ''Data
 deriveShow1 ''Data
@@ -237,7 +234,7 @@ class Reflectable' f where
     reflect' :: f p -> RecursiveData
 
 class ReflectableFields f where
-    reflectStructFields :: f p -> [NamedElement RecursiveData]
+    reflectStructFields :: f p -> [RecursiveData]
     reflectProductValues :: f p -> [RecursiveData]
 
 -- TODO: Maybe separate ReflectableFields based on their "K1 R a" content.
@@ -252,7 +249,7 @@ instance
     reflectStructFields m@(Generics.M1 thing) =
         if null name
             then error "Unexpected null name"
-            else [NamedElement {name, value = reflect' thing}]
+            else [Fix (StructField name (reflect' thing))]
       where
         name = Generics.selName m
     reflectProductValues m@(Generics.M1 thing) =
@@ -289,7 +286,12 @@ instance
   where
     reflect' m@(Generics.M1 thing) =
         if Generics.conIsRecord m
-            then Fix (Struct constructorName (reflectStructFields thing))
+            then Fix
+                (Struct ProductElement
+                    { name = constructorName
+                    , values= reflectStructFields thing
+                    }
+                )
             else mkSum constructorName (reflectProductValues thing)
       where
         constructorName =
@@ -318,18 +320,17 @@ printData (Fix (Sum ProductElement {name, values = []})) =
     "(" ++ name ++ ")"
 printData (Fix (Sum ProductElement {name, values})) =
     "(" ++ name ++ " " ++ unwords (map printData values) ++ ")"
-printData (Fix (Struct name fields)) =
-    name ++ " {" ++ intercalate "," (map printField fields) ++ "}"
-  where
-    printField :: NamedElement RecursiveData -> String
-    printField NamedElement {name = fieldName, value} =
-        fieldName ++ "=" ++ printData value
+printData (Fix (Struct ProductElement {name, values})) =
+    name ++ " {" ++ intercalate "," (map printData values) ++ "}"
+printData (Fix (StructField name value)) =
+    name ++ "=" ++ printData value
 printData (Fix (Value value)) =
     value
 printData (Fix (List values)) =
     "[" ++ intercalate "," (map printData values) ++ "]"
 printData (Fix (Tuple values)) =
     "(" ++ intercalate "," (map printData values) ++ ")"
+printData (Fix Deleted) = ""
 
 {-| Helper for creating a 'Sum' Data.
 -}
@@ -341,11 +342,45 @@ mkSum name values =
 -}
 mkStruct :: String -> [(String, RecursiveData)] -> RecursiveData
 mkStruct structName values =
-    Fix
-        (Struct
-            structName
-            (map
-                (\(fieldName, value) -> NamedElement {name = fieldName, value})
-                values
-            )
+    mkRawStruct
+        structName
+        (map
+            (\(fieldName, value) -> mkStructField fieldName value)
+            values
         )
+
+{-| Helper for creating a 'Struct' Data composed of things other than fields.
+-}
+mkRawStruct :: String -> [RecursiveData] -> RecursiveData
+mkRawStruct structName values =
+    Fix
+        (Struct ProductElement
+            { name = structName
+            , values = values
+            }
+        )
+
+{-| Helper for creating a 'StructField' RecursiveData.
+-}
+mkStructField :: String -> RecursiveData -> RecursiveData
+mkStructField name value = Fix (StructField name value)
+
+{-| Helper for creating a 'Value' RecursiveData.
+-}
+mkValue :: String -> RecursiveData
+mkValue value1 = Fix (Value value1)
+
+{-| Helper for creating a 'List' RecursiveData.
+-}
+mkList :: [RecursiveData] -> RecursiveData
+mkList values = Fix (List values)
+
+{-| Helper for creating a 'Tuple' RecursiveData.
+-}
+mkTuple :: [RecursiveData] -> RecursiveData
+mkTuple values = Fix (Tuple values)
+
+{-| Helper for creating a 'Deleted' RecursiveData.
+-}
+mkDeleted :: RecursiveData
+mkDeleted = Fix Deleted

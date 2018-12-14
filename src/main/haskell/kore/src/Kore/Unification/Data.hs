@@ -68,8 +68,7 @@ data UnificationProof level variable
     -- (x = (t1 /\ t2))
   deriving (Eq, Generic, Show)
 
-instance
-    Reflectable (variable level)
+instance Reflectable (variable level)
     => Reflectable (UnificationProof level variable)
 
 instance Semigroup (UnificationProof level variable) where

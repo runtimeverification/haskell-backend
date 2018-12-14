@@ -14,6 +14,10 @@ import Data.List
 import           Kore.Reflect
                  ( Reflectable (reflect) )
 import qualified Kore.Reflect as Reflect
+import           Kore.Reflect.Transform
+                 ( Transformation (Transformation), transform )
+import           Kore.Reflect.Transformations
+                 ( removeIdLocation )
 
 assertEqualWithPrinter
     :: (Eq a, HasCallStack)
@@ -116,7 +120,10 @@ formatDiffForExplanation expected actual =
 
 instance Reflectable a => EqualWithExplanation a where
     compareWithExplanation thing1 thing2 =
-        compareReflectable (reflect thing1) (reflect thing2)
+        compareReflectable
+            (normalize (reflect thing1)) (normalize (reflect thing2))
+      where
+        normalize = transform (Transformation [removeIdLocation])
     printWithExplanation = Reflect.printData . reflect
 
 compareReflectable
@@ -130,13 +137,25 @@ compareReflectable
   | otherwise =
     Just (formatDiffForExplanation name1 name2)
 compareReflectable
-    (Fix (Reflect.Struct name1 values1))
-    (Fix (Reflect.Struct name2 values2))
+    (Fix (Reflect.Struct
+        Reflect.ProductElement {name = name1, values = values1}
+    ))
+    (Fix (Reflect.Struct
+        Reflect.ProductElement {name = name2, values = values2}
+    ))
   | name1 == name2 = do -- Maybe monad
     err <- compareStructList values1 values2
     return (name1 ++ " {" ++ err ++ "}")
   | otherwise =
     error ("Expected the same name, got " ++ show [name1, name2])
+compareReflectable
+    (Fix (Reflect.StructField name1 value1))
+    (Fix (Reflect.StructField name2 value2))
+  | name1 == name2 = do -- Maybe monad
+    err <- compareReflectable value1 value2
+    return (name1 ++ "=" ++ err)
+  | otherwise =
+    Just (formatDiffForExplanation name1 name2)
 compareReflectable
     (Fix (Reflect.Value value1))
     (Fix (Reflect.Value value2))
@@ -150,6 +169,10 @@ compareReflectable
     (Fix (Reflect.Tuple values1))
     (Fix (Reflect.Tuple values2))
   = compareList "(" ")" values1 values2
+compareReflectable
+    (Fix Reflect.Deleted)
+    (Fix Reflect.Deleted)
+  = Nothing
 
 compareReflectable expected actual
   | expected == actual =
@@ -164,8 +187,8 @@ compareReflectable expected actual
         )
 
 compareStructList
-    :: [Reflect.NamedElement Reflect.RecursiveData]
-    -> [Reflect.NamedElement Reflect.RecursiveData]
+    :: [Reflect.RecursiveData]
+    -> [Reflect.RecursiveData]
     -> Maybe String
 compareStructList l1 l2
   | length l1 == length l2 =
@@ -180,23 +203,16 @@ compareStructList l1 l2
 
 compareStructListElement
     :: Either [String] [String]
-    ->  ( Reflect.NamedElement Reflect.RecursiveData
-        , Reflect.NamedElement Reflect.RecursiveData
-        )
+    ->  ( Reflect.RecursiveData, Reflect.RecursiveData )
     -> Either [String] [String]
 compareStructListElement (Left diff) _ =
     Left ("..." : diff)
 compareStructListElement
     (Right same)
-    ( Reflect.NamedElement {name = name1, value = value1}
-    , Reflect.NamedElement {name = name2, value = value2}
-    )
-  | name1 == name2 =
-    case compareReflectable value1 value2 of
-        Just diff -> Left ((name1 ++ "=(" ++ diff ++ ")") : same)
+    (data1, data2)
+  = case compareReflectable data1 data2 of
+        Just diff -> Left (diff : same)
         Nothing   -> Right ("..." : same)
-  | otherwise = error
-    ("expecting the same field name, but got " ++ show [name1, name2])
 
 compareList
     :: String -> String

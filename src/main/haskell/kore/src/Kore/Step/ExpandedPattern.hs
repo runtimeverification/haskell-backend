@@ -91,8 +91,7 @@ data Predicated level variable child = Predicated
     }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
-instance
-    (Reflectable (variable level), Reflectable child)
+instance (Reflectable (variable level), Reflectable child)
     => Reflectable (Predicated level variable child)
 
 instance

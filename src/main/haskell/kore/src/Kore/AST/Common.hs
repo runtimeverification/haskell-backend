@@ -1117,8 +1117,7 @@ instance
     ( Reflectable (domain child)
     , Reflectable (variable level)
     , Reflectable child
-    )
-    => Reflectable (Pattern level domain variable child)
+    ) => Reflectable (Pattern level domain variable child)
   where
     reflect (AndPattern p) = Reflect.mkSum "AndPattern" [reflect p]
     reflect (ApplicationPattern p) =

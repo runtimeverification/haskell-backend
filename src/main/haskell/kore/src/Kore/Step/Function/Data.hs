@@ -110,8 +110,7 @@ data AttemptedFunction level variable
     | Applied !(OrOfExpandedPattern level variable)
   deriving (Show, Eq, Generic)
 
-instance
-    Reflectable (variable level)
+instance Reflectable (variable level)
     => Reflectable (AttemptedFunction level variable)
 
 {-| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',

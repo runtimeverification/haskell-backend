@@ -43,8 +43,8 @@ data FunctionalProof level variable
     -- ^A char literal is a functional constructor without arguments.
   deriving (Eq, Generic, Show)
 
-instance
-    Reflectable (variable level) => Reflectable (FunctionalProof level variable)
+instance Reflectable (variable level)
+    => Reflectable (FunctionalProof level variable)
 
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
@@ -60,8 +60,8 @@ data FunctionProof level variable
     -- ^Head of a partial function.
   deriving (Eq, Generic, Show)
 
-instance
-    Reflectable (variable level) => Reflectable (FunctionProof level variable)
+instance Reflectable (variable level)
+    => Reflectable (FunctionProof level variable)
 
 -- |'TotalProof' is used for providing arguments that a pattern is
 -- total/not bottom.  Currently we only support arguments stating that a
@@ -76,5 +76,5 @@ data TotalProof level variable
     -- ^Head of a total symbol.
   deriving (Eq, Generic, Show)
 
-instance
-    Reflectable (variable level) => Reflectable (TotalProof level variable)
+instance Reflectable (variable level)
+    => Reflectable (TotalProof level variable)

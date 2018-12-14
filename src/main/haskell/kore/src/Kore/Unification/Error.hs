@@ -33,8 +33,7 @@ data UnificationOrSubstitutionError level variable
     | SubstitutionError (SubstitutionError level variable)
     deriving (Eq, Generic, Show)
 
-instance
-    Reflectable (variable level)
+instance Reflectable (variable level)
     => Reflectable (UnificationOrSubstitutionError level variable)
 
 -- |'UnificationError' specifies various error cases encountered during
@@ -60,8 +59,7 @@ newtype SubstitutionError level variable
     -- ^the circularity path may pass through non-constructors: maybe solvable.
     deriving (Eq, Generic, Show)
 
-instance
-    Reflectable (variable level)
+instance Reflectable (variable level)
     => Reflectable (SubstitutionError level variable)
 
 {-| 'substitutionErrorVariables' extracts all variables in a

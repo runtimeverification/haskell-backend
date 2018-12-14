@@ -36,7 +36,6 @@ import GHC.Generics
 import Kore.Reflect
        ( Reflectable )
 
-
 toProxy :: a -> Proxy a
 toProxy _ = Proxy
 
@@ -94,8 +93,7 @@ deriving instance (ShowMetaOrObject thing) => Show (Unified thing)
 
 instance (NFData (thing Meta), NFData (thing Object)) => NFData (Unified thing)
 
-instance
-    (Reflectable (thing Object), Reflectable (thing Meta))
+instance (Reflectable (thing Object), Reflectable (thing Meta))
     => Reflectable (Unified thing)
 
 {-|Given a function transforming objects of 'Meta' type and another transforming

@@ -145,8 +145,8 @@ data StepProofAtom (level :: *) (variable :: * -> *)
     -- ^ Proof for the simplification part of a step.
     deriving (Show, Eq, Generic)
 
-instance
-    Reflectable (variable level) => Reflectable (StepProofAtom level variable)
+instance Reflectable (variable level)
+    => Reflectable (StepProofAtom level variable)
 
 {-| 'VariableRenaming' represents a renaming of a variable.
 -}
@@ -157,8 +157,7 @@ data VariableRenaming level variable = VariableRenaming
     deriving (Show, Eq, Generic)
 
 
-instance
-    Reflectable (variable level)
+instance Reflectable (variable level)
     => Reflectable (VariableRenaming level variable)
 
 {-| 'StepperVariable' wraps a variable in a variable-like type, distinguishing
@@ -189,8 +188,8 @@ instance
     freshVariableWith (ConfigurationVariable a) n =
         ConfigurationVariable $ freshVariableWith a n
 
-instance
-    Reflectable (variable level) => Reflectable (StepperVariable variable level)
+instance Reflectable (variable level)
+    => Reflectable (StepperVariable variable level)
 
 {-! The result of applying an axiom to a pattern. Contains the rewritten
 pattern (if any) and the unrewritten part of the original pattern.
