@@ -20,6 +20,8 @@ import qualified Data.Map as Map
 import           Data.Proxy
 import           Data.These
                  ( These (This) )
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
@@ -91,7 +93,8 @@ substitutionSimplifier tools =
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
-    ::  ( p ~ CommonStepPattern Object
+    ::  ( HasCallStack
+        , p ~ CommonStepPattern Object
         , expanded ~ CommonExpandedPattern Object
         )
     => (p -> SMT expanded)

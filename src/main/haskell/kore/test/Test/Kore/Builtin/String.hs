@@ -5,8 +5,10 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
+import GHC.Stack
+       ( HasCallStack )
+
+import           Kore.AST.Pure
 import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Builtin.String as String
 import           Kore.Step.ExpandedPattern
@@ -292,7 +294,8 @@ asPartialExpandedPattern :: Maybe String -> CommonExpandedPattern Object
 asPartialExpandedPattern = String.asPartialExpandedPattern stringSort
 
 testString
-    :: String
+    :: HasCallStack
+    => String
     -> SymbolOrAlias Object
     -> [CommonStepPattern Object]
     -> CommonExpandedPattern Object
