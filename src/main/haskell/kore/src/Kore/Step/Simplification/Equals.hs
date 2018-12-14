@@ -84,12 +84,10 @@ This uses the following simplifications
         , and
             ( ceil(phi)
             , ceil(psi1) or ceil(psi2) or  ... or ceil(psin)
-            , or
-                ( ceil(psi1) and phi == psi1)
-                , ceil(psi2) and phi == psi2)
-                ...
-                , ceil(psin) and phi == psin)
-                )
+            , ceil(psi1) implies phi == psi1)
+            , ceil(psi2) implies phi == psi2)
+            ...
+            , ceil(psin) implies phi == psin)
             )
         )
 * Equals(t1 and t2) = ceil(t1 and t2) or (not ceil(t1) and not ceil(t2))
