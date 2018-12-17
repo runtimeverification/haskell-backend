@@ -13,6 +13,7 @@ module Kore.Step.OrOfExpandedPattern
     ( CommonOrOfExpandedPattern
     , MultiOr (..)
     , OrOfExpandedPattern
+    , OrOfPredicateSubstitution
     , filterOr -- TODO: This should be internal-only.
     , flatten
     , fmapFlattenWithPairs
@@ -43,17 +44,14 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTUtils.SmartConstructors
                  ( mkOr )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
                  ( SymbolOrAliasSorts )
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue, makeTruePredicate )
+                 ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
-import qualified Kore.Unification.Substitution as Substitution
 
 {-| 'MultiOr' is a Matching logic or of its children
 
@@ -62,12 +60,19 @@ TODO(virgil): Make this a list-like monad, many things would be nicer.
 newtype MultiOr child = MultiOr [child]
     deriving (Applicative, Eq, Foldable, Functor, Monad, Show, Traversable)
 
+type OrOfPredicated level variable term =
+    MultiOr (Predicated level variable term)
 
 {-| 'OrOfExpandedPattern' is a 'MultiOr' of 'ExpandedPatterns', which is the
 most common case.
 -}
-type OrOfExpandedPattern level variable =
-    MultiOr (ExpandedPattern level variable)
+type OrOfExpandedPattern level variable
+    = OrOfPredicated level variable (StepPattern level variable)
+
+{-| 'OrOfPredicateSubstitution' is a 'MultiOr' of 'PredicateSubstitution'.
+-}
+type OrOfPredicateSubstitution level variable
+    = OrOfPredicated level variable ()
 
 {-| 'CommonOrOfExpandedPattern' particularizes 'OrOfExpandedPattern' to
 'Variable', following the same convention as the other Common* types.
@@ -89,9 +94,13 @@ See also: 'filterUnique'
 
  -}
 filterOr
-    :: (MetaOrObject level, Ord (variable level))
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord term
+        )
+    => OrOfPredicated level variable term
+    -> OrOfPredicated level variable term
 filterOr =
     filterGeneric patternToOrBool . filterUnique
 
@@ -109,12 +118,16 @@ matching logic sense.
 filterUnique :: Ord a => MultiOr a -> MultiOr a
 filterUnique = MultiOr . Set.toList . Set.fromList . extract
 
-{-| 'make' constructs a normalized 'OrOfExpandedPattern'.
+{-| 'make' constructs a normalized 'OrOfPredicated'.
  -}
 make
-    :: (MetaOrObject level, Ord (variable level))
-    => [ExpandedPattern level variable]
-    -> OrOfExpandedPattern level variable
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord term
+        )
+    => [Predicated level variable term]
+    -> OrOfPredicated level variable term
 make patts = filterOr (MultiOr patts)
 
 {-|'makeMultiOr' constructs a 'MultiOr'.
@@ -136,7 +149,7 @@ makeFromSinglePurePattern patt = make [ ExpandedPattern.fromPurePattern patt ]
 It returns the patterns inside an 'or'.
 -}
 extractPatterns
-    :: OrOfExpandedPattern level variable -> [ExpandedPattern level variable]
+    :: OrOfPredicated level variable term -> [Predicated level variable term]
 extractPatterns = extract
 
 {-| 'extract' returns the patterns inside an 'or'.
@@ -147,8 +160,12 @@ extract (MultiOr x) = x
 {-| 'isFalse' checks if the 'Or' is composed only of bottom patterns.
 -}
 isFalse
-    :: (MetaOrObject level, Ord (variable level))
-    => OrOfExpandedPattern level variable
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord term
+        )
+    => OrOfPredicated level variable term
     -> Bool
 isFalse patt =
     case filterOr patt of
@@ -159,14 +176,10 @@ isFalse patt =
 
 Assumes that the pattern was filtered.
 -}
-isTrue :: OrOfExpandedPattern level variable -> Bool
 isTrue
-    (MultiOr
-        [ Predicated
-            {term = Top_ _, predicate = PredicateTrue, substitution}
-        ]
-    )
-  = Substitution.null substitution
+    :: ExpandedPattern.TopBottomTerm term
+    =>  OrOfPredicated level variable term -> Bool
+isTrue (MultiOr [ predicated ]) = ExpandedPattern.isTop predicated
 isTrue _ = False
 
 {-| 'fullCrossProduct' distributes all the elements in a list of or, making
@@ -201,28 +214,34 @@ makeGeneric
 
 -}
 fullCrossProduct
-    :: [OrOfExpandedPattern level variable]
-    -> MultiOr [ExpandedPattern level variable]
+    :: [OrOfPredicated level variable term]
+    -> MultiOr [Predicated level variable term]
 fullCrossProduct [] = makeMultiOr [[]]
 fullCrossProduct ors =
     foldr (crossProductGeneric (:)) lastOrsWithLists (init ors)
   where
     lastOrsWithLists = fmap (: []) (last ors)
 
-{-| 'flatten' transforms a MultiOr (OrOfExpandedPattern level variable)
-into an OrOfExpandedPattern by or-ing all the inner elements.
+{-| 'flatten' transforms a MultiOr (OrOfPredicated level variable)
+into an OrOfPredicated by or-ing all the inner elements.
 -}
 flatten
-    :: (MetaOrObject level, Ord (variable level))
-    => MultiOr (OrOfExpandedPattern level variable)
-    -> OrOfExpandedPattern level variable
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord term
+        )
+    => MultiOr (OrOfPredicated level variable term)
+    -> OrOfPredicated level variable term
 flatten ors =
     filterOr (flattenGeneric ors)
 
 {-| 'patternToOrBool' does a very simple attempt to check whether a pattern
 is top or bottom.
 -}
-patternToOrBool :: ExpandedPattern level variable -> OrBool
+patternToOrBool
+    :: ExpandedPattern.TopBottomTerm term
+    => Predicated level variable term -> OrBool
 patternToOrBool patt
   | ExpandedPattern.isTop patt = OrTrue
   | ExpandedPattern.isBottom patt = OrFalse
@@ -231,12 +250,16 @@ patternToOrBool patt
 {-| fmaps an or in a similar way to traverseWithPairs.
 -}
 fmapWithPairs
-    :: (MetaOrObject level, Ord (variable level))
-    =>  (  ExpandedPattern level variable
-        -> (ExpandedPattern level variable, a)
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord term
         )
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, [a])
+    =>  (  Predicated level variable term
+        -> (Predicated level variable term, a)
+        )
+    -> OrOfPredicated level variable term
+    -> (OrOfPredicated level variable term, [a])
 fmapWithPairs mapper patt =
     (filterOr (fmap fst mapped), extract (fmap snd mapped))
   where
@@ -251,12 +274,17 @@ proofs for each transformation: this function will return the transformed or
 and a list of the proofs involved in the transformation.
 -}
 traverseWithPairs
-    :: (MetaOrObject level, Monad f, Ord (variable level))
-    =>  (  ExpandedPattern level variable
-        -> f (ExpandedPattern level variable, a)
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , MetaOrObject level
+        , Monad f
+        , Ord (variable level)
+        , Ord term
         )
-    -> OrOfExpandedPattern level variable
-    -> f (OrOfExpandedPattern level variable, [a])
+    =>  (  Predicated level variable term
+        -> f (Predicated level variable term, a)
+        )
+    -> OrOfPredicated level variable term
+    -> f (OrOfPredicated level variable term, [a])
 traverseWithPairs mapper patt = do
     mapped <- traverse mapper patt
     return (filterOr (fmap fst mapped), extract (fmap snd mapped))
@@ -265,28 +293,37 @@ traverseWithPairs mapper patt = do
 'traverseFlattenWithPairs'.
 -}
 fmapFlattenWithPairs
-    :: (MetaOrObject level, Ord (variable level))
-    =>  (  ExpandedPattern level variable
-        -> (OrOfExpandedPattern level variable, a)
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord term
         )
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, [a])
+    =>  (  Predicated level variable term
+        -> (OrOfPredicated level variable term, a)
+        )
+    -> OrOfPredicated level variable term
+    -> (OrOfPredicated level variable term, [a])
 fmapFlattenWithPairs mapper patt =
     (flatten (fmap fst mapped), extract (fmap snd mapped))
   where
     mapped = fmap mapper patt
 
 {-| 'traverseFlattenWithPairs' is similar to 'traverseWithPairs', except
-that its function returns an 'OrOfExpandedPattern', so the actual result
+that its function returns an 'OrOfPredicated', so the actual result
 is flattened at the end.
 -}
 traverseFlattenWithPairs
-    :: (Monad f, MetaOrObject level, Ord (variable level))
-    =>  (  ExpandedPattern level variable
-        -> f (OrOfExpandedPattern level variable, a)
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , Monad f
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord term
         )
-    -> OrOfExpandedPattern level variable
-    -> f (OrOfExpandedPattern level variable, [a])
+    =>  (  Predicated level variable term
+        -> f (OrOfPredicated level variable term, a)
+        )
+    -> OrOfPredicated level variable term
+    -> f (OrOfPredicated level variable term, [a])
 traverseFlattenWithPairs mapper patt = do
     mapped <- traverse mapper patt
     return (flatten (fmap fst mapped), extract (fmap snd mapped))
@@ -295,12 +332,17 @@ traverseFlattenWithPairs mapper patt = do
 except that it works with 'MultiOr's.
 -}
 traverseFlattenWithPairsGeneric
-    :: (Monad f, MetaOrObject level, Ord (variable level))
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , Monad f
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord term
+        )
     =>  (  a
-        -> f (OrOfExpandedPattern level variable, pair)
+        -> f (OrOfPredicated level variable term, pair)
         )
     -> MultiOr a
-    -> f (OrOfExpandedPattern level variable, [pair])
+    -> f (OrOfPredicated level variable term, [pair])
 traverseFlattenWithPairsGeneric mapper patt = do
     mapped <- traverse mapper patt
     return (flatten (fmap fst mapped), extract (fmap snd mapped))
@@ -386,10 +428,14 @@ See also: 'filterOr'
 
  -}
 merge
-    :: (MetaOrObject level, Ord (variable level))
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    ::  ( ExpandedPattern.TopBottomTerm term
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord term
+        )
+    => OrOfPredicated level variable term
+    -> OrOfPredicated level variable term
+    -> OrOfPredicated level variable term
 merge patts1 patts2 =
     filterOr (mergeGeneric patts1 patts2)
 
