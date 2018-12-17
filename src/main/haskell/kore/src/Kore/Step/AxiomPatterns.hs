@@ -18,6 +18,7 @@ module Kore.Step.AxiomPatterns
     , lensComm, Comm (..)
     , lensUnit, Unit (..)
     , lensIdem, Idem (..)
+    , lensTrusted, Trusted (..)
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
@@ -34,8 +35,8 @@ import           Control.Monad
                  ( (>=>) )
 import           Data.Default
                  ( Default (..) )
-import           Data.Either
-                 ( rights )
+import           Data.Maybe
+                 ( mapMaybe )
 
 import           Kore.AST.Kore
 import           Kore.AST.PureToKore
@@ -50,6 +51,7 @@ import           Kore.Attribute.Parser
                  ( ParseAttributes (..), parseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.ProductionID
+import           Kore.Attribute.Trusted
 import           Kore.Attribute.Unit
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -72,6 +74,8 @@ data AxiomPatternAttributes =
     -- ^ The axiom is a left- or right-unit axiom.
     , idem :: !Idem
     -- ^ The axiom is an idempotency axiom.
+    , trusted :: !Trusted
+    -- ^ The claim is trusted
     }
     deriving (Eq, Ord, Show)
 
@@ -86,6 +90,7 @@ instance Default AxiomPatternAttributes where
             , comm = def
             , unit = def
             , idem = def
+            , trusted = def
             }
 
 instance ParseAttributes AxiomPatternAttributes where
@@ -96,6 +101,7 @@ instance ParseAttributes AxiomPatternAttributes where
         >=> lensComm (parseAttribute attr)
         >=> lensUnit (parseAttribute attr)
         >=> lensIdem (parseAttribute attr)
+        >=> lensTrusted (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -167,14 +173,11 @@ extractRewriteAxioms
     -- ^'IndexedModule' containing the definition
     -> [RewriteRule level]
 extractRewriteAxioms level idxMod =
-    extractRewriteAxiomsFrom
-        level
-        ( map
-            ( constructUnifiedSentence SentenceAxiomSentence
-            . getIndexedSentence
-            )
-            (indexedModuleAxioms idxMod)
+    mapMaybe
+        ( extractRewriteAxiomFrom level
+        . getIndexedSentence
         )
+        (indexedModuleAxioms idxMod)
 
 -- | Extracts all 'RewriteRule' claims matching a given @level@ from
 -- a verified definition.
@@ -183,29 +186,26 @@ extractRewriteClaims
     => level -- ^expected level for the axiom pattern
     -> VerifiedModule atts
     -- ^'IndexedModule' containing the definition
-    -> [RewriteRule level]
+    -> [(atts, RewriteRule level)]
 extractRewriteClaims level idxMod =
-    extractRewriteAxiomsFrom
-        level
-        ( map
-            ( constructUnifiedSentence SentenceAxiomSentence
-            . getIndexedSentence
-            )
-            (indexedModuleClaims idxMod)
+    mapMaybe
+        ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
+        . fmap (extractRewriteAxiomFrom level) -- applying on second component
         )
+    $ (indexedModuleClaims idxMod)
 
-extractRewriteAxiomsFrom
+extractRewriteAxiomFrom
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
-    -> [VerifiedKoreSentence]
-    -- ^ List of sentences to extract axiom patterns from
-    -> [RewriteRule level]
-extractRewriteAxiomsFrom level sentences =
-    [ axiomPat | RewriteAxiomPattern axiomPat <-
-        rights $ map
-            (verifiedKoreSentenceToAxiomPattern level)
-            sentences
-    ]
+    -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    -- ^ Sentence to extract axiom pattern from
+    -> Maybe (RewriteRule level)
+extractRewriteAxiomFrom level sentence =
+    case verifiedKoreSentenceToAxiomPattern level koreSentence of
+        Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
+        _ -> Nothing
+  where
+    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
 
 -- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
 -- a given 'KoreSentence'.

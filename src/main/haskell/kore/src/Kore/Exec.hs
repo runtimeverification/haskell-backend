@@ -40,13 +40,14 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import           Kore.OnePath.Verification
                  ( Axiom (Axiom), Claim (Claim), defaultStrategy, verify )
+import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  makeTruePredicate, unwrapPredicate )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
                  RulePattern (RulePattern), extractRewriteAxioms,
-                 extractRewriteClaims )
+                 extractRewriteClaims, lensTrusted )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
@@ -74,7 +75,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Step.Strategy
+import qualified Kore.Step.Strategy as Strategy
 import           Kore.Substitution.Class
                  ( substitute )
 import qualified Kore.Substitution.List as ListSubstitution
@@ -102,7 +103,8 @@ exec indexedModule purePattern stepLimit strategy =
         :: MetadataTools Object StepperAttributes
         -> StepPatternSimplifier Object Variable
         -> PredicateSubstitutionSimplifier Object Simplifier
-        -> ExecutionGraph (CommonExpandedPattern Object, StepProof Object Variable)
+        -> Strategy.ExecutionGraph
+            (CommonExpandedPattern Object, StepProof Object Variable)
         -> Simplifier (CommonStepPattern Object)
     execute _ _ _ executionGraph = do
         let (finalConfig, _) = pickLongest executionGraph
@@ -167,7 +169,7 @@ setUpConcreteExecution
     -> (MetadataTools Object StepperAttributes
         -> StepPatternSimplifier Object Variable
         -> PredicateSubstitutionSimplifier Object Simplifier
-        -> ExecutionGraph
+        -> Strategy.ExecutionGraph
             (CommonExpandedPattern Object, StepProof Object Variable)
         -> Simplifier a)
     -- ^ Callback to do the execution
@@ -261,7 +263,7 @@ makeAxiomsAndSimplifiers verifiedModule tools =
             simplifyFunctionAxioms tools
                 (extractFunctionAxioms Object verifiedModule)
         rewriteAxioms <-
-            simplifyRewriteAxioms tools
+            mapM (simplifyRewriteRule tools)
                 (extractRewriteAxioms Object verifiedModule)
         let
             functionEvaluators =
@@ -301,14 +303,12 @@ simplifyFunctionAxioms tools = mapM (mapM simplifyEqualityRule)
     simplifyEqualityRule (EqualityRule rule) =
         EqualityRule <$> preSimplify (emptyPatternSimplifier tools) rule
 
-simplifyRewriteAxioms
+simplifyRewriteRule
     :: MetadataTools Object StepperAttributes
-    -> [RewriteRule Object]
-    -> Simplifier [RewriteRule Object]
-simplifyRewriteAxioms tools = mapM simplifyRewriteRule
-  where
-    simplifyRewriteRule (RewriteRule rule) =
-        RewriteRule <$> preSimplify (emptyPatternSimplifier tools) rule
+    -> RewriteRule Object
+    -> Simplifier (RewriteRule Object)
+simplifyRewriteRule tools (RewriteRule rule) =
+    RewriteRule <$> preSimplify (emptyPatternSimplifier tools) rule
 
 emptyPatternSimplifier
     :: MetadataTools Object StepperAttributes
@@ -354,11 +354,11 @@ prove limit definitionModule specModule = do
         (rewriteAxioms, simplifier, substitutionSimplifier) =
             axiomsAndSimplifiers
     specAxioms <-
-        simplifyRewriteAxioms tools
+        mapM (sequence . fmap (simplifyRewriteRule tools))
             (extractRewriteClaims Object specModule)
     let
         axioms = fmap Axiom rewriteAxioms
-        claims = fmap Claim specAxioms
+        claims = fmap makeClaim specAxioms
 
     result <- runExceptT
         $ verify
@@ -366,9 +366,11 @@ prove limit definitionModule specModule = do
             simplifier
             substitutionSimplifier
             (defaultStrategy claims axioms)
-            (fmap makeClaim claims)
+            (map (\x -> (x,limit)) (extractUntrustedClaims claims))
 
     return $ Bifunctor.first toMLPattern result
 
   where
-    makeClaim claim = (claim, limit)
+    makeClaim (attributes, rule) = Claim { rule , attributes }
+    extractUntrustedClaims =
+        map Claim.rule . filter (not . isTrusted . trusted . Claim.attributes)
