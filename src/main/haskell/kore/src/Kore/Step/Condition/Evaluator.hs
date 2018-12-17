@@ -215,7 +215,6 @@ translatePredicate predicate = do
     translatePredicateEquals
         Equals
             { equalsOperandSort
-            , equalsResultSort
             , equalsFirst
             , equalsSecond
             }
@@ -224,12 +223,12 @@ translatePredicate predicate = do
             <$> translatePredicateEqualsChild equalsFirst
             <*> translatePredicateEqualsChild equalsSecond
       where
-        translatePredicateEqualsChild
-          | equalsOperandSort == equalsResultSort =
-            -- Child patterns are predicates.
-            translatePredicatePattern
-          | otherwise =
-            translatePattern equalsOperandSort
+        translatePredicateEqualsChild child =
+            -- Attempt to translate patterns in builtin sorts, or failing that,
+            -- as predicates.
+            (<|>)
+                (translatePattern equalsOperandSort child)
+                (translatePredicatePattern child)
 
     translatePredicateIff Iff { iffFirst, iffSecond } =
         iff
