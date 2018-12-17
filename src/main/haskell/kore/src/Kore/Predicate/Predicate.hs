@@ -83,6 +83,9 @@ instance TopBottom patt
     isTop (GenericPredicate patt) = isTop patt
     isBottom (GenericPredicate patt) = isBottom patt
 
+instance Unparse pattern' => Unparse (GenericPredicate pattern') where
+    unparse (GenericPredicate pattern') = unparse pattern'
+
 {-| 'Predicate' is a user-visible representation for predicates.
 -}
 type Predicate level variable = GenericPredicate (StepPattern level variable)
