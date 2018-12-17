@@ -205,13 +205,14 @@ runStep
     -> IO
         (Either
             (StepError Object Variable)
-            (CommonExpandedPattern Object, StepProof Object Variable)
+            [(CommonExpandedPattern Object, StepProof Object Variable)]
         )
 runStep configuration axiom = do
     ioResult <- runStepResult configuration axiom
-    return $ do
-        (StepResult { rewrittenPattern }, proof) <- ioResult
-        return (rewrittenPattern, proof)
+    return (map processResult <$> ioResult)
+  where
+    processResult (StepResult { rewrittenPattern }, proof) =
+        (rewrittenPattern, proof)
 
 runStepResult
     :: CommonExpandedPattern Object
@@ -221,7 +222,7 @@ runStepResult
     -> IO
         (Either
             (StepError Object Variable)
-            (StepResult Object Variable, StepProof Object Variable)
+            [(StepResult Object Variable, StepProof Object Variable)]
         )
 runStepResult configuration axiom =
     (runSMT . evalSimplifier . runExceptT)
@@ -244,14 +245,15 @@ runStepWith
     -> IO
         (Either
             (StepError Object Variable)
-            (CommonExpandedPattern Object, StepProof Object Variable)
+            [(CommonExpandedPattern Object, StepProof Object Variable)]
         )
 runStepWith solver configuration axiom = do
     ioResult <- runStepResultWith
         solver configuration axiom
-    return $ do
-        (StepResult { rewrittenPattern }, proof) <- ioResult
-        return (rewrittenPattern, proof)
+    return (map processResult <$> ioResult)
+  where
+    processResult (StepResult { rewrittenPattern }, proof) =
+        (rewrittenPattern, proof)
 
 runStepResultWith
     :: MVar Solver
@@ -262,7 +264,7 @@ runStepResultWith
     -> IO
         (Either
             (StepError Object Variable)
-            (StepResult Object Variable, StepProof Object Variable)
+            [(StepResult Object Variable, StepProof Object Variable)]
         )
 runStepResultWith solver configuration axiom =
     let smt =

@@ -264,7 +264,7 @@ notImplemented :: Function
 notImplemented =
     ApplicationFunctionEvaluator notImplemented0
   where
-    notImplemented0 _ _ _ _ = pure (NotApplicable, SimplificationProof)
+    notImplemented0 _ _ _ _ = pure [(NotApplicable, SimplificationProof)]
 
 {- | Verify a builtin sort declaration.
 
@@ -630,9 +630,10 @@ functionEvaluator impl =
         -> StepPatternSimplifier Object variable
         -> Application Object (StepPattern Object variable)
         -> Simplifier
-            ( AttemptedFunction Object variable
-            , SimplificationProof Object
-            )
+            [   ( AttemptedFunction Object variable
+                , SimplificationProof Object
+                )
+            ]
     evaluator
         tools
         _
@@ -642,10 +643,9 @@ functionEvaluator impl =
                 (MetadataTools.getResultSort tools -> resultSort)
             , applicationChildren
             }
-      =
-        do
-            attempt <- impl tools simplifier resultSort applicationChildren
-            return (attempt, SimplificationProof)
+      = do
+        attempt <- impl tools simplifier resultSort applicationChildren
+        return [(attempt, SimplificationProof)]
 
 {- | Run a parser on a verified domain value.
 

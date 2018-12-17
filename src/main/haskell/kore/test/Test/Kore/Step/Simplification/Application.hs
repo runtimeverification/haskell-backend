@@ -128,10 +128,10 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                     (That
                         [ ApplicationFunctionEvaluator
                             (const $ const $ const $ const $ return
-                                ( AttemptedFunction.Applied
+                                [( AttemptedFunction.Applied
                                     (OrOfExpandedPattern.make [gOfAExpanded])
                                 , SimplificationProof
-                                )
+                                )]
                             )
                         ]
                     )
@@ -221,7 +221,7 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                                 (const $ const $ const $ const $ do
                                     let zvar = freshVariableFromVariable z 1
                                     return
-                                        ( AttemptedFunction.Applied
+                                        [( AttemptedFunction.Applied
                                             (OrOfExpandedPattern.make
                                                 [ Predicated
                                                     { term = mkApp fSymbol [a]
@@ -236,7 +236,7 @@ test_applicationSimplification = give mockSymbolOrAliasSorts
                                                 ]
                                             )
                                         , SimplificationProof
-                                        )
+                                        )]
                                 )
                             ]
                         )

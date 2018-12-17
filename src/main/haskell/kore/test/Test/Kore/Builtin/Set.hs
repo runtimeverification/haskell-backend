@@ -354,9 +354,8 @@ test_concretizeKeysAxiom =
             , requires = Predicate.makeTruePredicate
             , attributes = Default.def
             }
-    expected =
-        Right
-            ( Predicated
+    expected = Right
+        [   ( Predicated
                 { term = symbolicKey
                 , predicate = Predicate.makeTruePredicate
                 , substitution = mempty
@@ -366,6 +365,7 @@ test_concretizeKeysAxiom =
                 , stepProof (StepProofUnification EmptyUnificationProof)
                 ]
             )
+        ]
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set.Builtin -> CommonStepPattern Object

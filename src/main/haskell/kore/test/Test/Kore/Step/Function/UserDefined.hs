@@ -81,7 +81,7 @@ test_userDefinedFunction =
                 )
                 (mockSimplifier [])
                 (metaF (Var_ $ x patternMetaSort))
-        assertEqualWithExplanation "f(x) => g(x)" expect actual
+        assertEqualWithExplanation "f(x) => g(x)" [expect] actual
 
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
@@ -100,7 +100,7 @@ test_userDefinedFunction =
                 )
                 (mockSimplifier [])
                 (metaF (Var_ $ x patternMetaSort))
-        assertEqualWithExplanation "f(x) => g(x) requires false" expect actual
+        assertEqualWithExplanation "f(x) => g(x) requires false" [expect] actual
 
     , testCase "Cannot apply step with unsat condition" $ do
         let expect =
@@ -123,7 +123,7 @@ test_userDefinedFunction =
                     [ (mkTop, ([], SimplificationProof)) ]
                 )
                 (metaF (Var_ $ x patternMetaSort))
-        assertEqualWithExplanation "" expect actual
+        assertEqualWithExplanation "" [expect] actual
 
     , testCase "Reevaluates the step application" $ do
         let expect =
@@ -163,7 +163,9 @@ test_userDefinedFunction =
                     ]
                 )
                 (metaF (Var_ $ x patternMetaSort))
-        assertEqualWithExplanation "f(x) => g(x) and g(x) => h(x)" expect actual
+        assertEqualWithExplanation "f(x) => g(x) and g(x) => h(x)"
+            [expect]
+            actual
 
     , testCase "Does not reevaluate the step application with incompatible condition" $ do
         let expect =
@@ -199,7 +201,7 @@ test_userDefinedFunction =
                 (metaF (Var_ $ x patternMetaSort))
         assertEqualWithExplanation
             "f(x) => g(x) and g(x) => h(x) + false"
-            expect
+            [expect]
             actual
 
     , testCase "Preserves step substitution" $ do
@@ -232,7 +234,9 @@ test_userDefinedFunction =
                     (Var_ $ a patternMetaSort)
                     (Var_ $ b patternMetaSort)
                 )
-        assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)" expect actual
+        assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)"
+            [expect]
+            actual
 
     , testCase "Merges the step substitution with the reevaluation one" $ do
         let expect =
@@ -291,7 +295,7 @@ test_userDefinedFunction =
                 )
         assertEqualWithExplanation
             "sigma(x,x) => g(x) vs sigma(a, b) and g(b) => h(c) + a=c,b=c"
-            expect
+            [expect]
             actual
     -- TODO: Add a test for StepWithAxiom returning a condition.
     -- TODO: Add a test for the stepper giving up
@@ -373,31 +377,38 @@ asApplication
 asApplication = asPurePattern . (mempty :<) . ApplicationPattern
 
 evaluateWithAxiom
-    :: MetaOrObject level
+    :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
     -> EqualityRule level
     -> CommonStepPatternSimplifier level
     -> Application level (CommonStepPattern level)
-    -> IO (CommonAttemptedFunction level)
+    -> IO [CommonAttemptedFunction level]
 evaluateWithAxiom
     metadataTools
     axiom
     simplifier
     app
-  =
-    evaluated >>= return . \case
-        AttemptedFunction.Applied orPattern ->
-            AttemptedFunction.Applied (fmap sortSubstitution orPattern)
-        result -> result
+  = do
+    results <- evaluated
+    return (map normalizeResult results)
   where
+    normalizeResult
+        :: CommonAttemptedFunction level -> CommonAttemptedFunction level
+    normalizeResult =
+        \case
+            AttemptedFunction.Applied orPattern ->
+                AttemptedFunction.Applied (fmap sortSubstitution orPattern)
+            result -> result
+
     sortSubstitution Predicated {term, predicate, substitution} =
         Predicated
             { term = term
             , predicate = predicate
             , substitution = Substitution.modify sort substitution
             }
+    evaluated :: IO [CommonAttemptedFunction level]
     evaluated =
-        (<$>) fst
+        (<$>) (map fst)
         $ SMT.runSMT SMT.defaultConfig
         $ evalSimplifier
         $ ruleFunctionEvaluator

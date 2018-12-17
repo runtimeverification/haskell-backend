@@ -27,7 +27,7 @@ import           Kore.Step.BaseStep
                  ( StepResult (StepResult), UnificationProcedure (..),
                  stepWithRuleForUnifier )
 import           Kore.Step.BaseStep as StepResult
-                 ( StepResult (..) )
+                 ( StepProof, StepResult (..) )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
@@ -56,7 +56,8 @@ evaluating the function, it tries to re-evaluate all functions on the result.
 The function is assumed to be defined through an axiom.
 -}
 ruleFunctionEvaluator
-    ::  ( FreshVariable variable
+    :: forall level variable .
+        ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , OrdMetaOrObject variable
@@ -74,7 +75,8 @@ ruleFunctionEvaluator
     -- ^ Evaluates functions in patterns
     -> Application level (StepPattern level variable)
     -- ^ The function on which to evaluate the current function.
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
+    -> Simplifier
+        [(AttemptedFunction level variable, SimplificationProof level)]
 ruleFunctionEvaluator
     (EqualityRule rule)
     tools
@@ -85,29 +87,10 @@ ruleFunctionEvaluator
     result <- runExceptT stepResult
     case result of
         Left _ ->
-            return (AttemptedFunction.NotApplicable, SimplificationProof)
-        Right (StepResult { rewrittenPattern = stepPattern }, _proof) ->
-            -- TODO(virgil): ^^^ Also use the remainder.
-            do
-                (   rewrittenPattern@Predicated
-                        { predicate = rewritingCondition }
-                    , _
-                    ) <-
-                        evaluatePredicate
-                            tools substitutionSimplifier simplifier stepPattern
-                case rewritingCondition of
-                    PredicateFalse ->
-                        return
-                            ( AttemptedFunction.Applied
-                                (OrOfExpandedPattern.make [])
-                            , SimplificationProof
-                            )
-                    _ ->
-                        reevaluateFunctions
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            rewrittenPattern
+            return [(AttemptedFunction.NotApplicable, SimplificationProof)]
+        Right results -> do
+            processedResults <- mapM processResult results
+            return (concat processedResults)
   where
     stepResult =
         stepWithRuleForUnifier
@@ -126,6 +109,35 @@ ruleFunctionEvaluator
             , predicate = makeTruePredicate
             , substitution = mempty
             }
+    processResult
+        :: (StepResult level variable, StepProof level variable)
+        -> Simplifier
+            [(AttemptedFunction level variable, SimplificationProof level)]
+    processResult
+        (StepResult { rewrittenPattern = stepPattern }, _proof)
+        -- TODO(virgil): ^^^ Also use the remainder.
+      = do
+        (   rewrittenPattern@Predicated
+                { predicate = rewritingCondition }
+            , _
+            ) <-
+                evaluatePredicate
+                    tools substitutionSimplifier simplifier stepPattern
+        case rewritingCondition of
+            PredicateFalse ->
+                return
+                    [   ( AttemptedFunction.Applied
+                            (OrOfExpandedPattern.make [])
+                        , SimplificationProof
+                        )
+                    ]
+            _ ->
+                reevaluateFunctions
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    rewrittenPattern
+
 
 {-| 'reevaluateFunctions' re-evaluates functions after a user-defined function
 was evaluated.
@@ -147,7 +159,8 @@ reevaluateFunctions
     -- ^ Evaluates functions in patterns.
     -> ExpandedPattern level variable
     -- ^ Function evaluation result.
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
+    -> Simplifier
+        [(AttemptedFunction level variable, SimplificationProof level)]
 reevaluateFunctions
     tools
     substitutionSimplifier
@@ -180,9 +193,9 @@ reevaluateFunctions
             (evaluatePredicate tools substitutionSimplifier wrappedSimplifier)
             mergedPatt
     return
-        ( AttemptedFunction.Applied evaluatedPatt
+        [( AttemptedFunction.Applied evaluatedPatt
         , SimplificationProof
-        )
+        )]
 
 evaluatePredicate
     ::  ( MetaOrObject level

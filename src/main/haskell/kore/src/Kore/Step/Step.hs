@@ -30,6 +30,8 @@ import Control.Monad.Except
        ( runExceptT )
 import Data.Foldable
        ( toList )
+import Data.Maybe
+       ( mapMaybe )
 import Data.Semigroup
        ( (<>) )
 import Numeric.Natural
@@ -121,15 +123,21 @@ transitionRule tools substitutionSimplifier simplifier =
             $ stepWithRule tools substitutionSimplifier config a
         case result of
             Left _ -> pure []
-            Right
-                ( StepResult
-                    { rewrittenPattern = config'
-                    -- TODO(virgil): Also use the remainder
-                    }
-                , proof') ->
-                if ExpandedPattern.isBottom config'
-                    then return []
-                    else return [(config', proof <> proof')]
+            Right results -> return $ mapMaybe (patternFromResult proof) results
+    patternFromResult
+        :: StepProof level Variable
+        -> (StepResult level Variable, StepProof level Variable)
+        -> Maybe (CommonExpandedPattern level, StepProof level Variable)
+    patternFromResult
+        proof
+        ( StepResult { rewrittenPattern = config' }
+        , proof'
+        )
+      =
+        if ExpandedPattern.isBottom config'
+            then Nothing
+            else Just (config', proof <> proof')
+
 
 {- | A strategy that applies all the rewrites in parallel.
 

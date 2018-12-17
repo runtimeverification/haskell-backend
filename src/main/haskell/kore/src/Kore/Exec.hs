@@ -142,8 +142,11 @@ search
                     simplifier
                     target
                     config
-        solutions <- searchGraph searchConfig (match searchPattern) executionGraph
+        solutionsLists <-
+            searchGraph searchConfig (match searchPattern) executionGraph
         let
+            solutions =
+                concatMap OrOfExpandedPattern.extractPatterns solutionsLists
             orPredicate =
                 give (symbolOrAliasSorts metadataTools)
                 $ makeMultipleOrPredicate

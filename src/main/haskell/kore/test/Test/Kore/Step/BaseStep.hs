@@ -7,7 +7,6 @@ import Test.Tasty.HUnit
 
 import           Control.Monad.Except
                  ( runExceptT )
-import qualified Data.Bifunctor as Bifunctor
 import           Data.Default
                  ( def )
 import           Data.Reflection
@@ -58,9 +57,8 @@ test_baseStep :: [TestTree]
 test_baseStep =
     give mockSymbolOrAliasSorts
     [ testCase "Substituting a variable." $ do
-        let expect =
-                Right
-                    ( Predicated
+        let expect = Right
+                [   ( Predicated
                         { term = Var_ $ v1 patternMetaSort
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -72,6 +70,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -84,9 +83,8 @@ test_baseStep =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Substituting a variable with a larger one." $ do
-        let expect =
-                Right
-                    ( Predicated
+        let expect = Right
+                [   ( Predicated
                         { term = Var_ $ y1 patternMetaSort
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -98,6 +96,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -110,9 +109,8 @@ test_baseStep =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Substituting a variable with itself." $ do
-        let expect =
-                Right
-                    ( Predicated
+        let expect = Right
+                [   ( Predicated
                         { term = Var_ $ v1 patternMetaSort
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -124,6 +122,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -141,9 +140,8 @@ test_baseStep =
     -- sigma(x, x) => x   vs   sigma(a, f(b))
     -- Expected: sigma(f(b), f(b)) and a=f(b)
     , testCase "Merging configuration patterns." $ do
-        let expect =
-                Right
-                    ( Predicated
+        let expect = Right
+                [   ( Predicated
                         { term = metaF (Var_ $ b1 patternMetaSort)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
@@ -159,6 +157,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -176,9 +175,8 @@ test_baseStep =
     -- sigma(x, x) => x   vs   sigma(f(a), f(b))
     -- Expected: f(b) and a=b
     , testCase "Substitution with symbol matching." $ do
-        let expect =
-                Right
-                    ( Predicated
+        let expect = Right
+                [   ( Predicated
                         { term = metaF (Var_ $ b1 patternMetaSort)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
@@ -191,6 +189,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -220,9 +219,8 @@ test_baseStep =
     -- sigma(sigma(a, b), sigma(b, a))
     -- Expected: sigma(b, b) and a=b
     , testCase "Merge multiple variables." $ do
-        let expect =
-                Right
-                    ( Predicated
+        let expect = Right
+                [   ( Predicated
                         { term =
                             metaSigma
                                 (Var_ $ b1 patternMetaSort)
@@ -238,6 +236,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -279,9 +278,8 @@ test_baseStep =
     -- x => exists a . x    vs    a
     -- Expected: exists <newvar> . a
     , testCase "Rename quantified rhs variables." $ do
-        let expect =
-                Right
-                    ( Predicated
+        let expect = Right
+                [   ( Predicated
                         { term =
                             Exists_
                                 patternMetaSort
@@ -301,6 +299,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -325,7 +324,7 @@ test_baseStep =
     -- sigma(x, x) -> x   vs   sigma(g(a), f(b))
     -- Expected: error because g(a) != f(b)
     , testCase "Symbol clashes." $ do
-        let expect = Right ExpandedPattern.bottom
+        let expect = Right []
         actual <-
             runStep
                 mockMetadataTools
@@ -338,13 +337,13 @@ test_baseStep =
                     , substitution = mempty
                     }
                 axiomMetaSigmaId
-        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+        assertEqualWithExplanation "" expect (fmap (map fst) actual)
 
     -- sigma(sigma(x, x), sigma(y, y)) -> sigma(x, y)
     -- vs
     -- sigma(sigma(a, f(b)), sigma(a, b))
     , testCase "Impossible substitution." $ do
-        let expect = Right ExpandedPattern.bottom
+        let expect = Right []
         actual <-
             runStep
                 mockMetadataTools
@@ -381,13 +380,13 @@ test_baseStep =
                     , attributes = def
                     }
                 )
-        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+        assertEqualWithExplanation "" expect (fmap (map fst) actual)
 
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, f(b)) with substitution b=a
     , testCase "Impossible substitution (ctor)." $ do
-        let expect = Right ExpandedPattern.bottom
+        let expect = Right [ExpandedPattern.bottom]
         actual <-
             runStep
                 mockMetadataTools
@@ -401,7 +400,7 @@ test_baseStep =
                         [(b1 patternMetaSort, Var_ $ a1 patternMetaSort)]
                     }
                 axiomMetaSigmaId
-        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+        assertEqualWithExplanation "" expect (fmap (map fst) actual)
 
     -- sigma(x, x) -> x
     -- vs
@@ -454,8 +453,8 @@ test_baseStep =
     -- vs
     -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
     , testCase "Unification is applied repeatedly" $ do
-        let expect =
-                Right Predicated
+        let expect = Right
+                [ Predicated
                     { term =
                         metaSigma
                             (metaSigma
@@ -478,6 +477,7 @@ test_baseStep =
                             )
                         ]
                     }
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -502,7 +502,7 @@ test_baseStep =
                     , substitution = mempty
                     }
                 axiomMetaSigmaId
-        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+        assertEqualWithExplanation "" expect (fmap (map fst) actual)
 
     -- sigma(sigma(x, x), y) => sigma(x, y)
     -- vs
@@ -511,9 +511,8 @@ test_baseStep =
     , testCase "Substitution normalization." $ do
         let
             fOfB = metaF (Var_ $ b1 patternMetaSort)
-            expect =
-                Right
-                    ( Predicated
+            expect = Right
+                [   ( Predicated
                         { term = metaSigma fOfB fOfB
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
@@ -526,6 +525,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -542,13 +542,12 @@ test_baseStep =
                     }
                 (RewriteRule RulePattern
                     { left =
-                        (metaSigma
+                        metaSigma
                             (metaSigma
                                 (Var_ $ x1 patternMetaSort)
                                 (Var_ $ x1 patternMetaSort)
                             )
                             (Var_ $ y1 patternMetaSort)
-                        )
                     , right =
                         metaSigma
                             (Var_ $ x1 patternMetaSort)
@@ -567,9 +566,8 @@ test_baseStep =
         let
             fOfB = metaF (Var_ $ b1 patternMetaSort)
             fOfC = metaF (Var_ $ c1 patternMetaSort)
-            expect =
-                Right
-                    ( Predicated
+            expect = Right
+                [   ( Predicated
                         { term = metaSigma fOfC fOfC
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
@@ -584,6 +582,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -619,7 +618,7 @@ test_baseStep =
     -- "sl2"
     -- Expected: bottom
     , testCase "Matching different string literals is bottom" $ do
-        let expect = Right ExpandedPattern.bottom
+        let expect = Right []
         actual <-
             runStep
                 mockMetadataTools
@@ -635,16 +634,15 @@ test_baseStep =
                     , attributes = def
                     }
                 )
-        assertEqualWithExplanation "" expect (Bifunctor.second fst actual)
+        assertEqualWithExplanation "" expect (fmap (map fst) actual)
 
     -- x => x
     -- vs
     -- a and g(a)=f(a)
     -- Expected: y1 and g(a)=f(a)
     , testCase "Preserving initial condition." $ do
-        let expect =
-                Right
-                    ( Predicated
+        let expect = Right
+                [   ( Predicated
                         { term = Var_ $ a1 patternMetaSort
                         , predicate =
                             makeEqualsPredicate
@@ -659,6 +657,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -680,9 +679,8 @@ test_baseStep =
     , testCase "Substitution_normalization." $ do
         let
             fOfB = metaF (Var_ $ b1 patternMetaSort)
-            expect =
-                Right
-                    ( Predicated
+            expect = Right
+                [   ( Predicated
                         { term = metaSigma fOfB fOfB
                         , predicate =
                             makeEqualsPredicate (metaG fOfB) (metaF fOfB)
@@ -696,6 +694,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -741,20 +740,20 @@ test_baseStep =
                 makeEqualsPredicate
                     (metaG (Var_ $ var patternMetaSort))
                     (metaF (Var_ $ var patternMetaSort))
-            expect =
-              Right
-                  ( Predicated
-                      { term = Var_ $ a1 patternMetaSort
-                      , predicate = preCondition a1
-                      , substitution = mempty
-                      }
-                  , mconcat
-                      (map stepProof
-                          [ StepProofVariableRenamings []
-                          , StepProofUnification EmptyUnificationProof
-                          ]
-                      )
-                  )
+            expect = Right
+                [   ( Predicated
+                        { term = Var_ $ a1 patternMetaSort
+                        , predicate = preCondition a1
+                        , substitution = mempty
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
+                    )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -797,9 +796,8 @@ test_baseStep =
             }
 
     identicalVariablesAssertion var = do
-        let expect =
-                Right
-                    ( Predicated
+        let expect = Right
+                [   ( Predicated
                         { term = Var_ $ var patternMetaSort
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -811,6 +809,7 @@ test_baseStep =
                             ]
                         )
                     )
+                ]
         actual <-
             runStep
                 mockMetadataTools
@@ -872,31 +871,33 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
         --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
         let
             expected = Right
-                ( StepResult
-                    { rewrittenPattern = Predicated
-                        { term = Mock.cg
-                        , predicate = makeCeilPredicate Mock.cg
-                        , substitution =
-                            Substitution.wrap [(Mock.x, Mock.a)]
+                [   ( StepResult
+                        { rewrittenPattern = Predicated
+                            { term = Mock.cg
+                            , predicate = makeCeilPredicate Mock.cg
+                            , substitution =
+                                Substitution.wrap [(Mock.x, Mock.a)]
+                            }
+                        , remainder = Predicated
+                            { term =
+                                Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                            , predicate =
+                                makeNotPredicate
+                                    (makeAndPredicate
+                                        (makeCeilPredicate Mock.cg)
+                                        (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                                    )
+                            , substitution = mempty
+                            }
                         }
-                    , remainder = Predicated
-                        { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
-                        , predicate =
-                            makeNotPredicate
-                                (makeAndPredicate
-                                    (makeCeilPredicate Mock.cg)
-                                    (makeEqualsPredicate (mkVar Mock.x) Mock.a)
-                                )
-                        , substitution = mempty
-                        }
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
+                ]
         actual <- runStepWithRemainder
             mockMetadataToolsR
             Predicated
@@ -928,35 +929,39 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
         --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
         let
             expected = Right
-                ( StepResult
-                    { rewrittenPattern = Predicated
-                        { term = Mock.cg
-                        , predicate = makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeCeilPredicate Mock.cg)
-                        , substitution = Substitution.wrap
-                            [(Mock.x, Mock.a)]
-                        }
-                    , remainder = Predicated
-                        { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
-                        , predicate = makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeNotPredicate
-                                (makeAndPredicate
-                                    (makeCeilPredicate Mock.cg)
-                                    (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                [   ( StepResult
+                        { rewrittenPattern = Predicated
+                            { term = Mock.cg
+                            , predicate = makeAndPredicate
+                                (makeCeilPredicate Mock.cf)
+                                (makeCeilPredicate Mock.cg)
+                            , substitution = Substitution.wrap
+                                [(Mock.x, Mock.a)]
+                            }
+                        , remainder = Predicated
+                            { term =
+                                Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                            , predicate = makeAndPredicate
+                                (makeCeilPredicate Mock.cf)
+                                (makeNotPredicate
+                                    (makeAndPredicate
+                                        (makeCeilPredicate Mock.cg)
+                                        (makeEqualsPredicate
+                                            (mkVar Mock.x) Mock.a
+                                        )
+                                    )
                                 )
-                            )
-                        , substitution = mempty
+                            , substitution = mempty
+                            }
                         }
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
+                ]
         actual <- runStepWithRemainder
             mockMetadataToolsR
             Predicated
@@ -988,31 +993,33 @@ test_baseStepRemainder = give mockSymbolOrAliasSortsR
         --   remainder: functionalConstr10(x), with ¬(f(x) == b)
         let
             expected = Right
-                ( StepResult
-                    { rewrittenPattern = Predicated
-                        { term = Mock.a
-                        , predicate =
-                            makeEqualsPredicate (Mock.f (mkVar Mock.x)) Mock.b
-                        , substitution = mempty
+                [   ( StepResult
+                        { rewrittenPattern = Predicated
+                            { term = Mock.a
+                            , predicate =
+                                makeEqualsPredicate
+                                    (Mock.f (mkVar Mock.x)) Mock.b
+                            , substitution = mempty
+                            }
+                        , remainder = Predicated
+                            { term = Mock.functionalConstr10 (mkVar Mock.x)
+                            , predicate =
+                                makeNotPredicate
+                                    (makeEqualsPredicate
+                                        (Mock.f (mkVar Mock.x))
+                                        Mock.b
+                                    )
+                            , substitution = mempty
+                            }
                         }
-                    , remainder = Predicated
-                        { term = Mock.functionalConstr10 (mkVar Mock.x)
-                        , predicate =
-                            makeNotPredicate
-                                (makeEqualsPredicate
-                                    (Mock.f (mkVar Mock.x))
-                                    Mock.b
-                                )
-                        , substitution = mempty
-                        }
-                    }
-                , mconcat
-                    (map stepProof
-                        [ StepProofVariableRenamings []
-                        , StepProofUnification EmptyUnificationProof
-                        ]
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
                     )
-                )
+                ]
         actual <- runStepWithRemainder
             mockMetadataToolsR
             Predicated
@@ -1147,14 +1154,17 @@ runStep
     -> IO
         (Either
             (StepError level Variable)
-            (CommonExpandedPattern level, StepProof level Variable)
+            [(CommonExpandedPattern level, StepProof level Variable)]
         )
 runStep metadataTools configuration axiom = do
     ioResult <-
         runStepWithRemainder metadataTools configuration axiom
     return $ do
-        (StepResult { rewrittenPattern }, proof) <- ioResult
-        return (rewrittenPattern, proof)
+        results <- ioResult
+        return (map processResult results)
+  where
+    processResult (StepResult { rewrittenPattern }, proof) =
+        (rewrittenPattern, proof)
 
 runStepWithRemainder
     :: MetaOrObject level
@@ -1166,7 +1176,7 @@ runStepWithRemainder
     -> IO
         (Either
             (StepError level Variable)
-            (StepResult level Variable, StepProof level Variable)
+            [(StepResult level Variable, StepProof level Variable)]
         )
 runStepWithRemainder metadataTools configuration axiom =
     SMT.runSMT SMT.defaultConfig

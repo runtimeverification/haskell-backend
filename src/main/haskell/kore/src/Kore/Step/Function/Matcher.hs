@@ -46,6 +46,10 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.OrOfExpandedPattern
+                 ( MultiOr, OrOfPredicateSubstitution )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( filterOr, fullCrossProduct, make )
 import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
@@ -103,7 +107,7 @@ matchAsUnification
     -> ExceptT
         (UnificationOrSubstitutionError level variable)
         m
-        ( PredicateSubstitution level variable
+        ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
 matchAsUnification tools substitutionSimplifier first second = do
@@ -137,7 +141,7 @@ match
             (UnificationOrSubstitutionError level variable)
             m
         )
-        (PredicateSubstitution level variable)
+        (OrOfPredicateSubstitution level variable)
 match tools substitutionSimplifier quantifiedVariables first second =
     matchEqualHeadPatterns
         tools substitutionSimplifier quantifiedVariables first second
@@ -145,17 +149,18 @@ match tools substitutionSimplifier quantifiedVariables first second =
     <|> matchNonVarToPattern tools substitutionSimplifier first second
 
 matchEqualHeadPatterns
-    :: ( Show (variable level)
-       , SortedVariable variable
-       , MetaOrObject level
-       , Ord (variable level)
-       , Ord (variable Meta)
-       , Ord (variable Object)
-       , Show (variable Meta)
-       , Show (variable Object)
-       , FreshVariable variable
-       , MonadCounter m
-       )
+    :: forall level variable m .
+        ( Show (variable level)
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Show (variable Meta)
+        , Show (variable Object)
+        , FreshVariable variable
+        , MonadCounter m
+        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> Map.Map (variable level) (variable level)
@@ -166,7 +171,7 @@ matchEqualHeadPatterns
             (UnificationOrSubstitutionError level variable)
             m
         )
-        (PredicateSubstitution level variable)
+        (OrOfPredicateSubstitution level variable)
 matchEqualHeadPatterns
     tools substitutionSimplifier quantifiedVariables first second
   =
@@ -224,7 +229,7 @@ matchEqualHeadPatterns
             case second of
                 (Exists_ _ secondVariable secondChild) ->
                     give (MetadataTools.symbolOrAliasSorts tools)
-                    $ checkVariableEscape [firstVariable, secondVariable]
+                    $ checkVariableEscapeOr [firstVariable, secondVariable]
                     <$> match
                         tools
                         substitutionSimplifier
@@ -248,7 +253,7 @@ matchEqualHeadPatterns
             case second of
                 (Forall_ _ secondVariable secondChild) ->
                     give (MetadataTools.symbolOrAliasSorts tools)
-                    $ checkVariableEscape [firstVariable, secondVariable]
+                    $ checkVariableEscapeOr [firstVariable, secondVariable]
                     <$> match
                         tools
                         substitutionSimplifier
@@ -342,18 +347,28 @@ matchEqualHeadPatterns
                         Nothing -> nothing
                         Just variable ->
                             if variable == secondVariable
-                            then just Predicated.topPredicate
+                            then justTop
                             else nothing
                 _ -> nothing
         _ -> nothing
   where
     topWhenEqualOrNothing first' second' =
         if first' == second'
-            then just Predicated.topPredicate
+            then justTop
             else nothing
+    justTop
+        :: MaybeT
+            (ExceptT
+                (UnificationOrSubstitutionError level variable)
+                m
+            )
+            (OrOfPredicateSubstitution level variable)
+    justTop = just
+        (OrOfExpandedPattern.make [Predicated.topPredicate])
 
 matchJoin
-    ::  ( FreshVariable variable
+    :: forall level variable m .
+        ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Ord (variable Meta)
@@ -373,19 +388,30 @@ matchJoin
             (UnificationOrSubstitutionError level variable)
             m
         )
-        (PredicateSubstitution level variable)
+        (OrOfPredicateSubstitution level variable)
 matchJoin tools substitutionSimplifier quantifiedVariables patterns
   = do
     matched <-
         traverse
             (uncurry $ match tools substitutionSimplifier quantifiedVariables)
             patterns
-    (merged, _proof) <- lift $ mergePredicatesAndSubstitutionsExcept
-        tools
-        substitutionSimplifier
-        (map Predicated.predicate matched)
-        (map Predicated.substitution matched)
-    return merged
+    let
+        crossProduct :: MultiOr [PredicateSubstitution level variable]
+        crossProduct = OrOfExpandedPattern.fullCrossProduct matched
+        merge
+            :: [PredicateSubstitution level variable]
+            -> ExceptT
+                (UnificationOrSubstitutionError level variable)
+                m
+                (PredicateSubstitution level variable)
+        merge items = do
+            (result, _proof) <- mergePredicatesAndSubstitutionsExcept
+                tools
+                substitutionSimplifier
+                (map Predicated.predicate items)
+                (map Predicated.substitution items)
+            return result
+    OrOfExpandedPattern.filterOr <$> traverse (lift . merge) crossProduct
 
 -- Note that we can't match variables to stuff which can have more than one
 -- value, because if we take the axiom
@@ -412,7 +438,7 @@ matchVariableFunction
     -> Map.Map (variable level) (variable level)
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT m (PredicateSubstitution level variable)
+    -> MaybeT m (OrOfPredicateSubstitution level variable)
 matchVariableFunction
     tools
     quantifiedVariables
@@ -423,15 +449,18 @@ matchVariableFunction
   = case Ceil.makeEvaluateTerm tools second of
         (predicate, _proof) ->
             just $
-                Predicated
-                    { term = ()
-                    , predicate
-                    , substitution = Substitution.wrap [(var, second)]
-                    }
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = ()
+                        , predicate
+                        , substitution = Substitution.wrap [(var, second)]
+                        }
+                    ]
 matchVariableFunction _ _ _ _ = nothing
 
 matchNonVarToPattern
-    ::  ( FreshVariable variable
+    :: forall level variable m .
+        ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Ord (variable Object)
@@ -451,38 +480,58 @@ matchNonVarToPattern
             (UnificationOrSubstitutionError level variable)
             m
         )
-        (PredicateSubstitution level variable)
+        (OrOfPredicateSubstitution level variable)
 matchNonVarToPattern tools substitutionSimplifier first second
   -- TODO(virgil): For simplification axioms this would need to return bottom!
-  = give (MetadataTools.symbolOrAliasSorts tools) $
+  =
     MaybeT $ lift $ do -- MonadCounter
-        (Predicated {predicate, substitution}, _proof) <-
+        (result, _proof) <-
             Equals.makeEvaluateTermsToPredicateSubstitution
                 tools substitutionSimplifier first second
-        let
-            -- We're only interested in substitutions involving first's
-            -- variables here, and we're converting everything else to
-            -- predicates.
-            -- TODO: Make a function for this.
-            leftVars = freePureVariables first
-            rawSubstitution = Substitution.unwrap substitution
-            (leftSubst, rightSubst) =
-                List.partition ((`elem` leftVars) . fst) rawSubstitution
-            finalPredicate = Predicated.toPredicate
+        (return . return)
+            (fmap secondVariablesSubstitutionToPredicate result)
+  where
+    secondVariablesSubstitutionToPredicate
+        :: PredicateSubstitution level variable
+        -> PredicateSubstitution level variable
+    secondVariablesSubstitutionToPredicate
+        Predicated {term = (), predicate, substitution}
+      = Predicated
+        { term = ()
+        , predicate = finalPredicate
+        , substitution = Substitution.wrap leftSubst
+        }
+      where
+        leftVars = freePureVariables first
+        rawSubstitution = Substitution.unwrap substitution
+        (leftSubst, rightSubst) =
+            List.partition ((`elem` leftVars) . fst) rawSubstitution
+        finalPredicate = give (MetadataTools.symbolOrAliasSorts tools) $
+            Predicated.toPredicate
                 Predicated
                     { term = ()
                     , predicate
                     , substitution = Substitution.wrap rightSubst
                     }
-        (return . return)
-            Predicated
-                { term = ()
-                , predicate = finalPredicate
-                , substitution = Substitution.wrap leftSubst
-                }
+
+checkVariableEscapeOr
+    ::  ( MetaOrObject level
+        , Show (variable Object)
+        , Show (variable Meta)
+        , Ord (variable Object)
+        , Ord (variable Meta)
+        , Given (SymbolOrAliasSorts level)
+        , SortedVariable variable
+        , Eq (variable level)
+        , Ord (variable level)
+        , Show (variable level))
+    => [variable level]
+    -> OrOfPredicateSubstitution level variable
+    -> OrOfPredicateSubstitution level variable
+checkVariableEscapeOr vars = fmap (checkVariableEscape vars)
 
 checkVariableEscape
-    :: ( MetaOrObject level
+    ::  ( MetaOrObject level
         , Show (variable Object)
         , Show (variable Meta)
         , Ord (variable Object)

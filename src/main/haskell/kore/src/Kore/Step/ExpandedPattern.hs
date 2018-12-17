@@ -21,6 +21,7 @@ module Kore.Step.ExpandedPattern
     , isBottom
     , isTop
     , mapVariables
+    , predicateSubstitutionToExpandedPattern
     , substitutionToPredicate
     , toMLPattern
     , top
@@ -327,3 +328,9 @@ freeVariables
     => PredicateSubstitution level variable
     -> Set.Set (variable level)
 freeVariables = Predicate.freeVariables . toPredicate
+
+predicateSubstitutionToExpandedPattern
+    :: MetaOrObject level
+    => PredicateSubstitution level variable
+    -> ExpandedPattern level variable
+predicateSubstitutionToExpandedPattern = fmap (const mkTop)
