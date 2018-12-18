@@ -21,8 +21,6 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
-import           Data.Char
-                 ( toLower )
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given )
@@ -39,6 +37,8 @@ import           Kore.ASTHelpers
 import           Kore.ASTUtils.SmartConstructors
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import qualified Kore.Builtin.Bool as Builtin.Bool
+import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( HeadType, SymbolOrAliasSorts )
@@ -1638,17 +1638,11 @@ builtinSet
 builtinSet = mkDomainValue setSort . Domain.BuiltinSet . Set.fromList
 
 builtinInt
-    :: Int
+    :: Integer
     -> StepPattern Object variable
-builtinInt =
-    mkDomainValue intSort . Domain.BuiltinPattern . mkStringLiteral . show
+builtinInt = Builtin.Int.asPattern intSort
 
 builtinBool
     :: Bool
     -> StepPattern Object variable
-builtinBool =
-    mkDomainValue boolSort
-    . Domain.BuiltinPattern
-    . mkStringLiteral
-    . map toLower
-    . show
+builtinBool = Builtin.Bool.asPattern boolSort
