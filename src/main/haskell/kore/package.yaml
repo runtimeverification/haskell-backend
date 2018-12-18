@@ -102,22 +102,16 @@ executables:
     source-dirs:
       - app/parser
       - app/share
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
-    - kore
+      - kore
 
   kore-exec:
     main: Main.hs
     source-dirs:
       - app/exec
       - app/share
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
 
@@ -126,10 +120,7 @@ executables:
     source-dirs:
       - app/format
       - app/share
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
 
@@ -138,6 +129,7 @@ executables:
     source-dirs:
       - app/prover
       - app/share
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
 
@@ -146,10 +138,7 @@ tests:
     main: Driver.hs
     source-dirs:
       - test
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
       - call-stack
@@ -174,10 +163,7 @@ benchmarks:
     source-dirs:
       - bench/parser
       - test
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
       - criterion
@@ -192,10 +178,7 @@ benchmarks:
     source-dirs:
       - bench/exec
       - test
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
       - criterion
