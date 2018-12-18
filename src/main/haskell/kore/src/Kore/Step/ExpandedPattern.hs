@@ -61,6 +61,8 @@ import           Kore.Predicate.Predicate
                  substitutionToPredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -115,6 +117,14 @@ instance
       where
         Predicated f predicate1 substitution1 = a
         Predicated x predicate2 substitution2 = b
+
+instance TopBottom term
+    => TopBottom (Predicated level variable term)
+  where
+    isTop Predicated {term, predicate, substitution} =
+        isTop term && isTop predicate && isTop substitution
+    isBottom Predicated {term, predicate, substitution} =
+        isBottom term || isBottom predicate || isBottom substitution
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
@@ -254,27 +264,6 @@ top =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-
-{-| 'isTop' checks whether an ExpandedPattern is equivalent to a top Pattern.
--}
-isTop :: ExpandedPattern level variable -> Bool
-isTop
-    Predicated
-        { term = Top_ _, predicate = PredicateTrue, substitution }
-  = Substitution.null substitution
-isTop _ = False
-
-{-| 'isBottom' checks whether an ExpandedPattern is equivalent to a bottom
-Pattern.
--}
-isBottom :: ExpandedPattern level variable -> Bool
-isBottom
-    Predicated {term = Bottom_ _}
-  = True
-isBottom
-    Predicated {predicate = PredicateFalse}
-  = True
-isBottom _ = False
 
 {- | Construct an 'ExpandedPattern' from a 'StepPattern'.
 

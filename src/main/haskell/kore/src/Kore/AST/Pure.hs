@@ -64,6 +64,8 @@ import qualified Kore.AST.Common as Head
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import           Kore.Sort
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 
 {- | The abstract syntax of Kore at a fixed level @level@.
 
@@ -181,6 +183,14 @@ instance
         (PurePattern level domain variable)
   where
     unwrap (PurePattern a) = PurePattern <$> unwrap a
+
+instance Functor domain
+    => TopBottom (PurePattern level domain variable annotation)
+  where
+    isTop (Recursive.project -> _ :< TopPattern Top {}) = True
+    isTop _ = False
+    isBottom (Recursive.project -> _ :< BottomPattern Bottom {}) = True
+    isBottom _ = False
 
 fromPurePattern
     :: Functor domain

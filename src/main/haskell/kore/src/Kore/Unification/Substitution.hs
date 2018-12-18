@@ -31,6 +31,8 @@ import Prelude hiding
 import Kore.AST.Pure as Pure
 import Kore.Step.Pattern
        ( StepPattern )
+import Kore.TopBottom
+       ( TopBottom (..) )
 
 -- | 'Substitution' is a wrapper for a list of substitutions of the form
 -- (variable level, StepPattern level variable). Values of this type should be
@@ -45,6 +47,11 @@ instance
 
 instance
     (Hashable (variable level)) => Hashable (Substitution level variable)
+
+instance TopBottom (Substitution level variable)
+  where
+    isTop = null
+    isBottom _ = False
 
 instance Semigroup (Substitution level variable) where
     (Substitution [])             <> (Substitution []) = mempty
