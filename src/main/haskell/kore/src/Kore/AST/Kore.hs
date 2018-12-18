@@ -46,8 +46,10 @@ module Kore.AST.Kore
 import           Control.Comonad
 import           Control.Comonad.Trans.Cofree
                  ( Cofree, CofreeF (..), ComonadCofree (..) )
+import qualified Control.Comonad.Trans.Env as Env
 import           Control.DeepSeq
                  ( NFData (..) )
+import qualified Data.Bifunctor as Bifunctor
 import           Data.Deriving
                  ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
 import           Data.Functor.Classes
@@ -108,6 +110,7 @@ instance
     Eq1 (UnifiedPattern domain variable)
   where
     liftEq = $(makeLiftEq ''UnifiedPattern)
+    {-# INLINE liftEq #-}
 
 instance
     ( Ord1 (Pattern Meta domain variable)
@@ -116,6 +119,7 @@ instance
     Ord1 (UnifiedPattern domain variable)
   where
     liftCompare = $(makeLiftCompare ''UnifiedPattern)
+    {-# INLINE liftCompare #-}
 
 instance
     ( Show1 (Pattern Meta domain variable)
@@ -137,6 +141,7 @@ instance
                 salt `hashWithSalt` (0::Int) `hashWithSalt` metaP
             UnifiedObjectPattern objectP ->
                 salt `hashWithSalt` (1::Int) `hashWithSalt` objectP
+    {-# INLINE hashWithSalt #-}
 
 -- |View a 'Meta' or an 'Object' 'Pattern' as an 'UnifiedPattern'
 asUnifiedPattern
@@ -194,7 +199,6 @@ deriving instance
     ) =>
     Traversable (UnifiedPattern domain variable)
 
-
 {- | The abstract syntax of Kore.
 
 @KorePattern@ covers the 'Object' and 'Meta' levels of Kore, corresponding to
@@ -232,6 +236,7 @@ instance
             (Recursive.project -> _ :< pat2)
           =
             liftEq eqWorker pat1 pat2
+    {-# INLINE (==) #-}
 
 instance
     ( OrdMetaOrObject variable
@@ -246,6 +251,7 @@ instance
             (Recursive.project -> _ :< pat2)
           =
             liftCompare compareWorker pat1 pat2
+    {-# INLINE compare #-}
 
 deriving instance
     ( Show annotation
@@ -264,6 +270,7 @@ instance
     Hashable (KorePattern domain variable annotation)
   where
     hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
+    {-# INLINE hashWithSalt #-}
 
 instance
     ( Functor domain
@@ -281,21 +288,122 @@ instance
 type instance Base (KorePattern domain variable annotation) =
     CofreeF (UnifiedPattern domain variable) annotation
 
+-- This instance implements all class functions for the PurePattern newtype
+-- because the their implementations for the inner type may be specialized.
 instance
     Functor domain =>
     Recursive (KorePattern domain variable annotation)
   where
-    project (KorePattern embedded) =
+    project = \(KorePattern embedded) ->
         case Recursive.project embedded of
             Compose (Identity projected) -> KorePattern <$> projected
+    {-# INLINE project #-}
 
+    -- This specialization is particularly important: The default implementation
+    -- of 'cata' in terms of 'project' would involve an extra call to 'fmap' at
+    -- every level of the tree due to the implementation of 'project' above.
+    cata alg = \(KorePattern fixed) ->
+        Recursive.cata
+            (\(Compose (Identity base)) -> alg base)
+            fixed
+    {-# INLINE cata #-}
+
+    para alg = \(KorePattern fixed) ->
+        Recursive.para
+            (\(Compose (Identity base)) ->
+                alg (Bifunctor.first KorePattern <$> base)
+            )
+            fixed
+    {-# INLINE para #-}
+
+    gpara dist alg = \(KorePattern fixed) ->
+        Recursive.gpara
+            (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
+            (\(Compose (Identity base)) -> alg (Env.local KorePattern <$> base))
+            fixed
+    {-# INLINE gpara #-}
+
+    prepro pre alg = \(KorePattern fixed) ->
+        Recursive.prepro
+            (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
+            (\(Compose (Identity base)) -> alg base)
+            fixed
+    {-# INLINE prepro #-}
+
+    gprepro dist pre alg = \(KorePattern fixed) ->
+        Recursive.gprepro
+            (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
+            (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
+            (\(Compose (Identity base)) -> alg base)
+            fixed
+    {-# INLINE gprepro #-}
+
+-- This instance implements all class functions for the PurePattern newtype
+-- because the their implementations for the inner type may be specialized.
 instance
     Functor domain =>
     Corecursive (KorePattern domain variable annotation)
   where
-    embed projected =
+    embed = \projected ->
         (KorePattern . Recursive.embed . Compose . Identity)
             (getKorePattern <$> projected)
+    {-# INLINE embed #-}
+
+    ana coalg = KorePattern . ana0
+      where
+        ana0 =
+            Recursive.ana (Compose . Identity . coalg)
+    {-# INLINE ana #-}
+
+    apo coalg = KorePattern . apo0
+      where
+        apo0 =
+            Recursive.apo
+                (\a ->
+                     (Compose . Identity)
+                        (Bifunctor.first getKorePattern <$> coalg a)
+                )
+    {-# INLINE apo #-}
+
+    postpro post coalg = KorePattern . postpro0
+      where
+        postpro0 =
+            Recursive.postpro
+                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                (Compose . Identity . coalg)
+    {-# INLINE postpro #-}
+
+    gpostpro dist post coalg = KorePattern . gpostpro0
+      where
+        gpostpro0 =
+            Recursive.gpostpro
+                (Compose . Identity . dist . (<$>) (runIdentity . getCompose))
+                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                (Compose . Identity . coalg)
+    {-# INLINE gpostpro #-}
+
+-- This instance implements all class functions for the PurePattern newtype
+-- because the their implementations for the inner type may be specialized.
+instance
+    Functor domain =>
+    Comonad (KorePattern domain variable)
+  where
+    extract = \(KorePattern fixed) -> extract fixed
+    {-# INLINE extract #-}
+    duplicate = \(KorePattern fixed) -> KorePattern (extend KorePattern fixed)
+    {-# INLINE duplicate #-}
+    extend extending = \(KorePattern fixed) ->
+        KorePattern (extend (extending . KorePattern) fixed)
+    {-# INLINE extend #-}
+
+instance
+    Functor domain =>
+    ComonadCofree
+        (UnifiedPattern domain variable)
+        (KorePattern domain variable)
+  where
+    unwrap = \(KorePattern fixed) -> KorePattern <$> unwrap fixed
+    {-# INLINE unwrap #-}
 
 -- | View an annotated 'Meta' or 'Object' 'Pattern' as a 'KorePattern'
 asKorePattern
@@ -320,18 +428,6 @@ eraseAnnotations =
         case unified of
             UnifiedMetaPattern _ -> UnifiedMeta Annotation.Null :< unified
             UnifiedObjectPattern _ -> UnifiedObject Annotation.Null :< unified
-
-instance Functor dom => Comonad (KorePattern dom var) where
-    extract (KorePattern a) = extract a
-    duplicate (KorePattern a) = KorePattern (extend KorePattern a)
-    extend extending (KorePattern a) =
-        KorePattern (extend (extending . KorePattern) a)
-
-instance
-    Functor domain =>
-    ComonadCofree (UnifiedPattern domain variable) (KorePattern domain variable)
-  where
-    unwrap (KorePattern a) = KorePattern <$> unwrap a
 
 -- | View a 'Meta' or 'Object' 'Pattern' as a 'KorePattern'
 asCommonKorePattern
