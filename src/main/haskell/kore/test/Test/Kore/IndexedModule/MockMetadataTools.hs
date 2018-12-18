@@ -12,6 +12,8 @@ module Test.Kore.IndexedModule.MockMetadataTools
 import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Set as Set
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.AST.Common
                  ( SymbolOrAlias (..) )
@@ -60,13 +62,14 @@ headTypeFunction
 headTypeFunction = caseBasedFunction
 
 functionAttributesFunction
-    :: [(Sort level, StepperAttributes)]
+    :: HasCallStack
+    => [(Sort level, StepperAttributes)]
     -> Sort level
     -> StepperAttributes
 functionAttributesFunction = caseBasedFunction
 
 caseBasedFunction
-    :: (Eq a, Show a)
+    :: (Eq a, Show a, HasCallStack)
     => [(a, b)] -> a -> b
 caseBasedFunction cases arg =
     fromMaybe
