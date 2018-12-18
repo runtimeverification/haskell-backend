@@ -15,7 +15,6 @@ module Kore.Step.ExpandedPattern
     , CommonExpandedPattern
     , PredicateSubstitution
     , CommonPredicateSubstitution
-    , TopBottomTerm
     , allVariables
     , erasePredicatedTerm
     , bottom
@@ -62,6 +61,8 @@ import           Kore.Predicate.Predicate
                  substitutionToPredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -117,6 +118,14 @@ instance
         Predicated f predicate1 substitution1 = a
         Predicated x predicate2 substitution2 = b
 
+instance TopBottom term
+    => TopBottom (Predicated level variable term)
+  where
+    isTop Predicated {term, predicate, substitution} =
+        isTop term && isTop predicate && isTop substitution
+    isBottom Predicated {term, predicate, substitution} =
+        isBottom term || isBottom predicate || isBottom substitution
+
 {- | The conjunction of a pattern, predicate, and substitution.
 
 The form of @ExpandedPattern@ is intended to be convenient for Kore execution.
@@ -134,25 +143,6 @@ type PredicateSubstitution level variable = Predicated level variable ()
 
 -- | A 'PredicateSubstitution' of the 'Variable' type.
 type CommonPredicateSubstitution level = PredicateSubstitution level Variable
-
-{-| Class for types whose values work as top, bottom, or something between
-when used as terms for 'Predicated'.
--}
-class TopBottomTerm term where
-    -- | Whether the term works as 'Top'.
-    isTopTerm :: term -> Bool
-    -- | Whether the term works as 'Bottom'.
-    isBottomTerm :: term -> Bool
-
-instance TopBottomTerm () where
-    isTopTerm = const True
-    isBottomTerm = const False
-
-instance TopBottomTerm (StepPattern level variable) where
-    isTopTerm (Top_ _) = True
-    isTopTerm _ = False
-    isBottomTerm (Bottom_ _) = True
-    isBottomTerm _ = False
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
 in an ExpandedPattern.
@@ -274,28 +264,6 @@ top =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-
-{-| 'isTop' checks whether an ExpandedPattern is equivalent to a top Pattern.
--}
-isTop :: (TopBottomTerm term) => Predicated level variable term -> Bool
-isTop
-    Predicated
-        { term, predicate = PredicateTrue, substitution }
-  = isTopTerm term && Substitution.null substitution
-isTop _ = False
-
-{-| 'isBottom' checks whether an ExpandedPattern is equivalent to a bottom
-Pattern.
--}
-isBottom :: (TopBottomTerm term) => Predicated level variable term -> Bool
-isBottom
-    Predicated {term}
-  | isBottomTerm term
-  = True
-isBottom
-    Predicated {predicate = PredicateFalse}
-  = True
-isBottom _ = False
 
 {- | Construct an 'ExpandedPattern' from a 'StepPattern'.
 

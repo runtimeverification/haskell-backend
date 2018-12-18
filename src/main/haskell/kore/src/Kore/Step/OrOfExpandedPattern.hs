@@ -52,6 +52,8 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 
 {-| 'MultiOr' is a Matching logic or of its children
 
@@ -59,6 +61,13 @@ TODO(virgil): Make this a list-like monad, many things would be nicer.
 -}
 newtype MultiOr child = MultiOr [child]
     deriving (Applicative, Eq, Foldable, Functor, Monad, Show, Traversable)
+
+instance TopBottom child => TopBottom (MultiOr child)
+  where
+    isTop (MultiOr [child]) = isTop child
+    isTop _ = False
+    isBottom (MultiOr []) = True
+    isBottom _ = False
 
 type OrOfPredicated level variable term =
     MultiOr (Predicated level variable term)
@@ -84,50 +93,43 @@ inside an 'MultiOr'.
 -}
 data OrBool = OrTrue | OrFalse | OrUnknown
 
-{- | Simplify the disjunction of patterns.
+{- | Simplify the disjunction.
 
 The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
 idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
-duplicated patterns from the result.
+duplicated items from the result.
 
 See also: 'filterUnique'
 
  -}
 filterOr
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord term
-        )
-    => OrOfPredicated level variable term
-    -> OrOfPredicated level variable term
+    :: (Ord term, TopBottom term)
+    => MultiOr term
+    -> MultiOr term
 filterOr =
     filterGeneric patternToOrBool . filterUnique
 
 {- | Simplify the disjunction by eliminating duplicate elements.
 
 The idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
-duplicated patterns from the result.
+duplicated items from the result.
 
-Note: The patterns are only compared for literal syntactic equality. Filtering
-does not account for α-equivalence, so patterns containing @\\forall@ and
-@\\exists@ may be considered inequal although they are equivalent in the
-matching logic sense.
+Note: Items are compared with their Ord instance. This does not attempt
+to account separately for things like α-equivalence, so, if that is not
+included in the Ord instance, items containing @\\forall@ and
+@\\exists@ may be considered inequal although they are equivalent in
+a logical sense.
 
  -}
 filterUnique :: Ord a => MultiOr a -> MultiOr a
 filterUnique = MultiOr . Set.toList . Set.fromList . extract
 
-{-| 'make' constructs a normalized 'OrOfPredicated'.
+{-| 'make' constructs a normalized 'MultiOr'.
  -}
 make
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord term
-        )
-    => [Predicated level variable term]
-    -> OrOfPredicated level variable term
+    :: (Ord term, TopBottom term)
+    => [term]
+    -> MultiOr term
 make patts = filterOr (MultiOr patts)
 
 {-|'makeMultiOr' constructs a 'MultiOr'.
@@ -152,34 +154,30 @@ extractPatterns
     :: OrOfPredicated level variable term -> [Predicated level variable term]
 extractPatterns = extract
 
-{-| 'extract' returns the patterns inside an 'or'.
+{-| 'extract' returns the items inside an 'or'.
 -}
 extract :: MultiOr a -> [a]
 extract (MultiOr x) = x
 
-{-| 'isFalse' checks if the 'Or' is composed only of bottom patterns.
+{-| 'isFalse' checks if the 'Or' is composed only of bottom items.
 -}
 isFalse
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord term
-        )
-    => OrOfPredicated level variable term
+    :: (Ord term, TopBottom term)
+    => MultiOr term
     -> Bool
 isFalse patt =
     case filterOr patt of
         MultiOr [] -> True
         _ -> False
 
-{-| 'isTrue' checks if the 'Or' is composed of a single top pattern.
+{-| 'isTrue' checks if the 'Or' is composed of a single top item.
 
-Assumes that the pattern was filtered.
+Assumes that the disjunction was filtered.
 -}
 isTrue
-    :: ExpandedPattern.TopBottomTerm term
-    =>  OrOfPredicated level variable term -> Bool
-isTrue (MultiOr [ predicated ]) = ExpandedPattern.isTop predicated
+    :: TopBottom term
+    => MultiOr term -> Bool
+isTrue (MultiOr [ term ]) = isTop term
 isTrue _ = False
 
 {-| 'fullCrossProduct' distributes all the elements in a list of or, making
@@ -214,25 +212,21 @@ makeGeneric
 
 -}
 fullCrossProduct
-    :: [OrOfPredicated level variable term]
-    -> MultiOr [Predicated level variable term]
+    :: [MultiOr term]
+    -> MultiOr [term]
 fullCrossProduct [] = makeMultiOr [[]]
 fullCrossProduct ors =
     foldr (crossProductGeneric (:)) lastOrsWithLists (init ors)
   where
     lastOrsWithLists = fmap (: []) (last ors)
 
-{-| 'flatten' transforms a MultiOr (OrOfPredicated level variable)
-into an OrOfPredicated by or-ing all the inner elements.
+{-| 'flatten' transforms a MultiOr (MultiOr term)
+into a (MultiOr term) by or-ing all the inner elements.
 -}
 flatten
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord term
-        )
-    => MultiOr (OrOfPredicated level variable term)
-    -> OrOfPredicated level variable term
+    :: (Ord term, TopBottom term)
+    => MultiOr (MultiOr term)
+    -> MultiOr term
 flatten ors =
     filterOr (flattenGeneric ors)
 
@@ -240,51 +234,45 @@ flatten ors =
 is top or bottom.
 -}
 patternToOrBool
-    :: ExpandedPattern.TopBottomTerm term
-    => Predicated level variable term -> OrBool
+    :: TopBottom term
+    => term -> OrBool
 patternToOrBool patt
-  | ExpandedPattern.isTop patt = OrTrue
-  | ExpandedPattern.isBottom patt = OrFalse
+  | isTop patt = OrTrue
+  | isBottom patt = OrFalse
   | otherwise = OrUnknown
 
 {-| fmaps an or in a similar way to traverseWithPairs.
 -}
 fmapWithPairs
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord term
+    :: (Ord term, TopBottom term)
+    =>  (  term
+        -> (term, a)
         )
-    =>  (  Predicated level variable term
-        -> (Predicated level variable term, a)
-        )
-    -> OrOfPredicated level variable term
-    -> (OrOfPredicated level variable term, [a])
+    -> MultiOr term
+    -> (MultiOr term, [a])
 fmapWithPairs mapper patt =
     (filterOr (fmap fst mapped), extract (fmap snd mapped))
   where
     mapped = fmap mapper patt
 
 {-| 'traverseWithPairs' traverses an or with a function that returns a
-(pattern, something) pair, then returns a 'MultiOr' of the patterns and
+(item, something) pair, then returns a 'MultiOr' of the items and
 a list of that something.
 
-This is handy when one transforms the patterns in an 'or', also producing
+This is handy when one transforms the items in an 'or', also producing
 proofs for each transformation: this function will return the transformed or
 and a list of the proofs involved in the transformation.
 -}
 traverseWithPairs
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , MetaOrObject level
-        , Monad f
-        , Ord (variable level)
+    ::  ( Monad f
         , Ord term
+        , TopBottom term
         )
-    =>  (  Predicated level variable term
-        -> f (Predicated level variable term, a)
+    =>  (  term
+        -> f (term, a)
         )
-    -> OrOfPredicated level variable term
-    -> f (OrOfPredicated level variable term, [a])
+    -> MultiOr term
+    -> f (MultiOr term, [a])
 traverseWithPairs mapper patt = do
     mapped <- traverse mapper patt
     return (filterOr (fmap fst mapped), extract (fmap snd mapped))
@@ -293,56 +281,47 @@ traverseWithPairs mapper patt = do
 'traverseFlattenWithPairs'.
 -}
 fmapFlattenWithPairs
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord term
+    :: (Ord term, TopBottom term)
+    =>  (  term
+        -> (MultiOr term, a)
         )
-    =>  (  Predicated level variable term
-        -> (OrOfPredicated level variable term, a)
-        )
-    -> OrOfPredicated level variable term
-    -> (OrOfPredicated level variable term, [a])
+    -> MultiOr term
+    -> (MultiOr term, [a])
 fmapFlattenWithPairs mapper patt =
     (flatten (fmap fst mapped), extract (fmap snd mapped))
   where
     mapped = fmap mapper patt
 
 {-| 'traverseFlattenWithPairs' is similar to 'traverseWithPairs', except
-that its function returns an 'OrOfPredicated', so the actual result
-is flattened at the end.
+that its function returns a flattened result.
 -}
 traverseFlattenWithPairs
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , Monad f
-        , MetaOrObject level
-        , Ord (variable level)
+    ::  ( Monad f
         , Ord term
+        , TopBottom term
         )
-    =>  (  Predicated level variable term
-        -> f (OrOfPredicated level variable term, a)
+    =>  (  term
+        -> f (MultiOr term, a)
         )
-    -> OrOfPredicated level variable term
-    -> f (OrOfPredicated level variable term, [a])
+    -> MultiOr term
+    -> f (MultiOr term, [a])
 traverseFlattenWithPairs mapper patt = do
     mapped <- traverse mapper patt
     return (flatten (fmap fst mapped), extract (fmap snd mapped))
 
 {-| 'traverseFlattenWithPairsGeneric' is similar to 'traverseFlattenWithPairs',
-except that it works with 'MultiOr's.
+except that it works on any 'MultiOr'.
 -}
 traverseFlattenWithPairsGeneric
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , Monad f
-        , MetaOrObject level
-        , Ord (variable level)
+    ::  ( Monad f
         , Ord term
+        , TopBottom term
         )
     =>  (  a
-        -> f (OrOfPredicated level variable term, pair)
+        -> f (MultiOr term, pair)
         )
     -> MultiOr a
-    -> f (OrOfPredicated level variable term, [pair])
+    -> f (MultiOr term, [pair])
 traverseFlattenWithPairsGeneric mapper patt = do
     mapped <- traverse mapper patt
     return (flatten (fmap fst mapped), extract (fmap snd mapped))
@@ -413,29 +392,16 @@ crossProductGenericF
 crossProductGenericF joiner (MultiOr first) (MultiOr second) =
     MultiOr <$> sequenceA (joiner <$> first <*> second)
 
-{- | Merge two disjunctions of patterns.
+{- | Merge two disjunctions of items.
 
-The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
-idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
-duplicated patterns from the result.
-
-Note: The patterns are only compared for literal syntactic equality. Filtering
-does not account for α-equivalence, so patterns containing @\\forall@ and
-@\\exists@ may be considered inequal although they are equivalent in the
-matching logic sense.
-
-See also: 'filterOr'
+The result is simplified with the 'filterOr' function.
 
  -}
 merge
-    ::  ( ExpandedPattern.TopBottomTerm term
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord term
-        )
-    => OrOfPredicated level variable term
-    -> OrOfPredicated level variable term
-    -> OrOfPredicated level variable term
+    :: (Ord term, TopBottom term)
+    => MultiOr term
+    -> MultiOr term
+    -> MultiOr term
 merge patts1 patts2 =
     filterOr (mergeGeneric patts1 patts2)
 

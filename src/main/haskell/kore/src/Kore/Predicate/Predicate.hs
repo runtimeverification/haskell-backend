@@ -64,6 +64,8 @@ import           Kore.Error
 import           Kore.IndexedModule.MetadataTools
                  ( SymbolOrAliasSorts )
 import           Kore.Step.Pattern
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -80,6 +82,12 @@ newtype GenericPredicate pat = GenericPredicate pat
 instance
     (Hashable pat
     ) => Hashable (GenericPredicate pat)
+
+instance TopBottom patt
+    => TopBottom (GenericPredicate patt)
+  where
+    isTop (GenericPredicate patt) = isTop patt
+    isBottom (GenericPredicate patt) = isBottom patt
 
 {-| 'Predicate' is a user-visible representation for predicates.
 -}
@@ -131,11 +139,10 @@ pattern PredicateTrue :: Predicate level variable
 pattern PredicateFalse <- GenericPredicate(Bottom_ _)
 pattern PredicateTrue <- GenericPredicate(Top_ _)
 
-{-|'isFalse' checks whether a predicate matches 'PredicateFalse'.
+{-|'isFalse' checks whether a predicate is obviously bottom.
 -}
-isFalse :: Predicate level variable -> Bool
-isFalse PredicateFalse = True
-isFalse _ = False
+isFalse :: TopBottom patt => GenericPredicate patt -> Bool
+isFalse = isBottom
 
 {-| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
 doing some simplification.
