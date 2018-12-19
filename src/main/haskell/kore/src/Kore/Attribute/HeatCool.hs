@@ -12,9 +12,13 @@ module Kore.Attribute.HeatCool
     , coolId, coolSymbol, coolAttribute
     ) where
 
+import Control.DeepSeq
+       ( NFData )
 import Control.Monad
        ( (>=>) )
 import Data.Default
+import GHC.Generics
+       ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -25,7 +29,9 @@ import qualified Kore.Attribute.Parser as Parser
 
  -}
 data HeatCool = Heat | Normal | Cool
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+
+instance NFData HeatCool
 
 instance Default HeatCool where
     def = Normal

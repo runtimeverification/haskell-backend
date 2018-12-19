@@ -30,6 +30,8 @@ import           Kore.IndexedModule.IndexedModule
                  mapIndexedModulePatterns )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
+import           Kore.Step.AxiomPatterns
+                 ( AxiomPatternAttributes )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -171,7 +173,9 @@ execBenchmark root kFile definitionFile mainModuleName test =
                 $ patternKoreToPure Object verifiedPattern
         return (verifiedModule, purePattern)
     execution
-        :: (VerifiedModule StepperAttributes, CommonStepPattern Object)
+        ::  ( VerifiedModule StepperAttributes AxiomPatternAttributes
+            , CommonStepPattern Object
+            )
         -> IO (CommonStepPattern Object)
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig
@@ -198,8 +202,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: IndexedModule sortParam patternType StepperAttributes
-    -> IndexedModule sortParam patternType StepperAttributes
+    :: IndexedModule sortParam patternType StepperAttributes AxiomPatternAttributes
+    -> IndexedModule sortParam patternType StepperAttributes AxiomPatternAttributes
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =

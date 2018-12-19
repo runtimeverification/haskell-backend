@@ -11,8 +11,12 @@ module Kore.Attribute.Unit
     , unitId, unitSymbol, unitAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -22,7 +26,9 @@ import qualified Kore.Attribute.Parser as Parser
 {- | @Unit@ represents the @unit@ attribute for axioms.
  -}
 newtype Unit = Unit { isUnit :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+
+instance NFData Unit
 
 instance Default Unit where
     def = Unit False

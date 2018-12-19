@@ -30,6 +30,8 @@ module Kore.Step.AxiomPatterns
     , extractRewriteClaims
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( (>=>) )
@@ -37,6 +39,8 @@ import           Data.Default
                  ( Default (..) )
 import           Data.Maybe
                  ( mapMaybe )
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.AST.PureToKore
@@ -77,7 +81,9 @@ data AxiomPatternAttributes =
     , trusted :: !Trusted
     -- ^ The claim is trusted
     }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+
+instance NFData AxiomPatternAttributes
 
 Lens.makeLenses ''AxiomPatternAttributes
 

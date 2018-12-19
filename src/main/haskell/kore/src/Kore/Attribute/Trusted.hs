@@ -11,8 +11,12 @@ module Kore.Attribute.Trusted
     , trustedId, trustedSymbol, trustedAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -22,7 +26,9 @@ import qualified Kore.Attribute.Parser as Parser
 {- | @Trusted@ represents the @trusted@ attribute for claim sentences.
  -}
 newtype Trusted = Trusted { isTrusted :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+
+instance NFData Trusted
 
 instance Default Trusted where
     def = Trusted False

@@ -11,8 +11,12 @@ module Kore.Attribute.Assoc
     , assocId, assocSymbol, assocAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -22,7 +26,9 @@ import qualified Kore.Attribute.Parser as Parser
 {- | @Assoc@ represents the @assoc@ attribute for axioms.
  -}
 newtype Assoc = Assoc { isAssoc :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+
+instance NFData Assoc
 
 instance Default Assoc where
     def = Assoc False
