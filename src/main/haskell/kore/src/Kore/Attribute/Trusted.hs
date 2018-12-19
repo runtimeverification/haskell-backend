@@ -1,9 +1,13 @@
 {-|
 Module      : Kore.Attribute.Trusted
-Description : Trusted claim sentence attribute
+Description : Attribute identifying trusted claim sentences
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
+Maintainer  : traian.serbanuta@runtimeverification.com
+
+
+A trusted claim is a reachability logic verification claim
+which can be used as a circularity without needing to be proven.
 
 -}
 module Kore.Attribute.Trusted

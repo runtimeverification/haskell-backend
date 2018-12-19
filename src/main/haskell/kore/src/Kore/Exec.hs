@@ -356,7 +356,7 @@ prove limit definitionModule specModule = do
         (rewriteAxioms, simplifier, substitutionSimplifier) =
             axiomsAndSimplifiers
     specAxioms <-
-        mapM (sequence . fmap (simplifyRewriteRule tools))
+        mapM (simplifyRuleOnSecond tools)
             (extractRewriteClaims Object specModule)
     let
         axioms = fmap Axiom rewriteAxioms
@@ -374,5 +374,13 @@ prove limit definitionModule specModule = do
 
   where
     makeClaim (attributes, rule) = Claim { rule , attributes }
+    simplifyRuleOnSecond
+        :: MetadataTools Object StepperAttributes
+        -> (AxiomPatternAttributes, RewriteRule Object)
+        -> Simplifier (AxiomPatternAttributes, RewriteRule Object)
+    simplifyRuleOnSecond tools (atts, rule) = do
+        rule' <- simplifyRewriteRule tools rule
+        return (atts, rule')
+    extractUntrustedClaims :: [Claim Object] -> [RewriteRule Object]
     extractUntrustedClaims =
         map Claim.rule . filter (not . isTrusted . trusted . Claim.attributes)

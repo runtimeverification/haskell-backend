@@ -94,6 +94,19 @@ test_onePathVerification =
         assertEqualWithExplanation ""
             (Right ())
             actual
+    , testCase "Trusted claim cannot prove itself" $ do
+        -- Trusted Claim: a => b
+        -- Expected: error a
+        actual <- runVerification
+            metadataTools
+            (Limit 4)
+            []
+            [ simpleTrustedClaim Mock.a Mock.b
+            , simpleClaim Mock.a Mock.b
+            ]
+        assertEqualWithExplanation ""
+            (Left $ ExpandedPattern.fromPurePattern Mock.a)
+            actual
     , testCase "Verifies one claim multiple steps" $ do
         -- Axiom: a => b
         -- Axiom: b => c

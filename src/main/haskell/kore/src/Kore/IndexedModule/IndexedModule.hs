@@ -128,41 +128,48 @@ data IndexedModule param pat declAtts axiomAtts =
     }
     deriving (Generic, Show)
 
-instance Bifunctor (IndexedModule param pat) where
-    bimap f g
-        IndexedModule
-        { indexedModuleName = name
-        , indexedModuleMetaAliasSentences = metaAliases
-        , indexedModuleObjectAliasSentences = objectAliases
-        , indexedModuleMetaSymbolSentences = metaSymbols
-        , indexedModuleObjectSymbolSentences = objectSymbols
-        , indexedModuleMetaSortDescriptions = metaSorts
-        , indexedModuleObjectSortDescriptions = objectSorts
-        , indexedModuleAxioms = axioms
-        , indexedModuleClaims = claims
-        , indexedModuleAttributes = attributes
-        , indexedModuleImports = imports
-        , indexedModuleHookedIdentifiers = hookIds
-        , indexedModuleHooks = hooks
-        }
-      = IndexedModule
-        { indexedModuleName = name
-        , indexedModuleMetaAliasSentences = Map.map (first f) metaAliases
-        , indexedModuleObjectAliasSentences = Map.map (first f) objectAliases
-        , indexedModuleMetaSymbolSentences = Map.map (first f) metaSymbols
-        , indexedModuleObjectSymbolSentences = Map.map (first f) objectSymbols
-        , indexedModuleMetaSortDescriptions = Map.map (first f) metaSorts
-        , indexedModuleObjectSortDescriptions = Map.map (first f) objectSorts
-        , indexedModuleAxioms = map (first g) axioms
-        , indexedModuleClaims = map (first g) claims
-        , indexedModuleAttributes = first f attributes
-        , indexedModuleImports =
-            map
-                (\(declAtts, atts, m) -> (f declAtts, atts, bimap f g m))
-                imports
-        , indexedModuleHookedIdentifiers = hookIds
-        , indexedModuleHooks = hooks
-        }
+
+-- |Strip module of its parsed attributes, replacing them with 'Attribute.Null'
+makeIndexedModuleAttributesNull
+    :: IndexedModule sortParam patternType1 declAttributes axiomAttributes
+    -> IndexedModule sortParam patternType1 Attribute.Null Attribute.Null
+makeIndexedModuleAttributesNull
+    IndexedModule
+    { indexedModuleName = name
+    , indexedModuleMetaAliasSentences = metaAliases
+    , indexedModuleObjectAliasSentences = objectAliases
+    , indexedModuleMetaSymbolSentences = metaSymbols
+    , indexedModuleObjectSymbolSentences = objectSymbols
+    , indexedModuleMetaSortDescriptions = metaSorts
+    , indexedModuleObjectSortDescriptions = objectSorts
+    , indexedModuleAxioms = axioms
+    , indexedModuleClaims = claims
+    , indexedModuleAttributes = attributes
+    , indexedModuleImports = imports
+    , indexedModuleHookedIdentifiers = hookIds
+    , indexedModuleHooks = hooks
+    }
+  = IndexedModule
+    { indexedModuleName = name
+    , indexedModuleMetaAliasSentences = Map.map (first aNull) metaAliases
+    , indexedModuleObjectAliasSentences = Map.map (first aNull) objectAliases
+    , indexedModuleMetaSymbolSentences = Map.map (first aNull) metaSymbols
+    , indexedModuleObjectSymbolSentences = Map.map (first aNull) objectSymbols
+    , indexedModuleMetaSortDescriptions = Map.map (first aNull) metaSorts
+    , indexedModuleObjectSortDescriptions = Map.map (first aNull) objectSorts
+    , indexedModuleAxioms = map (first aNull) axioms
+    , indexedModuleClaims = map (first aNull) claims
+    , indexedModuleAttributes = first aNull attributes
+    , indexedModuleImports =
+        map
+            (\(_, atts, m)->
+                (Attribute.Null, atts, makeIndexedModuleAttributesNull m))
+            imports
+    , indexedModuleHookedIdentifiers = hookIds
+    , indexedModuleHooks = hooks
+    }
+  where
+    aNull = const Attribute.Null
 
 
 
@@ -173,13 +180,6 @@ instance
     , NFData axiomAttributes
     ) =>
     NFData (IndexedModule sortParam patternType declAttributes axiomAttributes)
-
--- |Strip module of its parsed attributes, replacing them with 'Attribute.Null'
-makeIndexedModuleAttributesNull
-    :: IndexedModule sortParam patternType1 declAttributes axiomAttributes
-    -> IndexedModule sortParam patternType1 Attribute.Null Attribute.Null
-makeIndexedModuleAttributesNull =
-    bimap (const Attribute.Null) (const Attribute.Null)
 
 -- |Convenient notation for retrieving a sentence from a
 -- @(attributes,sentence)@ pair format.
