@@ -241,8 +241,8 @@ test_unifyConcreteDistinct =
             (===) ExpandedPattern.bottom =<< evaluate predicate
         )
 
-tree_unifyFramingVariable :: TestTree
-tree_unifyFramingVariable =
+test_unifyFramingVariable :: TestTree
+test_unifyFramingVariable =
     testPropertyWithSolver
         "unify a concrete set and a framed set"
         (give testSymbolOrAliasSorts $ do
@@ -252,20 +252,22 @@ tree_unifyFramingVariable =
                     (Set.insert framedElem)
                     (forAll genSetConcreteIntegerPattern)
             frameVar <- forAll (genSortedVariable setSort)
-            let patConcreteSet = asPattern concreteSet
+            let framedSet = Set.singleton framedElem
+                patConcreteSet = asPattern concreteSet
                 patFramedSet =
                     App_ concatSetSymbol
-                        [ fromConcretePurePattern framedElem
+                        [ asPattern framedSet
                         , Var_ frameVar
                         ]
                 remainder = Set.delete framedElem concreteSet
-                patRemainder = asPattern remainder
+            let
                 expect =
                     Predicated
-                        { term = patConcreteSet
+                        { term = builtinSet concreteSet
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap
-                            [(frameVar, patRemainder)]
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [(frameVar, builtinSet remainder)]
                         }
             (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
         )
@@ -372,6 +374,10 @@ Right asPattern = Set.asPattern verifiedModule setSort
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object
 Right asExpandedPattern = Set.asExpandedPattern verifiedModule setSort
+
+-- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
+builtinSet :: Set.Builtin -> CommonStepPattern Object
+builtinSet = Set.builtinSet setSort
 
 -- * Constructors
 
