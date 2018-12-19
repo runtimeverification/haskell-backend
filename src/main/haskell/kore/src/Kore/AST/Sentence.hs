@@ -490,7 +490,7 @@ type KoreSentenceHook = SentenceHook CommonKorePattern
 
 type VerifiedKoreSentenceHook = SentenceHook VerifiedKorePattern
 
-{-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Sentence',
+{-|'UnifiedSentence' is joining the 'Meta' and 'Object' versions of 'Sentence',
 to allow using toghether both 'Meta' and 'Object' sentences.
 -}
 data UnifiedSentence sortParam patternType where

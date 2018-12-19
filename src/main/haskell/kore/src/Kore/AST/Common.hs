@@ -46,7 +46,7 @@ import GHC.Generics
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import           Kore.Reflect
-                 ( Reflectable (..) )
+                 ( Reflectable (..), Reflectable1, ReflectableHelper )
 import qualified Kore.Reflect as Reflect
 import           Kore.Sort
 import           Template.Tools
@@ -1143,6 +1143,12 @@ instance
         Reflect.mkSum "CharLiteralPattern" [reflect p]
     reflect (TopPattern p) = Reflect.mkSum "TopPattern" [reflect p]
     reflect (VariablePattern p) = Reflect.mkSum "VariablePattern" [reflect p]
+
+instance
+    ( Functor domain
+    , Reflectable (domain ReflectableHelper)
+    , Reflectable (variable level)
+    ) => Reflectable1 (Pattern level domain variable)
 
 deriving instance Functor domain => Functor (Pattern level domain variable)
 

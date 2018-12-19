@@ -72,7 +72,7 @@ import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Reflect
-                 ( Reflectable )
+                 ( Reflectable, Reflectable1, ReflectableHelper )
 import           Kore.Sort
 import           Template.Tools
                  ( newDefinitionGroup )
@@ -96,6 +96,11 @@ instance
     , Reflectable (domain child)
     ) => Reflectable (UnifiedPattern domain variable child)
 
+instance
+    ( Reflectable (variable Meta), Reflectable (variable Object)
+    , Reflectable (domain ReflectableHelper)
+    , Functor domain
+    ) => Reflectable1 (UnifiedPattern domain variable)
 
 $newDefinitionGroup
 -- Begin a new definition group where UnifiedPattern is in scope.
@@ -231,7 +236,8 @@ newtype KorePattern
 
 instance
     ( Reflectable (variable Meta), Reflectable (variable Object)
-    , Reflectable (domain (Cofree (UnifiedPattern domain variable) annotation))
+    , Functor domain
+    , Reflectable (domain ReflectableHelper)
     , Reflectable annotation
     ) => Reflectable (KorePattern domain variable annotation)
 

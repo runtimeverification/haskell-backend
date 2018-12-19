@@ -63,6 +63,7 @@ default-extensions:
   - BangPatterns
   - ConstraintKinds
   - DataKinds
+  - DefaultSignatures
   - DeriveDataTypeable
   - DeriveFoldable
   - DeriveFunctor
@@ -89,6 +90,7 @@ default-extensions:
   - StandaloneDeriving
   - TypeApplications
   - TypeFamilies
+  - TypeOperators
   - TypeSynonymInstances
   - UndecidableInstances
   - ViewPatterns

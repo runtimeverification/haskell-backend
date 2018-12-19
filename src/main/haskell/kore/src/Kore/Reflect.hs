@@ -1,6 +1,4 @@
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeOperators     #-}
 {- |
 Module      : Kore.Reflect
 Description : Reflection for generic data structures.
@@ -36,6 +34,8 @@ module Kore.Reflect
     , ProductElement (..)
     , RecursiveData
     , Reflectable (..)
+    , Reflectable1 (..)
+    , ReflectableHelper
     , mkDeleted
     , mkList
     , mkRawStruct
@@ -219,17 +219,36 @@ instance (Reflectable a1, Reflectable a2) => Reflectable (Either a1 a2) where
     reflect (Left a) = mkSum "Left" [reflect a]
     reflect (Right a) = mkSum "Right" [reflect a]
 
-instance
-    (Reflectable (a (Cofree a b)), Reflectable b)
-    => Reflectable (Cofree a b)
+newtype ReflectableHelper = ReflectableHelper RecursiveData
+
+instance Reflectable ReflectableHelper
+  where
+    reflect (ReflectableHelper d) = d
+
+instance (Reflectable1 a, Reflectable b) => Reflectable (Cofree a b)
   where
     reflect (CofreeT (Identity (b :< a))) =
-        mkSum "Cofree" [reflect b, reflect a]
+        mkSum "Cofree" [reflect b, liftReflect reflect a]
+
+class Reflectable1 f where
+    liftReflect :: (a -> RecursiveData) -> f a -> RecursiveData
+    default liftReflect
+        ::  ( Functor f
+            , Reflectable (f ReflectableHelper)
+            )
+        => (a -> RecursiveData) -> f a -> RecursiveData
+    liftReflect reflector x = reflect (fmap wrapper x)
+      where
+        wrapper = ReflectableHelper . reflector
+
 
 -----------------------------------
 --      Generic reflection       --
 -----------------------------------
 
+{-| This class is a helper for reflecting GHC.Generic data and should be
+used only for that purpose.
+-}
 class Reflectable' f where
     reflect' :: f p -> RecursiveData
 

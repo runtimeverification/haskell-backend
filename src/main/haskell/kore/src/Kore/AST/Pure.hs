@@ -64,7 +64,7 @@ import qualified Kore.AST.Common as Head
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import           Kore.Reflect
-                 ( Reflectable )
+                 ( Reflectable, ReflectableHelper )
 import           Kore.Sort
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -92,7 +92,8 @@ newtype PurePattern
 
 instance
     ( Reflectable (variable level)
-    , Reflectable (domain (Cofree (Pattern level domain variable) annotation))
+    , Functor domain
+    , Reflectable (domain ReflectableHelper)
     , Reflectable annotation
     ) => Reflectable (PurePattern level domain variable annotation)
 
