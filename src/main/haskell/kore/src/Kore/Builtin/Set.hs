@@ -22,6 +22,7 @@ module Kore.Builtin.Set
     , builtinFunctions
     , Builtin
     , returnSet
+    , builtinSet
     , asPattern
     , asExpandedPattern
       -- * Symbols
@@ -187,9 +188,8 @@ returnSet
     -> m (AttemptedFunction Object variable)
 returnSet resultSort set =
     Builtin.appliedFunction
-        $ ExpandedPattern.fromPurePattern
-        $ DV_ resultSort
-        $ Domain.BuiltinSet set
+    $ ExpandedPattern.fromPurePattern
+    $ builtinSet resultSort set
 
 evalElement :: Builtin.Function
 evalElement =
@@ -348,16 +348,29 @@ builtinFunctions =
         , (toListKeyT, evalToList)
         ]
 
+{- | Render a 'Set' as an internal domain value pattern of the given sort.
+
+The result sort should be hooked to the builtin @Set@ sort, but this is not
+checked.
+
+The pattern will use the internal representation of concrete 'Set' domain
+values; it will not use a valid external representation. Use 'asPattern' to
+construct an externally-valid pattern.
+
+ -}
+builtinSet :: Sort Object -> Builtin -> StepPattern Object variable
+builtinSet resultSort = DV_ resultSort . Domain.BuiltinSet
+
 {- | Render a 'Set' as a domain value pattern of the given sort.
 
-    The result sort should be hooked to the builtin @Set@ sort, but this is not
-    checked.
+The result sort should be hooked to the builtin @Set@ sort, but this is not
+checked.
 
-    The constructed pattern will be valid in the contexed of the given indexed
-    module. It is an error if the indexed module does not define symbols hooked
-    to @SET.unit@, @SET.element@, and @SET.concat@.
+The constructed pattern will be valid in the contexed of the given indexed
+module. It is an error if the indexed module does not define symbols hooked
+to @SET.unit@, @SET.element@, and @SET.concat@.
 
-    See also: 'sort'
+See also: 'sort'
 
  -}
 asPattern
