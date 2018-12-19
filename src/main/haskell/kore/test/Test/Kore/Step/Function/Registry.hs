@@ -32,7 +32,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( extractRewriteAxioms )
+                 ( AxiomPatternAttributes, extractRewriteAxioms )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -191,10 +191,10 @@ testDef =
                 }
         ]
 
-testIndexedModule :: VerifiedModule StepperAttributes
+testIndexedModule :: VerifiedModule StepperAttributes AxiomPatternAttributes
 testIndexedModule =
     let
-        attributesVerification = defaultAttributesVerification Proxy
+        attributesVerification = defaultAttributesVerification Proxy Proxy
         verifyResult = verifyAndIndexDefinition
             attributesVerification
             Builtin.koreVerifiers

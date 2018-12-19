@@ -22,6 +22,8 @@ import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.OnePath.Verification as OnePath
+import qualified Kore.OnePath.Verification as Claim
+                 ( Claim (rule) )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
@@ -306,7 +308,7 @@ simpleClaim
     -> CommonStepPattern level
     -> OnePath.Claim level
 simpleClaim left right =
-    OnePath.Claim $ simpleRewrite left right
+    OnePath.Claim (simpleRewrite left right) def
 
 simpleRewrite
     :: MetaOrObject level
@@ -343,6 +345,6 @@ runVerification
         simplifier
         (Mock.substitutionSimplifier metadataTools)
         (OnePath.defaultStrategy claims axioms)
-        (map (\c -> (c, stepLimit)) claims)
+        (map (\c -> (Claim.rule c, stepLimit)) claims)
   where
     simplifier = Simplifier.create metadataTools Map.empty

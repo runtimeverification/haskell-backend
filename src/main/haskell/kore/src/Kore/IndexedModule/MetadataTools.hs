@@ -52,10 +52,10 @@ data MetadataTools level attributes = MetadataTools
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::  forall level atts.
+    ::  forall level declAtts axiomAtts.
         MetaOrObject level
-    => VerifiedModule atts
-    -> MetadataTools level atts
+    => VerifiedModule declAtts axiomAtts
+    -> MetadataTools level declAtts
 extractMetadataTools m =
   MetadataTools
     { symAttributes = getHeadAttributes m

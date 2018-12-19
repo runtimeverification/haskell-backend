@@ -43,9 +43,9 @@ verifyUniqueNames existingNames koreModule =
 
 {-|'verifyModule' verifies the welformedness of a Kore 'Module'. -}
 verifyModule
-    :: AttributesVerification atts
+    :: AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
-    -> KoreIndexedModule atts
+    -> KoreIndexedModule declAtts axiomAtts
     -> Either (Error VerifyError) (Module VerifiedKoreSentence)
 verifyModule attributesVerification builtinVerifiers indexedModule =
     withContext

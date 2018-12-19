@@ -5,8 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( HasCallStack, assertEqual, assertFailure, testCase )
 
-import Data.Proxy
-       ( Proxy (..) )
 import Data.Text
        ( Text )
 
@@ -133,8 +131,9 @@ expectFailureWithError description expectedError definition =
   where
     definition' = eraseUnifiedSentenceAnnotations <$> definition
 
-attributesVerificationForTests :: AttributesVerification Attribute.Null
-attributesVerificationForTests = defaultAttributesVerification Proxy
+attributesVerificationForTests
+    :: AttributesVerification Attribute.Null Attribute.Null
+attributesVerificationForTests = defaultNullAttributesVerification
 
 printDefinition :: KoreDefinition -> String
 printDefinition definition =

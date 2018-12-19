@@ -45,9 +45,10 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  makeTruePredicate, unwrapPredicate )
 import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), extractRewriteAxioms,
-                 extractRewriteClaims, lensTrusted )
+                 ( AxiomPatternAttributes (trusted),
+                 EqualityRule (EqualityRule), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern), Trusted (..), extractRewriteAxioms,
+                 extractRewriteClaims )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
@@ -81,12 +82,13 @@ import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
+                 ( Unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
 -- | Concrete execution
 exec
-    :: VerifiedModule StepperAttributes
+    :: VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ The main module
     -> CommonStepPattern Object
     -- ^ The input pattern
@@ -112,7 +114,7 @@ exec indexedModule purePattern stepLimit strategy =
 
 -- | Concrete execution search
 search
-    :: VerifiedModule StepperAttributes
+    :: VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ The main module
     -> CommonStepPattern Object
     -- ^ The input pattern
@@ -158,7 +160,7 @@ search
 -- | Provide a MetadataTools, simplifier, subsitution simplifier, and execution
 -- tree to the callback.
 setUpConcreteExecution
-    :: VerifiedModule StepperAttributes
+    :: VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ The main module
     -> CommonStepPattern Object
     -- ^ The input pattern
@@ -250,7 +252,7 @@ preSimplify
         }
 
 makeAxiomsAndSimplifiers
-    :: VerifiedModule StepperAttributes
+    :: VerifiedModule StepperAttributes AxiomPatternAttributes
     -> MetadataTools Object StepperAttributes
     -> Simplifier
         ( [RewriteRule Object]
@@ -340,9 +342,9 @@ emptyPatternSimplifier tools =
 -- | Proving a spec given as a module containing rules to be proven
 prove
     :: Limit Natural
-    -> VerifiedModule StepperAttributes
+    -> VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ The main module
-    -> VerifiedModule StepperAttributes
+    -> VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ The spec module
     -> Simplifier (Either (CommonStepPattern Object) ())
 prove limit definitionModule specModule = do

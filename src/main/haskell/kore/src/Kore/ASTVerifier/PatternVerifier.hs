@@ -74,7 +74,7 @@ data Context =
         { declaredVariables :: !DeclaredVariables
         , declaredSortVariables :: !(Set UnifiedSortVariable)
         -- ^ The sort variables in scope.
-        , indexedModule :: !(KoreIndexedModule Attribute.Null)
+        , indexedModule :: !(KoreIndexedModule Attribute.Null Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
         , builtinPatternVerifier :: !Builtin.PatternVerifier
         }

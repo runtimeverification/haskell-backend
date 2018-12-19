@@ -28,6 +28,8 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
+import           Kore.Step.AxiomPatterns
+                 ( AxiomPatternAttributes )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -128,8 +130,10 @@ main = do
 
 mainModule
     :: ModuleName
-    -> Map.Map ModuleName (VerifiedModule StepperAttributes)
-    -> IO (VerifiedModule StepperAttributes)
+    -> Map.Map
+        ModuleName
+        (VerifiedModule StepperAttributes AxiomPatternAttributes)
+    -> IO (VerifiedModule StepperAttributes AxiomPatternAttributes)
 mainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -170,11 +174,15 @@ mainParse parser fileName = do
 mainVerify
     :: Bool -- ^ whether to check (True) or ignore attributes during verification
     -> KoreDefinition -- ^ Parsed definition to check well-formedness
-    -> IO (Map.Map ModuleName (VerifiedModule StepperAttributes))
+    -> IO
+        (Map.Map
+            ModuleName
+            (VerifiedModule StepperAttributes AxiomPatternAttributes)
+        )
 mainVerify willChkAttr definition =
     let attributesVerification =
             if willChkAttr
-            then defaultAttributesVerification Proxy
+            then defaultAttributesVerification Proxy Proxy
             else DoNotVerifyAttributes
     in do
       verifyResult <-

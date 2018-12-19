@@ -27,6 +27,8 @@ import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
+import           Kore.Step.AxiomPatterns
+                 ( AxiomPatternAttributes )
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
 
@@ -103,7 +105,7 @@ testDefinition =
                 ]
             }
 
-testVerifiedModule :: VerifiedModule StepperAttributes
+testVerifiedModule :: VerifiedModule StepperAttributes AxiomPatternAttributes
 testVerifiedModule =
     case
         verifyAndIndexDefinition
@@ -188,7 +190,8 @@ testSubsorts =
   where
     test name cond = testCase name (assertBool "" cond)
     testSubsort name list = testCase name . assertEqual "" (Set.fromList list)
-    moduleIndex :: Map.Map ModuleName (VerifiedModule Attribute.Null)
+    moduleIndex ::
+        Map.Map ModuleName (VerifiedModule Attribute.Null Attribute.Null)
     Right moduleIndex =
         verifyAndIndexDefinition
             DoNotVerifyAttributes

@@ -2766,14 +2766,14 @@ runAction proof (description, action) =
         Left err -> Left (description ++ " : " ++ err)
         result   -> result
 
-defaultIndexedModule :: VerifiedModule Attribute.Null
+defaultIndexedModule :: VerifiedModule Attribute.Null Attribute.Null
 defaultIndexedModule =
     case defaultIndexedModuleWithError of
         Left err -> error (printError err)
         Right m  -> m
 
 defaultIndexedModuleWithError
-    :: Either (Error MLError) (VerifiedModule Attribute.Null)
+    :: Either (Error MLError) (VerifiedModule Attribute.Null Attribute.Null)
 defaultIndexedModuleWithError = do
     modules <-
         castError

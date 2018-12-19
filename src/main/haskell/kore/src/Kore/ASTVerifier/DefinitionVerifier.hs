@@ -9,6 +9,7 @@ Portability : POSIX
 -}
 module Kore.ASTVerifier.DefinitionVerifier
     ( defaultAttributesVerification
+    , defaultNullAttributesVerification
     , verifyDefinition
     , verifyAndIndexDefinition
     , verifyAndIndexDefinitionWithBase
@@ -23,7 +24,7 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
-                 ( Proxy )
+                 ( Proxy (..) )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -34,6 +35,7 @@ import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.ModuleVerifier
+import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Builtin as Builtin
@@ -64,8 +66,8 @@ e.g.:
 
 -}
 verifyDefinition
-    :: ParseAttributes atts
-    => AttributesVerification atts
+    :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
+    => AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
@@ -77,11 +79,11 @@ verifyDefinition attributesVerification builtinVerifiers definition = do
 collection of the definition's modules.
 -}
 verifyAndIndexDefinition
-    :: ParseAttributes atts
-    => AttributesVerification atts
+    :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
+    => AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
     -> KoreDefinition
-    -> Either (Error VerifyError) (Map.Map ModuleName (VerifiedModule atts))
+    -> Either (Error VerifyError) (Map.Map ModuleName (VerifiedModule declAtts axiomAtts))
 verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
@@ -98,16 +100,17 @@ If verification is successfull, it returns the updated maps op indexed modules
 and defined names.
 -}
 verifyAndIndexDefinitionWithBase
-    :: forall atts. ParseAttributes atts
+    :: forall declAtts axiomAtts
+    .  (ParseAttributes declAtts, ParseAttributes axiomAtts)
     => Maybe
-        ( Map.Map ModuleName (VerifiedModule atts)
+        ( Map.Map ModuleName (VerifiedModule declAtts axiomAtts)
         , Map.Map Text AstLocation
         )
-    -> AttributesVerification atts
+    -> AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError)
-        ( Map.Map ModuleName (VerifiedModule atts)
+        ( Map.Map ModuleName (VerifiedModule declAtts axiomAtts)
         , Map.Map Text AstLocation
         )
 verifyAndIndexDefinitionWithBase
@@ -140,7 +143,7 @@ verifyAndIndexDefinitionWithBase
             :: [KoreModule]
             -> Either
                 (Error VerifyError)
-                (Map.Map ModuleName (KoreIndexedModule atts))
+                (Map.Map ModuleName (KoreIndexedModule declAtts axiomAtts))
         indexModules modules =
             castError $ foldM
                 (indexModuleIfNeeded
@@ -175,7 +178,7 @@ verifyAndIndexDefinitionWithBase
             :: [Module VerifiedKoreSentence]
             -> Either
                 (Error VerifyError)
-                (Map.Map ModuleName (VerifiedModule atts))
+                (Map.Map ModuleName (VerifiedModule declAtts axiomAtts))
         indexVerifiedModules modules =
             castError $ foldM
                 (indexModuleIfNeeded
@@ -194,18 +197,29 @@ verifyAndIndexDefinitionWithBase
     modulesByName = Map.fromList . map (\m -> (moduleName m, m))
 
 defaultAttributesVerification
-    :: ParseAttributes atts
-    => Proxy atts
-    -> AttributesVerification atts
+    :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
+    => Proxy declAtts
+    -> Proxy axiomAtts
+    -> AttributesVerification declAtts axiomAtts
 defaultAttributesVerification = VerifyAttributes
 
+-- |default option for verifying attributes without parsing them
+defaultNullAttributesVerification
+    :: AttributesVerification Attribute.Null Attribute.Null
+defaultNullAttributesVerification =
+   defaultAttributesVerification proxy proxy
+  where
+    proxy :: Proxy Attribute.Null
+    proxy = Proxy
+
+
 indexImplicitModule
-    :: ParseAttributes attributes
+    :: (ParseAttributes declAtts, ParseAttributes axAtts)
     => Module (UnifiedSentence sortParam patternType)
     -> Either
         (Error VerifyError)
-        ( Map ModuleName (IndexedModule sortParam patternType attributes)
-        , ImplicitIndexedModule sortParam patternType attributes
+        ( Map ModuleName (IndexedModule sortParam patternType declAtts axAtts)
+        , ImplicitIndexedModule sortParam patternType declAtts axAtts
         , Map Text AstLocation
         )
 indexImplicitModule implicitModule = do
@@ -245,11 +259,15 @@ indexImplicitModule implicitModule = do
 containing only the 'kore' default module.
 -}
 verifyNormalKoreDefinition
-    :: (ParseAttributes atts, Show atts)
-    => AttributesVerification atts
+    ::  ( ParseAttributes declAtts
+        , Show declAtts
+        , ParseAttributes axiomAtts
+        , Show axiomAtts
+        )
+    => AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
     -> KoreDefinition
-    -> Either (Error VerifyError) (VerifiedModule atts)
+    -> Either (Error VerifyError) (VerifiedModule declAtts axiomAtts)
 verifyNormalKoreDefinition
     attributesVerification
     builtinVerifiers
@@ -269,11 +287,11 @@ verifyNormalKoreDefinition
 containing only the 'kore' default module.
 -}
 verifyImplicitKoreDefinition
-    :: ParseAttributes atts
-    => AttributesVerification atts
+    :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
+    => AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
     -> KoreDefinition
-    -> Either (Error VerifyError) (VerifiedModule atts)
+    -> Either (Error VerifyError) (VerifiedModule declAtts axiomAtts)
 verifyImplicitKoreDefinition
     attributesVerification
     builtinVerifiers
@@ -306,8 +324,8 @@ extractSingleModuleNameFromDefinition definition =
 
 findModule
     :: ModuleName
-    -> Map.Map ModuleName (IndexedModule param pat atts)
-    -> Either (Error VerifyError) (IndexedModule param pat atts)
+    -> Map.Map ModuleName (IndexedModule param pat declAtts axiomAtts)
+    -> Either (Error VerifyError) (IndexedModule param pat declAtts axiomAtts)
 findModule name modules =
     case Map.lookup name modules of
         Just a -> return a

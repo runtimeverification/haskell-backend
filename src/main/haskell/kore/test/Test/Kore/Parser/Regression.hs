@@ -19,8 +19,6 @@ import           Control.Monad
                  ( void )
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.ByteString.Lazy.Char8 as LazyChar8
-import           Data.Proxy
-                 ( Proxy (..) )
 import           System.Directory
                  ( getCurrentDirectory, setCurrentDirectory )
 import           System.FilePath
@@ -31,7 +29,6 @@ import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.MetaML.Lift
@@ -92,15 +89,12 @@ verify :: KoreDefinition -> Either String KoreDefinition
 verify definition =
     case
         verifyDefinition
-            attributesVerification
+            defaultNullAttributesVerification
             Builtin.koreVerifiers
             definition
       of
         Left e  -> Left (printError e)
         Right _ -> Right definition
-  where
-    attributesVerification :: AttributesVerification Attribute.Null
-    attributesVerification = defaultAttributesVerification Proxy
 
 runParser :: String -> VerifyRequest -> IO LazyByteString.ByteString
 runParser inputFileName verifyRequest = do

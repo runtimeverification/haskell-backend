@@ -38,7 +38,7 @@ extractFunctionAxioms
     ::  forall level.
         MetaOrObject level
     => level
-    -> VerifiedModule StepperAttributes
+    -> VerifiedModule StepperAttributes AxiomPatternAttributes
     -> Map (Id level) [EqualityRule level]
 extractFunctionAxioms level =
     \imod ->
@@ -50,7 +50,7 @@ extractFunctionAxioms level =
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
         :: Map (Id level) [EqualityRule level]
-        -> VerifiedModule StepperAttributes
+        -> VerifiedModule StepperAttributes AxiomPatternAttributes
         -> Map (Id level) [EqualityRule level]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences

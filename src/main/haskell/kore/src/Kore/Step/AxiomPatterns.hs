@@ -169,7 +169,7 @@ isNormalRule RulePattern { attributes } =
 extractRewriteAxioms
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
-    -> VerifiedModule attributes
+    -> VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
     -> [RewriteRule level]
 extractRewriteAxioms level idxMod =
@@ -184,9 +184,9 @@ extractRewriteAxioms level idxMod =
 extractRewriteClaims
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
-    -> VerifiedModule atts
+    -> VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
-    -> [(atts, RewriteRule level)]
+    -> [(axiomAtts, RewriteRule level)]
 extractRewriteClaims level idxMod =
     mapMaybe
         ( sequence                             -- (a, Maybe b) -> Maybe (a,b)

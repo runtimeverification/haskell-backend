@@ -128,7 +128,7 @@ testDefinition =
             ]
         }
 
-testIndexedModule :: VerifiedModule Attribute.Null
+testIndexedModule :: VerifiedModule Attribute.Null Attribute.Null
 testIndexedModule =
     case
         verifyAndIndexDefinition

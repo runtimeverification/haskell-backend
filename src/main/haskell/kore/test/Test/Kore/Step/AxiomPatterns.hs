@@ -382,8 +382,10 @@ parseAxiom str =
 
 extractIndexedModule
     :: Text
-    -> Either (Error a) (Map.Map ModuleName (VerifiedModule Attribute.Null))
-    -> VerifiedModule Attribute.Null
+    -> Either
+        (Error a)
+        (Map.Map ModuleName (VerifiedModule Attribute.Null Attribute.Null))
+    -> VerifiedModule Attribute.Null Attribute.Null
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)

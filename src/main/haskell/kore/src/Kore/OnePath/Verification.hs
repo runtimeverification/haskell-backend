@@ -36,7 +36,8 @@ import           Kore.OnePath.Step
 import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
 import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+                 ( AxiomPatternAttributes, RewriteRule (RewriteRule),
+                 RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern
@@ -59,7 +60,7 @@ import           Kore.Step.Strategy
 -}
 data Claim level = Claim
     { rule :: !(RewriteRule level)
-    , attributes :: !StepperAttributes
+    , attributes :: !AxiomPatternAttributes
     }
 
 
