@@ -10,7 +10,11 @@ Portability : portable
 module Kore.Unparser
     ( Unparse (..)
     , unparseToString
+    , renderDefault
     , layoutPrettyUnbounded
+    , parameters
+    , arguments
+    , attributes
     ) where
 
 import           Data.Functor.Const
@@ -51,8 +55,10 @@ class Unparse p where
 
 -- | Serialize an object to 'String'.
 unparseToString :: Unparse p => p -> String
-unparseToString =
-    renderString . layoutPretty defaultLayoutOptions . unparse
+unparseToString = renderDefault . unparse
+
+renderDefault :: Doc ann -> String
+renderDefault = renderString . layoutPretty defaultLayoutOptions
 
 instance Unparse (Id level) where
     unparse = pretty . getId

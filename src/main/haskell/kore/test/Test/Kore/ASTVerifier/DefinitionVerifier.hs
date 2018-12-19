@@ -23,6 +23,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.Unparser
+                 ( unparseToString )
 
 import Test.Kore
 
