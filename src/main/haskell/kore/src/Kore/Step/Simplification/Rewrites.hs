@@ -53,6 +53,19 @@ simplify
   =
     simplifyEvaluatedRewrites first second
 
+{- TODO (virgil): Preserve pattern sorts under simplification.
+
+One way to preserve the required sort annotations is to make
+'simplifyEvaluatedRewrites' take an argument of type
+
+> CofreeF (Or level) (Valid level) (OrOfExpandedPattern level variable)
+
+instead of two 'OrOfExpandedPattern' arguments. The type of
+'makeEvaluateRewrites' may be changed analogously. The 'Valid' annotation will
+eventually cache information besides the pattern sort, which will make it even
+more useful to carry around.
+
+-}
 simplifyEvaluatedRewrites
     ::  ( MetaOrObject Object
         , SortedVariable variable

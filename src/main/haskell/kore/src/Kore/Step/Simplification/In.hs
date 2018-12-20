@@ -65,6 +65,18 @@ simplify
   =
     simplifyEvaluatedIn tools first second
 
+{- TODO (virgil): Preserve pattern sorts under simplification.
+
+One way to preserve the required sort annotations is to make
+'simplifyEvaluatedIn' take an argument of type
+
+> CofreeF (In level) (Valid level) (OrOfExpandedPattern level variable)
+
+instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluateIn' may
+be changed analogously. The 'Valid' annotation will eventually cache information
+besides the pattern sort, which will make it even more useful to carry around.
+
+-}
 simplifyEvaluatedIn
     ::  ( MetaOrObject level
         , SortedVariable variable

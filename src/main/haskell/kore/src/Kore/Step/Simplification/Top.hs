@@ -25,6 +25,7 @@ import           Kore.Step.Simplification.Data
 
 {-| simplifies a Top pattern, which means returning an always-true or.
 -}
+-- TODO (virgil): Preserve pattern sorts under simplification.
 simplify
     :: (MetaOrObject level, Ord (variable level))
     => Top level child

@@ -56,7 +56,16 @@ import           Kore.Unparser
 
 {-| 'MultiOr' is a Matching logic or of its children
 
-TODO(virgil): Make this a list-like monad, many things would be nicer.
+-}
+{- TODO (virgil): Make 'getMultiOr' a non-empty list ("Data.NonEmpty").
+
+An empty 'MultiOr' corresponding to 'Bottom' actually discards information about
+the sort of its child patterns! That is a problem for simplification, which
+should preserve pattern sorts.
+
+A non-empty 'MultiOr' would also have a nice symmetry between 'Top' and 'Bottom'
+patterns.
+
 -}
 newtype MultiOr child = MultiOr { getMultiOr :: [child] }
   deriving
