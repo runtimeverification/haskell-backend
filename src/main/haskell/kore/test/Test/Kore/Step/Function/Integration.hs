@@ -412,9 +412,9 @@ mockEvaluator
     -> StepPatternSimplifier level variable
     -> Application level (StepPattern level variable)
     -> Simplifier
-        (AttemptedFunction level variable, SimplificationProof level)
+        [(AttemptedFunction level variable, SimplificationProof level)]
 mockEvaluator evaluation _ _ _ _ =
-    return (evaluation, SimplificationProof)
+    return [(evaluation, SimplificationProof)]
 
 evaluate
     :: forall level . MetaOrObject level

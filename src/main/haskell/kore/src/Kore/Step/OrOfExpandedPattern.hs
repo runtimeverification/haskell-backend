@@ -11,6 +11,7 @@ Portability : portable
 -}
 module Kore.Step.OrOfExpandedPattern
     ( CommonOrOfExpandedPattern
+    , CommonOrOfPredicateSubstitution
     , MultiOr (..)
     , OrOfExpandedPattern
     , OrOfPredicateSubstitution
@@ -33,11 +34,15 @@ module Kore.Step.OrOfExpandedPattern
     , traverseFlattenWithPairsGeneric
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import           Data.List
                  ( foldl' )
 import           Data.Reflection
                  ( Given )
 import qualified Data.Set as Set
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Common
                  ( SortedVariable, Variable )
@@ -60,7 +65,10 @@ import           Kore.TopBottom
 TODO(virgil): Make this a list-like monad, many things would be nicer.
 -}
 newtype MultiOr child = MultiOr [child]
-    deriving (Applicative, Eq, Foldable, Functor, Monad, Show, Traversable)
+  deriving
+    (Applicative, Eq, Foldable, Functor, Generic, Monad, Show, Traversable)
+
+instance NFData child => NFData (MultiOr child)
 
 instance TopBottom child => TopBottom (MultiOr child)
   where
@@ -87,6 +95,13 @@ type OrOfPredicateSubstitution level variable
 'Variable', following the same convention as the other Common* types.
 -}
 type CommonOrOfExpandedPattern level = OrOfExpandedPattern level Variable
+
+{-| 'CommonOrOfOrOfPredicateSubstitution' particularizes
+'OrOfPredicateSubstitution' to 'Variable', following the same convention
+as the other Common* types.
+-}
+type CommonOrOfPredicateSubstitution level =
+    OrOfPredicateSubstitution level Variable
 
 {-| 'OrBool' is an some sort of Bool data type used when evaluating things
 inside an 'MultiOr'.

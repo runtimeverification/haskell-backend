@@ -32,8 +32,12 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..) )
+                 ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.OrOfExpandedPattern
+                 ( OrOfPredicateSubstitution )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( make )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
@@ -76,12 +80,12 @@ unificationProcedure
         -- TODO: Consider using a false predicate instead of a Left error
         (UnificationOrSubstitutionError level variable)
         m
-        ( PredicateSubstitution level variable
+        ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
 unificationProcedure tools substitutionSimplifier p1 p2
   | p1Sort /= p2Sort =
-    return (Predicated.bottomPredicate, EmptyUnificationProof)
+    return (OrOfExpandedPattern.make [], EmptyUnificationProof)
   | otherwise = do
     let
         getUnifiedTerm =
@@ -95,17 +99,17 @@ unificationProcedure tools substitutionSimplifier p1 p2
         (pred', _) = Ceil.makeEvaluateTerm tools term
     if Predicated.isBottom pat
         then return
-            ( Predicated.bottomPredicate
-            , EmptyUnificationProof
-            )
+            (OrOfExpandedPattern.make [], EmptyUnificationProof)
         else return
-            ( Predicated
-                { term = ()
-                , predicate =
-                    give symbolOrAliasSorts
-                    $ makeAndPredicate predicate pred'
-                , substitution
-                }
+            ( OrOfExpandedPattern.make
+                [ Predicated
+                    { term = ()
+                    , predicate =
+                        give symbolOrAliasSorts
+                        $ makeAndPredicate predicate pred'
+                    , substitution
+                    }
+                ]
             , EmptyUnificationProof
             )
   where

@@ -127,9 +127,10 @@ evalKEq
     -> StepPatternSimplifier Object variable
     -> Application Object (StepPattern Object variable)
     -> Simplifier
-        ( AttemptedFunction Object variable
-        , SimplificationProof Object
-        )
+        [   ( AttemptedFunction Object variable
+            , SimplificationProof Object
+            )
+        ]
 evalKEq true false tools substitutionSimplifier _ pat =
     case pat of
         Application
@@ -162,9 +163,10 @@ evalKIte
     -> StepPatternSimplifier Object variable
     -> Application Object (StepPattern Object variable)
     -> Simplifier
-        ( AttemptedFunction Object variable
-        , SimplificationProof Object
-        )
+        [   ( AttemptedFunction Object variable
+            , SimplificationProof Object
+            )
+        ]
 evalKIte _ _ _ =
     \case
         Application { applicationChildren = [expr, t1, t2] } ->

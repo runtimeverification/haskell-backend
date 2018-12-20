@@ -25,7 +25,6 @@ import           Control.Exception
                  ( assert )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
-import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
@@ -48,10 +47,13 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..),
-                 erasePredicatedTerm )
+                 ( ExpandedPattern, Predicated (..), erasePredicatedTerm )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom, fromPurePattern, isBottom )
+import           Kore.Step.OrOfExpandedPattern
+                 ( OrOfPredicateSubstitution )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( make )
 import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
@@ -108,10 +110,10 @@ termEquals
     -> StepPattern level variable
     -> StepPattern level variable
     -> MaybeT m
-        (PredicateSubstitution level variable, SimplificationProof level)
+        (OrOfPredicateSubstitution level variable, SimplificationProof level)
 termEquals tools substitutionSimplifier first second = do
-    result <- termEqualsAnd tools substitutionSimplifier first second
-    return (Bifunctor.first erasePredicatedTerm result)
+    (result, proof) <- termEqualsAnd tools substitutionSimplifier first second
+    return (OrOfExpandedPattern.make [erasePredicatedTerm result], proof)
 
 termEqualsAnd
     ::  ( MetaOrObject level

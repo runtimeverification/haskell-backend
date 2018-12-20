@@ -36,15 +36,15 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateFalse, pattern PredicateTrue,
-                 makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
-                 makeOrPredicate )
+                 ( pattern PredicateTrue, makeAndPredicate,
+                 makeEqualsPredicate, makeNotPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+                 ( ExpandedPattern, Predicated (..),
+                 predicateSubstitutionToExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
+                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, merge, toExpandedPattern )
 import           Kore.Step.Pattern
@@ -340,21 +340,10 @@ makeEvaluate
     (result, _proof) <-
         makeEvaluateTermsToPredicateSubstitution
             tools substitutionSimplifier firstTerm secondTerm
-    let Predicated { predicate, substitution } = result
-    case predicate of
-        PredicateFalse ->
-            return (OrOfExpandedPattern.make [], SimplificationProof)
-        _ ->
-            return
-                (OrOfExpandedPattern.make
-                    [ Predicated
-                        { term = mkTop
-                        , predicate = predicate
-                        , substitution = substitution
-                        }
-                    ]
-                , SimplificationProof
-                )
+    return
+        ( fmap predicateSubstitutionToExpandedPattern result
+        , SimplificationProof
+        )
 makeEvaluate
     tools
     substitutionSimplifier
@@ -445,7 +434,8 @@ makeEvaluateTermsAssumesNoBottom
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe
-    ::  ( MetaOrObject level
+    :: forall level variable .
+        ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
@@ -461,19 +451,12 @@ makeEvaluateTermsAssumesNoBottomMaybe
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottomMaybe tools substitutionSimplifier first second
   = do
-        (result, _) <-
-            AndTerms.termEquals tools substitutionSimplifier first second
-        let Predicated { predicate, substitution } = result
-        return
-            ( OrOfExpandedPattern.make
-                [ Predicated
-                    { term = mkTop
-                    , predicate = predicate
-                    , substitution = substitution
-                    }
-                ]
-            , SimplificationProof
-            )
+    (result, _proof) <-
+        AndTerms.termEquals tools substitutionSimplifier first second
+    return
+        ( fmap predicateSubstitutionToExpandedPattern result
+        , SimplificationProof
+        )
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
 
@@ -499,12 +482,12 @@ makeEvaluateTermsToPredicateSubstitution
     -> PredicateSubstitutionSimplifier level m
     -> StepPattern level variable
     -> StepPattern level variable
-    -> m (PredicateSubstitution level variable, SimplificationProof level)
+    -> m (OrOfPredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateTermsToPredicateSubstitution
     tools substitutionSimplifier first second
   | first == second =
     return
-        ( Predicated.topPredicate
+        ( OrOfExpandedPattern.make [Predicated.topPredicate]
         , SimplificationProof
         )
   | otherwise = give symbolOrAliasSorts $ do
@@ -518,30 +501,33 @@ makeEvaluateTermsToPredicateSubstitution
     case result of
         Nothing ->
             return
-                ( Predicated
-                    { term = ()
-                    , predicate = makeEqualsPredicate first second
-                    , substitution = mempty
-                    }
+                ( OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeEqualsPredicate first second
+                        , substitution = mempty
+                        }
+                    ]
                 , SimplificationProof
                 )
-        Just wrappedResult -> do
-            let (Predicated { predicate, substitution }, _proof) =
-                    wrappedResult
-                (firstCeil, _proof1) = Ceil.makeEvaluateTerm tools first
+        Just (predicatedOr, _proof) -> do
+            let (firstCeil, _proof1) = Ceil.makeEvaluateTerm tools first
                 (secondCeil, _proof2) = Ceil.makeEvaluateTerm tools second
                 firstCeilNegation = makeNotPredicate firstCeil
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =
                     makeAndPredicate firstCeilNegation secondCeilNegation
-                finalPredicate =
-                    makeOrPredicate predicate ceilNegationAnd
             return
-                ( Predicated
-                    { term = ()
-                    , predicate = finalPredicate
-                    , substitution = substitution
-                    }
+                ( OrOfExpandedPattern.merge
+                    predicatedOr
+                    (OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = ()
+                            , predicate = ceilNegationAnd
+                            , substitution = mempty
+                            }
+                        ]
+                    )
                 , SimplificationProof
                 )
   where

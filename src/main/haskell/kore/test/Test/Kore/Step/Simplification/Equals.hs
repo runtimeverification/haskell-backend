@@ -31,7 +31,7 @@ import           Kore.Step.ExpandedPattern
                  Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
+                 ( CommonOrOfExpandedPattern, CommonOrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
@@ -430,32 +430,35 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
             (Mock.constr10 fOfA)
         )
     , testCase "sigma(f(a), f(b)) vs sigma(g(a), g(b))"
-        (assertTermEquals
+        (assertTermEqualsMulti
             mockMetadataTools
-            Predicated
+            [ Predicated
                 { term = ()
                 , predicate =
-                    makeOrPredicate
-                        (makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
-                            (makeEqualsPredicate fOfB gOfB)
-                        )
-                        (makeAndPredicate
-                            (makeNotPredicate
-                                (makeAndPredicate
-                                    (makeCeilPredicate fOfA)
-                                    (makeCeilPredicate fOfB)
-                                )
+                    makeAndPredicate
+                        (makeEqualsPredicate fOfA gOfA)
+                        (makeEqualsPredicate fOfB gOfB)
+                , substitution = mempty
+                }
+            , Predicated
+                { term = ()
+                , predicate =
+                    makeAndPredicate
+                        (makeNotPredicate
+                            (makeAndPredicate
+                                (makeCeilPredicate fOfA)
+                                (makeCeilPredicate fOfB)
                             )
-                            (makeNotPredicate
-                                (makeAndPredicate
-                                    (makeCeilPredicate gOfA)
-                                    (makeCeilPredicate gOfB)
-                                )
+                        )
+                        (makeNotPredicate
+                            (makeAndPredicate
+                                (makeCeilPredicate gOfA)
+                                (makeCeilPredicate gOfB)
                             )
                         )
                 , substitution = mempty
                 }
+            ]
             (Mock.functionalConstr20 fOfA fOfB)
             (Mock.functionalConstr20 gOfA gOfB)
         )
@@ -756,11 +759,31 @@ assertTermEqualsGeneric
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> Assertion
-assertTermEqualsGeneric tools expectPure first second =
+assertTermEqualsGeneric tools expectPure =
+    assertTermEqualsMultiGeneric tools [expectPure]
+
+
+assertTermEqualsMulti
+    :: HasCallStack
+    => MetadataTools Object StepperAttributes
+    -> [CommonPredicateSubstitution Object]
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> IO ()
+assertTermEqualsMulti = assertTermEqualsMultiGeneric
+
+assertTermEqualsMultiGeneric
+    :: (MetaOrObject level, HasCallStack)
+    => MetadataTools level StepperAttributes
+    -> [CommonPredicateSubstitution level]
+    -> CommonStepPattern level
+    -> CommonStepPattern level
+    -> Assertion
+assertTermEqualsMultiGeneric tools expectPure first second =
     give (MetadataTools.symbolOrAliasSorts tools) $ do
         let expectExpanded =
                 OrOfExpandedPattern.make
-                    [ predSubstToExpandedPattern expectPure ]
+                    (map predSubstToExpandedPattern expectPure)
         actualExpanded <-
             evaluateGeneric
                 tools
@@ -773,7 +796,7 @@ assertTermEqualsGeneric tools expectPure first second =
         actualPure <- evaluateTermsGeneric tools first second
         assertEqualWithExplanation
             "PureMLPattern"
-            expectPure
+            (OrOfExpandedPattern.make expectPure)
             actualPure
   where
     termToExpandedPattern
@@ -909,7 +932,7 @@ evaluateTermsGeneric
     => MetadataTools level StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
-    -> IO (CommonPredicateSubstitution level)
+    -> IO (CommonOrOfPredicateSubstitution level)
 evaluateTermsGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

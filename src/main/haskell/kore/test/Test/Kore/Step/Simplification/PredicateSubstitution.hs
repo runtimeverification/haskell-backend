@@ -329,18 +329,20 @@ simpleEvaluator
     => [(StepPattern Object variable, StepPattern Object variable)]
     -> Application Object (StepPattern Object variable)
     -> Simplifier
-        ( AttemptedFunction Object variable
-        , SimplificationProof Object
-        )
-simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
+        [   ( AttemptedFunction Object variable
+            , SimplificationProof Object
+            )
+        ]
+simpleEvaluator [] _ = return [(NotApplicable, SimplificationProof)]
 simpleEvaluator ((from, to) : ps) app
   | from == embed (mempty :< ApplicationPattern app) =
     return
-        ( Applied
-            (OrOfExpandedPattern.make
-                [Predicated.fromPurePattern to]
+        [   ( Applied
+                (OrOfExpandedPattern.make
+                    [Predicated.fromPurePattern to]
+                )
+            , SimplificationProof
             )
-        , SimplificationProof
-        )
+        ]
   | otherwise =
     simpleEvaluator ps app

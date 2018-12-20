@@ -442,9 +442,8 @@ test_concretizeKeysAxiom =
             , requires = Predicate.makeTruePredicate
             , attributes = Default.def
             }
-    expected =
-        Right
-            ( Predicated
+    expected = Right
+        [   ( Predicated
                 { term = val
                 , predicate = Predicate.makeTruePredicate
                 , substitution = mempty
@@ -454,6 +453,7 @@ test_concretizeKeysAxiom =
                 , stepProof (StepProofUnification EmptyUnificationProof)
                 ]
             )
+        ]
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonStepPattern Object

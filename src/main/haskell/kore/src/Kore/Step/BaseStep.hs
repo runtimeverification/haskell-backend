@@ -25,6 +25,10 @@ module Kore.Step.BaseStep
 
 import qualified Control.Arrow as Arrow
 import           Control.Monad.Except
+import           Control.Monad.Trans.Except
+                 ( throwE )
+import           Data.Either
+                 ( partitionEithers )
 import qualified Data.Hashable as Hashable
 import qualified Data.Map as Map
 import           Data.Maybe
@@ -38,6 +42,7 @@ import           Data.Sequence
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import           GHC.Generics
+                 ( Generic )
 
 
 import           Kore.AST.Pure
@@ -62,6 +67,10 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( toPredicate )
+import           Kore.Step.OrOfExpandedPattern
+                 ( OrOfPredicateSubstitution )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( extractPatterns )
 import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
@@ -216,7 +225,7 @@ newtype UnificationProcedure level =
         -> ExceptT
             (UnificationOrSubstitutionError level variable)
             m
-            ( PredicateSubstitution level variable
+            ( OrOfPredicateSubstitution level variable
             , UnificationProof level variable
             )
         )
@@ -250,16 +259,16 @@ stepWithRuleForUnifier
     -> ExceptT
         (StepError level variable)
         Simplifier
-        ( StepResult level variable
-        , StepProof level variable
-        )
+        [   ( StepResult level variable
+            , StepProof level variable
+            )
+        ]
 stepWithRuleForUnifier
     tools
     (UnificationProcedure unificationProcedure')
     substitutionSimplifier
     expandedPattern@Predicated
         { term = initialTerm
-        , substitution = initialSubstitution
         }
     axiom@RulePattern
         { left = axiomLeftRaw
@@ -270,17 +279,8 @@ stepWithRuleForUnifier
     -- Distinguish configuration (pattern) and axiom variables by lifting them
     -- into 'StepperVariable'.
     let
-        Predicated
-            { term = startPattern
-            , predicate = startCondition
-            , substitution = startSubstitution
-            } =
-                ExpandedPattern.mapVariables
-                    ConfigurationVariable expandedPattern
-        wrapAxiomVariables = mapVariables AxiomVariable
-        axiomLeft = wrapAxiomVariables axiomLeftRaw
-        axiomRight = wrapAxiomVariables axiomRightRaw
-        axiomRequires = Predicate.mapVariables AxiomVariable axiomRequiresRaw
+        axiomLeft = mapVariables AxiomVariable axiomLeftRaw
+        startPattern = mapVariables ConfigurationVariable initialTerm
 
     let
         -- Keep a set of all variables for remapping errors (below).
@@ -316,22 +316,86 @@ stepWithRuleForUnifier
     -- Unify the left-hand side of the rewriting axiom with the initial
     -- configuration, producing a substitution (instantiating the axiom to the
     -- configuration) subject to a predicate.
-    ( Predicated
-            { predicate = rawPredicate
-            , substitution = rawSubstitution
-            }
-        , rawSubstitutionProof
-        ) <- normalizeUnificationOrSubstitutionError
-                existingVars
-                (unificationProcedure'
-                    tools
-                    substitutionSimplifier
-                    axiomLeft
-                    startPattern
-                )
+    (rawOrPredicateSubstitution, rawSubstitutionProof) <-
+        normalizeUnificationOrSubstitutionError
+            existingVars
+            (unificationProcedure'
+                tools
+                substitutionSimplifier
+                axiomLeft
+                startPattern
+            )
+    keepGoodResults $ return $ map
+        (applyUnificationToRhs
+            tools
+            substitutionSimplifier
+            axiom
+            existingVars
+            expandedPattern
+            rawSubstitutionProof
+        )
+        (OrOfExpandedPattern.extractPatterns rawOrPredicateSubstitution)
 
-    -- Combine the all the predicates and substitutions generated above and
-    -- simplify the result.
+applyUnificationToRhs
+    :: forall level variable .
+        ( Eq (variable Meta)
+        , Eq (variable Object)
+        , Eq (variable level)
+        , FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Ord (variable level)
+        , Show (variable Meta)
+        , Show (variable Object)
+        , Show (variable level)
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> RulePattern level
+    -> Set.Set (StepperVariable variable level)
+    -> ExpandedPattern level variable
+    -> UnificationProof level (StepperVariable variable)
+    -> PredicateSubstitution level (StepperVariable variable)
+    -> ExceptT
+        (StepError level variable)
+        Simplifier
+        ( StepResult level variable
+        , StepProof level variable
+        )
+applyUnificationToRhs
+    tools
+    substitutionSimplifier
+    axiom@RulePattern
+        { left = axiomLeftRaw
+        , right = axiomRightRaw
+        , requires = axiomRequiresRaw
+        }
+    existingVars
+    expandedPattern@Predicated
+        {term = initialTerm, substitution = initialSubstitution}
+    rawSubstitutionProof
+    Predicated {predicate = rawPredicate, substitution = rawSubstitution}
+  = do
+    let
+        -- TODO(virgil): Some of the work is duplicated with the
+        -- startPattern = mapVariables ConfigurationVariable initialTerm
+        -- statement in the caller (stepWithRuleForUnifier). Should solve
+        -- this somehow.
+        Predicated
+            { predicate = startCondition
+            , substitution = startSubstitution
+            } =
+                ExpandedPattern.mapVariables
+                    ConfigurationVariable expandedPattern
+
+        wrapAxiomVariables = mapVariables AxiomVariable
+        axiomRight :: StepPattern level (StepperVariable variable)
+        axiomRight = wrapAxiomVariables axiomRightRaw
+        axiomRequires = Predicate.mapVariables AxiomVariable axiomRequiresRaw
+    -- Combine the all the predicates and substitutions generated
+    -- above and simplify the result.
     ( Predicated
             { predicate = normalizedCondition
             , substitution = normalizedSubstitution
@@ -368,6 +432,7 @@ stepWithRuleForUnifier
                 [rawSubstitution]
 
     let
+        negatedRemainder :: Predicate level (StepperVariable variable)
         negatedRemainder =
             give sortTools $ makeNotPredicate $
                 PredicateSubstitution.toPredicate
@@ -375,9 +440,10 @@ stepWithRuleForUnifier
                         { term = ()
                         , predicate = normalizedRemainderPredicateRaw
                         , substitution =
-                            -- Note that this filtering is reasonable only
-                            -- because below we check that there are no axiom
-                            -- variables left in the predicate.
+                            -- Note that this filtering is reasonable
+                            -- only because below we check that there
+                            -- are no axiom variables left in the
+                            -- predicate.
                             Substitution.modify
                                 (filter hasConfigurationVariable)
                                 normalizedRemainderSubstitution
@@ -385,6 +451,8 @@ stepWithRuleForUnifier
         -- the remainder predicate is the start predicate from which we
         -- remove what was handled by the current axiom, i.e. we `and` it with
         -- the negated unification results and the axiom condition.
+        normalizedRemainderPredicate
+            :: Predicate level (StepperVariable variable)
         normalizedRemainderPredicate =
             give sortTools $ makeAndPredicate
                 startCondition  -- from initial configuration
@@ -440,7 +508,7 @@ stepWithRuleForUnifier
             existingVars variableMapping2 rawSubstitutionProof
 
     if Predicate.isFalse condition
-       || variablesInLeftAxiom `Set.isSubsetOf` substitutions
+        || variablesInLeftAxiom `Set.isSubsetOf` substitutions
         then return ()
         else
             (error . unlines)
@@ -471,17 +539,17 @@ stepWithRuleForUnifier
                 if not (isFunctionPattern tools initialTerm)
                 then error
                     (  "Cannot handle non-function patterns, \
-                       \see design-decisions/\
-                       \2018-10-24-And-Not-Exists-Simplification.md \
-                       \for hints on how to fix:"
+                    \see design-decisions/\
+                    \2018-10-24-And-Not-Exists-Simplification.md \
+                    \for hints on how to fix:"
                     ++ show initialTerm
                     )
                 else if not (isFunctionPattern tools axiomLeftRaw)
                 then error
                     (  "Cannot handle non-function patterns, \
-                       \see design-decisions/\
-                       \2018-10-24-And-Not-Exists-Simplification.md \
-                       \for hints on how to fix:"
+                    \see design-decisions/\
+                    \2018-10-24-And-Not-Exists-Simplification.md \
+                    \for hints on how to fix:"
                     ++ show axiomLeftRaw
                     )
                 else Predicated
@@ -497,40 +565,8 @@ stepWithRuleForUnifier
             ((stepProof . StepProofUnification) substitutionProof)
         )
   where
-    -- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
-    -- internally-defined variables.
-    stepperVariableToVariableForError
-        :: forall a
-        .   ( FreshVariable variable
-            , MetaOrObject level
-            , Ord (variable level)
-            , Show (variable level)
-            )
-        => Set.Set (StepperVariable variable level)
-        -> ExceptT (StepError level (StepperVariable variable)) Simplifier a
-        -> ExceptT (StepError level variable) Simplifier a
-    stepperVariableToVariableForError existingVars = mapExceptT mapper
-      where
-        mapper
-            :: Simplifier
-                (Either (StepError level (StepperVariable variable)) a)
-            -> Simplifier (Either (StepError level variable) a)
-        mapper action = do
-            result <- action
-            case result of
-                Right value -> return (Right value)
-                Left err -> do
-                    let axiomVars = stepErrorVariables err
-                    mapping <-
-                        addAxiomVariablesAsConfig
-                            existingVars Map.empty (Set.toList axiomVars)
-                    let errorWithoutAxiomVars =
-                            mapStepErrorVariables
-                                (\var -> fromMaybe var (Map.lookup var mapping))
-                                err
-                    return $ Left $ mapStepErrorVariables
-                        configurationVariableToCommon errorWithoutAxiomVars
-
+    sortTools :: SymbolOrAliasSorts level
+    sortTools = MetadataTools.symbolOrAliasSorts tools
     variablePairToRenaming
         :: (StepperVariable variable level, StepperVariable variable level)
         -> VariableRenaming level variable
@@ -538,8 +574,23 @@ stepWithRuleForUnifier
         { variableRenamingOriginal = original
         , variableRenamingRenamed  = renamed
         }
-    sortTools :: SymbolOrAliasSorts level
-    sortTools = MetadataTools.symbolOrAliasSorts tools
+
+keepGoodResults
+    :: ExceptT
+        a
+        Simplifier
+        [ ExceptT a Simplifier b ]
+    -> ExceptT a Simplifier [b]
+keepGoodResults mresultsm = do
+    resultsm <- mresultsm
+    resultsEither <- lift $ mapM runExceptT resultsm
+    let
+        (errors, goodResults) = partitionEithers resultsEither
+    if null goodResults
+        then case errors of
+            [] -> return []
+            (err : _) -> throwE err
+        else return goodResults
 
 stepWithRule
     ::  ( FreshVariable variable
@@ -559,16 +610,51 @@ stepWithRule
     -> ExceptT
         (StepError level variable)
         Simplifier
-        ( StepResult level variable
-        , StepProof level variable
-        )
+        [   ( StepResult level variable
+            , StepProof level variable
+            )
+        ]
 stepWithRule tools substitutionSimplifier patt (RewriteRule rule) =
     stepWithRuleForUnifier
-        tools
-        (UnificationProcedure unificationProcedure)
-        substitutionSimplifier
-        patt
-        rule
+            tools
+            (UnificationProcedure unificationProcedure)
+            substitutionSimplifier
+            patt
+            rule
+
+-- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
+-- internally-defined variables.
+stepperVariableToVariableForError
+    :: forall a level variable
+    .   ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , Show (variable level)
+        )
+    => Set.Set (StepperVariable variable level)
+    -> ExceptT (StepError level (StepperVariable variable)) Simplifier a
+    -> ExceptT (StepError level variable) Simplifier a
+stepperVariableToVariableForError existingVars = mapExceptT mapper
+  where
+    mapper
+        :: Simplifier
+            (Either (StepError level (StepperVariable variable)) a)
+        -> Simplifier (Either (StepError level variable) a)
+    mapper action = do
+        result <- action
+        case result of
+            Right value -> return (Right value)
+            Left err -> do
+                let axiomVars = stepErrorVariables err
+                mapping <-
+                    addAxiomVariablesAsConfig
+                        existingVars Map.empty (Set.toList axiomVars)
+                let errorWithoutAxiomVars =
+                        mapStepErrorVariables
+                            (\var -> fromMaybe var (Map.lookup var mapping))
+                            err
+                return $ Left $ mapStepErrorVariables
+                    configurationVariableToCommon errorWithoutAxiomVars
 
 unificationProofStepVariablesToCommon
     ::  ( FreshVariable variable

@@ -34,13 +34,15 @@ import           Kore.AST.MetaOrObject
                  ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Predicate.Predicate
-                 ( pattern PredicateFalse )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.OrOfExpandedPattern
+                 ( OrOfPredicateSubstitution )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -49,8 +51,12 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
+import           Kore.Unification.Unifier
+                 ( UnificationProof (..) )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -114,7 +120,8 @@ searchGraph Config { searchType, bound } match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith
-    ::  ( MetaOrObject level
+    :: forall level variable .
+        ( MetaOrObject level
         , SortedVariable variable
         , Eq (variable level)
         , FreshVariable variable
@@ -128,37 +135,44 @@ matchWith
     -> StepPatternSimplifier level variable
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
-    -> MaybeT Simplifier (PredicateSubstitution level variable)
+    -> MaybeT Simplifier (OrOfPredicateSubstitution level variable)
 matchWith tools substitutionSimplifier simplifier e1 e2 = do
     (unifier, _proof) <-
         hushT $ unificationProcedure tools substitutionSimplifier t1 t2
-    (predSubst, _proof) <-
-            lift
-            $ mergePredicatesAndSubstitutions
+    let
+        mergeAndEvaluate
+            :: PredicateSubstitution level variable
+            -> Simplifier
+                ( PredicateSubstitution level variable
+                , UnificationProof level variable
+                )
+        mergeAndEvaluate predSubst = do
+            (merged, _proof) <-
+                mergePredicatesAndSubstitutions
+                    tools
+                    substitutionSimplifier
+                    [ Predicated.predicate predSubst
+                    , Predicated.predicate e1
+                    , Predicated.predicate e2
+                    ]
+                    [ Predicated.substitution predSubst]
+            (evaluated, _proof) <-
+                give tools
+                $ Predicate.evaluate substitutionSimplifier simplifier
+                $ Predicated.predicate merged
+            mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
-                [ Predicated.predicate unifier
-                , Predicated.predicate e1
-                , Predicated.predicate e2
+                [ Predicated.predicate evaluated
                 ]
-                [ Predicated.substitution unifier ]
-    (predSubst', _proof) <-
-        give tools
-        $ lift
-        $ Predicate.evaluate substitutionSimplifier simplifier
-        $ Predicated.predicate predSubst
-    let evaluatedPred = Predicated.predicate predSubst'
-    case evaluatedPred of
-        PredicateFalse -> nothing
-        _ ->
-            lift
-            $ fst <$> mergePredicatesAndSubstitutions
-                tools
-                substitutionSimplifier
-                [ Predicated.predicate predSubst' ]
-                [ Predicated.substitution predSubst'
-                , Predicated.substitution predSubst
+                [ Predicated.substitution merged
+                , Predicated.substitution evaluated
                 ]
+    (result, _proof) <-
+        lift $ OrOfExpandedPattern.traverseWithPairs mergeAndEvaluate unifier
+    if isBottom result
+        then nothing
+        else return result
   where
     t1 = Predicated.term e1
     t2 = Predicated.term e2

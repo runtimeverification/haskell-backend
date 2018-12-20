@@ -73,9 +73,10 @@ newtype ApplicationFunctionEvaluator level =
         -> StepPatternSimplifier level variable
         -> Application level (StepPattern level variable)
         -> Simplifier
-            ( AttemptedFunction level variable
-            , SimplificationProof level
-            )
+            [   ( AttemptedFunction level variable
+                , SimplificationProof level
+                )
+            ]
         )
 
 {-|Datastructure to combine both a builtin evaluator and axiom-based
@@ -114,16 +115,18 @@ type CommonAttemptedFunction level = AttemptedFunction level Variable
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableFunctionEvaluator
     :: Simplifier
-         (AttemptedFunction level1 variable, SimplificationProof level2)
-notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
+        [(AttemptedFunction level1 variable, SimplificationProof level2)]
+notApplicableFunctionEvaluator = pure [(NotApplicable, SimplificationProof)]
 
 -- |Yields a pure 'Simplifier' which produces a given 'StepPattern'
 purePatternFunctionEvaluator
     :: (MetaOrObject level, Ord (variable level))
     => StepPattern level variable
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level')
+    -> Simplifier
+        [(AttemptedFunction level variable, SimplificationProof level)]
 purePatternFunctionEvaluator p =
     pure
-        (Applied (makeFromSinglePurePattern p)
-        , SimplificationProof
-        )
+        [   ( Applied (makeFromSinglePurePattern p)
+            , SimplificationProof
+            )
+        ]

@@ -43,7 +43,7 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, make, merge )
+                 ( extractPatterns, isFalse, make, merge )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -55,7 +55,8 @@ import           Kore.Variables.Fresh
 {-| 'evaluateApplication' - evaluates functions on an application pattern.
 -}
 evaluateApplication
-    ::  ( MetaOrObject level
+    :: forall level variable .
+        ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
@@ -77,7 +78,8 @@ evaluateApplication
     -- ^ Aggregated children predicate and substitution.
     -> Application level (StepPattern level variable)
     -- ^ The pattern to be evaluated
-    -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier
+        (OrOfExpandedPattern level variable, SimplificationProof level)
 evaluateApplication
     tools
     substitutionSimplifier
@@ -105,21 +107,22 @@ evaluateApplication
             these
                 (evaluateWithFunctionAxioms . pure)
                 evaluateWithFunctionAxioms
-                (\builtinEvaluator axiomEvaluators ->
-                    do
-                    (result, proof) <- applyEvaluator app builtinEvaluator
-                    case result of
-                        AttemptedFunction.NotApplicable
-                          | isAppConcrete
-                          , Just hook <- getAppHookString ->
-                            error
-                                (   "Expecting hook " ++ hook
-                                ++  " to reduce concrete pattern\n\t"
-                                ++ show app
-                                )
-                          | otherwise ->
-                            evaluateWithFunctionAxioms axiomEvaluators
-                        AttemptedFunction.Applied pat -> return (pat, proof)
+                (\builtinEvaluator axiomEvaluators -> do
+                    unprocessedResults <- applyEvaluator app builtinEvaluator
+                    orResultsWithProofs <-
+                        mapM (processResult axiomEvaluators) unprocessedResults
+                    let
+                        dropProofs :: [(a, SimplificationProof level)] -> [a]
+                        dropProofs = map fst
+                    return
+                        (OrOfExpandedPattern.make
+                            (concatMap
+                                OrOfExpandedPattern.extractPatterns
+                                (dropProofs orResultsWithProofs)
+                            )
+                        , SimplificationProof
+                        )
+
                 )
                 builtinOrAxiomEvaluators
   where
@@ -135,6 +138,25 @@ evaluateApplication
 
     appPurePattern = asPurePattern (mempty :< ApplicationPattern app)
 
+    processResult
+        :: [ApplicationFunctionEvaluator level]
+        -> (AttemptedFunction level variable, SimplificationProof level)
+        -> Simplifier
+            (OrOfExpandedPattern level variable, SimplificationProof level)
+    processResult axiomEvaluators (result, proof) =
+        case result of
+            AttemptedFunction.NotApplicable
+              | isAppConcrete
+              , Just hook <- getAppHookString ->
+                error
+                    (   "Expecting hook " ++ hook
+                    ++  " to reduce concrete pattern\n\t"
+                    ++ show app
+                    )
+              | otherwise ->
+                evaluateWithFunctionAxioms axiomEvaluators
+            AttemptedFunction.Applied pat -> return (pat, proof)
+
     unchangedPatt =
         case childrenPredicateSubstitution of
             Predicated { predicate, substitution } ->
@@ -146,18 +168,20 @@ evaluateApplication
     unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
 
-    applyEvaluator app' (ApplicationFunctionEvaluator evaluator) =
-        evaluator
+    applyEvaluator app' (ApplicationFunctionEvaluator evaluator) = do
+        results <- evaluator
             tools
             substitutionSimplifier
             simplifier
             app'
-        >>=
-        mergeWithConditionAndSubstitution
-           tools
-           substitutionSimplifier
-           simplifier
-           childrenPredicateSubstitution
+        mapM
+            (mergeWithConditionAndSubstitution
+                tools
+                substitutionSimplifier
+                simplifier
+                childrenPredicateSubstitution
+            )
+            results
 
     notBottom =
         \case
@@ -171,8 +195,14 @@ evaluateApplication
         Text.unpack <$> (getHook . hook . symAttributes tools) appHead
 
     evaluateWithFunctionAxioms evaluators = do
-        results <- mapM (applyEvaluator app) evaluators
+        resultsLists <- mapM (applyEvaluator app) evaluators
         let
+            results
+                ::  [   ( AttemptedFunction level variable
+                        , SimplificationProof level
+                        )
+                    ]
+            results = concat resultsLists
             -- Separate into NotApplied and Applied results.
             (notApplied, applied) =
                 partition
