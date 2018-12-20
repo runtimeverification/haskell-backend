@@ -1,11 +1,19 @@
 // Copyright (c) 2016-2018 K Team. All Rights Reserved.
 
-module SUM-SPEC
+
+module VERIFICATION
   imports IMP
 
 // verification ids
   syntax Id ::= "n"     [token]
               | "sum"   [token]
+endmodule
+
+
+module SUM-SPEC
+  imports IMP
+  imports VERIFICATION
+
 
 rule
     <k>
