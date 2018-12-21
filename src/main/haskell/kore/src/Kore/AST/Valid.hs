@@ -43,6 +43,7 @@ module Kore.AST.Valid
     , mkStringLiteral
     , mkCharLiteral
     , mkSort
+    , mkSortVariable
     , varS
     , symS
     -- * Predicate constructors
@@ -839,6 +840,9 @@ mkCharLiteral char =
 
 mkSort :: Id level -> Sort level
 mkSort name = SortActualSort $ SortActual name []
+
+mkSortVariable :: Id level -> Sort level
+mkSortVariable name = SortVariableSort $ SortVariable name
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s
