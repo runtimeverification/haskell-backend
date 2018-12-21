@@ -1,6 +1,7 @@
 # Settings
 
 TOP ?= $(shell git rev-parse --show-toplevel)
+UPSTREAM_BRANCH := origin/master
 
 BUILD_DIR := $(TOP)/.build
 K_NIGHTLY := $(BUILD_DIR)/nightly.tar.gz

@@ -58,7 +58,7 @@ check:
 		echo >&2 "Please commit your changes!"; \
 		exit 1; \
 	fi
-	if ! ./scripts/git-rebased-on.sh "$$(git rev-parse origin/master)" --linear; \
+	if ! ./scripts/git-rebased-on.sh "$$(git rev-parse $(UPSTREAM_BRANCH))" --linear; \
 	then \
 		echo >&2 "Please rebase your branch onto ‘master’!"; \
 		exit 1; \
