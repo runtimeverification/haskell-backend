@@ -28,7 +28,6 @@ module Kore.Builtin
     , asMetaPattern
     ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Map
                  ( Map )
@@ -38,8 +37,9 @@ import           Data.Semigroup
 import           Data.Text
                  ( Text )
 
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Builtin.Bool as Bool
@@ -178,7 +178,7 @@ asPattern
   =
     case domainValueChild of
         Domain.BuiltinPattern _ ->
-            return (DV_ domainValueSort domainValueChild)
+            return (mkDomainValue domainValueSort domainValueChild)
         Domain.BuiltinMap map' ->
             Map.asPattern indexedModule domainValueSort <*> pure map'
         Domain.BuiltinList list ->
@@ -201,23 +201,24 @@ externalizePattern
     -> CommonStepPattern Object
     -> Either (Error e) (CommonStepPattern Object)
 externalizePattern indexedModule =
-    Recursive.fold (externalizePattern0 . Cofree.tailF)
+    Recursive.fold externalizePatternWorker
   where
-    externalizePattern0 =
-        \case
+    externalizePatternWorker (ann :< pat) =
+        case pat of
             DomainValuePattern dv ->
                 asPattern indexedModule =<< sequence dv
-            pat -> Recursive.embed . (mempty :<) <$> sequence pat
+            _ -> Recursive.embed . (ann :<) <$> sequence pat
 
 {- | Extract the meta-level pattern argument of a domain value.
 
-    WARNING: This is not implemented for internal domain values. Use
-    'externalizePattern' before calling this function.
+WARNING: This is not implemented for internal domain values. Use
+'externalizePattern' before calling this function.
 
  -}
 asMetaPattern
-    :: Domain.Builtin child
-    -> CommonStepPattern Meta
+    :: Functor domain
+    => Domain.Builtin child
+    -> PurePattern Meta domain Variable (Annotation.Null Meta)
 asMetaPattern =
     \case
         Domain.BuiltinPattern pat -> castVoidDomainValues pat

@@ -25,12 +25,12 @@ import qualified Control.Monad.Trans as Monad.Trans
 import Kore.AST.Common
        ( SortedVariable, Variable )
 import Kore.AST.MetaOrObject
-       ( Meta, MetaOrObject, Object )
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern )
 import Kore.Step.Pattern
+import Kore.Unparser
 import Kore.Variables.Fresh
 import SMT
        ( MonadSMT, SMT )
@@ -106,11 +106,10 @@ newtype PredicateSubstitutionSimplifier level m =
         .   ( FreshVariable variable
             , MetaOrObject level
             , Ord (variable level)
-            , Ord (variable Meta)
-            , Ord (variable Object)
+            , OrdMetaOrObject variable
             , Show (variable level)
-            , Show (variable Meta)
-            , Show (variable Object)
+            , ShowMetaOrObject variable
+            , Unparse (variable level)
             , SortedVariable variable
             )
         => PredicateSubstitution level variable

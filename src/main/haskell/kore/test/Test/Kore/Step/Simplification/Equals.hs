@@ -7,20 +7,11 @@ module Test.Kore.Step.Simplification.Equals
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Data.Reflection
-       ( give )
-
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkBottom, mkCharLiteral, mkDomainValue, mkStringLiteral,
-                 mkStringLiteral, mkTop, mkVar )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Bottom_ )
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
@@ -47,13 +38,13 @@ import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_equalsSimplification_OrOfExpandedPatterns :: [TestTree]
-test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
+test_equalsSimplification_OrOfExpandedPatterns =
     [ testCase "bottom == bottom" $ do
         let expect = OrOfExpandedPattern.make [ Predicated.top ]
         actual <-
@@ -115,7 +106,7 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
         let expect =
                 OrOfExpandedPattern.make
                     [ Predicated
-                        { term = mkTop
+                        { term = mkTop_
                         , predicate = makeEqualsPredicate fOfA gOfA
                         , substitution = mempty
                         }
@@ -147,7 +138,7 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
         let expect =
                 OrOfExpandedPattern.make
                     [ Predicated
-                        { term = mkTop
+                        { term = mkTop_
                         , predicate =
                             makeMultipleAndPredicate
                                 [ makeCeilPredicate Mock.cf
@@ -164,7 +155,7 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
                         , substitution = mempty
                         }
                     ,  Predicated
-                        { term = mkTop
+                        { term = mkTop_
                         , predicate =
                             makeMultipleAndPredicate
                                 [ makeNotPredicate $ makeCeilPredicate Mock.cf
@@ -218,12 +209,12 @@ test_equalsSimplification_OrOfExpandedPatterns = give mockSymbolOrAliasSorts
     ]
 
 test_equalsSimplification_ExpandedPatterns :: [TestTree]
-test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
+test_equalsSimplification_ExpandedPatterns =
     [ testCase "predicate-substitution vs predicate-substitution" $ do
         let expect =
                 OrOfExpandedPattern.make
                     [ Predicated
-                        { term = mkTop
+                        { term = mkTop_
                         , predicate =
                             makeIffPredicate
                                 (makeEqualsPredicate fOfA fOfB)
@@ -235,12 +226,12 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
             evaluate
                 mockMetadataTools
                 Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA fOfB
                     , substitution = mempty
                     }
                 Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = mempty
                     }
@@ -250,7 +241,7 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
         let expect =
                 OrOfExpandedPattern.make
                     [ Predicated
-                        { term = mkTop
+                        { term = mkTop_
                         , predicate =
                             makeOrPredicate
                                 ( makeAndPredicate
@@ -300,13 +291,13 @@ test_equalsSimplification_ExpandedPatterns = give mockSymbolOrAliasSorts
     ]
 
 test_equalsSimplification_Patterns :: [TestTree]
-test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
+test_equalsSimplification_Patterns =
     [ testCase "bottom == bottom"
         (assertTermEquals
             mockMetadataTools
             Predicated.topPredicate
-            mkBottom
-            mkBottom
+            mkBottom_
+            mkBottom_
         )
     , testCase "domain-value == domain-value"
         (assertTermEquals
@@ -314,11 +305,17 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
             Predicated.topPredicate
             (mkDomainValue
                 testSort
-                (Domain.BuiltinPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern
+                    $ eraseAnnotations
+                    $ mkStringLiteral "a"
+                )
             )
             (mkDomainValue
                 testSort
-                (Domain.BuiltinPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern
+                    $ eraseAnnotations
+                    $ mkStringLiteral "a"
+                )
             )
         )
     , testCase "domain-value != domain-value"
@@ -327,11 +324,17 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
             Predicated.bottomPredicate
             (mkDomainValue
                 testSort
-                (Domain.BuiltinPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern
+                    $ eraseAnnotations
+                    $ mkStringLiteral "a"
+                )
             )
             (mkDomainValue
                 testSort
-                (Domain.BuiltinPattern (mkStringLiteral "b"))
+                (Domain.BuiltinPattern
+                    $ eraseAnnotations
+                    $ mkStringLiteral "b"
+                )
             )
         )
     , testCase "domain-value != domain-value because of sorts"
@@ -340,11 +343,17 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
             Predicated.bottomPredicate
             (mkDomainValue
                 testSort
-                (Domain.BuiltinPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern
+                    $ eraseAnnotations
+                    $ mkStringLiteral "a"
+                )
             )
             (mkDomainValue
                 testSort2
-                (Domain.BuiltinPattern (mkStringLiteral "a"))
+                (Domain.BuiltinPattern
+                    $ eraseAnnotations
+                    $ mkStringLiteral "a"
+                )
             )
         )
     , testCase "\"a\" == \"a\""
@@ -379,7 +388,7 @@ test_equalsSimplification_Patterns = give mockSymbolOrAliasSorts
         (assertTermEquals
             mockMetadataTools
             Predicated.bottomPredicate
-            mkBottom
+            mkBottom_
             Mock.a
         )
     , testCase "a == a"
@@ -779,25 +788,24 @@ assertTermEqualsMultiGeneric
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> Assertion
-assertTermEqualsMultiGeneric tools expectPure first second =
-    give (MetadataTools.symbolOrAliasSorts tools) $ do
-        let expectExpanded =
-                OrOfExpandedPattern.make
-                    (map predSubstToExpandedPattern expectPure)
-        actualExpanded <-
-            evaluateGeneric
-                tools
-                (termToExpandedPattern first)
-                (termToExpandedPattern second)
-        assertEqualWithExplanation
-            "ExpandedPattern"
-            expectExpanded
-            actualExpanded
-        actualPure <- evaluateTermsGeneric tools first second
-        assertEqualWithExplanation
-            "PureMLPattern"
-            (OrOfExpandedPattern.make expectPure)
-            actualPure
+assertTermEqualsMultiGeneric tools expectPure first second = do
+    let expectExpanded =
+            OrOfExpandedPattern.make
+                (map predSubstToExpandedPattern expectPure)
+    actualExpanded <-
+        evaluateGeneric
+            tools
+            (termToExpandedPattern first)
+            (termToExpandedPattern second)
+    assertEqualWithExplanation
+        "ExpandedPattern"
+        expectExpanded
+        actualExpanded
+    actualPure <- evaluateTermsGeneric tools first second
+    assertEqualWithExplanation
+        "PureMLPattern"
+        (OrOfExpandedPattern.make expectPure)
+        actualPure
   where
     termToExpandedPattern
         :: MetaOrObject level
@@ -823,73 +831,60 @@ assertTermEqualsMultiGeneric tools expectPure first second =
         Predicated {predicate, substitution}
       =
         Predicated
-            { term = mkTop
+            { term = mkTop_
             , predicate = predicate
             , substitution = substitution
             }
 
 fOfA :: CommonStepPattern Object
-fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
+fOfA = Mock.f Mock.a
 
 fOfB :: CommonStepPattern Object
-fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
+fOfB = Mock.f Mock.b
 
 gOfA :: CommonStepPattern Object
-gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
+gOfA = Mock.g Mock.a
 
 gOfB :: CommonStepPattern Object
-gOfB = give mockSymbolOrAliasSorts $ Mock.g Mock.b
+gOfB = Mock.g Mock.b
 
 hOfA :: CommonStepPattern Object
-hOfA = give mockSymbolOrAliasSorts $ Mock.h Mock.a
+hOfA = Mock.h Mock.a
 
 hOfB :: CommonStepPattern Object
-hOfB = give mockSymbolOrAliasSorts $ Mock.h Mock.b
+hOfB = Mock.h Mock.b
 
 functionalOfA :: CommonStepPattern Object
-functionalOfA = give mockSymbolOrAliasSorts $ Mock.functional10 Mock.a
+functionalOfA = Mock.functional10 Mock.a
 
 constructor1OfA :: CommonStepPattern Object
-constructor1OfA = give mockSymbolOrAliasSorts $ Mock.constr10 Mock.a
+constructor1OfA = Mock.constr10 Mock.a
 
 constructor2OfA :: CommonStepPattern Object
-constructor2OfA = give mockSymbolOrAliasSorts $ Mock.constr11 Mock.a
+constructor2OfA = Mock.constr11 Mock.a
 
 functionalConstructor1OfA :: CommonStepPattern Object
-functionalConstructor1OfA =
-    give mockSymbolOrAliasSorts $ Mock.functionalConstr10 Mock.a
+functionalConstructor1OfA = Mock.functionalConstr10 Mock.a
 
 functionalConstructor2OfA :: CommonStepPattern Object
-functionalConstructor2OfA =
-    give mockSymbolOrAliasSorts $ Mock.functionalConstr11 Mock.a
+functionalConstructor2OfA = Mock.functionalConstr11 Mock.a
 
 plain1OfA :: CommonStepPattern Object
-plain1OfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
-
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+plain1OfA = Mock.plain10 Mock.a
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
-        mockSymbolOrAliasSorts
         Mock.attributesMapping
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
 
-mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
-mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
-
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools =
-    Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] [] []
+mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
 
 testSort :: Sort Object
-testSort =
-    case mkBottom :: CommonStepPattern Object of
-        Bottom_ sort -> sort
-        _ -> error "unexpected"
+testSort = Mock.testSort
 
 testSort2 :: Sort Object
 testSort2 =

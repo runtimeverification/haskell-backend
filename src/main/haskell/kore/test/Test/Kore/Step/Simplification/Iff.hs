@@ -7,16 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( Given, give )
-
-import           Kore.AST.Common
-                 ( Iff (..) )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkCeil, mkEquals, mkIff, mkNot, mkTop, mkVar )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
@@ -33,13 +25,11 @@ import qualified Kore.Step.Simplification.Iff as Iff
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_iffSimplification :: [TestTree]
-test_iffSimplification = give mockSymbolOrAliasSorts
+test_iffSimplification =
     [ testCase "Iff - bool operations"
         (do
             -- iff(top, top) = top
@@ -294,7 +284,7 @@ test_iffSimplification = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation "iff(top and predicate, top and predicate)"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate =
                         makeIffPredicate
                             (makeAndPredicate
@@ -311,12 +301,12 @@ test_iffSimplification = give mockSymbolOrAliasSorts
             )
             ( makeEvaluate
                 Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.wrap [(Mock.x, Mock.a)]
                     }
                 Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution = Substitution.wrap [(Mock.y, Mock.b)]
                     }
@@ -331,16 +321,16 @@ test_iffSimplification = give mockSymbolOrAliasSorts
                             (mkAnd
                                 (mkAnd
                                     (Mock.f Mock.a)
-                                    (mkCeil Mock.cf)
+                                    (mkCeil_ Mock.cf)
                                 )
-                                (mkEquals (mkVar Mock.x) Mock.a)
+                                (mkEquals_ (mkVar Mock.x) Mock.a)
                             )
                             (mkAnd
                                 (mkAnd
                                     (Mock.g Mock.b)
-                                    (mkCeil Mock.cg)
+                                    (mkCeil_ Mock.cg)
                                 )
-                                (mkEquals (mkVar Mock.y) Mock.b)
+                                (mkEquals_ (mkVar Mock.y) Mock.b)
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -361,10 +351,6 @@ test_iffSimplification = give mockSymbolOrAliasSorts
             )
         )
     ]
-  where
-    mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-    mockSymbolOrAliasSorts =
-        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
 
 makeIff
     :: (Ord (variable Object))
@@ -379,9 +365,7 @@ makeIff first second =
         }
 
 evaluate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
-        )
+    :: MetaOrObject level
     => Iff level (CommonOrOfExpandedPattern level)
     -> CommonOrOfExpandedPattern level
 evaluate iff0 =
@@ -390,9 +374,7 @@ evaluate iff0 =
 
 
 makeEvaluate
-    ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
-        )
+    :: MetaOrObject level
     => CommonExpandedPattern level
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level

@@ -11,17 +11,11 @@ Portability : portable
 -}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
-{-# OPTIONS_GHC -Wno-missing-signatures #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Kore.ASTUtils.Substitution
     ( subst
-    , localSubst
-    , freeVars
     ) where
 
-import           Control.Lens
 import           Data.Functor.Classes
                  ( Eq1 )
 import           Data.Functor.Foldable
@@ -29,8 +23,8 @@ import qualified Data.Set as S
 import qualified Data.Text as Text
 
 import Kore.AST.Pure
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
+import Kore.AST.Valid
+import Kore.Variables.Free
 
 -- | subst phi_1 phi_2 phi = phi[phi_2/phi_1]
 -- Note that different papers use different conventions.
@@ -40,52 +34,39 @@ subst
     ::  ( Eq1 domain, Traversable domain
         , MetaOrObject level
         )
-    => CommonPurePattern level domain
-    -> CommonPurePattern level domain
-    -> CommonPurePattern level domain
-    -> CommonPurePattern level domain
-subst old new = \case
-    Forall_ s1 v p -> handleBinder old new Forall_ s1 v p
-    Exists_ s1 v p -> handleBinder old new Exists_ s1 v p
-    pat
-     | pat == old -> new
-     | otherwise  -> embed $ fmap (subst old new) $ project pat
+    => PurePattern level domain Variable (Valid level)
+    -> PurePattern level domain Variable (Valid level)
+    -> PurePattern level domain Variable (Valid level)
+    -> PurePattern level domain Variable (Valid level)
+subst old new =
+    \case
+        Forall_ _ v p -> handleBinder old new mkForall v p
+        Exists_ _ v p -> handleBinder old new mkExists v p
+        pat
+          | pat == old -> new
+          | otherwise  -> embed $ fmap (subst old new) $ project pat
 
-handleBinder old new binder s1 v p
-  | S.member v (freeVars old) = binder s1 v p
-  | S.member v (freeVars new) = subst old new $ alphaRename binder s1 v p
-  | otherwise = binder s1 v $ subst old new p
-  where
-    alphaRename binder s1 v p =
-        binder s1 (replacementVar v p)
-        (subst (Var_ v) (Var_ $ replacementVar v p) p)
-    replacementVar v p =
-        head $ filter (not . flip S.member freeVarsP) $ alternatives v
-    freeVarsP = freeVars p
-    alternatives (Variable (Id name loc) sort) =
-        [Variable (Id (name <> (Text.pack . show) n) loc) sort | n <- [(0::Integer)..] ]
-
-freeVars
-    :: (MetaOrObject level, Traversable domain)
-    => CommonPurePattern level domain
-    -> S.Set (Variable level)
-freeVars = \case
-    Forall_ s1 v p -> S.delete v $ freeVars p
-    Exists_ s1 v p -> S.delete v $ freeVars p
-    Var_ v -> S.singleton v
-    p -> S.unions $ map freeVars $ p ^. partsOf allChildren
-
--- | Apply a substitution at every eligible position below the specified path.
--- This is technically less general than axiom 7, which allows for
--- substituting at an arbitrary set of eligible positions,
--- but it doesn't matter in practice.
-localSubst
+handleBinder
     ::  ( Eq1 domain, Traversable domain
         , MetaOrObject level
+        , pattern' ~ PurePattern level domain Variable (Valid level)
         )
-    => CommonPurePattern level domain
-    -> CommonPurePattern level domain
-    -> [Int]
-    -> CommonPurePattern level domain
-    -> CommonPurePattern level domain
-localSubst a b path pat = localInPattern path (subst a b) pat
+    => pattern'
+    -> pattern'
+    -> (Variable level -> pattern' -> pattern')
+    -- ^ Binder constructor
+    -> Variable level
+    -> pattern'
+    -> pattern'
+handleBinder old new mkBinder v p
+  | S.member v (freePureVariables old) = mkBinder v p
+  | S.member v (freePureVariables new) = subst old new renamed
+  | otherwise = mkBinder v $ subst old new p
+  where
+    renamed = mkBinder v' (subst (mkVar v) (mkVar v') p)
+    v' = head $ filter (not . flip S.member freeVarsP) $ alternatives v
+    freeVarsP = freePureVariables p
+    alternatives (Variable (Id name loc) sort) =
+        [ Variable (Id (name <> (Text.pack . show) n) loc) sort
+        | n <- [(0::Integer)..]
+        ]

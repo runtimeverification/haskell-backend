@@ -11,9 +11,8 @@ import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -44,7 +43,10 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = Test.Bool.asExpandedPattern (impl a b)
-        actual <- evaluate $ App_ symb (Test.Bool.asPattern <$> [a, b])
+        actual <-
+            evaluate
+            $ mkApp boolSort symb
+            $ Test.Bool.asPattern <$> [a, b]
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -69,9 +71,11 @@ test_KEqual =
                 ExpandedPattern.fromPurePattern
                 $ Test.Bool.asPattern True
             original =
-                App_ keqBoolSymbol
-                    [ App_ dotkSymbol []
-                    , App_ dotkSymbol []
+                mkApp
+                    boolSort
+                    keqBoolSymbol
+                    [ mkApp kSort dotkSymbol []
+                    , mkApp kSort dotkSymbol []
                     ]
         actual <- evaluateWith solver original
         assertEqual "" expect actual
@@ -81,11 +85,17 @@ test_KEqual =
                 ExpandedPattern.fromPurePattern
                 $ Test.Bool.asPattern False
             original =
-                App_ keqBoolSymbol
-                    [ DV_ idSort
-                        (Domain.BuiltinPattern (StringLiteral_ "t"))
-                    , DV_ idSort
-                        (Domain.BuiltinPattern (StringLiteral_ "x"))
+                mkApp
+                    boolSort
+                    keqBoolSymbol
+                    [ mkDomainValue idSort
+                        $ Domain.BuiltinPattern
+                        $ eraseAnnotations
+                        $ mkStringLiteral "t"
+                    , mkDomainValue idSort
+                        $ Domain.BuiltinPattern
+                        $ eraseAnnotations
+                        $ mkStringLiteral "x"
                     ]
         actual <- evaluateWith solver original
         assertEqual "" expect actual
@@ -95,14 +105,24 @@ test_KEqual =
                 ExpandedPattern.fromPurePattern
                 $ Test.Bool.asPattern False
             original =
-                App_ keqBoolSymbol
-                    [ App_ (injSymbol idSort kItemSort)
-                        [ DV_ idSort
-                            (Domain.BuiltinPattern (StringLiteral_ "t"))
+                mkApp
+                    boolSort
+                    keqBoolSymbol
+                    [ mkApp
+                        kItemSort
+                        (injSymbol idSort kItemSort)
+                        [ mkDomainValue idSort
+                            $ Domain.BuiltinPattern
+                            $ eraseAnnotations
+                            $ mkStringLiteral "t"
                         ]
-                    , App_ (injSymbol idSort kItemSort)
-                        [ DV_ idSort
-                            (Domain.BuiltinPattern (StringLiteral_ "x"))
+                    , mkApp
+                        kItemSort
+                        (injSymbol idSort kItemSort)
+                        [ mkDomainValue idSort
+                            $ Domain.BuiltinPattern
+                            $ eraseAnnotations
+                            $ mkStringLiteral "x"
                         ]
                     ]
         actual <- evaluateWith solver original
@@ -113,29 +133,43 @@ test_KEqual =
                 ExpandedPattern.fromPurePattern
                 $ Test.Bool.asPattern False
             original =
-                App_ keqBoolSymbol
-                    [ App_ kseqSymbol
-                        [ App_ (injSymbol idSort kItemSort)
-                            [ DV_ idSort
-                                (Domain.BuiltinPattern (StringLiteral_ "t"))
+                mkApp
+                    boolSort
+                    keqBoolSymbol
+                    [ mkApp
+                        boolSort
+                        kseqSymbol
+                        [ mkApp
+                            kItemSort
+                            (injSymbol idSort kItemSort)
+                            [ mkDomainValue idSort
+                                $ Domain.BuiltinPattern
+                                $ eraseAnnotations
+                                $ mkStringLiteral "t"
                             ]
-                        , App_ dotkSymbol []
+                        , mkApp kSort dotkSymbol []
                         ]
-                    , App_ kseqSymbol
-                        [ App_ (injSymbol idSort kItemSort)
-                            [ DV_ idSort
-                                (Domain.BuiltinPattern (StringLiteral_ "x"))
+                    , mkApp
+                        kSort
+                        kseqSymbol
+                        [ mkApp
+                            kItemSort
+                            (injSymbol idSort kItemSort)
+                            [ mkDomainValue idSort
+                                $ Domain.BuiltinPattern
+                                $ eraseAnnotations
+                                $ mkStringLiteral "x"
                             ]
-                        , App_ dotkSymbol []
+                        , mkApp kSort dotkSymbol []
                         ]
                     ]
         actual <- runSMT $ evaluate original
         assertEqual "" expect actual
     ]
   where
-    pat symbol = App_  symbol
+    pat symbol = mkApp boolSort symbol
         [ Test.Bool.asPattern True
-        , Var_ Variable
+        , mkVar Variable
             { variableName = testId "x"
             , variableSort = boolSort
             }
@@ -148,7 +182,9 @@ test_KIte =
                 ExpandedPattern.fromPurePattern
                 $ Test.Bool.asPattern False
             original =
-                App_ kiteKSymbol
+                mkApp
+                    kSort
+                    kiteKSymbol
                     [ Test.Bool.asPattern True
                     , Test.Bool.asPattern False
                     , Test.Bool.asPattern True
@@ -161,7 +197,9 @@ test_KIte =
                 ExpandedPattern.fromPurePattern
                 $ Test.Bool.asPattern True
             original =
-                App_ kiteKSymbol
+                mkApp
+                    kSort
+                    kiteKSymbol
                     [ Test.Bool.asPattern False
                     , Test.Bool.asPattern False
                     , Test.Bool.asPattern True

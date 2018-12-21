@@ -7,16 +7,12 @@ import Test.Tasty.HUnit
 
 import Data.Text.Prettyprint.Doc
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
-import Kore.Proof.Dummy
+import Kore.AST.Pure
+import Kore.AST.Valid
 import Kore.Proof.FunctionalityAxioms
 import Kore.Proof.LineBasedProof
 import Kore.Proof.Proof
 import Kore.Proof.Unification
-import Kore.Sort
 
 test_exampleProofs :: TestTree
 test_exampleProofs = testGroup "exampleProofs" $
@@ -41,14 +37,14 @@ a, b, c, d, e :: Variable Object
 [a, b, c, d, e] = map (`varS` s) ["a","b","c","d","e"]
 
 lhs :: Term
-lhs = dummyEnvironment $ mkApp f [mkApp f [V a, V b], V c]
+lhs = mkApp s f [mkApp s f [mkVar a, mkVar b], mkVar c]
 
 rhs :: Term
-rhs = dummyEnvironment $ mkApp f [V d, V e]
+rhs = mkApp s f [mkVar d, mkVar e]
 
 unifyffabcfde :: Proof
-Right unifyffabcfde = dummyEnvironment $ unificationProof lhs rhs
+Right unifyffabcfde = unificationProof lhs rhs
 
 ffabfcdIsFunctional :: Proof
-ffabfcdIsFunctional = dummyEnvironment $ proveFunctional $
-    mkApp f [mkApp f [V a, V b], mkApp f [V c, V d]]
+ffabfcdIsFunctional = proveFunctional $
+    mkApp s f [mkApp s f [mkVar a, mkVar b], mkApp s f [mkVar c, mkVar d]]

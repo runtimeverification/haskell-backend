@@ -10,7 +10,11 @@ Portability : portable
 module Kore.Unparser
     ( Unparse (..)
     , unparseToString
+    , renderDefault
     , layoutPrettyUnbounded
+    , parameters
+    , arguments
+    , attributes
     ) where
 
 import           Data.Functor.Const
@@ -51,11 +55,24 @@ class Unparse p where
 
 -- | Serialize an object to 'String'.
 unparseToString :: Unparse p => p -> String
-unparseToString =
-    renderString . layoutPretty defaultLayoutOptions . unparse
+unparseToString = renderDefault . unparse
+
+renderDefault :: Doc ann -> String
+renderDefault = renderString . layoutPretty defaultLayoutOptions
 
 instance Unparse (Id level) where
     unparse = pretty . getId
+
+instance
+    ( Unparse (thing Object)
+    , Unparse (thing Meta)
+    ) =>
+    Unparse (Unified thing)
+  where
+    unparse =
+        \case
+            UnifiedMeta meta -> unparse meta
+            UnifiedObject object -> unparse object
 
 instance Unparse StringLiteral where
     unparse = dquotes . fromString . escapeCString . getStringLiteral
@@ -416,12 +433,6 @@ unparseAxiom
         , unparse sentenceAxiomAttributes
         ]
 
-
-instance Unparse UnifiedSortVariable where
-    unparse =
-        \case
-            UnifiedMeta sv -> unparse sv
-            UnifiedObject sv -> unparse sv
 
 instance Unparse (SentenceHook patternType) where
     unparse =

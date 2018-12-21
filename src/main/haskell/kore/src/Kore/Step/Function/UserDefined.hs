@@ -17,6 +17,7 @@ import Control.Monad.Except
 import Data.Reflection
 
 import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -48,6 +49,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 {-| 'ruleFunctionEvaluator' evaluates a user-defined function. After
@@ -56,13 +58,14 @@ evaluating the function, it tries to re-evaluate all functions on the result.
 The function is assumed to be defined through an axiom.
 -}
 ruleFunctionEvaluator
-    :: forall level variable .
+    ::  forall level variable.
         ( FreshVariable variable
+        , SortedVariable variable
         , MetaOrObject level
         , Ord (variable level)
-        , OrdMetaOrObject variable
-        , SortedVariable variable
         , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         )
     => EqualityRule level
@@ -73,7 +76,10 @@ ruleFunctionEvaluator
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
-    -> Application level (StepPattern level variable)
+    -> CofreeF
+        (Application level)
+        (Valid level)
+        (StepPattern level variable)
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
         [(AttemptedFunction level variable, SimplificationProof level)]
@@ -99,13 +105,17 @@ ruleFunctionEvaluator
             substitutionSimplifier
             (stepperConfiguration app)
             rule
+
     stepperConfiguration
         :: MetaOrObject level
-        => Application level (StepPattern level variable)
+        => CofreeF
+            (Application level)
+            (Valid level)
+            (StepPattern level variable)
         -> ExpandedPattern level variable
-    stepperConfiguration app' =
+    stepperConfiguration (valid :< app') =
         Predicated
-            { term = asPurePattern (mempty :< ApplicationPattern app')
+            { term = asPurePattern (valid :< ApplicationPattern app')
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -147,6 +157,7 @@ reevaluateFunctions
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
@@ -199,12 +210,13 @@ reevaluateFunctions
 
 evaluatePredicate
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
@@ -221,25 +233,22 @@ evaluatePredicate
     simplifier
     Predicated {term, predicate, substitution}
   = do
-    (   Predicated
-            { predicate = evaluatedPredicate
-            , substitution = evaluatedSubstitution
-            }
-        , _proof
-        ) <- give (symbolOrAliasSorts tools) $
-             give tools $
-                 Predicate.evaluate substitutionSimplifier simplifier predicate
-    (   Predicated
-            { predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , _proof
-        ) <-
-            mergePredicatesAndSubstitutions
-                tools
+    (evaluated, _proof) <-
+        give tools
+            $ Predicate.evaluate
                 substitutionSimplifier
-                [evaluatedPredicate]
-                [substitution, evaluatedSubstitution]
+                simplifier
+                predicate
+    let Predicated { predicate = evaluatedPredicate } = evaluated
+        Predicated { substitution = evaluatedSubstitution } = evaluated
+    (merged, _proof) <-
+        mergePredicatesAndSubstitutions
+            tools
+            substitutionSimplifier
+            [evaluatedPredicate]
+            [substitution, evaluatedSubstitution]
+    let Predicated { predicate = mergedPredicate } = merged
+        Predicated { substitution = mergedSubstitution } = merged
     -- TODO(virgil): Do I need to re-evaluate the predicate?
     return
         ( Predicated

@@ -11,12 +11,10 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.Builders
 import           Kore.AST.Kore
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
+import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
@@ -24,12 +22,12 @@ import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Subsort
                  ( subsortAttribute )
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
+import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
 
 import Test.Kore
@@ -38,20 +36,13 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: PureSentenceSymbol Object Domain.Builtin
-objectA = SentenceSymbol
-    { sentenceSymbolSymbol =
-        Symbol
-          { symbolConstructor = (Id "b" AstLocationNone)
-          , symbolParams = []
-          }
-    , sentenceSymbolSorts = []
-    , sentenceSymbolResultSort = objectS1
-    , sentenceSymbolAttributes = Attributes [ constructorAttribute ]
-    }
+objectA :: SentenceSymbol Object (CommonStepPattern Object)
+objectA =
+    (mkSymbol_ (testId "b") [] objectS1)
+        { sentenceSymbolAttributes = Attributes [ constructorAttribute ] }
 
-metaA :: PureSentenceSymbol Meta Domain.Builtin
-metaA = symbol_ "#a" AstLocationTest [] charListMetaSort
+metaA :: SentenceSymbol Meta (CommonStepPattern Meta)
+metaA = mkSymbol_ (testId "#a") [] charListMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -62,7 +53,7 @@ testMetaModuleName = ModuleName "TEST-META-MODULE"
 testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
-testObjectModule :: PureModule Object Domain.Builtin
+testObjectModule :: Module (VerifiedPureSentence Object)
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
@@ -79,7 +70,7 @@ testObjectModule =
         , moduleAttributes = Attributes []
         }
 
-testMetaModule :: PureModule Meta Domain.Builtin
+testMetaModule :: Module (VerifiedPureSentence Meta)
 testMetaModule =
     Module
         { moduleName = testMetaModuleName
@@ -87,7 +78,7 @@ testMetaModule =
         , moduleAttributes = Attributes []
         }
 
-mainModule :: KoreModule
+mainModule :: VerifiedKoreModule
 mainModule =
     Module
         { moduleName = testMainModuleName
@@ -101,14 +92,16 @@ mainModule =
 
 testDefinition :: KoreDefinition
 testDefinition =
-    Definition
-        { definitionAttributes = Attributes []
-        , definitionModules =
-            [ modulePureToKore testObjectModule
-            , modulePureToKore testMetaModule
-            , mainModule
-            ]
-        }
+    (<$>)
+        eraseUnifiedSentenceAnnotations
+        Definition
+            { definitionAttributes = Attributes []
+            , definitionModules =
+                [ modulePureToKore testObjectModule
+                , modulePureToKore testMetaModule
+                , mainModule
+                ]
+            }
 
 testVerifiedModule :: VerifiedModule StepperAttributes
 testVerifiedModule =
@@ -160,30 +153,6 @@ test_metadataTools =
                 $ symAttributes metadataTools
                 $ symbolHead metaA
             )
-        )
-    , testCase "getArgumentSorts object"
-        (assertEqual ""
-            []
-            (applicationSortsOperands
-                (symbolOrAliasSorts metadataTools (symbolHead objectA)))
-        )
-    , testCase "getArgumentSorts meta"
-        (assertEqual ""
-            []
-            (applicationSortsOperands
-                (symbolOrAliasSorts metadataTools (symbolHead metaA)))
-        )
-    , testCase "getResultSort object"
-        (assertEqual ""
-            objectS1
-            (applicationSortsResult
-                (symbolOrAliasSorts metadataTools (symbolHead objectA)))
-        )
-    , testCase "getResultSort meta"
-        (assertEqual ""
-            charListMetaSort
-            (applicationSortsResult
-                (symbolOrAliasSorts metadataTools (symbolHead metaA)))
         )
     , testGroup "subsort" testSubsorts
     ]

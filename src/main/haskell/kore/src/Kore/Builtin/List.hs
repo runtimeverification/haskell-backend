@@ -44,8 +44,6 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( give )
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
@@ -53,7 +51,7 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Builtin as Builtin
@@ -73,6 +71,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
+import           Kore.Unparser
+                 ( Unparse )
 import           Kore.Variables.Fresh
 
 {- | Builtin variable name of the @List@ sort.
@@ -152,7 +152,7 @@ returnList
 returnList resultSort list =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
-        $ DV_ resultSort
+        $ mkDomainValue resultSort
         $ Domain.BuiltinList list
 
 evalElement :: Builtin.Function
@@ -285,11 +285,11 @@ asPattern
         (Builtin variable -> StepPattern Object variable)
 asPattern indexedModule dvSort = do
     symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let applyUnit = App_ symbolUnit []
+    let applyUnit = mkApp dvSort symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
-    let applyElement elem' = App_ symbolElement [elem']
+    let applyElement elem' = mkApp dvSort symbolElement [elem']
     symbolConcat <- lookupSymbolConcat dvSort indexedModule
-    let applyConcat list1 list2 = App_ symbolConcat [list1, list2]
+    let applyConcat list1 list2 = mkApp dvSort symbolConcat [list1, list2]
     let asPattern0 list =
             foldr applyConcat applyUnit
             $ Foldable.toList (applyElement <$> list)
@@ -368,6 +368,7 @@ unifyEquals
         , ShowMetaOrObject variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , SortedVariable variable
         , MonadCounter m
         , MetaOrObject level
@@ -383,7 +384,7 @@ unifyEquals
     -> (p -> p -> MaybeT m (expanded, proof))
 unifyEquals
     simplificationType
-    tools@MetadataTools { symbolOrAliasSorts }
+    tools
     _
     simplifyChild
   =
@@ -395,7 +396,7 @@ unifyEquals
         :: Traversable t
         => t (Predicated level variable a)
         -> Predicated level variable (t a)
-    propagatePredicates = give symbolOrAliasSorts sequenceA
+    propagatePredicates = sequenceA
 
     discardProofs :: Seq (expanded, proof) -> Seq expanded
     discardProofs = (<$>) fst
@@ -428,10 +429,10 @@ unifyEquals
                     [ x@(Var_ _), DV_ _ (Domain.BuiltinList list2) ] ->
                         unifyEqualsFramedLeft resultSort dv1 x list2
                     [ _, _ ] ->
-                        give symbolOrAliasSorts
-                            (Builtin.unifyEqualsUnsolved
-                                simplificationType dv1 app
-                            )
+                        Builtin.unifyEqualsUnsolved
+                            simplificationType
+                            dv1
+                            app
                     _ -> Builtin.wrongArity "LIST.concat"
               | otherwise -> empty
             _ -> empty
@@ -460,7 +461,7 @@ unifyEquals
                 result = asBuiltinDomainList <$> propagatedUnified
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = DV_ dvSort . Domain.BuiltinList
+        asBuiltinDomainList = mkDomainValue dvSort . Domain.BuiltinList
 
     unifyEqualsFramedRight
         :: (level ~ Object)
@@ -480,13 +481,13 @@ unifyEquals
         do
             (prefixUnified, _) <- unifyEqualsConcrete resultSort prefix1 prefix2
             (suffixUnified, _) <- simplifyChild frame2 listSuffix1
-            let result = give symbolOrAliasSorts $
+            let result =
                     pure dv1
                     <* prefixUnified
                     <* suffixUnified
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = DV_ resultSort . Domain.BuiltinList
+        asBuiltinDomainList = mkDomainValue resultSort . Domain.BuiltinList
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length prefix2
@@ -511,13 +512,13 @@ unifyEquals
         do
             (prefixUnified, _) <- simplifyChild frame2 listPrefix1
             (suffixUnified, _) <- unifyEqualsConcrete resultSort suffix1 suffix2
-            let result = give symbolOrAliasSorts $
+            let result =
                     pure dv1
                     <* prefixUnified
                     <* suffixUnified
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = DV_ resultSort . Domain.BuiltinList
+        asBuiltinDomainList = mkDomainValue resultSort . Domain.BuiltinList
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length list1 - Seq.length suffix2

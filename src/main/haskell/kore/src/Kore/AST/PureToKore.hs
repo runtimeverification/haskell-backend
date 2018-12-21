@@ -25,11 +25,10 @@ import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
 import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.AST.Kore
-import           Kore.AST.Pure
-import           Kore.AST.Sentence
-import qualified Kore.Domain.Builtin as Domain
-import           Kore.Error
+import Kore.AST.Kore
+import Kore.AST.Pure
+import Kore.AST.Sentence
+import Kore.Error
 
 patternPureToKore
     :: (Functor domain, MetaOrObject level)
@@ -138,9 +137,13 @@ axiomSentencePureToKore = unifyAxiomParameters . (<$>) patternPureToKore
             }
 
 modulePureToKore
-    :: MetaOrObject level
-    => PureModule level Domain.Builtin
-    -> KoreModule
+    ::  ( MetaOrObject level
+        , Functor domain
+        , purePattern ~ PurePattern level domain variable (annotation level)
+        , korePattern ~ KorePattern domain variable (Unified annotation)
+        )
+    => Module (Sentence level (SortVariable level) purePattern)
+    -> Module (UnifiedSentence UnifiedSortVariable korePattern)
 modulePureToKore mm = Module
     { moduleName = moduleName mm
     , moduleSentences = map sentencePureToKore (moduleSentences mm)
@@ -148,9 +151,13 @@ modulePureToKore mm = Module
     }
 
 definitionPureToKore
-    :: MetaOrObject level
-    => PureDefinition level Domain.Builtin
-    -> KoreDefinition
+    ::  ( MetaOrObject level
+        , Functor domain
+        , purePattern ~ PurePattern level domain variable (annotation level)
+        , korePattern ~ KorePattern domain variable (Unified annotation)
+        )
+    => Definition (Sentence level (SortVariable level) purePattern)
+    -> Definition (UnifiedSentence UnifiedSortVariable korePattern)
 definitionPureToKore dm = Definition
     { definitionAttributes = definitionAttributes dm
     , definitionModules = map modulePureToKore (definitionModules dm)

@@ -15,18 +15,11 @@ module Kore.Step.Simplification.Ceil
     ) where
 
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( give )
 
-import           Kore.AST.Common
-                 ( Ceil (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkTop )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern App_, pattern Bottom_, pattern DV_,
-                 pattern StringLiteral_, pattern Top_ )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -52,6 +45,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
                  ( isTotal )
+import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'Ceil' of 'OrOfExpandedPattern'.
 
@@ -64,8 +58,9 @@ A ceil(or) is equal to or(ceil). We also take into account that
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> Ceil level (OrOfExpandedPattern level variable)
@@ -81,11 +76,24 @@ simplify
 {-| 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
 for details.
 -}
+{- TODO (virgil): Preserve pattern sorts under simplification.
+
+One way to preserve the required sort annotations is to make 'simplifyEvaluated'
+take an argument of type
+
+> CofreeF (Ceil level) (Valid level) (OrOfExpandedPattern level variable)
+
+instead of an 'OrOfExpandedPattern' argument. The type of 'makeEvaluate' may
+be changed analogously. The 'Valid' annotation will eventually cache information
+besides the pattern sort, which will make it even more useful to carry around.
+
+-}
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> OrOfExpandedPattern level variable
@@ -102,8 +110,9 @@ for details.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level variable
@@ -118,39 +127,34 @@ makeEvaluate tools child
 makeEvaluateNonBoolCeil
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolCeil
-    _
-    patt@Predicated { term = Top_ _ }
-  =
+    tools
+    patt@Predicated {term, predicate, substitution}
+  | (Recursive.project -> _ :< TopPattern _) <- term =
     ( OrOfExpandedPattern.make [patt]
     , SimplificationProof
     )
-makeEvaluateNonBoolCeil
-    tools
-    Predicated {term, predicate, substitution}
-  =
+  | otherwise =
     let
         (termCeil, _proof1) = makeEvaluateTerm tools term
-        ceilPredicate =
-            give symbolOrAliasSorts $ makeAndPredicate predicate termCeil
+        ceilPredicate = makeAndPredicate predicate termCeil
     in
         ( OrOfExpandedPattern.make
             [ Predicated
-                { term = mkTop
+                { term = mkTop_
                 , predicate = ceilPredicate
                 , substitution = substitution
                 }
             ]
         , SimplificationProof
         )
-  where
-    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -161,50 +165,37 @@ makeEvaluateTerm
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> StepPattern level variable
     -> (Predicate level variable, SimplificationProof level)
 makeEvaluateTerm
-    _
-    (Top_ _)
-  =
+    tools
+    term@(Recursive.project -> _ :< projected)
+  | TopPattern _ <- projected =
     (makeTruePredicate, SimplificationProof)
-makeEvaluateTerm
-    _
-    (Bottom_ _)
-  =
+  | BottomPattern _ <- projected =
     (makeFalsePredicate, SimplificationProof)
-makeEvaluateTerm
-    tools
-    term
-  | isTotalPattern tools term
-  =
+  | isTotalPattern tools term =
     (makeTruePredicate, SimplificationProof)
-makeEvaluateTerm
-    tools
-    (App_ patternHead children)
-  | StepperAttributes.isTotal headAttributes
-  =
-    let
-        (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) children)
-        result = give (MetadataTools.symbolOrAliasSorts tools )
-            $ makeMultipleAndPredicate ceils
-    in
-        (result, SimplificationProof)
-  where
-    headAttributes = MetadataTools.symAttributes tools patternHead
-makeEvaluateTerm
-    tools
-    (DV_ _ child)
-  =
-    makeEvaluateBuiltin tools child
-makeEvaluateTerm
-    tools term
-  =
-    ( give (MetadataTools.symbolOrAliasSorts tools ) $ makeCeilPredicate term
-    , SimplificationProof
-    )
+  | otherwise =
+    case projected of
+        ApplicationPattern app
+          | StepperAttributes.isTotal headAttributes ->
+            let
+                (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) children)
+                result = makeMultipleAndPredicate ceils
+            in
+                (result, SimplificationProof)
+          where
+            Application { applicationSymbolOrAlias = patternHead } = app
+            Application { applicationChildren = children } = app
+            headAttributes = MetadataTools.symAttributes tools patternHead
+        DomainValuePattern DomainValue { domainValueChild = child } ->
+            makeEvaluateBuiltin tools child
+        _ ->
+            (makeCeilPredicate term, SimplificationProof)
 
 {-| Evaluates the ceil of a domain value.
 -}
@@ -214,34 +205,31 @@ makeEvaluateBuiltin
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> Domain.Builtin (StepPattern level variable)
     -> (Predicate level variable, SimplificationProof level)
 makeEvaluateBuiltin
     _tools
-    (Domain.BuiltinPattern (StringLiteral_ _))
-  =
-    -- This should be the only kind of Domain.BuiltinPattern, and it should
-    -- be valid and functional if this has passed verification.
-    (makeTruePredicate, SimplificationProof)
-makeEvaluateBuiltin
-    _tools
     (Domain.BuiltinPattern p)
   =
-        error
-            ( "Ceil not implemented: non-string pattern."
-            ++ show p
-            )
+    case Recursive.project p of
+        _ :< StringLiteralPattern _ ->
+            -- This should be the only kind of Domain.BuiltinPattern, and it
+            -- should be valid and functional if this has passed verification.
+            (makeTruePredicate, SimplificationProof)
+        _ ->
+            error
+                ( "Ceil not implemented: non-string pattern."
+                ++ show p
+                )
 makeEvaluateBuiltin
     tools
     (Domain.BuiltinMap m)
   =
-    ( give symbolOrAliasSorts $ makeMultipleAndPredicate ceils
-    , SimplificationProof
-    )
+    (makeMultipleAndPredicate ceils, SimplificationProof)
   where
-    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     values :: [StepPattern level variable]
     -- Maps assume that their keys are relatively functional.
     values = map snd (Map.toList m)
@@ -251,11 +239,8 @@ makeEvaluateBuiltin
     tools
     (Domain.BuiltinList l)
   =
-    ( give symbolOrAliasSorts $ makeMultipleAndPredicate ceils
-    , SimplificationProof
-    )
+    (makeMultipleAndPredicate ceils, SimplificationProof)
   where
-    symbolOrAliasSorts = MetadataTools.symbolOrAliasSorts tools
     ceils :: [Predicate level variable]
     (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) (Foldable.toList l))
 makeEvaluateBuiltin

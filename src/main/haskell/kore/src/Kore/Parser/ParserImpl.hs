@@ -53,12 +53,12 @@ import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.MetaML.AST
 import           Kore.Parser.Lexeme
 import           Kore.Parser.ParserUtils
                  ( Parser )
 import qualified Kore.Parser.ParserUtils as ParserUtils
 import           Kore.Unparser
+                 ( unparseToString )
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
 @meta-sort-variable@.
@@ -459,13 +459,13 @@ BNF definitions:
 @
 ⟨variable⟩ ::= ⟨object-variable⟩ | ⟨meta-variable⟩
 @
-unifiedVariableParser :: Parser (UnifiedVariable Variable)
+-}
+unifiedVariableParser :: Parser (Unified Variable)
 unifiedVariableParser = do
     c <- ParserUtils.peekChar'
     if c == '#'
-        then MetaVariable <$> variableParser Meta
-        else ObjectVariable <$> variableParser Object
--}
+        then UnifiedMeta <$> variableParser Meta
+        else UnifiedObject <$> variableParser Object
 
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
 application pattern), using an open recursion scheme for its children.
@@ -714,8 +714,7 @@ mlConstructorRemainderParser childParser x patternType =
                     (   DomainValue
                     <$> inCurlyBracesRemainderParser (sortParser Object)
                     <*> inParenthesesParser
-                        (Domain.BuiltinPattern . castMetaDomainValues
-                            <$> purePatternParser Meta)
+                        (Domain.BuiltinPattern <$> metaPatternParser)
                     )
         NextPatternType ->
             case isMetaOrObject (toProxy x) of
@@ -1116,10 +1115,10 @@ leveledPatternParser patternParser level = do
 purePatternParser
     :: MetaOrObject level
     => level
-    -> Parser (CommonPurePattern level Domain.Builtin)
+    -> Parser (ParsedPurePattern level Domain.Builtin)
 purePatternParser level = do
     patternHead <- leveledPatternParser (purePatternParser level) level
     return $ asPurePattern (mempty :< patternHead)
 
-metaPatternParser :: Parser CommonMetaPattern
+metaPatternParser :: Functor domain => Parser (ParsedPurePattern Meta domain)
 metaPatternParser = castMetaDomainValues <$> purePatternParser Meta

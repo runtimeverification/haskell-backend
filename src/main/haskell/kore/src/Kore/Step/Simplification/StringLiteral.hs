@@ -12,7 +12,7 @@ module Kore.Step.Simplification.StringLiteral
     ) where
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -36,7 +36,7 @@ simplify
 simplify (StringLiteral str) =
     ( OrOfExpandedPattern.make
         [Predicated
-            { term = StringLiteral_ str
+            { term = mkStringLiteral str
             , predicate = makeTruePredicate
             , substitution = mempty
             }

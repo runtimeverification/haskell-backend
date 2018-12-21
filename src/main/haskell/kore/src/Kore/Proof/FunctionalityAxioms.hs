@@ -8,11 +8,6 @@ Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes #-}
-
-{-# OPTIONS_GHC -Wno-unused-matches    #-}
-{-# OPTIONS_GHC -Wno-name-shadowing    #-}
-
 module Kore.Proof.FunctionalityAxioms
     ( generateFunctionalStatement
     , generateFunctionalHeadAxiom
@@ -21,23 +16,19 @@ module Kore.Proof.FunctionalityAxioms
     , forallElimFunctionalN
     ) where
 
-import Data.Reflection
+import qualified Data.Functor.Foldable as Recursive
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.ASTUtils.SmartConstructors
-import Kore.ASTUtils.SmartPatterns
-import Kore.IndexedModule.MetadataTools
+import Kore.AST.Pure
+import Kore.AST.Valid
 import Kore.Proof.Proof
 import Kore.Proof.Util
 
 -- | "a is functional" is encoded as "exists x. a = x"
 generateFunctionalStatement
-    :: Given (SymbolOrAliasSorts Object)
-    => Term
+    :: Term
     -> Term
 generateFunctionalStatement p =
-    mkExists var (p `mkEquals` (mkVar var))
+    mkExists var (p `mkEquals_` (mkVar var))
         where var = "x" `varS` getSort p
 
 -- | "f" is a functional head if
@@ -45,41 +36,50 @@ generateFunctionalStatement p =
 -- (exists x. x_1 = x) -> ... -> (exists x. x_n = x)
 -- -> (exists x. f(x_1,...,x_n) = x)""
 generateFunctionalHeadAxiom
-    :: Given (SymbolOrAliasSorts Object)
-    => SymbolOrAlias Object
+    :: CofreeF
+        (Application Object)
+        (Valid Object)
+        Term
     -> Term
-generateFunctionalHeadAxiom h =
-    let c = symbolOrAliasParams h
-        (vars, vars') = generateVarList c "x"
-    in mkForallN vars $ mkImpliesN
-           (map generateFunctionalStatement vars')
-           (generateFunctionalStatement $ mkApp h vars')
+generateFunctionalHeadAxiom (valid :< app) =
+    mkForallN vars $ mkImpliesN
+        (map generateFunctionalStatement vars')
+        (generateFunctionalStatement $ mkApp patternSort head' vars')
+  where
+    Valid { patternSort } = valid
+    Application { applicationSymbolOrAlias = head' } = app
+    Application { applicationChildren = children } = app
+    (vars, vars') = generateVarList (getSort <$> children) "x"
 
 -- | Attempts to prove a given symbol a is functional
 -- I.e. attempts to prove "exists x. a = x"
 -- It uses the functionalVariable axiom,
 -- and assumes everything else it needs.
 proveFunctional
-   :: Given (SymbolOrAliasSorts Object)
-   => Term
+   :: Term
    -> Proof
-proveFunctional p = case p of
-    V v -> useRule $ FunctionalVar v ("x" `varS` getSort p)
-    App_ h cs ->
-        let hFunctional =
-                forallElimFunctionalN'
-                    csFunctional
-                    cs
-                    (assume $ generateFunctionalHeadAxiom h)
-            csFunctional =
-                map proveFunctional cs
-        in modusPonensN csFunctional hFunctional
-    x -> assume $ generateFunctionalStatement x
+proveFunctional term@(Recursive.project -> valid :< pattern') =
+    case pattern' of
+        VariablePattern var ->
+            useRule $ FunctionalVar var (varS "x" patternSort)
+        ApplicationPattern app ->
+            let hFunctional =
+                    forallElimFunctionalN'
+                        csFunctional
+                        applicationChildren
+                        (assume $ generateFunctionalHeadAxiom $ valid :< app)
+                csFunctional =
+                    map proveFunctional applicationChildren
+            in modusPonensN csFunctional hFunctional
+          where
+            Application { applicationChildren } = app
+        _ -> assume $ generateFunctionalStatement term
+  where
+    Valid { patternSort } = valid
 
 -- | Length-1 version of forallElimFunctionalN'
 forallElimFunctional'
-    :: Given (SymbolOrAliasSorts Object)
-    => Proof
+    :: Proof
     -> Term
     -> Proof
     -> Proof
@@ -96,8 +96,7 @@ forallElimFunctional' argIsFunctional arg pat =
 -- "forall x_1 . ... forall x_n. p"
 -- with a list of patterns, also requiring their functionality proofs.
 forallElimFunctionalN'
-    :: Given (SymbolOrAliasSorts Object)
-    => [Proof]
+    :: [Proof]
     -> [Term]
     -> Proof
     -> Proof
@@ -111,8 +110,7 @@ forallElimFunctionalN' argsAreFunctional args pat =
 
 -- | Length-1 version of forallElimFunctionalN
 forallElimFunctional
-    :: Given (SymbolOrAliasSorts Object)
-    => Term
+    :: Term
     -> Proof
     -> Proof
 forallElimFunctional arg pat =
@@ -122,10 +120,7 @@ forallElimFunctional arg pat =
                     useRule $ FunctionalSubst
                         v
                         p
-                        (varS
-                            "x"
-                            $ getSort (V v :: Term)
-                        )
+                        (varS "x" $ sortedVariableSort v)
                         arg
             in modusPonensN [pat, assume $ generateFunctionalStatement arg] ax
         _ -> impossible
@@ -136,8 +131,7 @@ forallElimFunctional arg pat =
 -- "forall x_1 . ... forall x_n. p"
 -- with a list of N patterns, assuming they are functional.
 forallElimFunctionalN
-    :: Given (SymbolOrAliasSorts Object)
-    => [Term]
+    :: [Term]
     -> Proof
     -> Proof
 forallElimFunctionalN args pat =

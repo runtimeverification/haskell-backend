@@ -47,14 +47,12 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( give )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure as Kore
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Bool as Bool
@@ -80,6 +78,8 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( normalize )
+import           Kore.Unparser
+                 ( Unparse )
 import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Map@ sort.
@@ -379,12 +379,12 @@ asPattern
 asPattern indexedModule dvSort
   = do
     symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let applyUnit = App_ symbolUnit []
+    let applyUnit = mkApp dvSort symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
     let applyElement (key, value) =
-            App_ symbolElement [Kore.fromConcretePurePattern key, value]
+            mkApp dvSort symbolElement [Kore.fromConcretePurePattern key, value]
     symbolConcat <- lookupSymbolConcat dvSort indexedModule
-    let applyConcat map1 map2 = App_ symbolConcat [map1, map2]
+    let applyConcat map1 map2 = mkApp dvSort symbolConcat [map1, map2]
         asPattern0 result =
             foldr applyConcat applyUnit
                 (applyElement <$> Map.toAscList result)
@@ -414,7 +414,8 @@ asBuiltinDomainValue
     :: Sort Object
     -> Builtin variable
     -> StepPattern Object variable
-asBuiltinDomainValue resultSort map' = DV_ resultSort (Domain.BuiltinMap map')
+asBuiltinDomainValue resultSort map' =
+    mkDomainValue resultSort (Domain.BuiltinMap map')
 
 {- | Find the symbol hooked to @MAP.unit@ in an indexed module.
  -}
@@ -527,6 +528,7 @@ unifyEquals
         , MetaOrObject level
         , FreshVariable variable
         , Show (variable level)
+        , Unparse (variable level)
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
@@ -538,7 +540,7 @@ unifyEquals
     -> (p -> p -> MaybeT m (expanded, proof))
 unifyEquals
     simplificationType
-    tools@MetadataTools { symbolOrAliasSorts }
+    tools
     substitutionSimplifier
     unifyEqualsChildren
   =
@@ -556,7 +558,7 @@ unifyEquals
         :: (level ~ Object, Traversable t)
         => t (Predicated level variable a)
         -> Predicated level variable (t a)
-    propagatePredicates = give symbolOrAliasSorts sequenceA
+    propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
     unifyEquals0
@@ -588,10 +590,10 @@ unifyEquals
                         [ x@(Var_ _), DV_ _ (Domain.BuiltinMap map2) ] ->
                             unifyEqualsFramed1 resultSort dv1 map2 x
                         [ _, _ ] ->
-                            give symbolOrAliasSorts
-                                (Builtin.unifyEqualsUnsolved
-                                    simplificationType dv1 app
-                                )
+                            Builtin.unifyEqualsUnsolved
+                                simplificationType
+                                dv1
+                                app
                         _ ->
                             Builtin.wrongArity "MAP.concat"
                 | isSymbolElement hookTools symbol2 ->
@@ -599,7 +601,12 @@ unifyEquals
                         [ key2, value2 ] ->
                             -- The key is not concrete yet, or MAP.element would
                             -- have evaluated to a domain value.
-                            unifyEqualsElement map1 symbol2 key2 value2
+                            unifyEqualsElement
+                                resultSort
+                                map1
+                                symbol2
+                                key2
+                                value2
                         _ ->
                             Builtin.wrongArity "MAP.element"
                 | otherwise ->
@@ -675,7 +682,7 @@ unifyEquals
               | not (Map.null remainder2) =
                 -- There is nothing with which to unify the remainder of map2.
                 ExpandedPattern.bottom
-              | otherwise = give symbolOrAliasSorts $
+              | otherwise =
                     pure dv1 -- (DV_ resultSort (BuiltinDomainMap map1))
                     <* concrete
                     <* frame
@@ -693,21 +700,21 @@ unifyEquals
 
     unifyEqualsElement
         :: forall k . (level ~ Object, k ~ ConcreteStepPattern Object)
-        => Map k p  -- ^ concrete map
+        => Sort level
+        -> Map k p  -- ^ concrete map
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
         -> p  -- ^ value
         -> m (expanded, proof)
-    unifyEqualsElement map1 element' key2 value2 =
+    unifyEqualsElement resultSort map1 element' key2 value2 =
         case Map.toList map1 of
             [(Kore.fromConcretePurePattern -> key1, value1)] ->
-                give symbolOrAliasSorts $ do
+                do
                     (key, _) <- unifyEqualsChildren key1 key2
                     (value, _) <- unifyEqualsChildren value1 value2
                     let result =
-                            App_ element' <$> args
-                          where
-                            args = propagatePredicates [key, value]
+                            mkApp resultSort element'
+                                <$> propagatePredicates [key, value]
                     return (result, SimplificationProof)
             _ ->
                 -- Cannot unify a non-element Map with an element Map.

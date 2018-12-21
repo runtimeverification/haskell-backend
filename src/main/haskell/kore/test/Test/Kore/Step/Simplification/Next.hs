@@ -7,14 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( give )
-
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( getSort, mkAnd, mkEquals, mkNext, mkOr )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -27,13 +21,11 @@ import           Kore.Step.Simplification.Next
                  ( simplify )
 
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_nextSimplification :: [TestTree]
-test_nextSimplification = give mockSymbolOrAliasSorts
+test_nextSimplification =
     [ testCase "Next evaluates to Next"
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
@@ -63,7 +55,7 @@ test_nextSimplification = give mockSymbolOrAliasSorts
                         mkNext
                             (mkOr
                                 Mock.a
-                                (mkAnd Mock.b (mkEquals Mock.a Mock.b))
+                                (mkAnd Mock.b (mkEquals_ Mock.a Mock.b))
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -88,22 +80,15 @@ test_nextSimplification = give mockSymbolOrAliasSorts
         )
     ]
 
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts =
-    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
-
 findSort :: [CommonExpandedPattern Object] -> Sort Object
 findSort [] = Mock.testSort
-findSort
-    ( Predicated {term} : _ )
-  =
-    give mockSymbolOrAliasSorts $ getSort term
+findSort ( Predicated {term} : _ ) = getSort term
 
 evaluate
     :: Next Object (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate next =
-    case give mockSymbolOrAliasSorts $ simplify next of
+    case simplify next of
         (result, _proof) -> result
 
 makeNext

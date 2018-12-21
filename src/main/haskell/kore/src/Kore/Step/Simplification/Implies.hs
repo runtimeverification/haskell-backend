@@ -12,18 +12,10 @@ module Kore.Step.Simplification.Implies
     , simplifyEvaluated
     ) where
 
-import Data.Reflection
-       ( Given )
+import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.AST.Common
-                 ( Implies (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkImplies )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Top_ )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeImpliesPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -38,6 +30,7 @@ import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
+import           Kore.Unparser
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrOfExpandedPattern'
 children.
@@ -55,9 +48,9 @@ and it has a special case for children with top terms.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => Implies level (OrOfExpandedPattern level variable)
     ->  ( OrOfExpandedPattern level variable
@@ -76,12 +69,24 @@ simplify
 See 'simplify' for details.
 -}
 -- TODO: Maybe transform this to (not a) \/ b
+{- TODO (virgil): Preserve pattern sorts under simplification.
+
+One way to preserve the required sort annotations is to make 'simplifyEvaluated'
+take an argument of type
+
+> CofreeF (Implies level) (Valid level) (OrOfExpandedPattern level variable)
+
+instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluate' may
+be changed analogously. The 'Valid' annotation will eventually cache information
+besides the pattern sort, which will make it even more useful to carry around.
+
+-}
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
@@ -107,9 +112,9 @@ simplifyEvaluated first second
 simplifyEvaluateHalfImplies
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => OrOfExpandedPattern level variable
     -> ExpandedPattern level variable
@@ -135,9 +140,9 @@ simplifyEvaluateHalfImplies first second
 makeEvaluateImplies
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => ExpandedPattern level variable
     -> ExpandedPattern level variable
@@ -158,28 +163,30 @@ makeEvaluateImplies
 makeEvaluateImpliesNonBool
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateImpliesNonBool
-    Predicated
-        { term = t@(Top_ _)
+    pattern1@Predicated
+        { term = firstTerm
         , predicate = firstPredicate
         , substitution = firstSubstitution
         }
-    Predicated
-        { term = Top_ _
+    pattern2@Predicated
+        { term = secondTerm
         , predicate = secondPredicate
         , substitution = secondSubstitution
         }
+  | (Recursive.project -> _ :< TopPattern _) <- firstTerm
+  , (Recursive.project -> _ :< TopPattern _) <- secondTerm
   =
     ( OrOfExpandedPattern.make
         [ Predicated
-            { term = t
+            { term = firstTerm
             , predicate =
                 makeImpliesPredicate
                     (makeAndPredicate
@@ -194,12 +201,13 @@ makeEvaluateImpliesNonBool
         ]
     , SimplificationProof
     )
-makeEvaluateImpliesNonBool patt1 patt2 =
+  | otherwise =
     ( OrOfExpandedPattern.make
         [ Predicated
-            { term = mkImplies
-                (ExpandedPattern.toMLPattern patt1)
-                (ExpandedPattern.toMLPattern patt2)
+            { term =
+                mkImplies
+                    (ExpandedPattern.toMLPattern pattern1)
+                    (ExpandedPattern.toMLPattern pattern2)
             , predicate = makeTruePredicate
             , substitution = mempty
             }

@@ -178,15 +178,12 @@ mainPatternVerify
     :: VerifiedModule attrs
     -- ^ Module containing definitions visible in the pattern
     -> CommonKorePattern -- ^ Parsed pattern to check well-formedness
-    -> IO ()
-mainPatternVerify verifiedModule patt =
-    do
-      verifyResult <-
+    -> IO VerifiedKorePattern
+mainPatternVerify verifiedModule patt = do
+    verifyResult <-
         clockSomething "Verifying the pattern"
             (runPatternVerifier context $ verifyStandalonePattern Nothing patt)
-      case verifyResult of
-        Left err1 -> error (printError err1)
-        Right _   -> return ()
+    either (error . printError) return verifyResult
   where
     Builtin.Verifiers { patternVerifier } = Builtin.koreVerifiers
     indexedModule =

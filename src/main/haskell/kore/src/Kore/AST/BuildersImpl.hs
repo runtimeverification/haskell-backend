@@ -91,8 +91,8 @@ fillCheckPairSorts
         )
 fillCheckPairSorts (UnsortedPatternStub first) (UnsortedPatternStub second) =
     Left
-        ( Recursive.embed . (:<) mempty . first
-        , Recursive.embed . (:<) mempty . second
+        ( applyUnsortedPurePatternStub first
+        , applyUnsortedPurePatternStub second
         )
 fillCheckPairSorts
     (UnsortedPatternStub first)
@@ -162,7 +162,7 @@ unaryPattern
         }
 unaryPattern constructor (UnsortedPatternStub p) =
     UnsortedPatternStub
-        (\sortS -> constructor sortS (Recursive.embed (mempty :< p sortS)))
+        (\sortS -> constructor sortS (applyUnsortedPurePatternStub p sortS))
 
 {-|'unarySortedPattern' is a helper for building 'PurePatternStub's for unary
 operators where the result sort is different from the operand sort, like \ceil.

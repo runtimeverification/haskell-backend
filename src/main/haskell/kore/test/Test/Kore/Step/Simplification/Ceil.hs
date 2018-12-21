@@ -7,14 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( give )
-
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkBottom, mkDomainValue, mkStringLiteral, mkTop )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Bottom_ )
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -38,23 +32,25 @@ import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
+import           Test.Kore.Step.MockSymbols
+                 ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_ceilSimplification :: [TestTree]
-test_ceilSimplification = give mockSymbolOrAliasSorts
+test_ceilSimplification =
     [ testCase "Ceil - or distribution"
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
         (assertEqualWithExplanation ""
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfA
                     , substitution = mempty
                     }
                 , Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfB
                     , substitution = mempty
                     }
@@ -115,7 +111,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         (assertEqualWithExplanation "ceil(something(a) and equals(f(a), g(a)))"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
@@ -143,7 +139,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                 "ceil(constr(something(a), something(b)) and eq(f(a), g(a)))"
                 (OrOfExpandedPattern.make
                     [ Predicated
-                        { term = mkTop
+                        { term = mkTop_
                         , predicate =
                             makeAndPredicate
                                 (makeEqualsPredicate fOfA gOfA)
@@ -182,7 +178,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             "ceil(functional(something(a), something(b)) and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
@@ -210,7 +206,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             "ceil(f(a)) and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
@@ -235,7 +231,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             "ceil(f(a)) and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
@@ -260,7 +256,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             "ceil(functional and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
@@ -284,7 +280,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
@@ -310,7 +306,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             "ceil(1)"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -321,7 +317,10 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
                     { term =
                         mkDomainValue
                             testSort
-                            (Domain.BuiltinPattern (mkStringLiteral "a"))
+                            (Domain.BuiltinPattern
+                                $ eraseAnnotations
+                                $ mkStringLiteral "a"
+                            )
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -334,7 +333,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             "ceil(map)"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
@@ -359,7 +358,7 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
             "ceil(list)"
             (OrOfExpandedPattern.make
                 [ Predicated
-                    { term = mkTop
+                    { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeCeilPredicate fOfA)
@@ -394,13 +393,13 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
     ]
   where
     fOfA :: StepPattern Object Variable
-    fOfA = give mockSymbolOrAliasSorts $ Mock.f Mock.a
+    fOfA = Mock.f Mock.a
     fOfB :: StepPattern Object Variable
-    fOfB = give mockSymbolOrAliasSorts $ Mock.f Mock.b
-    gOfA = give mockSymbolOrAliasSorts $ Mock.g Mock.a
-    gOfB = give mockSymbolOrAliasSorts $ Mock.g Mock.b
-    somethingOfA = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.a
-    somethingOfB = give mockSymbolOrAliasSorts $ Mock.plain10 Mock.b
+    fOfB = Mock.f Mock.b
+    gOfA = Mock.g Mock.a
+    gOfB = Mock.g Mock.b
+    somethingOfA = Mock.plain10 Mock.a
+    somethingOfB = Mock.plain10 Mock.b
     somethingOfAExpanded = Predicated
         { term = somethingOfA
         , predicate = makeTruePredicate
@@ -411,11 +410,8 @@ test_ceilSimplification = give mockSymbolOrAliasSorts
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    mockSymbolOrAliasSorts =
-        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
             Mock.sortAttributesMapping
@@ -433,12 +429,6 @@ makeCeil patterns =
         , ceilResultSort  = testSort
         , ceilChild       = OrOfExpandedPattern.make patterns
         }
-
-testSort :: Sort Object
-testSort =
-    case mkBottom :: CommonStepPattern Object of
-        Bottom_ sort -> sort
-        _ -> error "unexpected"
 
 evaluate
     ::  ( MetaOrObject level

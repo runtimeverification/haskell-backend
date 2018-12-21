@@ -11,8 +11,8 @@ module Kore.Step.Simplification.Variable
     ( simplify
     ) where
 
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -28,7 +28,7 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that variable.
 -}
 simplify
-    :: (MetaOrObject level, Ord (variable level))
+    :: (MetaOrObject level, Ord (variable level), SortedVariable variable)
     => variable level
     -> ( OrOfExpandedPattern level variable
        , SimplificationProof level
@@ -36,7 +36,7 @@ simplify
 simplify var =
     ( OrOfExpandedPattern.make
         [Predicated
-            { term = Var_ var
+            { term = mkVar var
             , predicate = makeTruePredicate
             , substitution = mempty
             }

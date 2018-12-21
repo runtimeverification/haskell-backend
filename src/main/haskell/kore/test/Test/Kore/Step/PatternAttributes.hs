@@ -7,15 +7,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( give )
-
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkCharLiteral, mkOr, mkStringLiteral, mkVar )
+import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
+                 ( MetadataTools )
 import           Kore.Proof.Functional
 import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributes
@@ -28,7 +24,7 @@ import           Test.Kore
                  ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as MockSymbols
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -41,7 +37,7 @@ levelShow :: LevelInt level -> LevelString level
 levelShow (LevelInt i) = LevelString (show i)
 
 test_patternAttributes :: [TestTree]
-test_patternAttributes = give mockSymbolOrAliasSorts
+test_patternAttributes =
     [ testCase "variable mapping"
         (do
             assertEqualWithExplanation "FunctionalVariable"
@@ -54,7 +50,9 @@ test_patternAttributes = give mockSymbolOrAliasSorts
                 dv = DomainValue
                     { domainValueSort = testSort
                     , domainValueChild =
-                        Domain.BuiltinPattern (mkStringLiteral "10")
+                        Domain.BuiltinPattern
+                        $ eraseAnnotations
+                        $ mkStringLiteral "10"
                     }
             assertEqualWithExplanation "FunctionalDomainValue"
                 (FunctionalDomainValue dv)
@@ -248,23 +246,16 @@ test_patternAttributes = give mockSymbolOrAliasSorts
         )
     ]
   where
-    mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-    mockSymbolOrAliasSorts =
-        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools :: MetadataTools Object StepperAttributes
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
             Mock.sortAttributesMapping
             Mock.subsorts
 
-    mockMetaSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
-    mockMetaSymbolOrAliasSorts = Mock.makeSymbolOrAliasSorts []
     mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-    mockMetaMetadataTools =
-        Mock.makeMetadataTools mockMetaSymbolOrAliasSorts [] [] [] []
+    mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
 
 testSort :: Sort Object
 testSort =

@@ -8,7 +8,9 @@ import           Data.Function
 import           Data.Limit
                  ( Limit (Unlimited) )
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 
+import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
@@ -17,12 +19,15 @@ import           Kore.AST.Sentence
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
+import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), VerifiedModule )
+                 ( IndexedModule (..), VerifiedModule,
+                 mapIndexedModulePatterns )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Step.Pattern
@@ -125,6 +130,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
     envWithCleanup setUp cleanUp $ bench name . nfIO . execution
   where
     name = takeFileName test
+    setUp :: IO (VerifiedModule StepperAttributes, CommonStepPattern Object)
     setUp = do
         kompile
         definition <- readFile $ root </> definitionFile
@@ -139,12 +145,30 @@ execBenchmark root kFile definitionFile mainModuleName test =
             Just verifiedModule =
                 fmap constructorFunctions
                     $ Map.lookup mainModuleName verifiedModules
+            indexedModule =
+                mapIndexedModulePatterns
+                    Kore.eraseAnnotations
+                    verifiedModule
         pat <- parseProgram
         let
             parsedPattern = either error id $ fromKorePattern "" pat
+            verifiedPattern =
+                either (error . printError) id
+                $ PatternVerifier.runPatternVerifier context
+                $ PatternVerifier.verifyStandalonePattern Nothing parsedPattern
+              where
+                context =
+                    PatternVerifier.Context
+                        { builtinPatternVerifier =
+                            Builtin.patternVerifier Builtin.koreVerifiers
+                        , indexedModule = Attribute.Null <$ indexedModule
+                        , declaredSortVariables = Set.empty
+                        , declaredVariables =
+                            PatternVerifier.emptyDeclaredVariables
+                        }
             purePattern =
                 either (error . printError) id
-                    $ patternKoreToPure Object parsedPattern
+                $ patternKoreToPure Object verifiedPattern
         return (verifiedModule, purePattern)
     execution
         :: (VerifiedModule StepperAttributes, CommonStepPattern Object)

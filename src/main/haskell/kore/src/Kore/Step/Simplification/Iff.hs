@@ -13,18 +13,10 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
-import Data.Reflection
-       ( Given )
+import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.AST.Common
-                 ( Iff (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkIff )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Top_ )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeIffPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -38,6 +30,7 @@ import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
+import           Kore.Unparser
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrOfExpandedPattern'
 children.
@@ -48,9 +41,9 @@ and for children with top terms.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => Iff level (OrOfExpandedPattern level variable)
     ->  ( OrOfExpandedPattern level variable
@@ -68,12 +61,24 @@ simplify
 
 See 'simplify' for detailed documentation.
 -}
+{- TODO (virgil): Preserve pattern sorts under simplification.
+
+One way to preserve the required sort annotations is to make 'simplifyEvaluated'
+take an argument of type
+
+> CofreeF (Iff level) (Valid level) (OrOfExpandedPattern level variable)
+
+instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluate' may
+be changed analogously. The 'Valid' annotation will eventually cache information
+besides the pattern sort, which will make it even more useful to carry around.
+
+-}
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
@@ -106,9 +111,9 @@ See 'simplify' for detailed documentation.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => ExpandedPattern level variable
     -> ExpandedPattern level variable
@@ -128,28 +133,30 @@ makeEvaluate first second
 makeEvaluateNonBoolIff
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         )
     => ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolIff
-    Predicated
-        { term = t@(Top_ _)
+    patt1@Predicated
+        { term = firstTerm
         , predicate = firstPredicate
         , substitution = firstSubstitution
         }
-    Predicated
-        { term = Top_ _
+    patt2@Predicated
+        { term = secondTerm
         , predicate = secondPredicate
         , substitution = secondSubstitution
         }
+  | (Recursive.project -> _ :< TopPattern _) <- firstTerm
+  , (Recursive.project -> _ :< TopPattern _) <- secondTerm
   =
     ( OrOfExpandedPattern.make
         [ Predicated
-            { term = t
+            { term = firstTerm
             , predicate =
                 makeIffPredicate
                     (makeAndPredicate
@@ -164,7 +171,7 @@ makeEvaluateNonBoolIff
         ]
     , SimplificationProof
     )
-makeEvaluateNonBoolIff patt1 patt2 =
+  | otherwise =
     ( OrOfExpandedPattern.make
         [ Predicated
             { term = mkIff

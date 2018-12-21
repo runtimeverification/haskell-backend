@@ -11,9 +11,8 @@ module Kore.Step.Simplification.Application
     ( simplify
     ) where
 
-import           Kore.AST.Common
-                 ( Application (..), SortedVariable, SymbolOrAlias )
-import           Kore.AST.MetaOrObject
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
@@ -40,17 +39,14 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
--- data ExpandedApplication level variable = ExpandedApplication
---     { term         :: !(Application level (StepPattern level variable))
---     , predicate    :: !(Predicate level variable)
---     , substitution :: !(UnificationSubstitution level variable)
---     }
---     deriving (Eq, Show)
-
 type ExpandedApplication level variable =
-    Predicated level variable (Application level (StepPattern level variable))
+    Predicated
+        level
+        variable
+        (CofreeF (Application level) (Valid level) (StepPattern level variable))
 
 {-|'simplify' simplifies an 'Application' of 'OrOfExpandedPattern'.
 
@@ -64,14 +60,13 @@ then merging everything into an ExpandedPattern.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -79,7 +74,10 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Application level (OrOfExpandedPattern level variable)
+    -> CofreeF
+        (Application level)
+        (Valid level)
+        (OrOfExpandedPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
@@ -89,10 +87,7 @@ simplify
     substitutionSimplifier
     simplifier
     symbolIdToEvaluator
-    Application
-        { applicationSymbolOrAlias = symbol
-        , applicationChildren = children
-        }
+    (valid :< app)
   = do
     let
         -- The "Propagation Or" inference rule together with
@@ -101,7 +96,11 @@ simplify
     (unflattenedOr, _proofs) <-
         OrOfExpandedPattern.traverseFlattenWithPairsGeneric
             (makeAndEvaluateApplications
-                tools substitutionSimplifier simplifier symbolIdToEvaluator
+                tools
+                substitutionSimplifier
+                simplifier
+                symbolIdToEvaluator
+                valid
                 symbol
             )
             orDistributedChildren
@@ -109,17 +108,22 @@ simplify
         ( unflattenedOr
         , SimplificationProof
         )
+  where
+    Application
+        { applicationSymbolOrAlias = symbol
+        , applicationChildren = children
+        }
+      = app
 
 makeAndEvaluateApplications
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -127,6 +131,7 @@ makeAndEvaluateApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
+    -> Valid level
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
     -> Simplifier
@@ -136,6 +141,7 @@ makeAndEvaluateApplications
     substitutionSimplifier
     simplifier
     symbolIdToEvaluator
+    valid
     symbol
     children
   =
@@ -146,20 +152,20 @@ makeAndEvaluateApplications
                 substitutionSimplifier
                 simplifier
                 symbolIdToEvaluator
+                valid
                 symbol
                 children
         HeadType.Alias -> error "Alias evaluation not implemented yet."
 
 makeAndEvaluateSymbolApplications
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -167,6 +173,7 @@ makeAndEvaluateSymbolApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
+    -> Valid level
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
     -> Simplifier
@@ -176,27 +183,35 @@ makeAndEvaluateSymbolApplications
     substitutionSimplifier
     simplifier
     symbolIdToEvaluator
+    valid
     symbol
     children
   = do
     (expandedApplication, _proof) <-
-        makeExpandedApplication tools substitutionSimplifier symbol children
+        makeExpandedApplication
+            tools
+            substitutionSimplifier
+            valid
+            symbol
+            children
     (functionApplication, _proof) <-
         evaluateApplicationFunction
-            tools substitutionSimplifier simplifier symbolIdToEvaluator
+            tools
+            substitutionSimplifier
+            simplifier
+            symbolIdToEvaluator
             expandedApplication
     return (functionApplication, SimplificationProof)
 
 evaluateApplicationFunction
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Meta)
-        , Show (variable Object)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
@@ -226,21 +241,22 @@ evaluateApplicationFunction
 
 makeExpandedApplication
     ::  ( MetaOrObject level
-        , Kore.AST.Common.SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
-        , Ord (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
+    -> Valid level
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
     -> Simplifier
         (ExpandedApplication level variable, SimplificationProof level)
-makeExpandedApplication tools substitutionSimplifier symbol children
+makeExpandedApplication tools substitutionSimplifier valid symbol children
   = do
     (   Predicated
             { predicate = mergedPredicate
@@ -254,10 +270,13 @@ makeExpandedApplication tools substitutionSimplifier symbol children
                 (map ExpandedPattern.substitution children)
     return
         ( Predicated
-            { term = Application
-                { applicationSymbolOrAlias = symbol
-                , applicationChildren = map ExpandedPattern.term children
-                }
+            { term =
+                (:<) valid
+                    Application
+                        { applicationSymbolOrAlias = symbol
+                        , applicationChildren =
+                            map ExpandedPattern.term children
+                        }
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
             }

@@ -11,16 +11,8 @@ module Kore.Step.Simplification.Next
     ( simplify
     ) where
 
-import Data.Reflection
-       ( Given )
-
-import           Kore.AST.Common
-                 ( Next (..), SortedVariable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkNext )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -32,6 +24,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Unparser
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -44,9 +37,9 @@ Right now this does not do any actual simplification.
 simplify
     ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts Object)
-        , Show (variable Object)
         , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
     => Next Object (OrOfExpandedPattern Object variable)
     ->  ( OrOfExpandedPattern Object variable
@@ -60,9 +53,9 @@ simplify
 simplifyEvaluated
     ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts Object)
-        , Show (variable Object)
         , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
     => OrOfExpandedPattern Object variable
     -> (OrOfExpandedPattern Object variable, SimplificationProof Object)

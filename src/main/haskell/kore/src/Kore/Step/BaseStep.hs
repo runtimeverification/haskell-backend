@@ -33,8 +33,6 @@ import qualified Data.Hashable as Hashable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
-import           Data.Reflection
-                 ( give )
 import           Data.Semigroup
                  ( Semigroup (..) )
 import           Data.Sequence
@@ -46,12 +44,9 @@ import           GHC.Generics
 
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkBottom )
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeNotPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -93,6 +88,7 @@ import           Kore.Unification.Procedure
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
@@ -185,6 +181,15 @@ instance
     freshVariableWith (ConfigurationVariable a) n =
         ConfigurationVariable $ freshVariableWith a n
 
+instance
+    Unparse (variable level) =>
+    Unparse (StepperVariable variable level)
+  where
+    unparse =
+        \case
+            AxiomVariable var -> "Axiom" <> unparse var
+            ConfigurationVariable var -> "Config" <> unparse var
+
 {-! The result of applying an axiom to a pattern. Contains the rewritten
 pattern (if any) and the unrewritten part of the original pattern.
 -}
@@ -212,6 +217,7 @@ newtype UnificationProcedure level =
         .   ( SortedVariable variable
             , Ord (variable level)
             , Show (variable level)
+            , Unparse (variable level)
             , OrdMetaOrObject variable
             , ShowMetaOrObject variable
             , MetaOrObject level
@@ -248,6 +254,7 @@ stepWithRuleForUnifier
         , SortedVariable variable
         , Show (variable level)
         , ShowMetaOrObject variable
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> UnificationProcedure level
@@ -349,6 +356,7 @@ applyUnificationToRhs
         , Show (variable Meta)
         , Show (variable Object)
         , Show (variable level)
+        , Unparse (variable level)
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
@@ -434,27 +442,25 @@ applyUnificationToRhs
     let
         negatedRemainder :: Predicate level (StepperVariable variable)
         negatedRemainder =
-            give sortTools $ makeNotPredicate $
-                PredicateSubstitution.toPredicate
-                    Predicated
-                        { term = ()
-                        , predicate = normalizedRemainderPredicateRaw
-                        , substitution =
-                            -- Note that this filtering is reasonable
-                            -- only because below we check that there
-                            -- are no axiom variables left in the
-                            -- predicate.
-                            Substitution.modify
-                                (filter hasConfigurationVariable)
-                                normalizedRemainderSubstitution
-                        }
+            (makeNotPredicate . PredicateSubstitution.toPredicate)
+                Predicated
+                    { term = ()
+                    , predicate = normalizedRemainderPredicateRaw
+                    , substitution =
+                        -- Note that this filtering is reasonable only because
+                        -- below we check that there are no axiom variables left
+                        -- in the predicate.
+                        Substitution.modify
+                            (filter hasConfigurationVariable)
+                            normalizedRemainderSubstitution
+                    }
         -- the remainder predicate is the start predicate from which we
         -- remove what was handled by the current axiom, i.e. we `and` it with
         -- the negated unification results and the axiom condition.
         normalizedRemainderPredicate
             :: Predicate level (StepperVariable variable)
         normalizedRemainderPredicate =
-            give sortTools $ makeAndPredicate
+            makeAndPredicate
                 startCondition  -- from initial configuration
                 negatedRemainder
         hasConfigurationVariable :: (StepperVariable variable level, a) -> Bool
@@ -525,7 +531,7 @@ applyUnificationToRhs
     return
         ( StepResult
             { rewrittenPattern = Predicated
-                { term = result `orElse` mkBottom
+                { term = result `orElse` mkBottom_
                 , predicate = condition
                 -- TODO(virgil): Can there be unused variables? Should we
                 -- remove them?
@@ -565,8 +571,6 @@ applyUnificationToRhs
             ((stepProof . StepProofUnification) substitutionProof)
         )
   where
-    sortTools :: SymbolOrAliasSorts level
-    sortTools = MetadataTools.symbolOrAliasSorts tools
     variablePairToRenaming
         :: (StepperVariable variable level, StepperVariable variable level)
         -> VariableRenaming level variable
@@ -600,6 +604,7 @@ stepWithRule
         , SortedVariable variable
         , Show (variable level)
         , ShowMetaOrObject variable
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

@@ -10,13 +10,12 @@ import qualified Data.Default as Default
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( give )
 import qualified Data.Set as Set
+import           Prelude hiding
+                 ( concatMap )
 
 import           Kore.AST.Pure
-import qualified Kore.ASTUtils.SmartConstructors as Kore
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Predicate.Predicate as Predicate
@@ -71,8 +70,8 @@ test_lookupUnit =
         "lookup{}(unit{}(), key) === \\bottom{}()"
         (do
             key <- forAll genIntegerPattern
-            let patLookup = App_ lookupMapSymbol [App_ unitMapSymbol [], key]
-                predicate = mkEquals mkBottom patLookup
+            let patLookup = lookupMap unitMap key
+                predicate = mkEquals_ mkBottom_ patLookup
             (===) ExpandedPattern.bottom =<< evaluate patLookup
             (===) ExpandedPattern.top =<< evaluate predicate
         )
@@ -85,12 +84,8 @@ test_lookupUpdate =
             patKey <- forAll genIntegerPattern
             patVal <- forAll genIntegerPattern
             patMap <- forAll genMapPattern
-            let patLookup =
-                    App_ lookupMapSymbol
-                        [ App_ updateMapSymbol [ patMap, patKey, patVal ]
-                        , patKey
-                        ]
-                predicate = mkEquals patLookup patVal
+            let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
+                predicate = mkEquals_ patLookup patVal
                 expect = ExpandedPattern.fromPurePattern patVal
             (===) expect =<< evaluate patLookup
             (===) ExpandedPattern.top =<< evaluate predicate
@@ -102,11 +97,11 @@ test_concatUnit =
         "concat{}(unit{}(), map) === concat{}(map, unit{}()) === map"
         (do
             patMap <- forAll genMapPattern
-            let patConcat2 = App_ concatMapSymbol [ patUnit, patMap ]
-                patConcat1 = App_ concatMapSymbol [ patMap, patUnit ]
-                patUnit = App_ unitMapSymbol []
-                predicate1 = mkEquals patMap patConcat1
-                predicate2 = mkEquals patMap patConcat2
+            let patConcat2 = concatMap patUnit patMap
+                patConcat1 = concatMap patMap patUnit
+                patUnit = unitMap
+                predicate1 = mkEquals_ patMap patConcat1
+                predicate2 = mkEquals_ patMap patConcat2
             expect <- evaluate patMap
             (===) expect =<< evaluate patConcat1
             (===) expect =<< evaluate patConcat2
@@ -124,17 +119,17 @@ test_lookupConcatUniqueKeys =
             Monad.when (patKey1 == patKey2) discard
             patVal1 <- forAll genIntegerPattern
             patVal2 <- forAll genIntegerPattern
-            let patConcat = App_ concatMapSymbol [ patMap1, patMap2 ]
-                patMap1 = App_ elementMapSymbol [ patKey1, patVal1 ]
-                patMap2 = App_ elementMapSymbol [ patKey2, patVal2 ]
-                patLookup1 = App_ lookupMapSymbol [ patConcat, patKey1 ]
-                patLookup2 = App_ lookupMapSymbol [ patConcat, patKey2 ]
+            let patConcat = concatMap patMap1 patMap2
+                patMap1 = elementMap patKey1 patVal1
+                patMap2 = elementMap patKey2 patVal2
+                patLookup1 = lookupMap patConcat patKey1
+                patLookup2 = lookupMap patConcat patKey2
                 predicate =
                     mkImplies
-                        (mkNot (mkEquals patKey1 patKey2))
+                        (mkNot (mkEquals_ patKey1 patKey2))
                         (mkAnd
-                            (mkEquals patLookup1 patVal1)
-                            (mkEquals patLookup2 patVal2)
+                            (mkEquals_ patLookup1 patVal1)
+                            (mkEquals_ patLookup2 patVal2)
                         )
                 expect1 = ExpandedPattern.fromPurePattern patVal1
                 expect2 = ExpandedPattern.fromPurePattern patVal2
@@ -151,10 +146,10 @@ test_concatDuplicateKeys =
             patKey <- forAll genIntegerPattern
             patVal1 <- forAll genIntegerPattern
             patVal2 <- forAll genIntegerPattern
-            let patMap1 = App_ elementMapSymbol [ patKey, patVal1 ]
-                patMap2 = App_ elementMapSymbol [ patKey, patVal2 ]
-                patConcat = App_ concatMapSymbol [ patMap1, patMap2 ]
-                predicate = mkEquals mkBottom patConcat
+            let patMap1 = elementMap patKey patVal1
+                patMap2 = elementMap patKey patVal2
+                patConcat = concatMap patMap1 patMap2
+                predicate = mkEquals_ mkBottom_ patConcat
             (===) ExpandedPattern.bottom =<< evaluate patConcat
             (===) ExpandedPattern.top =<< evaluate predicate
         )
@@ -166,9 +161,9 @@ test_concatCommutes =
         (do
             patMap1 <- forAll genMapPattern
             patMap2 <- forAll genMapPattern
-            let patConcat1 = App_ concatMapSymbol [ patMap1, patMap2 ]
-                patConcat2 = App_ concatMapSymbol [ patMap2, patMap1 ]
-                predicate = mkEquals patConcat1 patConcat2
+            let patConcat1 = concatMap patMap1 patMap2
+                patConcat2 = concatMap patMap2 patMap1
+                predicate = mkEquals_ patConcat1 patConcat2
             actual1 <- evaluate patConcat1
             actual2 <- evaluate patConcat2
             (===) actual1 actual2
@@ -183,11 +178,11 @@ test_concatAssociates =
             patMap1 <- forAll genMapPattern
             patMap2 <- forAll genMapPattern
             patMap3 <- forAll genMapPattern
-            let patConcat12 = App_ concatMapSymbol [ patMap1, patMap2 ]
-                patConcat23 = App_ concatMapSymbol [ patMap2, patMap3 ]
-                patConcat12_3 = App_ concatMapSymbol [ patConcat12, patMap3 ]
-                patConcat1_23 = App_ concatMapSymbol [ patMap1, patConcat23 ]
-                predicate = mkEquals patConcat12_3 patConcat1_23
+            let patConcat12 = concatMap patMap1 patMap2
+                patConcat23 = concatMap patMap2 patMap3
+                patConcat12_3 = concatMap patConcat12 patMap3
+                patConcat1_23 = concatMap patMap1 patConcat23
+                predicate = mkEquals_ patConcat12_3 patConcat1_23
             actual12_3 <- evaluate patConcat12_3
             actual1_23 <- evaluate patConcat1_23
             (===) actual12_3 actual1_23
@@ -200,9 +195,9 @@ test_inKeysUnit =
         "inKeys{}(unit{}(), key) === \\dv{Bool{}}(\"false\")"
         (do
             patKey <- forAll genIntegerPattern
-            let patUnit = App_ unitMapSymbol []
-                patInKeys = App_ inKeysMapSymbol [ patKey, patUnit ]
-                predicate = mkEquals (Test.Bool.asPattern False) patInKeys
+            let patUnit = unitMap
+                patInKeys = inKeysMap patKey patUnit
+                predicate = mkEquals_ (Test.Bool.asPattern False) patInKeys
             (===) (Test.Bool.asExpandedPattern False) =<< evaluate patInKeys
             (===) ExpandedPattern.top =<< evaluate predicate
         )
@@ -213,10 +208,10 @@ test_keysUnit =
         "keys{}(unit{}() : Map{}) === unit{}() : Set{}"
         (\solver -> do
             let
-                patUnit = App_ unitMapSymbol []
-                patKeys = App_ keysMapSymbol [patUnit]
+                patUnit = unitMap
+                patKeys = keysMap patUnit
                 patExpect = Test.Set.asPattern Set.empty
-                predicate = mkEquals patExpect patKeys
+                predicate = mkEquals_ patExpect patKeys
             expect <- evaluateWith solver patExpect
             assertEqualWithExplanation "" expect =<< evaluateWith solver patKeys
             assertEqualWithExplanation "" ExpandedPattern.top =<< evaluateWith solver predicate
@@ -231,8 +226,8 @@ test_keysElement =
             val <- forAll genIntegerPattern
             let patMap = asPattern $ Map.singleton key val
                 patKeys = Test.Set.asPattern $ Set.singleton key
-                patSymbolic = App_ keysMapSymbol [patMap]
-                predicate = mkEquals patKeys patSymbolic
+                patSymbolic = keysMap patMap
+                predicate = mkEquals_ patKeys patSymbolic
             expect <- evaluate patKeys
             (===) expect =<< evaluate patSymbolic
             (===) ExpandedPattern.top =<< evaluate predicate
@@ -247,8 +242,8 @@ test_keys =
             let keys1 = Map.keysSet map1
                 patConcreteKeys = Test.Set.asPattern keys1
                 patMap = asPattern map1
-                patSymbolicKeys = App_ keysMapSymbol [patMap]
-                predicate = mkEquals patConcreteKeys patSymbolicKeys
+                patSymbolicKeys = keysMap patMap
+                predicate = mkEquals_ patConcreteKeys patSymbolicKeys
             expect <- evaluate patConcreteKeys
             (===) expect =<< evaluate patSymbolicKeys
             (===) ExpandedPattern.top =<< evaluate predicate
@@ -261,9 +256,9 @@ test_inKeysElement =
         (do
             patKey <- forAll genIntegerPattern
             patVal <- forAll genIntegerPattern
-            let patMap = App_ elementMapSymbol [ patKey, patVal ]
-                patInKeys = App_ inKeysMapSymbol [ patKey, patMap ]
-                predicate = mkEquals (Test.Bool.asPattern True) patInKeys
+            let patMap = elementMap patKey patVal
+                patInKeys = inKeysMap patKey patMap
+                predicate = mkEquals_ (Test.Bool.asPattern True) patInKeys
             (===) (Test.Bool.asExpandedPattern True) =<< evaluate patInKeys
             (===) ExpandedPattern.top =<< evaluate predicate
         )
@@ -284,7 +279,7 @@ test_simplify =
                 original =
                     mkDomainValue mapSort
                     $ Domain.BuiltinMap
-                    $ Map.fromList [(key, mkAnd x mkTop)]
+                    $ Map.fromList [(key, mkAnd x mkTop_)]
                 expected =
                     ExpandedPattern.fromPurePattern
                     $ mkDomainValue mapSort
@@ -301,7 +296,7 @@ test_symbolic =
         "builtin functions are not evaluated on symbolic keys"
         (do
             elements <- forAll $ genMapSortedVariable intSort genIntegerPattern
-            let patMap = asSymbolicPattern (Map.mapKeys Var_ elements)
+            let patMap = asSymbolicPattern (Map.mapKeys mkVar elements)
                 expect = ExpandedPattern.fromPurePattern patMap
             if Map.null elements
                 then discard
@@ -319,8 +314,8 @@ asSymbolicPattern result
         foldr1 applyConcat (applyElement <$> Map.toAscList result)
   where
     applyUnit = mkDomainValue mapSort $ Domain.BuiltinMap Map.empty
-    applyElement (key, value) = App_ elementMapSymbol [key, value]
-    applyConcat map1 map2 = App_ concatMapSymbol [map1, map2]
+    applyElement (key, value) = elementMap key value
+    applyConcat map1 map2 = concatMap map1 map2
 
 {- | Unify two maps with concrete keys and variable values.
  -}
@@ -332,13 +327,13 @@ test_unifyConcrete =
             let genVariablePair =
                     (,) <$> genIntVariable <*> genIntVariable
                   where
-                    genIntVariable = Var_ <$> genSortedVariable intSort
+                    genIntVariable = mkVar <$> genSortedVariable intSort
             map12 <- forAll (genConcreteMap genVariablePair)
             let map1 = fst <$> map12
                 map2 = snd <$> map12
                 patExpect = asPattern $ uncurry mkAnd <$> map12
                 patActual = mkAnd (asPattern map1) (asPattern map2)
-                predicate = mkEquals patExpect patActual
+                predicate = mkEquals_ patExpect patActual
             expect <- evaluate patExpect
             actual <- evaluate patActual
             (===) expect actual
@@ -464,42 +459,6 @@ asExpandedPattern :: Map.Builtin Variable -> CommonExpandedPattern Object
 Right asExpandedPattern = Map.asExpandedPattern verifiedModule mapSort
 
 -- * Constructors
-
-mkBottom :: CommonStepPattern Object
-mkBottom = Kore.mkBottom
-
-mkEquals
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
-mkEquals = give testSymbolOrAliasSorts Kore.mkEquals
-
-mkAnd
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
-mkAnd = give testSymbolOrAliasSorts Kore.mkAnd
-
-mkTop :: CommonStepPattern Object
-mkTop = Kore.mkTop
-
-mkVar :: Variable Object -> CommonStepPattern Object
-mkVar = give testSymbolOrAliasSorts Kore.mkVar
-
-mkDomainValue
-    :: Sort Object
-    -> Domain.Builtin (CommonStepPattern Object)
-    -> CommonStepPattern Object
-mkDomainValue = give testSymbolOrAliasSorts Kore.mkDomainValue
-
-mkImplies
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
-mkImplies = give testSymbolOrAliasSorts Kore.mkImplies
-
-mkNot :: CommonStepPattern Object -> CommonStepPattern Object
-mkNot = give testSymbolOrAliasSorts Kore.mkNot
 
 mkIntVar :: Id Object -> CommonStepPattern Object
 mkIntVar variableName =

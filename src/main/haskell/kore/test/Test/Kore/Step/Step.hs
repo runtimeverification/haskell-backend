@@ -14,12 +14,10 @@ import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
 import           Kore.AST.Pure
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts )
+                 ( MetadataTools (..) )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Predicate.Predicate
@@ -31,6 +29,7 @@ import           Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
+import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -55,8 +54,8 @@ x1 = Variable (testId "#x1")
 rewriteIdentity :: RewriteRule Meta
 rewriteIdentity =
     RewriteRule RulePattern
-        { left = Var_ (x1 patternMetaSort)
-        , right = Var_ (x1 patternMetaSort)
+        { left = mkVar (x1 patternMetaSort)
+        , right = mkVar (x1 patternMetaSort)
         , requires = makeTruePredicate
         , attributes = def
         }
@@ -64,24 +63,19 @@ rewriteIdentity =
 rewriteImplies :: RewriteRule Meta
 rewriteImplies =
     RewriteRule $ RulePattern
-        { left = Var_ (x1 patternMetaSort)
+        { left = mkVar (x1 patternMetaSort)
         , right =
-            Implies_
-                patternMetaSort
-                (Var_ $ x1 patternMetaSort)
-                (Var_ $ x1 patternMetaSort)
+            mkImplies
+                (mkVar $ x1 patternMetaSort)
+                (mkVar $ x1 patternMetaSort)
         , requires = makeTruePredicate
         , attributes = def
         }
 
 expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta Variable)]
 expectTwoAxioms =
-    [       ( Predicated
-            { term =
-                Implies_
-                    patternMetaSort
-                    (Var_ $ v1 patternMetaSort)
-                    (Var_ $ v1 patternMetaSort)
+    [   ( Predicated
+            { term = mkVar (v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -92,7 +86,10 @@ expectTwoAxioms =
             ]
         )
     ,   ( Predicated
-            { term = Var_ (v1 patternMetaSort)
+            { term =
+                mkImplies
+                    (mkVar $ v1 patternMetaSort)
+                    (mkVar $ v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -109,7 +106,7 @@ actualTwoAxioms =
     runStep
         mockMetadataTools
         Predicated
-            { term = Var_ (v1 patternMetaSort)
+            { term = mkVar (v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -122,8 +119,8 @@ initialFailSimple =
     Predicated
         { term =
             metaSigma
-                (metaG (Var_ $ a1 patternMetaSort))
-                (metaF (Var_ $ b1 patternMetaSort))
+                (metaG (mkVar $ a1 patternMetaSort))
+                (metaF (mkVar $ b1 patternMetaSort))
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -139,10 +136,10 @@ actualFailSimple =
         [ RewriteRule $ RulePattern
             { left =
                 metaSigma
-                    (Var_ $ x1 patternMetaSort)
-                    (Var_ $ x1 patternMetaSort)
+                    (mkVar $ x1 patternMetaSort)
+                    (mkVar $ x1 patternMetaSort)
             , right =
-                Var_ (x1 patternMetaSort)
+                mkVar (x1 patternMetaSort)
             , requires = makeTruePredicate
             , attributes = def
             }
@@ -153,8 +150,8 @@ initialFailCycle =
     Predicated
         { term =
             metaSigma
-                (Var_ $ a1 patternMetaSort)
-                (Var_ $ a1 patternMetaSort)
+                (mkVar $ a1 patternMetaSort)
+                (mkVar $ a1 patternMetaSort)
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -170,10 +167,10 @@ actualFailCycle =
         [ RewriteRule $ RulePattern
             { left =
                 metaSigma
-                    (metaF (Var_ $ x1 patternMetaSort))
-                    (Var_ $ x1 patternMetaSort)
+                    (metaF (mkVar $ x1 patternMetaSort))
+                    (mkVar $ x1 patternMetaSort)
             , right =
-                Var_ (x1 patternMetaSort)
+                mkVar (x1 patternMetaSort)
             , requires = makeTruePredicate
             , attributes = def
             }
@@ -182,7 +179,7 @@ actualFailCycle =
 initialIdentity :: ExpandedPattern Meta Variable
 initialIdentity =
     Predicated
-        { term = Var_ (v1 patternMetaSort)
+        { term = mkVar (v1 patternMetaSort)
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -263,14 +260,14 @@ test_simpleStrategy =
 axiomsSimpleStrategy :: [RewriteRule Meta]
 axiomsSimpleStrategy =
     [ RewriteRule $ RulePattern
-        { left = metaF (Var_ $ x1 patternMetaSort)
-        , right = metaG (Var_ $ x1 patternMetaSort)
+        { left = metaF (mkVar $ x1 patternMetaSort)
+        , right = metaG (mkVar $ x1 patternMetaSort)
         , requires = makeTruePredicate
         , attributes = def
         }
     , RewriteRule $ RulePattern
-        { left = metaG (Var_ $ x1 patternMetaSort)
-        , right = metaH (Var_ $ x1 patternMetaSort)
+        { left = metaG (mkVar $ x1 patternMetaSort)
+        , right = metaH (mkVar $ x1 patternMetaSort)
         , requires = makeTruePredicate
         , attributes = def
         }
@@ -279,7 +276,7 @@ axiomsSimpleStrategy =
 expectOneStep :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
 expectOneStep =
     ( Predicated
-        { term = metaG (Var_ $ v1 patternMetaSort)
+        { term = metaG (mkVar $ v1 patternMetaSort)
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -298,13 +295,13 @@ actualOneStep =
         mockMetadataTools
         Unlimited
         Predicated
-            { term = metaF (Var_ $ v1 patternMetaSort)
+            { term = metaF (mkVar $ v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
         [ RewriteRule $ RulePattern
-            { left = metaF (Var_ $ x1 patternMetaSort)
-            , right = metaG (Var_ $ x1 patternMetaSort)
+            { left = metaF (mkVar $ x1 patternMetaSort)
+            , right = metaG (mkVar $ x1 patternMetaSort)
             , requires = makeTruePredicate
             , attributes = def
             }
@@ -313,7 +310,7 @@ actualOneStep =
 expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
 expectTwoSteps =
     ( Predicated
-        { term = metaH (Var_ $ v1 patternMetaSort)
+        { term = metaH (mkVar $ v1 patternMetaSort)
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -333,7 +330,7 @@ actualTwoSteps =
         mockMetadataTools
         Unlimited
         Predicated
-            { term = metaF (Var_ $ v1 patternMetaSort)
+            { term = metaF (mkVar $ v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -343,7 +340,7 @@ actualTwoSteps =
 expectZeroStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
 expectZeroStepLimit =
         ( Predicated
-            { term = metaF (Var_ $ v1 patternMetaSort)
+            { term = metaF (mkVar $ v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -356,7 +353,7 @@ actualZeroStepLimit =
         mockMetadataTools
         (Limit 0)
         Predicated
-            { term = metaF (Var_ $ v1 patternMetaSort)
+            { term = metaF (mkVar $ v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -365,7 +362,7 @@ actualZeroStepLimit =
 expectStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
 expectStepLimit =
     ( Predicated
-        { term = metaG (Var_ $ v1 patternMetaSort)
+        { term = metaG (mkVar $ v1 patternMetaSort)
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -382,24 +379,17 @@ actualStepLimit =
         mockMetadataTools
         (Limit 1)
         Predicated
-            { term = metaF (Var_ $ v1 patternMetaSort)
+            { term = metaF (mkVar $ v1 patternMetaSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
         axiomsSimpleStrategy
-
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Meta
-mockSymbolOrAliasSorts = const ApplicationSorts
-    { applicationSortsOperands = [patternMetaSort, patternMetaSort]
-    , applicationSortsResult = patternMetaSort
-    }
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.constructorFunctionalAttributes
     , symbolOrAliasType = const HeadType.Symbol
     , sortAttributes = const Mock.constructorFunctionalAttributes
-    , symbolOrAliasSorts = mockSymbolOrAliasSorts
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     }
@@ -411,11 +401,10 @@ sigmaSymbol = SymbolOrAlias
     }
 
 metaSigma
-    :: Functor dom
-    => CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
-metaSigma p1 p2 = App_ sigmaSymbol [p1, p2]
+    :: CommonStepPattern Meta
+    -> CommonStepPattern Meta
+    -> CommonStepPattern Meta
+metaSigma p1 p2 = mkApp patternMetaSort sigmaSymbol [p1, p2]
 
 
 fSymbol :: SymbolOrAlias Meta
@@ -425,10 +414,9 @@ fSymbol = SymbolOrAlias
     }
 
 metaF
-    :: Functor dom
-    => CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
-metaF p = App_ fSymbol [p]
+    :: CommonStepPattern Meta
+    -> CommonStepPattern Meta
+metaF p = mkApp patternMetaSort fSymbol [p]
 
 
 gSymbol :: SymbolOrAlias Meta
@@ -438,10 +426,9 @@ gSymbol = SymbolOrAlias
     }
 
 metaG
-    :: Functor dom
-    => CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
-metaG p = App_ gSymbol [p]
+    :: CommonStepPattern Meta
+    -> CommonStepPattern Meta
+metaG p = mkApp patternMetaSort gSymbol [p]
 
 
 hSymbol :: SymbolOrAlias Meta
@@ -451,10 +438,9 @@ hSymbol = SymbolOrAlias
     }
 
 metaH
-    :: Functor dom
-    => CommonPurePattern Meta dom
-    -> CommonPurePattern Meta dom
-metaH p = App_ hSymbol [p]
+    :: CommonStepPattern Meta
+    -> CommonStepPattern Meta
+metaH p = mkApp patternMetaSort hSymbol [p]
 
 runStep
     :: MetaOrObject level

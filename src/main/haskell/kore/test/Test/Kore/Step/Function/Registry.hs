@@ -20,7 +20,7 @@ import           Kore.AST.Pure
 import           Kore.AST.PureToKore
                  ( patternPureToKore )
 import           Kore.AST.Sentence
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -52,13 +52,13 @@ import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
-updateAttributes :: Attributes -> KoreSentence -> KoreSentence
+updateAttributes :: Attributes -> VerifiedKoreSentence -> VerifiedKoreSentence
 updateAttributes attrs = applyUnifiedSentence updateAttrs updateAttrs
   where
     updateAttrs
         :: MetaOrObject level
-        => Sentence level UnifiedSortVariable CommonKorePattern
-        -> KoreSentence
+        => Sentence level UnifiedSortVariable VerifiedKorePattern
+        -> VerifiedKoreSentence
     updateAttrs (SentenceSymbolSentence ss) =
         constructUnifiedSentence SentenceSymbolSentence
             (ss { sentenceSymbolAttributes = attrs })
@@ -79,117 +79,117 @@ gHead = groundHead "g" AstLocationTest
 sHead = groundHead "s" AstLocationTest
 tHead = groundHead "t" AstLocationTest
 
-testDef :: KoreDefinition
-testDef = simpleDefinitionFromSentences
-            (ModuleName "test")
-            [ simpleSortSentence (SortName "S")
-            , simpleObjectSymbolSentence (SymbolName "s") (SortName "S")
-            , simpleObjectSymbolSentence (SymbolName "t") (SortName "S")
-            , updateAttributes
-                (Attributes [functionAttribute, constructorAttribute])
-                (simpleObjectSymbolSentence (SymbolName "f") (SortName "S"))
-            , updateAttributes
-                (Attributes [functionAttribute, constructorAttribute])
-                (simpleObjectSymbolSentence (SymbolName "g") (SortName "S"))
-            , asKoreAxiomSentence
-                SentenceAxiom
-                    { sentenceAxiomParameters = [asUnified sortVar]
-                    , sentenceAxiomAttributes = Attributes []
-                    , sentenceAxiomPattern =
-                        (patternPureToKore
-                            ( Implies_ sortVarS
-                                (Top_ sortVarS)
-                                (And_ sortVarS
-                                    (Equals_ sortS sortVarS
-                                        (App_ gHead [])
-                                        (App_ sHead [])
-                                    )
-                                    (Top_ sortVarS)
+testDef :: VerifiedKoreDefinition
+testDef =
+    simpleDefinitionFromSentences
+        (ModuleName "test")
+        [ simpleSortSentence (SortName "S")
+        , simpleObjectSymbolSentence (SymbolName "s") (SortName "S")
+        , simpleObjectSymbolSentence (SymbolName "t") (SortName "S")
+        , updateAttributes
+            (Attributes [functionAttribute, constructorAttribute])
+            (simpleObjectSymbolSentence (SymbolName "f") (SortName "S"))
+        , updateAttributes
+            (Attributes [functionAttribute, constructorAttribute])
+            (simpleObjectSymbolSentence (SymbolName "g") (SortName "S"))
+        , asKoreAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [asUnified sortVar]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    patternPureToKore
+                        (mkImplies
+                            (mkTop sortVarS)
+                            (mkAnd
+                                (mkEquals
+                                    sortVarS
+                                    (mkApp sortS gHead [])
+                                    (mkApp sortS sHead [])
                                 )
-                            :: CommonStepPattern Object)
+                                (mkTop sortVarS)
+                            )
                         )
-                    }
-            , asKoreAxiomSentence
-                SentenceAxiom
-                    { sentenceAxiomParameters = [asUnified sortVar]
-                    , sentenceAxiomAttributes = Attributes []
-                    , sentenceAxiomPattern =
-                        (patternPureToKore
-                            ( Implies_ sortVarS
-                                (Top_ sortVarS)
-                                (And_ sortVarS
-                                    (Equals_ sortS sortVarS
-                                        (Top_ sortS)
-                                        (App_ fHead [])
-                                    )
-                                    (Top_ sortVarS)
+                }
+        , asKoreAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [asUnified sortVar]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    (patternPureToKore
+                        (mkImplies
+                            (mkTop sortVarS)
+                            (mkAnd
+                                (mkEquals sortVarS
+                                    (mkTop sortS)
+                                    (mkApp sortS fHead [])
                                 )
-                            :: CommonStepPattern Object)
+                                (mkTop sortVarS)
+                            )
                         )
-                    }
-            , asKoreAxiomSentence
-                SentenceAxiom
-                    { sentenceAxiomParameters = [asUnified sortVar]
-                    , sentenceAxiomAttributes = Attributes []
-                    , sentenceAxiomPattern =
-                        (patternPureToKore
-                            ( Implies_ sortVarS
-                                (Top_ sortVarS)
-                                (And_ sortVarS
-                                    (Equals_ sortS sortVarS
-                                        (App_ fHead [])
-                                        (App_ sHead [])
-                                    )
-                                    (Top_ sortVarS)
+                    )
+                }
+        , asKoreAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [asUnified sortVar]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    (patternPureToKore
+                        (mkImplies
+                            (mkTop sortVarS)
+                            (mkAnd
+                                (mkEquals sortVarS
+                                    (mkApp sortS fHead [])
+                                    (mkApp sortS sHead [])
                                 )
-                            :: CommonStepPattern Object)
-                        )
-                    }
-             , asKoreAxiomSentence
-                SentenceAxiom
-                    { sentenceAxiomParameters = [asUnified sortVar]
-                    , sentenceAxiomAttributes = Attributes []
-                    , sentenceAxiomPattern =
-                        (patternPureToKore
-                            ( Implies_ sortVarS
-                                (Top_ sortVarS)
-                                (And_ sortVarS
-                                    (Equals_ sortS sortVarS
-                                        (App_ fHead [])
-                                        (App_ tHead [])
-                                    )
-                                    (Top_ sortVarS)
-                                )
-                            :: CommonStepPattern Object)
-                        )
-                    }
+                                (mkTop sortVarS)
+                            )
+                        :: CommonStepPattern Object)
+                    )
+                }
             , asKoreAxiomSentence
-                SentenceAxiom
-                    { sentenceAxiomParameters = [asUnified sortVar]
-                    , sentenceAxiomAttributes = Attributes []
-                    , sentenceAxiomPattern =
-                        (patternPureToKore
-                            (Top_ sortS
-                            :: CommonStepPattern Object)
-                        )
-                    }
-            , asKoreAxiomSentence
-                SentenceAxiom
-                    { sentenceAxiomParameters = [asUnified sortVar]
-                    , sentenceAxiomAttributes = Attributes []
-                    , sentenceAxiomPattern =
-                        (patternPureToKore
-                            (And_ sortS (Top_ sortS)
-                                (And_ sortS (Top_ sortS)
-                                    (Rewrites_ sortS
-                                        (App_ fHead [])
-                                        (App_ tHead [])
-                                    )
+            SentenceAxiom
+                { sentenceAxiomParameters = [asUnified sortVar]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    (patternPureToKore
+                        (mkImplies
+                            (mkTop sortVarS)
+                            (mkAnd
+                                (mkEquals sortVarS
+                                    (mkApp sortS fHead [])
+                                    (mkApp sortS tHead [])
                                 )
-                            :: CommonStepPattern Object)
-                        )
-                    }
-            ]
+                                (mkTop sortVarS)
+                            )
+                        :: CommonStepPattern Object)
+                    )
+                }
+        , asKoreAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [asUnified sortVar]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    (patternPureToKore
+                        (mkTop sortS :: CommonStepPattern Object)
+                    )
+                }
+        , asKoreAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [asUnified sortVar]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    (patternPureToKore
+                        (mkAnd (mkTop sortS)
+                            (mkAnd (mkTop sortS)
+                                (mkRewrites
+                                    (mkApp sortS fHead [])
+                                    (mkApp sortS tHead [])
+                                )
+                            )
+                        :: CommonStepPattern Object)
+                    )
+                }
+        ]
 
 testIndexedModule :: VerifiedModule StepperAttributes
 testIndexedModule =
@@ -198,7 +198,7 @@ testIndexedModule =
         verifyResult = verifyAndIndexDefinition
             attributesVerification
             Builtin.koreVerifiers
-            testDef
+            (eraseUnifiedSentenceAnnotations <$> testDef)
     in
         case verifyResult of
             Left err1            -> error (printError err1)
@@ -245,7 +245,7 @@ test_functionRegistry =
             (length (extractRewriteAxioms Object testIndexedModule))
         )
     , testCase "Checking that evaluator simplifies correctly" $ do
-        let expect = App_ sHead []
+        let expect = mkApp sortS sHead []
         (simplified, _) <-
             SMT.runSMT SMT.defaultConfig
             $ evalSimplifier
@@ -253,7 +253,7 @@ test_functionRegistry =
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)
                 (Simplifier.create testMetadataTools testEvaluators)
-                (makeExpandedPattern (App_ gHead []))
+                (makeExpandedPattern (mkApp sortS gHead []))
         let actual =
                 ExpandedPattern.term $ head
                 $ OrOfExpandedPattern.extractPatterns simplified

@@ -324,6 +324,13 @@ instance PrettyPrint a => PrettyPrint (Const a b) where
 instance PrettyPrint (Annotation.Null level) where
     prettyPrint _ Annotation.Null = "Null"
 
+instance MetaOrObject level => PrettyPrint (Valid level) where
+    prettyPrint _ valid@(Valid _) =
+        writeStructure
+            "Valid"
+            [ writeFieldOneLine "patternSort" patternSort valid
+            ]
+
 instance PrettyPrint child => PrettyPrint (Domain.Builtin child) where
     prettyPrint flags =
         \case

@@ -1,13 +1,14 @@
 module Test.Kore.AST.PureToKore (test_pureToKore) where
 
-import Test.Tasty
-       ( TestTree )
-import Test.Tasty.HUnit
-       ( assertEqual, testCase )
-import Test.Tasty.QuickCheck
-       ( forAll, testProperty )
+import           Hedgehog
+                 ( MonadTest, (===) )
+import qualified Hedgehog
+import           Test.Tasty
+import           Test.Tasty.Hedgehog
+import           Test.Tasty.HUnit
 
 import           Kore.AST.Kore
+import           Kore.AST.Pure as Pure
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
@@ -16,13 +17,18 @@ import           Kore.MetaML.AST
 import Test.Kore
 
 
-pureToKoreToPureProp :: CommonMetaPattern -> Bool
-pureToKoreToPureProp p = Right p == patternKoreToPure Meta (patternPureToKore p)
+pureToKoreToPureProp
+    :: MonadTest m => CommonMetaPattern -> m ()
+pureToKoreToPureProp p =
+    Right p === patternKoreToPure Meta (patternPureToKore p)
 
 test_pureToKore :: [TestTree]
 test_pureToKore =
-    [ testProperty "Pattern"
-        (forAll metaMLPatternGen pureToKoreToPureProp)
+    [ testProperty "Pattern" $ Hedgehog.property $ do
+        metaPattern <-
+            Hedgehog.forAll
+            $ standaloneGen (metaMLPatternGen =<< sortGen)
+        pureToKoreToPureProp (Pure.eraseAnnotations metaPattern)
     , testCase "definitionMetaToKore"
         (assertEqual ""
             Definition
@@ -85,7 +91,12 @@ test_pureToKore =
                             }
                         ]
                     }
-                  :: PureDefinition Meta Domain.Builtin
+                    :: Definition
+                        (Sentence
+                            Meta
+                            (SortVariable Meta)
+                            (ParsedPurePattern Meta Domain.Builtin)
+                        )
                 )
             )
         )

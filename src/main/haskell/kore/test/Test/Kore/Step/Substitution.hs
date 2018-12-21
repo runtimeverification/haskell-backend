@@ -4,19 +4,13 @@ module Test.Kore.Step.Substitution
 
 import           Control.Monad.Except
 import qualified Control.Monad.Morph as Morph
-import           Data.Reflection
-                 ( give )
 import           Test.Tasty
                  ( TestTree )
 import           Test.Tasty.HUnit
                  ( assertEqual, testCase )
 
-import           Kore.AST.Common
-                 ( Variable )
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
@@ -37,13 +31,13 @@ import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
-test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
+test_mergeAndNormalizeSubstitutions =
     [ testCase "Constructor normalization"
         -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
         $ do
@@ -319,11 +313,8 @@ test_mergeAndNormalizeSubstitutions = give mockSymbolOrAliasSorts
     ]
 
   where
-    mockSymbolOrAliasSorts =
-        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     mockMetadataTools =
         Mock.makeMetadataTools
-            mockSymbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
             Mock.sortAttributesMapping

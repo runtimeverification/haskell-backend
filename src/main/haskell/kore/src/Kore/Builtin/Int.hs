@@ -55,9 +55,9 @@ import           GHC.Integer.Logarithms
                  ( integerLog2# )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
-import qualified Kore.Annotation.Null as Annotation
+import           Kore.Annotation.Valid
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
@@ -210,14 +210,17 @@ asConcretePattern
     :: Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> ConcreteStepPattern Object
-asConcretePattern domainValueSort result =
-    DV_ domainValueSort (Domain.BuiltinPattern $ asMetaPattern result)
+asConcretePattern domainValueSort =
+    mkDomainValue domainValueSort
+        . Domain.BuiltinPattern
+        . eraseAnnotations
+        . asMetaPattern
 
 asMetaPattern
     :: Functor domain
     => Integer
-    -> PurePattern Meta domain variable (Annotation.Null Meta)
-asMetaPattern result = StringLiteral_ $ show result
+    -> PurePattern Meta domain variable (Valid Meta)
+asMetaPattern result = mkStringLiteral $ show result
 
 asExpandedPattern
     :: Sort Object  -- ^ resulting sort

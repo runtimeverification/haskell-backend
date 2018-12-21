@@ -15,14 +15,13 @@ module Kore.Exec
     ) where
 
 import qualified Control.Arrow as Arrow
+import           Control.Comonad
 import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
                  ( first )
 import qualified Data.Map.Merge.Strict as Map
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( give )
 import           Data.These
                  ( These (..) )
 
@@ -30,10 +29,10 @@ import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
 import           Kore.AST.Common
+import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
                  ( Meta, Object (..), asUnified )
-
-import           Kore.AST.Identifier
+import           Kore.AST.Valid
 import qualified Kore.Builtin as Builtin
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
@@ -80,6 +79,7 @@ import           Kore.Substitution.Class
                  ( substitute )
 import qualified Kore.Substitution.List as ListSubstitution
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -97,16 +97,16 @@ exec
 exec indexedModule purePattern stepLimit strategy =
     setUpConcreteExecution indexedModule purePattern stepLimit strategy execute
   where
+    Valid { patternSort } = extract purePattern
     execute
         :: MetadataTools Object StepperAttributes
         -> StepPatternSimplifier Object Variable
         -> PredicateSubstitutionSimplifier Object Simplifier
         -> ExecutionGraph (CommonExpandedPattern Object, StepProof Object Variable)
         -> Simplifier (CommonStepPattern Object)
-    execute metadataTools _ _ executionGraph =
-        give (symbolOrAliasSorts metadataTools) $ do
-            let (finalConfig, _) = pickLongest executionGraph
-            return (ExpandedPattern.toMLPattern finalConfig)
+    execute _ _ _ executionGraph = do
+        let (finalConfig, _) = pickLongest executionGraph
+        return (forceSort patternSort $ ExpandedPattern.toMLPattern finalConfig)
 
 -- | Concrete execution search
 search
@@ -133,6 +133,7 @@ search
   =
     setUpConcreteExecution verifiedModule purePattern stepLimit strategy execute
   where
+    Valid { patternSort } = extract purePattern
     execute metadataTools simplifier substitutionSimplifier executionGraph = do
         let
             match target (config, _proof) =
@@ -148,10 +149,9 @@ search
             solutions =
                 concatMap OrOfExpandedPattern.extractPatterns solutionsLists
             orPredicate =
-                give (symbolOrAliasSorts metadataTools)
-                $ makeMultipleOrPredicate
-                $ fmap Predicated.toPredicate solutions
-        return (unwrapPredicate orPredicate)
+                makeMultipleOrPredicate
+                    (Predicated.toPredicate <$> solutions)
+        return (forceSort patternSort $ unwrapPredicate orPredicate)
 
 -- | Provide a MetadataTools, simplifier, subsitution simplifier, and execution
 -- tree to the callback.
@@ -191,14 +191,16 @@ setUpConcreteExecution
                 (Limit.replicate stepLimit (strategy rewriteAxioms))
                 (pat, mempty)
         expandedPattern = makeExpandedPattern purePattern
-    simplifiedPatterns <-
+    (simplifiedPatterns, _) <-
         ExpandedPattern.simplify
             metadataTools substitutionSimplifier simplifier expandedPattern
     let
         initialPattern =
-            case OrOfExpandedPattern.extractPatterns (fst simplifiedPatterns) of
-                [] -> ExpandedPattern.bottom
+            case OrOfExpandedPattern.extractPatterns simplifiedPatterns of
+                [] -> ExpandedPattern.bottomOf patternSort
                 (config : _) -> config
+          where
+            Valid { patternSort } = extract purePattern
     executionGraph <- runStrategy' initialPattern
     execute metadataTools simplifier substitutionSimplifier executionGraph
 
@@ -279,6 +281,7 @@ makeAxiomsAndSimplifiers verifiedModule tools =
                     , Ord (variable Object)
                     , Show (variable Meta)
                     , Show (variable Object)
+                    , Unparse (variable Object)
                     , FreshVariable variable
                     )
                 => StepPatternSimplifier Object variable
@@ -325,6 +328,7 @@ emptyPatternSimplifier tools =
             , Ord (variable Object)
             , Show (variable Meta)
             , Show (variable Object)
+            , Unparse (variable Object)
             , FreshVariable variable
             )
         => StepPatternSimplifier Object variable
@@ -344,7 +348,6 @@ prove
 prove limit definitionModule specModule = do
     let
         tools = extractMetadataTools definitionModule
-        symbolOrAlias = symbolOrAliasSorts tools
     axiomsAndSimplifiers <-
         makeAxiomsAndSimplifiers definitionModule tools
     let
@@ -365,10 +368,7 @@ prove limit definitionModule specModule = do
             (defaultStrategy claims axioms)
             (fmap makeClaim claims)
 
-    return $
-        Bifunctor.first
-            (give symbolOrAlias toMLPattern)
-            result
+    return $ Bifunctor.first toMLPattern result
 
   where
     makeClaim claim = (claim, limit)

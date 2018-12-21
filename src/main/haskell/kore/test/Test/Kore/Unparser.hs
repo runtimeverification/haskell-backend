@@ -1,12 +1,14 @@
 module Test.Kore.Unparser
     ( test_parse, test_unparse ) where
 
-import Test.Tasty
-       ( TestTree, testGroup )
-import Test.Tasty.HUnit
-       ( assertEqual, testCase )
-import Test.Tasty.QuickCheck
-       ( forAll, testProperty )
+import           Hedgehog
+                 ( Gen, Property, (===) )
+import qualified Hedgehog
+import           Test.Tasty
+                 ( TestTree, testGroup )
+import           Test.Tasty.Hedgehog
+import           Test.Tasty.HUnit
+                 ( assertEqual, testCase )
 
 import Kore.AST.Kore
 import Kore.AST.Sentence
@@ -158,73 +160,59 @@ test_parse :: TestTree
 test_parse =
     testGroup
         "Parse"
-        [ testProperty "Object testId"
-            (forAll (idGen Object) (unparseParseProp (idParser Object)))
-        , testProperty "Meta testId"
-            (forAll (idGen Meta) (unparseParseProp (idParser Meta)))
-        , testProperty "StringLiteral"
-            (forAll stringLiteralGen (unparseParseProp stringLiteralParser))
-        , testProperty "CharLiteral"
-            (forAll charLiteralGen (unparseParseProp charLiteralParser))
-        , testProperty "Object Symbol"
-            (forAll (symbolGen Object) (unparseParseProp (symbolParser Object)))
-        , testProperty "Meta Symbol"
-            (forAll (symbolGen Meta) (unparseParseProp (symbolParser Meta)))
-        , testProperty "Object Alias"
-            (forAll (aliasGen Object) (unparseParseProp (aliasParser Object)))
-        , testProperty "Meta Alias"
-            (forAll (aliasGen Meta) (unparseParseProp (aliasParser Meta)))
-        , testProperty "Object SortVariable"
-            (forAll (sortVariableGen Object)
-                (unparseParseProp (sortVariableParser Object))
-            )
-        , testProperty "Meta SortVariable"
-            (forAll (sortVariableGen Meta)
-                (unparseParseProp (sortVariableParser Meta))
-            )
-        , testProperty "Object Sort"
-            (forAll (sortGen Object)
-                (unparseParseProp (sortParser Object))
-            )
-        , testProperty "Meta Sort"
-            (forAll (sortGen Meta)
-                (unparseParseProp (sortParser Meta))
-            )
-        {-
-        , testProperty "UnifiedVariable"
-            (forAll unifiedVariableGen (unparseParseProp unifiedVariableParser))
-        -}
-        , testProperty "CommonKorePattern"
-            (forAll korePatternGen (unparseParseProp korePatternParser))
-        , testProperty "Attributes"
-            (forAll
-                attributesGen
-                (unparseParseProp attributesParser)
-            )
-        , testProperty "Sentence"
-            (forAll koreSentenceGen (unparseParseProp koreSentenceParser))
-        , testProperty "Module"
-            (forAll
-                (moduleGen koreSentenceGen)
-                (unparseParseProp
-                    (moduleParser koreSentenceParser)
-                )
-            )
-        , testProperty "Definition"
-            (forAll
-                (definitionGen koreSentenceGen)
-                (unparseParseProp
-                    (definitionParser koreSentenceParser)
-                )
-            )
+        [ testProperty "Object testId" $
+            roundtrip (idGen IsObject) (idParser Object)
+        , testProperty "Meta testId" $
+            roundtrip (idGen IsMeta) (idParser Meta)
+        , testProperty "StringLiteral" $
+            roundtrip stringLiteralGen stringLiteralParser
+        , testProperty "CharLiteral" $
+            roundtrip charLiteralGen charLiteralParser
+        , testProperty "Object Symbol" $
+            roundtrip symbolGen (symbolParser Object)
+        , testProperty "Meta Symbol" $
+            roundtrip symbolGen (symbolParser Meta)
+        , testProperty "Object Alias" $
+            roundtrip aliasGen (aliasParser Object)
+        , testProperty "Meta Alias" $
+            roundtrip aliasGen (aliasParser Meta)
+        , testProperty "Object SortVariable" $
+            roundtrip sortVariableGen (sortVariableParser Object)
+        , testProperty "Meta SortVariable" $
+            roundtrip sortVariableGen (sortVariableParser Meta)
+        , testProperty "Object Sort" $
+            roundtrip (standaloneGen sortGen) (sortParser Object)
+        , testProperty "Meta Sort" $
+            roundtrip (standaloneGen sortGen) (sortParser Meta)
+        , testProperty "UnifiedVariable" $
+            roundtrip
+                (standaloneGen $ unifiedVariableGen =<< unifiedSortGen)
+                unifiedVariableParser
+        , testProperty "CommonKorePattern" $
+            roundtrip korePatternGen korePatternParser
+        , testProperty "Attributes" $
+            roundtrip (standaloneGen attributesGen) attributesParser
+        , testProperty "Sentence" $
+            roundtrip (standaloneGen koreSentenceGen) koreSentenceParser
+        , testProperty "Module" $
+            roundtrip
+                (standaloneGen $ moduleGen koreSentenceGen)
+                (moduleParser koreSentenceParser)
+        , testProperty "Definition" $
+            roundtrip
+                (standaloneGen $ definitionGen koreSentenceGen)
+                (definitionParser koreSentenceParser)
         ]
 
 parse :: Parser a -> String -> Either String a
 parse parser =
     parseOnly (parser <* endOfInput) "<test-string>"
 
-unparseParseProp :: (Unparse a, Eq a) => Parser a -> a -> Bool
-unparseParseProp p a = parse p (unparseToString a) == Right a
+roundtrip :: (Unparse a, Eq a, Show a) => Gen a -> Parser a -> Property
+roundtrip generator parser =
+    Hedgehog.property $ do
+        generated <- Hedgehog.forAll generator
+        parse parser (unparseToString generated) === Right generated
 
 unparseParseTest
     :: (Unparse a, Eq a, Show a) => Parser a -> a -> TestTree

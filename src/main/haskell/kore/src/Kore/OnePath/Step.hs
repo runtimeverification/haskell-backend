@@ -22,23 +22,17 @@ import           Control.Monad.Except
 import           Data.Foldable
                  ( toList )
 import           Data.Hashable
-import           Data.Reflection
-                 ( give )
 import           Data.Semigroup
                  ( (<>) )
 import qualified Data.Set as Set
 import           GHC.Generics
 
 import           Kore.AST.Common
-                 ( Variable )
+                 ( Variable (..) )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkCeil, mkExists, mkNot )
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (MetadataTools) )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.BaseStep
@@ -193,7 +187,7 @@ transitionRule
             )
         ]
 transitionRule
-    tools@MetadataTools { symbolOrAliasSorts }
+    tools
     substitutionSimplifier
     simplifier
   =
@@ -314,7 +308,7 @@ transitionRule
     transitionRemoveDestination
         destination
         (RewritePattern patt@Predicated{term, predicate, substitution}, proof1)
-      = give symbolOrAliasSorts $ do
+      = do
         let
             pattVars = ExpandedPattern.freeEpVariables patt
             destinationVars = ExpandedPattern.freeEpVariables destination
@@ -325,7 +319,7 @@ transitionRule
                 mkNot
                     (mkMultipleExists
                         extraVars
-                        (mkCeil
+                        (mkCeil_
                             (mkAnd destinationPatt pattPatt)
                         )
                     )

@@ -12,16 +12,10 @@ module Kore.Step.Simplification.Pattern
     , simplifyToOr
     ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Data.Reflection
-                 ( Given, give )
-
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import           Kore.Step.Function.Data
@@ -76,6 +70,7 @@ import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -89,10 +84,9 @@ simplify
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
@@ -108,8 +102,7 @@ simplify tools substitutionSimplifier symbolIdToEvaluator patt = do
     (orPatt, proof) <-
         simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt
     return
-        ( give (MetadataTools.symbolOrAliasSorts tools)
-            $ OrOfExpandedPattern.toExpandedPattern orPatt
+        ( OrOfExpandedPattern.toExpandedPattern orPatt
         , proof
         )
 
@@ -121,10 +114,9 @@ simplifyToOr
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
@@ -137,15 +129,12 @@ simplifyToOr
         , SimplificationProof level
         )
 simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt =
-    give
-        (MetadataTools.symbolOrAliasSorts tools)
-        (simplifyInternal
-            tools
-            substitutionSimplifier
-            simplifier
-            symbolIdToEvaluator
-            (Cofree.tailF $ fromPurePattern patt)
-        )
+    simplifyInternal
+        tools
+        substitutionSimplifier
+        simplifier
+        symbolIdToEvaluator
+        (fromPurePattern patt)
   where
     simplifier = StepPatternSimplifier
         (simplifyToOr tools symbolIdToEvaluator)
@@ -153,13 +142,11 @@ simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt =
 simplifyInternal
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Given (SymbolOrAliasSorts level)
         , Show (variable level)
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
@@ -167,7 +154,7 @@ simplifyInternal
     -> StepPatternSimplifier level variable
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPatternHead level variable (StepPattern level variable)
+    -> Base (StepPattern level variable) (StepPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
@@ -177,7 +164,7 @@ simplifyInternal
     substitutionSimplifier
     simplifier@(StepPatternSimplifier unwrappedSimplifier)
     symbolIdToEvaluator
-    patt
+    (valid :< patt)
   = do
     halfSimplified <- traverse (unwrappedSimplifier substitutionSimplifier) patt
     -- TODO: Remove fst
@@ -191,7 +178,7 @@ simplifyInternal
                 substitutionSimplifier
                 simplifier
                 symbolIdToEvaluator
-                p
+                (valid :< p)
         BottomPattern p -> return $ Bottom.simplify p
         CeilPattern p -> return $ Ceil.simplify tools p
         DomainValuePattern p -> return $ DomainValue.simplify tools p

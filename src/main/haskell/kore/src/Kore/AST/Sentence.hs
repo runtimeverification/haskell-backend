@@ -34,6 +34,7 @@ module Kore.AST.Sentence
     , SentenceHook (..)
     , Sentence (..)
     , sentenceAttributes
+    , eraseSentenceAnnotations
     , AsSentence (..)
     , Module (..)
     , getModuleNameForError
@@ -45,9 +46,11 @@ module Kore.AST.Sentence
     , PureSentence
     , PureModule
     , PureDefinition
+    , VerifiedPureSentence
     , UnifiedSentence (..)
     , constructUnifiedSentence
     , applyUnifiedSentence
+    , eraseUnifiedSentenceAnnotations
     , KoreSentenceSymbol
     , KoreSentenceAlias
     , KoreSentenceImport
@@ -66,6 +69,8 @@ module Kore.AST.Sentence
     , VerifiedKoreSentenceSort
     , VerifiedKoreSentenceHook
     , VerifiedKoreSentence
+    , VerifiedKoreModule
+    , VerifiedKoreDefinition
     , Attributes (..)
     ) where
 
@@ -81,8 +86,10 @@ import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
-import Kore.AST.Kore
-import Kore.AST.Pure
+import qualified Kore.Annotation.Null as Annotation
+import           Kore.AST.Kore as Kore
+import           Kore.AST.Pure as Pure
+import qualified Kore.Domain.Builtin as Domain
 
 {-|'Symbol' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -371,6 +378,19 @@ sentenceAttributes =
                     SentenceSymbol { sentenceSymbolAttributes } ->
                         sentenceSymbolAttributes
 
+-- | Erase the pattern annotations within a 'Sentence'.
+eraseSentenceAnnotations
+    :: Functor domain
+    => Sentence
+        level
+        sortParam
+        (PurePattern level domain variable erased)
+    -> Sentence
+        level
+        sortParam
+        (PurePattern level domain variable (Annotation.Null level))
+eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
+
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
 'Attributes'.
 
@@ -384,7 +404,7 @@ data Module (sentence :: *) =
         , moduleSentences  :: ![sentence]
         , moduleAttributes :: !Attributes
         }
-    deriving (Eq, Generic, Show)
+    deriving (Eq, Functor, Foldable, Generic, Show, Traversable)
 
 instance Hashable sentence => Hashable (Module sentence)
 
@@ -404,7 +424,7 @@ data Definition (sentence :: *) =
         { definitionAttributes :: !Attributes
         , definitionModules    :: ![Module sentence]
         }
-    deriving (Eq, Generic, Show)
+    deriving (Eq, Functor, Foldable, Generic, Show, Traversable)
 
 instance Hashable sentence => Hashable (Definition sentence)
 
@@ -520,6 +540,10 @@ type KoreSentence = UnifiedSentence UnifiedSortVariable CommonKorePattern
 type VerifiedKoreSentence =
     UnifiedSentence UnifiedSortVariable VerifiedKorePattern
 
+type VerifiedKoreModule = Module VerifiedKoreSentence
+
+type VerifiedKoreDefinition = Definition VerifiedKoreSentence
+
 constructUnifiedSentence
     ::  forall a level sortParam patternType.
         MetaOrObject level
@@ -540,6 +564,17 @@ applyUnifiedSentence metaT objectT =
     \case
         UnifiedMetaSentence metaS -> metaT metaS
         UnifiedObjectSentence objectS -> objectT objectS
+
+-- | Erase the pattern annotations within a 'UnifiedSentence'.
+eraseUnifiedSentenceAnnotations
+    :: Functor domain
+    => UnifiedSentence
+        sortParam
+        (KorePattern domain variable erased)
+    -> UnifiedSentence
+        sortParam
+        (KorePattern domain variable (Unified Annotation.Null))
+eraseUnifiedSentenceAnnotations sentence = Kore.eraseAnnotations <$> sentence
 
 -- |'KoreModule' fully instantiates 'Module' to correspond to the second, third,
 -- and forth non-terminals of the @definition@ syntactic category from the
@@ -615,23 +650,38 @@ instance
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level domain =
-    SentenceAxiom (SortVariable level) (CommonPurePattern level domain)
+    SentenceAxiom
+        (SortVariable level)
+        (PurePattern level domain Variable (Annotation.Null level))
 
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
 type PureSentenceAlias level domain =
-    SentenceAlias level (CommonPurePattern level domain)
+    SentenceAlias level (PurePattern level domain Variable (Annotation.Null level))
 
 -- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
 type PureSentenceSymbol level domain =
-    SentenceSymbol level (CommonPurePattern level domain)
+    SentenceSymbol level (PurePattern level domain Variable (Annotation.Null level))
 
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
 type PureSentenceImport level domain =
-    SentenceImport (CommonPurePattern level domain)
+    SentenceImport (PurePattern level domain Variable (Annotation.Null level))
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level domain =
-    Sentence level (SortVariable level) (CommonPurePattern level domain)
+    Sentence level
+        (SortVariable level)
+        (PurePattern level domain Variable (Annotation.Null level))
+
+{- | A 'PureSentence' which has passed verification.
+
+The contained patterns are annotated by 'Valid'.
+
+ -}
+type VerifiedPureSentence level =
+    Sentence
+        level
+        (SortVariable level)
+        (PurePattern level Domain.Builtin Variable (Valid level))
 
 instance
     ( MetaOrObject level

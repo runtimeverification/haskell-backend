@@ -40,9 +40,9 @@ import           Data.Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
-import qualified Kore.Annotation.Null as Annotation
+import           Kore.Annotation.Valid
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Step.ExpandedPattern
@@ -118,14 +118,17 @@ asPattern
     -> Bool  -- ^ builtin value to render
     -> StepPattern Object variable
 asPattern resultSort =
-    DV_ resultSort . Domain.BuiltinPattern . asMetaPattern
+    mkDomainValue resultSort
+        . Domain.BuiltinPattern
+        . eraseAnnotations
+        . asMetaPattern
 
 asMetaPattern
     :: Functor domain
     => Bool
-    -> PurePattern Meta domain variable (Annotation.Null Meta)
-asMetaPattern True = StringLiteral_ "true"
-asMetaPattern False = StringLiteral_ "false"
+    -> PurePattern Meta domain variable (Valid Meta)
+asMetaPattern True = mkStringLiteral "true"
+asMetaPattern False = mkStringLiteral "false"
 
 asExpandedPattern
     :: Sort Object  -- ^ resulting sort

@@ -63,8 +63,6 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.HashMap.Strict
                  ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Reflection
-                 ( Given )
 import           Data.Semigroup
                  ( Semigroup (..) )
 import           Data.Text
@@ -83,10 +81,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd )
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern StringLiteral_ )
+import           Kore.AST.Valid
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
@@ -100,8 +95,7 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( SortDescription, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+                 ( MetadataTools (..) )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
@@ -122,6 +116,7 @@ import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unparser
 
 type Parser = Parsec Void String
 
@@ -628,24 +623,21 @@ functionEvaluator impl =
         => MetadataTools Object StepperAttributes
         -> PredicateSubstitutionSimplifier level Simplifier
         -> StepPatternSimplifier Object variable
-        -> Application Object (StepPattern Object variable)
+        -> CofreeF
+            (Application Object)
+            (Valid Object)
+            (StepPattern Object variable)
         -> Simplifier
             [   ( AttemptedFunction Object variable
                 , SimplificationProof Object
                 )
             ]
-    evaluator
-        tools
-        _
-        simplifier
-        Application
-            { applicationSymbolOrAlias =
-                (MetadataTools.getResultSort tools -> resultSort)
-            , applicationChildren
-            }
-      = do
+    evaluator tools _ simplifier (valid :< app) = do
         attempt <- impl tools simplifier resultSort applicationChildren
         return [(attempt, SimplificationProof)]
+      where
+        Application { applicationChildren } = app
+        Valid { patternSort = resultSort } = valid
 
 {- | Run a parser on a verified domain value.
 
@@ -704,7 +696,7 @@ expectNormalConcreteTerm tools purePattern =
     MaybeT $ return $ do
         p <- asConcretePurePattern purePattern
         -- TODO (thomas.tuegel): Use the return value as the term.
-        _ <- Value.fromConcretePurePattern tools p
+        _ <- Value.fromConcreteStepPattern tools p
         return p
 
 {- | Run a function evaluator that can terminate early.
@@ -718,11 +710,11 @@ getAttemptedFunction attempt =
 
 -- | Return an unsolved unification problem.
 unifyEqualsUnsolved
-    ::  ( Given (SymbolOrAliasSorts level)
-        , Monad m
+    ::  ( Monad m
         , Ord (variable level)
         , SortedVariable variable
         , Show (variable level)
+        , Unparse (variable level)
         , level ~ Object
         , expanded ~ ExpandedPattern level variable
         , patt ~ StepPattern level variable

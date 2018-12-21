@@ -21,6 +21,7 @@ import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Unification.Error
        ( UnificationOrSubstitutionError )
+import Kore.Unparser
 import Kore.Variables.Fresh
        ( FreshVariable )
 
@@ -29,6 +30,7 @@ termAnd
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
@@ -45,6 +47,7 @@ termUnification
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable

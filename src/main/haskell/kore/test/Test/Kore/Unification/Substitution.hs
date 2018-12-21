@@ -7,21 +7,15 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Data.Reflection
-       ( give )
 import Prelude hiding
        ( null )
 
 import Kore.AST.Pure hiding
        ( mapVariables )
-import Kore.IndexedModule.MetadataTools
-       ( SymbolOrAliasSorts )
 import Kore.Step.Pattern
        ( StepPattern )
 import Kore.Unification.Substitution
 
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeSymbolOrAliasSorts )
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_substitution :: [TestTree]
@@ -186,9 +180,4 @@ emptySubst :: Substitution Object Variable
 emptySubst = mempty
 
 singletonSubst :: [(Variable Object, StepPattern Object Variable)]
-singletonSubst = give mockSymbolOrAliasSorts $ [(Mock.x, Mock.a)]
-
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts =
-    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
-
+singletonSubst = [(Mock.x, Mock.a)]

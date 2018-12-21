@@ -18,8 +18,6 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
@@ -32,18 +30,21 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
+
 {-| 'mergeWithPredicateSubstitution' ands the given predicate-substitution
 with the given pattern.
 -}
 mergeWithPredicateSubstitution
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         , Given (MetadataTools level StepperAttributes)
         )
     => MetadataTools level StepperAttributes
@@ -81,9 +82,8 @@ mergeWithPredicateSubstitution
                 [pattPredicate, conditionToMerge]
                 [pattSubstitution, substitutionToMerge]
     (evaluatedCondition, _) <-
-        give (MetadataTools.symbolOrAliasSorts tools)
-            $ Predicate.evaluate
-                substitutionSimplifier simplifier mergedCondition
+        Predicate.evaluate
+            substitutionSimplifier simplifier mergedCondition
     mergeWithEvaluatedCondition
         tools
         substitutionSimplifier
@@ -92,12 +92,13 @@ mergeWithPredicateSubstitution
 
 mergeWithEvaluatedCondition
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

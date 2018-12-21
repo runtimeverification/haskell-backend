@@ -7,9 +7,8 @@ import           Test.Tasty
 
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.IndexedModule.MetadataTools
@@ -58,7 +57,7 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = asExpandedPattern $ impl a b
-        actual <- evaluate $ App_ symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -75,7 +74,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         let expect = asExpandedPattern $ impl a
-        actual <- evaluate $ App_ symb (asPattern <$> [a])
+        actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =

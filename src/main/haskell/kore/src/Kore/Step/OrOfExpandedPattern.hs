@@ -38,19 +38,12 @@ import           Control.DeepSeq
                  ( NFData )
 import           Data.List
                  ( foldl' )
-import           Data.Reflection
-                 ( Given )
 import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
-                 ( SortedVariable, Variable )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkOr )
-import           Kore.IndexedModule.MetadataTools
-                 ( SymbolOrAliasSorts )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
@@ -59,12 +52,22 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.TopBottom
                  ( TopBottom (..) )
+import           Kore.Unparser
 
 {-| 'MultiOr' is a Matching logic or of its children
 
-TODO(virgil): Make this a list-like monad, many things would be nicer.
 -}
-newtype MultiOr child = MultiOr [child]
+{- TODO (virgil): Make 'getMultiOr' a non-empty list ("Data.NonEmpty").
+
+An empty 'MultiOr' corresponding to 'Bottom' actually discards information about
+the sort of its child patterns! That is a problem for simplification, which
+should preserve pattern sorts.
+
+A non-empty 'MultiOr' would also have a nice symmetry between 'Top' and 'Bottom'
+patterns.
+
+-}
+newtype MultiOr child = MultiOr { getMultiOr :: [child] }
   deriving
     (Applicative, Eq, Foldable, Functor, Generic, Monad, Show, Traversable)
 
@@ -137,7 +140,7 @@ a logical sense.
 
  -}
 filterUnique :: Ord a => MultiOr a -> MultiOr a
-filterUnique = MultiOr . Set.toList . Set.fromList . extract
+filterUnique = MultiOr . Set.toList . Set.fromList . getMultiOr
 
 {-| 'make' constructs a normalized 'MultiOr'.
  -}
@@ -161,18 +164,14 @@ makeFromSinglePurePattern
     -> OrOfExpandedPattern level variable
 makeFromSinglePurePattern patt = make [ ExpandedPattern.fromPurePattern patt ]
 
-{-| 'extractPatterns' particularizes 'extract' to ExpandedPattern.
+{-| 'extractPatterns' instantiates 'getMultiOr' at 'ExpandedPattern'.
 
-It returns the patterns inside an 'or'.
+It returns the patterns inside an @\or@.
 -}
 extractPatterns
-    :: OrOfPredicated level variable term -> [Predicated level variable term]
-extractPatterns = extract
-
-{-| 'extract' returns the items inside an 'or'.
--}
-extract :: MultiOr a -> [a]
-extract (MultiOr x) = x
+    :: OrOfPredicated level variable term
+    -> [Predicated level variable term]
+extractPatterns = getMultiOr
 
 {-| 'isFalse' checks if the 'Or' is composed only of bottom items.
 -}
@@ -266,7 +265,7 @@ fmapWithPairs
     -> MultiOr term
     -> (MultiOr term, [a])
 fmapWithPairs mapper patt =
-    (filterOr (fmap fst mapped), extract (fmap snd mapped))
+    (filterOr (fmap fst mapped), getMultiOr (fmap snd mapped))
   where
     mapped = fmap mapper patt
 
@@ -290,7 +289,7 @@ traverseWithPairs
     -> f (MultiOr term, [a])
 traverseWithPairs mapper patt = do
     mapped <- traverse mapper patt
-    return (filterOr (fmap fst mapped), extract (fmap snd mapped))
+    return (filterOr (fmap fst mapped), getMultiOr (fmap snd mapped))
 
 {-| 'fmapFlattenWithPairs' fmaps an or in a similar way to
 'traverseFlattenWithPairs'.
@@ -303,7 +302,7 @@ fmapFlattenWithPairs
     -> MultiOr term
     -> (MultiOr term, [a])
 fmapFlattenWithPairs mapper patt =
-    (flatten (fmap fst mapped), extract (fmap snd mapped))
+    (flatten (fmap fst mapped), getMultiOr (fmap snd mapped))
   where
     mapped = fmap mapper patt
 
@@ -322,7 +321,7 @@ traverseFlattenWithPairs
     -> f (MultiOr term, [a])
 traverseFlattenWithPairs mapper patt = do
     mapped <- traverse mapper patt
-    return (flatten (fmap fst mapped), extract (fmap snd mapped))
+    return (flatten (fmap fst mapped), getMultiOr (fmap snd mapped))
 
 {-| 'traverseFlattenWithPairsGeneric' is similar to 'traverseFlattenWithPairs',
 except that it works on any 'MultiOr'.
@@ -339,7 +338,7 @@ traverseFlattenWithPairsGeneric
     -> f (MultiOr term, [pair])
 traverseFlattenWithPairsGeneric mapper patt = do
     mapped <- traverse mapper patt
-    return (flatten (fmap fst mapped), extract (fmap snd mapped))
+    return (flatten (fmap fst mapped), getMultiOr (fmap snd mapped))
 
 {-| 'filterGeneric' simplifies a MultiOr according to a function which
 evaluates its children to true/false/unknown.
@@ -445,10 +444,10 @@ an 'ExpandedPattern'.
 -}
 toExpandedPattern
     ::  ( MetaOrObject level
-        , Given (SymbolOrAliasSorts level)
         , SortedVariable variable
         , Eq (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         )
     => OrOfExpandedPattern level variable -> ExpandedPattern level variable
 toExpandedPattern (MultiOr []) = ExpandedPattern.bottom

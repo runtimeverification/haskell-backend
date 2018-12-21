@@ -13,18 +13,16 @@ import Test.Tasty.HUnit
 import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( give )
 import qualified Data.Sequence as Seq
 import           Data.These
                  ( These (..) )
 
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartConstructors
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, SymbolOrAliasSorts )
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
@@ -51,18 +49,19 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified SMT
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools, makeSymbolOrAliasSorts )
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_simplificationIntegration :: [TestTree]
-test_simplificationIntegration = give mockSymbolOrAliasSorts
+test_simplificationIntegration =
     [ testCase "owise condition - main case" $ do
         let expect = OrOfExpandedPattern.make []
         actual <-
@@ -78,9 +77,9 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                                 (mkOr
                                     (mkExists Mock.x
                                         (mkAnd
-                                            mkTop
+                                            mkTop_
                                             (mkAnd
-                                                (mkCeil
+                                                (mkCeil_
                                                     (mkAnd
                                                         (Mock.constr10
                                                             (mkVar Mock.x)
@@ -88,14 +87,14 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                                                         (Mock.constr10 Mock.a)
                                                     )
                                                 )
-                                                mkTop
+                                                mkTop_
                                             )
                                         )
                                     )
-                                    mkBottom
+                                    mkBottom_
                                 )
                             )
-                            mkTop
+                            mkTop_
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -116,9 +115,9 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                                 (mkOr
                                     (mkExists Mock.x
                                         (mkAnd
-                                            mkTop
+                                            mkTop_
                                             (mkAnd
-                                                (mkCeil
+                                                (mkCeil_
                                                     (mkAnd
                                                         (Mock.constr10
                                                             (mkVar Mock.x)
@@ -126,14 +125,14 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
                                                         (Mock.constr11 Mock.a)
                                                     )
                                                 )
-                                                mkTop
+                                                mkTop_
                                             )
                                         )
                                     )
-                                    mkBottom
+                                    mkBottom_
                                 )
                             )
-                            mkTop
+                            mkTop_
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -143,7 +142,7 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
         let expect =
                 OrOfExpandedPattern.make
                     [ Predicated
-                        { term = mkTop
+                        { term = mkTop_
                         , predicate = makeCeilPredicate
                             (mkAnd
                                 (Mock.plain10 Mock.cf)
@@ -157,7 +156,7 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
             evaluate
                 mockMetadataTools
                 Predicated
-                    { term = mkCeil
+                    { term = mkCeil_
                         (mkAnd
                             (Mock.constr20
                                 (Mock.plain10 Mock.cf)
@@ -210,7 +209,6 @@ test_simplificationIntegration = give mockSymbolOrAliasSorts
 
 test_substitute :: [TestTree]
 test_substitute =
-    give mockSymbolOrAliasSorts
     [ testCase "Substitution under unary functional constructor" $ do
         let expect =
                 OrOfExpandedPattern.make
@@ -272,7 +270,6 @@ test_substitute =
 
 test_substituteMap :: [TestTree]
 test_substituteMap =
-    give mockSymbolOrAliasSorts
     [ testCase "Substitution applied to Map elements" $ do
         let expect =
                 OrOfExpandedPattern.make
@@ -307,12 +304,10 @@ test_substituteMap =
     ]
   where
     mkDomainBuiltinMap =
-        give mockSymbolOrAliasSorts
-            mkDomainValue Mock.testSort . Domain.BuiltinMap . Map.fromList
+        mkDomainValue Mock.testSort . Domain.BuiltinMap . Map.fromList
 
 test_substituteList :: [TestTree]
 test_substituteList =
-    give mockSymbolOrAliasSorts
     [ testCase "Substitution applied to List elements" $ do
         let expect =
                 OrOfExpandedPattern.make
@@ -347,17 +342,11 @@ test_substituteList =
     ]
   where
     mkDomainBuiltinList =
-        give mockSymbolOrAliasSorts
-            mkDomainValue Mock.testSort . Domain.BuiltinList . Seq.fromList
-
-mockSymbolOrAliasSorts :: SymbolOrAliasSorts Object
-mockSymbolOrAliasSorts =
-    Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
+        mkDomainValue Mock.testSort . Domain.BuiltinList . Seq.fromList
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
-        mockSymbolOrAliasSorts
         Mock.attributesMapping
         Mock.headTypeMapping
         Mock.sortAttributesMapping
@@ -389,6 +378,7 @@ evaluateWithAxioms tools axioms patt =
             , Ord (variable Object)
             , Show (variable Meta)
             , Show (variable Object)
+            , Unparse (variable Object)
             , SortedVariable variable
             )
         => StepPatternSimplifier Object variable

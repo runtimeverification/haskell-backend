@@ -30,6 +30,7 @@ import           Data.Text
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( SentenceSymbol (..) )
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
@@ -48,6 +49,7 @@ import           Kore.Step.Simplification.Equals
                  ( makeEvaluate )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -109,8 +111,8 @@ otherwise.
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-    [ ("KEQUAL.eq", ApplicationFunctionEvaluator (evalKEq True False))
-    , ("KEQUAL.neq", ApplicationFunctionEvaluator (evalKEq False True))
+    [ ("KEQUAL.eq", ApplicationFunctionEvaluator (evalKEq True))
+    , ("KEQUAL.neq", ApplicationFunctionEvaluator (evalKEq False))
     , ("KEQUAL.ite", ApplicationFunctionEvaluator evalKIte)
     ]
 
@@ -119,34 +121,34 @@ evalKEq
         , OrdMetaOrObject variable
         , SortedVariable variable
         , ShowMetaOrObject variable
+        , Unparse (variable Object)
         )
     => Bool
-    -> Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
     -> StepPatternSimplifier Object variable
-    -> Application Object (StepPattern Object variable)
+    -> CofreeF (Application Object) (Valid Object) (StepPattern Object variable)
     -> Simplifier
         [   ( AttemptedFunction Object variable
             , SimplificationProof Object
             )
         ]
-evalKEq true false tools substitutionSimplifier _ pat =
-    case pat of
-        Application
-            { applicationSymbolOrAlias =
-                (MetadataTools.getResultSort tools -> resultSort)
-            , applicationChildren = [t1, t2]
-            } -> evalEq resultSort t1 t2
-        _ -> notApplicableFunctionEvaluator
+evalKEq true tools substitutionSimplifier _ (valid :< app) =
+    case applicationChildren of
+        [t1, t2] -> evalEq t1 t2
+        _ -> Builtin.wrongArity (if true then "KEQUAL.eq" else "KEQUAL.neq")
   where
-    evalEq resultSort t1 t2 = do
+    false = not true
+    Valid { patternSort } = valid
+    Application { applicationChildren } = app
+    evalEq t1 t2 = do
         (result, _proof) <- makeEvaluate tools substitutionSimplifier ep1 ep2
-        if OrOfExpandedPattern.isTrue result
-            then purePatternFunctionEvaluator (Bool.asPattern resultSort true)
-        else if OrOfExpandedPattern.isFalse result
-            then purePatternFunctionEvaluator (Bool.asPattern resultSort false)
-        else notApplicableFunctionEvaluator
+        case () of
+            _ | OrOfExpandedPattern.isTrue result ->
+                purePatternFunctionEvaluator (Bool.asPattern patternSort true)
+              | OrOfExpandedPattern.isFalse result ->
+                purePatternFunctionEvaluator (Bool.asPattern patternSort false)
+              | otherwise -> notApplicableFunctionEvaluator
       where
         ep1 = ExpandedPattern.fromPurePattern t1
         ep2 = ExpandedPattern.fromPurePattern t2
@@ -161,14 +163,14 @@ evalKIte
     => MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
     -> StepPatternSimplifier Object variable
-    -> Application Object (StepPattern Object variable)
+    -> CofreeF (Application Object) (Valid Object) (StepPattern Object variable)
     -> Simplifier
         [   ( AttemptedFunction Object variable
             , SimplificationProof Object
             )
         ]
-evalKIte _ _ _ =
-    \case
+evalKIte _ _ _ (_ :< app) =
+    case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2
         _ -> Builtin.wrongArity "KEQUAL.ite"

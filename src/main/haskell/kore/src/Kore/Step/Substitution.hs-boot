@@ -24,6 +24,7 @@ import Kore.Unification.Error
        ( UnificationOrSubstitutionError )
 import Kore.Unification.Substitution
        ( Substitution )
+import Kore.Unparser
 import Kore.Variables.Fresh
        ( FreshVariable )
 
@@ -32,6 +33,7 @@ mergePredicatesAndSubstitutionsExcept
        , SortedVariable variable
        , MetaOrObject level
        , Ord (variable level)
+       , Unparse (variable level)
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , FreshVariable variable

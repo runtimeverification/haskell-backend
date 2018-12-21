@@ -11,9 +11,8 @@ module Kore.Step.Simplification.Predicate
     ( simplifyPartial
     ) where
 
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartPatterns
-                 ( pattern Top_ )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( Predicate, unwrapPredicate )
 import           Kore.Step.ExpandedPattern

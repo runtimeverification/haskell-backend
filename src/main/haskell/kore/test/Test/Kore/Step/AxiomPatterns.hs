@@ -20,12 +20,11 @@ import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (..), verifyAndIndexDefinition )
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
@@ -37,9 +36,7 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.Pattern
 
 import Test.Kore
-       ( sortVariableSort, testId )
-import Test.Kore.AST.MLPatterns
-       ( extractPurePattern )
+       ( testId )
 import Test.Kore.ASTVerifier.DefinitionVerifier
 
 test_axiomPatterns :: [TestTree]
@@ -55,133 +52,103 @@ axiomPatternsUnitTests =
         [ testCase "I1:AInt => I2:AInt"
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
-                    { left = extractPurePattern varI1
-                    , right = extractPurePattern varI2
-                    , requires = wrapPredicate topAInt
+                    { left = varI1
+                    , right = varI2
+                    , requires = wrapPredicate (mkTop sortAInt)
                     , attributes = def
                     }
                 )
                 ( koreSentenceToAxiomPattern Object
                 $ asKoreAxiomSentence $ axiomSentencePureToKore
-                    (axiom_
-                        (and_ top_
-                            (and_ top_
-                                (rewrites_ varI1 varI2)
+                    (mkAxiom_
+                        (mkAnd
+                            mkTop_
+                            (mkAnd
+                                mkTop_
+                                (mkRewrites varI1 varI2)
                             )
                         )
-                    :: PureSentenceAxiom Object Domain.Builtin)
+                    )
                 )
             )
-        , testCase "definition containing I1:AInt => I2:AInt"
-            (assertEqual ""
-                [ RewriteRule RulePattern
-                    { left = extractPurePattern varI1
-                    , right = extractPurePattern varI2
-                    , requires = wrapPredicate topAInt
-                    , attributes = def
-                    }
-                ]
-                ( extractRewriteAxioms Object
-                $ extractIndexedModule "TEST"
-                    (verifyAndIndexDefinition
+        ,   let
+                axiom1 :: VerifiedKoreSentence
+                axiom1 =
+                    (asKoreAxiomSentence . axiomSentencePureToKore)
+                        (mkAxiom_
+                            (mkAnd
+                                mkTop_
+                                (mkAnd mkTop_ (mkRewrites varI1 varI2))
+                            )
+                        )
+                axiom2 :: VerifiedKoreSentence
+                axiom2 =
+                    (asKoreAxiomSentence . axiomSentencePureToKore)
+                        (mkAxiom_
+                            (mkAnd
+                                mkTop_
+                                (mkAnd
+                                    mkTop_
+                                    (applyInj
+                                        sortKItem
+                                        (mkRewrites varI1 varI2)
+                                    )
+                                )
+                            )
+                        )
+                moduleTest =
+                    Module
+                        { moduleName = ModuleName "TEST"
+                        , moduleSentences =
+                            map
+                                eraseUnifiedSentenceAnnotations
+                                [ axiom1
+                                , axiom2
+                                , sortSentenceAInt
+                                , sortSentenceKItem
+                                , sentencePureToKore symbolSentenceInj
+                                ]
+                        , moduleAttributes = Attributes []
+                        }
+                indexedDefinition =
+                    verifyAndIndexDefinition
                         DoNotVerifyAttributes
                         Builtin.koreVerifiers
                         Definition
                             { definitionAttributes = Attributes []
-                            , definitionModules =
-                                [ Module
-                                    { moduleName = ModuleName "TEST"
-                                    , moduleSentences =
-                                        [ asKoreAxiomSentence
-                                          $ axiomSentencePureToKore
-                                            (axiom_
-                                                (and_ top_
-                                                    (and_ top_
-                                                        (rewrites_ varI1 varI2)
-                                                    )
-                                                )
-                                            :: PureSentenceAxiom Object Domain.Builtin)
-                                        , asKoreAxiomSentence
-                                          $ axiomSentencePureToKore
-                                            (axiom_
-                                                (and_ top_
-                                                    (and_ top_
-                                                        (applyPS symbolInj
-                                                            [sortAInt
-                                                            , sortKItem
-                                                            ]
-                                                            [rewrites_
-                                                                varI1
-                                                                varI2
-                                                            ]
-                                                        )
-                                                    )
-                                                )
-                                            :: PureSentenceAxiom Object Domain.Builtin)
-                                        , asSentence
-                                            (SentenceSort
-                                                { sentenceSortName =
-                                                    testId "AInt"
-                                                , sentenceSortParameters = []
-                                                , sentenceSortAttributes =
-                                                    Attributes []
-                                                }
-                                            ::KoreSentenceSort Object)
-                                        , asSentence
-                                            (SentenceSort
-                                                { sentenceSortName =
-                                                    testId "KItem"
-                                                , sentenceSortParameters = []
-                                                , sentenceSortAttributes =
-                                                    Attributes []
-                                                }
-                                            ::KoreSentenceSort Object)
-                                        , sentencePureToKore $
-                                            asSentence symbolInj
-                                        ]
-                                    , moduleAttributes = Attributes []
-                                    }
-                                ]
+                            , definitionModules = [ moduleTest ]
                             }
-                    )
-                )
-            )
-        , testCase "\"a\" => \"b\""
-            (assertEqual ""
-                (koreFail "Unexpected meta-level pattern")
-                ( koreSentenceToAxiomPattern Object
-                $ asKoreAxiomSentence
-                    SentenceAxiom
-                        { sentenceAxiomPattern =
-                            asCommonKorePattern $ RewritesPattern Rewrites
-                                { rewritesSort =
-                                    sortVariableSort "s"
-                                , rewritesFirst =
-                                    asCommonKorePattern $
-                                        StringLiteralPattern (StringLiteral "a")
-                                , rewritesSecond =
-                                    asCommonKorePattern $
-                                        StringLiteralPattern (StringLiteral "b")
-                                }
-                        , sentenceAxiomParameters = []
-                        , sentenceAxiomAttributes = Attributes []
+            in
+                testCase "definition containing I1:AInt => I2:AInt"
+                $ assertEqual ""
+                    [ RewriteRule RulePattern
+                        { left = varI1
+                        , right = varI2
+                        , requires = wrapPredicate (mkTop sortAInt)
+                        , attributes = def
                         }
-                )
-            )
+                    ]
+                    (extractRewriteAxioms Object
+                        (extractIndexedModule "TEST" indexedDefinition)
+                    )
         , testCase "(I1:AInt => I2:AInt)::KItem"
             (assertEqual ""
                 (koreFail "Unsupported pattern type in axiom")
                 (koreSentenceToAxiomPattern Object
                 $ asKoreAxiomSentence $ axiomSentencePureToKore
-                    (axiom_
-                        (and_ top_
-                            (and_ top_
-                                (applyPS symbolInj [sortAInt, sortKItem]
-                                    [rewrites_ varI1 varI2]
+                    (mkAxiom_
+                        (mkAnd
+                            mkTop_
+                            (mkAnd
+                                mkTop_
+                                (applySymbol
+                                    symbolInj
+                                    [sortAInt, sortKItem]
+                                    [mkRewrites varI1 varI2]
                                 )
                             )
                         )
-                    :: PureSentenceAxiom Object Domain.Builtin)
+                    )
                 )
             )
         ]
@@ -193,78 +160,80 @@ axiomPatternsIntegrationTests =
         [ testCase "I1 <= I2 => I1 <=Int I2 (generated)"
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
-                    { left = extractPurePattern $
-                        applyS symbolTCell
-                          [ applyS symbolKCell
-                              [ applyS symbolKSeq
-                                  [ applyPS symbolInj [sortBExp, sortKItem]
-                                      [ applyS symbolLeqAExp
-                                          [ applyPS symbolInj
-                                              [sortAInt, sortAExp] [varI1]
-                                          , applyPS symbolInj
-                                              [sortAInt, sortAExp] [varI2]
-                                          ]
-                                      ]
-                                  , varKRemainder
-                                  ]
-                              ]
-                          , varStateCell
-                          ]
-                    , right = extractPurePattern $
-                        applyS symbolTCell
-                          [ applyS symbolKCell
-                              [ applyS symbolKSeq
-                                  [ applyPS symbolInj [sortABool, sortKItem]
-                                      [ applyS symbolLeqAInt [ varI1, varI2 ] ]
-                                  , varKRemainder
-                                  ]
-                              ]
-                          , varStateCell
-                          ]
-                    , requires = wrapPredicate topTCell
+                    { left =
+                        applyTCell
+                            (applyKCell
+                                (applyKSeq
+                                    (applyInj sortKItem
+                                        (applyLeqAExp
+                                            (applyInj sortAExp varI1)
+                                            (applyInj sortAExp varI2)
+                                        )
+                                    )
+                                    varKRemainder
+                                )
+                            )
+                            varStateCell
+                    , right =
+                        applyTCell
+                            (applyKCell
+                                (applyKSeq
+                                    (applyInj
+                                        sortKItem
+                                        (applyLeqAInt varI1 varI2)
+                                    )
+                                    varKRemainder
+                                )
+                            )
+                            varStateCell
+                    , requires = wrapPredicate (mkTop sortTCell)
                     , attributes = def
                     }
                 )
-                (koreSentenceToAxiomPattern Object =<< parseAxiom
-                    "axiom{}\\and{TCell{}}(\n\
-                    \    \\top{TCell{}}(),\n\
-                    \    \\and{TCell{}}(\n\
-                    \        \\top{TCell{}}(),\n\
-                    \        \\rewrites{TCell{}}(\n\
-                    \            T{}(\n\
-                    \                k{}(\n\
-                    \                    kseq{}(\n\
-                    \                        inj{BExp{}, KItem{}}(\n\
-                    \                            leqAExp{}(\n\
-                    \                                inj{AInt{}, AExp{}}(\n\
-                    \                                    VarI1:AInt{}\n\
-                    \                                ),\n\
-                    \                                inj{AInt{}, AExp{}}(\n\
-                    \                                    VarI2:AInt{}\n\
-                    \                                )\n\
-                    \                            )\n\
-                    \                        ),\n\
-                    \                        VarDotVar1:K{}\n\
-                    \                    )\n\
-                    \                ),\n\
-                    \                VarDotVar0:StateCell{}\n\
-                    \            ),\n\
-                    \            T{}(\n\
-                    \                k{}(\n\
-                    \                    kseq{}(\n\
-                    \                        inj{ABool{}, KItem{}}(\n\
-                    \                            leqAInt{}(\n\
-                    \                                VarI1:AInt{},\n\
-                    \                                VarI2:AInt{})\n\
-                    \                        ),\n\
-                    \                        VarDotVar1:K{}\n\
-                    \                    )\n\
-                    \                ),\n\
-                    \                VarDotVar0:StateCell{}\n\
-                    \            )\n\
-                    \        )\n\
-                    \    )\n\
-                    \)[]"
+                (do
+                    parsed <-
+                        parseAxiom
+                            "axiom{}\\and{TCell{}}(\n\
+                            \    \\top{TCell{}}(),\n\
+                            \    \\and{TCell{}}(\n\
+                            \        \\top{TCell{}}(),\n\
+                            \        \\rewrites{TCell{}}(\n\
+                            \            T{}(\n\
+                            \                k{}(\n\
+                            \                    kseq{}(\n\
+                            \                        inj{BExp{}, KItem{}}(\n\
+                            \                            leqAExp{}(\n\
+                            \                                inj{AInt{}, AExp{}}(\n\
+                            \                                    VarI1:AInt{}\n\
+                            \                                ),\n\
+                            \                                inj{AInt{}, AExp{}}(\n\
+                            \                                    VarI2:AInt{}\n\
+                            \                                )\n\
+                            \                            )\n\
+                            \                        ),\n\
+                            \                        VarDotVar1:K{}\n\
+                            \                    )\n\
+                            \                ),\n\
+                            \                VarDotVar0:StateCell{}\n\
+                            \            ),\n\
+                            \            T{}(\n\
+                            \                k{}(\n\
+                            \                    kseq{}(\n\
+                            \                        inj{ABool{}, KItem{}}(\n\
+                            \                            leqAInt{}(\n\
+                            \                                VarI1:AInt{},\n\
+                            \                                VarI2:AInt{})\n\
+                            \                        ),\n\
+                            \                        VarDotVar1:K{}\n\
+                            \                    )\n\
+                            \                ),\n\
+                            \                VarDotVar0:StateCell{}\n\
+                            \            )\n\
+                            \        )\n\
+                            \    )\n\
+                            \)[]"
+                    let valid = UnifiedObject Valid { patternSort = sortTCell }
+                    koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
                 )
             )
         ]
@@ -283,45 +252,127 @@ sortAInt = simpleSort (SortName "AInt")
 sortAExp = simpleSort (SortName "AExp")
 sortBExp = simpleSort (SortName "BExp")
 
+sortSentenceAInt :: VerifiedKoreSentence
+sortSentenceAInt =
+    sentencePureToKore (asSentence sentence)
+  where
+    sentence :: SentenceSort Object (CommonStepPattern Object)
+    sentence =
+        SentenceSort
+            { sentenceSortName = testId "AInt"
+            , sentenceSortParameters = []
+            , sentenceSortAttributes = Attributes []
+            }
+
+sortSentenceKItem :: VerifiedKoreSentence
+sortSentenceKItem =
+    sentencePureToKore (asSentence sentence)
+  where
+    sentence :: SentenceSort Object (CommonStepPattern Object)
+    sentence =
+        SentenceSort
+            { sentenceSortName = testId "KItem"
+            , sentenceSortParameters = []
+            , sentenceSortAttributes = Attributes []
+            }
+
 sortParam :: Text -> SortVariable Object
 sortParam name = sortParameter Proxy name AstLocationTest
 
 sortParamSort :: Text -> Sort Object
 sortParamSort = SortVariableSort . sortParam
 
-symbolTCell, symbolKCell :: PureSentenceSymbol Object Domain.Builtin
-symbolTCell =
-    symbol_ "T" AstLocationTest
-        [sortKCell, sortStateCell] sortTCell
+symbolTCell, symbolKCell :: SentenceSymbol Object (CommonStepPattern Object)
+symbolTCell = mkSymbol_ (testId "T") [sortKCell, sortStateCell] sortTCell
 -- symbol T{}(KCell{}, StateCell{}) : TCell{} []
-symbolKCell =
-    symbol_ "k" AstLocationTest [sortK] sortKCell
+applyTCell
+    :: CommonStepPattern Object  -- ^ K cell
+    -> CommonStepPattern Object  -- ^ State cell
+    -> CommonStepPattern Object
+applyTCell kCell stateCell =
+    applySymbol_ symbolTCell [kCell, stateCell]
 
-symbolKSeq, symbolInj :: PureSentenceSymbol Object Domain.Builtin
-symbolKSeq =
-    symbol_ "kseq" AstLocationTest [sortKItem, sortK] sortK
+symbolKCell = mkSymbol_ (testId "k") [sortK] sortKCell
+applyKCell
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+applyKCell child = applySymbol_ symbolKCell [child]
+
+symbolKSeq, symbolInj :: SentenceSymbol Object (CommonStepPattern Object)
+symbolKSeq = mkSymbol_ (testId "kseq") [sortKItem, sortK] sortK
+
 symbolInj =
-    parameterizedSymbol_ "inj" AstLocationTest
+    mkSymbol
+        (testId "inj")
         [sortParam "From", sortParam "To"]
         [sortParamSort "From"]
         (sortParamSort "To")
+
+applyKSeq
+    :: CommonStepPattern Object  -- ^ head
+    -> CommonStepPattern Object  -- ^ tail
+    -> CommonStepPattern Object
+applyKSeq kHead kTail =
+    applySymbol_ symbolKSeq [kHead, kTail]
+
+applyInj
+    :: Sort Object  -- ^ destination sort
+    -> CommonStepPattern Object  -- ^ argument
+    -> CommonStepPattern Object
+applyInj sortTo child =
+    applySymbol symbolInj [sortFrom, sortTo] [child]
+  where
+    Valid { patternSort = sortFrom } = extract child
+
+symbolSentenceInj
+    :: Sentence Object (SortVariable Object) (CommonStepPattern Object)
+symbolSentenceInj = asSentence symbolInj
 -- symbol inj{From,To}(From) : To []
 
-symbolLeqAExp :: PureSentenceSymbol Object Domain.Builtin
-symbolLeqAExp =
-    symbol_ "leqAExp"
-        AstLocationTest [sortAExp, sortAExp] sortBExp
+symbolLeqAExp :: SentenceSymbol Object (CommonStepPattern Object)
+symbolLeqAExp = mkSymbol_ (testId "leqAExp") [sortAExp, sortAExp] sortBExp
 
-symbolLeqAInt :: PureSentenceSymbol Object Domain.Builtin
-symbolLeqAInt =
-    symbol_ "leqAInt"
-        AstLocationTest [sortAInt, sortAInt] sortABool
+applyLeqAExp
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+applyLeqAExp child1 child2 =
+    applySymbol_ symbolLeqAExp [child1, child2]
 
-varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object Domain.Builtin
-varI1 = parameterizedVariable_ sortAInt "VarI1" AstLocationTest
-varI2 = parameterizedVariable_ sortAInt "VarI2" AstLocationTest
-varKRemainder = parameterizedVariable_ sortK "VarDotVar1" AstLocationTest
-varStateCell = parameterizedVariable_ sortStateCell "VarDotVar0" AstLocationTest
+symbolLeqAInt :: SentenceSymbol Object (CommonStepPattern Object)
+symbolLeqAInt = mkSymbol_ (testId "leqAInt") [sortAInt, sortAInt] sortABool
+
+applyLeqAInt
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonStepPattern Object
+applyLeqAInt child1 child2 = applySymbol_ symbolLeqAInt [child1, child2]
+
+varI1, varI2, varKRemainder, varStateCell :: CommonStepPattern Object
+
+varI1 =
+    mkVar Variable
+        { variableName = testId "VarI1"
+        , variableSort = sortAInt
+        }
+
+varI2 =
+    mkVar Variable
+        { variableName = testId "VarI2"
+        , variableSort = sortAInt
+        }
+
+varKRemainder =
+    mkVar Variable
+        { variableName = testId "VarDotVar1"
+        , variableSort = sortK
+        }
+
+varStateCell =
+    mkVar Variable
+        { variableName = testId "VarDotVar0"
+        , variableSort = sortStateCell
+        }
 
 parseAxiom :: String -> Either (Error a) KoreSentence
 parseAxiom str =
@@ -339,9 +390,3 @@ extractIndexedModule name eModules =
         Right modules -> fromMaybe
             (error ("Module " ++ Text.unpack name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
-
-topAInt :: CommonStepPattern Object
-topAInt = Top_ sortAInt
-
-topTCell :: CommonStepPattern Object
-topTCell = Top_ sortTCell

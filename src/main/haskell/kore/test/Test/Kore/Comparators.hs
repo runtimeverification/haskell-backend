@@ -22,6 +22,7 @@ import Numeric.Natural
        ( Natural )
 
 import qualified Kore.Annotation.Null as Annotation
+import           Kore.Annotation.Valid
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.OnePath.Step
@@ -1293,4 +1294,17 @@ instance
 
 instance EqualWithExplanation (Annotation.Null level) where
     compareWithExplanation _ _ = Nothing
+    printWithExplanation = show
+
+instance StructEqualWithExplanation (Valid level) where
+    structFieldsWithNames expected actual =
+        [ EqWrap
+            "patternSort = "
+            (patternSort expected)
+            (patternSort actual)
+        ]
+    structConstructorName _ = "Valid"
+
+instance EqualWithExplanation (Valid level) where
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

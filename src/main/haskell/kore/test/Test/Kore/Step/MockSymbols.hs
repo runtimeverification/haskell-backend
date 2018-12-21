@@ -2,8 +2,7 @@ module Test.Kore.Step.MockSymbols where
 
 {- Intended usage:
    * Import qualified.
-   * use symbolOrAliasSortsMapping and attributesMapping to build
-     mock SymbolOrAliasSorts and MetadataTools.
+   * use attributesMapping to build mock MetadataTools.
    * Use things like a, b, c, x, y, z for testing.
 
    RULES:
@@ -22,8 +21,6 @@ module Test.Kore.Step.MockSymbols where
 -}
 
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( Given )
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 
@@ -32,16 +29,14 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( asConcretePurePattern )
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
-import           Kore.ASTUtils.SmartConstructors
+import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, SymbolOrAliasSorts )
+                 ( HeadType )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Sort
@@ -153,11 +148,12 @@ lessIntId :: Id level
 lessIntId = testId "lessIntId"
 greaterEqIntId :: Id level
 greaterEqIntId = testId "greaterEqIntId"
-
 elemListId :: Id level
 elemListId = testId "elemList"
 concatListId :: Id level
 concatListId = testId "concatList"
+sigmaId :: Id level
+sigmaId = testId "sigma"
 
 aSymbol :: SymbolOrAlias Object
 aSymbol = SymbolOrAlias
@@ -452,6 +448,12 @@ concatListSymbol = SymbolOrAlias
     , symbolOrAliasParams = []
     }
 
+sigmaSymbol :: SymbolOrAlias Object
+sigmaSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = sigmaId
+    , symbolOrAliasParams      = []
+    }
+
 var_x_1 :: Variable Object
 var_x_1 = Variable (testId "var_x_1") testSort
 var_y_1 :: Variable Object
@@ -467,665 +469,264 @@ m = Variable (testId "m") mapSort
 xInt :: Variable Object
 xInt = Variable (testId "xInt") intSort
 
-a   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-a = mkApp aSymbol []
+a :: StepPattern Object variable
+a = mkApp testSort aSymbol []
 
-aConcrete :: Given (SymbolOrAliasSorts Object) => ConcreteStepPattern Object
+aConcrete :: ConcreteStepPattern Object
 aConcrete = let Just r = asConcretePurePattern a in r
 
-aSort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-aSort0 = mkApp aSort0Symbol []
+aSort0 :: StepPattern Object variable
+aSort0 = mkApp testSort0 aSort0Symbol []
 
-aSort1
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-aSort1 = mkApp aSort1Symbol []
+aSort1 :: StepPattern Object variable
+aSort1 = mkApp testSort1 aSort1Symbol []
 
-aSubsort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-aSubsort = mkApp aSubsortSymbol []
+aSubsort :: StepPattern Object variable
+aSubsort = mkApp subSort aSubsortSymbol []
 
-aSubSubsort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-aSubSubsort = mkApp aSubSubsortSymbol []
+aSubSubsort :: StepPattern Object variable
+aSubSubsort = mkApp subSubSort aSubSubsortSymbol []
 
-aOtherSort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-aOtherSort = mkApp aOtherSortSymbol []
+aOtherSort :: StepPattern Object variable
+aOtherSort = mkApp otherSort aOtherSortSymbol []
 
-b   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-b = mkApp bSymbol []
+b :: StepPattern Object variable
+b = mkApp testSort bSymbol []
 
-bConcrete :: Given (SymbolOrAliasSorts Object) => ConcreteStepPattern Object
+bConcrete :: ConcreteStepPattern Object
 bConcrete = let Just r = asConcretePurePattern b in r
 
-bSort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-bSort0 = mkApp bSort0Symbol []
+bSort0 :: StepPattern Object variable
+bSort0 = mkApp testSort0 bSort0Symbol []
 
-c   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-c = mkApp cSymbol []
+c :: StepPattern Object variable
+c = mkApp testSort cSymbol []
 
-d   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-d = mkApp dSymbol []
+d :: StepPattern Object variable
+d = mkApp testSort dSymbol []
 
-e   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-e = mkApp eSymbol []
+e :: StepPattern Object variable
+e = mkApp testSort eSymbol []
 
-f   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
-f arg = mkApp fSymbol [arg]
+f :: StepPattern Object variable -> StepPattern Object variable
+f arg = mkApp testSort fSymbol [arg]
 
-g   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
-g arg = mkApp gSymbol [arg]
+g :: StepPattern Object variable -> StepPattern Object variable
+g arg = mkApp testSort gSymbol [arg]
 
-h   :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
-h arg = mkApp hSymbol [arg]
+h :: StepPattern Object variable -> StepPattern Object variable
+h arg = mkApp testSort hSymbol [arg]
 
-cf  :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-cf = mkApp cfSymbol []
+cf :: StepPattern Object variable
+cf = mkApp testSort cfSymbol []
 
-cfSort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-cfSort0 = mkApp cfSort0Symbol []
+cfSort0 :: StepPattern Object variable
+cfSort0 = mkApp testSort0 cfSort0Symbol []
 
-cfSort1
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-cfSort1 = mkApp cfSort1Symbol []
+cfSort1 :: StepPattern Object variable
+cfSort1 = mkApp testSort1 cfSort1Symbol []
 
-cg  :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-cg = mkApp cgSymbol []
+cg :: StepPattern Object variable
+cg = mkApp testSort cgSymbol []
 
-cgSort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-cgSort0 = mkApp cgSort0Symbol []
+cgSort0 :: StepPattern Object variable
+cgSort0 = mkApp testSort0 cgSort0Symbol []
 
-ch  :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-ch = mkApp chSymbol []
+ch :: StepPattern Object variable
+ch = mkApp testSort chSymbol []
 
-plain00
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-plain00 = mkApp plain00Symbol []
+plain00 :: StepPattern Object variable
+plain00 = mkApp testSort plain00Symbol []
 
-plain00Sort0
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-plain00Sort0 = mkApp plain00Sort0Symbol []
+plain00Sort0 :: StepPattern Object variable
+plain00Sort0 = mkApp testSort0 plain00Sort0Symbol []
 
-plain00Subsort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-plain00Subsort = mkApp plain00SubsortSymbol []
+plain00Subsort :: StepPattern Object variable
+plain00Subsort = mkApp subSort plain00SubsortSymbol []
 
-plain00SubSubsort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-plain00SubSubsort = mkApp plain00SubSubsortSymbol []
+plain00SubSubsort :: StepPattern Object variable
+plain00SubSubsort = mkApp subSubSort plain00SubSubsortSymbol []
 
 plain10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
-plain10 arg = mkApp plain10Symbol [arg]
+    :: StepPattern Object variable -> StepPattern Object variable
+plain10 arg = mkApp testSort plain10Symbol [arg]
 
 plain11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable -> StepPattern Object variable
-plain11 arg = mkApp plain11Symbol [arg]
+    :: StepPattern Object variable -> StepPattern Object variable
+plain11 arg = mkApp testSort plain11Symbol [arg]
 
 plain20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-plain20 arg1 arg2 = mkApp plain20Symbol [arg1, arg2]
+plain20 arg1 arg2 = mkApp testSort plain20Symbol [arg1, arg2]
 
 constr10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-constr10 arg = mkApp constr10Symbol [arg]
+constr10 arg = mkApp testSort constr10Symbol [arg]
 
 constr11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-constr11 arg = mkApp constr11Symbol [arg]
+constr11 arg = mkApp testSort constr11Symbol [arg]
 
 constr20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-constr20 arg1 arg2 = mkApp constr20Symbol [arg1, arg2]
+constr20 arg1 arg2 = mkApp testSort constr20Symbol [arg1, arg2]
 
 function20MapTest
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-function20MapTest arg1 arg2 = mkApp function20MapTestSymbol [arg1, arg2]
+function20MapTest arg1 arg2 =
+    mkApp testSort function20MapTestSymbol [arg1, arg2]
 
-functional00
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-functional00 = mkApp functional00Symbol []
+functional00 :: StepPattern Object variable
+functional00 = mkApp testSort functional00Symbol []
 
-functional01
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-functional01 = mkApp functional01Symbol []
+functional01 :: StepPattern Object variable
+functional01 = mkApp testSort functional01Symbol []
 
 functional10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-functional10 arg = mkApp functional10Symbol [arg]
+functional10 arg = mkApp testSort functional10Symbol [arg]
 
 functional11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-functional11 arg = mkApp functional11Symbol [arg]
+functional11 arg = mkApp testSort functional11Symbol [arg]
 
 functional20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-functional20 arg1 arg2 = mkApp functional20Symbol [arg1, arg2]
+functional20 arg1 arg2 = mkApp testSort functional20Symbol [arg1, arg2]
 
-functional00SubSubSort
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
-functional00SubSubSort = mkApp functional00SubSubSortSymbol []
+functional00SubSubSort :: StepPattern Object variable
+functional00SubSubSort = mkApp subSubSort functional00SubSubSortSymbol []
 
 functionalConstr10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-functionalConstr10 arg = mkApp functionalConstr10Symbol [arg]
+functionalConstr10 arg =
+    mkApp testSort functionalConstr10Symbol [arg]
 
 functionalConstr11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-functionalConstr11 arg = mkApp functionalConstr11Symbol [arg]
+functionalConstr11 arg = mkApp testSort functionalConstr11Symbol [arg]
 
 functionalConstr20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-functionalConstr20 arg1 arg2 = mkApp functionalConstr20Symbol [arg1, arg2]
+functionalConstr20 arg1 arg2 =
+    mkApp testSort functionalConstr20Symbol [arg1, arg2]
 
 functionalTopConstr20
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-functionalTopConstr20 arg1 arg2 = mkApp functionalTopConstr20Symbol [arg1, arg2]
+functionalTopConstr20 arg1 arg2 =
+    mkApp testSort functionalTopConstr20Symbol [arg1, arg2]
 
 functionalTopConstr21
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-functionalTopConstr21 arg1 arg2 = mkApp functionalTopConstr21Symbol [arg1, arg2]
+functionalTopConstr21 arg1 arg2 =
+    mkApp testSort functionalTopConstr21Symbol [arg1, arg2]
 
 injective10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-injective10 arg = mkApp injective10Symbol [arg]
+injective10 arg = mkApp testSort injective10Symbol [arg]
 
 injective11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-injective11 arg = mkApp injective11Symbol [arg]
+injective11 arg = mkApp testSort injective11Symbol [arg]
 
 sortInjection10
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-sortInjection10 arg = mkApp sortInjection10Symbol [arg]
+sortInjection10 arg =
+    mkApp testSort sortInjection10Symbol [arg]
 
 sortInjection11
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-sortInjection11 arg = mkApp sortInjection11Symbol [arg]
+sortInjection11 arg =
+    mkApp testSort sortInjection11Symbol [arg]
 
 sortInjection0ToTop
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-sortInjection0ToTop arg = mkApp sortInjection0ToTopSymbol [arg]
+sortInjection0ToTop arg =
+    mkApp topSort sortInjection0ToTopSymbol [arg]
 
 sortInjectionSubToTop
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-sortInjectionSubToTop arg = mkApp sortInjectionSubToTopSymbol [arg]
+sortInjectionSubToTop arg = mkApp topSort sortInjectionSubToTopSymbol [arg]
 
 sortInjectionSubSubToTop
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-sortInjectionSubSubToTop arg = mkApp sortInjectionSubSubToTopSymbol [arg]
+sortInjectionSubSubToTop arg =
+    mkApp topSort sortInjectionSubSubToTopSymbol [arg]
 
 sortInjectionSubSubToSub
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-sortInjectionSubSubToSub arg = mkApp sortInjectionSubSubToSubSymbol [arg]
+sortInjectionSubSubToSub arg =
+    mkApp subSort sortInjectionSubSubToSubSymbol [arg]
 
 sortInjectionOtherToTop
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
-sortInjectionOtherToTop arg = mkApp sortInjectionOtherToTopSymbol [arg]
+sortInjectionOtherToTop arg =
+    mkApp topSort sortInjectionOtherToTopSymbol [arg]
 
 concatMap
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-concatMap m1 m2 = mkApp concatMapSymbol [m1, m2]
+concatMap m1 m2 = mkApp mapSort concatMapSymbol [m1, m2]
 
 lessInt
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-lessInt i1 i2 = mkApp lessIntSymbol [i1, i2]
+lessInt i1 i2 = mkApp boolSort lessIntSymbol [i1, i2]
 
 greaterEqInt
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-greaterEqInt i1 i2 = mkApp greaterEqIntSymbol [i1, i2]
+greaterEqInt i1 i2 = mkApp boolSort greaterEqIntSymbol [i1, i2]
 
 elementMap
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-elementMap m1 m2 = mkApp elementMapSymbol [m1, m2]
+elementMap m1 m2 = mkApp mapSort elementMapSymbol [m1, m2]
 
 concatList
-    :: Given (SymbolOrAliasSorts Object)
-    => StepPattern Object variable
+    :: StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
-concatList l1 l2 = mkApp concatListSymbol [l1, l2]
+concatList l1 l2 = mkApp listSort concatListSymbol [l1, l2]
 
-symbolOrAliasSortsMapping :: [(SymbolOrAlias Object, ApplicationSorts Object)]
-symbolOrAliasSortsMapping =
-    [   ( aSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( aSort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort0
-            }
-        )
-    ,   ( aSort1Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort1
-            }
-        )
-    ,   ( aSubsortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = subSort
-            }
-        )
-    ,   ( aSubSubsortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = subSubSort
-            }
-        )
-    ,   ( aOtherSortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = otherSort
-            }
-        )
-    ,   ( bSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( bSort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort0
-            }
-        )
-    ,   ( cSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( dSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( eSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( fSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( gSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( hSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( cfSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( cfSort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort0
-            }
-        )
-    ,   ( cfSort1Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort1
-            }
-        )
-    ,   ( cgSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( cgSort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort0
-            }
-        )
-    ,   ( chSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( plain00Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( plain00Sort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort0
-            }
-        )
-    ,   ( plain00SubsortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = subSort
-            }
-        )
-    ,   ( functional00SubSubSortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = subSubSort
-            }
-        )
-    ,   ( plain00SubSubsortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = subSubSort
-            }
-        )
-    ,   ( plain10Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( plain11Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( plain20Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( constr10Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( constr11Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( constr20Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( function20MapTestSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [mapSort, testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functional00Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functional01Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functional10Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functional11Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functional20Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functionalConstr10Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functionalConstr11Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functionalConstr20Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functionalTopConstr20Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [topSort, testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( functionalTopConstr21Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort, topSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( injective10Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( injective11Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( sortInjection10Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort0]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( sortInjection11Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort1]
-            , applicationSortsResult = testSort
-            }
-        )
-    ,   ( sortInjection0ToTopSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort0]
-            , applicationSortsResult = topSort
-            }
-        )
-    ,   ( sortInjectionSubToTopSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [subSort]
-            , applicationSortsResult = topSort
-            }
-        )
-    ,   ( sortInjectionSubSubToTopSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [subSubSort]
-            , applicationSortsResult = topSort
-            }
-        )
-    ,   ( sortInjectionSubSubToSubSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [subSubSort]
-            , applicationSortsResult = subSort
-            }
-        )
-    ,   ( sortInjectionOtherToTopSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [otherSort]
-            , applicationSortsResult = topSort
-            }
-        )
-    ,   ( unitMapSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult = mapSort
-            }
-        )
-    ,   ( elementMapSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult = mapSort
-            }
-        )
-    ,   ( concatMapSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [mapSort, mapSort]
-            , applicationSortsResult = mapSort
-            }
-        )
-    ,   ( concatListSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [listSort, listSort]
-            , applicationSortsResult = listSort
-            }
-        )
-    ,   ( lessIntSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [intSort, intSort]
-            , applicationSortsResult = boolSort
-            }
-        )
-    ,   ( greaterEqIntSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [intSort, intSort]
-            , applicationSortsResult = boolSort
-            }
-        )
-    ]
+sigma
+    :: StepPattern Object variable
+    -> StepPattern Object variable
+    -> StepPattern Object variable
+sigma child1 child2 = mkApp testSort sigmaSymbol [child1, child2]
 
 attributesMapping :: [(SymbolOrAlias Object, StepperAttributes)]
 attributesMapping =
@@ -1309,6 +910,9 @@ attributesMapping =
             , smtlib = Smtlib (Just (SMT.Atom ">="))
             }
         )
+    ,   ( sigmaSymbol
+        , Mock.constructorFunctionalAttributes
+        )
     ]
 
 headTypeMapping :: [(SymbolOrAlias Object, HeadType)]
@@ -1485,6 +1089,9 @@ headTypeMapping =
         , HeadType.Symbol
         )
     ,   ( greaterEqIntSymbol
+        , HeadType.Symbol
+        )
+    ,   ( sigmaSymbol
         , HeadType.Symbol
         )
     ]

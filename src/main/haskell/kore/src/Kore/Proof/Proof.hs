@@ -14,7 +14,6 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
 
-
 module Kore.Proof.Proof
   ( PropF(..)
   , Prop
@@ -42,20 +41,18 @@ import           Data.Foldable
 import           Data.Functor.Foldable
 import           Data.Hashable
 import           Data.Maybe
-import           Data.Reflection
 import qualified Data.Set as S
 import           Data.Text.Prettyprint.Doc as P
 import           GHC.Generics
                  ( Generic )
 
 import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.ASTPrettyPrint
-import           Kore.ASTUtils.SmartConstructors
-import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTUtils.Substitution
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
 import           Kore.Unparser
+import           Kore.Variables.Free
 
 -- A note about partial pattern matches:
 -- The basic Kore datatype has quite a few constructors,
@@ -78,7 +75,7 @@ import           Kore.Unparser
 impossible :: a
 impossible = error "The impossible happened."
 
-type Term = CommonPurePattern Object Domain.Builtin
+type Term = PurePattern Object Domain.Builtin Variable (Valid Object)
 type Var = Variable Object
 
 -- | Fix-able functor representing a single deduction step
@@ -278,7 +275,7 @@ getAssumptions = assumptions . unfix
 getFreeVars :: Proof -> S.Set Var
 getFreeVars proof =
     S.unions
-  $ map freeVars
+  $ map freePureVariables
   $ S.toList
   $ getAssumptions proof
 
@@ -298,10 +295,7 @@ assume formula = By formula (Assumption formula) (S.singleton formula)
 -- The "mundane" rules are passed off to "interpretRule"
 -- which instantiates the schema.
 
-useRule
-  :: Given (SymbolOrAliasSorts Object)
-  => LargeRule Proof
-  -> Proof
+useRule :: LargeRule Proof -> Proof
 useRule (Assumption formula)
  = assume formula
 useRule (Discharge hypothesis conclusion)
@@ -353,10 +347,7 @@ useRule rule =
 
 -- | Given a rule such as `AndIntro a b`, converts it to the proposition
 -- that it proves, such as "a /\ b".
-interpretRule
-  :: Given (SymbolOrAliasSorts Object)
-  => LargeRule Proof
-  -> Term
+interpretRule :: LargeRule Proof -> Term
 interpretRule = \case
   ModusPonens a b ->
       let (Implies_ _ a' b') = getConclusion b
@@ -369,39 +360,39 @@ interpretRule = \case
           ++ prettyPrintToString (getConclusion a)
           ++ "in ModusPonens"
   FunctionalSubst x phi y phi' ->
-      (mkForall x phi) `mkImplies` ((mkExists y (phi' `mkEquals` Var_ y))
+      (mkForall x phi) `mkImplies` ((mkExists y (phi' `mkEquals_` mkVar y))
       `mkImplies`
-      (subst (Var_ x) phi' phi))
+      (subst (mkVar x) phi' phi))
   FunctionalVar x y ->
-      mkExists y (Var_ x `mkEquals` Var_ y)
+      mkExists y (mkVar x `mkEquals_` mkVar y)
   EqualityIntro a ->
-      mkEquals a a
+      mkEquals_ a a
   EqualityElim phi1 phi2 phi path ->
-        (phi1 `mkEquals` phi2)
+        (phi1 `mkEquals_` phi2)
         `mkImplies` (
             phi
             `mkImplies`
             (localInPattern path (subst phi1 phi2) phi)
         )
   MembershipForall x phi ->
-      (mkForall x (Var_ x `mkIn` phi)) `mkEquals` phi
+      (mkForall x (mkVar x `mkIn_` phi)) `mkEquals_` phi
   MembershipEq x y ->
-      (Var_ x `mkIn` Var_ y)
-      `mkEquals`
-      (Var_ x `mkEquals` Var_ y)
+      (mkVar x `mkIn_` mkVar y)
+      `mkEquals_`
+      (mkVar x `mkEquals_` mkVar y)
   MembershipAnd x phi1 phi2 ->
-      (Var_ x `mkIn` (phi1 `mkAnd` phi2))
-      `mkEquals`
-      ((Var_ x `mkIn` phi1) `mkAnd` (Var_ x `mkIn` phi2))
+      (mkVar x `mkIn_` (phi1 `mkAnd` phi2))
+      `mkEquals_`
+      ((mkVar x `mkIn_` phi1) `mkAnd` (mkVar x `mkIn_` phi2))
   MembershipExists x y phi ->
-      (Var_ x `mkIn` (mkExists y phi))
-      `mkEquals`
-      (mkExists y (Var_ x `mkIn` phi))
+      (mkVar x `mkIn_` (mkExists y phi))
+      `mkEquals_`
+      (mkExists y (mkVar x `mkIn_` phi))
   MembershipCong x y i phi ->
-      (Var_ x `mkIn` phi)
-      `mkEquals`
-      (mkExists y $ (Var_ y `mkIn` phi_i) `mkAnd` (Var_ x `mkIn` phi'))
-        where phi'       = phi & inPath [i] .~ (Var_ y)
+      (mkVar x `mkIn_` phi)
+      `mkEquals_`
+      (mkExists y $ (mkVar y `mkIn_` phi_i) `mkAnd` (mkVar x `mkIn_` phi'))
+        where phi'       = phi & inPath [i] .~ (mkVar y)
               Just phi_i = phi ^? inPath [i]
   AndIntro a b ->
       mkAnd (getConclusion a) (getConclusion b)
@@ -410,23 +401,20 @@ interpretRule = \case
   AndElimR a ->
       fromJust $ getConclusion a ^? inPath [1]
   ExistsIntro var term property ->
-      mkExists var $ subst (Var_ var) term $ getConclusion property
+      mkExists var $ subst (mkVar var) term $ getConclusion property
   OrIntroL a b ->
       mkOr (getConclusion a) b
   OrIntroR a b ->
       mkOr a (getConclusion b)
   ForallElim term proof ->
       case getConclusion proof of
-          Forall_ s v p -> subst (Var_ v) term p
+          Forall_ s v p -> subst (mkVar v) term p
           _             -> impossible
   TopIntro ->
-      mkTop
+      mkTop_
   _ -> impossible
 
-floorIfNotPredicate
-     :: Given (SymbolOrAliasSorts Object)
-     => Term
-     -> Term
+floorIfNotPredicate :: Term -> Term
 floorIfNotPredicate p
  | isObviouslyPredicate p = p
- | otherwise = mkFloor p
+ | otherwise = mkFloor_ p

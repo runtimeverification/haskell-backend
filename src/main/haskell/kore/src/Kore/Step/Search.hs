@@ -57,6 +57,7 @@ import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -123,12 +124,12 @@ matchWith
     :: forall level variable .
         ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
         , FreshVariable variable
         , Ord (variable level)
         , OrdMetaOrObject variable
         , Show (variable level)
         , ShowMetaOrObject variable
+        , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier

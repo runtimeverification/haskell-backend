@@ -12,18 +12,15 @@ import           Control.Monad.Trans.Except
 import           Data.Default
                  ( def )
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( give )
 import           Numeric.Natural
                  ( Natural )
 
 import           Data.Limit
                  ( Limit (..) )
-import           Kore.AST.MetaOrObject
-import           Kore.ASTUtils.SmartConstructors
-                 ( mkVar )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SymbolOrAliasSorts )
+                 ( MetadataTools (..) )
 import qualified Kore.OnePath.Verification as OnePath
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
@@ -52,7 +49,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_onePathVerification :: [TestTree]
-test_onePathVerification = give symbolOrAliasSorts
+test_onePathVerification =
     [ testCase "Runs zero steps" $ do
         -- Axiom: a => b
         -- Claim: a => b
@@ -287,13 +284,9 @@ test_onePathVerification = give symbolOrAliasSorts
             actual
     ]
   where
-    symbolOrAliasSorts :: SymbolOrAliasSorts Object
-    symbolOrAliasSorts =
-        Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping
     metadataTools :: MetadataTools Object StepperAttributes
     metadataTools =
         Mock.makeMetadataTools
-            symbolOrAliasSorts
             Mock.attributesMapping
             Mock.headTypeMapping
             Mock.sortAttributesMapping

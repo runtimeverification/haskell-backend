@@ -15,9 +15,9 @@ import qualified Data.Text as Text
 
 import Kore.AST.Builders
 import Kore.AST.MetaOrObject
+import Kore.AST.Pure
 import Kore.Implicit.ImplicitVarsInternal
 import Kore.MetaML.AST
-import Kore.Sort
 
 parameterizedEqualsAxiom
     :: [SortVariable Meta]

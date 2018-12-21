@@ -8,84 +8,68 @@ Stability   : experimental
 Portability : portable
 -}
 
-module Test.Kore.ASTUtils.AlphaCompare
-    ( test_alphaEq
-    ) where
+module Test.Kore.ASTUtils.AlphaCompare where
 
-import Test.Tasty
-import Test.Tasty.QuickCheck as QC
+import           Hedgehog
+                 ( Gen )
+import qualified Hedgehog
+import           Test.Tasty
+import           Test.Tasty.Hedgehog
 
-import Data.Reflection
-       ( give )
+import Control.Monad
+       ( when )
 
 import Kore.AST.Pure
+import Kore.AST.Valid
 import Kore.ASTUtils.AlphaCompare
-import Kore.ASTUtils.SmartConstructors
-import Kore.IndexedModule.MetadataTools
-       ( SymbolOrAliasSorts )
 import Kore.Step.Pattern
 
 import           Test.Kore
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 
-test_alphaEq :: TestTree
-test_alphaEq = testGroup ""
-    [ alphaComparePositives
-    , alphaCompareNegatives
-    , alphaEq1
-    , alphaEqMap
-    , alphaEqList
-    ]
+test_alphaComparePositives :: TestTree
+test_alphaComparePositives =
+    testProperty "alphaCompare x x == True" $ Hedgehog.property $ do
+        x :: CommonStepPattern Object <- Hedgehog.forAll stepPatternGen
+        Hedgehog.assert (alphaEq x x)
 
-alphaComparePositives :: TestTree
-alphaComparePositives =
-    QC.testProperty
-    "alphaCompare x x == True" $
-    forAll (stepPatternGen Object) $
-    (\(x :: CommonStepPattern Object) -> alphaEq x x)
+test_alphaCompareNegatives :: TestTree
+test_alphaCompareNegatives =
+    testProperty "x /y ==> alphaCompare x y == False" $ Hedgehog.property $ do
+        (x, y) <- Hedgehog.forAll pairs
+        when (x == y) Hedgehog.discard
+        Hedgehog.assert (not $ alphaEq x y)
+  where
+    pairs :: Gen (CommonStepPattern Object, CommonStepPattern Object)
+    pairs = (,) <$> stepPatternGen <*> stepPatternGen
 
-alphaCompareNegatives :: TestTree
-alphaCompareNegatives =
-    QC.testProperty
-    "x /y ==> alphaCompare x y == False" $
-    forAll pairs $
-    (\(x, y) -> (x /= y) ==> not (alphaEq x y))
-      where
-       pairs = (,) <$> stepPatternGen Object <*> stepPatternGen Object
+test_alphaEq1 :: TestTree
+test_alphaEq1 =
+    testProperty "(forall a. a) = (forall b. b)" $ Hedgehog.property $ do
+        let forall1 = mkForall v1 (mkVar v1)
+            forall2 = mkForall v2 (mkVar v2)
+        Hedgehog.assert (alphaEq forall1 forall2)
 
-alphaEq1 :: TestTree
-alphaEq1 =
-    give symbolOrAliasSorts $
-    QC.testProperty
-    "(forall a. a) = (forall b. b)" $
-    alphaEq (mkForall v1 (mkVar v1)) (mkForall v2 (mkVar v2))
+test_alphaEqList :: TestTree
+test_alphaEqList =
+    testProperty "forall a. [a, x] = forall b. [b, x]" $ Hedgehog.property $ do
+        let forall1 = mkForall v1 $ Mock.builtinList [mkVar v1, mkVar v3]
+            forall2 = mkForall v2 $ Mock.builtinList [mkVar v2, mkVar v3]
+        Hedgehog.assert (alphaEq forall1 forall2)
 
-alphaEqList :: TestTree
-alphaEqList =
-    give symbolOrAliasSorts $
-    QC.testProperty
-    "forall a. [a, x] = forall b. [b, x]" $
-    alphaEq
-        (mkForall v1 $ Mock.builtinList [mkVar v1, mkVar v3])
-        (mkForall v2 $ Mock.builtinList [mkVar v2, mkVar v3])
-
-
-alphaEqMap :: TestTree
-alphaEqMap =
-    give symbolOrAliasSorts $
-    QC.testProperty
-    "(forall a. x |-> a) = (forall b. x |-> b)" $
-    alphaEq
-        (mkForall v1 $ Mock.builtinMap [(mkTop, mkVar v1)])
-        (mkForall v2 $ Mock.builtinMap [(mkTop, mkVar v2)])
+test_alphaEqMap :: TestTree
+test_alphaEqMap =
+    testProperty
+        "(forall a. x |-> a) = (forall b. x |-> b)"
+        $ Hedgehog.property $ do
+            let forall1 = mkForall v1 $ Mock.builtinMap [(mkTop_, mkVar v1)]
+                forall2 = mkForall v2 $ Mock.builtinMap [(mkTop_, mkVar v2)]
+            Hedgehog.assert (alphaEq forall1 forall2)
 
 s :: Sort Object
 s = mkSort "S"
+
 v1, v2, v3 :: Variable Object
 v1 = varS "a" s
 v2 = varS "b" s
 v3 = varS "c" s
-
-symbolOrAliasSorts :: SymbolOrAliasSorts Object
-symbolOrAliasSorts = Mock.makeSymbolOrAliasSorts Mock.symbolOrAliasSortsMapping

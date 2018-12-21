@@ -22,7 +22,7 @@ import           Data.Text
 import           Kore.AST.Kore
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
@@ -68,18 +68,18 @@ test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
             , asSentence $ constructorDecl "b"
             , asSentence $ constructorDecl "c"
             , asSentence $ constructorDecl "d"
-            , asKoreAxiomSentence $ functionalAxiom "a"
-            , asKoreAxiomSentence $ functionalAxiom "b"
-            , asKoreAxiomSentence $ functionalAxiom "c"
-            , asKoreAxiomSentence $ functionalAxiom "d"
-            , asKoreAxiomSentence $ rewritesAxiom "a" "b"
-            , asKoreAxiomSentence $ rewritesAxiom "b" "c"
-            , asKoreAxiomSentence $ rewritesAxiom "c" "d"
+            , functionalAxiom "a"
+            , functionalAxiom "b"
+            , functionalAxiom "c"
+            , functionalAxiom "d"
+            , rewritesAxiom "a" "b"
+            , rewritesAxiom "b" "c"
+            , rewritesAxiom "c" "d"
             ]
         , moduleAttributes = Attributes []
         }
-    inputPattern = applyToNoArgs "b"
-    expected = applyToNoArgs "d"
+    inputPattern = applyToNoArgs mySort "b"
+    expected = applyToNoArgs mySort "d"
 
 test_search :: TestTree
 test_search =
@@ -112,25 +112,25 @@ test_search =
             , asSentence $ constructorDecl "c"
             , asSentence $ constructorDecl "d"
             , asSentence $ constructorDecl "e"
-            , asKoreAxiomSentence $ functionalAxiom "a"
-            , asKoreAxiomSentence $ functionalAxiom "b"
-            , asKoreAxiomSentence $ functionalAxiom "c"
-            , asKoreAxiomSentence $ functionalAxiom "d"
-            , asKoreAxiomSentence $ functionalAxiom "e"
-            , asKoreAxiomSentence $ rewritesAxiom "a" "b"
-            , asKoreAxiomSentence $ rewritesAxiom "a" "c"
-            , asKoreAxiomSentence $ rewritesAxiom "c" "d"
-            , asKoreAxiomSentence $ rewritesAxiom "e" "a"
+            , functionalAxiom "a"
+            , functionalAxiom "b"
+            , functionalAxiom "c"
+            , functionalAxiom "d"
+            , functionalAxiom "e"
+            , rewritesAxiom "a" "b"
+            , rewritesAxiom "a" "c"
+            , rewritesAxiom "c" "d"
+            , rewritesAxiom "e" "a"
             ]
         , moduleAttributes = Attributes []
         }
-    inputPattern = applyToNoArgs "a"
+    inputPattern = applyToNoArgs mySort "a"
     expected =
         let
-            a = applyToNoArgs "a"
-            b = applyToNoArgs "b"
-            c = applyToNoArgs "c"
-            d = applyToNoArgs "d"
+            a = applyToNoArgs mySort "a"
+            b = applyToNoArgs mySort "b"
+            c = applyToNoArgs mySort "c"
+            d = applyToNoArgs mySort "d"
         in
             \case
                 ONE -> Set.fromList [b, c]
@@ -141,7 +141,7 @@ test_search =
 -- | V:MySort{}
 searchVar :: CommonStepPattern Object
 searchVar =
-    Var_ Variable
+    mkVar Variable
         { variableName = Id "V" AstLocationTest
         , variableSort = mySort
         }
@@ -165,24 +165,19 @@ extractSearchResults =
     \case
         Equals_ operandSort resultSort first second
           | operandSort == mySort
-            && resultSort == predicateSort
+            && resultSort == mySort
             && first == searchVar
           -> Just $ Set.singleton second
         Or_ sort first second
-          | sort == predicateSort
+          | sort == mySort
           ->
             liftA2
                 Set.union
                 (extractSearchResults first)
                 (extractSearchResults second)
         _ -> Nothing
-  where
-    predicateSort = SortActualSort SortActual
-        { sortActualName = "PREDICATE"
-        , sortActualSorts = []
-        }
 
-verifiedMyModule :: KoreModule -> VerifiedModule StepperAttributes
+verifiedMyModule :: VerifiedKoreModule -> VerifiedModule StepperAttributes
 verifiedMyModule module_ = indexedModule
   where
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules
@@ -192,7 +187,7 @@ verifiedMyModule module_ = indexedModule
         definition
     definition = Definition
         { definitionAttributes = Attributes []
-        , definitionModules = [module_]
+        , definitionModules = [eraseUnifiedSentenceAnnotations <$> module_]
         }
 
 mySortName :: Id Object
@@ -205,7 +200,7 @@ mySort = SortActualSort SortActual
     }
 
 -- | sort MySort{} []
-mySortDecl :: KoreSentenceSort Object
+mySortDecl :: VerifiedKoreSentenceSort Object
 mySortDecl = SentenceSort
     { sentenceSortName = mySortName
     , sentenceSortParameters = []
@@ -213,20 +208,14 @@ mySortDecl = SentenceSort
     }
 
 -- | symbol name{}() : MySort{} [functional{}(), constructor{}()]
-constructorDecl :: Text -> KoreSentenceSymbol Object
-constructorDecl name = SentenceSymbol
-    { sentenceSymbolSymbol =
-        Symbol
-            { symbolConstructor = Id name AstLocationTest
-            , symbolParams = []
-            }
-    , sentenceSymbolSorts = []
-    , sentenceSymbolResultSort = mySort
-    , sentenceSymbolAttributes = Attributes
-        [ functionalAttribute
-        , constructorAttribute
-        ]
-    }
+constructorDecl :: Text -> VerifiedKoreSentenceSymbol Object
+constructorDecl name =
+    (mkSymbol_ (testId name) [] mySort)
+        { sentenceSymbolAttributes = Attributes
+            [ functionalAttribute
+            , constructorAttribute
+            ]
+        }
 
 -- |
 --  axiom{R}
@@ -236,23 +225,23 @@ constructorDecl name = SentenceSymbol
 --              V:MySort{},
 --              a{}()))
 --  [functional{}()]
-functionalAxiom :: Text -> KoreSentenceAxiom
-functionalAxiom name = SentenceAxiom
-    { sentenceAxiomParameters = [UnifiedObject r]
-    , sentenceAxiomPattern =
-        asCommonKorePattern $ ExistsPattern Exists
-            { existsSort = SortVariableSort r
-            , existsVariable = v
-            , existsChild =
-                asCommonKorePattern $ EqualsPattern Equals
-                    { equalsOperandSort = mySort
-                    , equalsResultSort = SortVariableSort r
-                    , equalsFirst = asCommonKorePattern $ VariablePattern v
-                    , equalsSecond = patternPureToKore $ applyToNoArgs name
-                    }
-            }
-    , sentenceAxiomAttributes = Attributes [functionalAttribute]
-    }
+functionalAxiom
+    :: Text
+    -> VerifiedKoreSentence
+functionalAxiom name =
+    constructUnifiedSentence
+        ((<$>) patternPureToKore . SentenceAxiomSentence)
+        (mkAxiom
+            [UnifiedObject r]
+            (mkExists v
+                (mkEquals
+                    (SortVariableSort r)
+                    (mkVar v)
+                    (applyToNoArgs mySort name)
+                )
+            )
+        )
+            { sentenceAxiomAttributes = Attributes [functionalAttribute] }
   where
     v = Variable
         { variableName = Id "V" AstLocationTest
@@ -270,31 +259,29 @@ functionalAxiom name = SentenceAxiom
 --                  lhsName{}(),
 --                  rhsName{}())))
 --  []
-rewritesAxiom :: Text -> Text -> KoreSentenceAxiom
-rewritesAxiom lhsName rhsName = SentenceAxiom
-    { sentenceAxiomParameters = []
-    , sentenceAxiomPattern = asCommonKorePattern $ AndPattern And
-        { andSort = mySort
-        , andFirst = asCommonKorePattern $ TopPattern $ Top mySort
-        , andSecond = asCommonKorePattern $ AndPattern And
-            { andSort = mySort
-            , andFirst = asCommonKorePattern $ TopPattern $ Top mySort
-            , andSecond = asCommonKorePattern $ RewritesPattern Rewrites
-                { rewritesSort = mySort
-                , rewritesFirst = patternPureToKore $ applyToNoArgs lhsName
-                , rewritesSecond = patternPureToKore $ applyToNoArgs rhsName
-                }
-            }
-        }
-    , sentenceAxiomAttributes = Attributes []
-    }
+rewritesAxiom :: Text -> Text -> VerifiedKoreSentence
+rewritesAxiom lhsName rhsName =
+    constructUnifiedSentence
+        ((<$>) patternPureToKore . SentenceAxiomSentence)
+        (mkAxiom_
+            (mkAnd
+                (mkTop mySort)
+                (mkAnd
+                    (mkTop mySort)
+                    (mkRewrites
+                        (applyToNoArgs mySort lhsName)
+                        (applyToNoArgs mySort rhsName)
+                    )
+                )
+            )
+        )
 
-applyToNoArgs :: Text -> CommonStepPattern Object
-applyToNoArgs name =
-    App_
-    (SymbolOrAlias
-        { symbolOrAliasConstructor = testId name
-        , symbolOrAliasParams = []
-        }
-    )
-    []
+applyToNoArgs :: Sort Object -> Text -> CommonStepPattern Object
+applyToNoArgs sort name =
+    mkApp
+        sort
+        SymbolOrAlias
+            { symbolOrAliasConstructor = testId name
+            , symbolOrAliasParams = []
+            }
+        []

@@ -21,10 +21,8 @@ import qualified Data.Map.Strict as Map
 import           Data.These
                  ( These )
 
-import Kore.AST.Common
-       ( Application, SortedVariable, Variable )
-import Kore.AST.Identifier
-import Kore.AST.MetaOrObject
+import Kore.AST.Pure
+import Kore.AST.Valid
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.OrOfExpandedPattern
@@ -35,6 +33,7 @@ import Kore.Step.Simplification.Data
        StepPatternSimplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
+import Kore.Unparser
 import Kore.Variables.Fresh
        ( FreshVariable )
 
@@ -66,12 +65,16 @@ newtype ApplicationFunctionEvaluator level =
             , SortedVariable variable
             , Show (variable level)
             , Show (variable Object)
+            , Unparse (variable level)
             , ShowMetaOrObject variable
             )
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level Simplifier
         -> StepPatternSimplifier level variable
-        -> Application level (StepPattern level variable)
+        -> CofreeF
+            (Application level)
+            (Valid level)
+            (StepPattern level variable)
         -> Simplifier
             [   ( AttemptedFunction level variable
                 , SimplificationProof level

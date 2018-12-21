@@ -54,8 +54,9 @@ import           Numeric
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
+import           Kore.Annotation.Valid
 import           Kore.AST.Pure
-import           Kore.ASTUtils.SmartPatterns
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
@@ -196,18 +197,17 @@ asConcretePattern
     :: Sort Object  -- ^ resulting sort
     -> String  -- ^ builtin value to render
     -> ConcreteStepPattern Object
-asConcretePattern domainValueSort result =
-    (asPurePattern . (mempty :<) . DomainValuePattern)
-        DomainValue
-            { domainValueSort
-            , domainValueChild = Domain.BuiltinPattern $ asMetaPattern result
-            }
+asConcretePattern domainValueSort =
+    mkDomainValue domainValueSort
+        . Domain.BuiltinPattern
+        . eraseAnnotations
+        . asMetaPattern
 
 asMetaPattern
     :: Functor domain
     => String
-    -> CommonPurePattern Meta domain
-asMetaPattern result = StringLiteral_ $ result
+    -> PurePattern Meta domain variable (Valid Meta)
+asMetaPattern result = mkStringLiteral $ result
 
 asExpandedPattern
     :: Sort Object  -- ^ resulting sort
