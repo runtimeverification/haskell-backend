@@ -30,8 +30,6 @@ import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import qualified Kore.Builtin as Builtin
 import           Kore.Exec
-import           Kore.Implicit.ImplicitSorts
-                 ( predicateSort )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Predicate.Predicate
@@ -167,11 +165,11 @@ extractSearchResults =
     \case
         Equals_ operandSort resultSort first second
           | operandSort == mySort
-            && resultSort == predicateSort
+            && resultSort == mySort
             && first == searchVar
           -> Just $ Set.singleton second
         Or_ sort first second
-          | sort == predicateSort
+          | sort == mySort
           ->
             liftA2
                 Set.union

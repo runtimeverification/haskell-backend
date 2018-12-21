@@ -446,7 +446,7 @@ mainWithOptions
                 Just specIndexedModule ->
                     either
                         (\pat -> (ExitFailure 1, pat))
-                        (\_ -> (ExitSuccess, mkTop_))
+                        (\_ -> (ExitSuccess, mkTop $ mkSortVariable "R" ))
                     <$> prove
                             stepLimit
                             indexedModule
