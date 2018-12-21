@@ -1,7 +1,7 @@
 module SET-UNIFY-FRAMING-VARIABLE
-  
+
   imports DOMAINS
-  
+
   syntax Val ::= "a" | "b" | "c"
 
   configuration
@@ -10,7 +10,7 @@ module SET-UNIFY-FRAMING-VARIABLE
       <s1> SetItem(a) SetItem(b) SetItem(c) </s1>
     </T>
 
-  rule 
+  rule
     <k> V:Val </k>
     <s1> (SetItem(V) => .Set) X:Set </s1>
 

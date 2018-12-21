@@ -22,9 +22,9 @@ $(DEFINITION): set-unify-concrete-2.k $(K)
 %.output.golden: %.output
 	mv $< $<.golden
 
-test: tests/1.test tests/2.test tests/3.test 
+test: tests/1.test tests/2.test tests/3.test
 
-test-k: tests/1.test tests/2.test tests/3.test 
+test-k: tests/1.test tests/2.test tests/3.test
 
 golden: tests/1.output.golden tests/2.output.golden tests/3.output.golden
 

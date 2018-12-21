@@ -23,7 +23,7 @@ module AINT
   rule addWithCarry(.AInt, I:AInt, One) => addWithCarry(One .AInt, I, Zero)
   rule addWithCarry(I:AInt, .AInt, Zero) => I
   rule addWithCarry(I:AInt, .AInt, One) => addWithCarry(I, One .AInt, Zero)
-  
+
   rule addWithCarry(Zero I1:AInt, B:ABool I2:AInt, Zero) => B addWithCarry(I1, I2, Zero)
   rule addWithCarry(B:ABool I1:AInt, Zero I2:AInt, Zero) => B addWithCarry(I1, I2, Zero)
   rule addWithCarry(Zero I1:AInt, Zero I2:AInt, B:ABool) => B addWithCarry(I1, I2, Zero)

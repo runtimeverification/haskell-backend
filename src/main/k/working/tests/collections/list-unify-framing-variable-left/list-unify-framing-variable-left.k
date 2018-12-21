@@ -1,7 +1,7 @@
 module LIST-UNIFY-FRAMING-VARIABLE-LEFT
-  
+
   imports DOMAINS
-  
+
   syntax Val ::= "a" | "b" | "c"
 
   configuration
@@ -10,7 +10,7 @@ module LIST-UNIFY-FRAMING-VARIABLE-LEFT
       <s1> ListItem(a) ListItem(b) ListItem(c) </s1>
     </T>
 
-  rule 
+  rule
     <k> V:Val </k>
     <s1> X:List (ListItem(V) => .List) </s1>
 

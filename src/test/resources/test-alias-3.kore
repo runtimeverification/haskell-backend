@@ -7,7 +7,7 @@ module TEST-ALIAS-3
 
   symbol g{}(S{}, S{}) : S{} []
 
-  alias f{}(S{},S{}) : S{} 
+  alias f{}(S{},S{}) : S{}
   where f{}(X:S{}, Y:S{}) := g{}(Y:S{}, X:S{}) []
 
 endmodule []
