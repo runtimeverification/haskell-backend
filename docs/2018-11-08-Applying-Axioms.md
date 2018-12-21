@@ -33,7 +33,7 @@ Note: • is "strong next" in this document
    with terms (only) containing variables from `X`. If there are equalities
    substituting variables from `X`, they should be considered as part of the
    predicate `p(X,Y)`.
- 
+
    Then, `α(Y) ∧ φ(X) = tα(Y) ∧ subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X)`
 
    Note: `\ceil(α(Y) ∧ φ(X)) = subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X)`

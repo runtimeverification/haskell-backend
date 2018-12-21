@@ -1,8 +1,8 @@
 module LIST-UNIFY-CONCRETE
-  
+
   imports DOMAINS
-  
-  syntax Val ::= "x" | "y" | "z" 
+
+  syntax Val ::= "x" | "y" | "z"
                | "success" | "ready"
                | "test1" | "test2" | "test3" | "test4" | "test5"
 
@@ -16,35 +16,35 @@ module LIST-UNIFY-CONCRETE
   // --- some initial values ---
 
   // PASS
-  rule 
+  rule
     <k> test1 => ready ... </k>
     <a> .List => ListItem(x) ListItem(y) ListItem(z) </a>
     <b> .List => ListItem(x) ListItem(y) ListItem(z) </b>
 
   // PASS
-  rule 
+  rule
     <k> test2 => ready ... </k>
     <a> .List => ListItem(x) ListItem(y) </a>
     <b> .List => ListItem(x) ListItem(y) ListItem(z) </b>
 
   // PASS
-  rule 
+  rule
     <k> test3 => ready ... </k>
     <a> .List => ListItem(x) ListItem(y) </a>
     <b> .List => ListItem(x) ListItem(z) </b>
-  
+
   // PASS
-  rule 
+  rule
     <k> test4 => ready ... </k>
     <b> .List => ListItem(x) ListItem(z) </b>
 
   // PASS
-  rule 
+  rule
     <k> test5 => ready ... </k>
 
   // --- compare two lists ---
 
-  rule 
+  rule
     <k> ready => success ... </k>
     <a> L1:List </a>
     <b> L1      </b>

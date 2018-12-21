@@ -38,7 +38,7 @@ module IMP
     <T> <k> $PGM:Pgm </k> <state> .State </state> </T>
 
   rule S1:Stmt S2:Stmt => S1 ~> S2
-  
+
   rule <k> X:AId = I:AInt ; => .K ...</k> <state> S:State => set(S, X, I) </state>
 
   rule while (C:BExp) S:Block => if (C) { S while (C) S } else {}
