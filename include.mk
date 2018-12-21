@@ -3,12 +3,12 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 
 BUILD_DIR := $(TOP)/.build
-K_SUBMODULE := $(BUILD_DIR)/k
+K_NIGHTLY := $(BUILD_DIR)/nightly.tar.gz
+K_DIR := $(BUILD_DIR)/k
 # The K submodule reflog is used as a source timestamp.
-K_SRC := $(TOP)/.git/modules/deps/k/logs/HEAD
-K_PACKAGE := $(K_SUBMODULE)/k-distribution/target/release/k
-K_BIN := $(K_PACKAGE)/bin
-K_LIB := $(K_PACKAGE)/lib
+K_BIN := $(K_DIR)/bin
+K_LIB := $(K_DIR)/lib
+K_REPO := 'https://github.com/kframework/k'
 
 # The kernel JAR is used as a build timestamp.
 K := $(K_LIB)/java/kernel-1.0-SNAPSHOT.jar
@@ -41,16 +41,5 @@ KPROVE_OPTS ?= --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
 
 FORCE:
 
-$(K_SUBMODULE): FORCE
-	if test ! -f $(K_SUBMODULE)/pom.xml; then \
-		git submodule update --init -- $(K_SUBMODULE); \
-	fi
-
-$(K_SRC): $(K_SUBMODULE)
-
 $(KORE_EXEC): FORCE
 	stack build $(STACK_BUILD_OPTS) kore:exe:kore-exec
-
-$(K): $(K_SRC)
-	cd $(K_SUBMODULE) && mvn package -q -DskipTests -U
-	rm -f $(K_BIN)/ng

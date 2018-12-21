@@ -3,11 +3,19 @@ include include.mk
 jenkins: STACK_OPTS += --test --bench --coverage
 export STACK_OPTS
 
-.PHONY: all clean clean-submodules distclean docs haddock jenkins kore stylish \
+.PHONY: all clean clean-submodules distclean docs haddock jenkins kore k-frontend stylish \
         test test-kore test-k
 
 kore:
 	stack build $(STACK_BUILD_OPTS)
+
+k-frontend:
+	mkdir -p $(BUILD_DIR)
+	rm -rf $(K_DIR) $(K_NIGHTLY)
+	wget --output-document $(K_NIGHTLY) \
+	    $$(curl 'https://api.github.com/repos/kframework/k/releases' | jq --raw-output '.[0].assets[0].browser_download_url')
+	mkdir --parents $(K_DIR)
+	tar --extract --verbose --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIR)
 
 docs: haddock
 
@@ -23,7 +31,7 @@ haddock:
 		cp -r $$(stack path --local-doc-root) haskell_documentation; \
 	fi
 
-all: kore
+all: kore k-frontend
 
 test: test-kore test-k
 
@@ -39,10 +47,9 @@ test-k:
 jenkins: distclean check all test docs
 
 distclean: clean
-	if test -f $(K_SUBMODULE)/pom.xml; then \
-		cd $(K_SUBMODULE) && mvn clean -q; \
+	if test -f $(K_DIR)/pom.xml; then \
+		cd $(K_DIR) && mvn clean -q; \
 	fi
-	git submodule deinit --force -- ./
 
 clean: clean-submodules
 	stack clean
