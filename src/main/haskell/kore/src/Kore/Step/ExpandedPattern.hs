@@ -18,6 +18,7 @@ module Kore.Step.ExpandedPattern
     , Kore.Step.ExpandedPattern.allVariables
     , erasePredicatedTerm
     , bottom
+    , bottomOf
     , isBottom
     , isTop
     , Kore.Step.ExpandedPattern.mapVariables
@@ -25,6 +26,7 @@ module Kore.Step.ExpandedPattern
     , substitutionToPredicate
     , toMLPattern
     , top
+    , topOf
     , topPredicate
     , bottomPredicate
     , Kore.Step.ExpandedPattern.fromPurePattern
@@ -248,6 +250,19 @@ bottom =
         , substitution = mempty
         }
 
+{- | An 'ExpandedPattern' where the 'term' is 'Bottom' of the given 'Sort'.
+
+The 'predicate' is set to 'makeFalsePredicate'.
+
+ -}
+bottomOf :: MetaOrObject level => Sort level -> ExpandedPattern level variable
+bottomOf resultSort =
+    Predicated
+        { term      = mkBottom resultSort
+        , predicate = makeFalsePredicate
+        , substitution = mempty
+        }
+
 {-|'top' is an expanded pattern that has a top condition and that
 should become Top when transformed to a ML pattern.
 -}
@@ -255,6 +270,16 @@ top :: MetaOrObject level => ExpandedPattern level variable
 top =
     Predicated
         { term      = mkTop_
+        , predicate = makeTruePredicate
+        , substitution = mempty
+        }
+
+{- | An 'ExpandedPattern' where the 'term' is 'Top' of the given 'Sort'.
+ -}
+topOf :: MetaOrObject level => Sort level -> ExpandedPattern level variable
+topOf resultSort =
+    Predicated
+        { term      = mkTop resultSort
         , predicate = makeTruePredicate
         , substitution = mempty
         }
