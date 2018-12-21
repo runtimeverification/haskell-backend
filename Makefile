@@ -3,7 +3,7 @@ include include.mk
 jenkins: STACK_OPTS += --test --bench --coverage
 export STACK_OPTS
 
-.PHONY: all clean clean-submodules distclean docs haddock jenkins kore k-frontend stylish \
+.PHONY: all clean docs haddock jenkins kore k-frontend stylish \
         test test-kore test-k
 
 kore:
@@ -44,17 +44,13 @@ test-kore:
 test-k:
 	$(MAKE) -C src/main/k/working test-k
 
-jenkins: distclean check all test docs
+jenkins: clean check all test docs
 
-distclean: clean
-	if test -f $(K_DIR)/pom.xml; then \
-		cd $(K_DIR) && mvn clean -q; \
-	fi
-
-clean: clean-submodules
+clean:
 	stack clean
 	find . -name '*.tix' -exec rm -f '{}' \;
 	$(MAKE) -C src/main/k/working clean
+	rm -rf $(BUILD_DIR)
 
 check:
 	if ! ./scripts/git-assert-clean.sh; \
