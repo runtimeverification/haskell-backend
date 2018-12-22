@@ -32,8 +32,8 @@ import           Kore.IndexedModule.IndexedModule
 
 {-| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. -}
-data AttributesVerification atts
-    = VerifyAttributes (Proxy atts)
+data AttributesVerification declAtts axiomAtts
+    = VerifyAttributes (Proxy declAtts) (Proxy axiomAtts)
     | DoNotVerifyAttributes
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
@@ -44,11 +44,11 @@ parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 verifyAttributes
     :: MonadError (Error VerifyError) m
     => Attributes
-    -> AttributesVerification atts
+    -> AttributesVerification declAtts axiomAtts
     -> m VerifySuccess
 verifyAttributes
     (Attributes patterns)
-    (VerifyAttributes _)
+    (VerifyAttributes _ _)
   = do
     withContext
         "attributes"
@@ -81,15 +81,15 @@ verifyAttributePattern =
 
  -}
 verifySortHookAttribute
-    :: KoreIndexedModule atts
-    -> AttributesVerification atts
+    :: KoreIndexedModule declAtts axiomAtts
+    -> AttributesVerification declAtts axiomAtts
     -> Attributes
     -> Either (Error VerifyError) Hook
 verifySortHookAttribute _indexedModule =
     \case
         DoNotVerifyAttributes ->
             \_ -> return emptyHook
-        VerifyAttributes _ ->
+        VerifyAttributes _ _ ->
             \attributes -> parseAttributes attributes
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
@@ -100,7 +100,7 @@ verifySortHookAttribute _indexedModule =
 
  -}
 verifySymbolHookAttribute
-    :: AttributesVerification atts
+    :: AttributesVerification declAtts axiomAtts
     -> Attributes
     -> Either (Error VerifyError) Hook
 verifySymbolHookAttribute =
@@ -108,7 +108,7 @@ verifySymbolHookAttribute =
         DoNotVerifyAttributes ->
             -- Do not attempt to parse, verify, or return the hook attribute.
             \_ -> return emptyHook
-        VerifyAttributes _ ->
+        VerifyAttributes _ _ ->
             \attributes -> parseAttributes attributes
 
 {- | Verify that the @hook{}()@ attribute is not present.
@@ -117,7 +117,7 @@ verifySymbolHookAttribute =
 
  -}
 verifyNoHookAttribute
-    :: AttributesVerification atts
+    :: AttributesVerification declAtts axiomAtts
     -> Attributes
     -> Either (Error VerifyError) ()
 verifyNoHookAttribute =
@@ -125,7 +125,7 @@ verifyNoHookAttribute =
         DoNotVerifyAttributes ->
             -- Do not verify anything.
             \_ -> return ()
-        VerifyAttributes _ -> \attributes -> do
+        VerifyAttributes _ _ -> \attributes -> do
             Hook { getHook } <- castError (parseAttributes attributes)
             case getHook of
                 Nothing ->

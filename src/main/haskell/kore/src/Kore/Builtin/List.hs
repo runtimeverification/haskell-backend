@@ -278,7 +278,7 @@ builtinFunctions =
 
  -}
 asPattern
-    :: VerifiedModule attrs
+    :: VerifiedModule declAttrs axiomAttrs
     -- ^ indexed module where pattern would appear
     -> Sort Object
     -> Either (Kore.Error e)
@@ -301,7 +301,7 @@ asPattern indexedModule dvSort = do
 
  -}
 asExpandedPattern
-    :: VerifiedModule attrs
+    :: VerifiedModule declAttrs axiomAttrs
     -- ^ dictionary of Map constructor symbols
     -> Sort Object
     -> Either (Kore.Error e)
@@ -313,7 +313,7 @@ asExpandedPattern symbols resultSort =
  -}
 lookupSymbolUnit
     :: Sort Object
-    -> VerifiedModule attrs
+    -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolUnit = Builtin.lookupSymbol "LIST.unit"
 
@@ -321,7 +321,7 @@ lookupSymbolUnit = Builtin.lookupSymbol "LIST.unit"
  -}
 lookupSymbolElement
     :: Sort Object
-    -> VerifiedModule attrs
+    -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolElement = Builtin.lookupSymbol "LIST.element"
 
@@ -329,7 +329,7 @@ lookupSymbolElement = Builtin.lookupSymbol "LIST.element"
  -}
 lookupSymbolConcat
     :: Sort Object
-    -> VerifiedModule attrs
+    -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolConcat = Builtin.lookupSymbol "LIST.concat"
 
@@ -337,7 +337,7 @@ lookupSymbolConcat = Builtin.lookupSymbol "LIST.concat"
  -}
 lookupSymbolGet
     :: Sort Object
-    -> VerifiedModule attrs
+    -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolGet = Builtin.lookupSymbol "LIST.get"
 

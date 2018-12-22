@@ -34,6 +34,8 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.AxiomPatterns
+                 ( AxiomPatternAttributes )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Pattern
@@ -177,7 +179,9 @@ extractSearchResults =
                 (extractSearchResults second)
         _ -> Nothing
 
-verifiedMyModule :: VerifiedKoreModule -> VerifiedModule StepperAttributes
+verifiedMyModule
+    :: VerifiedKoreModule
+    -> VerifiedModule StepperAttributes AxiomPatternAttributes
 verifiedMyModule module_ = indexedModule
   where
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules

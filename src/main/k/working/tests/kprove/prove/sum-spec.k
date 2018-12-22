@@ -1,28 +1,15 @@
 // Copyright (c) 2016-2018 K Team. All Rights Reserved.
+requires "verification.k"
 
 
-module VERIFICATION
-  imports IMP
-
-// verification ids
-  syntax Id ::= "n"     [token]
-              | "sum"   [token]
-endmodule
-
-
-module SUM-SPEC
-  imports IMP
+module SUM-INVARIANT
   imports VERIFICATION
-
 
 rule
     <k>
-      while (!(n <= 0)) {
-        sum = sum + n + n;
-        n = n + -1;
-      }
+     loop
     =>
-      .K
+     .K
     ...</k>
   <state>
       n   |-> (N:Int => 0)
@@ -30,15 +17,15 @@ rule
   </state>
 requires N >=Int 0
 
+endmodule
+
+
+module SUM-SPEC
+  imports SUM-INVARIANT
+
 rule
     <k>
-      int n, sum;
-      n = N:Int;
-      sum = 0;
-      while (!(n <= 0)) {
-        sum = sum + n + n;
-        n = n + -1;
-      }
+      main(N:Int)
     =>
       .K
     </k>

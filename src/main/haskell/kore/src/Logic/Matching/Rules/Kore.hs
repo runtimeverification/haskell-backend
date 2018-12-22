@@ -15,11 +15,11 @@ import           Kore.AST.PureToKore
                  ( patternPureToKore )
 import           Kore.ASTUtils.SmartPatterns
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Attribute.Null as Attribute
 import           Kore.Error
                  ( Error, castError, koreFail, koreFailWhen, withContext )
 import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule, mapIndexedModulePatterns )
+                 ( VerifiedModule, makeIndexedModuleAttributesNull,
+                 mapIndexedModulePatterns )
 import           Kore.MetaML.AST
                  ( CommonMetaPattern, metaFreeVariables )
 import           Kore.Substitution.Class
@@ -46,7 +46,7 @@ type Rule = MLRule Symbol Var Formula
 
 -- To get an indexed module one can use `verifyAndIndexDefinition`
 formulaVerifier
-    :: VerifiedModule atts
+    :: VerifiedModule specAtts axiomAtts
     -> CommonMetaPattern
     -> Either (Error MLError) ()
 formulaVerifier verifiedModule formula = do
@@ -59,7 +59,7 @@ formulaVerifier verifiedModule formula = do
         mapIndexedModulePatterns eraseAnnotations verifiedModule
     context =
         PatternVerifier.Context
-            { indexedModule = Attribute.Null <$ indexedModule
+            { indexedModule = makeIndexedModuleAttributesNull indexedModule
             , declaredSortVariables = sortVariables unifiedFormula
             , builtinPatternVerifier =
                 -- Do not validate builtin patterns.

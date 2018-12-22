@@ -14,17 +14,13 @@ module Kore.Implicit.Verified
     )
     where
 
-import Data.Proxy
-       ( Proxy (..) )
-
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.DefinitionVerifier
-                 ( defaultAttributesVerification,
+                 ( defaultNullAttributesVerification,
                  verifyImplicitKoreDefinition )
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
-import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( Error, printError )
@@ -35,13 +31,10 @@ import           Kore.MetaML.AST
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
     _ <- verifyImplicitKoreDefinition
-        attributesVerification
+        defaultNullAttributesVerification
         Builtin.koreVerifiers
         (definitionPureToKore uncheckedMetaDefinition)
     return uncheckedMetaDefinition
-  where
-    attributesVerification =
-        defaultAttributesVerification (Proxy :: Proxy Attribute.Null)
 
 {-| 'implicitMetaDefinition' is a definition with everything Meta
 that is implicitly defined and visible everywhere. This definition passes
@@ -56,13 +49,10 @@ implicitMetaDefinition =
 checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
     _ <- verifyImplicitKoreDefinition
-        attributesVerification
+        defaultNullAttributesVerification
         Builtin.koreVerifiers
         uncheckedKoreDefinition
     return uncheckedKoreDefinition
-  where
-    attributesVerification =
-        defaultAttributesVerification (Proxy :: Proxy Attribute.Null)
 
 {-| 'implicitKoreDefinition' is a definition with everything
 that is implicitly defined and visible everywhere. This definition passes

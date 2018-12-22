@@ -11,12 +11,16 @@ module Kore.Attribute.ProductionID
     , productionIDId, productionIDSymbol, productionIDAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
 import qualified Data.Maybe as Maybe
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -26,7 +30,9 @@ import qualified Kore.Attribute.Parser as Parser
 {- | @ProductionID@ represents the @productionID@ attribute.
  -}
 newtype ProductionID = ProductionID { getProductionID :: Maybe Text }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+
+instance NFData ProductionID
 
 instance Default ProductionID where
     def = ProductionID Nothing

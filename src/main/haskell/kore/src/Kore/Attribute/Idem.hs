@@ -11,8 +11,12 @@ module Kore.Attribute.Idem
     , idemId, idemSymbol, idemAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -22,7 +26,9 @@ import qualified Kore.Attribute.Parser as Parser
 {- | @Idem@ represents the @idem@ attribute for axioms.
  -}
 newtype Idem = Idem { isIdem :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+
+instance NFData Idem
 
 instance Default Idem where
     def = Idem False

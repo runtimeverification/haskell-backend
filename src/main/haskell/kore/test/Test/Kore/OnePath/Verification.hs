@@ -22,10 +22,13 @@ import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.OnePath.Verification as OnePath
+import qualified Kore.OnePath.Verification as Claim
+                 ( Claim (..) )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+                 ( AxiomPatternAttributes (..), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern), Trusted (..) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern
@@ -90,6 +93,19 @@ test_onePathVerification =
             [simpleClaim Mock.a Mock.b]
         assertEqualWithExplanation ""
             (Right ())
+            actual
+    , testCase "Trusted claim cannot prove itself" $ do
+        -- Trusted Claim: a => b
+        -- Expected: error a
+        actual <- runVerification
+            metadataTools
+            (Limit 4)
+            []
+            [ simpleTrustedClaim Mock.a Mock.b
+            , simpleClaim Mock.a Mock.b
+            ]
+        assertEqualWithExplanation ""
+            (Left $ ExpandedPattern.fromPurePattern Mock.a)
             actual
     , testCase "Verifies one claim multiple steps" $ do
         -- Axiom: a => b
@@ -259,6 +275,42 @@ test_onePathVerification =
         assertEqualWithExplanation ""
             (Left $ ExpandedPattern.fromPurePattern Mock.b)
             actual
+    , testCase "trusted second proves first" $ do
+        -- Axiom: a => b
+        -- Axiom: c => d
+        -- Claim: a => d
+        -- Trusted Claim: b => c
+        -- Expected: success
+        actual <- runVerification
+            metadataTools
+            (Limit 4)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.c Mock.d
+            ]
+            [ simpleClaim Mock.a Mock.d
+            , simpleTrustedClaim Mock.b Mock.c
+            ]
+        assertEqualWithExplanation ""
+            (Right ())
+            actual
+    , testCase "trusted first proves second" $ do
+        -- Axiom: a => b
+        -- Axiom: c => d
+        -- Claim: b => c
+        -- Claim: a => d
+        -- Expected: success
+        actual <- runVerification
+            metadataTools
+            (Limit 4)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.c Mock.d
+            ]
+            [ simpleTrustedClaim Mock.b Mock.c
+            , simpleClaim Mock.a Mock.d
+            ]
+        assertEqualWithExplanation ""
+            (Right ())
+            actual
     , testCase "Prefers using claims for rewriting" $ do
         -- Axiom: a => b
         -- Axiom: b => c
@@ -306,7 +358,15 @@ simpleClaim
     -> CommonStepPattern level
     -> OnePath.Claim level
 simpleClaim left right =
-    OnePath.Claim $ simpleRewrite left right
+    OnePath.Claim (simpleRewrite left right) def
+
+simpleTrustedClaim
+    :: MetaOrObject level
+    => CommonStepPattern level
+    -> CommonStepPattern level
+    -> OnePath.Claim level
+simpleTrustedClaim left right =
+    OnePath.Claim (simpleRewrite left right) def { trusted = Trusted True }
 
 simpleRewrite
     :: MetaOrObject level
@@ -343,6 +403,8 @@ runVerification
         simplifier
         (Mock.substitutionSimplifier metadataTools)
         (OnePath.defaultStrategy claims axioms)
-        (map (\c -> (c, stepLimit)) claims)
+        ( map (\c -> (Claim.rule c, stepLimit))
+        . filter (not . isTrusted . trusted . Claim.attributes)
+        $ claims)
   where
     simplifier = Simplifier.create metadataTools Map.empty

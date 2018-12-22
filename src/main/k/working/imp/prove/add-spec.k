@@ -1,10 +1,16 @@
 /*
 */
 
-module ADD-SPEC
+module VERIFICATION
   imports IMP
 
   syntax Id ::= "sum" [token]
+endmodule
+
+
+module ADD-SPEC
+  imports VERIFICATION
+  imports IMP
 
   rule
     <k>

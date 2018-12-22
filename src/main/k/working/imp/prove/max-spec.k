@@ -1,12 +1,18 @@
 /*
 */
 
-module MAX-SPEC
+module VERIFICATION
   imports IMP
 
   syntax Id ::= "a" [token]
   syntax Id ::= "b" [token]
   syntax Id ::= "max" [token]
+endmodule
+
+
+module MAX-SPEC
+  imports VERIFICATION
+  imports IMP
 
   rule
     <k>

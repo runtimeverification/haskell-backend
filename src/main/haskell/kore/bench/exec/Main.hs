@@ -20,16 +20,17 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule,
-                 mapIndexedModulePatterns )
+                 makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
+import           Kore.Step.AxiomPatterns
+                 ( AxiomPatternAttributes )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -130,7 +131,9 @@ execBenchmark root kFile definitionFile mainModuleName test =
     envWithCleanup setUp cleanUp $ bench name . nfIO . execution
   where
     name = takeFileName test
-    setUp :: IO (VerifiedModule StepperAttributes, CommonStepPattern Object)
+    setUp :: IO
+                ( VerifiedModule StepperAttributes AxiomPatternAttributes
+                , CommonStepPattern Object)
     setUp = do
         kompile
         definition <- readFile $ root </> definitionFile
@@ -161,7 +164,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     PatternVerifier.Context
                         { builtinPatternVerifier =
                             Builtin.patternVerifier Builtin.koreVerifiers
-                        , indexedModule = Attribute.Null <$ indexedModule
+                        , indexedModule =
+                            makeIndexedModuleAttributesNull indexedModule
                         , declaredSortVariables = Set.empty
                         , declaredVariables =
                             PatternVerifier.emptyDeclaredVariables
@@ -171,7 +175,9 @@ execBenchmark root kFile definitionFile mainModuleName test =
                 $ patternKoreToPure Object verifiedPattern
         return (verifiedModule, purePattern)
     execution
-        :: (VerifiedModule StepperAttributes, CommonStepPattern Object)
+        ::  ( VerifiedModule StepperAttributes AxiomPatternAttributes
+            , CommonStepPattern Object
+            )
         -> IO (CommonStepPattern Object)
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig
@@ -198,8 +204,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: IndexedModule sortParam patternType StepperAttributes
-    -> IndexedModule sortParam patternType StepperAttributes
+    :: IndexedModule sortParam patternType StepperAttributes AxiomPatternAttributes
+    -> IndexedModule sortParam patternType StepperAttributes AxiomPatternAttributes
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =

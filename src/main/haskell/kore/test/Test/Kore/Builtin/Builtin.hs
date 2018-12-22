@@ -36,7 +36,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
-                 ( RewriteRule )
+                 ( AxiomPatternAttributes, RewriteRule )
 import           Kore.Step.BaseStep
                  ( StepProof, StepResult (StepResult), stepWithRule )
 import qualified Kore.Step.BaseStep as StepResult
@@ -123,10 +123,12 @@ verify
     :: KoreDefinition
     -> Either
         (Kore.Error.Error VerifyError)
-        (Map ModuleName (VerifiedModule StepperAttributes))
+        (Map
+            ModuleName (VerifiedModule StepperAttributes AxiomPatternAttributes)
+        )
 verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
   where
-    attrVerify = defaultAttributesVerification Proxy
+    attrVerify = defaultAttributesVerification Proxy Proxy
 
 -- TODO (traiansf): Get rid of this.
 -- The function below works around several limitations of
@@ -134,8 +136,8 @@ verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: VerifiedModule StepperAttributes
-    -> VerifiedModule StepperAttributes
+    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes AxiomPatternAttributes
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =
@@ -164,11 +166,12 @@ constructorFunctions ixm =
     recurseIntoImports (attrs, attributes, importedModule) =
         (attrs, attributes, constructorFunctions importedModule)
 
-verifiedModules :: Map ModuleName (VerifiedModule StepperAttributes)
+verifiedModules
+    :: Map ModuleName (VerifiedModule StepperAttributes AxiomPatternAttributes)
 verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-verifiedModule :: VerifiedModule StepperAttributes
+verifiedModule :: VerifiedModule StepperAttributes AxiomPatternAttributes
 Just verifiedModule = Map.lookup testModuleName verifiedModules
 
 testMetadataTools :: MetadataTools Object StepperAttributes

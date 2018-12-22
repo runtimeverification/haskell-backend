@@ -11,8 +11,12 @@ module Kore.Attribute.Comm
     , commId, commSymbol, commAttribute
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -22,7 +26,9 @@ import qualified Kore.Attribute.Parser as Parser
 {- | @Comm@ represents the @comm@ attribute for axioms.
  -}
 newtype Comm = Comm { isComm :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+
+instance NFData Comm
 
 instance Default Comm where
     def = Comm False

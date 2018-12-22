@@ -36,7 +36,8 @@ import           Kore.OnePath.Step
 import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
 import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+                 ( AxiomPatternAttributes, RewriteRule (RewriteRule),
+                 RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern
@@ -57,7 +58,11 @@ import           Kore.Step.Strategy
 
 {- | Wrapper for a rewrite rule that should be used as a claim.
 -}
-newtype Claim level = Claim (RewriteRule level)
+data Claim level = Claim
+    { rule :: !(RewriteRule level)
+    , attributes :: !AxiomPatternAttributes
+    }
+
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
@@ -84,7 +89,7 @@ verify
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
-    -> [(Claim level, Limit Natural)]
+    -> [(RewriteRule level, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT
@@ -140,9 +145,7 @@ defaultStrategy
       where
         unwrap (Axiom a) = a
     coinductiveRewrites :: [RewriteRule level]
-    coinductiveRewrites = map unwrap claims
-      where
-        unwrap (Claim c) = c
+    coinductiveRewrites = map rule claims
     expandedTarget :: CommonExpandedPattern level
     expandedTarget = ExpandedPattern.fromPurePattern target
 
@@ -154,7 +157,7 @@ verifyClaim
     ->  (  CommonStepPattern level
         -> [Strategy (Prim (CommonExpandedPattern level) (RewriteRule level))]
         )
-    -> (Claim level, Limit Natural)
+    -> (RewriteRule level, Limit Natural)
     -> ExceptT
         (CommonExpandedPattern level)
         Simplifier
@@ -164,7 +167,7 @@ verifyClaim
     simplifier
     substitutionSimplifier
     strategyBuilder
-    (Claim (RewriteRule RulePattern {left, right, requires}), stepLimit)
+    (RewriteRule RulePattern {left, right, requires}, stepLimit)
   = do
     let
         strategy =
