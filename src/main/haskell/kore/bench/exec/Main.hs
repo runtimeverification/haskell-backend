@@ -20,14 +20,13 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule,
-                 mapIndexedModulePatterns )
+                 makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Parser.Parser
                  ( fromKore, fromKorePattern )
 import           Kore.Step.AxiomPatterns
@@ -132,7 +131,9 @@ execBenchmark root kFile definitionFile mainModuleName test =
     envWithCleanup setUp cleanUp $ bench name . nfIO . execution
   where
     name = takeFileName test
-    setUp :: IO (VerifiedModule StepperAttributes, CommonStepPattern Object)
+    setUp :: IO
+                ( VerifiedModule StepperAttributes AxiomPatternAttributes
+                , CommonStepPattern Object)
     setUp = do
         kompile
         definition <- readFile $ root </> definitionFile
@@ -163,7 +164,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     PatternVerifier.Context
                         { builtinPatternVerifier =
                             Builtin.patternVerifier Builtin.koreVerifiers
-                        , indexedModule = Attribute.Null <$ indexedModule
+                        , indexedModule =
+                            makeIndexedModuleAttributesNull indexedModule
                         , declaredSortVariables = Set.empty
                         , declaredVariables =
                             PatternVerifier.emptyDeclaredVariables
