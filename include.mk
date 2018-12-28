@@ -2,7 +2,7 @@
 
 TOP ?= $(shell git rev-parse --show-toplevel)
 UPSTREAM_BRANCH := origin/master
-NPROCS := 4
+NPROCS := $(shell nproc)
 
 BUILD_DIR := $(TOP)/.build
 K_NIGHTLY := $(BUILD_DIR)/nightly.tar.gz
