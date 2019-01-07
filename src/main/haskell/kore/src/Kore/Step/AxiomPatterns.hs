@@ -44,8 +44,6 @@ import           GHC.Generics
                  ( Generic )
 
 import           Kore.AST.Kore
-import           Kore.AST.PureToKore
-                 ( axiomSentencePureToKore, patternKoreToPure )
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Assoc
@@ -254,9 +252,8 @@ sentenceToAxiomPattern
     attributes <-
         Attribute.Parser.liftParser
         $ parseAttributes sentenceAxiomAttributes
-    case patternKoreToPure level sentenceAxiomPattern of
-        Right pat -> patternToAxiomPattern attributes pat
-        Left err  -> Left err
+    stepPattern <- fromKorePattern level sentenceAxiomPattern
+    patternToAxiomPattern attributes stepPattern
 sentenceToAxiomPattern _ _ =
     koreFail "Only axiom sentences can be translated to AxiomPatterns"
 
@@ -309,7 +306,7 @@ mkRewriteAxiom
     -> Maybe (CommonStepPattern Object)  -- ^ requires clause
     -> VerifiedKoreSentence
 mkRewriteAxiom lhs rhs requires =
-    (asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
+    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
         (mkRewrites
             (mkAnd (fromMaybe mkTop_ requires) lhs)
             (mkAnd mkTop_ rhs)
@@ -323,7 +320,7 @@ mkFunctionAxiom
     -> Maybe (CommonStepPattern Object)  -- ^ requires clause
     -> VerifiedKoreSentence
 mkFunctionAxiom lhs rhs requires =
-    (asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
+    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
         (case requires of
             Just requires' -> mkImplies requires' (mkAnd function mkTop_)
             Nothing -> function

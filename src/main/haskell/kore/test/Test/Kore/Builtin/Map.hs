@@ -418,7 +418,7 @@ test_concretizeKeys =
             , variableSort = intSort
             }
     key = Test.Int.asConcretePattern 1
-    symbolicKey = fromConcretePurePattern key
+    symbolicKey = fromConcreteStepPattern key
     val = Test.Int.asPattern 2
     concreteMap = asPattern $ Map.fromList [(key, val)]
     symbolic = asSymbolicPattern $ Map.fromList [(mkVar x, mkVar v)]
@@ -474,7 +474,7 @@ test_concretizeKeysAxiom =
     x = mkIntVar (testId "x")
     v = mkIntVar (testId "v")
     key = Test.Int.asConcretePattern 1
-    symbolicKey = fromConcretePurePattern key
+    symbolicKey = fromConcreteStepPattern key
     val = Test.Int.asPattern 2
     symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
     axiom =

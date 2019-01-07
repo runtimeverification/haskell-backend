@@ -50,7 +50,7 @@ simplify _ DomainValue { domainValueSort, domainValueChild } =
     )
 
 simplifyBuiltin
-    :: ( Eq (variable Object)
+    :: ( Ord (variable Object)
        , Show (variable Object)
        , Unparse (variable Object)
        , SortedVariable variable

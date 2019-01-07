@@ -64,6 +64,7 @@ import           GHC.Generics
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
+                 ( Valid (..) )
 import           Kore.AST.Common hiding
                  ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
                  mapVariables, traverseVariables )
@@ -315,7 +316,7 @@ type CommonPurePattern level domain =
 
 -- | A concrete pure pattern (containing no variables) at level @lvl@.
 type ConcretePurePattern level domain =
-    PurePattern level domain Concrete (Valid level)
+    PurePattern level domain Concrete (Valid (Concrete level) level)
 
 -- | A pure pattern which has only been parsed and lacks 'Valid' annotations.
 type ParsedPurePattern level domain =

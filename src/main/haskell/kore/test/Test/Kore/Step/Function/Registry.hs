@@ -17,8 +17,6 @@ import           Data.These
 
 import           Kore.AST.Kore
 import           Kore.AST.Pure
-import           Kore.AST.PureToKore
-                 ( patternPureToKore )
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -97,7 +95,7 @@ testDef =
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -115,7 +113,7 @@ testDef =
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    (patternPureToKore
+                    (toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -133,7 +131,7 @@ testDef =
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    (patternPureToKore
+                    (toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -151,7 +149,7 @@ testDef =
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    (patternPureToKore
+                    (toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -169,7 +167,7 @@ testDef =
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    (patternPureToKore
+                    (toKorePattern
                         (mkTop sortS :: CommonStepPattern Object)
                     )
                 }
@@ -178,7 +176,7 @@ testDef =
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkRewrites
                             (mkAnd mkTop_ (mkApp sortS fHead []))
                             (mkAnd mkTop_ (mkApp sortS tHead []))

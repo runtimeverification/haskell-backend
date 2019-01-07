@@ -9,11 +9,11 @@ import GHC.Stack
        ( HasCallStack )
 
 import Kore.AST.Kore
-import Kore.AST.PureToKore
 import Kore.AST.Sentence
 import Kore.AST.Valid
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
+import Kore.Step.Pattern
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -333,8 +333,8 @@ sortVisibilityTests =
             , sentenceSortAttributes = Attributes []
             }
         :: VerifiedKoreSentenceSort Object)
-    topSortPattern = patternPureToKore $ mkTop sort
-    metaTopSortPattern = patternPureToKore $ mkTop charMetaSort
+    topSortPattern = toKorePattern $ mkTop sort
+    metaTopSortPattern = toKorePattern $ mkTop charMetaSort
     sortReferenceInSort =
         SortActualSort SortActual
             { sortActualName = testId "sort2"
@@ -345,7 +345,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore $ mkTop sortReferenceInSort
+                    toKorePattern $ mkTop sortReferenceInSort
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInSortSupportingSentences =
@@ -376,7 +376,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkExists existsVariable (mkVar existsVariable))
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -391,7 +391,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore $ mkAnd (mkTop sort) mkTop_
+                    toKorePattern $ mkAnd (mkTop sort) mkTop_
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInNextPatternSentence =
@@ -399,7 +399,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkNext (mkTop sort))
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -408,7 +408,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkNext
                             (mkEquals
                                 anotherSort
@@ -465,7 +465,7 @@ sortVisibilityTests =
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    patternPureToKore $ mkTop sort
+                    toKorePattern $ mkTop sort
                 , sentenceAliasAttributes = Attributes []
                 }
             :: VerifiedKoreSentenceAlias Object)
@@ -493,7 +493,7 @@ sortVisibilityTests =
                             ]
                         }
                 , sentenceAliasRightPattern =
-                    patternPureToKore $ mkTop anotherSort
+                    toKorePattern $ mkTop anotherSort
                 , sentenceAliasAttributes = Attributes []
                 }
             :: VerifiedKoreSentenceAlias Object)
@@ -504,7 +504,7 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkApp
                             sort
                             SymbolOrAlias
@@ -656,7 +656,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore symbolPattern
+                    toKorePattern symbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     metaSymbolReferenceInAxiomSentence =
@@ -664,7 +664,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore metaSymbolPattern
+                    toKorePattern metaSymbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInAndPatternSentence =
@@ -672,7 +672,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore (mkAnd symbolPattern mkTop_)
+                    toKorePattern (mkAnd symbolPattern mkTop_)
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInExistsPatternSentence =
@@ -680,7 +680,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkExists
                             Variable
                                 { variableName = testId "var"
@@ -695,7 +695,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore (mkNext symbolPattern)
+                    toKorePattern (mkNext symbolPattern)
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInSymbolOrAliasSentence =
@@ -703,7 +703,7 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkApp
                             defaultSort
                             SymbolOrAlias
@@ -840,7 +840,7 @@ aliasVisibilityTests =
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    patternPureToKore $ mkTop sentenceAliasResultSort
+                    toKorePattern $ mkTop sentenceAliasResultSort
                 , sentenceAliasAttributes = Attributes []
                 }
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
@@ -874,21 +874,21 @@ aliasVisibilityTests =
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    patternPureToKore $ mkTop sentenceAliasResultSort
+                    toKorePattern $ mkTop sentenceAliasResultSort
                 , sentenceAliasAttributes = Attributes []
                 }
     aliasReferenceInAxiomSentence =
         asKoreAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = patternPureToKore aliasPattern
+                , sentenceAxiomPattern = toKorePattern aliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     metaAliasReferenceInAxiomSentence =
         asKoreAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = patternPureToKore metaAliasPattern
+                , sentenceAxiomPattern = toKorePattern metaAliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInAndPatternSentence =
@@ -896,7 +896,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkAnd aliasPattern mkTop_)
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -905,7 +905,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkExists
                             Variable
                                 { variableName = testId "var"
@@ -920,7 +920,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore (mkNext aliasPattern)
+                    toKorePattern (mkNext aliasPattern)
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInAliasOrAliasSentence =
@@ -928,7 +928,7 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    patternPureToKore
+                    toKorePattern
                         (mkApp
                             defaultSort
                             SymbolOrAlias
@@ -948,7 +948,7 @@ aliasVisibilityTests =
             sentenceAliasResultSort :: Sort Object
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "sv1"))
-        in (sentencePureToKore . SentenceAliasSentence)
+        in (toKoreSentence . SentenceAliasSentence)
             SentenceAlias
                 { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
                 , sentenceAliasSorts =
@@ -1313,7 +1313,7 @@ nameDuplicationTests =
         in Module
             { moduleName = modName
             , moduleSentences =
-                [ (sentencePureToKore . asSentence)
+                [ (toKoreSentence . asSentence)
                     SentenceAlias
                         { sentenceAliasAlias = Alias
                             { aliasConstructor

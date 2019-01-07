@@ -9,11 +9,11 @@ import           Data.Default
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
+import qualified Data.Set as Set
 
 import           Kore.Annotation.Valid
 import           Kore.AST.Kore
 import           Kore.AST.Pure
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTHelpers
@@ -121,8 +121,8 @@ testDefinition =
     Definition
         { definitionAttributes = Attributes [strictAttribute]
         , definitionModules =
-            [ modulePureToKore testObjectModule
-            , modulePureToKore testMetaModule
+            [ toKoreModule testObjectModule
+            , toKoreModule testMetaModule
             , subMainModule
             , mainModule
             ]
@@ -212,7 +212,10 @@ test_resolvers =
                             }
                     , sentenceAliasRightPattern =
                         let
-                            valid = Valid { patternSort = objectS1 }
+                            valid = Valid { patternSort, freeVariables }
+                              where
+                                patternSort = objectS1
+                                freeVariables = Set.empty
                             top' = TopPattern Top { topSort = objectS1 }
                         in
                             asKorePattern (valid :< top')
@@ -246,7 +249,10 @@ test_resolvers =
                         }
                 , sentenceAliasRightPattern =
                     let
-                        valid = Valid { patternSort = charListMetaSort }
+                        valid = Valid { patternSort, freeVariables }
+                          where
+                            patternSort = charListMetaSort
+                            freeVariables = Set.empty
                         top' = TopPattern Top { topSort = charListMetaSort }
                     in
                         asKorePattern (valid :< top')

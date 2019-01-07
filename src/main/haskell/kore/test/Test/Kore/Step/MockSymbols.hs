@@ -503,261 +503,282 @@ m = Variable (testId "m") mapSort
 xInt :: Variable Object
 xInt = Variable (testId "xInt") intSort
 
-a :: StepPattern Object variable
+a :: Ord (variable Object) => StepPattern Object variable
 a = mkApp testSort aSymbol []
 
 aConcrete :: ConcreteStepPattern Object
 aConcrete = let Just r = asConcretePurePattern a in r
 
-aSort0 :: StepPattern Object variable
+aSort0 :: Ord (variable Object) => StepPattern Object variable
 aSort0 = mkApp testSort0 aSort0Symbol []
 
-aSort1 :: StepPattern Object variable
+aSort1 :: Ord (variable Object) => StepPattern Object variable
 aSort1 = mkApp testSort1 aSort1Symbol []
 
-aSubsort :: StepPattern Object variable
+aSubsort :: Ord (variable Object) => StepPattern Object variable
 aSubsort = mkApp subSort aSubsortSymbol []
 
-aSubSubsort :: StepPattern Object variable
+aSubSubsort :: Ord (variable Object) => StepPattern Object variable
 aSubSubsort = mkApp subSubSort aSubSubsortSymbol []
 
-aOtherSort :: StepPattern Object variable
+aOtherSort :: Ord (variable Object) => StepPattern Object variable
 aOtherSort = mkApp otherSort aOtherSortSymbol []
 
-b :: StepPattern Object variable
+b :: Ord (variable Object) => StepPattern Object variable
 b = mkApp testSort bSymbol []
 
 bConcrete :: ConcreteStepPattern Object
 bConcrete = let Just r = asConcretePurePattern b in r
 
-bSort0 :: StepPattern Object variable
+bSort0 :: Ord (variable Object) => StepPattern Object variable
 bSort0 = mkApp testSort0 bSort0Symbol []
 
-c :: StepPattern Object variable
+c :: Ord (variable Object) => StepPattern Object variable
 c = mkApp testSort cSymbol []
 
-d :: StepPattern Object variable
+d :: Ord (variable Object) => StepPattern Object variable
 d = mkApp testSort dSymbol []
 
-e :: StepPattern Object variable
+e :: Ord (variable Object) => StepPattern Object variable
 e = mkApp testSort eSymbol []
 
-f :: StepPattern Object variable -> StepPattern Object variable
+f, g, h
+    :: Ord (variable Object)
+    => StepPattern Object variable
+    -> StepPattern Object variable
 f arg = mkApp testSort fSymbol [arg]
-
-g :: StepPattern Object variable -> StepPattern Object variable
 g arg = mkApp testSort gSymbol [arg]
-
-h :: StepPattern Object variable -> StepPattern Object variable
 h arg = mkApp testSort hSymbol [arg]
 
-cf :: StepPattern Object variable
+cf :: Ord (variable Object) => StepPattern Object variable
 cf = mkApp testSort cfSymbol []
 
-cfSort0 :: StepPattern Object variable
+cfSort0 :: Ord (variable Object) => StepPattern Object variable
 cfSort0 = mkApp testSort0 cfSort0Symbol []
 
-cfSort1 :: StepPattern Object variable
+cfSort1 :: Ord (variable Object) => StepPattern Object variable
 cfSort1 = mkApp testSort1 cfSort1Symbol []
 
-cg :: StepPattern Object variable
+cg :: Ord (variable Object) => StepPattern Object variable
 cg = mkApp testSort cgSymbol []
 
-cgSort0 :: StepPattern Object variable
+cgSort0 :: Ord (variable Object) => StepPattern Object variable
 cgSort0 = mkApp testSort0 cgSort0Symbol []
 
-ch :: StepPattern Object variable
+ch :: Ord (variable Object) => StepPattern Object variable
 ch = mkApp testSort chSymbol []
 
-plain00 :: StepPattern Object variable
+plain00 :: Ord (variable Object) => StepPattern Object variable
 plain00 = mkApp testSort plain00Symbol []
 
-plain00Sort0 :: StepPattern Object variable
+plain00Sort0 :: Ord (variable Object) => StepPattern Object variable
 plain00Sort0 = mkApp testSort0 plain00Sort0Symbol []
 
-plain00Subsort :: StepPattern Object variable
+plain00Subsort :: Ord (variable Object) => StepPattern Object variable
 plain00Subsort = mkApp subSort plain00SubsortSymbol []
 
-plain00SubSubsort :: StepPattern Object variable
+plain00SubSubsort :: Ord (variable Object) => StepPattern Object variable
 plain00SubSubsort = mkApp subSubSort plain00SubSubsortSymbol []
 
-plain10
-    :: StepPattern Object variable -> StepPattern Object variable
+plain10, plain11
+    :: Ord (variable Object)
+    => StepPattern Object variable
+    -> StepPattern Object variable
 plain10 arg = mkApp testSort plain10Symbol [arg]
-
-plain11
-    :: StepPattern Object variable -> StepPattern Object variable
 plain11 arg = mkApp testSort plain11Symbol [arg]
 
 plain20
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 plain20 arg1 arg2 = mkApp testSort plain20Symbol [arg1, arg2]
 
-constr10
-    :: StepPattern Object variable
+constr10, constr11
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 constr10 arg = mkApp testSort constr10Symbol [arg]
-
-constr11
-    :: StepPattern Object variable
-    -> StepPattern Object variable
 constr11 arg = mkApp testSort constr11Symbol [arg]
 
 constr20
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 constr20 arg1 arg2 = mkApp testSort constr20Symbol [arg1, arg2]
 
 function20MapTest
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 function20MapTest arg1 arg2 =
     mkApp testSort function20MapTestSymbol [arg1, arg2]
 
-functional00 :: StepPattern Object variable
+functional00 :: Ord (variable Object) => StepPattern Object variable
 functional00 = mkApp testSort functional00Symbol []
 
-functional01 :: StepPattern Object variable
+functional01 :: Ord (variable Object) => StepPattern Object variable
 functional01 = mkApp testSort functional01Symbol []
 
 functional10
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 functional10 arg = mkApp testSort functional10Symbol [arg]
 
 functional11
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 functional11 arg = mkApp testSort functional11Symbol [arg]
 
 functional20
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 functional20 arg1 arg2 = mkApp testSort functional20Symbol [arg1, arg2]
 
-functional00SubSubSort :: StepPattern Object variable
+functional00SubSubSort :: Ord (variable Object) => StepPattern Object variable
 functional00SubSubSort = mkApp subSubSort functional00SubSubSortSymbol []
 
 functionalConstr10
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 functionalConstr10 arg =
     mkApp testSort functionalConstr10Symbol [arg]
 
 functionalConstr11
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 functionalConstr11 arg = mkApp testSort functionalConstr11Symbol [arg]
 
 functionalConstr20
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 functionalConstr20 arg1 arg2 =
     mkApp testSort functionalConstr20Symbol [arg1, arg2]
 
 functionalTopConstr20
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 functionalTopConstr20 arg1 arg2 =
     mkApp testSort functionalTopConstr20Symbol [arg1, arg2]
 
 functionalTopConstr21
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 functionalTopConstr21 arg1 arg2 =
     mkApp testSort functionalTopConstr21Symbol [arg1, arg2]
 
 injective10
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 injective10 arg = mkApp testSort injective10Symbol [arg]
 
 injective11
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 injective11 arg = mkApp testSort injective11Symbol [arg]
 
 sortInjection10
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 sortInjection10 arg =
     mkApp testSort sortInjection10Symbol [arg]
 
 sortInjection11
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 sortInjection11 arg =
     mkApp testSort sortInjection11Symbol [arg]
 
 sortInjection0ToTop
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 sortInjection0ToTop arg =
     mkApp topSort sortInjection0ToTopSymbol [arg]
 
 sortInjectionSubToTop
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 sortInjectionSubToTop arg = mkApp topSort sortInjectionSubToTopSymbol [arg]
 
 sortInjectionSubSubToTop
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 sortInjectionSubSubToTop arg =
     mkApp topSort sortInjectionSubSubToTopSymbol [arg]
 
 sortInjectionSubSubToSub
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 sortInjectionSubSubToSub arg =
     mkApp subSort sortInjectionSubSubToSubSymbol [arg]
 
 sortInjectionOtherToTop
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
 sortInjectionOtherToTop arg =
     mkApp topSort sortInjectionOtherToTopSymbol [arg]
 
 concatMap
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 concatMap m1 m2 = mkApp mapSort concatMapSymbol [m1, m2]
 
 lessInt
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 lessInt i1 i2 = mkApp boolSort lessIntSymbol [i1, i2]
 
 greaterEqInt
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 greaterEqInt i1 i2 = mkApp boolSort greaterEqIntSymbol [i1, i2]
 
 elementMap
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 elementMap m1 m2 = mkApp mapSort elementMapSymbol [m1, m2]
 
 concatList
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 concatList l1 l2 = mkApp listSort concatListSymbol [l1, l2]
 
 sigma
-    :: StepPattern Object variable
+    :: Ord (variable Object)
+    => StepPattern Object variable
     -> StepPattern Object variable
     -> StepPattern Object variable
 sigma child1 child2 = mkApp testSort sigmaSymbol [child1, child2]
@@ -1288,26 +1309,31 @@ subsorts =
     ]
 
 builtinMap
-    :: [(ConcreteStepPattern Object, StepPattern Object variable)]
+    :: Ord (variable Object)
+    => [(ConcreteStepPattern Object, StepPattern Object variable)]
     -> StepPattern Object variable
 builtinMap = mkDomainValue mapSort . Domain.BuiltinMap . Map.fromList
 
 builtinList
-    :: [StepPattern Object variable]
+    :: Ord (variable Object)
+    => [StepPattern Object variable]
     -> StepPattern Object variable
 builtinList = mkDomainValue listSort . Domain.BuiltinList . Seq.fromList
 
 builtinSet
-    :: [ConcreteStepPattern Object]
+    :: Ord (variable Object)
+    => [ConcreteStepPattern Object]
     -> StepPattern Object variable
 builtinSet = mkDomainValue setSort . Domain.BuiltinSet . Set.fromList
 
 builtinInt
-    :: Integer
+    :: Ord (variable Object)
+    => Integer
     -> StepPattern Object variable
 builtinInt = Builtin.Int.asPattern intSort
 
 builtinBool
-    :: Bool
+    :: Ord (variable Object)
+    => Bool
     -> StepPattern Object variable
 builtinBool = Builtin.Bool.asPattern boolSort

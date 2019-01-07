@@ -76,7 +76,10 @@ evaluateApplication
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
-    -> CofreeF (Application level) (Valid level) (StepPattern level variable)
+    -> CofreeF
+        (Application level)
+        (Valid (variable level) level)
+        (StepPattern level variable)
     -- ^ The pattern to be evaluated
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -331,11 +334,6 @@ evaluateSortInjection tools unchanged ap = case apChild of
     apHead = applicationSymbolOrAlias ap
     [fromSort, _] = symbolOrAliasParams apHead
     [apChild] = applicationChildren ap
-    updateSortInjectionSource
-        :: SymbolOrAlias level
-        -> Sort level
-        -> [StepPattern level variable]
-        -> StepPattern level variable
     updateSortInjectionSource head1 fromSort1 =
         mkApp toSort1 head1 { symbolOrAliasParams = [fromSort1, toSort1] }
       where

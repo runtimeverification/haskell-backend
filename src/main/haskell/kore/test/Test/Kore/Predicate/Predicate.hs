@@ -12,9 +12,7 @@ import qualified Data.Set as Set
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Implicit.ImplicitSorts
-import           Kore.Predicate.Predicate
-import qualified Kore.Predicate.Predicate as Predicate
-                 ( isFalse )
+import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
 import qualified Kore.Unification.Substitution as Substitution
 
@@ -275,17 +273,19 @@ test_predicate =
         ( do
             assertEqual "top has no free variables"
                 Set.empty
-                (freeVariables (makeTruePredicate :: CommonPredicate Meta))
+                (Predicate.freeVariables
+                    (makeTruePredicate :: CommonPredicate Meta)
+                )
             assertEqual "equals predicate has two variables"
                 (Set.fromList
                     [ a patternMetaSort
                     , b patternMetaSort
                     ]
                 )
-                (freeVariables pr1)
+                (Predicate.freeVariables pr1)
             assertEqual "quantified variables are not included"
                 Set.empty
-                (freeVariables
+                (Predicate.freeVariables
                     (makeExistsPredicate
                         (a patternMetaSort)
                         makeTruePredicate

@@ -38,7 +38,7 @@ generateFunctionalStatement p =
 generateFunctionalHeadAxiom
     :: CofreeF
         (Application Object)
-        (Valid Object)
+        (Valid (Variable Object) Object)
         Term
     -> Term
 generateFunctionalHeadAxiom (valid :< app) =

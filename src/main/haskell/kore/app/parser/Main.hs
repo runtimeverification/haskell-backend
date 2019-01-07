@@ -27,7 +27,7 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Parser.Parser
-                 ( fromKore, fromKorePattern )
+                 ( parseKoreDefinition, parseKorePattern )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes )
 import           Kore.Step.StepperAttributes
@@ -147,12 +147,12 @@ mainModule name modules =
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
 mainDefinitionParse :: String -> IO KoreDefinition
-mainDefinitionParse = mainParse fromKore
+mainDefinitionParse = mainParse parseKoreDefinition
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
 mainPatternParse :: String -> IO CommonKorePattern
-mainPatternParse = mainParse fromKorePattern
+mainPatternParse = mainParse parseKorePattern
 
 -- | IO action that parses a kore AST entity from a filename and prints timing
 -- information.
