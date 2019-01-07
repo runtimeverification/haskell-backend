@@ -42,6 +42,7 @@ prove_tests := \
 	add-spec \
 	max-spec \
 	sum-spec \
+	double-sum-spec \
 
 test: $(foreach test, $(all_tests), tests/$(test).test)
 
