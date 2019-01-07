@@ -28,6 +28,7 @@ dependencies:
   - comonad
   - containers >= 0.5.8
   - clock
+  - cryptonite
   - data-default
   - deepseq
   - deriving-compat
@@ -41,6 +42,7 @@ dependencies:
   - integer-gmp
   - lens
   - megaparsec >= 6.4.0
+  - memory
   - mmorph
   - mtl
   - optparse-applicative

@@ -106,6 +106,34 @@ test_length =
         (Test.Int.asExpandedPattern 0)
     ]
 
+test_chr :: [TestTree]
+test_chr =
+    [ testString
+        "STRING.chr(48) is '0'"
+        chrStringSymbol
+        [Test.Int.asPattern 48]
+        (asExpandedPattern "0")
+    , testString
+        "STRING.chr(100) is 'd'"
+        chrStringSymbol
+        [Test.Int.asPattern 100]
+        (asExpandedPattern "d")
+    ]
+
+test_ord :: [TestTree]
+test_ord =
+    [ Test.Int.testInt
+        "STRING.ord('0') is 48"
+        ordStringSymbol
+        [asPattern "0"]
+        (Test.Int.asExpandedPattern 48)
+    , Test.Int.testInt
+        "STRING.ord('d') is 100"
+        ordStringSymbol
+        [asPattern "d"]
+        (Test.Int.asExpandedPattern 100)
+    ]
+
 test_find :: [TestTree]
 test_find =
     [ Test.Int.testInt
