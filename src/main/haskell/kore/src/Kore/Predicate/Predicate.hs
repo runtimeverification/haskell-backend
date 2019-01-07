@@ -32,7 +32,7 @@ module Kore.Predicate.Predicate
     , makeMultipleOrPredicate
     , makeTruePredicate
     , allVariables
-    , freeVariables
+    , Kore.Predicate.Predicate.freeVariables
     , Kore.Predicate.Predicate.mapVariables
     , stringFromPredicate
     , substitutionToPredicate
@@ -164,7 +164,7 @@ doing some simplification.
 makeMultipleAndPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -181,7 +181,7 @@ doing some simplification.
 makeMultipleOrPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -200,7 +200,7 @@ makeAndPredicate
     -- or, even better, a type (like ShowMetaOrObject in MetaOrObject).
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Unparse (variable level)
         )
     => Predicate level variable
@@ -221,7 +221,7 @@ some simplification.
 makeOrPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -243,7 +243,7 @@ implication, doing some simplification.
 makeImpliesPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -263,7 +263,7 @@ some simplification.
 makeIffPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -300,7 +300,7 @@ predicate.
 makeEqualsPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -316,6 +316,7 @@ predicate.
 makeInPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -358,6 +359,7 @@ makeFloorPredicate patt =
 makeExistsPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -374,6 +376,7 @@ makeExistsPredicate v (GenericPredicate p) =
 makeForallPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -403,7 +406,7 @@ makePredicate
     :: forall level variable e .
         ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -454,8 +457,11 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
 mapVariables
-    :: (from level -> to level) -> Predicate level from -> Predicate level to
-mapVariables f = fmap (Kore.AST.Pure.mapVariables f)
+    :: Ord (to level)
+    => (from level -> to level)
+    -> Predicate level from
+    -> Predicate level to
+mapVariables f = fmap (Kore.Step.Pattern.mapVariables f)
 
 {- | Extract the set of all (free and bound) variables from a @Predicate@.
 -}
@@ -482,7 +488,7 @@ freeVariables = freePureVariables . unwrapPredicate
 substitutionToPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -496,7 +502,7 @@ substitutionToPredicate =
 singleSubstitutionToPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )

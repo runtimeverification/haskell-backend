@@ -20,7 +20,6 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Kore
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -233,7 +232,7 @@ functionalAxiom
     -> VerifiedKoreSentence
 functionalAxiom name =
     constructUnifiedSentence
-        ((<$>) patternPureToKore . SentenceAxiomSentence)
+        ((<$>) toKorePattern . SentenceAxiomSentence)
         (mkAxiom
             [UnifiedObject r]
             (mkExists v

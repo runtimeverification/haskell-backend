@@ -33,11 +33,12 @@ import Kore.Variables.Free
 subst
     ::  ( Eq1 domain, Traversable domain
         , MetaOrObject level
+        , valid ~ Valid (Variable level) level
         )
-    => PurePattern level domain Variable (Valid level)
-    -> PurePattern level domain Variable (Valid level)
-    -> PurePattern level domain Variable (Valid level)
-    -> PurePattern level domain Variable (Valid level)
+    => PurePattern level domain Variable valid
+    -> PurePattern level domain Variable valid
+    -> PurePattern level domain Variable valid
+    -> PurePattern level domain Variable valid
 subst old new =
     \case
         Forall_ _ v p -> handleBinder old new mkForall v p
@@ -49,7 +50,8 @@ subst old new =
 handleBinder
     ::  ( Eq1 domain, Traversable domain
         , MetaOrObject level
-        , pattern' ~ PurePattern level domain Variable (Valid level)
+        , valid ~ Valid (Variable level) level
+        , pattern' ~ PurePattern level domain Variable valid
         )
     => pattern'
     -> pattern'

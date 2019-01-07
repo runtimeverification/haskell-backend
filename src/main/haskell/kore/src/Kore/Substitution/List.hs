@@ -42,7 +42,7 @@ instance
         (PurePattern level domain variable annotation)
   where
     substitutionTermsFreeVars =
-        foldMap (freeVariables . snd) . getSubstitution
+        foldMap (Kore.Variables.Free.freeVariables . snd) . getSubstitution
 
 instance
     ( Foldable domain
@@ -55,7 +55,7 @@ instance
         (KorePattern domain variable annotation)
   where
     substitutionTermsFreeVars =
-        foldMap (freeVariables . snd) . getSubstitution
+        foldMap (Kore.Variables.Free.freeVariables . snd) . getSubstitution
 
 instance Eq v => MapClass Substitution v t where
     isEmpty = null . getSubstitution

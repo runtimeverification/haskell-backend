@@ -1296,16 +1296,26 @@ instance EqualWithExplanation (Annotation.Null level) where
     compareWithExplanation _ _ = Nothing
     printWithExplanation = show
 
-instance StructEqualWithExplanation (Valid level) where
+instance
+    ( EqualWithExplanation variable, Show variable
+    ) => StructEqualWithExplanation (Valid variable level)
+  where
     structFieldsWithNames expected actual =
         [ EqWrap
             "patternSort = "
             (patternSort expected)
             (patternSort actual)
+        , EqWrap
+            "freeVariables = "
+            (Kore.AST.Kore.freeVariables expected)
+            (Kore.AST.Kore.freeVariables actual)
         ]
     structConstructorName _ = "Valid"
 
-instance EqualWithExplanation (Valid level) where
+instance
+    ( EqualWithExplanation variable, Show variable
+    ) => EqualWithExplanation (Valid variable level)
+  where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 

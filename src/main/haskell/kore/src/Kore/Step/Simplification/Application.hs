@@ -46,7 +46,11 @@ type ExpandedApplication level variable =
     Predicated
         level
         variable
-        (CofreeF (Application level) (Valid level) (StepPattern level variable))
+        (CofreeF
+            (Application level)
+            (Valid (variable level) level)
+            (StepPattern level variable)
+        )
 
 {-|'simplify' simplifies an 'Application' of 'OrOfExpandedPattern'.
 
@@ -76,7 +80,7 @@ simplify
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application level)
-        (Valid level)
+        (Valid (variable level) level)
         (OrOfExpandedPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -131,7 +135,7 @@ makeAndEvaluateApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Valid level
+    -> Valid (variable level) level
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
     -> Simplifier
@@ -173,7 +177,7 @@ makeAndEvaluateSymbolApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomsFunctionEvaluatorMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Valid level
+    -> Valid (variable level) level
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
     -> Simplifier
@@ -251,7 +255,7 @@ makeExpandedApplication
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> Valid level
+    -> Valid (variable level) level
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
     -> Simplifier

@@ -105,7 +105,7 @@ evaluate
 asPredicateSubstitution
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )

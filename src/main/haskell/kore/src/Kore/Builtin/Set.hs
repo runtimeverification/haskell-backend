@@ -337,7 +337,7 @@ evalToList = Builtin.functionEvaluator evalToList0
                             _      -> Builtin.wrongArity toListKey
             _set <- expectBuiltinSet toListKey tools _set
             List.returnList resultSort
-                . fmap Kore.fromConcretePurePattern
+                . fmap fromConcreteStepPattern
                 . Seq.fromList
                 . Set.toList
                 $ _set
@@ -389,7 +389,11 @@ values; it will not use a valid external representation. Use 'asPattern' to
 construct an externally-valid pattern.
 
  -}
-builtinSet :: Sort Object -> Builtin -> StepPattern Object variable
+builtinSet
+    :: Ord (variable Object)
+    => Sort Object
+    -> Builtin
+    -> StepPattern Object variable
 builtinSet resultSort = mkDomainValue resultSort . Domain.BuiltinSet
 
 {- | Render a 'Set' as a domain value pattern of the given sort.
@@ -405,7 +409,8 @@ See also: 'sort'
 
  -}
 asPattern
-    :: VerifiedModule declAttrs axiomAttrs
+    :: Ord (variable Object)
+    => VerifiedModule declAttrs axiomAttrs
     -- ^ indexed module where pattern would appear
     -> Sort Object
     -> Either
@@ -413,29 +418,15 @@ asPattern
         (Builtin -> StepPattern Object variable)
 asPattern indexedModule dvSort = do
     symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let
-        applyUnit :: StepPattern Object variable
-        applyUnit = mkApp dvSort symbolUnit []
+    let applyUnit = mkApp dvSort symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
-    let
-        applyElement
-            :: ConcreteStepPattern Object
-            -> StepPattern Object variable
-        applyElement elem' =
-            mkApp dvSort symbolElement [Kore.fromConcretePurePattern elem']
+    let applyElement elem' =
+            mkApp dvSort symbolElement [fromConcreteStepPattern elem']
     symbolConcat <- lookupSymbolConcat dvSort indexedModule
     let
-        applyConcat
-            :: StepPattern Object variable
-            -> StepPattern Object variable
-            -> StepPattern Object variable
         applyConcat set1 set2 = mkApp dvSort symbolConcat [set1, set2]
-    let
-        asPattern0
-            :: Builtin -> StepPattern Object variable
         asPattern0 set =
-            foldr applyConcat applyUnit
-                (applyElement <$> Foldable.toList set)
+            foldr applyConcat applyUnit (applyElement <$> Foldable.toList set)
     return asPattern0
 
 {- | Render a 'Seq' as an extended domain value pattern.
@@ -444,7 +435,8 @@ asPattern indexedModule dvSort = do
 
  -}
 asExpandedPattern
-    :: VerifiedModule declAttrs axiomAttrs
+    :: Ord (variable Object)
+    => VerifiedModule declAttrs axiomAttrs
     -- ^ dictionary of Map constructor symbols
     -> Sort Object
     -> Either
@@ -695,7 +687,7 @@ unifyEquals
         -> m (expanded, proof)
     unifyEqualsElement resultSort set1 element' key2 =
         case Set.toList set1 of
-            [Kore.fromConcretePurePattern -> key1] ->
+            [fromConcreteStepPattern -> key1] ->
                 do
                     (key, _) <- unifyEqualsChildren key1 key2
                     let result =

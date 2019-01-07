@@ -75,7 +75,8 @@ import           Kore.Variables.Free
 impossible :: a
 impossible = error "The impossible happened."
 
-type Term = PurePattern Object Domain.Builtin Variable (Valid Object)
+type Term =
+    PurePattern Object Domain.Builtin Variable (Valid (Variable Object) Object)
 type Var = Variable Object
 
 -- | Fix-able functor representing a single deduction step

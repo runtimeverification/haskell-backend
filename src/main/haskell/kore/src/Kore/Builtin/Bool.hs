@@ -114,7 +114,8 @@ parse = (Parsec.<|>) true false
 
  -}
 asPattern
-    :: Sort Object  -- ^ resulting sort
+    :: Ord (variable Object)
+    => Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> StepPattern Object variable
 asPattern resultSort =
@@ -126,12 +127,13 @@ asPattern resultSort =
 asMetaPattern
     :: Functor domain
     => Bool
-    -> PurePattern Meta domain variable (Valid Meta)
+    -> PurePattern Meta domain variable (Valid (variable Meta) Meta)
 asMetaPattern True = mkStringLiteral "true"
 asMetaPattern False = mkStringLiteral "false"
 
 asExpandedPattern
-    :: Sort Object  -- ^ resulting sort
+    :: Ord (variable Object)
+    => Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =

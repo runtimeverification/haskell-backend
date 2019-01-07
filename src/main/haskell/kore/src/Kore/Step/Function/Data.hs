@@ -73,7 +73,7 @@ newtype ApplicationFunctionEvaluator level =
         -> StepPatternSimplifier level variable
         -> CofreeF
             (Application level)
-            (Valid level)
+            (Valid (variable level) level)
             (StepPattern level variable)
         -> Simplifier
             [   ( AttemptedFunction level variable

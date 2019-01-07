@@ -28,9 +28,7 @@ import GHC.Generics
 import Prelude hiding
        ( null )
 
-import Kore.AST.Pure as Pure
 import Kore.Step.Pattern
-       ( StepPattern )
 import Kore.TopBottom
        ( TopBottom (..) )
 
@@ -100,7 +98,9 @@ modify f = wrap . f . unwrap
 -- | 'mapVariables' changes all the variables in the substitution
 -- with the given function.
 mapVariables
-    :: (variableFrom level -> variableTo level)
+    ::  forall level variableFrom variableTo.
+        Ord (variableTo level)
+    => (variableFrom level -> variableTo level)
     -> Substitution level variableFrom
     -> Substitution level variableTo
 mapVariables variableMapper =
@@ -114,7 +114,7 @@ mapVariables variableMapper =
         mapper
         (variable, patt)
       =
-        (mapper variable, Pure.mapVariables mapper patt)
+        (mapper variable, Kore.Step.Pattern.mapVariables mapper patt)
 
 -- | Returns true iff the substitution is normalized.
 isNormalized :: Substitution level variable -> Bool

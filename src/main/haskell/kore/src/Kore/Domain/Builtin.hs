@@ -33,7 +33,7 @@ import           GHC.Generics
 import Kore.Annotation.Valid
 import Kore.AST.Pure
 
-type Key = PurePattern Object Builtin Concrete (Valid Object)
+type Key = PurePattern Object Builtin Concrete (Valid (Concrete Object) Object)
 
 data Builtin child
     = BuiltinPattern !(ParsedPurePattern Meta (Const Void))

@@ -11,6 +11,7 @@ import           Data.Maybe
                  ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
+import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -18,7 +19,6 @@ import qualified Data.Text as Text
 import           Kore.AST.Builders
 import           Kore.AST.Kore
 import           Kore.AST.Pure
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -67,7 +67,7 @@ axiomPatternsUnitTests =
                 axiom1 = mkRewriteAxiom varI1 varI2 Nothing
                 axiom2 :: VerifiedKoreSentence
                 axiom2 =
-                    (asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
+                    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
                         (applyInj sortKItem
                             (mkRewrites
                                 (mkAnd mkTop_ varI1)
@@ -84,7 +84,7 @@ axiomPatternsUnitTests =
                                 , axiom2
                                 , sortSentenceAInt
                                 , sortSentenceKItem
-                                , sentencePureToKore symbolSentenceInj
+                                , toKoreSentence symbolSentenceInj
                                 ]
                         , moduleAttributes = Attributes []
                         }
@@ -113,7 +113,7 @@ axiomPatternsUnitTests =
             (assertEqual ""
                 (koreFail "Unsupported pattern type in axiom")
                 (koreSentenceToAxiomPattern Object
-                    ((asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
+                    ((asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
                         (applySymbol
                             symbolInj
                             [sortAInt, sortKItem]
@@ -208,7 +208,17 @@ axiomPatternsIntegrationTests =
                             \        )\n\
                             \    )\n\
                             \[]"
-                    let valid = UnifiedObject Valid { patternSort = sortTCell }
+                    let valid =
+                            UnifiedObject Valid { patternSort, freeVariables }
+                          where
+                            patternSort = sortTCell
+                            freeVariables =
+                                Set.fromList
+                                    [ asUnified (Variable "VarI1" sortAInt)
+                                    , asUnified (Variable "VarI2" sortAInt)
+                                    , asUnified (Variable "VarDotVar1" sortK)
+                                    , asUnified (Variable "VarDotVar0" sortStateCell)
+                                    ]
                     koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
                 )
             )
@@ -230,7 +240,7 @@ sortBExp = simpleSort (SortName "BExp")
 
 sortSentenceAInt :: VerifiedKoreSentence
 sortSentenceAInt =
-    sentencePureToKore (asSentence sentence)
+    toKoreSentence (asSentence sentence)
   where
     sentence :: SentenceSort Object (CommonStepPattern Object)
     sentence =
@@ -242,7 +252,7 @@ sortSentenceAInt =
 
 sortSentenceKItem :: VerifiedKoreSentence
 sortSentenceKItem =
-    sentencePureToKore (asSentence sentence)
+    toKoreSentence (asSentence sentence)
   where
     sentence :: SentenceSort Object (CommonStepPattern Object)
     sentence =

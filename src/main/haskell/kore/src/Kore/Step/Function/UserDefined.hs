@@ -72,7 +72,7 @@ ruleFunctionEvaluator
     -- ^ Evaluates functions in patterns
     -> CofreeF
         (Application level)
-        (Valid level)
+        (Valid (variable level) level)
         (StepPattern level variable)
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
@@ -104,7 +104,7 @@ ruleFunctionEvaluator
         :: MetaOrObject level
         => CofreeF
             (Application level)
-            (Valid level)
+            (Valid (variable level) level)
             (StepPattern level variable)
         -> ExpandedPattern level variable
     stepperConfiguration (valid :< app') =

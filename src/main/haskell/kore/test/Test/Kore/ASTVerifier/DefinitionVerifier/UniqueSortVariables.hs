@@ -6,11 +6,11 @@ import Test.Tasty
        ( TestTree )
 
 import Kore.AST.Kore
-import Kore.AST.PureToKore
 import Kore.AST.Sentence
 import Kore.AST.Valid
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
+import Kore.Step.Pattern
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -431,12 +431,12 @@ test_uniqueSortVariables =
     ]
   where
     topS =
-        patternPureToKore
+        toKorePattern
             (mkTop
                 (simpleSort $ SortName "s" :: Sort Object)
             )
     topS1 =
-        patternPureToKore
+        toKorePattern
             (mkTop
                 (simpleSort $ SortName "s1" :: Sort Object)
             )

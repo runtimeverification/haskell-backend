@@ -12,7 +12,6 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import           Kore.AST.Kore
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -99,8 +98,8 @@ testDefinition =
         Definition
             { definitionAttributes = Attributes []
             , definitionModules =
-                [ modulePureToKore testObjectModule
-                , modulePureToKore testMetaModule
+                [ toKoreModule testObjectModule
+                , toKoreModule testMetaModule
                 , mainModule
                 ]
             }

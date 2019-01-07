@@ -13,12 +13,12 @@ import           Data.Maybe
 import qualified Data.Text as Text
 
 import Kore.AST.Kore
-import Kore.AST.PureToKore
 import Kore.AST.Sentence
 import Kore.AST.Valid
        ( mkTop )
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
+import Kore.Step.Pattern
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -551,7 +551,7 @@ unfilteredTestExamplesForSort
                             aliasName
                             sort
                             sortVariables
-                            (patternPureToKore $ mkTop sort)
+                            (toKorePattern $ mkTop sort)
                         )
                     : additionalSentences
                     )
@@ -578,7 +578,7 @@ unfilteredTestExamplesForSort
                             sort
                             additionalSort
                             sortVariables
-                            (patternPureToKore $ mkTop additionalSort)
+                            (toKorePattern $ mkTop additionalSort)
                         )
                     : additionalSentences
                     )

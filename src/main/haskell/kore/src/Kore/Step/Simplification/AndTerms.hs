@@ -776,7 +776,7 @@ when @src1@ is a subsort of @src2@.
  -}
 sortInjectionAndEqualsAssumesDifferentHeads
     ::  forall level variable m .
-        ( Eq (variable Object)
+        ( Ord (variable level)
         , MetaOrObject level
         , MonadCounter m
         )
@@ -1070,7 +1070,7 @@ The function patterns are unified by creating an @\\equals@ predicate.
 functionAnd
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )

@@ -170,21 +170,21 @@ war :: String -> StepPattern Meta W
 war s = mkVar (W s)
 
 makeEq
-    :: (SortedVariable var, Show (var Meta), Unparse (var Meta))
+    :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
     => StepPattern Meta var
     -> StepPattern Meta var
     -> StepPattern Meta var
 makeEq = mkEquals sortVariable
 
 makeAnd
-    :: (SortedVariable var, Show (var Meta), Unparse (var Meta))
+    :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
     => StepPattern Meta var
     -> StepPattern Meta var
     -> StepPattern Meta var
 makeAnd p1 p2 = mkAnd p1 p2
 
 makeEquals
-    :: (SortedVariable var, Eq (var Meta), Show (var Meta), Unparse (var Meta))
+    :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
     => StepPattern Meta var -> StepPattern Meta var -> Predicate Meta var
 makeEquals p1 p2 = makeEqualsPredicate p1 p2
 

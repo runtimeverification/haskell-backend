@@ -286,8 +286,10 @@ stepWithRuleForUnifier
     -- Distinguish configuration (pattern) and axiom variables by lifting them
     -- into 'StepperVariable'.
     let
-        axiomLeft = mapVariables AxiomVariable axiomLeftRaw
-        startPattern = mapVariables ConfigurationVariable initialTerm
+        axiomLeft =
+            Kore.Step.Pattern.mapVariables AxiomVariable axiomLeftRaw
+        startPattern =
+            Kore.Step.Pattern.mapVariables ConfigurationVariable initialTerm
 
     let
         -- Keep a set of all variables for remapping errors (below).
@@ -398,7 +400,7 @@ applyUnificationToRhs
                 ExpandedPattern.mapVariables
                     ConfigurationVariable expandedPattern
 
-        wrapAxiomVariables = mapVariables AxiomVariable
+        wrapAxiomVariables = Kore.Step.Pattern.mapVariables AxiomVariable
         axiomRight :: StepPattern level (StepperVariable variable)
         axiomRight = wrapAxiomVariables axiomRightRaw
         axiomRequires = Predicate.mapVariables AxiomVariable axiomRequiresRaw
@@ -890,7 +892,7 @@ predicateStepVariablesToCommon existingVars mapped predicate' = do
         )
   where
     configurationVariablesToCommon =
-        mapVariables configurationVariableToCommon
+        Kore.Step.Pattern.mapVariables configurationVariableToCommon
 
 patternStepVariablesToCommon
     ::  ( FreshVariable variable
@@ -917,7 +919,7 @@ patternStepVariablesToCommon existingVars mapped patt = do
         )
   where
     configurationVariablesToCommon =
-        mapVariables configurationVariableToCommon
+        Kore.Step.Pattern.mapVariables configurationVariableToCommon
 
 configurationVariableToCommon
     :: StepperVariable variable level -> variable level
@@ -933,7 +935,7 @@ replacePatternVariables
     -> StepPattern level (StepperVariable variable)
     -> StepPattern level (StepperVariable variable)
 replacePatternVariables mapping =
-    mapVariables
+    Kore.Step.Pattern.mapVariables
         (\var -> fromMaybe var (Map.lookup var mapping))
 
 addAxiomVariablesAsConfig

@@ -5,11 +5,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( HasCallStack, assertEqual, assertFailure, testCase )
 
-import Data.Text
-       ( Text )
+import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Kore
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTPrettyPrint
@@ -20,6 +20,7 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
+import           Kore.Step.Pattern
 import           Kore.Unparser
                  ( unparseToString )
 
@@ -189,13 +190,13 @@ simpleMetaAliasSentence :: AliasName -> SortName -> VerifiedKoreSentence
 simpleMetaAliasSentence alias sort =
     asSentence (simpleAliasSentence @Meta alias sort r)
   where
-    r = patternPureToKore $ mkTop (simpleSort sort :: Sort Meta)
+    r = toKorePattern $ mkTop (simpleSort sort :: Sort Meta)
 
 simpleObjectAliasSentence :: AliasName -> SortName -> VerifiedKoreSentence
 simpleObjectAliasSentence alias sort =
    asSentence (simpleAliasSentence @Object alias sort r)
   where
-    r = patternPureToKore $ mkTop (simpleSort sort :: Sort Object)
+    r = toKorePattern $ mkTop (simpleSort sort :: Sort Object)
 
 simpleAliasSentence
     :: AliasName
@@ -308,7 +309,7 @@ aliasSentenceWithSort (AliasName name) sort =
                     , applicationChildren = []
                     }
             , sentenceAliasRightPattern =
-                patternPureToKore $ mkTop patternMetaSort
+                toKorePattern $ mkTop patternMetaSort
             , sentenceAliasAttributes =
                 Attributes [] :: Attributes
             }
@@ -337,7 +338,7 @@ metaAliasSentenceWithSortParameters
                     , applicationChildren = []
                     }
             , sentenceAliasRightPattern =
-                patternPureToKore $ mkTop sort
+                toKorePattern $ mkTop sort
             , sentenceAliasAttributes = Attributes []
             }
             :: VerifiedKoreSentenceAlias Meta
@@ -596,7 +597,7 @@ objectAliasSentenceWithArguments a b c =
         (asKorePattern $ valid :< top')
   where
     top' = TopPattern Top { topSort = b }
-    valid = Valid { patternSort = b }
+    valid = Valid { patternSort = b, freeVariables = Set.empty }
 
 aliasSentenceWithArguments
     :: MetaOrObject level
@@ -649,7 +650,7 @@ unifiedSortVariable _x (SortVariableName name) =
     asUnified (sortVariable name :: SortVariable level)
 
 stringUnifiedPattern :: String -> VerifiedKorePattern
-stringUnifiedPattern s = patternPureToKore (mkStringLiteral s)
+stringUnifiedPattern s = toKorePattern (mkStringLiteral s)
 
 variable :: VariableName -> Sort level -> Variable level
 variable (VariableName name) sort =
@@ -670,8 +671,11 @@ variablePattern name sort =
 
 unifiedVariablePattern
     :: MetaOrObject level => VariableName -> Sort level -> VerifiedKorePattern
-unifiedVariablePattern name sort =
-    asKorePattern (Valid { patternSort = sort } :< variablePattern name sort)
+unifiedVariablePattern name patternSort =
+    asKorePattern (valid :< variablePattern name patternSort)
+  where
+    freeVariables = Set.singleton (asUnified $ variable name patternSort)
+    valid = Valid { patternSort, freeVariables }
 
 simpleExistsPattern
     :: MetaOrObject level
@@ -682,7 +686,7 @@ simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
         { existsSort = resultSort
         , existsVariable = quantifiedVariable
-        , existsChild = patternPureToKore $ mkVar quantifiedVariable
+        , existsChild = toKorePattern $ mkVar quantifiedVariable
         }
 
 simpleExistsUnifiedPattern
@@ -690,7 +694,7 @@ simpleExistsUnifiedPattern
 simpleExistsUnifiedPattern name sort =
     asKorePattern $ valid :< simpleExistsPattern (variable name sort) sort
   where
-    valid = Valid { patternSort = sort }
+    valid = Valid { patternSort = sort, freeVariables = Set.empty }
 
 simpleExistsObjectUnifiedPattern
     :: VariableName -> Sort Object -> VerifiedKorePattern
@@ -712,7 +716,7 @@ simpleExistsEqualsUnifiedPattern
     (OperandSort operandSort)
     (ResultSort resultSort)
   =
-    patternPureToKore
+    toKorePattern
         (mkExists
             var
             (mkEquals resultSort variablePattern' variablePattern')
@@ -752,7 +756,7 @@ applicationUnifiedPatternWithParams
     -> [Sort level]
     -> VerifiedKorePattern
 applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
-    patternPureToKore
+    toKorePattern
         (mkApp
             resultSort
             SymbolOrAlias
