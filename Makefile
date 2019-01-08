@@ -12,10 +12,10 @@ kore:
 k-frontend:
 	mkdir -p $(BUILD_DIR)
 	rm -rf $(K_DIR) $(K_NIGHTLY)
-	wget --output-document $(K_NIGHTLY) \
+	curl --location --output $(K_NIGHTLY) \
 	    $$(curl 'https://api.github.com/repos/kframework/k/releases' | jq --raw-output '.[0].assets[0].browser_download_url')
 	mkdir --parents $(K_DIR)
-	tar --extract --verbose --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIR)
+	tar --extract --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIR)
 
 docs: haddock
 
