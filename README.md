@@ -33,3 +33,15 @@ The `/src` directory contains a parser for the Kore language implemented
 in scala.
 
 The `/src/test` directory contains a collection of Kore definition examples.
+
+## Build Dependencies
+
+-   [curl](https://curl.haxx.se/) and [jq](https://stedolan.github.io/jq/) for downloading and building latest nightly K.
+-   [git](https://git-scm.com/) for checkstyle on the repository history and files.
+-   [stack](https://www.haskellstack.org/) for building the Kore project using `make`.
+
+Example installation of dependencies on Ubuntu:
+
+```sh
+sudo apt install curl jq git haskell-stack
+```
