@@ -42,9 +42,9 @@ Algorithm
 Consider the following "one-path" reachability goal
 
 ```
-∀ X . φ(X) → ◆ ∃ Y . ψ(X, Y)
+∀ X . φ(X) → ◇w ∃ Y . ψ(X, Y)
 ```
-where `X` and `Y` are sets of variables and `◆` denotes "strong-eventually"
+where `X` and `Y` are sets of variables and `◇w` denotes "weak-eventually"
 
 Consider also the axiom
 
@@ -56,38 +56,38 @@ The steps below show how the given goal is transformed by "applying" the
 given axiom.
 
 
-### Unrolling "strong-eventually"
+### Unrolling "weak-eventually"
 
 Let `Δ = ν f . •f` denote the formula for diverging computation.
 Then,  for any formula ψ:
 
-- `◆ ψ = ◇ ψ ∨ Δ` by the definition of "strong eventually"
+- `◇w ψ = ◇ ψ ∨ Δ` by the definition of "weak eventually"
 - `    = ψ ∨ •◇ ψ ∨ Δ` by unrolling `◇`
 - `    = ψ ∨ •◇ ψ ∨ •Δ` by unrolling `Δ`
 - `    = ψ ∨ •(◇ ψ ∨ Δ)`
   because `•` commutes with `∨`
-- `    = ψ ∨ •◆ ψ`
+- `    = ψ ∨ •◇w ψ`
 
 
 Therefore proving
 ```
-∀ X . φ(X) → ◆ ∃ Y . ψ(X, Y)
+∀ X . φ(X) → ◇w ∃ Y . ψ(X, Y)
 ```
 is equivalent to proving
 ```
-∀ X . φ(X) →  ∃ Y . ψ(X, Y) ∨ •◆ ∃ Y . ψ(X, Y)`
+∀ X . φ(X) →  ∃ Y . ψ(X, Y) ∨ •◇w ∃ Y . ψ(X, Y)`
 ```
 
 We can now move `∃ Y . ψ(X, Y)` to the left of the implication,
 and (assuming law of excluded middle) we obtain the equivalent:
 ```
-∀ X . φ(X) ∧ ¬∃ Y . ψ(X, Y) →  •◆ ∃ Y . ψ(X, Y)`
+∀ X . φ(X) ∧ ¬∃ Y . ψ(X, Y) →  •◇w ∃ Y . ψ(X, Y)`
 ```
 
 
 ### Applying the axiom `∀ Z . α(Z) → •β(Z)`
 
-In the following let `Ψ(X) = ◆ ∃ Y . ψ(X, Y)` and let `Φ(X)` be the extended
+In the following let `Ψ(X) = ◇w ∃ Y . ψ(X, Y)` and let `Φ(X)` be the extended
 function-like pattern obtained from applying the
 `AndNotExistsSimplification` algorithm to `φ(X) ∧ ¬∃ Y . ψ(X, Y)`.
 
@@ -126,9 +126,9 @@ Moreover, we can apply the `AndNotExistsSimplification` algorithm on
 
 Therefore, it is sound to replace the original goal with
 ```
-(∀ X . Φ'(X) → ◆ ∃ Y . ψ(X, Y))
+(∀ X . Φ'(X) → ◇w ∃ Y . ψ(X, Y))
 ∧
-(∀ X . Φα(X) → •◆ ∃ Y . ψ(X, Y))
+(∀ X . Φα(X) → •◇w ∃ Y . ψ(X, Y))
 ```
 
 The process of applying an axiom can then be restarted on the second conjunct,
@@ -145,7 +145,7 @@ from the unification process.
 
 Consider proving that
 ```
-∀ A:Int . 3 / A -> ◆ ∃ B:Int . B
+∀ A:Int . 3 / A -> ◇w ∃ B:Int . B
 ```
 
 using axiom
@@ -155,22 +155,22 @@ using axiom
 
 Then the goal will simplify to
 ```
-(∀ A:Int . 3 /Int A ∧ (A =/=Int 0 = true)-> ◆ ∃ B:Int . B)
+(∀ A:Int . 3 /Int A ∧ (A =/=Int 0 = true)-> ◇w ∃ B:Int . B)
 ∧
-(∀ A:Int . 3 / A ∧ ¬ (A =/=Int 0 = true) -> • ◆ ∃ B:Int . B)
+(∀ A:Int . 3 / A ∧ ¬ (A =/=Int 0 = true) -> • ◇w ∃ B:Int . B)
 ```
 
 The first conjunct can be discharged immediately, leaving the second
 one as a goal.
 ```
-(∀ A:Int . 3 / A ∧ ¬ (A =/=Int 0 = true) -> • ◆ ∃ B:Int . B
+(∀ A:Int . 3 / A ∧ ¬ (A =/=Int 0 = true) -> • ◇w ∃ B:Int . B
 ```
 
 ### Example (from unification)
 
 Consider proving the goal
 ```
-∀ A:Int . if A <Int 0 then -1 else 1 -> ◆ (∃ B:Int . B = -1 ∨  B = 1)
+∀ A:Int . if A <Int 0 then -1 else 1 -> ◇w (∃ B:Int . B = -1 ∨  B = 1)
 ```
 
 using axioms
@@ -182,36 +182,36 @@ and
 ∀ E1:Exp, E2:Exp . if false then E1 else E2 -> • E2
 ```
 
-First, we unroll `◆` to get
+First, we unroll `◇w` to get
 ```
-∀ A:Int . if A <Int 0 then -1 else 1 ∧ ¬(∃ B:Int . B = -1 ∨  B = 1) -> •◆ (∃ B:Int . B = -1 ∨  B = 1)
+∀ A:Int . if A <Int 0 then -1 else 1 ∧ ¬(∃ B:Int . B = -1 ∨  B = 1) -> •◇w (∃ B:Int . B = -1 ∨  B = 1)
 ```
 
 Now, since the `if` construct is not an integer, this simplifies to
 ```
-∀ A:Int . if A <Int 0 then -1 else 1 -> •◆ (∃ B:Int . B = -1 ∨  B = 1)
+∀ A:Int . if A <Int 0 then -1 else 1 -> •◇w (∃ B:Int . B = -1 ∨  B = 1)
 ```
 
 
 Then, by using the first axiom, the goal will simplify to
 ```
-(∀ A:Int . -1 ∧ A <Int 0 = true -> ◆ (∃ B:Int . B = -1 ∨  B = 1))
+(∀ A:Int . -1 ∧ A <Int 0 = true -> ◇w (∃ B:Int . B = -1 ∨  B = 1))
 ∧
-(∀ A:Int . if A <Int 0 then -1 else 1 ∧ ¬(A <Int 0 = true) -> •◆ (∃ B:Int . B = -1 ∨  B = 1))
+(∀ A:Int . if A <Int 0 then -1 else 1 ∧ ¬(A <Int 0 = true) -> •◇w (∃ B:Int . B = -1 ∨  B = 1))
 ```
 
 The first conjunct can be discharged immediately. Also, using that `true` and
 `false` are the only constructors for `Bool`, `¬(A <Int 0 = true)` can
 be simplified to `A <Int 0 = false`, making the goal:
 ```
-(∀ A:Int . if A <Int 0 then -1 else 1 ∧ A <Int 0 = false -> •◆ (∃ B:Int . B = -1 ∨  B = 1))
+(∀ A:Int . if A <Int 0 then -1 else 1 ∧ A <Int 0 = false -> •◇w (∃ B:Int . B = -1 ∨  B = 1))
 ```
 
 By applying next the "else" axiom,  we obtain the goal:
 ```
-(∀ A:Int . 1 ∧ A <Int 0 = false -> ◆ (∃ B:Int . B = -1 ∨  B = 1))
+(∀ A:Int . 1 ∧ A <Int 0 = false -> ◇w (∃ B:Int . B = -1 ∨  B = 1))
 ∧
-(∀ A:Int . if A <Int 0 then -1 else 1 ∧ ¬(A <Int 0 = true)  ∧ ¬(A <Int 0 = false)-> •◆ (∃ B:Int . B = -1 ∨  B = 1))
+(∀ A:Int . if A <Int 0 then -1 else 1 ∧ ¬(A <Int 0 = true)  ∧ ¬(A <Int 0 = false)-> •◇w (∃ B:Int . B = -1 ∨  B = 1))
 ```
 
 Now both conjuncts are discharged immediately
