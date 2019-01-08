@@ -27,6 +27,7 @@ import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
 import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -42,7 +43,6 @@ import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.Free
 import           Kore.Variables.Fresh
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
@@ -201,10 +201,12 @@ getDependencies
     -> variable level  -- ^ substitution variable
     -> StepPattern level variable  -- ^ substitution pattern
     -> Set (variable level)
-getDependencies interesting var p@(Recursive.project -> _ :< h) =
-    case h of
+getDependencies interesting var (Recursive.project -> valid :< patternHead) =
+    case patternHead of
         VariablePattern v | v == var -> Set.empty
-        _ -> Set.intersection interesting (freePureVariables p)
+        _ -> Set.intersection interesting freeVariables
+  where
+    Valid { freeVariables } = valid
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.
