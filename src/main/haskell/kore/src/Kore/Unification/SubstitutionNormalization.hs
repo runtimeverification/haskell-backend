@@ -37,8 +37,6 @@ import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isNonSimplifiable_ )
-import           Kore.Substitution.Class
-import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import           Kore.Unification.Substitution
@@ -58,9 +56,9 @@ normalizeSubstitution
     ::  forall m level variable
      .  ( MetaOrObject level
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         , MonadCounter m
         , Show (variable level)
         )
@@ -146,13 +144,14 @@ variableToSubstitution varToPattern var =
 normalizeSortedSubstitution
     ::  ( MetaOrObject level
         , OrdMetaOrObject variable
-        , Eq (variable level)
+        , Ord (variable level)
         , MonadCounter m
         , FreshVariable variable
+        , SortedVariable variable
         )
     => [(variable level, StepPattern level variable)]
     -> [(variable level, StepPattern level variable)]
-    -> [(Unified variable, StepPattern level variable)]
+    -> [(variable level, StepPattern level variable)]
     -> m (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
     return Predicated
@@ -172,11 +171,11 @@ normalizeSortedSubstitution
             normalizeSortedSubstitution unprocessed result substitution
         _ -> do
             substitutedVarPattern <-
-                substitute varPattern (ListSubstitution.fromList substitution)
+                substitute (Map.fromList substitution) varPattern
             normalizeSortedSubstitution
                 unprocessed
                 ((var, substitutedVarPattern) : result)
-                ((asUnified var, substitutedVarPattern) : substitution)
+                ((var, substitutedVarPattern) : substitution)
 
 extractVariables
     ::  ( MetaOrObject level

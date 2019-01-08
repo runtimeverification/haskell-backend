@@ -39,6 +39,7 @@ module Kore.Predicate.Predicate
     , fromPredicate
     , unwrapPredicate
     , wrapPredicate
+    , substitute
     ) where
 
 import           Control.DeepSeq
@@ -47,6 +48,8 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Hashable
 import           Data.List
                  ( foldl', nub )
+import           Data.Map.Strict
+                 ( Map )
 import           Data.Set
                  ( Set )
 import           GHC.Generics
@@ -57,6 +60,8 @@ import           Kore.AST.Valid
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Step.Pattern
+                 ( StepPattern )
+import qualified Kore.Step.Pattern as Step.Pattern
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
@@ -65,6 +70,8 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Free
                  ( freePureVariables, pureAllVariables )
+import           Kore.Variables.Fresh
+                 ( FreshVariable, MonadCounter )
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
@@ -461,7 +468,7 @@ mapVariables
     => (from level -> to level)
     -> Predicate level from
     -> Predicate level to
-mapVariables f = fmap (Kore.Step.Pattern.mapVariables f)
+mapVariables f = fmap (Step.Pattern.mapVariables f)
 
 {- | Extract the set of all (free and bound) variables from a @Predicate@.
 -}
@@ -510,3 +517,22 @@ singleSubstitutionToPredicate
     -> Predicate level variable
 singleSubstitutionToPredicate (var, patt) =
     makeEqualsPredicate (mkVar var) patt
+
+{- | Traverse the predicate from the top down and apply substitutions.
+
+The 'freeVariables' annotation is used to avoid traversing subterms that
+contain none of the targeted variables.
+
+ -}
+substitute
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , MonadCounter m
+        , Ord (variable level)
+        , SortedVariable variable
+        )
+    => Map (variable level) (StepPattern level variable)
+    -> Predicate level variable
+    -> m (Predicate level variable)
+substitute subst (GenericPredicate stepPattern) =
+    GenericPredicate <$> Step.Pattern.substitute subst stepPattern

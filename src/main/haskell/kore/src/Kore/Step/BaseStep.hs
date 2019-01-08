@@ -23,14 +23,13 @@ module Kore.Step.BaseStep
     , stepWithRuleForUnifier
     ) where
 
-import qualified Control.Arrow as Arrow
 import           Control.Monad.Except
 import           Control.Monad.Trans.Except
                  ( throwE )
 import           Data.Either
                  ( partitionEithers )
 import qualified Data.Hashable as Hashable
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 import           Data.Semigroup
@@ -76,9 +75,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
-import           Kore.Substitution.Class
-                 ( substitute )
-import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Error
@@ -471,11 +467,9 @@ applyUnificationToRhs
 
     let
         rawNormalizedSubstitution = Substitution.unwrap normalizedSubstitution
-        unifiedSubstitution =
-            ListSubstitution.fromList
-                (makeUnifiedSubstitution rawNormalizedSubstitution)
+        substitution = Map.fromList rawNormalizedSubstitution
     -- Apply substitution to resulting configuration and conditions.
-    rawResult <- substitute axiomRight unifiedSubstitution
+    rawResult <- substitute substitution axiomRight
 
     let
         variablesInLeftAxiom =
@@ -988,14 +982,3 @@ removeAxiomVariables =
             ConfigurationVariable _ -> True
         )
     . Substitution.unwrap
-
-makeUnifiedSubstitution
-    :: MetaOrObject level
-    => [( StepperVariable variable level
-        , StepPattern level (StepperVariable variable)
-        )]
-    -> [(Unified (StepperVariable variable)
-        , StepPattern level (StepperVariable variable)
-        )]
-makeUnifiedSubstitution =
-    map (Arrow.first asUnified)
