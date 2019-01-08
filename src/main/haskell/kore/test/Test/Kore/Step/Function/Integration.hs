@@ -324,6 +324,53 @@ test_functionIntegration =
                 (Mock.f Mock.c)
         assertEqualWithExplanation "" expect actual
 
+    , testCase "Merges substitutions with reevaluation ones." $ do
+        let expect =
+                Predicated
+                    { term = Mock.f Mock.e
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [   ( Mock.var_x_1
+                            , Mock.a
+                            )
+                        ,   ( Mock.var_z_1
+                            , Mock.a
+                            )
+                        ]
+                    }
+        actual <-
+            evaluate
+                mockMetadataTools
+                (Map.map That $ Map.fromList
+                    [   ( Mock.cId
+                        ,   [ appliedMockEvaluator Predicated
+                                { term = Mock.d
+                                , predicate = makeTruePredicate
+                                , substitution = Substitution.unsafeWrap
+                                    [   ( Mock.x
+                                        , mkVar Mock.z
+                                        )
+                                    ]
+                                }
+                            ]
+                        )
+                    ,   ( Mock.dId
+                        ,   [ appliedMockEvaluator Predicated
+                                { term = Mock.e
+                                , predicate = makeTruePredicate
+                                , substitution = Substitution.unsafeWrap
+                                    [   ( Mock.x
+                                        , Mock.a
+                                        )
+                                    ]
+                                }
+                            ]
+                        )
+                    ]
+                )
+                (Mock.f Mock.c)
+        assertEqualWithExplanation "" expect actual
+
     , testCase "Simplifies substitution-predicate." $ do
         -- Mock.plain10 below prevents:
         -- 1. unification without substitution.
