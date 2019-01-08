@@ -12,7 +12,9 @@ module Kore.Step.Simplification.Exists
     , makeEvaluate
     ) where
 
-import qualified Control.Arrow as Arrow
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
@@ -38,9 +40,6 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Substitution.Class
-                 ( substitute )
-import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -186,8 +185,7 @@ makeEvaluate
     (Local localSubstitution, Global globalSubstitution) =
         splitSubstitutionByVariable variable $ Substitution.unwrap substitution
     localSubstitutionList =
-        ListSubstitution.fromList
-            (map (Arrow.first asUnified) localSubstitution)
+        Map.fromList localSubstitution
 
 makeEvaluateNoFreeVarInSubstitution
     ::  ( MetaOrObject level
@@ -254,14 +252,13 @@ substituteTermPredicate
         )
     => StepPattern level variable
     -> Predicate level variable
-    -> ListSubstitution.Substitution (Unified variable) (StepPattern level variable)
+    -> Map (variable level) (StepPattern level variable)
     -> Substitution level variable
     -> Simplifier
         (ExpandedPattern level variable, SimplificationProof level)
 substituteTermPredicate term predicate substitution globalSubstitution = do
-    substitutedTerm <- substitute term substitution
-    substitutedPredicate <-
-        traverse (`substitute` substitution) predicate
+    substitutedTerm <- substitute substitution term
+    substitutedPredicate <- traverse (substitute substitution) predicate
     return
         ( Predicated
             { term = substitutedTerm

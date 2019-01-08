@@ -14,12 +14,10 @@ module Kore.Exec
     , prove
     ) where
 
-import qualified Control.Arrow as Arrow
 import           Control.Comonad
 import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
-                 ( first )
 import qualified Data.Map.Merge.Strict as Map
 import qualified Data.Map.Strict as Map
 import           Data.These
@@ -31,7 +29,7 @@ import qualified Data.Limit as Limit
 import           Kore.AST.Common
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
-                 ( Meta, Object (..), asUnified )
+                 ( Meta, Object (..) )
 import           Kore.AST.Valid
 import qualified Kore.Builtin as Builtin
 import           Kore.IndexedModule.IndexedModule
@@ -77,9 +75,6 @@ import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Substitution.Class
-                 ( substitute )
-import qualified Kore.Substitution.List as ListSubstitution
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
@@ -238,12 +233,10 @@ preSimplify
     let
         [Predicated {term, predicate = PredicateTrue, substitution}] =
             OrOfExpandedPattern.extractPatterns simplifiedOrLhs
-        listSubst =
-            ListSubstitution.fromList
-                (map (Arrow.first asUnified) (Substitution.unwrap substitution))
-    newLhs <- substitute term listSubst
-    newRhs <- substitute rhs listSubst
-    newRequires <- traverse (`substitute` listSubst) requires
+        subst = Map.fromList (Substitution.unwrap substitution)
+    newLhs <- substitute subst term
+    newRhs <- substitute subst rhs
+    newRequires <- traverse (substitute subst) requires
     return RulePattern
         { left = newLhs
         , right = newRhs
