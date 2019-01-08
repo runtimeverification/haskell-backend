@@ -16,6 +16,7 @@ k-frontend:
 	    $$(curl 'https://api.github.com/repos/kframework/k/releases' | jq --raw-output '.[0].assets[0].browser_download_url')
 	mkdir --parents $(K_DIR)
 	tar --extract --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIR)
+	$(KRUN) --version
 
 docs: haddock
 
