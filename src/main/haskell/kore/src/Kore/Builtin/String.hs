@@ -38,7 +38,7 @@ import           Control.Error
 import           Control.Monad
                  ( void )
 import           Data.Char
-                 ( chr )
+                 ( chr, ord )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.List
                  ( findIndex, isPrefixOf, tails )
@@ -129,6 +129,12 @@ symbolVerifiers =
             [assertSort, Int.assertSort]
         )
     ,   ( string2IntKeyT
+        , Builtin.verifySymbol Int.assertSort [assertSort]
+        )
+    ,   ( chrKeyT
+        , Builtin.verifySymbol assertSort [Int.assertSort]
+        )
+    ,   ( ordKeyT
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
     ]
@@ -258,6 +264,11 @@ chrKey :: String
 chrKey = "STRING.chr"
 chrKeyT :: Text
 chrKeyT = "STRING.chr"
+
+ordKey :: String
+ordKey = "STRING.ord"
+ordKeyT :: Text
+ordKeyT = "STRING.ord"
 
 evalSubstr :: Builtin.Function
 evalSubstr = Builtin.functionEvaluator evalSubstr0
@@ -410,6 +421,33 @@ evalChr = Builtin.functionEvaluator evalChr0
                 . asExpandedPattern resultSort
                 $ [ chr (fromIntegral _n) ]
 
+evalOrd :: Builtin.Function
+evalOrd = Builtin.functionEvaluator evalOrd0
+    where
+    evalOrd0
+        :: (Ord (variable Object), Show (variable Object))
+        => MetadataTools Object StepperAttributes
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
+    evalOrd0 _ _ resultSort arguments =
+        Builtin.getAttemptedFunction $ do
+            let _str =
+                    case arguments of
+                        [_str] -> _str
+                        _    -> Builtin.wrongArity ordKey
+            _str <- expectBuiltinString ordKey _str
+            Builtin.appliedFunction
+                . maybe crash charToOrdInt
+                $ listToMaybe _str
+      where
+        crash = Builtin.verifierBug $ ordKey <> " called with string of length != 1"
+        charToOrdInt =
+            Int.asExpandedPattern resultSort
+            . toInteger
+            . ord
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -423,6 +461,7 @@ builtinFunctions =
     , (string2BaseKeyT, evalString2Base)
     , (string2IntKeyT, evalString2Int)
     , (chrKeyT, evalChr)
+    , (ordKeyT, evalOrd)
     ]
   where
     comparator name op =

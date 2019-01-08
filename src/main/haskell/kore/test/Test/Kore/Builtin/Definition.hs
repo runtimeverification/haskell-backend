@@ -259,6 +259,9 @@ differenceSetSymbol = builtinSymbol Set.differenceKeyT
 toListSetSymbol :: SymbolOrAlias Object
 toListSetSymbol = builtinSymbol Set.toListKeyT
 
+sizeSetSymbol :: SymbolOrAlias Object
+sizeSetSymbol = builtinSymbol Set.sizeKeyT
+
 -- ** String
 
 ltStringSymbol :: SymbolOrAlias Object
@@ -272,6 +275,12 @@ substrStringSymbol = builtinSymbol "substrString"
 
 lengthStringSymbol :: SymbolOrAlias Object
 lengthStringSymbol = builtinSymbol "lengthString"
+
+chrStringSymbol :: SymbolOrAlias Object
+chrStringSymbol = builtinSymbol "chrString"
+
+ordStringSymbol :: SymbolOrAlias Object
+ordStringSymbol = builtinSymbol "ordString"
 
 findStringSymbol :: SymbolOrAlias Object
 findStringSymbol = builtinSymbol "findString"
@@ -919,6 +928,11 @@ setModule =
                 listSort
                 [setSort]
                 [hookAttribute Set.toListKey]
+            , hookedSymbolDecl
+                sizeSetSymbol
+                intSort
+                [setSort]
+                [hookAttribute Set.sizeKey]
             ]
         }
 
@@ -957,6 +971,16 @@ stringModule =
                 intSort
                 [stringSort]
                 [hookAttribute "STRING.length"]
+            , hookedSymbolDecl
+                chrStringSymbol
+                stringSort
+                [intSort]
+                [hookAttribute "STRING.chr"]
+            , hookedSymbolDecl
+                ordStringSymbol
+                intSort
+                [stringSort]
+                [hookAttribute "STRING.ord"]
             , hookedSymbolDecl
                 findStringSymbol
                 intSort
