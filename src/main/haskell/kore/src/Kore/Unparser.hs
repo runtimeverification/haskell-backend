@@ -193,6 +193,9 @@ instance
             Domain.BuiltinMap _ -> Builtin.notImplementedInternal
             Domain.BuiltinList _ -> Builtin.notImplementedInternal
             Domain.BuiltinSet _ -> Builtin.notImplementedInternal
+            Domain.BuiltinInteger int -> dquotes $ pretty int
+            Domain.BuiltinBool bool -> dquotes $ pretty bool
+
 
 instance Unparse (Domain.External child) where
     unparse (Domain.External lit) = unparse lit
