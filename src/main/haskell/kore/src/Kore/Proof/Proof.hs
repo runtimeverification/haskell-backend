@@ -49,8 +49,8 @@ import           GHC.Generics
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.ASTPrettyPrint
-import           Kore.ASTUtils.Substitution
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Proof.Substitution
 import           Kore.Unparser
 import           Kore.Variables.Free
 
