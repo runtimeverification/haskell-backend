@@ -183,6 +183,26 @@ test_toList =
             (===) ExpandedPattern.top =<< evaluate predicate
         )
 
+test_size :: TestTree
+test_size =
+    testPropertyWithSolver
+        "SET.size is size"
+        (do
+            set <- forAll genSetConcreteIntegerPattern
+            let
+                size = Set.size set
+                patExpected = Test.Int.asPattern $ toInteger size
+                patActual =
+                    mkApp
+                        intSort
+                        sizeSetSymbol
+                        [ asPattern set ]
+                predicate = mkEquals_ patExpected patActual
+            expect <- evaluate patExpected
+            (===) expect =<< evaluate patActual
+            (===) ExpandedPattern.top =<< evaluate predicate
+        )
+
 genSetSortedVariable
     :: MetaOrObject level
     => Sort level

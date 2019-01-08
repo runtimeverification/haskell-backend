@@ -48,6 +48,7 @@ import           Kore.Builtin.Error
                  ( notImplementedInternal )
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.KEqual as KEqual
+import qualified Kore.Builtin.Krypto as Krypto
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
@@ -90,6 +91,7 @@ koreVerifiers =
         <> KEqual.symbolVerifiers
         <> Set.symbolVerifiers
         <> String.symbolVerifiers
+        <> Krypto.symbolVerifiers
     , patternVerifier =
            Bool.patternVerifier
         <> Int.patternVerifier
@@ -120,6 +122,7 @@ koreEvaluators = evaluators builtins
             , Map.builtinFunctions
             , Set.builtinFunctions
             , String.builtinFunctions
+            , Krypto.builtinFunctions
             ]
 
 {- | Construct an evaluation context for the given builtin functions.

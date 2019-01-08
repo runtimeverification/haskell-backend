@@ -44,6 +44,8 @@ module Kore.Builtin.Set
     , differenceKeyT
     , toListKey
     , toListKeyT
+    , sizeKey
+    , sizeKeyT
       -- * Unification
     , unifyEquals
     ) where
@@ -72,6 +74,7 @@ import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
@@ -145,6 +148,9 @@ symbolVerifiers =
       )
     , ( toListKeyT
       , Builtin.verifySymbol List.assertSort [assertSort]
+      )
+    , ( sizeKeyT
+      , Builtin.verifySymbol Int.assertSort [assertSort]
       )
     ]
   where
@@ -333,6 +339,29 @@ evalToList = Builtin.functionEvaluator evalToList0
                 . Set.toList
                 $ _set
 
+evalSize :: Builtin.Function
+evalSize = Builtin.functionEvaluator evalSize0
+  where
+    evalSize0
+        :: Ord (variable Object)
+        => MetadataTools Object StepperAttributes
+        -> StepPatternSimplifier Object variable
+        -> Sort Object
+        -> [StepPattern Object variable]
+        -> Simplifier (AttemptedFunction Object variable)
+    evalSize0 tools _ resultSort arguments =
+        Builtin.getAttemptedFunction $ do
+            let _set =
+                        case arguments of
+                            [_set] -> _set
+                            _      -> Builtin.wrongArity sizeKey
+            _set <- expectBuiltinSet sizeKey tools _set
+            Builtin.appliedFunction
+                . Int.asExpandedPattern resultSort
+                . toInteger
+                . Set.size
+                $ _set
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -344,6 +373,7 @@ builtinFunctions =
         , (inKeyT, evalIn)
         , (differenceKeyT, evalDifference)
         , (toListKeyT, evalToList)
+        , (sizeKeyT, evalSize)
         ]
 
 {- | Render a 'Set' as an internal domain value pattern of the given sort.
@@ -452,6 +482,11 @@ toListKey :: String
 toListKey = "SET.set2list"
 toListKeyT :: Text
 toListKeyT = "SET.set2list"
+
+sizeKey :: String
+sizeKey = "SET.size"
+sizeKeyT :: Text
+sizeKeyT = "SET.size"
 
 {- | Find the symbol hooked to @SET.unit@ in an indexed module.
  -}
