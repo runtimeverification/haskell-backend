@@ -41,7 +41,7 @@ test-kore:
 		cp -r $$(stack path --local-hpc-root) coverage_report; \
 	fi
 
-test-k:
+test-k: kore
 	$(MAKE) --directory src/main/k/working test-k -j$(NPROCS)
 
 jenkins: clean check all test docs
