@@ -1,6 +1,6 @@
 include include.mk
 
-jenkins: STACK_OPTS += --test --bench --coverage
+jenkins: STACK_OPTS += --test --bench
 export STACK_OPTS
 
 .PHONY: all clean docs haddock jenkins kore k-frontend stylish \

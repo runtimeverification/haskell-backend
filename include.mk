@@ -28,7 +28,7 @@ STACK_HADDOCK_OPTS = $(STACK_OPTS) --no-run-tests --no-run-benchmarks
 STACK_TEST_OPTS = $(STACK_OPTS) --no-run-benchmarks
 
 ifdef BUILD_NUMBER
-STACK_TEST_OPTS += --ta --xml=test-results.xml
+STACK_TEST_OPTS += --ta --xml=test-results.xml --coverage
 endif
 
 STACK_LOCAL_INSTALL_ROOT := $(shell stack path --local-install-root)
