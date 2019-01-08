@@ -40,6 +40,8 @@ data Builtin child
     | BuiltinMap !(Map Key child)
     | BuiltinList !(Seq child)
     | BuiltinSet !(Set Key)
+    | BuiltinInteger Integer
+    | BuiltinBool Bool
     deriving (Foldable, Functor, Generic, Traversable)
 
 deriving instance Eq child => Eq (Builtin child)
@@ -63,5 +65,9 @@ instance Hashable child => Hashable (Builtin child) where
                 salt `hashWithSalt` (2::Int) `hashWithSalt` list
             BuiltinSet (Foldable.toList -> set) ->
                 salt `hashWithSalt` (3::Int) `hashWithSalt` set
+            BuiltinInteger int ->
+                salt `hashWithSalt` (4::Int) `hashWithSalt` int
+            BuiltinBool bool ->
+                salt `hashWithSalt` (5::Int) `hashWithSalt` bool
 
 instance NFData child => NFData (Builtin child)
