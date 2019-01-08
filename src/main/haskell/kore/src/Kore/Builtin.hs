@@ -190,6 +190,11 @@ asPattern
             List.asPattern indexedModule domainValueSort <*> pure list
         Domain.BuiltinSet set ->
             Set.asPattern indexedModule domainValueSort <*> pure set
+        Domain.BuiltinInteger int ->
+            return $ Int.asPattern domainValueSort int
+        Domain.BuiltinBool bool ->
+            return $ Bool.asPattern domainValueSort bool
+
 
 {- | Externalize all builtin domain values in the given pattern.
 
@@ -230,3 +235,5 @@ asMetaPattern =
         Domain.BuiltinMap _ -> notImplementedInternal
         Domain.BuiltinList _ -> notImplementedInternal
         Domain.BuiltinSet _ -> notImplementedInternal
+        Domain.BuiltinInteger _ -> notImplementedInternal
+        Domain.BuiltinBool _ -> notImplementedInternal
