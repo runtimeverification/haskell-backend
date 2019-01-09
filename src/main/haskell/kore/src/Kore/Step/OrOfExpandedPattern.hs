@@ -155,7 +155,7 @@ make patts = filterOr (MultiOr patts)
 makeMultiOr :: [a] -> MultiOr a
 makeMultiOr = MultiOr
 
-{-|'makeFromPurePattern' constructs a normalized 'OrOfExpandedPattern' from
+{-| Constructs a normalized 'OrOfExpandedPattern' from
 'StepPatterns'.
 -}
 makeFromSinglePurePattern

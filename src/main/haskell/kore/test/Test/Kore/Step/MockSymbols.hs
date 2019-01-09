@@ -458,6 +458,8 @@ var_x_1 :: Variable Object
 var_x_1 = Variable (testId "var_x_1") testSort
 var_y_1 :: Variable Object
 var_y_1 = Variable (testId "var_y_1") testSort
+var_z_1 :: Variable Object
+var_z_1 = Variable (testId "var_z_1") testSort
 x :: Variable Object
 x = Variable (testId "x") testSort
 y :: Variable Object

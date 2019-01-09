@@ -14,7 +14,6 @@ module Kore.Step.Function.UserDefined
 
 import Control.Monad.Except
        ( runExceptT )
-import Data.Reflection
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -29,26 +28,21 @@ import           Kore.Step.BaseStep
                  stepWithRuleForUnifier )
 import           Kore.Step.BaseStep as StepResult
                  ( StepProof, StepResult (..) )
-import qualified Kore.Step.Condition.Evaluator as Predicate
-                 ( evaluate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
-import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( mergeWithPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make, traverseWithPairs )
+                 ( make )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
+import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -131,130 +125,16 @@ ruleFunctionEvaluator
                 { predicate = rewritingCondition }
             , _
             ) <-
-                evaluatePredicate
+                ExpandedPattern.simplifyPredicate
                     tools substitutionSimplifier simplifier stepPattern
-        case rewritingCondition of
-            PredicateFalse ->
-                return
-                    [   ( AttemptedFunction.Applied
-                            (OrOfExpandedPattern.make [])
-                        , SimplificationProof
-                        )
-                    ]
-            _ ->
-                reevaluateFunctions
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    rewrittenPattern
-
-
-{-| 'reevaluateFunctions' re-evaluates functions after a user-defined function
-was evaluated.
--}
-reevaluateFunctions
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , FreshVariable variable
-        )
-    => MetadataTools level StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
-    -- ^ Evaluates functions in patterns.
-    -> ExpandedPattern level variable
-    -- ^ Function evaluation result.
-    -> Simplifier
-        [(AttemptedFunction level variable, SimplificationProof level)]
-reevaluateFunctions
-    tools
-    substitutionSimplifier
-    wrappedSimplifier@(StepPatternSimplifier simplifier)
-    Predicated
-        { term   = rewrittenPattern
-        , predicate = rewritingCondition
-        , substitution = rewrittenSubstitution
-        }
-  = do
-    (pattOr , _proof) <-
-        -- TODO(virgil): This call should be done in Evaluator.hs, but,
-        -- for optimization purposes, it's done here. Make sure that
-        -- this still makes sense after the evaluation code is fully
-        -- optimized.
-        simplifier substitutionSimplifier rewrittenPattern
-    (mergedPatt, _proof) <-
-        OrOfExpandedPattern.mergeWithPredicateSubstitution
-            tools
-            substitutionSimplifier
-            wrappedSimplifier
-            Predicated
-                { term = ()
-                , predicate = rewritingCondition
-                , substitution = rewrittenSubstitution
-                }
-            pattOr
-    (evaluatedPatt, _) <-
-        OrOfExpandedPattern.traverseWithPairs
-            (evaluatePredicate tools substitutionSimplifier wrappedSimplifier)
-            mergedPatt
-    return
-        [( AttemptedFunction.Applied evaluatedPatt
-        , SimplificationProof
-        )]
-
-evaluatePredicate
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , FreshVariable variable
-        , SortedVariable variable
-        )
-    => MetadataTools level StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
-    -- ^ Evaluates functions in a pattern.
-    -> ExpandedPattern level variable
-    -- ^ The condition to be evaluated.
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
-evaluatePredicate
-    tools
-    substitutionSimplifier
-    simplifier
-    Predicated {term, predicate, substitution}
-  = do
-    (evaluated, _proof) <-
-        give tools
-            $ Predicate.evaluate
-                substitutionSimplifier
-                simplifier
-                predicate
-    let Predicated { predicate = evaluatedPredicate } = evaluated
-        Predicated { substitution = evaluatedSubstitution } = evaluated
-    (merged, _proof) <-
-        mergePredicatesAndSubstitutions
-            tools
-            substitutionSimplifier
-            [evaluatedPredicate]
-            [substitution, evaluatedSubstitution]
-    let Predicated { predicate = mergedPredicate } = merged
-        Predicated { substitution = mergedSubstitution } = merged
-    -- TODO(virgil): Do I need to re-evaluate the predicate?
-    return
-        ( Predicated
-            { term = term
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , SimplificationProof
-        )
+        let
+            results =
+                case rewritingCondition of
+                    PredicateFalse -> []
+                    _ -> [rewrittenPattern]
+        return
+            [   ( AttemptedFunction.Applied
+                    (OrOfExpandedPattern.make results)
+                , SimplificationProof
+                )
+            ]
