@@ -439,10 +439,13 @@ evalOrd = Builtin.functionEvaluator evalOrd0
                         _    -> Builtin.wrongArity ordKey
             _str <- expectBuiltinString ordKey _str
             Builtin.appliedFunction
-                . maybe crash charToOrdInt
-                $ listToMaybe _str
+                . maybe ExpandedPattern.bottom charToOrdInt
+                $ singletonOrNothing _str
       where
-        crash = Builtin.verifierBug $ ordKey <> " called with string of length != 1"
+        singletonOrNothing :: [a] -> Maybe a
+        singletonOrNothing [x] = Just x
+        singletonOrNothing _ = Nothing
+
         charToOrdInt =
             Int.asExpandedPattern resultSort
             . toInteger
