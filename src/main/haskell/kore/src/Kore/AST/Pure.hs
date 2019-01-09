@@ -316,7 +316,7 @@ eraseAnnotations = (<$) Annotation.Null
 type CommonPurePattern level domain =
     PurePattern level domain Variable (Annotation.Null level)
 
--- | A concrete pure pattern (containing no variables) at level @lvl@.
+-- | A concrete pure pattern (containing no variables) at level @level@.
 type ConcretePurePattern level domain =
     PurePattern level domain Concrete (Valid (Concrete level) level)
 
