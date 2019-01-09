@@ -38,10 +38,3 @@ KORE_EXEC_OPTS ?=
 KOMPILE_OPTS ?= --backend haskell
 KRUN_OPTS ?= --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
 KPROVE_OPTS ?= --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
-
-# Targets
-
-FORCE:
-
-$(KORE_EXEC): FORCE
-	stack build $(STACK_BUILD_OPTS) kore:exe:kore-exec
