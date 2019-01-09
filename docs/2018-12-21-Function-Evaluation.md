@@ -38,41 +38,104 @@ or a "constructor modulo axioms" like Map.concat and Map.elem
 
 ### Safe functions
 
-A function is safe if evaluates (including the predicate) to either
+A function is safe if
 
-1. patterns without free variables
-1. patterns whose symbols are constructor-like
-1. patterns whose symbols are either constructor-like or functions which
-   are safe according to this definition.
+1. The function is builtin and does not have axioms for non-builtin evaluation
+   (e.g. `+Int`, but not `bitRangeInt` for the EVM semantics).
+1. The function evaluates (including the predicate) to either
+    * patterns without free variables (i.e. constant functions)
+    * patterns whose symbols are constructor-like
+      (including `Map.concat and kseq`)
+    * patterns whose symbols are either constructor-like or functions which
+      are safe according to this definition.
+
+Examples:
+* `+Int`, `.Map`
+* `id(x) := x`
+* `succ(x) := x +Int 1`
+* `bitRangeInt` for the EVM semantics.
+* `initStateCell` where `initStateCell(.KList)=>'<state>'('.Map'(.KList))`
+* `initTCell` where
+  `initTCell(Init)=>'<T>'(initKCell(Init),initStateCell(.KList))`
+  (assuming that `initKCell` is also safe).
 
 ### Acceptable functions
 
-A function is acceptable if evaluates (including the predicate) to either
+A function is acceptable if
+1. The function is builtin and does not have axioms for non-builtin evaluation
+1. The function evaluates (including the predicate) to either
+    * patterns without free variables
+    * patterns whose symbols are constructor-like
+    * patterns whose terms have constructor-like symbols at the top
+    * patterns whose symbols are either constructor-like or functions which
+      are safe according to this definition.
 
-1. patterns without free variables
-1. patterns whose symbols are constructor-like
-1. patterns whose terms have constructor-like symbols at the top
-1. patterns whose symbols are either constructor-like or functions which
-   are safe according to this definition.
+Examples:
+1. all safe functions are acceptable
+1. `plus` for Peano arithmetic where `plus(s(x), y) = s(plus(x, y))` and
+  `plus(0, y) = y`.
+1. `parseHexBytes` from the erc20 verification semantics, where
+    * `parseHexBytes("") = .WordStack`
+    * `parseHexBytes(S) = :Int_WordStack(parseHexWord(substr(S, 0, 2)), parseHexBytes(substr(2, len(s)))) if len(S) >= 2`
 
-### Complicated fuctions
+### Complicated functions
 
 A function is complicated if it is not acceptable.
 
+Examples:
+1. The `len` function defined above.
+
+
 ### Safe evaluation results
 
-1. Any result which we get without having a substitution/predicate `X=p`
-   where `X` is a symbolic variable and `p` contains axiom variables, but it's
-   not itself a variable, is safe.
-1. Any result whose symbols are either constructor-like or safe functions
-   is safe.
+`f(...)` evaluates to a safe result if any of the following is true
+1. The evaluation process does not add, to the
+   substitution/predicate, the following:
+    * substitutions `X=p` where `X` is a symbolic variable
+      and `p` contains axiom variables, but it's
+      not itself a variable
+      (`x=constant` and `x=y` are fine, `x=f(y)` is not fine). Note that
+      `x=y` should not occur in practice, since we would actually use it as
+      `y=x`, i.e. `normal-variable=symbolic-variable`.
+1. The result's symbols symbols are either constructor-like or safe functions
+   (both in the term and the predicate).
+
+Examples:
+
+The following are safe:
+1. evaluating something to `2 and []`
+1. evaluating something to `x +Int y and []`
+1. evaluating something to `f(x) and [y=3]`
+1. evaluating something to `f(x) and [y=z]`
+1. evaluating `plus(s(s(0)), y)` to `s(plus(s(0), y))` with the rule above
+   since we're not adding anything to the substitution/predicate.
+
+The following are not safe:
+1. evaluating `plus(x, y)` with the axiom
+   `plus(s(x'), y') = s(plus(x', y'))`
+   since we would use `x=s(x')` in the substitution and the result uses
+   an unsafe function, i.e. `plus`
+1. evaluating `parseHexBytes(x)` with the second axiom above since
+   the result contains `parseHexBytes`, which is not safe
 
 ### Acceptable evaluation results
 
 1. Any safe result is also acceptable.
-1. Any result whose symbols are either constructors-like or
+1. Any result whose term symbols are either constructors-like or
    acceptable functions, is acceptable.
 1. Any result whose term has a constructor-like symbol at the top is acceptable.
+
+Examples:
+
+The following are safe:
+1. evaluating `plus(x, y)` to `s(plus(z, y)) and [x=s(z)]`
+1. evaluating `parseHexBytes(x)` with the second axiom above
+1. evaluating `len(X)` if `len` would be defined over Peano integers,
+   i.e. `len(Cons(_, X)) = s(len(X))`
+
+The following is not safe:
+1. evaluating `len(X)` to `1 +Int len(Y) and [X=Cons(_, Y)]` since `+Int`
+   is not a constructor and `len` is not safe.
 
 ### Function evaluation
 
