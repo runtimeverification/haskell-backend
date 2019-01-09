@@ -132,6 +132,16 @@ test_ord =
         ordStringSymbol
         [asPattern "d"]
         (Test.Int.asExpandedPattern 100)
+    , Test.Int.testInt
+        "STRING.ord('') is bottom"
+        ordStringSymbol
+        [asPattern ""]
+        bottom
+    , Test.Int.testInt
+        "STRING.ord('foo') is bottom"
+        ordStringSymbol
+        [asPattern "foo"]
+        bottom
     ]
 
 test_find :: [TestTree]
