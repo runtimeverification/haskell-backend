@@ -14,6 +14,7 @@ module Kore.Variables.Free
     , freePureVariables
     , allVariables
     , pureAllVariables
+    , synthetic
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
@@ -179,3 +180,27 @@ pureAllVariables
     => PurePattern level domain variable annotation
     -> Set.Set (variable level)
 pureAllVariables = Recursive.fold pureMergeVariables
+
+{- | @synthetic@ is an algebra for the free variables of a pattern.
+
+Use @synthetic@ with 'Kore.Annotation.synthesize' to annotate a pattern with its
+free variables as a synthetic attribute.
+
+ -}
+synthetic
+    ::  ( Foldable domain
+        , Ord (variable level)
+        )
+    => CofreeF (Pattern level domain variable) a (Set.Set (variable level))
+    -> Set.Set (variable level)
+synthetic (_ :< patternHead) =
+    case patternHead of
+        ExistsPattern Exists { existsVariable, existsChild } ->
+            Set.delete existsVariable existsChild
+        ForallPattern Forall { forallVariable, forallChild } ->
+            Set.delete forallVariable forallChild
+        VariablePattern variable ->
+            Set.singleton variable
+        _ -> Foldable.foldl' Set.union Set.empty patternHead
+
+{-# INLINE synthetic #-}
