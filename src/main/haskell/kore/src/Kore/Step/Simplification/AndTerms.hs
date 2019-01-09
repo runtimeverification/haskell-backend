@@ -364,7 +364,7 @@ andEqualsFunctions =
     , (BothT,          Builtin.Map.unifyEquals)
     , (BothT,          Builtin.Set.unifyEquals)
     , (BothT,          Builtin.List.unifyEquals)
-    , (BothT,    liftE  domainValueAndConstructorErrors)
+    , (BothT,   liftE  domainValueAndConstructorErrors)
     , (BothT,   liftET domainValueAndEqualsAssumesDifferent)
     , (BothT,   liftET stringLiteralAndEqualsAssumesDifferent)
     , (BothT,   liftET charLiteralAndEqualsAssumesDifferent)
