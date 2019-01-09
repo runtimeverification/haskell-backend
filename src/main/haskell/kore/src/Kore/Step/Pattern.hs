@@ -26,18 +26,12 @@ module Kore.Step.Pattern
     , substitute
     ) where
 
-import           Control.Comonad
-import qualified Data.Foldable as Foldable
+import qualified Control.Lens as Lens
 import           Data.Functor.Foldable
                  ( Base )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
-import qualified Data.Map.Strict as Map
-import           Data.Maybe
-import           Data.Set
-                 ( Set )
-import qualified Data.Set as Set
 
 import           Control.Monad.Counter
                  ( MonadCounter )
@@ -45,7 +39,7 @@ import           Kore.Annotation.Valid
                  ( Valid (..) )
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
-                 ( Exists (..), Forall (..), Pattern (..), SortedVariable )
+                 ( Pattern (..), SortedVariable )
 import qualified Kore.AST.Common as Head
 import           Kore.AST.Kore
                  ( KorePattern, UnifiedPattern (..), UnifiedSortVariable,
@@ -54,13 +48,12 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( CofreeF (..), Concrete, Pattern, PurePattern, Variable )
 import           Kore.AST.Sentence
-import           Kore.AST.Valid
-                 ( mkVar )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Sort
+import qualified Kore.Substitute as Substitute
 import           Kore.Variables.Fresh
-                 ( FreshVariable, freshVariableSuchThat )
+                 ( FreshVariable )
 
 type StepPattern level variable =
     PurePattern level Domain.Builtin variable (Valid (variable level) level)
@@ -344,140 +337,7 @@ substitute
     => Map (variable level) (StepPattern level variable)
     -> StepPattern level variable
     -> m (StepPattern level variable)
-substitute subst stepPattern
-  | Map.null subst' = return stepPattern
-  | otherwise =
-    case stepPatternHead of
-        -- Capturing quantifiers
-        ExistsPattern exists@Exists { existsVariable }
-          | Set.member existsVariable targetFreeVariables -> do
-            exists' <- substituteUnderExists subst' freeVariables' exists
-            (return . Recursive.embed) (valid' :< ExistsPattern exists')
-
-        ForallPattern forall@Forall { forallVariable }
-          | Set.member forallVariable targetFreeVariables -> do
-            forall' <- substituteUnderForall subst' freeVariables' forall
-            (return . Recursive.embed) (valid' :< ForallPattern forall')
-
-        -- Variables
-        VariablePattern variable ->
-            (return . fromMaybe stepPattern) (Map.lookup variable subst')
-
-        -- All other patterns
-        _ -> do
-            stepPatternHead' <- traverse (substitute subst') stepPatternHead
-            (return . Recursive.embed) (valid' :< stepPatternHead')
+substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
   where
-    valid@Valid { freeVariables } :< stepPatternHead =
-        Recursive.project stepPattern
-    -- | The substitution applied to subterms, including only the free variables
-    -- below the current node. Shadowed variables are automatically omitted.
-    subst' = Map.intersection subst (Map.fromSet id freeVariables)
-    valid' = valid { freeVariables = freeVariables' }
-    -- | Free variables of the original pattern that are not targeted.
-    originalVariables = Set.difference freeVariables (Map.keysSet subst')
-    -- | Free variables of the target substitutions.
-    targetFreeVariables =
-        Foldable.foldl'
-            Set.union
-            Set.empty
-            (Valid.freeVariables . extract <$> subst')
-    freeVariables' = Set.union originalVariables targetFreeVariables
-
-{- | Perform capture-avoiding substitution under a binder by renaming.
-
-The bound variable is freshened with respect to the set of free variables and
-the given substitution (along with renaming) is applied to the child pattern.
-The result is the variable and child pattern after renaming.
-
- -}
-substituteUnderBinder
-    ::  ( FreshVariable variable
-        , MetaOrObject level
-        , MonadCounter m
-        , Ord (variable level)
-        , SortedVariable variable
-        )
-    => Map (variable level) (StepPattern level variable)  -- ^ Substitution
-    -> Set (variable level)  -- ^ Free variables of resulting binder
-    -> variable level  -- ^ Bound variable
-    -> StepPattern level variable  -- ^ Child pattern
-    -> m (variable level, StepPattern level variable)
-substituteUnderBinder subst freeVariables' variable child = do
-    variable' <- freshVariableSuchThat variable wouldNotCapture
-    -- Rename the freshened bound variable in the subterms.
-    let subst' = Map.insert variable (mkVar variable') subst
-    child' <- substitute subst' child
-    return (variable', child')
-  where
-    wouldNotCapture variable' = Set.notMember variable' freeVariables'
-
-{-# INLINE substituteUnderBinder #-}
-
-{- | Perform capture-avoiding substitution under 'Exists' by renaming.
-
-The bound variable is freshened with respect to the set of free variables and
-the given substitution (along with renaming) is applied to the child pattern.
-The result is the 'Exists' binder after renaming.
-
- -}
-substituteUnderExists
-    ::  ( FreshVariable variable
-        , MetaOrObject level
-        , MonadCounter m
-        , Ord (variable level)
-        , SortedVariable variable
-        )
-    => Map (variable level) (StepPattern level variable)  -- ^ Substitution
-    -> Set (variable level)  -- ^ Free variables of resulting binder
-    -> Exists level variable (StepPattern level variable)
-    -> m (Exists level variable (StepPattern level variable))
-substituteUnderExists subst freeVariables' exists = do
-    (existsVariable', existsChild') <-
-        substituteUnderBinder
-            subst
-            freeVariables'
-            existsVariable
-            existsChild
-    return exists
-        { existsVariable = existsVariable'
-        , existsChild = existsChild'
-        }
-  where
-    Exists { existsVariable, existsChild } = exists
-
-{-# INLINE substituteUnderExists #-}
-
-{- | Perform capture-avoiding substitution under 'Forall' by renaming.
-
-The bound variable is freshened with respect to the set of free variables and
-the given substitution (along with renaming) is applied to the child pattern.
-The result is the 'Forall' binder after renaming.
-
- -}
-substituteUnderForall
-    ::  ( FreshVariable variable
-        , MetaOrObject level
-        , MonadCounter m
-        , Ord (variable level)
-        , SortedVariable variable
-        )
-    => Map (variable level) (StepPattern level variable)  -- ^ Substitution
-    -> Set (variable level)  -- ^ Free variables of resulting binder
-    -> Forall level variable (StepPattern level variable)
-    -> m (Forall level variable (StepPattern level variable))
-substituteUnderForall subst freeVariables' forall = do
-    (forallVariable', forallChild') <-
-        substituteUnderBinder
-            subst
-            freeVariables'
-            forallVariable
-            forallChild
-    return forall
-        { forallVariable = forallVariable'
-        , forallChild = forallChild'
-        }
-  where
-    Forall { forallVariable, forallChild } = forall
-
-{-# INLINE substituteUnderForall #-}
+    getFreeVariables Valid { freeVariables } = freeVariables
+    setFreeVariables valid freeVariables = valid { freeVariables }
