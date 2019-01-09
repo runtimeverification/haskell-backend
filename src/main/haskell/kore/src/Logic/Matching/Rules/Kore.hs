@@ -6,11 +6,14 @@ module Logic.Matching.Rules.Kore where
 
 import           Control.Monad.Error.Class
                  ( MonadError )
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
+import qualified Kore.Annotation as Annotation
+import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
-                 ( Meta (..), Unified (..) )
+                 ( Meta (..) )
 import           Kore.AST.PureToKore
                  ( patternPureToKore )
 import           Kore.ASTUtils.SmartPatterns
@@ -22,11 +25,11 @@ import           Kore.IndexedModule.IndexedModule
                  mapIndexedModulePatterns )
 import           Kore.MetaML.AST
                  ( CommonMetaPattern, metaFreeVariables )
-import           Kore.Substitution.Class
+import           Kore.Substitute
                  ( substitute )
-import qualified Kore.Substitution.List as Substitution
 import           Kore.Unparser
                  ( Unparse, unparseToString )
+import qualified Kore.Variables.Free as Variables.Free
 import           Kore.Variables.Fresh
 import           Kore.Variables.Sort
                  ( TermWithSortVariablesClass (sortVariables) )
@@ -234,9 +237,6 @@ deriving instance MonadError (Error MLError) NoCapture
 instance MonadCounter NoCapture where
     increment = koreFail "Did not expect variable capturing"
 
-type MetaPatternSubstitution =
-    Substitution.Substitution (Unified Variable) CommonKorePattern
-
 checkVariableSubstitution
     :: SubstitutingVariable (Variable Meta)
     -> SubstitutedVariable (Variable Meta)
@@ -261,23 +261,20 @@ checkVariableSubstitution
         psi1 (nameInKind "psi1")
         beforeSubstitution (nameInProposition "phi")
     afterSubstitution <-
-        substitute
-            beforeSubstitution
-            (Substitution.fromList
-                [   ( UnifiedMeta substituted
-                    , substitutingPattern
-                    )
-                ]
-            )
+        substitute id
+            (Map.singleton substituted substitutingPattern)
+            (Annotation.synthesize Variables.Free.synthetic beforeSubstitution)
     testFormulaEquality
         psi2 (nameInKind "psi2")
-        afterSubstitution (nameInProposition "phi[substituting/substituted]")
+        (Annotation.Null <$ afterSubstitution)
+        (nameInProposition "phi[substituting/substituted]")
   where
     kind = "((forall x . psi1) -> psi2)"
     nameInKind name = name ++ " in " ++ kind
     nameInProposition name =
         name ++ " in VariableSubstitution(substituting, substituted, phi)"
-    substitutingPattern = Var_ substituting
+    substitutingPattern =
+        Annotation.synthesize Variables.Free.synthetic (Var_ substituting)
 
 checkForall
     :: Variable Meta
