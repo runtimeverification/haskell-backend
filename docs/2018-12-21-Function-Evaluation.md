@@ -41,7 +41,8 @@ or a "constructor modulo axioms" like Map.concat and Map.elem
 A function is safe if
 
 1. The function is builtin and does not have axioms for non-builtin evaluation
-   (e.g. `+Int`, but not `bitRangeInt` for the EVM semantics).
+   (e.g. `+Int`, but not `bitRangeInt` for the EVM semantics since it also has a
+   non-builtin definition).
 1. The function evaluates (including the predicate) to either
     * patterns without free variables (i.e. constant functions)
     * patterns whose symbols are constructor-like
@@ -53,11 +54,14 @@ Examples:
 * `+Int`, `.Map`
 * `id(x) := x`
 * `succ(x) := x +Int 1`
-* `bitRangeInt` for the EVM semantics.
+* `bitRangeInt` for the EVM semantics since it evaluates to safe functions.
 * `initStateCell` where `initStateCell(.KList)=>'<state>'('.Map'(.KList))`
+  since it evaluates to patterns with constructor-like symbols.
 * `initTCell` where
   `initTCell(Init)=>'<T>'(initKCell(Init),initStateCell(.KList))`
-  (assuming that `initKCell` is also safe).
+  (assuming that `initKCell` is also safe) since it evaluates to
+  since it evaluates to patterns with constructor-like symbols and safe
+  symbols.
 
 ### Acceptable functions
 
@@ -74,9 +78,16 @@ Examples:
 1. all safe functions are acceptable
 1. `plus` for Peano arithmetic where `plus(s(x), y) = s(plus(x, y))` and
   `plus(0, y) = y`.
+    * Unsafe because it is not builtin, and it evaluates to a pattern
+      which contains `plus`, so it does not fit the second part of the
+      safe function definition.
+    * Acceptable because the result has a constructor at the top.
 1. `parseHexBytes` from the erc20 verification semantics, where
     * `parseHexBytes("") = .WordStack`
     * `parseHexBytes(S) = :Int_WordStack(parseHexWord(substr(S, 0, 2)), parseHexBytes(substr(2, len(s)))) if len(S) >= 2`
+    * Unsafe for the same reason as `plus`.
+    * Acceptable because, on both branches, the result has a constructor at the
+      top
 
 ### Complicated functions
 
@@ -84,6 +95,9 @@ A function is complicated if it is not acceptable.
 
 Examples:
 1. The `len` function defined above.
+    * Not acceptable because `1 +Int len(x)` has `+Int` at the top, which
+      is not a constructor, and it does not contain only
+      constructors and acceptable functions (i.e. it contains `len`).
 
 
 ### Safe evaluation results
@@ -104,9 +118,13 @@ Examples:
 
 The following are safe:
 1. evaluating something to `2 and []`
+   since the predicate/substitution is empty.
 1. evaluating something to `x +Int y and []`
+   since the predicate/substitution is empty.
 1. evaluating something to `f(x) and [y=3]`
+   since `3` does not contain variables.
 1. evaluating something to `f(x) and [y=z]`
+   since `z` is a variable.
 1. evaluating `plus(s(s(0)), y)` to `s(plus(s(0), y))` with the rule above
    since we're not adding anything to the substitution/predicate.
 
@@ -127,15 +145,18 @@ The following are not safe:
 
 Examples:
 
-The following are safe:
+The following are acceptable:
 1. evaluating `plus(x, y)` to `s(plus(z, y)) and [x=s(z)]`
+   since the term `s(plus(z, y))` has a constructor at the top.
 1. evaluating `parseHexBytes(x)` with the second axiom above
+   since the term has a constructor at the top.
 1. evaluating `len(X)` if `len` would be defined over Peano integers,
-   i.e. `len(Cons(_, X)) = s(len(X))`
+   i.e. `len(Cons(_, X)) = s(len(X))`,
+   since the term has a constructor at the top.
 
-The following is not safe:
+The following is not acceptable:
 1. evaluating `len(X)` to `1 +Int len(Y) and [X=Cons(_, Y)]` since `+Int`
-   is not a constructor and `len` is not safe.
+   is not a constructor and `len` is not acceptable.
 
 ### Function evaluation
 
