@@ -31,7 +31,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..) )
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..),
                  BuiltinAndAxiomsFunctionEvaluatorMap )
@@ -42,11 +42,12 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, isFalse, make, merge )
+                 ( extractPatterns, isFalse, make, merge, traverseWithPairs )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
+import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( Hook (..), StepperAttributes (..), isSortInjection_ )
 import           Kore.Unparser
@@ -220,14 +221,86 @@ evaluateApplication
                 -- is not really correct as we doesn't explain how we got
                 -- here.
             appliedTerms = map unwrapApplied applied
+            unsimplifiedResults :: OrOfExpandedPattern level variable
+            unsimplifiedResults =
+                foldr OrOfExpandedPattern.merge notAppliedTerm appliedTerms
+            simplifiedResults :: Simplifier (OrOfExpandedPattern level variable)
+            simplifiedResults = do
+                simplifiedLists <- mapM
+                    simplifyIfNeeded
+                    (OrOfExpandedPattern.extractPatterns unsimplifiedResults)
+                return (OrOfExpandedPattern.make (concat simplifiedLists))
+            simplifyIfNeeded
+                :: ExpandedPattern level variable
+                -> Simplifier [ExpandedPattern level variable]
+            simplifyIfNeeded result =
+                if result == unchangedPatt
+                    then return [unchangedPatt]
+                    else do
+                        orPatt <- reevaluateFunctions
+                            tools
+                            substitutionSimplifier
+                            simplifier
+                            result
+                        return (OrOfExpandedPattern.extractPatterns orPatt)
+        simplified <- simplifiedResults
         return
-            ( foldr OrOfExpandedPattern.merge notAppliedTerm appliedTerms
+            ( simplified
             , SimplificationProof
             )
 
--- TODO(virgil): Builtins are not expected to recursively simplify until the
--- result stabilizes. Find out if that is indeed the case, then, if needed,
--- move the recursive simplification call from UserDefined.hs here.
+{-| 'reevaluateFunctions' re-evaluates functions after a user-defined function
+was evaluated.
+-}
+reevaluateFunctions
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -- ^ Tools for finding additional information about patterns
+    -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level variable
+    -- ^ Evaluates functions in patterns.
+    -> ExpandedPattern level variable
+    -- ^ Function evaluation result.
+    -> Simplifier (OrOfExpandedPattern level variable)
+reevaluateFunctions
+    tools
+    substitutionSimplifier
+    wrappedSimplifier@(StepPatternSimplifier simplifier)
+    Predicated
+        { term   = rewrittenPattern
+        , predicate = rewritingCondition
+        , substitution = rewrittenSubstitution
+        }
+  = do
+    (pattOr , _proof) <-
+        simplifier substitutionSimplifier rewrittenPattern
+    (mergedPatt, _proof) <-
+        OrOfExpandedPattern.mergeWithPredicateSubstitution
+            tools
+            substitutionSimplifier
+            wrappedSimplifier
+            Predicated
+                { term = ()
+                , predicate = rewritingCondition
+                , substitution = rewrittenSubstitution
+                }
+            pattOr
+    (evaluatedPatt, _) <-
+        OrOfExpandedPattern.traverseWithPairs
+            (ExpandedPattern.simplifyPredicate
+                tools substitutionSimplifier wrappedSimplifier
+            )
+            mergedPatt
+    return evaluatedPatt
 
 evaluateSortInjection
     :: (MetaOrObject level, Ord (variable level))
