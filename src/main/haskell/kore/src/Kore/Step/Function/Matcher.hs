@@ -14,6 +14,7 @@ module Kore.Step.Function.Matcher
 
 import           Control.Applicative
                  ( (<|>) )
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error.Util
                  ( just, nothing )
 import           Control.Monad.Counter
@@ -23,12 +24,19 @@ import           Control.Monad.Trans.Except
                  ( ExceptT (..) )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
+import           Data.Either
+                 ( isRight )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
 import qualified Data.Map as Map
+import           Data.Reflection
+                 ( give )
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Builtin.Attributes
+                 ( isConstructorModuloLike_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern
@@ -37,8 +45,10 @@ import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( filterOr, fullCrossProduct, make )
+                 ( extractPatterns, filterOr, fullCrossProduct, make )
 import           Kore.Step.Pattern
+import           Kore.Step.PatternAttributes
+                 ( isConstructorModuloLikePattern )
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -454,6 +464,13 @@ matchVariableFunction
                     ]
 matchVariableFunction _ _ _ _ = nothing
 
+data ArbitrarySymbols a = ArbitrarySymbols
+    { under :: Set.Set a
+    -- ^ Set of things that have arbitrary symbols above them.
+    , without :: Set.Set a
+    -- ^ Set of things that do not have arbitrary symbols above them.
+    }
+
 matchNonVarToPattern
     :: forall level variable m .
         ( FreshVariable variable
@@ -478,14 +495,25 @@ matchNonVarToPattern
             m
         )
         (OrOfPredicateSubstitution level variable)
-matchNonVarToPattern tools substitutionSimplifier first second =
+matchNonVarToPattern tools substitutionSimplifier first second
+  = do
     -- TODO(virgil): For simplification axioms this would need to return bottom!
-    MaybeT $ lift $ do -- MonadCounter
+    finalResult <- MaybeT $ lift $ do -- MonadCounter
         (result, _proof) <-
             Equals.makeEvaluateTermsToPredicateSubstitution
                 tools substitutionSimplifier first second
         (return . return)
             (fmap secondVariablesSubstitutionToPredicate result)
+    let
+        firstVariables = freePureVariables first
+        resultVariables =
+            foldMap
+                (freeVariablesUnderArbitrarySymbols tools)
+                (OrOfExpandedPattern.extractPatterns finalResult)
+    if null (Set.intersection firstVariables resultVariables)
+        || isRight (isConstructorModuloLikePattern tools first)
+        then return finalResult
+        else nothing
   where
     secondVariablesSubstitutionToPredicate
         :: PredicateSubstitution level variable
@@ -508,6 +536,83 @@ matchNonVarToPattern tools substitutionSimplifier first second =
                 , predicate
                 , substitution = Substitution.wrap rightSubst
                 }
+
+freeVariablesUnderArbitrarySymbols
+    :: forall level variable .
+        ( MetaOrObject level
+        , Ord (variable level)
+        , Show (variable level)
+        , SortedVariable variable
+        , Unparse (variable level)
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitution level variable
+    -> Set.Set (variable level)
+freeVariablesUnderArbitrarySymbols tools expandedPatt =
+    freeUnderArbitrarySymbols
+  where
+    ArbitrarySymbols { under = freeUnderArbitrarySymbols } =
+        Recursive.fold
+            (freeVarsHelper . Cofree.tailF)
+            (Predicated.toMLPattern
+                (Predicated.predicateSubstitutionToExpandedPattern
+                    expandedPatt
+                )
+            )
+    freeVarsHelper
+        :: StepPatternHead
+            level
+            variable
+            (ArbitrarySymbols (variable level))
+        -> ArbitrarySymbols (variable level)
+    freeVarsHelper patt =
+        case patt of
+            (ApplicationPattern Application {applicationSymbolOrAlias}) ->
+                if give tools $
+                    isConstructorModuloLike_ applicationSymbolOrAlias
+                    then ArbitrarySymbols
+                        { under = underArbitrarySymbols
+                        , without = withoutArbitrarySymbols
+                        }
+                    else ArbitrarySymbols
+                        { under = Set.union
+                            underArbitrarySymbols withoutArbitrarySymbols
+                        , without = Set.empty
+                        }
+            (ExistsPattern Exists {existsVariable}) -> ArbitrarySymbols
+                { under = Set.delete existsVariable underArbitrarySymbols
+                , without =
+                    Set.delete existsVariable withoutArbitrarySymbols
+                }
+            (ForallPattern Forall {forallVariable}) -> ArbitrarySymbols
+                { under = Set.delete forallVariable underArbitrarySymbols
+                , without =
+                    Set.delete forallVariable withoutArbitrarySymbols
+                }
+            (VariablePattern variable) -> ArbitrarySymbols
+                { under = underArbitrarySymbols
+                , without = Set.insert variable withoutArbitrarySymbols
+                }
+            _ ->
+                ArbitrarySymbols
+                    { under = underArbitrarySymbols
+                    , without = withoutArbitrarySymbols
+                    }
+      where
+        ArbitrarySymbols
+            { under = underArbitrarySymbols
+            , without = withoutArbitrarySymbols
+            }
+          =
+            foldr
+                mergeVars
+                ArbitrarySymbols {under = Set.empty, without = Set.empty}
+                patt
+        mergeVars
+            ArbitrarySymbols {under = a, without = b}
+            ArbitrarySymbols {under = c, without = d}
+          = ArbitrarySymbols
+            {under = Set.union a c, without = Set.union b d}
 
 checkVariableEscapeOr
     ::  ( MetaOrObject level

@@ -7,7 +7,8 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
 module Kore.Proof.Functional
-    ( FunctionProof (..)
+    ( ConstructorLikeProof (..)
+    , FunctionProof (..)
     , FunctionalProof (..)
     , TotalProof (..)
     ) where
@@ -63,4 +64,10 @@ data TotalProof level variable
     -- ^A functional component is also total.
     | TotalHead (SymbolOrAlias level)
     -- ^Head of a total symbol.
+  deriving (Eq, Show)
+
+-- |Used for providing arguments that a pattern is made of constructor-like
+-- elements.
+data ConstructorLikeProof
+    = ConstructorLikeProof
   deriving (Eq, Show)

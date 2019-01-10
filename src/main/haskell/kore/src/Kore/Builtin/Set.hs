@@ -31,6 +31,9 @@ module Kore.Builtin.Set
     , lookupSymbolConcat
     , lookupSymbolIn
     , lookupSymbolDifference
+    , isSymbolConcat
+    , isSymbolElement
+    , isSymbolUnit
       -- * Keys
     , unitKey
     , unitKeyT
@@ -543,6 +546,14 @@ isSymbolElement
     -> SymbolOrAlias Object
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKeyT
+
+{- | Check if the given symbol is hooked to @SET.unit@.
+-}
+isSymbolUnit
+    :: MetadataTools Object Hook
+    -> SymbolOrAlias Object
+    -> Bool
+isSymbolUnit = Builtin.isSymbol "SET.unit"
 
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 

@@ -9,7 +9,8 @@ Portability : portable
 -}
 
 module Kore.Step.PatternAttributesError
-    ( FunctionError (..)
+    ( ConstructorLikeError (..)
+    , FunctionError (..)
     , FunctionalError (..)
     , TotalError (..)
     ) where
@@ -37,6 +38,14 @@ data FunctionalError level
     | NonFunctionalPattern
     -- ^ The pattern is neither an application pattern nor one of the basic
     -- pattern types (e.g. domain values).
+    deriving (Eq, Show)
+
+{-| An error explaining why a pattern is not composed of constructor-like heads
+and things like StringLiteral, DomainValue and variables.
+-}
+data ConstructorLikeError
+    = NonConstructorLikeHead
+    -- ^ The pattern was the application of a non-functional head to something
     deriving (Eq, Show)
 
 {-| An error explaining why a pattern is not composed of total heads and
