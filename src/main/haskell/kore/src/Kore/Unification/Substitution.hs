@@ -11,6 +11,7 @@ Portability : portable
 module Kore.Unification.Substitution
     ( Substitution
     , unwrap
+    , toMap
     , wrap
     , modify
     , Kore.Unification.Substitution.mapVariables
@@ -20,13 +21,16 @@ module Kore.Unification.Substitution
     , unsafeWrap
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Hashable
-import GHC.Generics
-       ( Generic )
-import Prelude hiding
-       ( null )
+import           Control.DeepSeq
+                 ( NFData )
+import           Data.Hashable
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
+import           GHC.Generics
+                 ( Generic )
+import           Prelude hiding
+                 ( null )
 
 import Kore.Step.Pattern
 import Kore.TopBottom
@@ -69,6 +73,12 @@ unwrap
     -> [(variable level, StepPattern level variable)]
 unwrap (Substitution xs) = xs
 unwrap (NormalizedSubstitution xs)  = xs
+
+toMap
+    :: Ord (variable level)
+    => Substitution level variable
+    -> Map (variable level) (StepPattern level variable)
+toMap = Map.fromList . unwrap
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.

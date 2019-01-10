@@ -72,14 +72,11 @@ normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
   where
-    rawSubstitution :: [(variable level, StepPattern level variable)]
-    rawSubstitution = Substitution.unwrap substitution
-
     interestingVariables :: Set (variable level)
-    interestingVariables = extractVariables rawSubstitution
+    interestingVariables = Map.keysSet variableToPattern
 
     variableToPattern :: Map (variable level) (StepPattern level variable)
-    variableToPattern = Map.fromList rawSubstitution
+    variableToPattern = Substitution.toMap substitution
 
     allDependencies :: Map (variable level) (Set (variable level))
     allDependencies =
@@ -176,16 +173,6 @@ normalizeSortedSubstitution
                 unprocessed
                 ((var, substitutedVarPattern) : result)
                 ((var, substitutedVarPattern) : substitution)
-
-extractVariables
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        )
-    => [(variable level, StepPattern level variable)]
-    -> Set (variable level)
-extractVariables unification =
-    let (vars, _) = unzip unification
-    in Set.fromList vars
 
 {- | Calculate the dependencies of a substitution.
 

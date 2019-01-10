@@ -233,7 +233,7 @@ preSimplify
     let
         [Predicated {term, predicate = PredicateTrue, substitution}] =
             OrOfExpandedPattern.extractPatterns simplifiedOrLhs
-        subst = Map.fromList (Substitution.unwrap substitution)
+        subst = Substitution.toMap substitution
     newLhs <- substitute subst term
     newRhs <- substitute subst rhs
     newRequires <- traverse (substitute subst) requires
