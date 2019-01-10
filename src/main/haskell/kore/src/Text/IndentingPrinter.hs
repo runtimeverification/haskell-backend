@@ -1,3 +1,11 @@
+{-|
+Module      : Text.IndentingPrinter
+Description : Indentation-aware pretty-printer
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+-}
+
 module Text.IndentingPrinter
     ( PrinterOutput (write, betweenLines, withIndent)
     , printToString
