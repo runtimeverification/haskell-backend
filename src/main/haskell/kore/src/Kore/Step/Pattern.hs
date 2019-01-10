@@ -1,3 +1,11 @@
+{-|
+Module      : Kore.Step.Pattern
+Description : Abstract representation of Kore patterns in the evaluator
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : thomas.tuegel@runtimeverification.com
+-}
+
 module Kore.Step.Pattern
     ( StepPattern
     , CommonStepPattern
