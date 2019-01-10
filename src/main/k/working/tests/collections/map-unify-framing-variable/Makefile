@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): map-unify-framing-variable.k $(KOMPILE_TARGETS)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module MAP-UNIFY-FRAMING-VARIABLE
 
-%.map-unify-framing-variable.kore: %.map-unify-framing-variable $(DEFINITION) $(K) $(KORE_EXEC)
+%.map-unify-framing-variable.kore: %.map-unify-framing-variable $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.map-unify-framing-variable $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.map-unify-framing-variable $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.map-unify-framing-variable $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.map-unify-framing-variable $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

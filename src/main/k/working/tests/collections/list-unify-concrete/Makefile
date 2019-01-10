@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): list-unify-concrete.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-concrete
 
-%.list-unify-concrete.kore: %.list-unify-concrete $(DEFINITION) $(K) $(KORE_EXEC)
+%.list-unify-concrete.kore: %.list-unify-concrete $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.list-unify-concrete $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.list-unify-concrete $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.list-unify-concrete $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.list-unify-concrete $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

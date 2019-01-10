@@ -7,16 +7,16 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): imp.k $(KOMPILE_TARGETS)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module IMP
 
-%.imp.kore: %.imp $(DEFINITION) $(K)
+%.imp.kore: %.imp $(DEFINITION) $(KRUN)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.search.final.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.search.final.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
 
-%.krun: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

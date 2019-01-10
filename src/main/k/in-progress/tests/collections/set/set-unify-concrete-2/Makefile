@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): set-unify-concrete-2.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module set-unify-concrete-2
 
-%.set-unify-concrete-2.kore: %.set-unify-concrete-2 $(DEFINITION) $(K) $(KORE_EXEC)
+%.set-unify-concrete-2.kore: %.set-unify-concrete-2 $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.set-unify-concrete-2 $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.set-unify-concrete-2 $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.set-unify-concrete-2 $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.set-unify-concrete-2 $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
