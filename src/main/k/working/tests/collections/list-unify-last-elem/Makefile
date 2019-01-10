@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := list-unify-last-elem-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-unify-last-elem.k $(K)
+$(DEFINITION): list-unify-last-elem.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-UNIFY-LAST-ELEM
 
 %.list-unify-last-elem.kore: %.list-unify-last-elem $(DEFINITION) $(K) $(KORE_EXEC)

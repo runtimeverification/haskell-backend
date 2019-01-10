@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := strict-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): strict.k $(K)
+$(DEFINITION): strict.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module STRICT
 
 %.strict.kore: %.strict $(DEFINITION) $(K) $(KORE_EXEC)

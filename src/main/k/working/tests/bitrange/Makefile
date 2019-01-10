@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := bitrange-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): bitrange.k $(K)
+$(DEFINITION): bitrange.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module bitrange
 
 %.bitrange.kore: %.eqtest $(DEFINITION) $(KORE_EXEC)

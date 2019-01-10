@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := imp-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): imp.k $(K)
+$(DEFINITION): imp.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module IMP
 
 %.imp.kore: %.imp $(DEFINITION) $(K) $(KORE_EXEC)

@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := list-unify-framing-variable-left-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-unify-framing-variable-left.k $(K)
+$(DEFINITION): list-unify-framing-variable-left.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-UNIFY-FRAMING-VARIABLE-LEFT
 
 %.list-unify-framing-variable-left.kore: %.list-unify-framing-variable-left $(DEFINITION) $(K) $(KORE_EXEC)

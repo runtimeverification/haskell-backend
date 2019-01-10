@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := list-requires-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-requires.k $(K)
+$(DEFINITION): list-requires.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-REQUIRES
 
 %.list-requires.kore: %.list-requires $(DEFINITION) $(K) $(KORE_EXEC)

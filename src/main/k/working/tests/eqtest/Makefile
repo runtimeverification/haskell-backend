@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := eqtest-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): eqtest.k $(K)
+$(DEFINITION): eqtest.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module eqtest
 
 %.eqtest.kore: %.eqtest $(DEFINITION) $(KORE_EXEC)

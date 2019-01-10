@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := demo-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): demo.k $(K)
+$(DEFINITION): demo.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module demo
 
 %.demo.kore: %.demo $(DEFINITION) $(K) $(KORE_EXEC)
