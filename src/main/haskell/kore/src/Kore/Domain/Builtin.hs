@@ -1,3 +1,11 @@
+{-|
+Module      : Kore.Domain.Builtin
+Description : Internal representation of builtin domains
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : thomas.tuegel@runtimeverification.com
+-}
+
 {-# LANGUAGE TemplateHaskell #-}
 
 module Kore.Domain.Builtin where
