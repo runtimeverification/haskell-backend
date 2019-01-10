@@ -1,3 +1,11 @@
+{-|
+Module      : Kore.Step.Error
+Description : Kore step evaluator errors
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+-}
+
 module Kore.Step.Error
     ( StepError (..)
     , mapStepErrorVariables
