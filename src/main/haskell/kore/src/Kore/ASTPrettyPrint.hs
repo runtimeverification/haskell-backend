@@ -1,3 +1,11 @@
+{-|
+Module      : Kore.ASTPrettyPrint
+Description : Pretty-printer for internal representations of Kore
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+-}
+
 module Kore.ASTPrettyPrint
     ( prettyPrintToString
     , PrettyPrint(..)

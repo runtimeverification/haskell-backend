@@ -12,7 +12,13 @@ kore:
 docs: haddock
 
 haddock:
-	stack haddock --no-haddock-deps $(STACK_HADDOCK_OPTS)
+	stack haddock --no-haddock-deps $(STACK_HADDOCK_OPTS) 2>&1 | tee haddock.log
+	if grep -B 2 'Module header' haddock.log; then \
+		echo >&2 "Please fix the missing documentation!"; \
+		exit 1; \
+	else \
+		rm haddock.log; \
+	fi
 	if [ -n "$$BUILD_NUMBER" ]; then \
 		cp -r $$(stack path --local-doc-root) haskell_documentation; \
 	fi
