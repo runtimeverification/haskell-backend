@@ -13,7 +13,7 @@ $(DEFINITION): imp.k $(KOMPILE)
 %.krun: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
-%.kprove: %.k $(DEFINITION) $(K) $(KORE_EXEC)
+%.kprove: %.k $(DEFINITION) $(KPROVE) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
 
 %.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
