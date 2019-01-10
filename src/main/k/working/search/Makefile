@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := search-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): search.k $(K)
+$(DEFINITION): search.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module SEARCH
 
 %.search.kore: %.search $(DEFINITION) $(K) $(KORE_EXEC)

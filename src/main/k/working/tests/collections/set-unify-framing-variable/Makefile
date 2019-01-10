@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := set-unify-framing-variable-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): set-unify-framing-variable.k $(K)
+$(DEFINITION): set-unify-framing-variable.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module SET-UNIFY-FRAMING-VARIABLE
 
 %.set-unify-framing-variable.kore: %.set-unify-framing-variable $(DEFINITION) $(K) $(KORE_EXEC)

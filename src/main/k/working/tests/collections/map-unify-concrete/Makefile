@@ -4,7 +4,7 @@ include $(TOP)/include.mk
 KOMPILED := map-unify-concrete-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): map-unify-concrete.k $(K)
+$(DEFINITION): map-unify-concrete.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module map-unify-concrete
 
 %.map-unify-concrete.kore: %.map-unify-concrete $(DEFINITION) $(K) $(KORE_EXEC)
