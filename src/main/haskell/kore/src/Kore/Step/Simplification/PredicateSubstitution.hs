@@ -12,9 +12,8 @@ module Kore.Step.Simplification.PredicateSubstitution
     , simplify
     ) where
 
-import           Data.List
-                 ( group )
-import qualified Data.Map.Strict as Map
+import Data.List
+       ( group )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -100,7 +99,7 @@ simplify
     initialValue@Predicated { predicate, substitution }
     times
   = do
-    let substitution' = Map.fromList (Substitution.unwrap substitution)
+    let substitution' = Substitution.toMap substitution
     substitutedPredicate <- Predicate.substitute substitution' predicate
     -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
     -- probably be fixed in 'Kore.Step.Simplification.Pattern'.

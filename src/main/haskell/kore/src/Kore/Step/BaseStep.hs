@@ -465,9 +465,7 @@ applyUnificationToRhs
         hasConfigurationVariable (AxiomVariable _, _) = False
         hasConfigurationVariable (ConfigurationVariable _, _) = True
 
-    let
-        rawNormalizedSubstitution = Substitution.unwrap normalizedSubstitution
-        substitution = Map.fromList rawNormalizedSubstitution
+    let substitution = Substitution.toMap normalizedSubstitution
     -- Apply substitution to resulting configuration and conditions.
     rawResult <- substitute substitution axiomRight
 
@@ -487,8 +485,8 @@ applyUnificationToRhs
         extractAxiomVariables =
             Set.fromList . mapMaybe toVariable . Set.toList
         substitutions =
-            Set.fromList . mapMaybe (toVariable . fst)
-            $ rawNormalizedSubstitution
+            Set.fromList . mapMaybe toVariable . Map.keys
+            $ substitution
 
     -- Unwrap internal 'StepperVariable's and collect the variable mappings
     -- for the proof.
