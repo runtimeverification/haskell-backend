@@ -272,7 +272,9 @@ patternToAxiomPattern
 patternToAxiomPattern attributes pat =
     case pat of
         -- normal rewrite axioms
-        And_ _ requires (And_ _ _ensures (Rewrites_ _ lhs rhs)) ->
+        -- TODO (thomas.tuegel): Allow \and{_}(ensures, rhs) to be wrapped in
+        -- quantifiers.
+        Rewrites_ _ (And_ _ requires lhs) (And_ _ _ensures rhs) ->
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                 { left = lhs
                 , right = rhs

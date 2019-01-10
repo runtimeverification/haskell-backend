@@ -265,20 +265,18 @@ functionalAxiom name =
 --  []
 rewritesAxiom :: Text -> Text -> VerifiedKoreSentence
 rewritesAxiom lhsName rhsName =
-    constructUnifiedSentence
-        ((<$>) patternPureToKore . SentenceAxiomSentence)
-        (mkAxiom_
-            (mkAnd
-                (mkTop mySort)
-                (mkAnd
-                    (mkTop mySort)
-                    (mkRewrites
-                        (applyToNoArgs mySort lhsName)
-                        (applyToNoArgs mySort rhsName)
-                    )
-                )
-            )
+    constructRewritesAxiom
+        (mkRewrites
+            (mkAnd (mkTop mySort) (applyToNoArgs mySort lhsName))
+            (mkAnd (mkTop mySort) (applyToNoArgs mySort rhsName))
         )
+  where
+    constructRewritesAxiom =
+        constructUnifiedSentence
+            ( fmap patternPureToKore
+            . SentenceAxiomSentence
+            . mkAxiom_
+            )
 
 applyToNoArgs :: Sort Object -> Text -> CommonStepPattern Object
 applyToNoArgs sort name =
