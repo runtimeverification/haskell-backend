@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): list-unify-last-elem.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-UNIFY-LAST-ELEM
 
-%.list-unify-last-elem.kore: %.list-unify-last-elem $(DEFINITION) $(K) $(KORE_EXEC)
+%.list-unify-last-elem.kore: %.list-unify-last-elem $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.list-unify-last-elem $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.list-unify-last-elem $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.list-unify-last-elem $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.list-unify-last-elem $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

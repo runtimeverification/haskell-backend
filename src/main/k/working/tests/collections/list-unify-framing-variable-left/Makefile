@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): list-unify-framing-variable-left.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-UNIFY-FRAMING-VARIABLE-LEFT
 
-%.list-unify-framing-variable-left.kore: %.list-unify-framing-variable-left $(DEFINITION) $(K) $(KORE_EXEC)
+%.list-unify-framing-variable-left.kore: %.list-unify-framing-variable-left $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.list-unify-framing-variable-left $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.list-unify-framing-variable-left $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.list-unify-framing-variable-left $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.list-unify-framing-variable-left $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

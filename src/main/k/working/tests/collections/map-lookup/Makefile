@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): map-lookup.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module MAP-LOOKUP
 
-%.map-lookup.kore: %.map-lookup $(DEFINITION) $(K) $(KORE_EXEC)
+%.map-lookup.kore: %.map-lookup $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.map-lookup $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.map-lookup $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.map-lookup $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.map-lookup $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

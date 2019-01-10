@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): list-unify-first-elem.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-UNIFY-FIRST-ELEM
 
-%.list-unify-first-elem.kore: %.list-unify-first-elem $(DEFINITION) $(K) $(KORE_EXEC)
+%.list-unify-first-elem.kore: %.list-unify-first-elem $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.list-unify-first-elem $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.list-unify-first-elem $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.list-unify-first-elem $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.list-unify-first-elem $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

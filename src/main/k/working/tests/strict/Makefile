@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): strict.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module STRICT
 
-%.strict.kore: %.strict $(DEFINITION) $(K) $(KORE_EXEC)
+%.strict.kore: %.strict $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.strict $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.strict $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.strict $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.strict $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

@@ -7,46 +7,46 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): search.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module SEARCH
 
-%.search.kore: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.search.kore: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.star.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.star.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all
 
-%.plus.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.plus.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps
 
-%.one.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.one.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step
 
-%.final.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.final.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
 
-%.star.unreachable.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.star.unreachable.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all --pattern '<k> unreachable </k>'
 
-%.plus.unreachable.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.plus.unreachable.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps --pattern '<k> unreachable </k>'
 
-%.one.unreachable.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.one.unreachable.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step --pattern '<k> unreachable </k>'
 
-%.final.unreachable.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.final.unreachable.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final --pattern '<k> unreachable </k>'
 
-%.star.initial.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.star.initial.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all --pattern '<k> initial </k>'
 
-%.plus.initial.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.plus.initial.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps --pattern '<k> initial </k>'
 
-%.one.initial.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.one.initial.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step --pattern '<k> initial </k>'
 
-%.final.initial.output: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.final.initial.output: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final --pattern '<k> initial </k>'
 
-%.krun: %.search $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.search $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

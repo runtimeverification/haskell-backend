@@ -7,13 +7,13 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): list-requires.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module LIST-REQUIRES
 
-%.list-requires.kore: %.list-requires $(DEFINITION) $(K) $(KORE_EXEC)
+%.list-requires.kore: %.list-requires $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.list-requires $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.list-requires $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.list-requires $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.list-requires $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
