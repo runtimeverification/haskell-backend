@@ -1,3 +1,11 @@
+{-|
+Module      : Kore.Domain.External
+Description : Domain values in the concrete syntax of Kore
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+Maintainer  : thomas.tuegel@runtimeverification.com
+-}
+
 {-# LANGUAGE TemplateHaskell #-}
 
 module Kore.Domain.External
