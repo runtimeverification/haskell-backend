@@ -45,18 +45,6 @@ test_axiomPatterns =
     , axiomPatternsIntegrationTests
     ]
 
-mkRewriteAxiom
-    :: CommonStepPattern Object  -- ^ left-hand side
-    -> CommonStepPattern Object  -- ^ right-hand side
-    -> CommonStepPattern Object  -- ^ requires clause
-    -> VerifiedKoreSentence
-mkRewriteAxiom lhs rhs requires =
-    (asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
-        (mkRewrites
-            (mkAnd requires lhs)
-            (mkAnd mkTop_ rhs)
-        )
-
 axiomPatternsUnitTests :: TestTree
 axiomPatternsUnitTests =
     testGroup
@@ -71,12 +59,12 @@ axiomPatternsUnitTests =
                     }
                 )
                 (koreSentenceToAxiomPattern Object
-                    (mkRewriteAxiom varI1 varI2 mkTop_)
+                    (mkRewriteAxiom varI1 varI2 Nothing)
                 )
             )
         ,   let
                 axiom1 :: VerifiedKoreSentence
-                axiom1 = mkRewriteAxiom varI1 varI2 mkTop_
+                axiom1 = mkRewriteAxiom varI1 varI2 Nothing
                 axiom2 :: VerifiedKoreSentence
                 axiom2 =
                     (asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
