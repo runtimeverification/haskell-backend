@@ -1,0 +1,32 @@
+pipeline {
+    agent { label 'master' }
+    stages {
+        stage('Clean') {
+            steps {
+                sh 'make clean'
+            }
+        }
+        stage('Checkstyle') {
+            steps {
+                sh 'make check'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'make kore'
+                sh 'make k-frontend'
+            }
+        }
+        stage('Tests') {
+            steps {
+                sh 'make test-kore'
+                sh 'make test-k'
+            }
+        }
+        stage('Documentation') {
+            steps {
+                sh 'make haddock'
+            }
+        }
+    }
+}
