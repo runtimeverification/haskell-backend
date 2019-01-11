@@ -5,6 +5,7 @@ import           Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
+import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
@@ -15,8 +16,12 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Hook
+                 ( Hook )
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
@@ -26,6 +31,9 @@ import           Kore.Step.BaseStep
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
+import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Unification.Data
 import qualified Kore.Unification.Substitution as Substitution
 
@@ -39,8 +47,11 @@ import           Test.Kore.Builtin.Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+                 ( makeMetadataTools )
 import           Test.Kore.Step.Condition.Evaluator
                  ( genSortedVariable )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 import           Test.Tasty.HUnit.Extensions
 
@@ -397,6 +408,42 @@ test_concretizeKeysAxiom =
                 ]
             )
         ]
+
+test_isBuiltin :: [TestTree]
+test_isBuiltin =
+    [ testCase "isSymbolConcat" $ do
+        assertBool ""
+            (Set.isSymbolConcat mockHookTools Mock.concatSetSymbol)
+        assertBool ""
+            (not (Set.isSymbolConcat mockHookTools Mock.aSymbol))
+        assertBool ""
+            (not (Set.isSymbolConcat mockHookTools Mock.elementSetSymbol))
+    , testCase "isSymbolElement" $ do
+        assertBool ""
+            (Set.isSymbolElement mockHookTools Mock.elementSetSymbol)
+        assertBool ""
+            (not (Set.isSymbolElement mockHookTools Mock.aSymbol))
+        assertBool ""
+            (not (Set.isSymbolElement mockHookTools Mock.concatSetSymbol))
+    , testCase "isSymbolUnit" $ do
+        assertBool ""
+            (Set.isSymbolUnit mockHookTools Mock.unitSetSymbol)
+        assertBool ""
+            (not (Set.isSymbolUnit mockHookTools Mock.aSymbol))
+        assertBool ""
+            (not (Set.isSymbolUnit mockHookTools Mock.concatSetSymbol))
+    ]
+
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.sortAttributesMapping
+        Mock.subsorts
+
+mockHookTools :: MetadataTools Object Hook
+mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set.Builtin -> CommonStepPattern Object

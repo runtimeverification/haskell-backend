@@ -464,11 +464,12 @@ matchVariableFunction
                     ]
 matchVariableFunction _ _ _ _ = nothing
 
-data ArbitrarySymbols a = ArbitrarySymbols
+data NonConstructorSymbols a = NonConstructorSymbols
     { under :: Set.Set a
-    -- ^ Set of things that have arbitrary symbols above them.
+    -- ^ Set of things that have non-constructor-modulo-like symbols above them.
     , without :: Set.Set a
-    -- ^ Set of things that do not have arbitrary symbols above them.
+    -- ^ Set of things that do not have non-constructor-modulo-like symbols
+    -- above them.
     }
 
 matchNonVarToPattern
@@ -508,8 +509,36 @@ matchNonVarToPattern tools substitutionSimplifier first second
         firstVariables = freePureVariables first
         resultVariables =
             foldMap
-                (freeVariablesUnderArbitrarySymbols tools)
+                (freeVariablesUnderNonConstructorSymbols tools)
                 (OrOfExpandedPattern.extractPatterns finalResult)
+    -- In some cases we want to avoid returning a pattern from which we can't
+    -- extract a substitution for the variabels in 'first'.
+    -- As an example, returning f(x)=a makes it unlikely that we'll be able
+    -- to extract a substitution for x in the end. On the other hand, when
+    -- matching maps, we want to be able to return equations like
+    -- concat(elem(x,y),z) = map-domain-value.
+    --
+    -- Let us also note that, for simplification equations
+    -- (e.g. (x+y)+z = (x+z)+y if x and y are concrete integers and z is not),
+    -- it does not matter much if we apply them or not, while
+    -- for function definition axioms we want to try to solve these equations.
+    --
+    -- This may be solvable in a better way after we'll have a way to
+    -- differentiate between the two axiom types, but, for now, we note that
+    -- function axioms are suppposed to use only constructor-modulo-like
+    -- patterns inside, i.e. if
+    -- f(p1, .., pn) = something
+    -- is such an equation, then p1..pn should be constructor-modulo-like
+    -- patterns.
+    --
+    -- So, as a first approximation, we could check that 'first' is constructor
+    -- modulo-like, which it means that it could be a subpattern of one
+    -- of the pi patterns mentioned above.
+    --
+    -- But, since the above approximation may be too narrow,
+    -- we also allow predicates which look solvable, i.e. ones in
+    -- which first's variables do not occur under non-constructor-like
+    -- symbols.
     if null (Set.intersection firstVariables resultVariables)
         || isRight (isConstructorModuloLikePattern tools first)
         then return finalResult
@@ -537,7 +566,7 @@ matchNonVarToPattern tools substitutionSimplifier first second
                 , substitution = Substitution.wrap rightSubst
                 }
 
-freeVariablesUnderArbitrarySymbols
+freeVariablesUnderNonConstructorSymbols
     :: forall level variable .
         ( MetaOrObject level
         , Ord (variable level)
@@ -548,10 +577,10 @@ freeVariablesUnderArbitrarySymbols
     => MetadataTools level StepperAttributes
     -> PredicateSubstitution level variable
     -> Set.Set (variable level)
-freeVariablesUnderArbitrarySymbols tools expandedPatt =
-    freeUnderArbitrarySymbols
+freeVariablesUnderNonConstructorSymbols tools expandedPatt =
+    freeUnderNonConstructorSymbols
   where
-    ArbitrarySymbols { under = freeUnderArbitrarySymbols } =
+    NonConstructorSymbols { under = freeUnderNonConstructorSymbols } =
         Recursive.fold
             (freeVarsHelper . Cofree.tailF)
             (Predicated.toMLPattern
@@ -563,55 +592,56 @@ freeVariablesUnderArbitrarySymbols tools expandedPatt =
         :: StepPatternHead
             level
             variable
-            (ArbitrarySymbols (variable level))
-        -> ArbitrarySymbols (variable level)
+            (NonConstructorSymbols (variable level))
+        -> NonConstructorSymbols (variable level)
     freeVarsHelper patt =
         case patt of
             (ApplicationPattern Application {applicationSymbolOrAlias}) ->
                 if give tools $
                     isConstructorModuloLike_ applicationSymbolOrAlias
-                    then ArbitrarySymbols
-                        { under = underArbitrarySymbols
-                        , without = withoutArbitrarySymbols
+                    then NonConstructorSymbols
+                        { under = underNonConstructorSymbols
+                        , without = withoutNonConstructorSymbols
                         }
-                    else ArbitrarySymbols
+                    else NonConstructorSymbols
                         { under = Set.union
-                            underArbitrarySymbols withoutArbitrarySymbols
+                            underNonConstructorSymbols
+                            withoutNonConstructorSymbols
                         , without = Set.empty
                         }
-            (ExistsPattern Exists {existsVariable}) -> ArbitrarySymbols
-                { under = Set.delete existsVariable underArbitrarySymbols
+            (ExistsPattern Exists {existsVariable}) -> NonConstructorSymbols
+                { under = Set.delete existsVariable underNonConstructorSymbols
                 , without =
-                    Set.delete existsVariable withoutArbitrarySymbols
+                    Set.delete existsVariable withoutNonConstructorSymbols
                 }
-            (ForallPattern Forall {forallVariable}) -> ArbitrarySymbols
-                { under = Set.delete forallVariable underArbitrarySymbols
+            (ForallPattern Forall {forallVariable}) -> NonConstructorSymbols
+                { under = Set.delete forallVariable underNonConstructorSymbols
                 , without =
-                    Set.delete forallVariable withoutArbitrarySymbols
+                    Set.delete forallVariable withoutNonConstructorSymbols
                 }
-            (VariablePattern variable) -> ArbitrarySymbols
-                { under = underArbitrarySymbols
-                , without = Set.insert variable withoutArbitrarySymbols
+            (VariablePattern variable) -> NonConstructorSymbols
+                { under = underNonConstructorSymbols
+                , without = Set.insert variable withoutNonConstructorSymbols
                 }
             _ ->
-                ArbitrarySymbols
-                    { under = underArbitrarySymbols
-                    , without = withoutArbitrarySymbols
+                NonConstructorSymbols
+                    { under = underNonConstructorSymbols
+                    , without = withoutNonConstructorSymbols
                     }
       where
-        ArbitrarySymbols
-            { under = underArbitrarySymbols
-            , without = withoutArbitrarySymbols
+        NonConstructorSymbols
+            { under = underNonConstructorSymbols
+            , without = withoutNonConstructorSymbols
             }
           =
             foldr
                 mergeVars
-                ArbitrarySymbols {under = Set.empty, without = Set.empty}
+                NonConstructorSymbols {under = Set.empty, without = Set.empty}
                 patt
         mergeVars
-            ArbitrarySymbols {under = a, without = b}
-            ArbitrarySymbols {under = c, without = d}
-          = ArbitrarySymbols
+            NonConstructorSymbols {under = a, without = b}
+            NonConstructorSymbols {under = c, without = d}
+          = NonConstructorSymbols
             {under = Set.union a c, without = Set.union b d}
 
 checkVariableEscapeOr
