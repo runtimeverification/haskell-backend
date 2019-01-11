@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+set -e
+set -u
+
+# Environment setup
+
+MASTER_BRANCH="${MASTER_BRANCH:-origin/master}"
+NPROCS="${NPROCS:-4}"
+
+BUILD_DIR=$TOP/.build
+K_NIGHTLY=$BUILD_DIR/nightly.tar.gz
+K_DIR=$BUILD_DIR/k
+K_BIN=$K_DIR/bin
+K_LIB=$K_DIR/lib
+K_REPO='https://github.com/kframework/k'
+
+HS_TOP="./src/main/haskell/kore"
+HS_SOURCE_DIRS=("$HS_TOP/src" "$HS_TOP/app" "$HS_TOP/test" "$HS_TOP/bench")
+
+STACK_OPTS="${STACK_OPTS:---pedantic}"
+STACK_BUILD_OPTS="$STACK_OPTS --coverage --no-run-tests --no-run-benchmarks"
+STACK_HADDOCK_OPTS="$STACK_OPTS --no-run-tests --no-run-benchmarks"
+STACK_TEST_OPTS="$STACK_OPTS --no-run-benchmarks"
+
+COVERAGE_REPORT=".build/coverage_report"
+HASKELL_DOCUMENTATION=".build/haskell_documentation"
+
+# Utilities
+
+notif() { echo "== KORE BUILD: $@" >&2 ; }
+fatal() { notif "FATAL: $@" ; exit 1 ; }
+
+# Main runnables
+
+build_clean() {
+    stack clean
+    find . -name '*.tix' -delete
+    make --directory src/main/k/working clean -j"$NPROCS"
+    rm -rf "$BUILD_DIR"
+}
+
+build_k_frontend() {
+    mkdir -p $BUILD_DIR
+    rm -rf $K_DIR $K_NIGHTLY
+    wget --output-document $K_NIGHTLY \
+        $(curl 'https://api.github.com/repos/kframework/k/releases' | jq --raw-output '.[0].assets[0].browser_download_url')
+    mkdir --parents $K_DIR
+    tar --extract --verbose --file $K_NIGHTLY --strip-components 1 --directory $K_DIR
+}
+
+build_stylish() {
+    ./scripts/git-assert-clean.sh \
+        || fatal "Please commit your changes!"
+
+    ./scripts/git-rebased-on.sh "$(git rev-parse $MASTER_BRANCH)" --linear \
+        || fatal "Please rebase your branch on 'master'!"
+
+    for hs_file in $(find ${HS_SOURCE_DIRS[@]} -name '*.hs' -o -name '*.hs-boot'); do
+        stylish-haskell -i "$hs_file"
+    done
+    ./scripts/git-assert-clean.sh \
+        || fatal "Please commit fixed stylizations!"
+}
+
+build_build() {
+    stack build ${STACK_BUILD_OPTS[@]}
+}
+
+build_test_unit() {
+    stack test ${STACK_TEST_OPTS[@]}
+    hpc_root="$(stack path --local-hpc-root)"
+    cp -r "$hpc_root" "$COVERAGE_REPORT"
+}
+
+build_test_integration() {
+    make --directory src/main/k/working test-k -j"$NPROCS"
+}
+
+build_test() {
+    build_test_unit
+    build_test_integration
+}
+
+build_docs() {
+    stack haddock --no-haddock-deps ${STACK_HADDOCK_OPTS[@]}
+    doc_root="$(stack path --local-doc-root)"
+    cp -r "$doc_root" "$HASKELL_DOCUMENTATION"
+}
+
+build_ci() {
+    build_clean
+    build_stylish
+    build_build
+    build_test
+    build_docs
+}
+
+# Command Processing
+
+{ build_command="$1" && shift ; } || build_command='help'
+notif "$0 $build_command $@"
+
+case "$build_command" in
+    clean)      build_clean                 ;;
+    k-frontend) build_k_frontend            ;;
+    stylish)    build_stylish               ;;
+    build)      build_build                 ;;
+    test-unit)  build_test_unit             ;;
+    test-int)   build_test_integration "$@" ;;
+    test)       build_test             "$@" ;;
+    docs)       build_docs                  ;;
+    ci)         build_ci               "$@" ;;
+    *)          echo "
+    usage: $0 [clean|stylish|build|test-unit|test-int|test|docs|ci]
+
+    -   clean:      Remove build products.
+    -   stylish:    Check for commit-history-style and code-style.
+    -   build:      Build the Haskell backend.
+    -   test-unit:  Run Stack unit tests, produce coverage report.
+    -   test-int:   Run K integration tests.
+    -   test:       Run both unit and integration tests.
+    -   docs:       Build the documentation.
+    -   ci:         Run all of clean, stylish, build, test, docs.
+"
+            exit 1 ;;
+esac
