@@ -58,42 +58,20 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                ( koreSentenceToAxiomPattern Object
-                $ asKoreAxiomSentence $ axiomSentencePureToKore
-                    (mkAxiom_
-                        (mkAnd
-                            mkTop_
-                            (mkAnd
-                                mkTop_
-                                (mkRewrites varI1 varI2)
-                            )
-                        )
-                    )
+                (koreSentenceToAxiomPattern Object
+                    (mkRewriteAxiom varI1 varI2 Nothing)
                 )
             )
         ,   let
                 axiom1 :: VerifiedKoreSentence
-                axiom1 =
-                    (asKoreAxiomSentence . axiomSentencePureToKore)
-                        (mkAxiom_
-                            (mkAnd
-                                mkTop_
-                                (mkAnd mkTop_ (mkRewrites varI1 varI2))
-                            )
-                        )
+                axiom1 = mkRewriteAxiom varI1 varI2 Nothing
                 axiom2 :: VerifiedKoreSentence
                 axiom2 =
-                    (asKoreAxiomSentence . axiomSentencePureToKore)
-                        (mkAxiom_
-                            (mkAnd
-                                mkTop_
-                                (mkAnd
-                                    mkTop_
-                                    (applyInj
-                                        sortKItem
-                                        (mkRewrites varI1 varI2)
-                                    )
-                                )
+                    (asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
+                        (applyInj sortKItem
+                            (mkRewrites
+                                (mkAnd mkTop_ varI1)
+                                (mkAnd mkTop_ varI2)
                             )
                         )
                 moduleTest =
@@ -135,18 +113,14 @@ axiomPatternsUnitTests =
             (assertEqual ""
                 (koreFail "Unsupported pattern type in axiom")
                 (koreSentenceToAxiomPattern Object
-                $ asKoreAxiomSentence $ axiomSentencePureToKore
-                    (mkAxiom_
-                        (mkAnd
-                            mkTop_
-                            (mkAnd
-                                mkTop_
-                                (applySymbol
-                                    symbolInj
-                                    [sortAInt, sortKItem]
-                                    [mkRewrites varI1 varI2]
-                                )
-                            )
+                    ((asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
+                        (applySymbol
+                            symbolInj
+                            [sortAInt, sortKItem]
+                            [ mkRewrites
+                                (mkAnd mkTop_ varI1)
+                                (mkAnd mkTop_ varI2)
+                            ]
                         )
                     )
                 )
@@ -193,11 +167,10 @@ axiomPatternsIntegrationTests =
                 (do
                     parsed <-
                         parseAxiom
-                            "axiom{}\\and{TCell{}}(\n\
-                            \    \\top{TCell{}}(),\n\
-                            \    \\and{TCell{}}(\n\
-                            \        \\top{TCell{}}(),\n\
-                            \        \\rewrites{TCell{}}(\n\
+                            "axiom{}\n\
+                            \    \\rewrites{TCell{}}(\n\
+                            \        \\and{TCell{}}(\n\
+                            \            \\top{TCell{}}(),\n\
                             \            T{}(\n\
                             \                k{}(\n\
                             \                    kseq{}(\n\
@@ -215,11 +188,14 @@ axiomPatternsIntegrationTests =
                             \                    )\n\
                             \                ),\n\
                             \                VarDotVar0:StateCell{}\n\
-                            \            ),\n\
+                            \            )\n\
+                            \        ),\n\
+                            \        \\and{TCell{}}(\n\
+                            \            \\top{TCell{}}(),\n\
                             \            T{}(\n\
                             \                k{}(\n\
                             \                    kseq{}(\n\
-                            \                        inj{ABool{}, KItem{}}(\n\
+                            \                       inj{ABool{}, KItem{}}(\n\
                             \                            leqAInt{}(\n\
                             \                                VarI1:AInt{},\n\
                             \                                VarI2:AInt{})\n\
@@ -231,7 +207,7 @@ axiomPatternsIntegrationTests =
                             \            )\n\
                             \        )\n\
                             \    )\n\
-                            \)[]"
+                            \[]"
                     let valid = UnifiedObject Valid { patternSort = sortTCell }
                     koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
                 )

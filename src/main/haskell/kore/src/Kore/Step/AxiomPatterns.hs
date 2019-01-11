@@ -28,6 +28,8 @@ module Kore.Step.AxiomPatterns
     , koreSentenceToAxiomPattern
     , extractRewriteAxioms
     , extractRewriteClaims
+    , mkRewriteAxiom
+    , mkFunctionAxiom
     ) where
 
 import           Control.DeepSeq
@@ -38,13 +40,12 @@ import           Control.Monad
 import           Data.Default
                  ( Default (..) )
 import           Data.Maybe
-                 ( mapMaybe )
 import           GHC.Generics
                  ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.AST.PureToKore
-                 ( patternKoreToPure )
+                 ( axiomSentencePureToKore, patternKoreToPure )
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Assoc
@@ -272,7 +273,9 @@ patternToAxiomPattern
 patternToAxiomPattern attributes pat =
     case pat of
         -- normal rewrite axioms
-        And_ _ requires (And_ _ _ensures (Rewrites_ _ lhs rhs)) ->
+        -- TODO (thomas.tuegel): Allow \and{_}(ensures, rhs) to be wrapped in
+        -- quantifiers.
+        Rewrites_ _ (And_ _ requires lhs) (And_ _ _ensures rhs) ->
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                 { left = lhs
                 , right = rhs
@@ -297,3 +300,33 @@ patternToAxiomPattern attributes pat =
                 }
         Forall_ _ _ child -> patternToAxiomPattern attributes child
         _ -> koreFail "Unsupported pattern type in axiom"
+
+{- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteAxiomPattern'.
+ -}
+mkRewriteAxiom
+    :: CommonStepPattern Object  -- ^ left-hand side
+    -> CommonStepPattern Object  -- ^ right-hand side
+    -> Maybe (CommonStepPattern Object)  -- ^ requires clause
+    -> VerifiedKoreSentence
+mkRewriteAxiom lhs rhs requires =
+    (asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
+        (mkRewrites
+            (mkAnd (fromMaybe mkTop_ requires) lhs)
+            (mkAnd mkTop_ rhs)
+        )
+
+{- | Construct a 'VerifiedKoreSentence' corresponding to 'FunctionAxiomPattern'.
+ -}
+mkFunctionAxiom
+    :: CommonStepPattern Object  -- ^ left-hand side
+    -> CommonStepPattern Object  -- ^ right-hand side
+    -> Maybe (CommonStepPattern Object)  -- ^ requires clause
+    -> VerifiedKoreSentence
+mkFunctionAxiom lhs rhs requires =
+    (asKoreAxiomSentence . axiomSentencePureToKore . mkAxiom_)
+        (case requires of
+            Just requires' -> mkImplies requires' (mkAnd function mkTop_)
+            Nothing -> function
+        )
+  where
+    function = mkEquals_ lhs rhs

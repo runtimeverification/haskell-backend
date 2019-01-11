@@ -35,7 +35,6 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Pattern
@@ -74,9 +73,9 @@ test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
             , functionalAxiom "b"
             , functionalAxiom "c"
             , functionalAxiom "d"
-            , rewritesAxiom "a" "b"
-            , rewritesAxiom "b" "c"
-            , rewritesAxiom "c" "d"
+            , rewriteAxiom "a" "b"
+            , rewriteAxiom "b" "c"
+            , rewriteAxiom "c" "d"
             ]
         , moduleAttributes = Attributes []
         }
@@ -119,10 +118,10 @@ test_search =
             , functionalAxiom "c"
             , functionalAxiom "d"
             , functionalAxiom "e"
-            , rewritesAxiom "a" "b"
-            , rewritesAxiom "a" "c"
-            , rewritesAxiom "c" "d"
-            , rewritesAxiom "e" "a"
+            , rewriteAxiom "a" "b"
+            , rewriteAxiom "a" "c"
+            , rewriteAxiom "c" "d"
+            , rewriteAxiom "e" "a"
             ]
         , moduleAttributes = Attributes []
         }
@@ -253,32 +252,14 @@ functionalAxiom name =
         }
     r = SortVariable $ Id "R" AstLocationTest
 
--- |
---  axiom{}
---      \and{MySort{}}(
---          \top{MySort{}}(),
---          \and{MySort{}}(),
---              \top{MySort{}}(),
---              \rewrites{MySort{}}(
---                  lhsName{}(),
---                  rhsName{}())))
---  []
-rewritesAxiom :: Text -> Text -> VerifiedKoreSentence
-rewritesAxiom lhsName rhsName =
-    constructUnifiedSentence
-        ((<$>) patternPureToKore . SentenceAxiomSentence)
-        (mkAxiom_
-            (mkAnd
-                (mkTop mySort)
-                (mkAnd
-                    (mkTop mySort)
-                    (mkRewrites
-                        (applyToNoArgs mySort lhsName)
-                        (applyToNoArgs mySort rhsName)
-                    )
-                )
-            )
-        )
+{- | Rewrite the left-hand constant into the right-hand constant.
+ -}
+rewriteAxiom :: Text -> Text -> VerifiedKoreSentence
+rewriteAxiom lhsName rhsName =
+    mkRewriteAxiom
+        (applyToNoArgs mySort lhsName)
+        (applyToNoArgs mySort rhsName)
+        Nothing
 
 applyToNoArgs :: Sort Object -> Text -> CommonStepPattern Object
 applyToNoArgs sort name =
