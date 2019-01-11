@@ -166,7 +166,7 @@ newtype PatternVerifier =
       runPatternVerifier
           :: forall m child. MonadError (Error VerifyError) m
           => (Id Object -> m HookedSortDescription)
-          -> StepPatternHead Object Variable child
+          -> Pattern Object Domain.Builtin Variable child
           -> m ()
     }
 
@@ -368,7 +368,7 @@ verifyDomainValue builtinSort validate =
         :: forall m child. MonadError (Error VerifyError) m
         => (Id Object -> m HookedSortDescription)
         -- ^ Function to lookup sorts by identifier
-        -> StepPatternHead Object Variable child
+        -> Pattern Object Domain.Builtin Variable child
         -- ^ Pattern to verify
         -> m ()
     runPatternVerifier findSort =

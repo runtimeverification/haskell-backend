@@ -10,7 +10,6 @@ module Kore.Step.Pattern
     ( StepPattern
     , CommonStepPattern
     , ConcreteStepPattern
-    , StepPatternHead
     , module Kore.AST.MetaOrObject
     , module Kore.AST.Pure
     , mapVariables
@@ -40,7 +39,7 @@ import           Kore.Annotation.Valid
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
                  ( Pattern (..), SortedVariable )
-import qualified Kore.AST.Common as Head
+import qualified Kore.AST.Common as Base
 import           Kore.AST.Kore
                  ( KorePattern, UnifiedPattern (..), UnifiedSortVariable,
                  asUnifiedPattern )
@@ -62,8 +61,6 @@ type CommonStepPattern level = StepPattern level Variable
 
 type ConcreteStepPattern level = StepPattern level Concrete
 
-type StepPatternHead level variable = Pattern level Domain.Builtin variable
-
 {- | Use the provided mapping to replace all variables in a 'StepPattern'.
 
 @mapVariables@ is lazy: it descends into its argument only as the result is
@@ -82,7 +79,7 @@ mapVariables mapping =
     Recursive.unfold (mapVariablesWorker . Recursive.project)
   where
     mapVariablesWorker (valid :< pat) =
-        Valid.mapVariables mapping valid :< Head.mapVariables mapping pat
+        Valid.mapVariables mapping valid :< Base.mapVariables mapping pat
 
 {- | Use the provided traversal to replace all variables in a 'StepPattern'.
 
@@ -109,7 +106,7 @@ traverseVariables traversing =
         projected =
             (:<)
                 <$> Valid.traverseVariables traversing valid
-                <*> (Head.traverseVariables traversing =<< sequence pat)
+                <*> (Base.traverseVariables traversing =<< sequence pat)
 
 {- | Construct a 'ConcreteStepPattern' from a 'StepPattern'.
 

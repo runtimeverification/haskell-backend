@@ -114,7 +114,7 @@ data PartialPatternProof proof
   deriving Functor
 
 provePattern
-    ::  (  StepPatternHead level variable (Either error [proof])
+    ::  (  Recursive.Base (StepPattern level variable) (Either error [proof])
         -> Either error (PartialPatternProof proof)
         )
     -> StepPattern level variable
@@ -122,52 +122,54 @@ provePattern
 provePattern levelProver =
     Recursive.fold reduceM
   where
-    reduceM (_ :< patt) = do
-        wrappedProof <- levelProver patt
+    reduceM base = do
+        wrappedProof <- levelProver base
         case wrappedProof of
             DoNotDescend proof -> return [proof]
             Descend proof -> do
-                proofs <- concat <$> sequence patt
+                proofs <- concat <$> sequence base
                 return (proof : proofs)
 
 -- Tells whether the pattern is a built-in constructor-like pattern
 isPreconstructedPattern
     :: err
-    -> StepPatternHead level variable pat
+    -> Recursive.Base (StepPattern level variable) pat
     -> Either err (PartialPatternProof (FunctionalProof level variable))
-isPreconstructedPattern
-    _
-    (DomainValuePattern dv@DomainValue { domainValueChild })
-  =
-    (Right . Descend)
-        (FunctionalDomainValue dv
-            { domainValueChild = () <$ domainValueChild }
-        )
-isPreconstructedPattern _ (StringLiteralPattern str) =
-    Right (DoNotDescend (FunctionalStringLiteral str))
-isPreconstructedPattern _ (CharLiteralPattern str) =
-    Right (DoNotDescend (FunctionalCharLiteral str))
-isPreconstructedPattern err _ = Left err
+isPreconstructedPattern err (_ :< pattern') =
+    case pattern' of
+        DomainValuePattern dv@DomainValue { domainValueChild } ->
+            (Right . Descend)
+                (FunctionalDomainValue dv
+                    { domainValueChild = () <$ domainValueChild }
+                )
+        StringLiteralPattern str ->
+            Right (DoNotDescend (FunctionalStringLiteral str))
+        CharLiteralPattern char ->
+            Right (DoNotDescend (FunctionalCharLiteral char))
+        _ -> Left err
 
 checkFunctionalHead
     :: MetadataTools level StepperAttributes
-    -> StepPatternHead level variable a
+    -> Recursive.Base (StepPattern level variable) a
     -> Either
         (FunctionalError level)
         (PartialPatternProof (FunctionalProof level variable))
-checkFunctionalHead _ (VariablePattern v) =
-    Right (DoNotDescend (FunctionalVariable v))
-checkFunctionalHead tools (ApplicationPattern ap)
-    | give tools isFunctional_ patternHead =
-        return (Descend (FunctionalHead patternHead))
-    | give tools isSortInjection_ patternHead =
-        assert (MetadataTools.isSubsortOf tools sortFrom sortTo)
-        $ return (Descend (FunctionalHead patternHead))
-    | otherwise = Left (NonFunctionalHead patternHead)
-  where
-    patternHead = applicationSymbolOrAlias ap
-    [sortFrom, sortTo] = symbolOrAliasParams patternHead
-checkFunctionalHead _ p = isPreconstructedPattern NonFunctionalPattern p
+checkFunctionalHead tools base@(_ :< pattern') =
+    case pattern' of
+        VariablePattern v ->
+            Right (DoNotDescend (FunctionalVariable v))
+        ApplicationPattern ap
+          | give tools isFunctional_ patternHead ->
+            return (Descend (FunctionalHead patternHead))
+          | give tools isSortInjection_ patternHead ->
+            assert (MetadataTools.isSubsortOf tools sortFrom sortTo)
+            $ return (Descend (FunctionalHead patternHead))
+          | otherwise ->
+            Left (NonFunctionalHead patternHead)
+          where
+            patternHead = applicationSymbolOrAlias ap
+            [sortFrom, sortTo] = symbolOrAliasParams patternHead
+        _ -> isPreconstructedPattern NonFunctionalPattern base
 
 {-|@isConstructorLikeTop@ checks whether the given 'Pattern' is topped in a
 constructor / syntactic sugar for a constructor (literal / domain value)
@@ -175,54 +177,56 @@ construct.
 -}
 isConstructorLikeTop
     :: MetadataTools level StepperAttributes
-    -> StepPatternHead level variable pat
+    -> Recursive.Base (StepPattern level variable) pat
     -> Bool
-isConstructorLikeTop tools (ApplicationPattern ap) =
-    give tools $ isConstructor_ patternHead
-  where
-    patternHead = applicationSymbolOrAlias ap
-isConstructorLikeTop _ p = isRight (isPreconstructedPattern undefined p)
+isConstructorLikeTop tools base@(_ :< pattern') =
+    case pattern' of
+        ApplicationPattern ap ->
+            give tools isConstructor_ patternHead
+          where
+            patternHead = applicationSymbolOrAlias ap
+        _ -> isRight (isPreconstructedPattern undefined base)
 
 checkConstructorLikeHead
     :: MetadataTools level StepperAttributes
-    -> StepPatternHead level variable a
+    -> Recursive.Base (StepPattern level variable) a
     -> Either
         ConstructorLikeError
         (PartialPatternProof ConstructorLikeProof)
-checkConstructorLikeHead
-    tools
-    (ApplicationPattern Application {applicationSymbolOrAlias})
-  | give tools $ isConstructor_ applicationSymbolOrAlias
-    || isSortInjection_ applicationSymbolOrAlias
-  = return (Descend ConstructorLikeProof)
-checkConstructorLikeHead
-    _
-    (VariablePattern _)
-  = return (Descend ConstructorLikeProof)
-checkConstructorLikeHead _ patternHead
-  | isRight (isPreconstructedPattern undefined patternHead) =
-    return (DoNotDescend ConstructorLikeProof)
-  | otherwise = Left NonConstructorLikeHead
+checkConstructorLikeHead tools base@(_ :< pattern') =
+    case pattern' of
+        ApplicationPattern Application {applicationSymbolOrAlias}
+          | isConstructor || isSortInjection ->
+            return (Descend ConstructorLikeProof)
+          where
+            (isConstructor, isSortInjection) =
+                give tools
+                    ((,) <$> isConstructor_ <*> isSortInjection_)
+                    applicationSymbolOrAlias
+        VariablePattern _ ->
+            return (Descend ConstructorLikeProof)
+        _ | Right _ <- isPreconstructedPattern undefined base ->
+            return (DoNotDescend ConstructorLikeProof)
+          | otherwise -> Left NonConstructorLikeHead
 
 checkConstructorModuloLikeHead
     :: (MetaOrObject level, Show a, Show (variable level))
     => MetadataTools level StepperAttributes
-    -> StepPatternHead level variable a
+    -> Recursive.Base (StepPattern level variable) a
     -> Either
         ConstructorLikeError
         (PartialPatternProof ConstructorLikeProof)
-checkConstructorModuloLikeHead
-    tools
-    patt
-  =
-    case checkConstructorLikeHead tools patt of
+checkConstructorModuloLikeHead tools base@(_ :< pattern') =
+    case checkConstructorLikeHead tools base of
         r@(Right _) -> r
-        Left _ -> case patt of
-            (ApplicationPattern Application {applicationSymbolOrAlias}) ->
-                if give tools $ isConstructorModulo_ applicationSymbolOrAlias
-                    then return (Descend ConstructorLikeProof)
-                    else Left NonConstructorLikeHead
-            _ -> Left NonConstructorLikeHead
+        Left _ ->
+            case pattern' of
+                ApplicationPattern Application {applicationSymbolOrAlias}
+                  | isConstructorModulo -> return (Descend ConstructorLikeProof)
+                  where
+                    isConstructorModulo =
+                        give tools isConstructorModulo_ applicationSymbolOrAlias
+                _ -> Left NonConstructorLikeHead
 
 {-| checks whether a pattern is function-like or not and, if it is, returns
     a proof certifying that.
@@ -236,36 +240,40 @@ isFunctionPattern tools =
 
 checkFunctionHead
     :: MetadataTools level StepperAttributes
-    -> StepPatternHead level variable a
+    -> Recursive.Base (StepPattern level variable) a
     -> Either
         (FunctionError level)
         (PartialPatternProof (FunctionProof level variable))
-checkFunctionHead tools (ApplicationPattern ap)
-  | give tools isFunction_ patternHead =
-    Right (Descend (FunctionHead patternHead))
-  where
-    patternHead = applicationSymbolOrAlias ap
-checkFunctionHead tools patt =
-    case checkFunctionalHead tools patt of
-        Right proof -> Right (FunctionProofFunctional <$> proof)
-        Left (NonFunctionalHead patternHead) ->
-            Left (NonFunctionHead patternHead)
-        Left NonFunctionalPattern -> Left NonFunctionPattern
+checkFunctionHead tools base@(_ :< pattern') =
+    case pattern' of
+        ApplicationPattern ap
+          | give tools isFunction_ patternHead ->
+            Right (Descend (FunctionHead patternHead))
+          where
+            patternHead = applicationSymbolOrAlias ap
+        _ ->
+            case checkFunctionalHead tools base of
+                Right proof -> Right (FunctionProofFunctional <$> proof)
+                Left (NonFunctionalHead patternHead) ->
+                    Left (NonFunctionHead patternHead)
+                Left NonFunctionalPattern -> Left NonFunctionPattern
 
 checkTotalHead
     :: MetadataTools level StepperAttributes
-    -> StepPatternHead level variable a
+    -> Recursive.Base (StepPattern level variable) a
     -> Either
         (TotalError level)
         (PartialPatternProof (TotalProof level variable))
-checkTotalHead tools (ApplicationPattern ap)
-  | isTotal (MetadataTools.symAttributes tools patternHead) =
-    Right (Descend (TotalHead patternHead))
-  where
-    patternHead = applicationSymbolOrAlias ap
-checkTotalHead tools patt =
-    case checkFunctionalHead tools patt of
-        Right proof -> Right (TotalProofFunctional <$> proof)
-        Left (NonFunctionalHead patternHead) ->
-            Left (NonTotalHead patternHead)
-        Left NonFunctionalPattern -> Left NonTotalPattern
+checkTotalHead tools base@(_ :< pattern') =
+    case pattern' of
+        ApplicationPattern ap
+          | isTotal (MetadataTools.symAttributes tools patternHead) ->
+            Right (Descend (TotalHead patternHead))
+          where
+            patternHead = applicationSymbolOrAlias ap
+        _ ->
+            case checkFunctionalHead tools base of
+                Right proof -> Right (TotalProofFunctional <$> proof)
+                Left (NonFunctionalHead patternHead) ->
+                    Left (NonTotalHead patternHead)
+                Left NonFunctionalPattern -> Left NonTotalPattern
