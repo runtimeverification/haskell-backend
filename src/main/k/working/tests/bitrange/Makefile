@@ -4,16 +4,16 @@ include $(TOP)/include.mk
 KOMPILED := bitrange-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): bitrange.k $(K)
+$(DEFINITION): bitrange.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module bitrange
 
 %.bitrange.kore: %.eqtest $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.bitrange $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.bitrange $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.bitrange $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.bitrange $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

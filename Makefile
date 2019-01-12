@@ -1,13 +1,22 @@
 include include.mk
 
-jenkins: STACK_OPTS += --test --bench --coverage
+jenkins: STACK_OPTS += --test --bench
 export STACK_OPTS
 
-.PHONY: all clean clean-submodules distclean docs haddock jenkins kore stylish \
+.PHONY: all clean docs haddock jenkins kore k-frontend stylish \
         test test-kore test-k
 
 kore:
 	stack build $(STACK_BUILD_OPTS)
+
+k-frontend:
+	mkdir -p $(BUILD_DIR)
+	rm -rf $(K_DIR) $(K_NIGHTLY)
+	curl --location --output $(K_NIGHTLY) \
+	    $$(curl 'https://api.github.com/repos/kframework/k/releases' | jq --raw-output '.[0].assets[0].browser_download_url')
+	mkdir --parents $(K_DIR)
+	tar --extract --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIR)
+	$(KRUN) --version
 
 docs: haddock
 
@@ -23,7 +32,7 @@ haddock:
 		cp -r $$(stack path --local-doc-root) haskell_documentation; \
 	fi
 
-all: kore
+all: kore k-frontend
 
 test: test-kore test-k
 
@@ -33,21 +42,16 @@ test-kore:
 		cp -r $$(stack path --local-hpc-root) coverage_report; \
 	fi
 
-test-k:
-	$(MAKE) -C src/main/k/working test-k
+test-k: all
+	$(MAKE) --directory src/main/k/working test-k -j$(NPROCS)
 
-jenkins: distclean check all test docs
+jenkins: clean check all test docs
 
-distclean: clean
-	if test -f $(K_SUBMODULE)/pom.xml; then \
-		cd $(K_SUBMODULE) && mvn clean -q; \
-	fi
-	git submodule deinit --force -- ./
-
-clean: clean-submodules
+clean:
 	stack clean
 	find . -name '*.tix' -exec rm -f '{}' \;
-	$(MAKE) -C src/main/k/working clean
+	$(MAKE) --directory src/main/k/working clean -j$(NPROCS)
+	rm -rf $(BUILD_DIR)
 
 check:
 	if ! ./scripts/git-assert-clean.sh; \
@@ -55,7 +59,7 @@ check:
 		echo >&2 "Please commit your changes!"; \
 		exit 1; \
 	fi
-	if ! ./scripts/git-rebased-on.sh "$$(git rev-parse origin/master)" --linear; \
+	if ! ./scripts/git-rebased-on.sh "$$(git rev-parse $(UPSTREAM_BRANCH))" --linear; \
 	then \
 		echo >&2 "Please rebase your branch onto ‘master’!"; \
 		exit 1; \

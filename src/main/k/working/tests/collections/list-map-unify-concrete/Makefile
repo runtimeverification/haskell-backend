@@ -4,16 +4,16 @@ include $(TOP)/include.mk
 KOMPILED := list-map-unify-concrete-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-map-unify-concrete.k $(K)
+$(DEFINITION): list-map-unify-concrete.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-map-unify-concrete
 
-%.list-map-unify-concrete.kore: %.list-map-unify-concrete $(DEFINITION) $(K) $(KORE_EXEC)
+%.list-map-unify-concrete.kore: %.list-map-unify-concrete $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.list-map-unify-concrete $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.list-map-unify-concrete $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.list-map-unify-concrete $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.list-map-unify-concrete $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

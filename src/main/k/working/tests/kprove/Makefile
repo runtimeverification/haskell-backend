@@ -4,22 +4,22 @@ include $(TOP)/include.mk
 KOMPILED := imp-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): imp.k $(K)
+$(DEFINITION): imp.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module IMP
 
-%.imp.kore: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.imp.kore: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.krun: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
-%.kprove: %.k $(DEFINITION) $(K) $(KORE_EXEC)
+%.kprove: %.k $(DEFINITION) $(KPROVE) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
 
-%.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.search.final.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.search.final.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final \
 		$(foreach pat, $(wildcard $*.search.pattern), --pattern "$$(cat $(pat))")
 

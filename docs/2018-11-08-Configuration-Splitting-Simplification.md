@@ -81,7 +81,7 @@ Input:
    - `α(Z) =  s(Z) ∧ q(Z)`
    - `s(Z)` is a functional term made of constructor-like symbols and variables
    - `q(Z)` is a predicate
-   
+
 
 Output: `t'(X)` and `p'(X)` such that
 

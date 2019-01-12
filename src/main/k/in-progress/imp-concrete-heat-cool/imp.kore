@@ -28,8 +28,8 @@ endmodule []
 
 module INJ
   symbol inj{From,To}(From) : To []
- 
-  axiom{S1,S2,S3,R} 
+
+  axiom{S1,S2,S3,R}
     \equals{S3,R}(
       inj{S2,S3}(inj{S1,S2}(T:S1)),
       inj{S1,S3}(T:S1))
@@ -3214,25 +3214,25 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateCell:SortStateCell{}, 
+            \exists{SortBool{}} (VarStateCell:SortStateCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisCell{}(kseq{}(inj{SortStateCell{}, SortKItem{}}(VarStateCell:SortStateCell{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarTCell:SortTCell{}, 
+            \exists{SortBool{}} (VarTCell:SortTCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisCell{}(kseq{}(inj{SortTCell{}, SortKItem{}}(VarTCell:SortTCell{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarCell:SortCell{}, 
+            \exists{SortBool{}} (VarCell:SortCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisCell{}(kseq{}(inj{SortCell{}, SortKItem{}}(VarCell:SortCell{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKCell:SortKCell{}, 
+            \exists{SortBool{}} (VarKCell:SortKCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisCell{}(kseq{}(inj{SortKCell{}, SortKItem{}}(VarKCell:SortKCell{}),dotk{}()))))),
@@ -3371,7 +3371,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStream:SortStream{}, 
+            \exists{SortBool{}} (VarStream:SortStream{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStream{}(kseq{}(inj{SortStream{}, SortKItem{}}(VarStream:SortStream{}),dotk{}()))))),
@@ -3400,13 +3400,13 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarBlock:SortBlock{}, 
+            \exists{SortBool{}} (VarBlock:SortBlock{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStmt{}(kseq{}(inj{SortBlock{}, SortKItem{}}(VarBlock:SortBlock{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStmt:SortStmt{}, 
+            \exists{SortBool{}} (VarStmt:SortStmt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStmt{}(kseq{}(inj{SortStmt{}, SortKItem{}}(VarStmt:SortStmt{}),dotk{}()))))),
@@ -3481,7 +3481,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateCell:SortStateCell{}, 
+            \exists{SortBool{}} (VarStateCell:SortStateCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStateCell{}(kseq{}(inj{SortStateCell{}, SortKItem{}}(VarStateCell:SortStateCell{}),dotk{}()))))),
@@ -3570,7 +3570,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarTCellFragment:SortTCellFragment{}, 
+            \exists{SortBool{}} (VarTCellFragment:SortTCellFragment{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisTCellFragment{}(kseq{}(inj{SortTCellFragment{}, SortKItem{}}(VarTCellFragment:SortTCellFragment{}),dotk{}()))))),
@@ -3589,7 +3589,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarList:SortList{}, 
+            \exists{SortBool{}} (VarList:SortList{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisList{}(kseq{}(inj{SortList{}, SortKItem{}}(VarList:SortList{}),dotk{}()))))),
@@ -3672,13 +3672,13 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarBool:SortBool{}, 
+            \exists{SortBool{}} (VarBool:SortBool{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisBExp{}(kseq{}(inj{SortBool{}, SortKItem{}}(VarBool:SortBool{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarBExp:SortBExp{}, 
+            \exists{SortBool{}} (VarBExp:SortBExp{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisBExp{}(kseq{}(inj{SortBExp{}, SortKItem{}}(VarBExp:SortBExp{}),dotk{}()))))),
@@ -3713,7 +3713,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKConfigVar:SortKConfigVar{}, 
+            \exists{SortBool{}} (VarKConfigVar:SortKConfigVar{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKConfigVar{}(kseq{}(inj{SortKConfigVar{}, SortKItem{}}(VarKConfigVar:SortKConfigVar{}),dotk{}()))))),
@@ -3768,7 +3768,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarBool:SortBool{}, 
+            \exists{SortBool{}} (VarBool:SortBool{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisBool{}(kseq{}(inj{SortBool{}, SortKItem{}}(VarBool:SortBool{}),dotk{}()))))),
@@ -3797,175 +3797,175 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarAssignment:SortAssignment{}, 
+            \exists{SortBool{}} (VarAssignment:SortAssignment{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortAssignment{}, SortKItem{}}(VarAssignment:SortAssignment{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKCell:SortKCell{}, 
+            \exists{SortBool{}} (VarKCell:SortKCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortKCell{}, SortKItem{}}(VarKCell:SortKCell{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarState:SortState{}, 
+            \exists{SortBool{}} (VarState:SortState{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortState{}, SortKItem{}}(VarState:SortState{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateCellOpt:SortStateCellOpt{}, 
+            \exists{SortBool{}} (VarStateCellOpt:SortStateCellOpt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortStateCellOpt{}, SortKItem{}}(VarStateCellOpt:SortStateCellOpt{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarIOError:SortIOError{}, 
+            \exists{SortBool{}} (VarIOError:SortIOError{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortIOError{}, SortKItem{}}(VarIOError:SortIOError{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarCell:SortCell{}, 
+            \exists{SortBool{}} (VarCell:SortCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortCell{}, SortKItem{}}(VarCell:SortCell{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateValue:SortStateValue{}, 
+            \exists{SortBool{}} (VarStateValue:SortStateValue{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortStateValue{}, SortKItem{}}(VarStateValue:SortStateValue{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarInt:SortInt{}, 
+            \exists{SortBool{}} (VarInt:SortInt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortInt{}, SortKItem{}}(VarInt:SortInt{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarBlock:SortBlock{}, 
+            \exists{SortBool{}} (VarBlock:SortBlock{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortBlock{}, SortKItem{}}(VarBlock:SortBlock{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStream:SortStream{}, 
+            \exists{SortBool{}} (VarStream:SortStream{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortStream{}, SortKItem{}}(VarStream:SortStream{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarAExp:SortAExp{}, 
+            \exists{SortBool{}} (VarAExp:SortAExp{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortAExp{}, SortKItem{}}(VarAExp:SortAExp{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarId:SortId{}, 
+            \exists{SortBool{}} (VarId:SortId{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortId{}, SortKItem{}}(VarId:SortId{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarMap:SortMap{}, 
+            \exists{SortBool{}} (VarMap:SortMap{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortMap{}, SortKItem{}}(VarMap:SortMap{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarList:SortList{}, 
+            \exists{SortBool{}} (VarList:SortList{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortList{}, SortKItem{}}(VarList:SortList{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStmt:SortStmt{}, 
+            \exists{SortBool{}} (VarStmt:SortStmt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortStmt{}, SortKItem{}}(VarStmt:SortStmt{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarTCell:SortTCell{}, 
+            \exists{SortBool{}} (VarTCell:SortTCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortTCell{}, SortKItem{}}(VarTCell:SortTCell{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarTCellFragment:SortTCellFragment{}, 
+            \exists{SortBool{}} (VarTCellFragment:SortTCellFragment{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortTCellFragment{}, SortKItem{}}(VarTCellFragment:SortTCellFragment{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKResult:SortKResult{}, 
+            \exists{SortBool{}} (VarKResult:SortKResult{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortKResult{}, SortKItem{}}(VarKResult:SortKResult{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarBExp:SortBExp{}, 
+            \exists{SortBool{}} (VarBExp:SortBExp{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortBExp{}, SortKItem{}}(VarBExp:SortBExp{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateCell:SortStateCell{}, 
+            \exists{SortBool{}} (VarStateCell:SortStateCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortStateCell{}, SortKItem{}}(VarStateCell:SortStateCell{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateKey:SortStateKey{}, 
+            \exists{SortBool{}} (VarStateKey:SortStateKey{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortStateKey{}, SortKItem{}}(VarStateKey:SortStateKey{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarSet:SortSet{}, 
+            \exists{SortBool{}} (VarSet:SortSet{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortSet{}, SortKItem{}}(VarSet:SortSet{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarPgm:SortPgm{}, 
+            \exists{SortBool{}} (VarPgm:SortPgm{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortPgm{}, SortKItem{}}(VarPgm:SortPgm{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarIds:SortIds{}, 
+            \exists{SortBool{}} (VarIds:SortIds{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortIds{}, SortKItem{}}(VarIds:SortIds{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKCellOpt:SortKCellOpt{}, 
+            \exists{SortBool{}} (VarKCellOpt:SortKCellOpt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortKCellOpt{}, SortKItem{}}(VarKCellOpt:SortKCellOpt{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarBool:SortBool{}, 
+            \exists{SortBool{}} (VarBool:SortBool{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortBool{}, SortKItem{}}(VarBool:SortBool{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarString:SortString{}, 
+            \exists{SortBool{}} (VarString:SortString{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortString{}, SortKItem{}}(VarString:SortString{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKItem:SortKItem{}, 
+            \exists{SortBool{}} (VarKItem:SortKItem{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortKItem{}, SortKItem{}}(VarKItem:SortKItem{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarFloat:SortFloat{}, 
+            \exists{SortBool{}} (VarFloat:SortFloat{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKItem{}(kseq{}(inj{SortFloat{}, SortKItem{}}(VarFloat:SortFloat{}),dotk{}()))))),
@@ -3984,13 +3984,13 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarInt:SortInt{}, 
+            \exists{SortBool{}} (VarInt:SortInt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStateValue{}(kseq{}(inj{SortInt{}, SortKItem{}}(VarInt:SortInt{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateValue:SortStateValue{}, 
+            \exists{SortBool{}} (VarStateValue:SortStateValue{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStateValue{}(kseq{}(inj{SortStateValue{}, SortKItem{}}(VarStateValue:SortStateValue{}),dotk{}()))))),
@@ -4075,7 +4075,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarSet:SortSet{}, 
+            \exists{SortBool{}} (VarSet:SortSet{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisSet{}(kseq{}(inj{SortSet{}, SortKItem{}}(VarSet:SortSet{}),dotk{}()))))),
@@ -4120,7 +4120,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarString:SortString{}, 
+            \exists{SortBool{}} (VarString:SortString{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisString{}(kseq{}(inj{SortString{}, SortKItem{}}(VarString:SortString{}),dotk{}()))))),
@@ -4239,7 +4239,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKCell:SortKCell{}, 
+            \exists{SortBool{}} (VarKCell:SortKCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKCell{}(kseq{}(inj{SortKCell{}, SortKItem{}}(VarKCell:SortKCell{}),dotk{}()))))),
@@ -4354,13 +4354,13 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateCellOpt:SortStateCellOpt{}, 
+            \exists{SortBool{}} (VarStateCellOpt:SortStateCellOpt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStateCellOpt{}(kseq{}(inj{SortStateCellOpt{}, SortKItem{}}(VarStateCellOpt:SortStateCellOpt{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateCell:SortStateCell{}, 
+            \exists{SortBool{}} (VarStateCell:SortStateCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStateCellOpt{}(kseq{}(inj{SortStateCell{}, SortKItem{}}(VarStateCell:SortStateCell{}),dotk{}()))))),
@@ -4387,7 +4387,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarIds:SortIds{}, 
+            \exists{SortBool{}} (VarIds:SortIds{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisIds{}(kseq{}(inj{SortIds{}, SortKItem{}}(VarIds:SortIds{}),dotk{}()))))),
@@ -4438,7 +4438,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarTCell:SortTCell{}, 
+            \exists{SortBool{}} (VarTCell:SortTCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisTCell{}(kseq{}(inj{SortTCell{}, SortKItem{}}(VarTCell:SortTCell{}),dotk{}()))))),
@@ -4473,7 +4473,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarMap:SortMap{}, 
+            \exists{SortBool{}} (VarMap:SortMap{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisMap{}(kseq{}(inj{SortMap{}, SortKItem{}}(VarMap:SortMap{}),dotk{}()))))),
@@ -4504,7 +4504,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarIOError:SortIOError{}, 
+            \exists{SortBool{}} (VarIOError:SortIOError{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisIOError{}(kseq{}(inj{SortIOError{}, SortKItem{}}(VarIOError:SortIOError{}),dotk{}()))))),
@@ -4571,13 +4571,13 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarStateKey:SortStateKey{}, 
+            \exists{SortBool{}} (VarStateKey:SortStateKey{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStateKey{}(kseq{}(inj{SortStateKey{}, SortKItem{}}(VarStateKey:SortStateKey{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarId:SortId{}, 
+            \exists{SortBool{}} (VarId:SortId{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisStateKey{}(kseq{}(inj{SortId{}, SortKItem{}}(VarId:SortId{}),dotk{}()))))),
@@ -4596,13 +4596,13 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKCell:SortKCell{}, 
+            \exists{SortBool{}} (VarKCell:SortKCell{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKCellOpt{}(kseq{}(inj{SortKCell{}, SortKItem{}}(VarKCell:SortKCell{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKCellOpt:SortKCellOpt{}, 
+            \exists{SortBool{}} (VarKCellOpt:SortKCellOpt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKCellOpt{}(kseq{}(inj{SortKCellOpt{}, SortKItem{}}(VarKCellOpt:SortKCellOpt{}),dotk{}()))))),
@@ -4651,7 +4651,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarBlock:SortBlock{}, 
+            \exists{SortBool{}} (VarBlock:SortBlock{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisBlock{}(kseq{}(inj{SortBlock{}, SortKItem{}}(VarBlock:SortBlock{}),dotk{}()))))),
@@ -4712,7 +4712,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarState:SortState{}, 
+            \exists{SortBool{}} (VarState:SortState{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisState{}(kseq{}(inj{SortState{}, SortKItem{}}(VarState:SortState{}),dotk{}()))))),
@@ -4851,7 +4851,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarId:SortId{}, 
+            \exists{SortBool{}} (VarId:SortId{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisId{}(kseq{}(inj{SortId{}, SortKItem{}}(VarId:SortId{}),dotk{}()))))),
@@ -4870,7 +4870,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarFloat:SortFloat{}, 
+            \exists{SortBool{}} (VarFloat:SortFloat{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisFloat{}(kseq{}(inj{SortFloat{}, SortKItem{}}(VarFloat:SortFloat{}),dotk{}()))))),
@@ -4917,19 +4917,19 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarAExp:SortAExp{}, 
+            \exists{SortBool{}} (VarAExp:SortAExp{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisAExp{}(kseq{}(inj{SortAExp{}, SortKItem{}}(VarAExp:SortAExp{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarInt:SortInt{}, 
+            \exists{SortBool{}} (VarInt:SortInt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisAExp{}(kseq{}(inj{SortInt{}, SortKItem{}}(VarInt:SortInt{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarId:SortId{}, 
+            \exists{SortBool{}} (VarId:SortId{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisAExp{}(kseq{}(inj{SortId{}, SortKItem{}}(VarId:SortId{}),dotk{}()))))),
@@ -4988,7 +4988,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarInt:SortInt{}, 
+            \exists{SortBool{}} (VarInt:SortInt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisInt{}(kseq{}(inj{SortInt{}, SortKItem{}}(VarInt:SortInt{}),dotk{}()))))),
@@ -5017,7 +5017,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarAssignment:SortAssignment{}, 
+            \exists{SortBool{}} (VarAssignment:SortAssignment{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisAssignment{}(kseq{}(inj{SortAssignment{}, SortKItem{}}(VarAssignment:SortAssignment{}),dotk{}()))))),
@@ -5092,7 +5092,7 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarPgm:SortPgm{}, 
+            \exists{SortBool{}} (VarPgm:SortPgm{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisPgm{}(kseq{}(inj{SortPgm{}, SortKItem{}}(VarPgm:SortPgm{}),dotk{}()))))),
@@ -5245,19 +5245,19 @@ module IMP
       \not{R} (
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarBool:SortBool{}, 
+            \exists{SortBool{}} (VarBool:SortBool{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKResult{}(kseq{}(inj{SortBool{}, SortKItem{}}(VarBool:SortBool{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarInt:SortInt{}, 
+            \exists{SortBool{}} (VarInt:SortInt{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKResult{}(kseq{}(inj{SortInt{}, SortKItem{}}(VarInt:SortInt{}),dotk{}()))))),
         \or{R} (
           \ceil{SortBool{},R} (
-            \exists{SortBool{}} (VarKResult:SortKResult{}, 
+            \exists{SortBool{}} (VarKResult:SortKResult{},
               \and{SortBool{}} (
                 \top{SortBool{}}(),
                 LblisKResult{}(kseq{}(inj{SortKResult{}, SortKItem{}}(VarKResult:SortKResult{}),dotk{}()))))),

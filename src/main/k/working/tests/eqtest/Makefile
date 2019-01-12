@@ -4,16 +4,16 @@ include $(TOP)/include.mk
 KOMPILED := eqtest-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): eqtest.k $(K)
+$(DEFINITION): eqtest.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module eqtest
 
 %.eqtest.kore: %.eqtest $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.eqtest $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.eqtest $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.eqtest $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.eqtest $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

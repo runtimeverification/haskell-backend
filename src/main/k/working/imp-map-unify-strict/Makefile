@@ -4,19 +4,19 @@ include $(TOP)/include.mk
 KOMPILED := imp-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): imp.k $(K)
+$(DEFINITION): imp.k $(KOMPILE)
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module IMP
 
-%.imp.kore: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.imp.kore: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --dry-run
 
-%.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.search.final.output: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.search.final.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
 
-%.krun: %.imp $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output

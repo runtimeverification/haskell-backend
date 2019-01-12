@@ -1,7 +1,7 @@
 module LIST-UNIFY-ANY-ELEM
-  
+
   imports DOMAINS
-  
+
   syntax Val ::= "a" | "b" | "c"
 
   configuration
@@ -11,7 +11,7 @@ module LIST-UNIFY-ANY-ELEM
       <v> .K </v>
     </T>
 
-  rule 
+  rule
     <k> V:Val </k>
     <l> ... ListItem(V) ... </l>
     <v> . => V </v>

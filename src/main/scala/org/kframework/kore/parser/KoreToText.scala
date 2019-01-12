@@ -77,7 +77,7 @@ object KoreToText {
       ") : " +
       apply(returnSort) +
       " " +
-      "where" + 
+      "where" +
       apply(leftPattern) +
       " " +
       ":=" +
