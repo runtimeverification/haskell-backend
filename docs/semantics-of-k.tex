@@ -16,22 +16,22 @@
   \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
   \newcommandx{\unsure}[2][1=]
     {\todo[linecolor=red,backgroundcolor=red!25,
-	bordercolor=red,#1]
-	{#2}\xspace{}}
+ bordercolor=red,#1]
+ {#2}\xspace{}}
   \newcommandx{\change}[2][1=]
     {\todo[linecolor=blue,backgroundcolor=blue!25,
-	bordercolor=blue,#1]
-	{#2}\xspace{}}
+ bordercolor=blue,#1]
+ {#2}\xspace{}}
   \newcommandx{\info}[2][1=]
     {\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,
-	bordercolor=OliveGreen,#1]
-	{#2}}
+ bordercolor=OliveGreen,#1]
+ {#2}}
   \newcommandx{\improvement}[2][1=]
     {\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]
-	{#2}\xspace{}}
+ {#2}\xspace{}}
   \newcommandx{\thiswillnotshow}[2][1=]
     {\todo[disable,#1]
-	{#2}\xspace{}}
+ {#2}\xspace{}}
 
   % What are there for?
   % Select what to do with todonotes:
@@ -45,7 +45,7 @@
     {\par {\bfseries \color{blue} #1 \par}} %comment showed
 
   % ams math packages.
-  \usepackage{amsmath, amssymb, amsthm, mathtools,mathbbol,prftree}
+  \usepackage{amsmath, amssymb, amsthm, mathtools,prftree}
   \usepackage{txfonts}
 
   % Declare a global counter for theorem environments:
@@ -169,44 +169,44 @@
   % Define Kore Language style
   \lstdefinelanguage{kore}
   {
-  	% print whole listing small and in serif fonts
-  	basicstyle=\ttfamily\footnotesize,
-  	% use /* */ for comments
-  	morecomment=[s]{/*}{*/},
-  	% print white for comments
-  	commentstyle=\color{codegray},
-  	% print line number in the left, in tiny fonts
-  	numbers=left,
-  	numberstyle=\tiny,
-  	% print all characters at their natural width
-  	columns=fullflexible,
-  	% print background color grey
-  	backgroundcolor=\color{backgray},
-  	% regard some characters as letters
-  	alsoletter={-\#\\},
-  	% list of declaration keywords
-  	keywordstyle=[1]\color{codeblue},
-  	morekeywords=[1]{
-  		module,
-  		endmodule,
-  		hooked-sort,
-  		sort,
-  		symbol,
-  		hooked-symbol,
-  		alias,
-  		axiom,
-  	},
+   % print whole listing small and in serif fonts
+   basicstyle=\ttfamily\footnotesize,
+   % use /* */ for comments
+   morecomment=[s]{/*}{*/},
+   % print white for comments
+   commentstyle=\color{codegray},
+   % print line number in the left, in tiny fonts
+   numbers=left,
+   numberstyle=\tiny,
+   % print all characters at their natural width
+   columns=fullflexible,
+   % print background color grey
+   backgroundcolor=\color{backgray},
+   % regard some characters as letters
+   alsoletter={-\#\\},
+   % list of declaration keywords
+   keywordstyle=[1]\color{codeblue},
+   morekeywords=[1]{
+    module,
+    endmodule,
+    hooked-sort,
+    sort,
+    symbol,
+    hooked-symbol,
+    alias,
+    axiom,
+   },
     % list of connectives
     keywordstyle=[2]\color{codegreen},
     morekeywords=[2]{
-    	\\not,
-    	\\or,
-    	\\implies,
-    	\\and,
-    	\\equals,
-    	\\exists,
-    	\\forall,
-    	\\iff
+     \\not,
+     \\or,
+     \\implies,
+     \\and,
+     \\equals,
+     \\exists,
+     \\forall,
+     \\iff
     }
   }
 
@@ -417,11 +417,11 @@
   \newcommand{\KgetSorts}{\texttt{\sharpsymbol getSorts}}
   \newcommand{\KgetSymbols}{\texttt{\sharpsymbol getSymbols}}
   \newcommand{\KsortDeclared}[1]{
-  	\parametric{\texttt{\sharpsymbol sortDeclared}}{#1}}
+   \parametric{\texttt{\sharpsymbol sortDeclared}}{#1}}
   \newcommand{\KsortsDeclared}[1]{
         \parametric{\texttt{\sharpsymbol sortsDeclared}}{#1}}
   \newcommand{\KsymbolDeclared}[1]{
-  	\parametric{\texttt{\sharpsymbol symbolDeclared}}{#1}}
+   \parametric{\texttt{\sharpsymbol symbolDeclared}}{#1}}
   \newcommand{\KaxiomDeclared}{\texttt{\sharpsymbol axiomDeclared}}
   \newcommand{\Kderivable}{\Kdeduce}
 
@@ -430,7 +430,7 @@
   \newcommand{\KSortConnectedComponent}{\texttt{\sharpsymbol
   SortConnectedComponent}}
   \newcommand{\KsubsortOverloading}[1]{
-  	\parametric{\texttt{\sharpsymbol subsortOverloading}}{#1}}
+   \parametric{\texttt{\sharpsymbol subsortOverloading}}{#1}}
 
   \newcommand{\KwellFormed}{\texttt{\sharpsymbol wellFormed}}
   \newcommand{\KwellFormedPatterns}{\texttt{\sharpsymbol wellFormedPatterns}}
@@ -543,7 +543,7 @@ organize the texts, and correct typos, but please follow the FSL
 rules for editing, though; e.g., $<$80 characters per line,
 each sentence on a new line, etc. }
 
-\tableofcontents
+%\tableofcontents
 
 \section{Introduction}
 \label{sec:introduction}
@@ -932,16 +932,16 @@ When writing patterns, the following precedence and associativity rules are
 useful to reduce the
 number of necessary parentheses.
 \begin{center}
-	\begin{tabular}{c|c|c}
-		Connective      &     Precedence & Associativity \\\hline
-		$\neg$          &     1          & 　--　　　　　　　　　　　\\\hline
-		$=$, $\in$      &     2          & 　--          　\\\hline
-		$\wedge$        &     3          &  left         \\\hline
-		$\vee$          &     4          &  left         \\\hline
-		$\to$           &     5          &  right        \\\hline
-		$\leftrightarrow$ &   6          &  --           \\\hline
-		$\exists$,$\forall$ & 7          &  --           \\\hline
-	\end{tabular}
+ \begin{tabular}{c|c|c}
+  Connective      &     Precedence & Associativity \\\hline
+  $\neg$          &     1          &  --           \\\hline
+  $=$, $\in$      &     2          &  --           \\\hline
+  $\wedge$        &     3          &  left         \\\hline
+  $\vee$          &     4          &  left         \\\hline
+  $\to$           &     5          &  right        \\\hline
+  $\leftrightarrow$ &   6          &  --           \\\hline
+  $\exists$,$\forall$ & 7          &  --           \\\hline
+ \end{tabular}
 \end{center}
 As a convention, binders ($\forall$ and $\exists$) have a lower precedence than
 other connectives.
@@ -1213,17 +1213,17 @@ when $x \not\in \bigcup_{j \neq i} \FV(\varphi_j)$
 \underline{Frame rule:}
 
 \begin{quote}
-	11.
-	$\displaystyle\frac{\varphi_i \imp \varphi'_i}
-	{\sigma(\varphi_1 \ddd \varphi_{i-1} ,
-		\varphi_i,
-		\varphi_{i+1} \ddd \varphi_n)
-		\imp
-		\sigma(\varphi_1 \ddd \varphi_{i-1} ,
-		\varphi'_i,
-		\varphi_{i+1} \ddd \varphi_n)
-	}$
-	\hfill \textsc{(Framing)}
+ 11.
+ $\displaystyle\frac{\varphi_i \imp \varphi'_i}
+ {\sigma(\varphi_1 \ddd \varphi_{i-1} ,
+  \varphi_i,
+  \varphi_{i+1} \ddd \varphi_n)
+  \imp
+  \sigma(\varphi_1 \ddd \varphi_{i-1} ,
+  \varphi'_i,
+  \varphi_{i+1} \ddd \varphi_n)
+ }$
+ \hfill \textsc{(Framing)}
 \end{quote}
 
 Besides the above rules, we need two more proof rules
@@ -1236,9 +1236,9 @@ These two rules are
 \underline{More rules:}
 
 \begin{quote}
-	12.
-	$\vdash \exists x . x$
-	\hfill \textsc{(Existence)}
+ 12.
+ $\vdash \exists x . x$
+ \hfill \textsc{(Existence)}
 \end{quote}
 
 To ease our notation in writing the next proof rule,
@@ -1262,11 +1262,11 @@ Using our notation of symbol contexts, we present the last proof rule
 which captures the fact that variables are singletons:
 
 \begin{quote}
-	13.
-	$\vdash \neg ( C_1[x \wedge \varphi]
-	 \wedge C_2[ x \wedge \neg \varphi ] )$
-	where $C_1, C_2$ are symbol contexts
-	\hfill \textsc{(Singleton Variables)}
+ 13.
+ $\vdash \neg ( C_1[x \wedge \varphi]
+  \wedge C_2[ x \wedge \neg \varphi ] )$
+ where $C_1, C_2$ are symbol contexts
+ \hfill \textsc{(Singleton Variables)}
 \end{quote}
 
 The following result establishes the soundness and completeness
@@ -1687,12 +1687,16 @@ An alternative way to define greatest fixed-point is using the least fixed-point
 where the pattern $\neg e[\neg x / x]$ is called the \emph{dual of pattern $e$ w.r.t. the variable $x$}.
 This definition is justified by the following theorem which establishes the duality between least and greatest fixed-points.
 \begin{theorem}[Duality of Fixed-Points]
-	Let $F \colon 2^M \to 2^M$ be a monotone function. By Knaster-Tarski theorem, it has a unique least fixed-point $\mu x . F \subseteq M$ and a unique greatest fixed-point $\nu x . F \subseteq M$, which satisfy the following duality equations:
-	\begin{align*}
-	& \nu x . F = M \setminus \left( \mu x . \bar{F} \right) \\
-	& \mu x . F = M \setminus \left( \nu x . \bar{F} \right) \\
-	\end{align*}
-	where $\bar{F} \colon 2^M \to 2^M$ is also a monotone function defined as $\bar{F}(A) = M \setminus ( F(M \setminus A))$.
+ Let $F \colon 2^M \to 2^M$ be a monotone function. By Knaster-Tarski theorem, 
+ it has a unique least fixed-point $\mu x . F \subseteq M$ and a unique 
+ greatest fixed-point $\nu x . F \subseteq M$, which satisfy the following 
+ duality equations:
+ \begin{align*}
+ & \nu x . F = M \setminus \left( \mu x . \bar{F} \right) \\
+ & \mu x . F = M \setminus \left( \nu x . \bar{F} \right) \\
+ \end{align*}
+ where $\bar{F} \colon 2^M \to 2^M$ is also a monotone function defined as 
+ $\bar{F}(A) = M \setminus ( F(M \setminus A))$.
 \end{theorem}
 
 \subsection{Contexts}
@@ -2396,10 +2400,10 @@ more basic proof system of matching logic.
 %For example,
 %\begin{center}
 %\begin{tabular}{rl}
-%	$\parametric{\List}{s}$ is a subsort of $\parametric{\List}{s'}$
-%	& if $s$ is a subsort of $s'$ \\
-%	$\parametric{\Map}{s_1,s_2}$ is a subsort of $\parametric{\Map}{s'_1,s'_2}$
-%	& if $s_1$ is a subsort of $s'_1$ and $s_2$ is a subsort of $s'_2$
+% $\parametric{\List}{s}$ is a subsort of $\parametric{\List}{s'}$
+% & if $s$ is a subsort of $s'$ \\
+% $\parametric{\Map}{s_1,s_2}$ is a subsort of $\parametric{\Map}{s'_1,s'_2}$
+% & if $s_1$ is a subsort of $s'_1$ and $s_2$ is a subsort of $s'_2$
 %\end{tabular}
 %\end{center}
 %In other words, an instance of a parametric sort is the subsort of the other
@@ -2409,32 +2413,32 @@ more basic proof system of matching logic.
 %We fake this intuition of inclusion by defining an injective function
 %called the \emph{injection function}:
 %\begin{center}
-%	\begin{tabular}{rl}
-%		$\inj{s}{s'} \colon s \to s'$
-%		& \doubleslash a parametric function \\
-%		& \doubleslash defined for any $s \preceq
-%		s'$ \\
-%		$\inj{s}{s}(x) = x$
-%		& \doubleslash (identity) axiom \\
-%		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}(y)$
-%		& \doubleslash (injectivity) axiom \\
-%		$\inj{s}{s''}(x) = \inj{s'}{s''}(\inj{s}{s'}(x))$
-%		& \doubleslash (transitivity) axiom \\
-%	\end{tabular}
+% \begin{tabular}{rl}
+%  $\inj{s}{s'} \colon s \to s'$
+%  & \doubleslash a parametric function \\
+%  & \doubleslash defined for any $s \preceq
+%  s'$ \\
+%  $\inj{s}{s}(x) = x$
+%  & \doubleslash (identity) axiom \\
+%  $x = y \to \inj{s}{s'}(x) = \inj{s}{s'}(y)$
+%  & \doubleslash (injectivity) axiom \\
+%  $\inj{s}{s''}(x) = \inj{s'}{s''}(\inj{s}{s'}(x))$
+%  & \doubleslash (transitivity) axiom \\
+% \end{tabular}
 %\end{center}
 %
 %The dual of injection functions are \emph{retracts}.
 %They are surjective partial functions that are the inverse of injection
 %functions, which can be defined as follows:
 %\begin{center}
-%	\begin{tabular}{rl}
-%		$\retract{s'}{s} \colon s \rightharpoonup s'$
-%		& \doubleslash a parametric partial function \\
-%		& \doubleslash defined for any $s \preceq
-%		s'$ \\
-%		$\retract{s'}{s}(x) = x$
-%		& \doubleslash for any $x$ is a variable of sort $s'$
-%	\end{tabular}
+% \begin{tabular}{rl}
+%  $\retract{s'}{s} \colon s \rightharpoonup s'$
+%  & \doubleslash a parametric partial function \\
+%  & \doubleslash defined for any $s \preceq
+%  s'$ \\
+%  $\retract{s'}{s}(x) = x$
+%  & \doubleslash for any $x$ is a variable of sort $s'$
+% \end{tabular}
 %\end{center}
 %
 %%Injection functions and retracts are useful.
@@ -2484,10 +2488,10 @@ more basic proof system of matching logic.
 %phenomenon that we use one name for multiple operations.
 %For example,
 %\begin{enumerate}[label=(\alph*).]
-%	\item Use $\_\doublecolon\_$ as the cons operation for lists of all types;
-%	\item Use $\_+\_$ as both the addition of naturals and rationals;
-%	\item Use $\_+\_$ as both the addition of naturals and concatenation of
-%	strings;
+% \item Use $\_\doublecolon\_$ as the cons operation for lists of all types;
+% \item Use $\_+\_$ as both the addition of naturals and rationals;
+% \item Use $\_+\_$ as both the addition of naturals and concatenation of
+% strings;
 %\end{enumerate}
 %In literature, especially literature on order-sorted algebras, researchers
 %have
@@ -2522,14 +2526,14 @@ more basic proof system of matching logic.
 %\end{center}
 %while it parses those expressions as the follows for backends
 %\begin{center}
-%	\begin{tabular}{rl}
-%		$1 {\ \parametric{\doublecolon}{\Nat}\ } 2 {\
-%		\parametric{\doublecolon}{\Nat}\ } {\parametric{\nil}{\Nat}}$
+% \begin{tabular}{rl}
+%  $1 {\ \parametric{\doublecolon}{\Nat}\ } 2 {\
+%  \parametric{\doublecolon}{\Nat}\ } {\parametric{\nil}{\Nat}}$
 %& \doubleslash a list of two naturals $1, 2$ \\
 %$\quot{1} {\ \parametric{\doublecolon}{\String}\ } \quot{2} {\
-%	\parametric{\doublecolon}{\String}\ } {\parametric{\nil}{\String}}$
+% \parametric{\doublecolon}{\String}\ } {\parametric{\nil}{\String}}$
 %& \doubleslash a list of two strings $\quot{1}, \quot{2}$
-%	\end{tabular}
+% \end{tabular}
 %\end{center}
 %where we define the following parametric sorts and symbols for lists, and the
 %{\nil} and {\cons} operations:
@@ -2575,23 +2579,23 @@ more basic proof system of matching logic.
 %
 %\begin{center}
 %\begin{tabular}{rl}
-%	$\_\parametric{+}{\Nat,\Nat,\Nat}\_ \colon \Nat \times \Nat \to \Nat$
-%	& \doubleslash the addition for two naturals \\
-%	$\_\parametric{+}{\Nat,\Rat,\Rat}\_ \colon \Nat \times \Rat \to \Rat$
-%	& \doubleslash the addition for two naturals \\
-%	$\_\parametric{+}{\Rat,\Nat,\Rat}\_ \colon \Rat \times \Nat \to \Rat$
-%	& \doubleslash the addition for two naturals \\
-%	$\_\parametric{+}{\Rat,\Rat,\Rat}\_ \colon \Rat \times \Rat \to \Rat$
-%	& \doubleslash the addition for two naturals
+% $\_\parametric{+}{\Nat,\Nat,\Nat}\_ \colon \Nat \times \Nat \to \Nat$
+% & \doubleslash the addition for two naturals \\
+% $\_\parametric{+}{\Nat,\Rat,\Rat}\_ \colon \Nat \times \Rat \to \Rat$
+% & \doubleslash the addition for two naturals \\
+% $\_\parametric{+}{\Rat,\Nat,\Rat}\_ \colon \Rat \times \Nat \to \Rat$
+% & \doubleslash the addition for two naturals \\
+% $\_\parametric{+}{\Rat,\Rat,\Rat}\_ \colon \Rat \times \Rat \to \Rat$
+% & \doubleslash the addition for two naturals
 %\end{tabular}
 %\end{center}
 %or more compactly defined as follows
 %\begin{center}
-%	\begin{tabular}{rl}
-%		$\_\parametric{+}{s_1,s_2,s_3}\_ \colon s_1 \times s_2 \to s_3$
-%		&  where $s_1,s_2,s_3 \in \{\Nat, \Rat\}$ \\
-%		& and if one of $s_1$ and $s_2$
-%		is $\Rat$, then $s_3$ is $\Rat$
+% \begin{tabular}{rl}
+%  $\_\parametric{+}{s_1,s_2,s_3}\_ \colon s_1 \times s_2 \to s_3$
+%  &  where $s_1,s_2,s_3 \in \{\Nat, \Rat\}$ \\
+%  & and if one of $s_1$ and $s_2$
+%  is $\Rat$, then $s_3$ is $\Rat$
 %\end{tabular}
 %\end{center}
 %
@@ -2641,7 +2645,7 @@ more basic proof system of matching logic.
 %%\subsubsection{Injective Functions}
 %%Given $s_1$ is a subsort of $s_2$, there exists naturally an injective
 %%function\footnote{These injective functions are called inclusion operations
-%%	in~\cite{GOGUEN1992217}.}
+%% in~\cite{GOGUEN1992217}.}
 %%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
 %%We denote these injective functions as $\Kqinj$ in the meta-theory and define
 %%\begin{align*}
@@ -2864,7 +2868,7 @@ be no finite or algorithmic way to represent those
 (e.g., the set of properties of the ``builtin'' model of natural numbers is
 not r.e.).
 
-\section{Towards a Formal Semantics of {\K}: The Need For a Meta-Theory}
+\section{Towards a Formal Semantics of K: The Need For a Meta-Theory}
 \label{sec:meta-theory-reflection}
 
 {\K} is a best effort realization of matching logic.
@@ -2946,39 +2950,39 @@ matching logic, finite or infinite.
 In particular, $K$ enjoys the following \emph{reflection} property, which we
 split in two properties for clarity and terminology:
 \begin{center}
-	\begin{tabular}{l}
-		$
-		\prftree[r]{\hspace*{3ex}\textsc{(Upward Reflection)}}
-		{T \vdash \varphi}
-		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
-		$
-		\\[4ex]
-		$
-		\prftree[r]{\hspace*{3ex} \textsc{(Downward Reflection)}}
-		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
-		{T \vdash \varphi}
-		$
-	\end{tabular}
+ \begin{tabular}{l}
+  $
+  \prftree[r]{\hspace*{3ex}\textsc{(Upward Reflection)}}
+  {T \vdash \varphi}
+  {K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
+  $
+  \\[4ex]
+  $
+  \prftree[r]{\hspace*{3ex} \textsc{(Downward Reflection)}}
+  {K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
+  {T \vdash \varphi}
+  $
+ \end{tabular}
 \end{center}
 where
 \begin{itemize}
-	\item $T$ is any \emph{recursively enumerable} matching logic theory,
-	including all (finite or infinite) theories in
-	Section~\ref{sec:case-studies};
-	\item $\denote{T}$, called the \emph{meta-representation of $T$}, consists
-	of definitions of finitely many matching logic symbols and finitely many
-	matching logic patterns as axioms;
-	\item $K \cup \denote{T}$, called the \emph{meta-theory instantiated by
-	$T$}, is obtained by adding the new symbols and axioms in
-	$\denote{T}$ to the meta-theory $K$;
-	\item $\denote{\varphi}$ is the \emph{meta-representation of $\varphi$},
-	and it is a matching logic pattern in $K \cup \denote{T}$, i.e., the
-	meta-theory instantiated by $T$;
-	\item $\Kdeduce$ is a predicate symbol defined in the meta-theory $K$ that
-	axiomatizes the provability relation of matching logic (see
-	Section~\ref{sec:ML-proof-system});
+ \item $T$ is any \emph{recursively enumerable} matching logic theory,
+ including all (finite or infinite) theories in
+ Section~\ref{sec:case-studies};
+ \item $\denote{T}$, called the \emph{meta-representation of $T$}, consists
+ of definitions of finitely many matching logic symbols and finitely many
+ matching logic patterns as axioms;
+ \item $K \cup \denote{T}$, called the \emph{meta-theory instantiated by
+ $T$}, is obtained by adding the new symbols and axioms in
+ $\denote{T}$ to the meta-theory $K$;
+ \item $\denote{\varphi}$ is the \emph{meta-representation of $\varphi$},
+ and it is a matching logic pattern in $K \cup \denote{T}$, i.e., the
+ meta-theory instantiated by $T$;
+ \item $\Kdeduce$ is a predicate symbol defined in the meta-theory $K$ that
+ axiomatizes the provability relation of matching logic (see
+ Section~\ref{sec:ML-proof-system});
 \end{itemize}
-	
+ 
 With the meta-theory $K$, any schema mechanisms, conventions or notations
 that are found useful to define theories $T$ can be given a formal semantics by
 defining a corresponding meta-representation $\denote{T}$, which is a finite
@@ -3128,7 +3132,7 @@ But it has a specific return sort, $\Pred$, so it cannot be directly used
 in any sort context.
 To do it, we have to introduce the following abbreviation:
 \begin{center}
-	$b \equiv (b = \top_\Pred)$ \qquad for any pattern $b$ of sort $\Pred$
+ $b \equiv (b = \top_\Pred)$ \qquad for any pattern $b$ of sort $\Pred$
 \end{center}
 and the equality lets us use it in any sort context.
 
@@ -3136,12 +3140,12 @@ The second approach is to define
 $$ \isEmpty \colon \List \to \Bool $$
 as a function from $\List$ to $\Bool$, with two axioms:
 \begin{center}
-	$isEmpty(\nil)=\ittrue \qquad\qquad \isEmpty(\cons(x,L)) = \itfalse$
+ $isEmpty(\nil)=\ittrue \qquad\qquad \isEmpty(\cons(x,L)) = \itfalse$
 \end{center}
 Now $\isEmpty$ is defined as a function and has a specific return sort $\Bool$.
 To use it in any sort context, we have to introduce the following abbreviation:
 \begin{center}
-	$b \equiv (b = \ittrue)$ \qquad for any pattern $b$ of sort $\Bool$
+ $b \equiv (b = \ittrue)$ \qquad for any pattern $b$ of sort $\Bool$
 \end{center}
 and the equality lets us use it in any sort context.
 
@@ -3149,13 +3153,13 @@ The last approach, which is also the approach that we adopt in defining $K$, is
 to define $\isEmpty$ as a \emph{predicate symbol schema}, i.e., as a set of
 symbols
 \begin{center}
-	$\parametric{\isEmpty}{s} \in \Sigma_{\List,s}$ \qquad for any sort $s$
+ $\parametric{\isEmpty}{s} \in \Sigma_{\List,s}$ \qquad for any sort $s$
 \end{center}
 with two axiom schemas:
 \begin{center}
-	$\parametric{\isEmpty}{s}(\nil)$
-	\qquad\qquad
-	$\neg \parametric{\isEmpty}{s}(\cons(x,L))$
+ $\parametric{\isEmpty}{s}(\nil)$
+ \qquad\qquad
+ $\neg \parametric{\isEmpty}{s}(\cons(x,L))$
 \end{center}
 Now $\isEmpty$ is a \emph{symbol schema}, so it can be put in any
 sort contexts by simply instantiating the sort parameter $s$ with corresponding
@@ -3210,24 +3214,24 @@ parts, running from Section~\ref{sec:chars-string} to
 Section~\ref{sec:ML-proof-system}, as follows:
 \begin{center}
 \begin{tabular}{l|l}
-	\textbf{Section} & \textbf{Contents}
-	\\\hline\hline
-	Section~\ref{sec:chars-string} & Definition of characters and strings
-	\\\hline
-	Section~\ref{sec:ML-sorts-symbols} & Definition of meta-representations
-	of sorts and symbols
-	\\\hline
-	Section~\ref{sec:finite-lists} & Definition of finite lists
-	\\\hline
-	Section~\ref{sec:ML-patterns} & Definition of meta-representations of
-	patterns
-	\\\hline
-	Section~\ref{sec:ML-theories} & Definition of predicate symbols that
-	define theories
-	\\\hline
-	Section~\ref{sec:ML-proof-system} & Axiomatization of the proof system of
-	matching logic
-	\\\hline
+ \textbf{Section} & \textbf{Contents}
+ \\\hline\hline
+ Section~\ref{sec:chars-string} & Definition of characters and strings
+ \\\hline
+ Section~\ref{sec:ML-sorts-symbols} & Definition of meta-representations
+ of sorts and symbols
+ \\\hline
+ Section~\ref{sec:finite-lists} & Definition of finite lists
+ \\\hline
+ Section~\ref{sec:ML-patterns} & Definition of meta-representations of
+ patterns
+ \\\hline
+ Section~\ref{sec:ML-theories} & Definition of predicate symbols that
+ define theories
+ \\\hline
+ Section~\ref{sec:ML-proof-system} & Axiomatization of the proof system of
+ matching logic
+ \\\hline
 \end{tabular}
 \end{center}
 Section~\ref{sec:K-summary} then gives a summary of all sorts, symbols, and
@@ -3246,25 +3250,25 @@ The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 +
 26 + 10 + 5 = 67$ functional constructors (more can be added if needed or
 desired):
 \begin{center}
-	\begin{tabular}{c c c}
-		$\quottt{a} \colon \to \KChar$ & $\quottt{b} \colon \to \KChar$ &
-		$\quottt{c} \colon \to \KChar$ \\
-		$\cdots$ & $\cdots$ & $\cdots$ \\
-		$\quottt{x} \colon \to \KChar$ & $\quottt{y} \colon \to \KChar$ &
-		$\quottt{z} \colon \to \KChar$ \\
-		$\quottt{A} \colon \to \KChar$ & $\quottt{B} \colon \to \KChar$ &
-		$\quottt{C} \colon \to \KChar$ \\
-		$\cdots$ & $\cdots$ & $\cdots$ \\
-		$\quottt{X} \colon \to \KChar$ & $\quottt{Y} \colon \to \KChar$ &
-		$\quottt{Z} \colon \to \KChar$ \\
-		$\quottt{0} \colon \to \KChar$ & $\cdots$ & $\quottt{9} \colon \to
-		\KChar$
-		\\
-		$\quottt{\sharpsymbol} \colon \to \KChar$ & $\quottt{\slashsymbol}
-		\colon \to \KChar$ & $\quottt{`} \colon \to \KChar$
-		\\
-		$\quottt{-} \colon \to \KChar$ & $\quottt{'} \colon \to \KChar$
-	\end{tabular}
+ \begin{tabular}{c c c}
+  $\quottt{a} \colon \to \KChar$ & $\quottt{b} \colon \to \KChar$ &
+  $\quottt{c} \colon \to \KChar$ \\
+  $\cdots$ & $\cdots$ & $\cdots$ \\
+  $\quottt{x} \colon \to \KChar$ & $\quottt{y} \colon \to \KChar$ &
+  $\quottt{z} \colon \to \KChar$ \\
+  $\quottt{A} \colon \to \KChar$ & $\quottt{B} \colon \to \KChar$ &
+  $\quottt{C} \colon \to \KChar$ \\
+  $\cdots$ & $\cdots$ & $\cdots$ \\
+  $\quottt{X} \colon \to \KChar$ & $\quottt{Y} \colon \to \KChar$ &
+  $\quottt{Z} \colon \to \KChar$ \\
+  $\quottt{0} \colon \to \KChar$ & $\cdots$ & $\quottt{9} \colon \to
+  \KChar$
+  \\
+  $\quottt{\sharpsymbol} \colon \to \KChar$ & $\quottt{\slashsymbol}
+  \colon \to \KChar$ & $\quottt{`} \colon \to \KChar$
+  \\
+  $\quottt{-} \colon \to \KChar$ & $\quottt{'} \colon \to \KChar$
+ \end{tabular}
 \end{center}
 
 \paragraph{Strings as Finite Lists of Characters.}
@@ -3287,10 +3291,10 @@ $\Kepsilon$ as an alias of $\KnilKCharList$ that represents the empty string.
 As a convention, strings are often represented by texts wrapped with
 double-quotation marks.
 For example, we simply write $\qquottt{abc}$ instead of
-	$$
-	\KconsKCharList(\quottt{a}, \KconsKCharList(\quottt{b},
-	\KconsKCharList(\quottt{c}, \Kepsilon)))
-	$$
+ $$
+ \KconsKCharList(\quottt{a}, \KconsKCharList(\quottt{b},
+ \KconsKCharList(\quottt{c}, \Kepsilon)))
+ $$
 \end{notation}
 
 \subsection{Matching Logic Sorts and Symbols}
@@ -3355,14 +3359,14 @@ when the sort $s$ is understood from the context.
 Here we are writing
 \begin{center}
 \begin{tabular}{lll}
-	$f$ & as a shorthand of $f \cln \KString$ & which is a variable of sort
-	$\KString$ \\
-	$S$ & as a shorthand of $S \cln \KSortList$ & which is a variable of sort
-	$\KSortList$ \\
-	$S'$ & as a shorthand of $S' \cln \KSortList$ & which is a variable of sort
-	$\KSortList$ \\
-	$s$ & as a shorthand of $s \cln \KSort$ & which is a variable of sort
-	$\KSort$
+ $f$ & as a shorthand of $f \cln \KString$ & which is a variable of sort
+ $\KString$ \\
+ $S$ & as a shorthand of $S \cln \KSortList$ & which is a variable of sort
+ $\KSortList$ \\
+ $S'$ & as a shorthand of $S' \cln \KSortList$ & which is a variable of sort
+ $\KSortList$ \\
+ $s$ & as a shorthand of $s \cln \KSort$ & which is a variable of sort
+ $\KSort$
 \end{tabular}
 \end{center}
 The universal quantifiers ``$\forall f\forall S \forall S'\forall s$'' in the
@@ -3410,8 +3414,8 @@ rather a helper function, via the axiom:
 Here we are writing
 \begin{center}
 \begin{tabular}{ll}
-	$s$ & as a shorthand of $s \cln \KSort$ \\
-	$s'$ & as a shorthand of $s' \cln \KSort$ \\
+ $s$ & as a shorthand of $s \cln \KSort$ \\
+ $s'$ & as a shorthand of $s' \cln \KSort$ \\
     $(s,s')$ & as a shorthand of
     $\KconsKSortList(s,\KconsKSortList(s',\KnilKSortList))$ \\
     $(s)$ & as a shorthand of $\KconsKSortList(s,\KnilKSortList)$
@@ -3420,16 +3424,16 @@ Here we are writing
 The last two shorthands are defined in Notation~\ref{notation:lists}.
 
 \begin{remark}
-	The function {\KSymbolceil} is used to construct the meta-representations
-	of definedness symbols \emph{in the object theories}.
-	The reader may have noticed that we assumed equality defined in the
-	meta-theory $K$, which means that we also assumed definedness symbols defined.
-	In fact, as discussed in Section~\ref{sec:symbol-schema-finitary}, the
-	meta-theory $K$ has $n^2$ different definedness symbols:
-	\begin{center}
-		$\ceil{\_}_{\smallshp s}^{\smallshp s'} \in \Sigma_K$ \qquad
-		for any $\shp s, \shp s' \in S_K$ that are sorts in the meta-theory $K$
-	\end{center}
+ The function {\KSymbolceil} is used to construct the meta-representations
+ of definedness symbols \emph{in the object theories}.
+ The reader may have noticed that we assumed equality defined in the
+ meta-theory $K$, which means that we also assumed definedness symbols defined.
+ In fact, as discussed in Section~\ref{sec:symbol-schema-finitary}, the
+ meta-theory $K$ has $n^2$ different definedness symbols:
+ \begin{center}
+  $\ceil{\_}_{\smallshp s}^{\smallshp s'} \in \Sigma_K$ \qquad
+  for any $\shp s, \shp s' \in S_K$ that are sorts in the meta-theory $K$
+ \end{center}
     where $n = |S_K|$ is the number of sorts in the meta-theory.
     The function $\KSymbolceil \in \Sigma_K$ has nothing to do with those $n^2$
     definedness symbols in the meta-theory $K$.
@@ -3460,12 +3464,12 @@ In fact, the meta-theory $K$ defines the following five different types of
 cons-lists:
 \begin{center}
 \begin{tabular}{l|l}
-	\textbf{Sort} & \textbf{Meaning} \\\hline\hline
-	\KCharList & Sort for cons-lists of characters \KChar \\\hline
-	\KSortList & Sort for cons-lists of sorts \KSort \\\hline
-	\KSymbolList & Sort for cons-lists of symbols \KSymbol \\\hline
-	\KVariableList & Sort for cons-lists of variables \KVariable \\\hline
-	\KPatternList & Sort for cons-lists of patterns	\KPattern
+ \textbf{Sort} & \textbf{Meaning} \\\hline\hline
+ \KCharList & Sort for cons-lists of characters \KChar \\\hline
+ \KSortList & Sort for cons-lists of sorts \KSort \\\hline
+ \KSymbolList & Sort for cons-lists of symbols \KSymbol \\\hline
+ \KVariableList & Sort for cons-lists of variables \KVariable \\\hline
+ \KPatternList & Sort for cons-lists of patterns \KPattern
 \end{tabular}
 \end{center}
 We have already defined the sorts \KChar, \KSort, and \KSymbol.
@@ -3536,16 +3540,16 @@ It has two axioms
 \end{align*}
 
 \begin{notation}
-	\label{notation:lists}
-	To write list expressions more compactly, we use abbreviation(s)
-	\begin{align*}
-	& (s_1) \equiv \KconsKSortList(s_1, \KnilKSortList)
-	\\
-	& (s_1, s_2, \dots, s_n) \equiv \KconsKSortList(s_1, \KconsKSortList(s_2,
-	\dots\KconsKSortList(s_n, \KnilKSortList)\dots))
-	\end{align*}
-	We may refer to this abbreviation as the
-	\emph{mixfix form representation of lists}.
+ \label{notation:lists}
+ To write list expressions more compactly, we use abbreviation(s)
+ \begin{align*}
+ & (s_1) \equiv \KconsKSortList(s_1, \KnilKSortList)
+ \\
+ & (s_1, s_2, \dots, s_n) \equiv \KconsKSortList(s_1, \KconsKSortList(s_2,
+ \dots\KconsKSortList(s_n, \KnilKSortList)\dots))
+ \end{align*}
+ We may refer to this abbreviation as the
+ \emph{mixfix form representation of lists}.
 \end{notation}
 
 \subsubsection{Finite Lists of Characters, Symbols, Variables, and Patterns}
@@ -3653,37 +3657,37 @@ connectives
 We refer readers to Section~\ref{sec:useful} for the reasons why the membership construct ``\Kin'' requires sort {\KPattern} instead of sort {\KVariable} for its third argument.
 
 \begin{notation}\label{notation:variables-about-KPattern}
-	As a convention, we are writing
-	\begin{center}
-	\begin{tabular}{lll}
-		$x$ & as a shorthand of $x \cln \KString$
-		& which is a variable of sort $\KString$
-		\\
-		$y$ & as a shorthand of $y \cln \KString$
-		& which is a variable of sort $\KString$
-		\\
-		$z$ & as a shorthand of $z \cln \KString$
-		& which is a variable of sort $\KString$
-		\\
-		$s$ & as a shorthand of $s \cln \KSort$
-		& which is a variable of sort $\KSort$
-		\\
-		$\sigma$ & as a shorthand of $\sigma \cln \KSymbol$
-		& which is a variable of sort $\KSymbol$
-		\\
-		$v$ & as a shorthand of $v \cln \KVariable$
-		& which is a variable of sort $\KVariable$
-		\\
-		$u$ & as a shorthand of $u \cln \KVariable$
-		& which is a variable of sort $\KVariable$
-		\\
-		$\varphi$ & as a shorthand of $\varphi \cln \KPattern$
-		& which is a variable of sort $\KPattern$
-		\\
-		$\psi$ & as a shorthand of $\psi \cln \KPattern$
-		& which is a variable of sort $\KPattern$
-	\end{tabular}
-	\end{center}
+ As a convention, we are writing
+ \begin{center}
+ \begin{tabular}{lll}
+  $x$ & as a shorthand of $x \cln \KString$
+  & which is a variable of sort $\KString$
+  \\
+  $y$ & as a shorthand of $y \cln \KString$
+  & which is a variable of sort $\KString$
+  \\
+  $z$ & as a shorthand of $z \cln \KString$
+  & which is a variable of sort $\KString$
+  \\
+  $s$ & as a shorthand of $s \cln \KSort$
+  & which is a variable of sort $\KSort$
+  \\
+  $\sigma$ & as a shorthand of $\sigma \cln \KSymbol$
+  & which is a variable of sort $\KSymbol$
+  \\
+  $v$ & as a shorthand of $v \cln \KVariable$
+  & which is a variable of sort $\KVariable$
+  \\
+  $u$ & as a shorthand of $u \cln \KVariable$
+  & which is a variable of sort $\KVariable$
+  \\
+  $\varphi$ & as a shorthand of $\varphi \cln \KPattern$
+  & which is a variable of sort $\KPattern$
+  \\
+  $\psi$ & as a shorthand of $\psi \cln \KPattern$
+  & which is a variable of sort $\KPattern$
+ \end{tabular}
+ \end{center}
 \end{notation}
 
 Derived connectives have axioms
@@ -3703,8 +3707,8 @@ Derived connectives have axioms
   & \Kceil(s_1, s_2, \varphi) =
     \Kapplication(\KSymbolceil(s_1, s_2),
     \underbrace{(\varphi)}_{
-    	\mathclap{
-    		\text{the singleton list that contains only $\varphi$}}})
+     \mathclap{
+      \text{the singleton list that contains only $\varphi$}}})
   \\
   & \Kfloor(s_1, s_2, \varphi)
   = \Knot(s_2, \Kceil(s_1, s_2, \Knot(s_1, \varphi)))
@@ -3722,29 +3726,30 @@ Derived connectives have axioms
 \end{align*}
 
 \begin{notation}
-	As one may have already noticed, patterns of sort $\KPattern$ get huge rather quickly.
-	The following notations are adopted to write $\KPattern$ patterns in a more
-	compact way, by putting a bar over their normal mixfix forms
-	\todo{We should define this overbar notation in a recursive manner.}
-	\begin{align*}
-	  & \overline{x \cln s} \equiv \KvariablePattern(x, s) \\
-	  & \overline{\sigma(\varphi_1, \dots, \varphi_n)} \equiv
-	  \Kapplication(\sigma, (\varphi_1, \dots, \varphi_n))
-	  \\
-	  & \overline{\varphi \wedge_s \psi} \equiv \Kand(s, \varphi, \psi)
-	  \\
-	  & \overline{\neg_s \varphi} \equiv \Knot(s, \varphi)
-	  \\
-	  & \overline{\exists_s v . \varphi} \equiv
-	  \Kexists(s, v, \varphi)
-	  \\
-	  & \overline{\varphi \vee_s \psi} \equiv \Kor(s, \varphi, \psi)
-	  \\
-	  & \overline{\varphi \to_s \psi} \equiv \Kimplies(s, \varphi, \psi)
-	  \\
-	  & \overline{\varphi \leftrightarrow_s \psi} \equiv \Kiff(s, \varphi, \psi)
-	  \\
-	  & \overline{\forall_s v . \varphi} \equiv \Kforall(s, v, \varphi)
+ As one may have already noticed, patterns of sort $\KPattern$ get huge rather 
+ quickly.
+ The following notations are adopted to write $\KPattern$ patterns in a more
+ compact way, by putting a bar over their normal mixfix forms
+ \todo{We should define this overbar notation in a recursive manner.}
+ \begin{align*}
+   & \overline{x \cln s} \equiv \KvariablePattern(x, s) \\
+   & \overline{\sigma(\varphi_1, \dots, \varphi_n)} \equiv
+   \Kapplication(\sigma, (\varphi_1, \dots, \varphi_n))
+   \\
+   & \overline{\varphi \wedge_s \psi} \equiv \Kand(s, \varphi, \psi)
+   \\
+   & \overline{\neg_s \varphi} \equiv \Knot(s, \varphi)
+   \\
+   & \overline{\exists_s v . \varphi} \equiv
+   \Kexists(s, v, \varphi)
+   \\
+   & \overline{\varphi \vee_s \psi} \equiv \Kor(s, \varphi, \psi)
+   \\
+   & \overline{\varphi \to_s \psi} \equiv \Kimplies(s, \varphi, \psi)
+   \\
+   & \overline{\varphi \leftrightarrow_s \psi} \equiv \Kiff(s, \varphi, \psi)
+   \\
+   & \overline{\forall_s v . \varphi} \equiv \Kforall(s, v, \varphi)
       \\
       & \overline{\ceil{\varphi}_{s_1}^{s_2}} \equiv \Kceil(s_1, s_2, \varphi)
       \\
@@ -3760,7 +3765,7 @@ Derived connectives have axioms
       & \overline{\top_s} \equiv \Ktop(s)
       \\
       & \overline{\bot_s} \equiv \Kbottom(s)
-	\end{align*}
+ \end{align*}
 \end{notation}
 
 \paragraph{Domain Values.}
@@ -3877,7 +3882,7 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   \\
   & \overline{(\exists_{s'} x \cln s . \varphi)[\psi/v]}
   \qquad \text{\doubleslash this complex axiom is needed to
-  	prevent {free variable capturing}}\\
+   prevent {free variable capturing}}\\
   & = \exists x' . \left(x' = \KfreshName(\varphi, \psi,
   \KVariableAsKPattern(v)) \wedge \overline{\exists_{s'} x' \cln s .
   (\varphi[x' \cln s / x \cln s][\psi/v])}\right)
@@ -3931,7 +3936,7 @@ They are
 \end{align*}
 A related predicate symbol
 \begin{equation}
-	\KsortsDeclared{\shs} \colon \KSortList \to \shs
+ \KsortsDeclared{\shs} \colon \KSortList \to \shs
 \end{equation}
 checks whether a list of sorts are declared:
 \begin{align*}
@@ -4139,40 +4144,40 @@ logic defined in Section~\ref{sec:deduction}. We recall our conventions for
 variable names.
 We are using
 \begin{center}
-	\begin{tabular}{lll}
-		$x$ & as a shorthand of $x \cln \KString$
-		& which is a variable of sort $\KString$
-		\\
-		$y$ & as a shorthand of $y \cln \KString$
-		& which is a variable of sort $\KString$
-		\\
-		$z$ & as a shorthand of $z \cln \KString$
-		& which is a variable of sort $\KString$
-		\\
-		$s$ & as a shorthand of $s \cln \KSort$
-		& which is a variable of sort $\KSort$
-		\\
-		$\sigma$ & as a shorthand of $\sigma \cln \KSymbol$
-		& which is a variable of sort $\KSymbol$
-		\\
-		$v$ & as a shorthand of $v \cln \KVariable$
-		& which is a variable of sort $\KVariable$
-		\\
-		$u$ & as a shorthand of $u \cln \KVariable$
-		& which is a variable of sort $\KVariable$
-		\\
-		$\varphi$ & as a shorthand of $\varphi \cln \KPattern$
-		& which is a variable of sort $\KPattern$
-		\\
-		$\psi$ & as a shorthand of $\psi \cln \KPattern$
-		& which is a variable of sort $\KPattern$
-		\\
-		$L$ & as a shorthand of $L \cln \KPatternList$
-		& which is a variable of sort $\KPatternList$
-		\\
-		$R$ & as a shorthand of $R \cln \KPatternList$
-		& which is a variable of sort $\KPatternList$
-	\end{tabular}
+ \begin{tabular}{lll}
+  $x$ & as a shorthand of $x \cln \KString$
+  & which is a variable of sort $\KString$
+  \\
+  $y$ & as a shorthand of $y \cln \KString$
+  & which is a variable of sort $\KString$
+  \\
+  $z$ & as a shorthand of $z \cln \KString$
+  & which is a variable of sort $\KString$
+  \\
+  $s$ & as a shorthand of $s \cln \KSort$
+  & which is a variable of sort $\KSort$
+  \\
+  $\sigma$ & as a shorthand of $\sigma \cln \KSymbol$
+  & which is a variable of sort $\KSymbol$
+  \\
+  $v$ & as a shorthand of $v \cln \KVariable$
+  & which is a variable of sort $\KVariable$
+  \\
+  $u$ & as a shorthand of $u \cln \KVariable$
+  & which is a variable of sort $\KVariable$
+  \\
+  $\varphi$ & as a shorthand of $\varphi \cln \KPattern$
+  & which is a variable of sort $\KPattern$
+  \\
+  $\psi$ & as a shorthand of $\psi \cln \KPattern$
+  & which is a variable of sort $\KPattern$
+  \\
+  $L$ & as a shorthand of $L \cln \KPatternList$
+  & which is a variable of sort $\KPatternList$
+  \\
+  $R$ & as a shorthand of $R \cln \KPatternList$
+  & which is a variable of sort $\KPatternList$
+ \end{tabular}
 \end{center}
 Finally, notice that all the axioms are axiom schemas, with $\shs \in S_K$
 being any sort of the meta-theory.
@@ -4192,7 +4197,7 @@ $\vdash \varphi \to (\psi \to \varphi)$.
 \end{equation*}
 Let us pause here and clarify some points.
 Firstly, the lengthy pattern
-$\parametric{\KwellFormed}{\shs}(\overline{\varphi \to_s (\psi 	\to_s
+$\parametric{\KwellFormed}{\shs}(\overline{\varphi \to_s (\psi  \to_s
 \varphi)})$ is called a \emph{welformedness premise}.
 They are necessary, and they are crucial in establishing the faithfulness
 theorem (Section~\ref{sec:proof-of-faithfulness-theorem}).
@@ -4211,10 +4216,10 @@ and in the meta-theory axiom
 $$
 \forall \varphi \forall \psi \forall s \left(
 \parametric{\KwellFormed}{\shs}(\overline{\varphi \to_s (\psi
-		\to_s  \varphi)})
+  \to_s  \varphi)})
 \to
 \parametric{\Kdeduce}{\shs}(\overline{\varphi \to_s (\psi \to_s
-		\varphi)})\right)
+  \varphi)})\right)
 $$
 When we use them in the inference rule schema, they are mathematical variables
 or the so-called meta-variables for wellformed matching logic patterns.
@@ -4269,7 +4274,7 @@ $\vdash \forall v . (\varphi \to \psi) \to (\varphi \to \forall v . \psi)$ if
 $v$ does not occur free in $\varphi$.
 \begin{equation*}
 \neg\parametric{\KoccursFree}{\shs}(v, \varphi)
-\to \parametric{\Kdeduce}{\shs}(\overline{\forall_s v . (\varphi \to_s	\psi)
+\to \parametric{\Kdeduce}{\shs}(\overline{\forall_s v . (\varphi \to_s \psi)
 \to_s (\varphi \to_s
 \forall_s v . \psi)}).
 \end{equation*}
@@ -4286,7 +4291,7 @@ $\vdash \forall v . \varphi \to \varphi[u/v]$
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(
   \overline{
-	\forall_{s_1} v . \varphi \to_{s_1} \varphi[u/v]}).
+ \forall_{s_1} v . \varphi \to_{s_1} \varphi[u/v]}).
 \end{equation*}
 
 \paragraph{Rules about Structures}\quad
@@ -4340,8 +4345,8 @@ $
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(
 \overline{
-	\sigma(L,\varphi_i \vee \varphi'_i,R) \imp
-	\sigma(L, \varphi_i, R) \vee \sigma(L, \varphi'_i, R)
+ \sigma(L,\varphi_i \vee \varphi'_i,R) \imp
+ \sigma(L, \varphi_i, R) \vee \sigma(L, \varphi'_i, R)
 }).
 \end{equation*}
 
@@ -4366,8 +4371,8 @@ u,
 \imp
 \parametric{\Kdeduce}{\shs}(
 \overline{
-	\sigma(L,\exists u . \varphi_i,R) \imp
-	\exists u . \sigma(L, \varphi_i, R)
+ \sigma(L,\exists u . \varphi_i,R) \imp
+ \exists u . \sigma(L, \varphi_i, R)
 }).
 \end{equation*}
 
@@ -4409,7 +4414,7 @@ $
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(
 \overline{
-	\exists x . x
+ \exists x . x
 }
 ).
 \end{equation*}
@@ -4455,9 +4460,9 @@ if $C_1,C_2$ are symbol contexts (see Section~\ref{sec:deduction}).
 \imp
 \parametric{\Kdeduce}{\shs}(
 \overline{
-	\neg(
-	C_1 \wedge C_2
-	)
+ \neg(
+ C_1 \wedge C_2
+ )
 }
 ).
 \end{equation*}
@@ -4469,10 +4474,10 @@ if $C_1,C_2$ are symbol contexts (see Section~\ref{sec:deduction}).
 $A \vdash \varphi$ if $\varphi \in A$.
 \begin{equation*}
 \underbrace{\parametric{\KaxiomDeclared}{\shs}(\varphi)}_\text{if $\varphi$ is
-	an axiom in the current theory} \to
+ an axiom in the current theory} \to
 \underbrace{\parametric{\Kdeduce}{\shs}(\varphi)}_\text{then $\varphi$ is
-	provable
-	in the current theory}
+ provable
+ in the current theory}
 \end{equation*}
 
 \subsubsection{Derived Proof Rules about Membership and Equality}
@@ -4493,8 +4498,8 @@ $u$ does not occur free in $\psi$.
 \begin{equation*}
 \parametric{\KoccursFree}{\shs}(u, \psi) \to
 \parametric{\Kdeduce}{\shs}(\overline{\exists_{s_2} u . u =_{s_1}^{s_2} \psi
-	\wedge_{s_2}
-	\forall_{s_2} v . \varphi \to_{s_2} \varphi[\psi/v]}).
+ \wedge_{s_2}
+ \forall_{s_2} v . \varphi \to_{s_2} \varphi[\psi/v]}).
 \end{equation*}
 
 (\textsc{Functional Variable}). \quad
@@ -4511,8 +4516,8 @@ $$\parametric{\Kdeduce}{\shs}(\overline{\varphi =_{s_1}^{s_2} \varphi})$$
 $\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/v] \to \psi[\varphi_2/v])$.
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2)
-	\to_{s_2}
-	(\psi[\varphi_1/v] \to_{s_2} \psi[\varphi_2/v])}).
+ \to_{s_2}
+ (\psi[\varphi_1/v] \to_{s_2} \psi[\varphi_2/v])}).
 \end{equation*}
 
 \paragraph{Definedness Axioms.}\quad
@@ -4535,7 +4540,7 @@ If $\vdash \varphi$, and $v$ does not occur free in $\varphi$, then $\vdash v
 \parametric{\Kdeduce}{\shs}(\varphi) \wedge \neg
 \parametric{\KoccursFree}{\shs}(v, \varphi) \to
 \parametric{\Kdeduce}{\shs}(\overline{v
-	\in_{s_1}^{s_2} \varphi}).
+ \in_{s_1}^{s_2} \varphi}).
 \end{equation*}
 
 (\textsc{Membership Elimination}).
@@ -4551,23 +4556,23 @@ $\vdash \varphi$.
 $\vdash (v \in u) = (v = u)$.
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{(v \in_{s_1}^{s_2} u) =_{s_2}^{s_3} (v
-	=_{s_1}^{s_2} u)}).
+ =_{s_1}^{s_2} u)}).
 \end{equation*}
 
 (\textsc{Membership $\wedge$}).
 $\vdash v \in (\varphi \wedge \psi) = (v \in \varphi) \wedge (v \in \psi).$
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{v \in_{s_1}^{s_2} (\varphi \wedge_{s_1}
-	\psi) =_{s_2}^{s_3}
-	(v \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (v \in_{s_1}^{s_2} \psi)}).
+ \psi) =_{s_2}^{s_3}
+ (v \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (v \in_{s_1}^{s_2} \psi)}).
 \end{equation*}
 
 (\textsc{Membership $\neg$}).
 $\vdash v \in \neg \varphi = \neg (v \in \varphi)$.
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{v \in_{s_1}^{s_2} \neg_{s_1} \varphi
-	=_{s_2}^{s_3}
-	\neg_{s_2} (v \in_{s_1}^{s_2} \varphi)}).
+ =_{s_2}^{s_3}
+ \neg_{s_2} (v \in_{s_1}^{s_2} \varphi)}).
 \end{equation*}
 
 (\textsc{Membership $\forall$}).
@@ -4575,9 +4580,9 @@ $\vdash v \in \forall u . \varphi = \forall u . v \in \varphi$ if $v$ is
 distinct from $u$.
 \begin{equation*}
 (v \neq u)  \to \parametric{\Kdeduce}{\shs}(\overline{(v \in_{s_1}^{s_2}
-	\forall_{s_1} u .
-	\varphi) =_{s_2}^{s_3}
-	(\forall_{s_2} u . (v \in_{s_1}^{s_2} \varphi))}).
+ \forall_{s_1} u .
+ \varphi) =_{s_2}^{s_3}
+ (\forall_{s_2} u . (v \in_{s_1}^{s_2} \varphi))}).
 \end{equation*}
 
 (\textsc{Membership Symbol}).
@@ -4587,12 +4592,12 @@ not occur free in $\sigma(\dots \varphi_i \dots)$.
 \begin{align*}
 & (u \neq v)
 \wedge \neg \parametric{\KoccursFree}{\shs}(u, \overline{\sigma(L, \varphi_i,
-	R)})
+ R)})
 \\
 \to & \parametric{\Kdeduce}{\shs}(\overline{v \in_{s_1}^{s_2} \sigma(L,
-	\varphi_i, R)
-	=_{s_2}^{s_3} \exists_{s_2} u . (u \in_{s_4}^{s_2} \varphi_i \wedge_{s_2} v
-	\in_{s_1}^{s_2} \sigma(L, u, R))}),
+ \varphi_i, R)
+ =_{s_2}^{s_3} \exists_{s_2} u . (u \in_{s_4}^{s_2} \varphi_i \wedge_{s_2} v
+ \in_{s_1}^{s_2} \sigma(L, u, R))}),
 \end{align*}
 
 \subsection{More about Symbols}
@@ -4705,135 +4710,135 @@ We list all its sorts and symbols, together with their meaning.
 \subsubsection{Sorts in Meta-Theory}
 There are in total 10 sorts in the meta-theory.
 \begin{center}
-	\begin{tabular}{l|l}
-		\textbf{Sort} & \textbf{Meaning} \\
-		\hline
-		\KChar & Characters \\
-		{\KCharList} or \KString & Strings \\
-		\KSort & Sorts \\
-		\KSortList & Cons-lists of sorts \\
-		\KSymbol & Symbols \\
-		\KSymbolList & Cons-lists of symbols \\
-		\KVariable & Variables \\
-		\KVariableList & Cons-lists of variables \\
-		\KPattern & Patterns \\
-		\KPatternList & Cons-lists of patterns \\
-	\end{tabular}
+ \begin{tabular}{l|l}
+  \textbf{Sort} & \textbf{Meaning} \\
+  \hline
+  \KChar & Characters \\
+  {\KCharList} or \KString & Strings \\
+  \KSort & Sorts \\
+  \KSortList & Cons-lists of sorts \\
+  \KSymbol & Symbols \\
+  \KSymbolList & Cons-lists of symbols \\
+  \KVariable & Variables \\
+  \KVariableList & Cons-lists of variables \\
+  \KPattern & Patterns \\
+  \KPatternList & Cons-lists of patterns \\
+ \end{tabular}
 \end{center}
 
 \subsubsection{Symbols in Meta-Theory}
 
 \small
-	\begin{longtable}{l|l}
-	    \textbf{Symbol or Symbol Schema} & \textbf{Meaning} \\
-	    \hline\hline
-	    \endhead
-	    $\ceil{\_}_{\smallshs_1}^{\smallshs_2}$ & $10 \times 10 = 100$
-	    definedness symbols in the meta-theory,
-	    \\ & defined for each $\shs_1,\shs_2 \in
-	    S_K$ \\
-	    \quottt{a}, \quottt{b}, \dots & 65 individual characters \\
-	    {\KnilKCharList} or \Kepsilon & Empty string \\
-	    \KconsKCharList & Concatenate a character to a string \\
-	    {\KappendKCharList} or \Kconcat & Concatenate two strings \\
-	    \Ksort & Construct sorts \\
-	    \KnilKSortList & Empty sort list \\
-	    \KconsKSortList & Construct sort lists \\
-	    \KappendKSortList & Append two sort lists \\
-	    \parametric{\KinKSortList}{$\shs$} & Check whether a sort belongs to a
-	    sort list \\
-	    \KdeleteKSortList & Delete a sort from a sort list \\
-	    \Ksymbol & Construct symbols \\
-	    \KgetArgumentSorts & Get the argument sorts of a symbol \\
-	    \KgetReturnSort & Get the return sort of a symbol \\
-	    \KSymbolceil & Construct meta-representations of definedness symbols
-	    \\
-	    \KnilKSymbolList & Empty symbol list \\
-	    \KconsKSymbolList & Construct symbol lists \\
-	    \KappendKSymbolList & Append two symbol lists \\
-	    \parametric{\KinKSymbolList}{$\shs$} & Check whether a symbol belongs
-	    to a symbol list \\
-	    \KdeleteKSymbolList & Delete a symbol from a symbol list \\
-	    \Kvariable & Construct variables $x \cln s$ \\
-	    \KnilKVariableList & Empty variable list \\
-	    \KconsKVariableList & Construct variable lists \\
-	    \parametric{\KinKVariableList}{$\shs$} & Check whether a variable
-	    belongs
-	    to a variable list \\
-	    \KappendKVariableList & Append two variable lists \\
-	    \KdeleteKVariableList & Delete a variable from a variable list \\
-	    \KVariableAsKPattern & Injection function from {\KVariable} to
-	    {\KPattern} \\
-	    \KvariablePattern & Construct variable patterns of the form $x \cln
-	    s$ \\
-	    \Kapplication & Construct patterns of the form
-	    $\sigma(\varphi_1,\dots,\varphi_n)$ \\
-	    \Kand & Construct patterns of the form $\varphi_1 \wedge_s \varphi_2$ \\
-	    \Knot & Construct patterns of the form $\neg_s \varphi$ \\
-	    \Kexists & Construct patterns of the form $\exists_s x \cln s' .
-	    \varphi$
-	    \\
-	    \Kor & Construct patterns of the form $\varphi_1 \vee_s \varphi_2$ \\
-	    \Kimplies & Construct patterns of the form $\varphi_1 \to_s \varphi_s$
-	    \\
-	    \Kiff & Construct patterns of the form $\varphi_1 \lra_s \varphi_s$
-	    \\
-	    \Kforall & Construct patterns of the form $\forall_s x \cln s' .
-	    \varphi$
-	    \\
-	    \Kceil & Construct patterns of the form $\ceil{\varphi}_{s}^{s'} $
-	    \\
-	    \Kfloor & Construct patterns of the form $\floor{\varphi}_{s}^{s'} $
-	    \\
-	    \Kequals & Construct patterns of the form $\varphi_1 =_{s}^{s'}
-	    \varphi_2$
-	    \\
-	    \Kmembership & Construct patterns of the form $x \cln s \in_s^{s'}
-	    \varphi$
-	    \\
-	    \Ktop & Construct patterns of the form $\top_s^{s'}$
-	    \\
-	    \Kbottom & Construct patterns of the form $\bot_s^{s'}$
-	    \\
-	    \KnilKPatternList & Empty pattern list \\
-		\KconsKPatternList & Construct pattern lists \\
-		\KappendKPatternList & Append two pattern lists \\
-		\parametric{\KinKPatternList}{$\shs$} & Check whether a pattern belongs
-		to a
-		pattern list \\
-		\KdeleteKPatternList & Delete a pattern from a pattern list \\
-	    \KgetFV & Get free variables in a pattern \\
-	    \KgetFVFromPatterns & Get all free variables in a list of patterns \\
-	    $\parametric{\KoccursFree}{\shs}$ & Check whether a variable occurs
-	    free 	    in a pattern \\
-	    \KfreshName & Generate a fresh variable name w.r.t. a list of patterns
-	    \\
-	    \Ksubstitute & Substitute a variable for a pattern \\
-	    \KsubstitutePatterns & Substitute a variabel for a list of patterns \\
-	    \KsortDeclared{$\shs$} & Check whether a sort is declared
-	    in the current theory
-	    \\
-	    \KsortsDeclared{$\shs$}  & Check whether a list of sorts
-	    are declared in the current theory
-	    \\
-	    \KsymbolDeclared{$\shs$} & Check whether a symbol is
-	    declared in the current theory \\
-	    \parametric{\KaxiomDeclared}{$\shs$} & Check whether an axiom is
-	    declared in the current theory \\
-	    \parametric{\KwellFormed}{$\shs$} & Check whether a pattern is
-	    wellformed in the current theory \\
-	    \parametric{\KwellFormedPatterns}{$\shs$} & Check whether a list of
-	    patterns are wellformed in the current theory
-	    \\
-	    \KgetSort & Get the sort of a pattern in the current theory; \\
-	              & Returns $\bot_{\KSort}$ if the pattern is not wellformed\\
-	    \KgetSortsFromPatterns & Get the sorts from a list of patterns; \\
-	              & Returns $\bot_{\KSortList}$ if any pattern is not
-	              wellformed
-	    \\
-	    \parametric{\Kdeduce}{$\shs$} & Check whether a pattern is provable in
-	    the current theory
-	\end{longtable}
+ \begin{longtable}{l|l}
+     \textbf{Symbol or Symbol Schema} & \textbf{Meaning} \\
+     \hline\hline
+     \endhead
+     $\ceil{\_}_{\smallshs_1}^{\smallshs_2}$ & $10 \times 10 = 100$
+     definedness symbols in the meta-theory,
+     \\ & defined for each $\shs_1,\shs_2 \in
+     S_K$ \\
+     \quottt{a}, \quottt{b}, \dots & 65 individual characters \\
+     {\KnilKCharList} or \Kepsilon & Empty string \\
+     \KconsKCharList & Concatenate a character to a string \\
+     {\KappendKCharList} or \Kconcat & Concatenate two strings \\
+     \Ksort & Construct sorts \\
+     \KnilKSortList & Empty sort list \\
+     \KconsKSortList & Construct sort lists \\
+     \KappendKSortList & Append two sort lists \\
+     \parametric{\KinKSortList}{$\shs$} & Check whether a sort belongs to a
+     sort list \\
+     \KdeleteKSortList & Delete a sort from a sort list \\
+     \Ksymbol & Construct symbols \\
+     \KgetArgumentSorts & Get the argument sorts of a symbol \\
+     \KgetReturnSort & Get the return sort of a symbol \\
+     \KSymbolceil & Construct meta-representations of definedness symbols
+     \\
+     \KnilKSymbolList & Empty symbol list \\
+     \KconsKSymbolList & Construct symbol lists \\
+     \KappendKSymbolList & Append two symbol lists \\
+     \parametric{\KinKSymbolList}{$\shs$} & Check whether a symbol belongs
+     to a symbol list \\
+     \KdeleteKSymbolList & Delete a symbol from a symbol list \\
+     \Kvariable & Construct variables $x \cln s$ \\
+     \KnilKVariableList & Empty variable list \\
+     \KconsKVariableList & Construct variable lists \\
+     \parametric{\KinKVariableList}{$\shs$} & Check whether a variable
+     belongs
+     to a variable list \\
+     \KappendKVariableList & Append two variable lists \\
+     \KdeleteKVariableList & Delete a variable from a variable list \\
+     \KVariableAsKPattern & Injection function from {\KVariable} to
+     {\KPattern} \\
+     \KvariablePattern & Construct variable patterns of the form $x \cln
+     s$ \\
+     \Kapplication & Construct patterns of the form
+     $\sigma(\varphi_1,\dots,\varphi_n)$ \\
+     \Kand & Construct patterns of the form $\varphi_1 \wedge_s \varphi_2$ \\
+     \Knot & Construct patterns of the form $\neg_s \varphi$ \\
+     \Kexists & Construct patterns of the form $\exists_s x \cln s' .
+     \varphi$
+     \\
+     \Kor & Construct patterns of the form $\varphi_1 \vee_s \varphi_2$ \\
+     \Kimplies & Construct patterns of the form $\varphi_1 \to_s \varphi_s$
+     \\
+     \Kiff & Construct patterns of the form $\varphi_1 \lra_s \varphi_s$
+     \\
+     \Kforall & Construct patterns of the form $\forall_s x \cln s' .
+     \varphi$
+     \\
+     \Kceil & Construct patterns of the form $\ceil{\varphi}_{s}^{s'} $
+     \\
+     \Kfloor & Construct patterns of the form $\floor{\varphi}_{s}^{s'} $
+     \\
+     \Kequals & Construct patterns of the form $\varphi_1 =_{s}^{s'}
+     \varphi_2$
+     \\
+     \Kmembership & Construct patterns of the form $x \cln s \in_s^{s'}
+     \varphi$
+     \\
+     \Ktop & Construct patterns of the form $\top_s^{s'}$
+     \\
+     \Kbottom & Construct patterns of the form $\bot_s^{s'}$
+     \\
+     \KnilKPatternList & Empty pattern list \\
+  \KconsKPatternList & Construct pattern lists \\
+  \KappendKPatternList & Append two pattern lists \\
+  \parametric{\KinKPatternList}{$\shs$} & Check whether a pattern belongs
+  to a
+  pattern list \\
+  \KdeleteKPatternList & Delete a pattern from a pattern list \\
+     \KgetFV & Get free variables in a pattern \\
+     \KgetFVFromPatterns & Get all free variables in a list of patterns \\
+     $\parametric{\KoccursFree}{\shs}$ & Check whether a variable occurs
+     free      in a pattern \\
+     \KfreshName & Generate a fresh variable name w.r.t. a list of patterns
+     \\
+     \Ksubstitute & Substitute a variable for a pattern \\
+     \KsubstitutePatterns & Substitute a variabel for a list of patterns \\
+     \KsortDeclared{$\shs$} & Check whether a sort is declared
+     in the current theory
+     \\
+     \KsortsDeclared{$\shs$}  & Check whether a list of sorts
+     are declared in the current theory
+     \\
+     \KsymbolDeclared{$\shs$} & Check whether a symbol is
+     declared in the current theory \\
+     \parametric{\KaxiomDeclared}{$\shs$} & Check whether an axiom is
+     declared in the current theory \\
+     \parametric{\KwellFormed}{$\shs$} & Check whether a pattern is
+     wellformed in the current theory \\
+     \parametric{\KwellFormedPatterns}{$\shs$} & Check whether a list of
+     patterns are wellformed in the current theory
+     \\
+     \KgetSort & Get the sort of a pattern in the current theory; \\
+               & Returns $\bot_{\KSort}$ if the pattern is not wellformed\\
+     \KgetSortsFromPatterns & Get the sorts from a list of patterns; \\
+               & Returns $\bot_{\KSortList}$ if any pattern is not
+               wellformed
+     \\
+     \parametric{\Kdeduce}{$\shs$} & Check whether a pattern is provable in
+     the current theory
+ \end{longtable}
 \normalsize
 
 \section{Representing Theories in the Meta-Theory}
@@ -4842,21 +4847,21 @@ In Section~\ref{sec:meta-theory-reflection}, we showed the reason why we
 need a meta-theory and its role in defining the semantics of \K.
 In particular, we introduced the reflection property
 \begin{center}
-	\begin{tabular}{l}
-		$
-		\prftree[r]{\hspace*{3ex}\textsc{(Upward Reflection)}}
-		{T \vdash \varphi}
-		{K \cup \denote{T} \vdashfin
-		\parametric{\Kdeduce}{\shs}(\denote{\varphi})}
-		$
-		\\[4ex]
-		$
-		\prftree[r]{\hspace*{3ex} \textsc{(Downward Reflection)}}
-		{K \cup \denote{T} \vdashfin
-		\parametric{\Kdeduce}{\shs}(\denote{\varphi})}
-		{T \vdash \varphi}
-		$
-	\end{tabular}
+ \begin{tabular}{l}
+  $
+  \prftree[r]{\hspace*{3ex}\textsc{(Upward Reflection)}}
+  {T \vdash \varphi}
+  {K \cup \denote{T} \vdashfin
+  \parametric{\Kdeduce}{\shs}(\denote{\varphi})}
+  $
+  \\[4ex]
+  $
+  \prftree[r]{\hspace*{3ex} \textsc{(Downward Reflection)}}
+  {K \cup \denote{T} \vdashfin
+  \parametric{\Kdeduce}{\shs}(\denote{\varphi})}
+  {T \vdash \varphi}
+  $
+ \end{tabular}
 \end{center}
 However, we did not show what the meta-representations $\denote{T}$ and
 $\denote{\varphi}$ look like.
@@ -4886,15 +4891,15 @@ For sort $\parametric{\List}{s}$, $s \in S_L$, two constructors and an
 append
 function are defined
 \begin{center}
-	\begin{tabular}{ll}
-		$\epsilon_s \colon \to \parametric{\List}{s}$       &
-		\doubleslash the empty list \\
-		$\_::_s\_ \colon s \times \parametric{\List}{s} \to
-		\parametric{\List}{s}$  &
-		\doubleslash the cons function \\
-		$\_@_s\_ \colon \parametric{\List}{s} \times \parametric{\List}{s} \to
-		\parametric{\List}{s}$ & \doubleslash the append function
-	\end{tabular}
+ \begin{tabular}{ll}
+  $\epsilon_s \colon \to \parametric{\List}{s}$       &
+  \doubleslash the empty list \\
+  $\_::_s\_ \colon s \times \parametric{\List}{s} \to
+  \parametric{\List}{s}$  &
+  \doubleslash the cons function \\
+  $\_@_s\_ \colon \parametric{\List}{s} \times \parametric{\List}{s} \to
+  \parametric{\List}{s}$ & \doubleslash the append function
+ \end{tabular}
 \end{center}
 The theory $T_L$ also gets some axioms.
 For example, the following are two axiom (schemas) in $T_L$.
@@ -4920,35 +4925,35 @@ A naming function associates any ``artifact'' or ``thing'' in $T_L$ with a
 $\KString$ pattern as its name.
 For instance, the following is a possible naming of $T_L$
 \begin{center}
-	\begin{tabular}{l|l}
-		\textbf{Things in $T_L$} & \textbf{Names as $\KString$ Patterns}
-		\\\hline
-		Non-parametric sort $\Nat$ & \qquottt{Nat}
-		\\\hline
-		Parametric sort $\List$ & \qquottt{List}
-		\\\hline
-		Non-parametric constant $O$ & \qquottt{zero}
-		\\\hline
-		Non-parametric function $S$ & \qquottt{succ}
-		\\\hline
-		Non-parametric function $\_+\_$ & \qquottt{plus}
-		\\\hline
-		Parametric constant $\epsilon$ & \qquottt{nil}
-		\\\hline
-		Parametric function $\_::\_$ & \qquottt{cons}
-		\\\hline
-	    Parametric function $\_@\_$ & \qquottt{append}
-	    \\\hline
-	    Variable Name $x$ & \qquottt{x}
-	    \\\hline
-	    Variable Name $L_0$ & \qquottt{L0}
-	    \\\hline
-	    Variable Name $L$ & \qquottt{L}
-	    \\\hline
-	    \dots & \dots
-	\end{tabular}
-	\captionof{table}{An Example Naming of $T_L$}
-	\label{tab:naming}
+ \begin{tabular}{l|l}
+  \textbf{Things in $T_L$} & \textbf{Names as $\KString$ Patterns}
+  \\\hline
+  Non-parametric sort $\Nat$ & \qquottt{Nat}
+  \\\hline
+  Parametric sort $\List$ & \qquottt{List}
+  \\\hline
+  Non-parametric constant $O$ & \qquottt{zero}
+  \\\hline
+  Non-parametric function $S$ & \qquottt{succ}
+  \\\hline
+  Non-parametric function $\_+\_$ & \qquottt{plus}
+  \\\hline
+  Parametric constant $\epsilon$ & \qquottt{nil}
+  \\\hline
+  Parametric function $\_::\_$ & \qquottt{cons}
+  \\\hline
+     Parametric function $\_@\_$ & \qquottt{append}
+     \\\hline
+     Variable Name $x$ & \qquottt{x}
+     \\\hline
+     Variable Name $L_0$ & \qquottt{L0}
+     \\\hline
+     Variable Name $L$ & \qquottt{L}
+     \\\hline
+     \dots & \dots
+ \end{tabular}
+ \captionof{table}{An Example Naming of $T_L$}
+ \label{tab:naming}
 \end{center}
 Notice that we do not bother to name the meta-variable $\shs$ that is used as
 sort parameters in defining the $T_L$ theory, because, strictly speaking,
@@ -4976,34 +4981,34 @@ In $T_L$, the non-parametric sort $\Nat$ has name \qquottt{Nat},
 so its meta-representation is the following $\KSort$ pattern
 $$
 \Ksort(
-	\underbrace{\qquottt{Nat}}_\text{name of $\Nat$},
-	\underbrace{\KnilKSortList}_\text{no sort parameter})
+ \underbrace{\qquottt{Nat}}_\text{name of $\Nat$},
+ \underbrace{\KnilKSortList}_\text{no sort parameter})
 $$
 The parametric sort $\parametric{\List}{\Nat}$ has one sort parameter $\Nat$,
 so its meta-representation is
 $$
 \Ksort(
-	\underbrace{
-		\qquottt{List}}_
-		\text{name of $\List$},
-	\underbrace{
-		\KconsKSortList(\Ksort(\qquottt{Nat}, \KnilKSortList),\KnilKSortList)}_
-		\text{the singleton list $\Nat$ of sort parameters})
+ \underbrace{
+  \qquottt{List}}_
+  \text{name of $\List$},
+ \underbrace{
+  \KconsKSortList(\Ksort(\qquottt{Nat}, \KnilKSortList),\KnilKSortList)}_
+  \text{the singleton list $\Nat$ of sort parameters})
 $$
 or using our abbreviation notation for list expressions
 (Notation~\ref{notation:lists}):
 $$
-	\Ksort(
-		\qquottt{List},
-		\underbrace{(\Ksort(\qquottt{Nat},\KnilKSortList))}_
-			\text{the singleton list $\Nat$ of sort parameters})
+ \Ksort(
+  \qquottt{List},
+  \underbrace{(\Ksort(\qquottt{Nat},\KnilKSortList))}_
+   \text{the singleton list $\Nat$ of sort parameters})
 $$
 The parametric sort $\parametric{\List}{\parametric{\List}{\Nat}}$ has a sort
 parameter $\parametric{\List}{\Nat}$, so its
 meta-representation is
 $$ \Ksort(\qquottt{List}, \underbrace{(\Ksort(\qquottt{List},
 (\Ksort(\qquottt{Nat},\KnilKSortList))))}_
-	\text{the singleton list $\parametric{\List}{\Nat}$ of sort parameters})$$
+ \text{the singleton list $\parametric{\List}{\Nat}$ of sort parameters})$$
 
 Even though we use abbreviation notations for list expressions, the
 meta-representations can still be too lengthy to write and read.
@@ -5029,23 +5034,23 @@ following two axioms
 Remember that $s \cln \KSort$ is a variable of $\KSort$.
 With these two helper functions, we can write much shorter meta-representations:
 \begin{center}
-	\begin{tabular}{l|l}
-		\textbf{Sorts in $T_L$} & \textbf{Meta-Representations in $K$}
-		\\\hline
-		$\Nat$
-		&
-		$\KqNat$
-		\\\hline
-		$\parametric{\List}{\Nat}$
-		&
-		$\KqList(\KqNat)$
-		\\\hline
-		$\parametric{\List}{\parametric{\List}{\Nat}}$
-		&
-		$\KqList(\KqList(\KqNat))$
-		\\\hline
-		\dots & \dots
-	\end{tabular}
+ \begin{tabular}{l|l}
+  \textbf{Sorts in $T_L$} & \textbf{Meta-Representations in $K$}
+  \\\hline
+  $\Nat$
+  &
+  $\KqNat$
+  \\\hline
+  $\parametric{\List}{\Nat}$
+  &
+  $\KqList(\KqNat)$
+  \\\hline
+  $\parametric{\List}{\parametric{\List}{\Nat}}$
+  &
+  $\KqList(\KqList(\KqNat))$
+  \\\hline
+  \dots & \dots
+ \end{tabular}
 \end{center}
 Notice how similar the sorts in $T_L$ and their meta-representations in $K$ are.
 
@@ -5094,7 +5099,7 @@ Thus its meta-representation is
 \begin{alignat*}{2}
 \Ksymbol(
 &\qquottt{zero}, &&\quad\text{\doubleslash name of $O \colon \!\to \Nat$} \\
-&\KnilKSortList,　&&\quad\text{\doubleslash no sort parameter} \\
+&\KnilKSortList, &&\quad\text{\doubleslash no sort parameter} \\
 &\KnilKSortList, &&\quad\text{\doubleslash no argument sort} \\
 &\KqNat)         &&\quad\text{\doubleslash return sort is $\Nat$}
 \end{alignat*}
@@ -5107,7 +5112,7 @@ is
 \begin{alignat*}{2}
 \Ksymbol(
 &\qquottt{succ}, &&\quad\text{\doubleslash name of $S$} \\
-&\KnilKSortList,　&&\quad\text{\doubleslash no sort parameter} \\
+&\KnilKSortList, &&\quad\text{\doubleslash no sort parameter} \\
 &(\KqNat), &&\quad\text{\doubleslash one argument sort $\Nat$} \\
 &\KqNat)         &&\quad\text{\doubleslash return sort is $\Nat$}
 \end{alignat*}
@@ -5118,7 +5123,7 @@ Its meta-representation is
 \begin{alignat*}{2}
 \Ksymbol(
 &\qquottt{plus}, &&\quad\text{\doubleslash name of $\_+\_$} \\
-&\KnilKSortList,　&&\quad\text{\doubleslash no sort parameter} \\
+&\KnilKSortList, &&\quad\text{\doubleslash no sort parameter} \\
 &(\KqNat,\KqNat), &&\quad\text{\doubleslash two argument sorts $\Nat,\Nat$} \\
 &\KqNat)         &&\quad\text{\doubleslash return sort is $\Nat$}
 \end{alignat*}
@@ -5132,7 +5137,7 @@ Its meta-representation is
 \begin{alignat*}{2}
 \Ksymbol(
 &\qquottt{nil}, &&\quad\text{\doubleslash name of $\epsilon$} \\
-&(\KqNat),　&&\quad\text{\doubleslash one sort parameter $\Nat$} \\
+&(\KqNat), &&\quad\text{\doubleslash one sort parameter $\Nat$} \\
 &\KnilKSortList, &&\quad\text{\doubleslash no argument sort} \\
 &\KqList(\KqNat))         &&\quad\text{\doubleslash return sort is
 $\parametric{\List}{\Nat}$}
@@ -5147,7 +5152,7 @@ Its meta-representation is
 \begin{alignat*}{2}
 \Ksymbol(
 &\qquottt{nil}, &&\quad\text{\doubleslash name of $\epsilon$} \\
-&(\KqList(\KqNat)),　&&\quad\text{\doubleslash one sort parameter
+&(\KqList(\KqNat)), &&\quad\text{\doubleslash one sort parameter
 $\parametric{\List}{\Nat}$} \\
 &\KnilKSortList, &&\quad\text{\doubleslash no argument sort} \\
 &\KqList(\KqList(\KqNat)))         &&\quad\text{\doubleslash return sort is
@@ -5162,12 +5167,12 @@ Its meta-representation is
 \begin{alignat*}{2}
 \Ksymbol(
 &\qquottt{cons}, &&\quad\text{\doubleslash name of $\_::\_$} \\
-&(\KqNat),　&&\quad\text{\doubleslash one sort parameter $\Nat$} \\
+&(\KqNat), &&\quad\text{\doubleslash one sort parameter $\Nat$} \\
 &(\KqNat,\KqList(\KqNat)), &&\quad\text{\doubleslash two argument sorts
 $\Nat,\parametric{\List}{\Nat}$}
 \\
 &\KqList(\KqNat))         &&\quad\text{\doubleslash return sort is
-	$\parametric{\List}{\Nat}$}
+ $\parametric{\List}{\Nat}$}
 \end{alignat*}
 The symbol
 $$\_@_\Nat\_ \colon \parametric{\List}{\Nat} \times \parametric{\List}{\Nat}
@@ -5178,12 +5183,12 @@ Its meta-representation is
 \begin{alignat*}{2}
 \Ksymbol(
 &\qquottt{append}, &&\quad\text{\doubleslash name of $\_@\_$} \\
-&(\KqNat),　&&\quad\text{\doubleslash one sort parameter $\Nat$} \\
+&(\KqNat), &&\quad\text{\doubleslash one sort parameter $\Nat$} \\
 &(\KqList(\KqNat),\KqList(\KqNat)), &&\quad\text{\doubleslash two argument
 sorts $\parametric{\List}{\Nat},\parametric{\List}{\Nat}$}
 \\
 &\KqList(\KqNat))         &&\quad\text{\doubleslash return sort is
-	$\parametric{\List}{\Nat}$}
+ $\parametric{\List}{\Nat}$}
 \end{alignat*}
 
 \paragraph{Representing Symbol Definedness.}
@@ -5199,12 +5204,12 @@ For non-parametric symbols, we add the next axioms to $\denote{T_L}$
 \\
 & \KsymbolDeclared{\shs}(
 \underbrace{\Ksymbol(\qquottt{succ}, \KnilKSortList, (\KqNat),
-	\KqNat)}_\text{the meta-representation of $S \colon \!\Nat\to \Nat$})
+ \KqNat)}_\text{the meta-representation of $S \colon \!\Nat\to \Nat$})
 \\
 & \KsymbolDeclared{\shs}(
 \underbrace{\Ksymbol(\qquottt{plus}, \KnilKSortList, (\KqNat,\KqNat),
-	\KqNat)}_\text{the meta-representation of $\_+\_ \colon
-	\!\Nat\times\Nat\to \Nat$})
+ \KqNat)}_\text{the meta-representation of $\_+\_ \colon
+ \!\Nat\times\Nat\to \Nat$})
 \end{align*}
 For parametric symbols, we add the next axioms to $\denote{T_L}$
 \footnotesize
@@ -5213,25 +5218,25 @@ For parametric symbols, we add the next axioms to $\denote{T_L}$
   \underbrace{\KsortDeclared{\shs}(s)}_\text{if $s$ is defined} \to
   \underbrace{\KsymbolDeclared{\shs}(
   \underbrace{\Ksymbol(\qquottt{nil}, (s), \KnilKSortList,
-  	\KqList(s))}_\text{the meta-representation of $\epsilon_s \colon \! \to
-  	\parametric{\List}{s}$})}_\text{then $\epsilon_s$ is defined} \right)
+   \KqList(s))}_\text{the meta-representation of $\epsilon_s \colon \! \to
+   \parametric{\List}{s}$})}_\text{then $\epsilon_s$ is defined} \right)
 \\
 & \forall s . \left(
 \KsortDeclared{\shs}(s) \to
 \KsymbolDeclared{\shs}(
 \underbrace{\Ksymbol(\qquottt{cons}, (s), (s, \KqList(s)),
-	\KqList(s))}_\text{meta-representation of $\_::_s\_ \colon s \times
-	\parametric{\List}{s} \! \to
-	\parametric{\List}{s}$})
+ \KqList(s))}_\text{meta-representation of $\_::_s\_ \colon s \times
+ \parametric{\List}{s} \! \to
+ \parametric{\List}{s}$})
 \right)
 \\
 & \forall s . \left(
 \KsortDeclared{\shs}(s) \to
 \KsymbolDeclared{\shs}(
 \underbrace{\Ksymbol(\qquottt{append}, (s), (\KqList(s), \KqList(s)),
-	\KqList(s))}_\text{meta-representation of $\_@_s\_ \colon \!
-	\parametric{\List}{s} \times \parametric{\List}{s} \to
-	\parametric{\List}{s}$})
+ \KqList(s))}_\text{meta-representation of $\_@_s\_ \colon \!
+ \parametric{\List}{s} \times \parametric{\List}{s} \to
+ \parametric{\List}{s}$})
 \right)
 \end{align*}
 \normalsize
@@ -5252,7 +5257,7 @@ Notice we abbreviate $s$ for $s \cln \KSort$ as we always do.
 %
 %If $T$ has symbol a symbol schema
 %\begin{center}
-%	$\parametric{\sigma}{s_1,\dots,s_n} \in S$ \quad for any $s_1,\dots,s_n \in
+% $\parametric{\sigma}{s_1,\dots,s_n} \in S$ \quad for any $s_1,\dots,s_n \in
 %S$
 %\end{center}
 %then add the following axiom to $\denote{T}$
@@ -5321,8 +5326,8 @@ $\denote{T_L}$
 $$ \Kqzero \colon \to \KPattern$$
 and define an axiom
 $$ \Kqzero = \underbrace{\Kapplication(\Ksymbol(\qquottt{zero}, \KnilKSortList,
-	\KnilKSortList,
-	\KqNat),
+ \KnilKSortList,
+ \KqNat),
 \KnilKPatternList)}_\text{the meta-representation of pattern $O$}
 $$
 With this helper function defined, the meta-representation of the pattern $O$
@@ -5392,16 +5397,16 @@ Using this helper function, we can easily construct meta-representations for
 the patterns $\epsilon_s$ for any $s$, as shown in the next table
 \begin{center}
 \begin{tabular}{l|l}
-	\textbf{Patterns in $T_L$} & \textbf{Meta-Representations in $K$}
-	\\\hline
-	$\epsilon_\Nat$ & $\Kqnil(\KqNat)$
-	\\\hline
-	$\epsilon_{\parametric{\List}{\Nat}}$ & $\Kqnil(\KqList(\KqNat))$
-	\\\hline
-	$\epsilon_{\parametric{\List}{\parametric{\List}{\Nat}}}$ &
-	$\Kqnil(\KqList(\KqList(\KqNat)))$
-	\\\hline
-	\dots & \dots
+ \textbf{Patterns in $T_L$} & \textbf{Meta-Representations in $K$}
+ \\\hline
+ $\epsilon_\Nat$ & $\Kqnil(\KqNat)$
+ \\\hline
+ $\epsilon_{\parametric{\List}{\Nat}}$ & $\Kqnil(\KqList(\KqNat))$
+ \\\hline
+ $\epsilon_{\parametric{\List}{\parametric{\List}{\Nat}}}$ &
+ $\Kqnil(\KqList(\KqList(\KqNat)))$
+ \\\hline
+ \dots & \dots
 \end{tabular}
 \end{center}
 
@@ -5568,21 +5573,25 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %Sections~\ref{sec:ML-sorts-symbols,sec:ML-patterns,sec:meta-theory-sort-parameters}).
 %
 %\begin{center}
-%	\begin{tabular}{l|r}
-%		\textbf{Objects} & \textbf{Abstract Syntax Trees as Patterns in $K$}
-%		\\\hline
-%		Non-parametric sort $\Nat$ & $\Ksort(\text{``Nat''}, \KnilKSortList)$
-%		\\\hline
-%		Parametric sort $\parametric{\List}{\Nat}$ & $\Ksort(\text{``List''}, \KconsKSortList(\Ksort(\text{``Nat''}, \KnilKSortList),$ \\ & $\KnilKSortList))$
-%		\\\hline
-%		Non-parametric constant symbol $\zero$ & $\Ksymbol(\text{``zero''}, \KnilKSortList, \KnilKSortList,$ \\ &
-%		$\Ksort(\text{``Nat''}, \KnilKSortList))$
-%		\\\hline
-%		Parametric symbol $\parametric{nil}{\Nat}$ & See equation~\eqref{nil-Nat}
-%		\\\hline
-%		Parametric symbol $\parametric{\cons}{\Nat}$ & See equation~\eqref{cons-Nat}
-%	\end{tabular}
-%	\captionof{table}{Objects and Their Abstract Syntax Trees (Without Notation Sugar)}
+% \begin{tabular}{l|r}
+%  \textbf{Objects} & \textbf{Abstract Syntax Trees as Patterns in $K$}
+%  \\\hline
+%  Non-parametric sort $\Nat$ & $\Ksort(\text{``Nat''}, \KnilKSortList)$
+%  \\\hline
+%  Parametric sort $\parametric{\List}{\Nat}$ & $\Ksort(\text{``List''}, 
+%\KconsKSortList(\Ksort(\text{``Nat''}, \KnilKSortList),$ \\ & 
+%$\KnilKSortList))$
+%  \\\hline
+%  Non-parametric constant symbol $\zero$ & $\Ksymbol(\text{``zero''}, 
+%\KnilKSortList, \KnilKSortList,$ \\ &
+%  $\Ksort(\text{``Nat''}, \KnilKSortList))$
+%  \\\hline
+%  Parametric symbol $\parametric{nil}{\Nat}$ & See equation~\eqref{nil-Nat}
+%  \\\hline
+%  Parametric symbol $\parametric{\cons}{\Nat}$ & See equation~\eqref{cons-Nat}
+% \end{tabular}
+% \captionof{table}{Objects and Their Abstract Syntax Trees (Without Notation 
+%Sugar)}
 %\end{center}
 %
 %\paragraph{Abstract Syntax Trees With Sugar.}
@@ -5597,26 +5606,27 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %Basically, we could introduce as much notation sugar as we want to the meta-theory in order to make writing abstract syntax trees less painful.
 %
 %\begin{center}
-%	\begin{tabular}{l|r}
-%		\textbf{Objects} & \textbf{Abstract Syntax Trees as Patterns in $K$}
-%		\\\hline
-%		Non-parametric sort $\Nat$ & $\KNat$
-%		\\\hline
-%		Parametric sort $\parametric{\List}{\Nat}$ & $\KList(\KNat)$
-%		\\\hline
-%		Non-parametric constant symbol $\zero$ & $\KSymbolzero$
-%		\\\hline
-%		Parametric symbol $\parametric{nil}{\Nat}$ & $\KSymbolnil(\KNat)$
-%		\\\hline
-%		Parametric symbol $\parametric{\cons}{\Nat}$ & $\KSymbolcons(\KNat)$
-%		\\\hline
-%		Pattern $zero$ & $\Kzero$
-%		\\\hline
-%		Pattern $\parametric{\cons}{\Nat}(\zero, \parametric{\nil}{\Nat})$
-%		& $\Kcons(\KNat, \Kzero, \Knil(\KNat))$
-%	\end{tabular}
-%	\captionof{table}{Objects and Their Abstract Syntax Trees (With Notation Sugar)}
-%	\label{tab:ast-with-sugar}
+% \begin{tabular}{l|r}
+%  \textbf{Objects} & \textbf{Abstract Syntax Trees as Patterns in $K$}
+%  \\\hline
+%  Non-parametric sort $\Nat$ & $\KNat$
+%  \\\hline
+%  Parametric sort $\parametric{\List}{\Nat}$ & $\KList(\KNat)$
+%  \\\hline
+%  Non-parametric constant symbol $\zero$ & $\KSymbolzero$
+%  \\\hline
+%  Parametric symbol $\parametric{nil}{\Nat}$ & $\KSymbolnil(\KNat)$
+%  \\\hline
+%  Parametric symbol $\parametric{\cons}{\Nat}$ & $\KSymbolcons(\KNat)$
+%  \\\hline
+%  Pattern $zero$ & $\Kzero$
+%  \\\hline
+%  Pattern $\parametric{\cons}{\Nat}(\zero, \parametric{\nil}{\Nat})$
+%  & $\Kcons(\KNat, \Kzero, \Knil(\KNat))$
+% \end{tabular}
+% \captionof{table}{Objects and Their Abstract Syntax Trees (With Notation 
+%Sugar)}
+% \label{tab:ast-with-sugar}
 %\end{center}
 %
 %Such transformation from objects to their abstract syntax trees with notation sugar as shown in Table~\ref{tab:ast-with-sugar} is the \emph{lifting} operation ``$\denote{\ \ \ }$''.
@@ -5632,29 +5642,33 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %Section~\ref{sec:ML-theories}).
 %
 %\begin{center}
-%	\begin{tabular}{l|r}
-%		\textbf{Declarations} & \textbf{Assertions Added to the Meta-Theory $K$}
-%		\\\hline
-%		\texttt{sort Nat} & $\KsortDeclared(\KNat)$
-%		\\\hline
-%		\texttt{sort List\{S\}} & $\KsortDeclared(s) \to \KsortDeclared(\KList(s))$
-%		\\\hline
-%		\texttt{symbol zero():Nat} & $\KsymbolDeclared(\KSymbolzero)$
-%		\\\hline
-%		\texttt{symbol succ(Nat):Nat} & $\KsymbolDeclared(\KSymbolsucc)$
-%		\\\hline
-%		\texttt{symbol nil\{S\}():List\{S\}} & $\KsortDeclared(s)\to\KsymbolDeclared(\KSymbolnil(s))$
-%		\\\hline
-%		\texttt{symbol cons\{S\}(S,List\{S\}):List\{S\}} & $\KsortDeclared(s)\to\KsymbolDeclared(\KSymbolcons(s))$
-%		\\\hline
-%		\texttt{axiom $\varphi$} & $\Kdeduce(\denote{\varphi})$
-%		\\\hline
-%		\texttt{axiom\{S\} $\varphi$} & $\KsortDeclared(s) \to \Kdeduce(\denote{\varphi})$
-%		\\\hline
-%		\texttt{axiom\{S1,..,Sn\} $\varphi$} & $\KsortDeclared(s_1) \wedge \dots \wedge \KsortDeclared(s_n) \to \Kdeduce(\denote{\varphi})$
-%	\end{tabular}
-%	\captionof{table}{Lift Declarations to Assertions}
-%	\label{tab:declarations-as-assertions}
+% \begin{tabular}{l|r}
+%  \textbf{Declarations} & \textbf{Assertions Added to the Meta-Theory $K$}
+%  \\\hline
+%  \texttt{sort Nat} & $\KsortDeclared(\KNat)$
+%  \\\hline
+%  \texttt{sort List\{S\}} & $\KsortDeclared(s) \to \KsortDeclared(\KList(s))$
+%  \\\hline
+%  \texttt{symbol zero():Nat} & $\KsymbolDeclared(\KSymbolzero)$
+%  \\\hline
+%  \texttt{symbol succ(Nat):Nat} & $\KsymbolDeclared(\KSymbolsucc)$
+%  \\\hline
+%  \texttt{symbol nil\{S\}():List\{S\}} & 
+%$\KsortDeclared(s)\to\KsymbolDeclared(\KSymbolnil(s))$
+%  \\\hline
+%  \texttt{symbol cons\{S\}(S,List\{S\}):List\{S\}} & 
+%$\KsortDeclared(s)\to\KsymbolDeclared(\KSymbolcons(s))$
+%  \\\hline
+%  \texttt{axiom $\varphi$} & $\Kdeduce(\denote{\varphi})$
+%  \\\hline
+%  \texttt{axiom\{S\} $\varphi$} & $\KsortDeclared(s) \to 
+%\Kdeduce(\denote{\varphi})$
+%  \\\hline
+%  \texttt{axiom\{S1,..,Sn\} $\varphi$} & $\KsortDeclared(s_1) \wedge \dots 
+%\wedge \KsortDeclared(s_n) \to \Kdeduce(\denote{\varphi})$
+% \end{tabular}
+% \captionof{table}{Lift Declarations to Assertions}
+% \label{tab:declarations-as-assertions}
 %\end{center}
 %
 %\paragraph{Lifting Kore Definitions.} Given kore definition ``\texttt{natlist.kore}'', its lifting is a kore definition with notation sugar defined as symbols and declarations defined as axioms:
@@ -5702,35 +5716,35 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %The theory of lambda calculus, denoted as $L$, has
 %only one sort which we denote as $\Exp$
 %\begin{center}
-%	(\textsc{Exp}) \quad $\Exp$ is a sort in theory $L$.
+% (\textsc{Exp}) \quad $\Exp$ is a sort in theory $L$.
 %\end{center} It has two binary symbols which we
 %denote as $\lambda_0$ and $\app$, respectively
 %\begin{center}
-%	(\textsc{Abstraction}) \quad $\lambda_0(\Exp, \Exp) \colon \Exp$
-%	\\
-%	(\textsc{Application}) \quad $\app(\Exp, \Exp) \colon \Exp$
+% (\textsc{Abstraction}) \quad $\lambda_0(\Exp, \Exp) \colon \Exp$
+% \\
+% (\textsc{Application}) \quad $\app(\Exp, \Exp) \colon \Exp$
 %\end{center}
 %We introduce the symbol $\lambda$ as an alias defined as
 %\begin{center}
-%	(\textsc{Binder})\quad $ \lambda(x, e) \coloneqq \exists x . \lambda_0(x,
-%	e)$ \quad for any variable $x$ and $\Exp$ pattern $e$
+% (\textsc{Binder})\quad $ \lambda(x, e) \coloneqq \exists x . \lambda_0(x,
+% e)$ \quad for any variable $x$ and $\Exp$ pattern $e$
 %\end{center}
 %and define a syntactic class called $\lambda$-terms
 %\begin{center}
-%	(\textsc{$\lambda$-Term}) \quad $\Lambda$-terms is the smallest set
-%	satisfying the following three conditions
-%	\begin{itemize}[leftmargin=11em,nosep]
-%		\item $x \in \text{$\lambda$-Term}$ for any variable $x$
-%		\item $\lambda(x, e) \in \text{$\lambda$-Term}$ for any variable $x$
-%		and $e \in \text{$\lambda$-Term}$
-%		\item $\app(e, e') \in \text{$\lambda$-Term}$ for any $e, e' \in
-%		\text{$\lambda$-Term}$
-%	\end{itemize}
+% (\textsc{$\lambda$-Term}) \quad $\Lambda$-terms is the smallest set
+% satisfying the following three conditions
+% \begin{itemize}[leftmargin=11em,nosep]
+%  \item $x \in \text{$\lambda$-Term}$ for any variable $x$
+%  \item $\lambda(x, e) \in \text{$\lambda$-Term}$ for any variable $x$
+%  and $e \in \text{$\lambda$-Term}$
+%  \item $\app(e, e') \in \text{$\lambda$-Term}$ for any $e, e' \in
+%  \text{$\lambda$-Term}$
+% \end{itemize}
 %\end{center}
 %The theory $\Lambda$ has an axiom schema
 %\begin{center}
-%	(\textsc{Beta}) \quad $\app(\lambda(x, e), e') = e'[e/x]$
-%	\quad if $e$ and $e'$ are $\lambda$-terms
+% (\textsc{Beta}) \quad $\app(\lambda(x, e), e') = e'[e/x]$
+% \quad if $e$ and $e'$ are $\lambda$-terms
 %\end{center}
 %
 %\paragraph{Naming Function.}
@@ -5749,51 +5763,51 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %
 %In $L$,
 %\begin{center}
-%	$\Exp$ is a sort
+% $\Exp$ is a sort
 %\end{center}
 %
 %In $K$,
 %\begin{center}
-%	\begin{tabular}{l}
-%		$\KExp$ is a constant symbol of sort $\KSort$ \\
-%		$\KExp = \Ksort(\text{``Exp''})$ \\
-%		$\KsortDeclared(\KExp)$
-%	\end{tabular}
+% \begin{tabular}{l}
+%  $\KExp$ is a constant symbol of sort $\KSort$ \\
+%  $\KExp = \Ksort(\text{``Exp''})$ \\
+%  $\KsortDeclared(\KExp)$
+% \end{tabular}
 %\end{center}
 %
 %In $L$,
 %\begin{center}
-%	$\lambda_0$ is a binary symbol
+% $\lambda_0$ is a binary symbol
 %\end{center}
 %
 %In $K$,
 %\begin{center}
-%	\begin{tabular}{l}
-%		$\mathit{KSymbollambda0}$ is a constant symbol of sort $\KSymbol$ \\
-%		$\mathit{KSymbollambda0} = \Ksymbol(\text{``Exp''}, (\KExp, \KExp),
-%		\KExp)$ \\
-%		$\KsymbolDeclared(\mathit{KSymbollambda0})$ \\
-%		$\Klambdazero \colon \KPattern \times \KPattern \to \KPattern$ is a
-%		symbol\\
-%		$\Klambdazero(\varphi, \psi) = \Kapplication(\mathit{KSymbollambda0},
-%		(\varphi, \psi))$\\
-%	\end{tabular}
+% \begin{tabular}{l}
+%  $\mathit{KSymbollambda0}$ is a constant symbol of sort $\KSymbol$ \\
+%  $\mathit{KSymbollambda0} = \Ksymbol(\text{``Exp''}, (\KExp, \KExp),
+%  \KExp)$ \\
+%  $\KsymbolDeclared(\mathit{KSymbollambda0})$ \\
+%  $\Klambdazero \colon \KPattern \times \KPattern \to \KPattern$ is a
+%  symbol\\
+%  $\Klambdazero(\varphi, \psi) = \Kapplication(\mathit{KSymbollambda0},
+%  (\varphi, \psi))$\\
+% \end{tabular}
 %\end{center}
 %
 %In $L$
 %\begin{center}
-%	$\lambda$ is an alias defined as $\lambda(x, e) = \exists x . \lambda_0(x,
-%	e)$
+% $\lambda$ is an alias defined as $\lambda(x, e) = \exists x . \lambda_0(x,
+% e)$
 %\end{center}
 %
 %In $K$
 %\begin{center}
-%	\begin{tabular}{l}
-%		$\Klambda \colon \KVariable \times \KPattern \to \KPattern$ is a symbol
-%		\\
-%		$\Klambda(v, \varphi) = \Kexists(\KExp, \KExp, v, \Klambdazero(v,
-%		\varphi))$
-%	\end{tabular}
+% \begin{tabular}{l}
+%  $\Klambda \colon \KVariable \times \KPattern \to \KPattern$ is a symbol
+%  \\
+%  $\Klambda(v, \varphi) = \Kexists(\KExp, \KExp, v, \Klambdazero(v,
+%  \varphi))$
+% \end{tabular}
 %\end{center}
 
 %\paragraph{Strings.}
@@ -5833,19 +5847,19 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %predicate} is used in a reflective logic of propositional logic that satisfies
 %the faithfulness conditions
 %\begin{center}
-%	\begin{tabular}{ccc}
-%		$
-%		\prftree[r]{\footnotesize (Upward Reflection)}
-%		{\vdash \varphi}
-%		{\vdash T(\denote{\varphi})}
-%		$
-%		&&
-%		$
-%		\prftree[r]{\footnotesize (Downward Reflection)}
-%		{\vdash T(\denote{\varphi})}
-%		{\vdash \varphi}
-%		$
-%	\end{tabular}
+% \begin{tabular}{ccc}
+%  $
+%  \prftree[r]{\footnotesize (Upward Reflection)}
+%  {\vdash \varphi}
+%  {\vdash T(\denote{\varphi})}
+%  $
+%  &&
+%  $
+%  \prftree[r]{\footnotesize (Downward Reflection)}
+%  {\vdash T(\denote{\varphi})}
+%  {\vdash \varphi}
+%  $
+% \end{tabular}
 %\end{center}
 %where $\denote{\varphi}$ is the abstract syntax tree that represents the
 %formula $\varphi$ in the reflective logic.
@@ -5857,29 +5871,29 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %predicate symbols in the meta-theory $K$ that capture the semantics of the
 %matching logic proof system, or more specifically, the semantics of
 %\begin{itemize}\itemsep0em
-%	\item A sort being declared in a theory ($\KsortDeclared$)
-%	\item A symbol being decalred in a theory ($\KsymbolDeclared$)
-%	\item A pattern being an axiom in a theory ($\KaxiomDeclared$)
-%	\item A pattern being wellformed in a theory ($\KwellFormed$)
-%	\item A pattern being derivable in a theory ($\Kderivable$)
+% \item A sort being declared in a theory ($\KsortDeclared$)
+% \item A symbol being decalred in a theory ($\KsymbolDeclared$)
+% \item A pattern being an axiom in a theory ($\KaxiomDeclared$)
+% \item A pattern being wellformed in a theory ($\KwellFormed$)
+% \item A pattern being derivable in a theory ($\Kderivable$)
 %\end{itemize}
 %
 %Each of them has to satisfy the corresponding faithfulness theorem.
 %In particular, the faithfulness for the derivability means
 %\begin{center}
-%	\begin{tabular}{cc}
-%		$
-%		\prftree[r]{\footnotesize (Upward Reflection)}
-%		{T \vdash \varphi}
-%		{K \cup \denote{T} \vdash \Kdeduce(\denote{\varphi})}
-%		$
-%		&
-%		$
-%		\prftree[r]{\footnotesize (Downward Reflection)}
-%		{K \cup \denote{T} \vdash \Kdeduce(\denote{\varphi})}
-%		{T \vdash \varphi}
-%		$
-%	\end{tabular}
+% \begin{tabular}{cc}
+%  $
+%  \prftree[r]{\footnotesize (Upward Reflection)}
+%  {T \vdash \varphi}
+%  {K \cup \denote{T} \vdash \Kdeduce(\denote{\varphi})}
+%  $
+%  &
+%  $
+%  \prftree[r]{\footnotesize (Downward Reflection)}
+%  {K \cup \denote{T} \vdash \Kdeduce(\denote{\varphi})}
+%  {T \vdash \varphi}
+%  $
+% \end{tabular}
 %\end{center}
 %where $\denote{\varphi}$ is the representation of $\varphi$ in the
 %meta-theory, and $\denote{T}$ is the set of assertions of predicates that
@@ -5899,7 +5913,7 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %We could do the same thing for theories, that is, we develop a universe of
 %abstract syntax tree of matching logic theories and go from that.
 %We called such approach \emph{deep embedding}, compared to the \emph{shallow
-%	embedding} approach what we are going to propose).
+% embedding} approach what we are going to propose).
 %In deep embedding, the derivability relation is captured by a \emph{binary}
 %predicate symbol that takes representations of a pattern and a theory as its
 %two arguments.
@@ -5923,12 +5937,12 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 We present the faithfulness theorem of the meta-theory, whose proof is in
 Section~\ref{sec:proof-of-faithfulness-theorem}.
 \begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
-	Given a matching logic theory $T$ and a naming function.
-	Let $\denote{T}$ be the meta-theory instantiated with $T$, and $\varphi$ be
-	any pattern in $T$,
-	$$T \vdash \varphi \quad \text{iff} \quad K \cup \denote{T} \vdashfin
-	\parametric{\Kdeduce}{\shs}(\denote{\varphi})\quad\text{for any $\shs \in
-	S_K$}$$
+ Given a matching logic theory $T$ and a naming function.
+ Let $\denote{T}$ be the meta-theory instantiated with $T$, and $\varphi$ be
+ any pattern in $T$,
+ $$T \vdash \varphi \quad \text{iff} \quad K \cup \denote{T} \vdashfin
+ \parametric{\Kdeduce}{\shs}(\denote{\varphi})\quad\text{for any $\shs \in
+ S_K$}$$
 \end{theorem}
 
 Theorem~\ref{thm:faithfulness-finite} is an important theorem both in theory
@@ -5949,7 +5963,7 @@ in Section~\ref{sec:meta-theory-reflection}
 \begin{center}
 $T \vdash \varphi$ \quad iff \quad
 $K \cup \denote{T} \vdashfin
-		\parametric{\Kdeduce}{\shs}(\denote{\varphi})$
+  \parametric{\Kdeduce}{\shs}(\denote{\varphi})$
 \end{center}
 
 Given such a reflection property,
@@ -6014,24 +6028,24 @@ Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
 \syntacc{keyword}, which we all defined below.
 
 \begin{table}[h]
-	\centering
-	\begin{tabular}{c|l}
-		\textrm{Token Character(s)} & \textrm{Name} % & \textrm{Usage}
-		\\\hline
-		\texttt{:} & Colon % & Variables and Declarations
-		\\
-		\texttt{:=} & Colon Equal % & Aliases declarations
-		\\
-		\texttt{\string{ \string}} & Curly Braces % & Sort Parameters
-		\\
-		\texttt{( )} & Parenthesis % & Kore Expressions
-		\\
-		\texttt{[ ]} & Braces
-		\\
-		\texttt{,} & Comma % & Kore Expression
-	\end{tabular}
-	\caption{Lexicon Tokens in Kore}
-	\label{tab:lexicon-tokens}
+ \centering
+ \begin{tabular}{c|l}
+  \textrm{Token Character(s)} & \textrm{Name} % & \textrm{Usage}
+  \\\hline
+  \texttt{:} & Colon % & Variables and Declarations
+  \\
+  \texttt{:=} & Colon Equal % & Aliases declarations
+  \\
+  \texttt{\string{ \string}} & Curly Braces % & Sort Parameters
+  \\
+  \texttt{( )} & Parenthesis % & Kore Expressions
+  \\
+  \texttt{[ ]} & Braces
+  \\
+  \texttt{,} & Comma % & Kore Expression
+ \end{tabular}
+ \caption{Lexicon Tokens in Kore}
+ \label{tab:lexicon-tokens}
 \end{table}
 
 \paragraph{Identifiers.}
@@ -6085,26 +6099,26 @@ Kore has six keywords.
 They belong to the syntactic category \syntacc{keyword}.
 They are used to signify the begin and end of a declaration.
 \begin{center}
-	{\ttfamily
-		\begin{tabular}{l|l}
-			\textrm{Keyword} & \textrm{Usage}
-			\\\hline
-			module & \textrm{Initiate a module declaration}
-			\\
-			endmodule & \textrm{Finalize a module declaration}
-			\\
-			sort & \textrm{Initiate a sort declaration}
-			\\
-			symbol & \textrm{Initiate a symbol declaration}
-			\\
-			alias & \textrm{Initiate an alias declaration}
-			\\
-			axiom & \textrm{Initiate an axiom declaration}
+ {\ttfamily
+  \begin{tabular}{l|l}
+   \textrm{Keyword} & \textrm{Usage}
+   \\\hline
+   module & \textrm{Initiate a module declaration}
+   \\
+   endmodule & \textrm{Finalize a module declaration}
+   \\
+   sort & \textrm{Initiate a sort declaration}
+   \\
+   symbol & \textrm{Initiate a symbol declaration}
+   \\
+   alias & \textrm{Initiate an alias declaration}
+   \\
+   axiom & \textrm{Initiate an axiom declaration}
       \\
       hooked-sort & \textrm{Initiate a hooked sort declaration}
       \\
       hooked-symbol & \textrm{Initiate a hooked symbol declaration}
-	\end{tabular}}
+ \end{tabular}}
 \end{center}
 
 
@@ -6119,12 +6133,12 @@ sort is object-level or meta-level in the parse time.
 \setlength{\grammarparsep}{3pt}
 \begin{grammar}\small
 <sort> ::= <object-sort> | <meta-sort>
-	
+ 
 <object-sort> ::= <object-sort-variable> | <object-non-variable-sort>
 
 <object-sort-variable> ::= <object-identifier>
 
-<object-non-variable-sort> ::= <object-sort-constructor> `{' 	
+<object-non-variable-sort> ::= <object-sort-constructor> `{'  
 <object-sort-list> `}'
 
 <object-sort-constructor> ::= <object-identifier>
@@ -6197,43 +6211,43 @@ Section~\ref{sec:meta-theory}.
 %Here are some examples of object and meta-sorts written in Kore syntax.
 %\begin{center}{\ttfamily
 %\begin{tabular}{lllllll}
-%	\textrm{Sort} &
-%	\textrm{Sort} &
-%	\textrm{Sort} &
-%	\textrm{Meta or} &
-%	\textrm{Sort} &
-%	\textrm{Depending}\\
-%	\textrm{}       &
-%	\textrm{Constructor} &
-%	\textrm{Parameters}  &
-%	\textrm{Object?}       &
-%	\textrm{Schema?}     &
-%	\textrm{Variable(s)}
-%	\\\hline
-%	\parametric{Nat}{} & Nat & - & \textrm{Object} & \textrm{No} & -
-%	\\\hline
-%	\parametric{List}{\parametric{Nat}{}} & List & \parametric{Nat}{} &
-%	\textrm{Object} &
-%	\textrm{No} & -
-%	\\\hline
-%	\parametric{Map}{\parametric{Nat}{},S} & Map & \parametric{Nat}{},S &
-%	\textrm{Object} &
-%	\textrm{Yes} & S
-%	\\\hline
-%	\parametric{Map}{S1,\parametric{List}{S2}} & Map & S1,\parametric{List}{S2}
-%	&
-%	\textrm{Object} & \textrm{Yes} & S1,S2
-%	\\\hline
-%	S & - & - & \textrm{Object} & \textrm{Yes} & S
-%	\\\hline
-%	\parametric{\KPattern}{} & \KPattern & - & \textrm{Meta} & \textrm{No} & -
-%	\\\hline
-%	\parametric{\KSort}{} & \KSort & - & \textrm{Meta} & \textrm{No} & -
-%	\\\hline
-%	\parametric{\KPatternList}{} & \KPatternList & - & \textrm{Meta} &
-%	\textrm{No} & -
-%	\\\hline
-%	\sharpsymbol S & - & - & \textrm{Meta} & \textrm{Yes} & \sharpsymbol S
+% \textrm{Sort} &
+% \textrm{Sort} &
+% \textrm{Sort} &
+% \textrm{Meta or} &
+% \textrm{Sort} &
+% \textrm{Depending}\\
+% \textrm{}       &
+% \textrm{Constructor} &
+% \textrm{Parameters}  &
+% \textrm{Object?}       &
+% \textrm{Schema?}     &
+% \textrm{Variable(s)}
+% \\\hline
+% \parametric{Nat}{} & Nat & - & \textrm{Object} & \textrm{No} & -
+% \\\hline
+% \parametric{List}{\parametric{Nat}{}} & List & \parametric{Nat}{} &
+% \textrm{Object} &
+% \textrm{No} & -
+% \\\hline
+% \parametric{Map}{\parametric{Nat}{},S} & Map & \parametric{Nat}{},S &
+% \textrm{Object} &
+% \textrm{Yes} & S
+% \\\hline
+% \parametric{Map}{S1,\parametric{List}{S2}} & Map & S1,\parametric{List}{S2}
+% &
+% \textrm{Object} & \textrm{Yes} & S1,S2
+% \\\hline
+% S & - & - & \textrm{Object} & \textrm{Yes} & S
+% \\\hline
+% \parametric{\KPattern}{} & \KPattern & - & \textrm{Meta} & \textrm{No} & -
+% \\\hline
+% \parametric{\KSort}{} & \KSort & - & \textrm{Meta} & \textrm{No} & -
+% \\\hline
+% \parametric{\KPatternList}{} & \KPatternList & - & \textrm{Meta} &
+% \textrm{No} & -
+% \\\hline
+% \sharpsymbol S & - & - & \textrm{Meta} & \textrm{Yes} & \sharpsymbol S
 %\end{tabular}
 %}
 %\end{center}
@@ -6259,14 +6273,14 @@ Section~\ref{sec:meta-theory}.
 %Section~\ref{sec:K-summary}).
 %They are
 %\begin{center}
-%	{\ttfamily
-%		\begin{tabular}{llll}
-%			\verb|#Sort| & \verb|#Symbol| & \verb|#Variable| & \verb|#Pattern|
-%			\\\hline
-%			\verb|#SortList| & \verb|#SymbolList| & \verb|#VariableList| &
-%			\verb|#PatternList|
-%		\end{tabular}
-%	}
+% {\ttfamily
+%  \begin{tabular}{llll}
+%   \verb|#Sort| & \verb|#Symbol| & \verb|#Variable| & \verb|#Pattern|
+%   \\\hline
+%   \verb|#SortList| & \verb|#SymbolList| & \verb|#VariableList| &
+%   \verb|#PatternList|
+%  \end{tabular}
+% }
 %\end{center}
 
 \subsubsection{Heads}
@@ -6316,15 +6330,15 @@ respectively, as shown in the next grammar.
 
 
 \begin{grammar}\small
-	<head> ::= <object-head> | <meta-head>
-	
-	<object-head> ::= <object-head-constructor> `{' <object-sort-list> `}'
-		
-	<object-head-constructor> ::= <object-identifier>
-	
-	<meta-head> ::= <meta-head-constructor> `{' <meta-sort-list> `}'
-	
-	<meta-head-constructor> ::= <meta-identifier>
+ <head> ::= <object-head> | <meta-head>
+ 
+ <object-head> ::= <object-head-constructor> `{' <object-sort-list> `}'
+  
+ <object-head-constructor> ::= <object-identifier>
+ 
+ <meta-head> ::= <meta-head-constructor> `{' <meta-sort-list> `}'
+ 
+ <meta-head-constructor> ::= <meta-identifier>
 \end{grammar}
 A head is of the form \texttt{$C$\{$s_1,\dots,s_n$\}} for some $n \ge 0$, where
 $C$ is a head constructor and $s_1,\dots,s_n$ are sort parameters.
@@ -6337,40 +6351,40 @@ parameters.
 %Here are some examples of object and meta-symbols written in Kore syntax.
 %
 %\begin{center}{\ttfamily
-%		\begin{tabular}{lllll}
-%			\textrm{Symbol} & \textrm{Symbol Constructor} &
-%			\textrm{Parameter(s)} &
-%			\textrm{Schema?} & \textrm{Depending Variable(s)}
-%			\\\hline
-%			\parametric{zero}{} & zero & - & \textrm{No} & -
-%			\\\hline
-%			\parametric{succ}{} & succ & - &
-%			\textrm{No} & -
-%			\\\hline
-%			\parametric{nil}{S} & nil & S			&
-%			\textrm{Yes} & S
-%			\\\hline
-%			\parametric{cons}{S} & cons &
-%			S
-%			& \textrm{Yes} & S
-%			\\\hline
-%			\parametric{cons}{Nat} & cons &
-%			Nat
-%			& \textrm{No} & -
-%			\\\hline
-%			\parametric{merge}{S1,S2} & merge & S1,S2 & \textrm{Yes} & S1,S2
-%			\\\hline
-%			\parametric{merge}{Nat,\parametric{List}{S}} & merge &
-%			Nat,\parametric{List}{S} &
-%			\textrm{Yes} & S
-%			\\\hline
-%			\parametric{isLambdaTerm}{\sharpsymbol S}
-%			& isLambdaTerm
-%			& \sharpsymbol S
-%			& \textrm{Yes}
-%			& \sharpsymbol S
-%		\end{tabular}
-%	}
+%  \begin{tabular}{lllll}
+%   \textrm{Symbol} & \textrm{Symbol Constructor} &
+%   \textrm{Parameter(s)} &
+%   \textrm{Schema?} & \textrm{Depending Variable(s)}
+%   \\\hline
+%   \parametric{zero}{} & zero & - & \textrm{No} & -
+%   \\\hline
+%   \parametric{succ}{} & succ & - &
+%   \textrm{No} & -
+%   \\\hline
+%   \parametric{nil}{S} & nil & S   &
+%   \textrm{Yes} & S
+%   \\\hline
+%   \parametric{cons}{S} & cons &
+%   S
+%   & \textrm{Yes} & S
+%   \\\hline
+%   \parametric{cons}{Nat} & cons &
+%   Nat
+%   & \textrm{No} & -
+%   \\\hline
+%   \parametric{merge}{S1,S2} & merge & S1,S2 & \textrm{Yes} & S1,S2
+%   \\\hline
+%   \parametric{merge}{Nat,\parametric{List}{S}} & merge &
+%   Nat,\parametric{List}{S} &
+%   \textrm{Yes} & S
+%   \\\hline
+%   \parametric{isLambdaTerm}{\sharpsymbol S}
+%   & isLambdaTerm
+%   & \sharpsymbol S
+%   & \textrm{Yes}
+%   & \sharpsymbol S
+%  \end{tabular}
+% }
 %\end{center}
 %
 %We call a symbol constructor $C_\itsymbol$ a \emph{parametric symbol}, if it
@@ -6401,80 +6415,80 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 
 \begin{grammar}
 \label{grammar:patterns}
-	\small
-	<pattern> ::= <object-pattern> | <meta-pattern>
-	
-	<variable> ::= <object-variable> | <meta-variable>
-	
-	<object-pattern> ::= \quad
+ \small
+ <pattern> ::= <object-pattern> | <meta-pattern>
+ 
+ <variable> ::= <object-variable> | <meta-variable>
+ 
+ <object-pattern> ::= \quad
     \alt <object-variable>
-	\alt <object-head> `(' <pattern-list> `)'
-	\alt `\\and' `{' <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\not' `{' <object-sort> `}'
-	`(' <pattern> `)'
-	\alt `\\or' `{' <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\implies' `{' <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\iff' `{' <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\forall' `{' <object-sort> `}'
-	`(' <object-variable> `,' <pattern> `)'
-	\alt `\\exists' `{' <object-sort> `}'
-	`(' <object-variable> `,' <pattern> `)'
-	\alt `\\ceil' `{' <object-sort> `,'  <object-sort> `}'
-	`(' <pattern> `)'
-	\alt `\\floor' `{' <object-sort> `,'  <object-sort> `}'
-	`(' <pattern> `)'
-	\alt `\\equals' `{' <object-sort> `,'  <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\in' `{' <object-sort> `,'  <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\top' `{' <object-sort> `}' `(' `)'
-	\alt `\\bottom' `{' <object-sort> `}' `(' `)'
-	\alt `\\dv' `{' <object-sort> `}' `(' <meta-pattern> `)'
-	\doubleslash where <meta-pattern> has sort {\KString} (see wellformedness
-	conditions)
-	
-	<object-variable> ::= <object-identifier> `:' <object-sort>
-	
-	<meta-pattern> ::= \quad
+ \alt <object-head> `(' <pattern-list> `)'
+ \alt `\\and' `{' <object-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\not' `{' <object-sort> `}'
+ `(' <pattern> `)'
+ \alt `\\or' `{' <object-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\implies' `{' <object-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\iff' `{' <object-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\forall' `{' <object-sort> `}'
+ `(' <object-variable> `,' <pattern> `)'
+ \alt `\\exists' `{' <object-sort> `}'
+ `(' <object-variable> `,' <pattern> `)'
+ \alt `\\ceil' `{' <object-sort> `,'  <object-sort> `}'
+ `(' <pattern> `)'
+ \alt `\\floor' `{' <object-sort> `,'  <object-sort> `}'
+ `(' <pattern> `)'
+ \alt `\\equals' `{' <object-sort> `,'  <object-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\in' `{' <object-sort> `,'  <object-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\top' `{' <object-sort> `}' `(' `)'
+ \alt `\\bottom' `{' <object-sort> `}' `(' `)'
+ \alt `\\dv' `{' <object-sort> `}' `(' <meta-pattern> `)'
+ \doubleslash where <meta-pattern> has sort {\KString} (see wellformedness
+ conditions)
+ 
+ <object-variable> ::= <object-identifier> `:' <object-sort>
+ 
+ <meta-pattern> ::= \quad
     \alt <meta-variable>
     \alt <string>
     \alt <char>
-	\alt <meta-head> `(' <pattern-list> `)'
-	\alt `\\and' `{' <meta-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\not' `{' <meta-sort> `}'
-	`(' <pattern> `)'
-	\alt `\\or' `{' <meta-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\implies' `{' <meta-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\iff' `{' <meta-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\forall' `{' <meta-sort> `}'
-	`(' <meta-variable> `,' <pattern> `)'
-	\alt `\\exists' `{' <meta-sort> `}'
-	`(' <meta-variable> `,' <pattern> `)'
-	\alt `\\ceil' `{' <meta-sort> `,' <meta-sort> `}'
-	`(' <pattern> `)'
-	\alt `\\floor' `{' <meta-sort> `,' <meta-sort> `}'
-	`(' <pattern> `)'
-	\alt `\\equals' `{' <meta-sort> `,' <meta-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\in' `{' <meta-sort> `,' <meta-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
-	\alt `\\top' `{' <meta-sort> `}' `(' `)'
-	\alt `\\bottom' `{' <meta-sort> `}' `(' `)'
-	
-	<meta-variable> ::= <meta-identifier> `:' <meta-sort>
-	
-	<pattern-list> ::= $\epsilon$ | <nonempty-pattern-list>
-	
-	<nonempty-pattern-list> ::= <pattern> | <pattern> `,'
-	<nonempty-pattern-list>
+ \alt <meta-head> `(' <pattern-list> `)'
+ \alt `\\and' `{' <meta-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\not' `{' <meta-sort> `}'
+ `(' <pattern> `)'
+ \alt `\\or' `{' <meta-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\implies' `{' <meta-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\iff' `{' <meta-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\forall' `{' <meta-sort> `}'
+ `(' <meta-variable> `,' <pattern> `)'
+ \alt `\\exists' `{' <meta-sort> `}'
+ `(' <meta-variable> `,' <pattern> `)'
+ \alt `\\ceil' `{' <meta-sort> `,' <meta-sort> `}'
+ `(' <pattern> `)'
+ \alt `\\floor' `{' <meta-sort> `,' <meta-sort> `}'
+ `(' <pattern> `)'
+ \alt `\\equals' `{' <meta-sort> `,' <meta-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\in' `{' <meta-sort> `,' <meta-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
+ \alt `\\top' `{' <meta-sort> `}' `(' `)'
+ \alt `\\bottom' `{' <meta-sort> `}' `(' `)'
+ 
+ <meta-variable> ::= <meta-identifier> `:' <meta-sort>
+ 
+ <pattern-list> ::= $\epsilon$ | <nonempty-pattern-list>
+ 
+ <nonempty-pattern-list> ::= <pattern> | <pattern> `,'
+ <nonempty-pattern-list>
 \end{grammar}
 Notice that we allow a mixed syntax for object-level patterns and meta-level
 patterns.
@@ -6501,12 +6515,12 @@ binary construct defined by $\varphi \parametric{\Rightarrow}{s} \psi \equiv
 \psi$.
 They have the following productions:
 \begin{grammar}
-	\small
-	<object-pattern> ::= \quad
-	\alt `\\next' `{' <object-sort> `}'
-	`(' <pattern> `)'
-	\alt `\\rewrites' `{' <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
+ \small
+ <object-pattern> ::= \quad
+ \alt `\\next' `{' <object-sort> `}'
+ `(' <pattern> `)'
+ \alt `\\rewrites' `{' <object-sort> `}'
+ `(' <pattern> `,' <pattern> `)'
 \end{grammar}
 Notice that these constructs are only defined for object-level patterns.
 The meta-theory does not have these constructs defined, (see
@@ -6715,7 +6729,7 @@ axiom.
 
 <meta-symbol-declaration> ::= \quad
 \alt `symbol' <meta-head-constructor>
-`{'	<meta-sort-variable-list> `}'
+`{' <meta-sort-variable-list> `}'
  `(' <meta-sort-list> `)' `:' <meta-sort> <attributes>
 
 <alias-declaration> ::= <object-alias-declaration> | <meta-alias-declaration>
@@ -6734,7 +6748,7 @@ axiom.
 
 <meta-alias-declaration> ::= \quad
 \alt `alias' <meta-head-constructor>
-`{'	<meta-sort-variable-list> `}'
+`{' <meta-sort-variable-list> `}'
 `(' <meta-sort-list> `)' `:' <meta-sort>
 `where'
 <meta-head-constructor>
@@ -6845,19 +6859,19 @@ A Kore definition contains at least a module.
 
 %Here are some examples of sort declarations in Kore.
 %\begin{center}{\ttfamily
-%		\begin{tabular}{l|r}
-%			\textrm{Declaration} & \textrm{Informal Semantics}
-%			\\\hline
-%			sort \parametric{Nat}{} & \textrm{Declare a non-parametric sort
-%			$\Nat$}
-%			\\\hline
-%			sort \parametric{List}{S} & \textrm{Declare a sort schema
-%			$\parametric{\List}{s}$ for any sort $s$}
-%			\\\hline
-%			sort \parametric{Map}{S1,S2} & \textrm{Declare a sort schema
-%			$\parametric{\Map}{s_1,s_2}$ for any sort $s_1,s_2$}
-%		\end{tabular}
-%	}
+%  \begin{tabular}{l|r}
+%   \textrm{Declaration} & \textrm{Informal Semantics}
+%   \\\hline
+%   sort \parametric{Nat}{} & \textrm{Declare a non-parametric sort
+%   $\Nat$}
+%   \\\hline
+%   sort \parametric{List}{S} & \textrm{Declare a sort schema
+%   $\parametric{\List}{s}$ for any sort $s$}
+%   \\\hline
+%   sort \parametric{Map}{S1,S2} & \textrm{Declare a sort schema
+%   $\parametric{\Map}{s_1,s_2}$ for any sort $s_1,s_2$}
+%  \end{tabular}
+% }
 %\end{center}
 %
 %In Kore, new meta-sort constructors cannot be declared.
@@ -6872,46 +6886,46 @@ A Kore definition contains at least a module.
 %of sort variables, a list of argument sorts, and a result sort.
 %
 %\begin{grammar}\small
-%	<symbol-declaration> ::= <object-symbol-declaration> |
-%	<meta-symbol-declaration>
-%	
-%	<object-symbol-declaration> ::= \quad
-%	\alt `symbol' <object-symbol-constructor> `{'
-%		<object-sort-variable-list> `}' `(' <object-sort-list> `)' `:'
-%		<object-sort>
-%		
-%	<meta-symbol-declaration> ::= \quad
-%	\alt `symbol' <meta-symbol-constructor> `{'
-%		<meta-sort-variable-list> `}' `(' <meta-sort-list> `)' `:'
-%	<meta-sort>
+% <symbol-declaration> ::= <object-symbol-declaration> |
+% <meta-symbol-declaration>
+% 
+% <object-symbol-declaration> ::= \quad
+% \alt `symbol' <object-symbol-constructor> `{'
+%  <object-sort-variable-list> `}' `(' <object-sort-list> `)' `:'
+%  <object-sort>
+%  
+% <meta-symbol-declaration> ::= \quad
+% \alt `symbol' <meta-symbol-constructor> `{'
+%  <meta-sort-variable-list> `}' `(' <meta-sort-list> `)' `:'
+% <meta-sort>
 %\end{grammar}
 %
 %Here are some examples of symbol declarations in Kore.
 %
 %\begin{center}{\ttfamily
-%		\begin{tabular}{lcc}
-%			\textrm{Declaration} & \textrm{Object or Meta?} & \textrm{Arity}
-%			\\\hline
-%			symbol \parametric{zero}{}():\parametric{Nat}{} & \textrm{Object} &
-%			$0$
-%			\\\hline
-%			symbol \parametric{succ}{}(\parametric{Nat}{}):\parametric{Nat}{} &
-%			\textrm{Object} & $1$
-%			\\\hline
-%			symbol \parametric{nil}{S}():\parametric{List}{S} & \textrm{Object}
-%			& $0$
-%			\\\hline
-%			symbol
-%			\parametric{cons}{S}(S,\parametric{List}{S}):\parametric{List}{S} &
-%			\textrm{Object} & $2$
-%			\\\hline
-%			symbol \parametric{ceil}{S1,S2}(S1):S2 & \textrm{Object} & $1$
-%			\\\hline
-%			symbol \parametric{isLambdaTerm}{\#S}(\parametric{\#Pattern}{}):\#S
-%			&
-%			\textrm{Meta} & $1$
-%		\end{tabular}
-%	}
+%  \begin{tabular}{lcc}
+%   \textrm{Declaration} & \textrm{Object or Meta?} & \textrm{Arity}
+%   \\\hline
+%   symbol \parametric{zero}{}():\parametric{Nat}{} & \textrm{Object} &
+%   $0$
+%   \\\hline
+%   symbol \parametric{succ}{}(\parametric{Nat}{}):\parametric{Nat}{} &
+%   \textrm{Object} & $1$
+%   \\\hline
+%   symbol \parametric{nil}{S}():\parametric{List}{S} & \textrm{Object}
+%   & $0$
+%   \\\hline
+%   symbol
+%   \parametric{cons}{S}(S,\parametric{List}{S}):\parametric{List}{S} &
+%   \textrm{Object} & $2$
+%   \\\hline
+%   symbol \parametric{ceil}{S1,S2}(S1):S2 & \textrm{Object} & $1$
+%   \\\hline
+%   symbol \parametric{isLambdaTerm}{\#S}(\parametric{\#Pattern}{}):\#S
+%   &
+%   \textrm{Meta} & $1$
+%  \end{tabular}
+% }
 %\end{center}
 %
 %Notice that allowing parametric meta-symbols does not break the finitary of
@@ -6927,7 +6941,7 @@ A Kore definition contains at least a module.
 %``\verb|axiom|'', followed by a list of sort variables as parameters wrapped
 %with curly braces.
 %\begin{grammar}\small
-%	 <axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern>
+%  <axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern>
 %\end{grammar}
 %If the pattern is an object pattern, we call the declaration an \emph{object
 %axiom declaration}.
@@ -7066,12 +7080,12 @@ declared in the current theory''.
 % and its head is not lifted.
 
 \begin{notation}
-	We use the double bracket $\denote{\_}$ for the lifting process and
-	overload it for all syntactic categories.
-	Subscripts are used (e.g., $\denote{\_}_\name$, $\denote{\_}_\llist$,
-	\dots) when we need
-	some auxiliary lifting processes and do not want to confuse them
-	with the canonical one.
+ We use the double bracket $\denote{\_}$ for the lifting process and
+ overload it for all syntactic categories.
+ Subscripts are used (e.g., $\denote{\_}_\name$, $\denote{\_}_\llist$,
+ \dots) when we need
+ some auxiliary lifting processes and do not want to confuse them
+ with the canonical one.
 \end{notation}
 
 \subsubsection{Lift Object Identifiers to String Literals}
@@ -7140,25 +7154,25 @@ form $\parametric{C}{s_1,\dots,s_n}$
 
 For example,
 \begin{center}{\ttfamily
-		\begin{tabular}{l|l}
-			\textrm{Object sort $s$} & \textrm{Meta pattern $\denote{s}$}
-			\\\hline
-			\parametric{Nat}{} & \parametric{\sharpsymbol `Nat}{}()
-			\\\hline
-			\parametric{List}{\parametric{Nat}{}} &
-			\parametric{\sharpsymbol `List}{}(\parametric{\sharpsymbol
-			`Nat}{}())
-			\\\hline
-			\parametric{Map}{\parametric{Nat}{},S} & \parametric{\sharpsymbol
-			`Map}{}(\parametric{\sharpsymbol `Nat}{}(),\sharpsymbol S:\KSort)
-			\\\hline
-			\parametric{Map}{S1,\parametric{List}{S2}} &
-			\parametric{\sharpsymbol `Map}{}(\sharpsymbol
-			S1:\KSort,\parametric{\sharpsymbol `List}{}(\sharpsymbol S2:\KSort))
-			\\\hline
-			S & \sharpsymbol S:\KSort
-		\end{tabular}
-	}
+  \begin{tabular}{l|l}
+   \textrm{Object sort $s$} & \textrm{Meta pattern $\denote{s}$}
+   \\\hline
+   \parametric{Nat}{} & \parametric{\sharpsymbol `Nat}{}()
+   \\\hline
+   \parametric{List}{\parametric{Nat}{}} &
+   \parametric{\sharpsymbol `List}{}(\parametric{\sharpsymbol
+   `Nat}{}())
+   \\\hline
+   \parametric{Map}{\parametric{Nat}{},S} & \parametric{\sharpsymbol
+   `Map}{}(\parametric{\sharpsymbol `Nat}{}(),\sharpsymbol S:\KSort)
+   \\\hline
+   \parametric{Map}{S1,\parametric{List}{S2}} &
+   \parametric{\sharpsymbol `Map}{}(\sharpsymbol
+   S1:\KSort,\parametric{\sharpsymbol `List}{}(\sharpsymbol S2:\KSort))
+   \\\hline
+   S & \sharpsymbol S:\KSort
+  \end{tabular}
+ }
 \end{center}
 
 Given a list of object sorts $s_1,\dots,s_n$.
@@ -7235,8 +7249,8 @@ $$ \denote{\_} \colon \syntacc{sort-declaration} \to
 \syntacc{declaration}$$
 Consider the sort declaration
 \begin{center}
-	\ttfamily
-	sort $C$\{$s_1,\dots,s_n$\} [$\att$]
+ \ttfamily
+ sort $C$\{$s_1,\dots,s_n$\} [$\att$]
 \end{center}
 where $s_1,\dots,s_n$ are sort variables, and $C$ is a sort constructor, and
 $\att$ is an attribute.
@@ -7249,8 +7263,8 @@ $n$ arguments.
 \begin{center}
 \ttfamily
 symbol $\denote{C}$($\underbrace{\parametric{
-		\KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$n$
-	times}$):\parametric{\KSort}{} []
+  \KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$n$
+ times}$):\parametric{\KSort}{} []
 \end{center}
 
 The second declaration is an axiom declaration that says the helper function
@@ -7261,8 +7275,8 @@ $\denote{C}$ is indeed just a helper function
 axiom\{$\shs$\} \\
 \ttfamily
 \qquad \slequals\{\KSort\{\},\shs\}($\denote{
-	\text{$C$\{$s_1,\dots,s_n$\}}}$,$\denote{
-	\text{$C$\{$s_1,\dots,s_n$\}}}_\verbose$) []
+ \text{$C$\{$s_1,\dots,s_n$\}}}$,$\denote{
+ \text{$C$\{$s_1,\dots,s_n$\}}}_\verbose$) []
 \end{tabular}
 \end{center}
 where $\shs$ is a fresh meta-level sort variable.
@@ -7279,18 +7293,18 @@ axiom\{$\shs$\} \\
 \slimplies\{\shs\}( \\
 \ttfamily
 \qquad\qquad\KsortsDeclared{\shs}($\denote{
-	s_1,\dots,s_n}_\llist$),\\
+ s_1,\dots,s_n}_\llist$),\\
 \ttfamily
 \qquad\qquad\KsortDeclared{\shs}($\denote{
-	\text{$C$\{$s_1,\dots,s_n$\}}}$)) []
+ \text{$C$\{$s_1,\dots,s_n$\}}}$)) []
 \end{tabular}
 \end{center}
 where $\shs$ is a fresh meta-level sort variable.
 
 The declaration of a hooked sort
 \begin{center}
-	\ttfamily
-	hooked-sort $C$\{$s_1,\dots,s_n$\} [$\att$]
+ \ttfamily
+ hooked-sort $C$\{$s_1,\dots,s_n$\} [$\att$]
 \end{center}
 is lifted in the same way as
 a normal sort declaration.
@@ -7325,12 +7339,12 @@ function $\denote{C}$ of the symbol constructor $C$.
 Since $C$ takes $m$ sort parameters and $n$ arguments, the helper function
 $\denote{C}$ takes in total $m+n$ arguments.
 \begin{center}
-	\ttfamily
-	symbol $\denote{C}$($\underbrace{\parametric{
-			\KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$m$
-		times},\underbrace{\parametric{
-			\KPattern}{},\dots,\parametric{\KPattern}{}}_\textrm{$n$
-		times}$):\parametric{\KPattern}{} []
+ \ttfamily
+ symbol $\denote{C}$($\underbrace{\parametric{
+   \KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$m$
+  times},\underbrace{\parametric{
+   \KPattern}{},\dots,\parametric{\KPattern}{}}_\textrm{$n$
+  times}$):\parametric{\KPattern}{} []
 \end{center}
 
 The second declaration is an axiom declaration that says the helper function
@@ -7340,9 +7354,9 @@ Let us use $\sigma$ to denote the following meta-pattern
 $$
 \sigma =
 \texttt{\Ksymbol\{\}($\denote{
-		C}_\name$,$\denote{
-		v_1,\dots,v_m}_\llist$,$\denote{
-		s_1,\dots,s_n}_\llist$,$\denote{s}$)}
+  C}_\name$,$\denote{
+  v_1,\dots,v_m}_\llist$,$\denote{
+  s_1,\dots,s_n}_\llist$,$\denote{s}$)}
 $$
 We also need $n$ fresh and distinct meta-level variables of sort $\KPattern$,
 denoted as
@@ -7377,19 +7391,19 @@ Now we are ready to show the axiom declaration which says the helper function
 $\denote{C}$ is indeed just a helper function.
 
 \begin{center}
-	\begin{tabular}{l}
-		\ttfamily
-		axiom\{$\shs$\} \\
-		\ttfamily
-		\qquad \slequals\{\KPattern\{\},\shs\}( \\
-		\ttfamily
-		\qquad\qquad$\denote{C}$($
-		\denote{v_1},\dots,\denote{v_m},\varphi_1,\dots,\varphi_n$), \\
-		\ttfamily
-		\qquad\qquad
-		\Kapplication\{\}($\sigma, \denote{\varphi_1,\dots,\varphi_n}_\llist$)
-		[]
-	\end{tabular}
+ \begin{tabular}{l}
+  \ttfamily
+  axiom\{$\shs$\} \\
+  \ttfamily
+  \qquad \slequals\{\KPattern\{\},\shs\}( \\
+  \ttfamily
+  \qquad\qquad$\denote{C}$($
+  \denote{v_1},\dots,\denote{v_m},\varphi_1,\dots,\varphi_n$), \\
+  \ttfamily
+  \qquad\qquad
+  \Kapplication\{\}($\sigma, \denote{\varphi_1,\dots,\varphi_n}_\llist$)
+  []
+ \end{tabular}
 \end{center}
 where $\shs$ is a fresh meta-level sort variable.
 
@@ -7398,19 +7412,19 @@ The third declaration is an axiom declaration that says the parametric symbol
 $v_1,\dots,v_m$ are declared.
 
 \begin{center}
-	\begin{tabular}{l}
-		\ttfamily
-		axiom\{$\shs$\} \\
-		\ttfamily
-		\qquad
-		\slimplies\{\shs\}( \\
-		\ttfamily
-		\qquad\qquad\KsortsDeclared{\shs}($\denote{
-			v_1,\dots,v_m}_\llist$),\\
-		\ttfamily
-		\qquad\qquad\KsymbolDeclared{\shs}($\sigma$))
-		[]
-	\end{tabular}
+ \begin{tabular}{l}
+  \ttfamily
+  axiom\{$\shs$\} \\
+  \ttfamily
+  \qquad
+  \slimplies\{\shs\}( \\
+  \ttfamily
+  \qquad\qquad\KsortsDeclared{\shs}($\denote{
+   v_1,\dots,v_m}_\llist$),\\
+  \ttfamily
+  \qquad\qquad\KsymbolDeclared{\shs}($\sigma$))
+  []
+ \end{tabular}
 \end{center}
 where $\shs$ is a fresh meta-level sort variable.
 
@@ -7446,13 +7460,13 @@ helper function $\denote{C}$ of the alias constructor $C$.
 Since $C$ takes $m$ sort parameters and $n$ arguments, the helper function
 $\denote{C}$ takes in total $m+n$ arguments.
 \begin{center}
-	\ttfamily
-	symbol $\denote{C}$($\underbrace{\parametric{
-			\KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$m$
-		times},\underbrace{\parametric{
-			\KPattern}{},\dots,\parametric{\KPattern}{}}_\textrm{$n$
-		times}$):\parametric{\KPattern}{}
-	[]
+ \ttfamily
+ symbol $\denote{C}$($\underbrace{\parametric{
+   \KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$m$
+  times},\underbrace{\parametric{
+   \KPattern}{},\dots,\parametric{\KPattern}{}}_\textrm{$n$
+  times}$):\parametric{\KPattern}{}
+ []
 \end{center}
 
 The axiom declaration is about the definition of the alias
@@ -7491,7 +7505,7 @@ meta-pattern of sort $\KVariable$.
 \begin{align*}
 &\denote{\_}_\var \colon \syntacc{object-variable} \to \syntacc{meta-pattern} \\
 &\denote{x \cln s} = \texttt{\parametric{\Kvariable}{}($\denote{
-		x}_\name$,$\denote{s}$)} \quad \text{for any object variable $x \cln s$}
+  x}_\name$,$\denote{s}$)} \quad \text{for any object variable $x \cln s$}
 \end{align*}
 The lifting of a variable $v$ is defined as
 $$
@@ -7508,15 +7522,15 @@ The lifting of a pattern of the form
 \texttt{$C$\{$s_1,\dots,s_m$\}($\varphi_1,\dots,\varphi_n$)} is defined as
 \begin{align*}
 \denote{C\texttt{\{}s_1,\dots,s_n\texttt{\}}\texttt{(}\varphi_1,
-	\dots,\varphi_n\texttt{)}}
+ \dots,\varphi_n\texttt{)}}
  =
 \begin{cases*}
 \denote{C}\texttt{(}\denote{s_1},\dots,\denote{s_n},\denote{
-	\varphi_1},\dots,\denote{\varphi_n}\texttt{)} & if $C$ is
-	\syntacc{object-head}\\
+ \varphi_1},\dots,\denote{\varphi_n}\texttt{)} & if $C$ is
+ \syntacc{object-head}\\
 C\texttt{\{}s_1,\dots,s_n\texttt{\}}\texttt{(}\denote{
-	\varphi_1},\dots,\denote{\varphi_n}\texttt{)} & if $C$ is
-	\syntacc{meta-head}
+ \varphi_1},\dots,\denote{\varphi_n}\texttt{)} & if $C$ is
+ \syntacc{meta-head}
 \end{cases*}
 \end{align*}
 
@@ -7618,7 +7632,7 @@ $\denote{\texttt{\slfloor\{$s_1,s_2$\}($\varphi$)}}
 $\denote{\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 =
 \texttt{\Kequals\{\}($\denote{s_1}$,$\denote{s_2}$,$
-	\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+ \denote{\varphi_1}$,$\denote{\varphi_2}$)}$
 & if $s_1,s_2$ are \syntacc{object-sort}
 \\
 $\denote{\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
@@ -7629,7 +7643,7 @@ $\denote{\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 $\denote{\texttt{\slin\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 =
 \texttt{\Kmembership\{\}($\denote{s_1}$,$\denote{s_2}$,$
-	\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+ \denote{\varphi_1}$,$\denote{\varphi_2}$)}$
 & if $s_1,s_2$ are \syntacc{object-sort}
 \\
 $\denote{\texttt{\slin\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
@@ -7689,12 +7703,12 @@ $\denote{\texttt{\sldv\{$s$\}($str$)}}
 %patterns, in which we intensionally merge the grammars of both object and
 %meta-patterns for simplicity.
 %\begin{grammar}
-%	<pattern> ::= \quad
-%	\alt <object-identifier> `:' <object-sort>
-%	\alt <meta-identifier> `:' <meta-sort>
-%	\alt <string-literal>
-%	\alt <object-head> `(' <pattern-list> `)'
-%	\alt <meta-head> `(' <pattern-list> `)'
+% <pattern> ::= \quad
+% \alt <object-identifier> `:' <object-sort>
+% \alt <meta-identifier> `:' <meta-sort>
+% \alt <string-literal>
+% \alt <object-head> `(' <pattern-list> `)'
+% \alt <meta-head> `(' <pattern-list> `)'
 %\end{grammar}
 %We will define the lifting operation for patterns case by case following the
 %grammar of patterns
@@ -7755,9 +7769,9 @@ $\denote{\texttt{\sldv\{$s$\}($str$)}}
 %\denote{\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)} =
 %\begin{cases*}
 %\denote{C}(\denote{s_1},\dots,\denote{s_n},\denote{
-%	\varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)\\
+% \varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)\\
 %\parametric{C}{s_1,\dots,s_n}(\denote{
-%	\varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)
+% \varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)
 %\end{cases*}
 %\end{align*}
 
@@ -7769,28 +7783,28 @@ In Kore, an axiom declaration is lifted as follows.
   \syntacc{axiom-declaration}
   \\
   &\denote{\texttt{\parametric{axiom}{$s_1,\dots,s_n$}
-  		$\varphi$}} =
-  	\begin{cases*}
-  	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$}}
-  	\texttt{ \parametric{\slimplies}{$s'$}(} \\
-  	\qquad\qquad\quad\ \texttt{
-  	\KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)}, \texttt{
-  	\parametric{\Kdeduce}{$s'$}($\denote{\varphi}$))}
+    $\varphi$}} =
+   \begin{cases*}
+   \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$}}
+   \texttt{ \parametric{\slimplies}{$s'$}(} \\
+   \qquad\qquad\quad\ \texttt{
+   \KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)}, \texttt{
+   \parametric{\Kdeduce}{$s'$}($\denote{\varphi}$))}
   \\
- 	\qquad\qquad\qquad\qquad\qquad\qquad\qquad\quad\qquad\qquad\quad \text{if
- 	$\varphi$ is
- 	\syntacc{object-pattern}} \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\quad\qquad\qquad\quad \text{if
+  $\varphi$ is
+  \syntacc{object-pattern}} \\
   \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$}}
-    	\texttt{ \parametric{\slimplies}{$s'$}(} \\
-    	\qquad\qquad\quad\ \texttt{
-    	\KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)},
-    	\denote{\varphi} \texttt{)}
-    	\\
- 	\qquad\qquad\qquad\qquad\qquad\qquad\qquad\quad\qquad\qquad\quad
- 	\text{if
- 	$\varphi$ is
- 	\syntacc{meta-pattern}} \\
-  	\end{cases*}
+     \texttt{ \parametric{\slimplies}{$s'$}(} \\
+     \qquad\qquad\quad\ \texttt{
+     \KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)},
+     \denote{\varphi} \texttt{)}
+     \\
+  \qquad\qquad\qquad\qquad\qquad\qquad\qquad\quad\qquad\qquad\quad
+  \text{if
+  $\varphi$ is
+  \syntacc{meta-pattern}} \\
+   \end{cases*}
 \end{align*}
 where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in
 $s_1,\dots,s_n$,
@@ -8001,12 +8015,12 @@ Read with cautions.
 
 We restate the faithfulness theorem
 \begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite-in-appendix}
-	Given a matching logic theory $T$ and a naming function $e$.
-	Let $\denote{T}$ be the meta-theory instantiated with $T$, and $\varphi$ be
-	any pattern in $T$,
-	$$T \vdash \varphi \quad \text{iff} \quad K \cup \denote{T} \vdashfin
-	\parametric{\Kdeduce}{\shs}(\denote{\varphi})\quad\text{for any $\shs \in
-	S_K$}$$
+ Given a matching logic theory $T$ and a naming function $e$.
+ Let $\denote{T}$ be the meta-theory instantiated with $T$, and $\varphi$ be
+ any pattern in $T$,
+ $$T \vdash \varphi \quad \text{iff} \quad K \cup \denote{T} \vdashfin
+ \parametric{\Kdeduce}{\shs}(\denote{\varphi})\quad\text{for any $\shs \in
+ S_K$}$$
 \end{theorem}
 
 Before we start to prove the theorem, we need to explain what ``the
@@ -8015,250 +8029,250 @@ the theorem.
 For that reason, we introduce the next definition.
 
 \begin{definition}[Naming and Lifting]
-	Suppose $T = (S, \Sigma, A)$ is a finite matching logic theory, with $\Var
-	= \bigcup_{s \in S} \Var_s$ is the set of all variables of $T$.
-	\emph{A naming of $T$}, denoted as $e$, consists of the following three
-	naming functions
-	\begin{itemize}
-		\item A sort-naming function $e_S \colon S \to \PATTERNS_\KString$ that
-		maps each sort in $S$ to a syntactic $\KString$ pattern such that $K
-		\vdash e_S(s_1) \neq e_S(s_2)$ for any distinct sorts $s_1$ and $s_2$;
-		\item A symbol-naming function $e_\Sigma \colon \Sigma \to
-		\PATTERNS_\KString$ that maps each symbol in $\Sigma$ to a syntactic
-		$\KString$ pattern such that $K \vdash e_\Sigma(\sigma_1) \neq
-		e_\Sigma(\sigma_2)$ for any distinct symbols $\sigma_1$ and $\sigma_2$;
-		\item A variable-naming function $e_\Var \colon \Var \to
-		\PATTERNS_\KString$ that maps each variable in $T$ to a syntactic
-		$\KString$ pattern in $K$, such that $K \vdash e_\Var(x) \neq
-		e_\Var(y)$ for any distinct variables $x$ and $y$.
-	\end{itemize}
-	
-	Given $e = \{e_S, e_\Sigma, e_\Var \}$ is a naming of theory $T$, the
-	\emph{lift of $T$ with respect to $e$} consists of the following lifting
-	functions.
-	
-	(Sort-lifting).
-	For each sort $s$ in theory $T$, the lift of $s$ is a
-	$\parametric{\KSort}{}$ pattern
-	$$ \hat{s} = \Ksort(e_S(s))$$
-	
-	(Symbol-lifting).
-	For each symbol $\sigma \in \Sigma_{s_1 \dots s_n, s}$, the lift of
-	$\sigma$ is a $\KSymbol$ pattern
-	$$ \hat{\sigma} = \Ksymbol(e_\Sigma(\sigma), (\hat{s_1}, \dots, \hat{s_n}),
-	\hat{s})$$
-	
-	(Pattern-lifting).
-	For each $\Sigma$-pattern $\varphi$, the lift of $\varphi$ is a $\KPattern$
-	pattern inductively defined as follows
-	\begin{equation*}
-	\hat{\varphi} =
-	\begin{cases*}
-	\Kvariable(e_\Var(x), \hat{s}) & if $\varphi$ is a variable $x \in \Var_s
-	\subseteq \PATTERNS_s$
-	\\
-	\Kapplication(\hat{\sigma}, (\hat{\psi_1}, \dots, \hat{\psi_n})) & if
-	$\varphi$ is $\sigma(\psi_1,\dots,\psi_n) \in \PATTERNS_s$
-	\\
-	\Kand(\hat{\psi_1}, \hat{\psi_2}, \hat{s}) & if $\varphi$ is $\psi_1 \wedge
-	\psi_2 \in \PATTERNS_s$
-	\\
-	\Knot(\hat{\psi}, \hat{s}) & if $\varphi$ is $\neg \psi \in \PATTERNS_s$
-	\\
-	\Kexists(e_\Var(x), \hat{s_1}, \hat{\psi}, \hat{s_2}) & if $\varphi$ is
-	$\exists x . \psi \in \PATTERNS_{s_2}$ and $x \in \Var_{s_1}$
-	\end{cases*}
-	\end{equation*}
-	
-	(Theory-lifting). Since $T = (S, \Sigma, A)$ is a finite theory, let us
-	suppose
-	\begin{equation*}
-	S = \{ s_1, \dots, s_n \},
-	\Sigma = \{ \sigma_1, \dots, \sigma_m \},
-	A = \{ \varphi_1, \dots, \varphi_k \},
-	\end{equation*}
-	are three finite sets. The lift of theory $T$ is a $\KTheory$ pattern
-	$$ \hat{T} = \Ktheory(\Ksignature(\hat{S}, \hat{\Sigma}), \hat{A}),$$
-	where the lifts of $S$, $\Sigma$, and $A$ are respectively defined as
-	\begin{align*}
-	& \hat{S} = \hat{s_1},\dots,\hat{s_n}
-	\quad \text{is a $\parametric{\KSort}{}List$ pattern}
-	\\
-	& \hat{\Sigma} = \hat{\sigma_1},\dots,\hat{\sigma_m}
-	\quad \text{is a $\KSymbolList$ pattern}
-	\\
-	& \hat{A} = \hat{\varphi_1}, \dots, \hat{\varphi_k}
-	\quad \text{is a $\KPatternList$ pattern}
-	\end{align*}
+ Suppose $T = (S, \Sigma, A)$ is a finite matching logic theory, with $\Var
+ = \bigcup_{s \in S} \Var_s$ is the set of all variables of $T$.
+ \emph{A naming of $T$}, denoted as $e$, consists of the following three
+ naming functions
+ \begin{itemize}
+  \item A sort-naming function $e_S \colon S \to \PATTERNS_\KString$ that
+  maps each sort in $S$ to a syntactic $\KString$ pattern such that $K
+  \vdash e_S(s_1) \neq e_S(s_2)$ for any distinct sorts $s_1$ and $s_2$;
+  \item A symbol-naming function $e_\Sigma \colon \Sigma \to
+  \PATTERNS_\KString$ that maps each symbol in $\Sigma$ to a syntactic
+  $\KString$ pattern such that $K \vdash e_\Sigma(\sigma_1) \neq
+  e_\Sigma(\sigma_2)$ for any distinct symbols $\sigma_1$ and $\sigma_2$;
+  \item A variable-naming function $e_\Var \colon \Var \to
+  \PATTERNS_\KString$ that maps each variable in $T$ to a syntactic
+  $\KString$ pattern in $K$, such that $K \vdash e_\Var(x) \neq
+  e_\Var(y)$ for any distinct variables $x$ and $y$.
+ \end{itemize}
+ 
+ Given $e = \{e_S, e_\Sigma, e_\Var \}$ is a naming of theory $T$, the
+ \emph{lift of $T$ with respect to $e$} consists of the following lifting
+ functions.
+ 
+ (Sort-lifting).
+ For each sort $s$ in theory $T$, the lift of $s$ is a
+ $\parametric{\KSort}{}$ pattern
+ $$ \hat{s} = \Ksort(e_S(s))$$
+ 
+ (Symbol-lifting).
+ For each symbol $\sigma \in \Sigma_{s_1 \dots s_n, s}$, the lift of
+ $\sigma$ is a $\KSymbol$ pattern
+ $$ \hat{\sigma} = \Ksymbol(e_\Sigma(\sigma), (\hat{s_1}, \dots, \hat{s_n}),
+ \hat{s})$$
+ 
+ (Pattern-lifting).
+ For each $\Sigma$-pattern $\varphi$, the lift of $\varphi$ is a $\KPattern$
+ pattern inductively defined as follows
+ \begin{equation*}
+ \hat{\varphi} =
+ \begin{cases*}
+ \Kvariable(e_\Var(x), \hat{s}) & if $\varphi$ is a variable $x \in \Var_s
+ \subseteq \PATTERNS_s$
+ \\
+ \Kapplication(\hat{\sigma}, (\hat{\psi_1}, \dots, \hat{\psi_n})) & if
+ $\varphi$ is $\sigma(\psi_1,\dots,\psi_n) \in \PATTERNS_s$
+ \\
+ \Kand(\hat{\psi_1}, \hat{\psi_2}, \hat{s}) & if $\varphi$ is $\psi_1 \wedge
+ \psi_2 \in \PATTERNS_s$
+ \\
+ \Knot(\hat{\psi}, \hat{s}) & if $\varphi$ is $\neg \psi \in \PATTERNS_s$
+ \\
+ \Kexists(e_\Var(x), \hat{s_1}, \hat{\psi}, \hat{s_2}) & if $\varphi$ is
+ $\exists x . \psi \in \PATTERNS_{s_2}$ and $x \in \Var_{s_1}$
+ \end{cases*}
+ \end{equation*}
+ 
+ (Theory-lifting). Since $T = (S, \Sigma, A)$ is a finite theory, let us
+ suppose
+ \begin{equation*}
+ S = \{ s_1, \dots, s_n \},
+ \Sigma = \{ \sigma_1, \dots, \sigma_m \},
+ A = \{ \varphi_1, \dots, \varphi_k \},
+ \end{equation*}
+ are three finite sets. The lift of theory $T$ is a $\KTheory$ pattern
+ $$ \hat{T} = \Ktheory(\Ksignature(\hat{S}, \hat{\Sigma}), \hat{A}),$$
+ where the lifts of $S$, $\Sigma$, and $A$ are respectively defined as
+ \begin{align*}
+ & \hat{S} = \hat{s_1},\dots,\hat{s_n}
+ \quad \text{is a $\parametric{\KSort}{}List$ pattern}
+ \\
+ & \hat{\Sigma} = \hat{\sigma_1},\dots,\hat{\sigma_m}
+ \quad \text{is a $\KSymbolList$ pattern}
+ \\
+ & \hat{A} = \hat{\varphi_1}, \dots, \hat{\varphi_k}
+ \quad \text{is a $\KPatternList$ pattern}
+ \end{align*}
 \end{definition}
 
 In order to prove Theorem~\ref{thm:faithfulness-finite}, we introduce a
 canonical model of $K$.
 
 \begin{definition}[Canonical model of $K$]
-	The canonical model of $K$, denoted as $M_K$, contains
-	carrier sets (for each sort in $S_K$) and relations (for each
-	symbols in $\Sigma_K$) that are defined in the following.
-	
-	The carrier set for the sort $\KPred$ is a singleton set $M_\KPred = \{
-	\star \}$.
-	
-	The carrier set for the sort $\KChar$ is the set of all 62 constructors of
-	the sort $\KChar$, denoted as $M_\KChar$.
-	
-	The carrier set for the sort $\KString$ is the set of all syntactic
-	patterns of the sort $\KString$, denoted as $M_\KString$.
-	
-	The carrier set for the sort $\parametric{\KSort}{}$ is the set of all
-	syntactic patterns
-	of the sort $\parametric{\KSort}{}$
-	$$M_\parametric{\KSort}{} = \{ \Ksort(str) \mid str \in M_\KString \}.$$
-	
-	The carrier set for the sort $\parametric{\KSort}{}List$ is the set of all
-	finite lists of
-	$M_\parametric{\KSort}{}$:
-	$$M_\parametric{\KSort}{}List = (M_\parametric{\KSort}{})^*.$$
-	
-	The carrier set for the sort $\KSymbol$ is the set of all syntactic
-	patterns of the sort $\KSymbol$
-	$$M_\KSymbol = \{ \Ksymbol(str, l, s) \mid str \in M_\KString, l \in
-	M_\parametric{\KSort}{}List, s \in M_\parametric{\KSort}{} \}.$$
-	
-	The carrier set for the sort $\KSymbolList$ is the set of all finite lists
-	over $M_\KSymbol$:
-	$$M_\KSymbolList = (M_\KSymbol)^* .$$
-	
-	The carrier set for the sort $\KPattern$ is the set of all syntactic
-	patterns of the sort $\KPattern$, denoted as $M_\KPattern$.
-	
-	The carrier set for the sort $\KPatternList$ is the set of all finite lists
-	over $M_\KPattern$:
-	$$M_\KPatternList = (M_\KPattern)^*.$$
-	
-	The carrier set for the sort $\KSignature$ is a product set
-	$$ M_\KSignature = M_\parametric{\KSort}{}List \times M_\KSymbolList.$$
-	
-	The carrier set for the sort $\KTheory$ is a product set
-	$$ M_\KTheory = M_\KSignature \times M_\KPattern. $$
-	
-	The interpretations of most symbols (except $\Kdeduce$) in $K$ are
-	so straightforward that they are trivial.\improvement{Basically I want to
-	say that $M_K$ is almost (except $Kprovable$) the initial algebra of $K$.}
-	For example, $\KconsKSortList$ is interpreted as the cons function on
-	$M_\parametric{\KSort}{}List$, and $\KdeleteKPatternList$ is interpreted as
-	a function on
-	$M_\KPattern \times M_\KPatternList$ that deletes the first argument from
-	the second, etc.
-	
-	The only nontrivial interpretation is the one for $\Kdeduce$, as we would
-	like to interpret it \emph{in terms of} matching logic reasoning.
-	The interpretation of $\Kdeduce$ in the canonical model is a predicate on
-	$M_\KTheory$ and $M_\KPattern$.
-	Intuitively, $\Kdeduce_M(T, \varphi)$ holds if both $T$ and $\varphi$ are
-	well-formed and $\varphi$ is deducible in the finite matching logic theory
-	$T$.
-	This intuition is captured by the next formal definition.
-	
-	For any $T = (\Sigma, A) \in M_\KTheory$ and $\varphi \in M_\KPattern$, we
-	define
-	\begin{equation*}
-	\Kdeduce_M(T, \varphi) =
-	\begin{cases*}
-	\emptyset & if $\KwellFormed_M(\Sigma, \varphi) = \emptyset$
-	\\
-	\{ \star \} & if $\Bracket{T} \vdash \Bracket{\varphi}$
-	\\
-	\emptyset & if $\Bracket{T} \not\vdash \Bracket{\varphi}$
-	\end{cases*}
-	\end{equation*}
-	where the \emph{semantics bracket} $\Bracket{\_}$ is defined (only on
-	well-formed $T$ and $\varphi$) as follows:
-	\begin{center}\begin{tabular}{l}
-			$\Bracket{T}$ is the matching logic theory $(\Sigma, \Bracket{A})$
-			\\
-			$\Bracket{A} = \{ \Bracket{\psi} | \mid \psi \in A \}$ \\
-			$\Bracket{\varphi} =
-			\begin{cases*}
-			x \cln s & if $\varphi$ is $\Kvariable(x, s)$ \\
-			\sigma(\Bracket{\varphi_1},\dots,\Bracket{\varphi_n}) & if
-			$\varphi$ is $\Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$\\
-			\Bracket{\varphi_1} \wedge \Bracket{\varphi_2} & if $\varphi$ is
-			$\Kand(\varphi_1,\varphi_2,s)$,\\
-			\neg \Bracket{\varphi_1} & if $\varphi$ is $\Knot(\varphi_1, s)$\\
-			\exists x . \Bracket{\varphi_1} & if $\varphi$ is $\Kexists(x, s_1,
-			\varphi_1, s_2)$
-			\end{cases*}$
-	\end{tabular}\end{center}
-	
-	It is tedious but straightforward to verify that $\Kdeduce_M$ satisfies all
-	axioms about $\Kdeduce$ that we introduced in
-	Section~\ref{sec:ml-proof-system-finite-case}.
-	For example, the Rule (K1)
-	\begin{equation*}
-	\Kdeduce(T, \overline{\varphi \leftrightarrow_s (\psi \leftrightarrow_s
-	\varphi)})
-	\end{equation*}
-	holds in $K$ because
-	$$\Bracket{T} \vdash \Bracket{\varphi} \to (\Bracket{\psi} \to
-	\Bracket{\varphi})$$
-	The Rule (Modus Ponens)
-	\begin{equation*}
-	\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \leftrightarrow_s
-	\psi}) \to
-	\Kdeduce(T, \psi)
-	\end{equation*}
-	holds in $K$ because
-	$$\text{if $\Bracket{T} \vdash \Bracket{\varphi}$ and $\Bracket{T} \vdash
-	\Bracket{\varphi} \to \Bracket{\psi}$, then $\Bracket{T} \vdash
-	\Bracket{\psi}$}.$$
-	
-	Readers are welcomed to verify the remaining axioms in $K$ also hold
-	in $M_K$.
-	We omit them here.
-	
-	
+ The canonical model of $K$, denoted as $M_K$, contains
+ carrier sets (for each sort in $S_K$) and relations (for each
+ symbols in $\Sigma_K$) that are defined in the following.
+ 
+ The carrier set for the sort $\KPred$ is a singleton set $M_\KPred = \{
+ \star \}$.
+ 
+ The carrier set for the sort $\KChar$ is the set of all 62 constructors of
+ the sort $\KChar$, denoted as $M_\KChar$.
+ 
+ The carrier set for the sort $\KString$ is the set of all syntactic
+ patterns of the sort $\KString$, denoted as $M_\KString$.
+ 
+ The carrier set for the sort $\parametric{\KSort}{}$ is the set of all
+ syntactic patterns
+ of the sort $\parametric{\KSort}{}$
+ $$M_\parametric{\KSort}{} = \{ \Ksort(str) \mid str \in M_\KString \}.$$
+ 
+ The carrier set for the sort $\parametric{\KSort}{}List$ is the set of all
+ finite lists of
+ $M_\parametric{\KSort}{}$:
+ $$M_\parametric{\KSort}{}List = (M_\parametric{\KSort}{})^*.$$
+ 
+ The carrier set for the sort $\KSymbol$ is the set of all syntactic
+ patterns of the sort $\KSymbol$
+ $$M_\KSymbol = \{ \Ksymbol(str, l, s) \mid str \in M_\KString, l \in
+ M_\parametric{\KSort}{}List, s \in M_\parametric{\KSort}{} \}.$$
+ 
+ The carrier set for the sort $\KSymbolList$ is the set of all finite lists
+ over $M_\KSymbol$:
+ $$M_\KSymbolList = (M_\KSymbol)^* .$$
+ 
+ The carrier set for the sort $\KPattern$ is the set of all syntactic
+ patterns of the sort $\KPattern$, denoted as $M_\KPattern$.
+ 
+ The carrier set for the sort $\KPatternList$ is the set of all finite lists
+ over $M_\KPattern$:
+ $$M_\KPatternList = (M_\KPattern)^*.$$
+ 
+ The carrier set for the sort $\KSignature$ is a product set
+ $$ M_\KSignature = M_\parametric{\KSort}{}List \times M_\KSymbolList.$$
+ 
+ The carrier set for the sort $\KTheory$ is a product set
+ $$ M_\KTheory = M_\KSignature \times M_\KPattern. $$
+ 
+ The interpretations of most symbols (except $\Kdeduce$) in $K$ are
+ so straightforward that they are trivial.\improvement{Basically I want to
+ say that $M_K$ is almost (except $Kprovable$) the initial algebra of $K$.}
+ For example, $\KconsKSortList$ is interpreted as the cons function on
+ $M_\parametric{\KSort}{}List$, and $\KdeleteKPatternList$ is interpreted as
+ a function on
+ $M_\KPattern \times M_\KPatternList$ that deletes the first argument from
+ the second, etc.
+ 
+ The only nontrivial interpretation is the one for $\Kdeduce$, as we would
+ like to interpret it \emph{in terms of} matching logic reasoning.
+ The interpretation of $\Kdeduce$ in the canonical model is a predicate on
+ $M_\KTheory$ and $M_\KPattern$.
+ Intuitively, $\Kdeduce_M(T, \varphi)$ holds if both $T$ and $\varphi$ are
+ well-formed and $\varphi$ is deducible in the finite matching logic theory
+ $T$.
+ This intuition is captured by the next formal definition.
+ 
+ For any $T = (\Sigma, A) \in M_\KTheory$ and $\varphi \in M_\KPattern$, we
+ define
+ \begin{equation*}
+ \Kdeduce_M(T, \varphi) =
+ \begin{cases*}
+ \emptyset & if $\KwellFormed_M(\Sigma, \varphi) = \emptyset$
+ \\
+ \{ \star \} & if $\Bracket{T} \vdash \Bracket{\varphi}$
+ \\
+ \emptyset & if $\Bracket{T} \not\vdash \Bracket{\varphi}$
+ \end{cases*}
+ \end{equation*}
+ where the \emph{semantics bracket} $\Bracket{\_}$ is defined (only on
+ well-formed $T$ and $\varphi$) as follows:
+ \begin{center}\begin{tabular}{l}
+   $\Bracket{T}$ is the matching logic theory $(\Sigma, \Bracket{A})$
+   \\
+   $\Bracket{A} = \{ \Bracket{\psi} | \mid \psi \in A \}$ \\
+   $\Bracket{\varphi} =
+   \begin{cases*}
+   x \cln s & if $\varphi$ is $\Kvariable(x, s)$ \\
+   \sigma(\Bracket{\varphi_1},\dots,\Bracket{\varphi_n}) & if
+   $\varphi$ is $\Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$\\
+   \Bracket{\varphi_1} \wedge \Bracket{\varphi_2} & if $\varphi$ is
+   $\Kand(\varphi_1,\varphi_2,s)$,\\
+   \neg \Bracket{\varphi_1} & if $\varphi$ is $\Knot(\varphi_1, s)$\\
+   \exists x . \Bracket{\varphi_1} & if $\varphi$ is $\Kexists(x, s_1,
+   \varphi_1, s_2)$
+   \end{cases*}$
+ \end{tabular}\end{center}
+ 
+ It is tedious but straightforward to verify that $\Kdeduce_M$ satisfies all
+ axioms about $\Kdeduce$ that we introduced in
+ Section~\ref{sec:ml-proof-system-finite-case}.
+ For example, the Rule (K1)
+ \begin{equation*}
+ \Kdeduce(T, \overline{\varphi \leftrightarrow_s (\psi \leftrightarrow_s
+ \varphi)})
+ \end{equation*}
+ holds in $K$ because
+ $$\Bracket{T} \vdash \Bracket{\varphi} \to (\Bracket{\psi} \to
+ \Bracket{\varphi})$$
+ The Rule (Modus Ponens)
+ \begin{equation*}
+ \Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \leftrightarrow_s
+ \psi}) \to
+ \Kdeduce(T, \psi)
+ \end{equation*}
+ holds in $K$ because
+ $$\text{if $\Bracket{T} \vdash \Bracket{\varphi}$ and $\Bracket{T} \vdash
+ \Bracket{\varphi} \to \Bracket{\psi}$, then $\Bracket{T} \vdash
+ \Bracket{\psi}$}.$$
+ 
+ Readers are welcomed to verify the remaining axioms in $K$ also hold
+ in $M_K$.
+ We omit them here.
+ 
+ 
 \end{definition}
 
 
 Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 
 \begin{proof}[Proof Sketch of Theorem~\ref{thm:faithfulness-finite}]\quad
-	
-	Step 1 (The ``$\Rightarrow$'' part).
-	
-	We prove this by simply mimicking the proof of $T \vdash \varphi$ in
-	$K$.
-	
-	Step 2 (The ``$\Leftarrow$'' part).
-	
-	Let us fix a finite matching logic theory $T = (S, \Sigma, A)$, a
-	$\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $K
-	\vdash \Kdeduce(\hat{T}, \hat{\varphi})$.
-	Since the matching logic proof system is sound, the interpretation of
-	$\Kdeduce(\hat{T}, \hat{\varphi})$ should hold in the canonical model $M_K$:
-	$$ \Kdeduce_M(\hat{T}, \hat{\varphi}) = \{ \star \}. $$
-	By definition, this means that
-	$$\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}.$$
-	
-	Finally notice that by construction of encoding, lifting, and the semantics
-	bracket, there is an isomorphism between $T$ and  $\Bracket{\hat{T}}$, so
-	from $\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}$ we have
-	$$T \vdash \varphi.$$
-	
-%	\fbox{\begin{minipage}{35em}\color{blue}\small
-%			The following a snapshot of what we had on the board:
-%			
-%			Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, A)$
-%			and a $\Sigma$-pattern $\varphi$.
-%			
-%			Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, A)$.
-%			
-%			Step 2.3. Show that $M_T$ is a model of $K$.
-%			
-%			Step 2.4. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_T$ and
-%			get $T
-%			\vDash \varphi$.
-%	\end{minipage}}
+ 
+ Step 1 (The ``$\Rightarrow$'' part).
+ 
+ We prove this by simply mimicking the proof of $T \vdash \varphi$ in
+ $K$.
+ 
+ Step 2 (The ``$\Leftarrow$'' part).
+ 
+ Let us fix a finite matching logic theory $T = (S, \Sigma, A)$, a
+ $\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $K
+ \vdash \Kdeduce(\hat{T}, \hat{\varphi})$.
+ Since the matching logic proof system is sound, the interpretation of
+ $\Kdeduce(\hat{T}, \hat{\varphi})$ should hold in the canonical model $M_K$:
+ $$ \Kdeduce_M(\hat{T}, \hat{\varphi}) = \{ \star \}. $$
+ By definition, this means that
+ $$\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}.$$
+ 
+ Finally notice that by construction of encoding, lifting, and the semantics
+ bracket, there is an isomorphism between $T$ and  $\Bracket{\hat{T}}$, so
+ from $\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}$ we have
+ $$T \vdash \varphi.$$
+ 
+% \fbox{\begin{minipage}{35em}\color{blue}\small
+%   The following a snapshot of what we had on the board:
+%   
+%   Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, A)$
+%   and a $\Sigma$-pattern $\varphi$.
+%   
+%   Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, A)$.
+%   
+%   Step 2.3. Show that $M_T$ is a model of $K$.
+%   
+%   Step 2.4. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_T$ and
+%   get $T
+%   \vDash \varphi$.
+% \end{minipage}}
 \end{proof}
 
 
@@ -8277,15 +8291,15 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 %efforts.
 %Specifically:
 %\begin{itemize}
-%	\item
-%	We restrict the infinite sets of sorts to ones which can be described with
-%	a finite set of \emph{parametric} sorts, where the parameters range over
-%	other sorts.
-%	For example, $S=\{\Nat,\parametric{\List}{X}\}$ describes the infinite set
-%	of sorts
-%	$S=\{\Nat, \parametric{\List}{\Nat},
-%	\parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
-%	
+% \item
+% We restrict the infinite sets of sorts to ones which can be described with
+% a finite set of \emph{parametric} sorts, where the parameters range over
+% other sorts.
+% For example, $S=\{\Nat,\parametric{\List}{X}\}$ describes the infinite set
+% of sorts
+% $S=\{\Nat, \parametric{\List}{\Nat},
+% \parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
+% 
 %\end{itemize}
 %
 %From here on, unless otherwise specified, when we say \emph{set} we mean
