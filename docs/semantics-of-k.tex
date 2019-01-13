@@ -292,6 +292,7 @@
   % Define sorts and symbols in the calculus K.
 
   \newcommand{\doubleslash}{/\!/{ }}
+  \newcommand{\nats}{\mathbb{N}}
 
   \newcommand{\compose}{\circ}
   \newcommand{\strict}[1]{\textsf{strict(#1)}}
@@ -522,6 +523,8 @@
   \newcommand{\att}{\mathit{att}}
   \newcommand{\verbose}{\mathit{verbose}}
   \newcommand{\var}{\mathit{var}}
+
+  \newcommand{\rand}{\mathsf{rand}}
 
 
 
@@ -2290,6 +2293,95 @@ We leave it as a (non-trivial) exercise to the reader to also define the
 all-path reachability relation $\varphi \Rightarrow^\forall\varphi'$ and to
 prove all the proof rules of reachability logic as lemmas/theorems using the
 more basic proof system of matching logic.
+
+\subsection{An Example}
+
+Consider the following example.
+Suppose we want to define a simple transition system
+whose state/configuration set is $\nats \cup \{ \rand \}$,
+where $\rand$ is the program construct representing a random number generator.
+The intended semantics of $\rand$ is that it can go to any number $n \in \nats$
+in one step.
+How can we write an axiom that captures the intended semantics?
+
+We here give three candidate axioms.
+\begin{align*}
+& \prule{Axiom A} &&
+\forall x . (\rand \imp (x > 0 \imp \snext(x)))
+&& \text{\doubleslash correct} \\
+& \prule{Axiom B} &&
+\rand \imp \exists x . (x > 0 \wedge (\snext x))
+&& \text{\doubleslash incorrect} \\
+& \prule{Axiom C} &&
+\forall x . (\rand \imp (x > 0 \wedge \snext(x)))
+&& \text{\doubleslash totally wrong}
+\end{align*}
+
+We first explain why \prule{Axiom B} and \prule{Axiom C} are wrong.
+First of all, \prule{Axiom C} is \emph{inconsistent}, meaning that
+we can prove everything, even ``bottom $\bot$'', from \prule{Axiom C}.
+To see why, we simply instantiate the ``$\forall x$'' with $x = 0$,
+and then we get $\forall x . \rand \imp (0 > 0 \wedge \snext(x))$.
+Since $0 > 0$ is false, meaning it equals $\bot$,
+we get
+$\rand \imp \bot$.
+
+\prule{Axiom B} is also wrong, but it is \emph{consistent}.
+What it says is that $\rand$ must be the predecessor of \emph{some positive 
+number}.
+Therefore, the transition system where $\rand$ can \emph{only} go to,
+say, $42$, satisfies \prule{Axiom B}.
+This means that \prule{Axiom B} is too weak to capture the intended semantics 
+of $\rand$.
+
+\prule{Axiom A} is the correct axiom. It says that \emph{for all positive 
+numbers 
+$n$},
+$\rand$ is a predecessor of $n$.
+This captures precisely the intended semantics of $\rand$.
+Note that \prule{Axiom A} is a \emph{positive axiom}, meaning that
+it merely says what the transition system \emph{must do},
+but not constrains what it \emph{cannot do}.
+Positive axioms will \emph{not} introduce inconsistency, as 
+the total transition system (i.e., the translation relation is the total 
+relation and all states can go to all other states, including themselves)
+is always a candidate model.
+
+To conclude this example, we show that if we want to capture \emph{in further}
+that $\rand$ can \emph{only} go to positive numbers and nowhere else,
+we need the following axiom, which is \emph{not} a positive axiom anymore:
+$$
+\prule{Axiom D} \qquad \rand \imp \wnext ( \exists x . (x > 0) \wedge x )
+$$
+where $\wnext \varphi \equiv \neg \snext \neg \varphi$ is the dual
+of ``one-path next'' $\snext$, called ``all-path next''. 
+The axiom says that \emph{for all next states} of $\rand$,
+it must be some positive number.
+\prule{Axiom A} and \prule{Axiom D} captures the intended semantics
+of $\rand$ most precisely. 
+For the purpose of reasoning about \emph{what the transition system can do},
+e.g., one-path reachability properties,
+\prule{Axiom A} is good enough,
+but for reasoning about more general properties, e.g., all-path reachability 
+properties,
+we must know \emph{what the transition system cannot do},
+and \prule{Axiom D} is needed in there.
+
+
+
+%Just a following up on @grigore.rosu’s `rand` example where `rand` can rewrite 
+%to any positive integers. The following three axioms are _different_ (where 
+%`snext` is strong next):
+%```(A) \forall x . (rand -> (x > 0 -> snext(x)))   // correct
+%(B) rand -> snext(\exists x . (x /\ x > 0))  // incorrect
+%(C) \forall x . (rand -> (x > 0 /\ snext(x)))  // totally wrong```
+%(A) is what Grigore proposed and is the correct one. It forces the model to 
+%have all transitions `rand => 1, rand => 2, rand => 3, ...`. (B) is my first 
+%attemp, which is strong, because it allows models which contain, for example, 
+%only one transition `rand => 42` and nothing else, which is _not_ what we 
+%want. 
+%(C) is totally wrong, as one can prove `rand -> \bot` by instantiating `x` to 
+%be `0`.
 
 %
 %
