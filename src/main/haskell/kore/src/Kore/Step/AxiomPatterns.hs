@@ -47,6 +47,7 @@ import           Kore.AST.Kore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Assoc
+import qualified Kore.Attribute.Axiom.Concrete as Axiom
 import           Kore.Attribute.Comm
 import           Kore.Attribute.HeatCool
 import           Kore.Attribute.Idem
@@ -79,6 +80,7 @@ data AxiomPatternAttributes =
     -- ^ The axiom is an idempotency axiom.
     , trusted :: !Trusted
     -- ^ The claim is trusted
+    , concrete :: !Axiom.Concrete
     }
     deriving (Eq, Ord, Show, Generic)
 
@@ -96,6 +98,7 @@ instance Default AxiomPatternAttributes where
             , unit = def
             , idem = def
             , trusted = def
+            , concrete = def
             }
 
 instance ParseAttributes AxiomPatternAttributes where
@@ -107,6 +110,7 @@ instance ParseAttributes AxiomPatternAttributes where
         >=> lensUnit (parseAttribute attr)
         >=> lensIdem (parseAttribute attr)
         >=> lensTrusted (parseAttribute attr)
+        >=> lensConcrete (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 
