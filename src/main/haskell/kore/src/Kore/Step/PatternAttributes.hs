@@ -9,7 +9,9 @@ Portability : portable
 -}
 
 module Kore.Step.PatternAttributes
-    ( isConstructorLikeTop
+    ( isConstructorLikePattern
+    , isConstructorLikeTop
+    , isConstructorModuloLikePattern
     , isFunctionPattern
     , isFunctionalPattern
     , isTotalPattern
@@ -28,6 +30,8 @@ import           Data.Reflection
                  ( give )
 
 import           Kore.AST.Pure
+import           Kore.Builtin.Attributes
+                 ( isConstructorModulo_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -35,7 +39,8 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Proof.Functional
 import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributesError
-                 ( FunctionError (..), FunctionalError (..), TotalError (..) )
+                 ( ConstructorLikeError (..), FunctionError (..),
+                 FunctionalError (..), TotalError (..) )
 import           Kore.Step.StepperAttributes
 
 functionalProofVars
@@ -61,7 +66,7 @@ mapFunctionalProofVariables
     -> FunctionalProof level variableTo
 mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
 
-{-| checks whether a pattern is functional or not and, if it is, returns a proof
+{-| Checks whether a pattern is functional or not and, if it is, returns a proof
     certifying that.
 -}
 isFunctionalPattern
@@ -71,7 +76,7 @@ isFunctionalPattern
 isFunctionalPattern tools =
     provePattern (checkFunctionalHead tools)
 
-{-| checks whether a pattern is non-bottom or not and, if it is, returns a proof
+{-| Checks whether a pattern is non-bottom or not and, if it is, returns a proof
     certifying that.
 -}
 isTotalPattern
@@ -80,6 +85,28 @@ isTotalPattern
     -> Either (TotalError level) [TotalProof level variable]
 isTotalPattern tools =
     provePattern (checkTotalHead tools)
+
+{-| Checks whether a pattern is constructor-like or not and, if it is,
+    returns a proof certifying that.
+-}
+isConstructorLikePattern
+    :: MetadataTools level StepperAttributes
+    -> StepPattern level variable
+    -> Either ConstructorLikeError [ConstructorLikeProof]
+isConstructorLikePattern tools =
+    provePattern (checkConstructorLikeHead tools)
+
+{-| Checks whether a pattern is constructor-like, including
+    constructors modulo associativity, commutativity and neutral element.
+    If it is, returns a proof certifying that.
+-}
+isConstructorModuloLikePattern
+    :: (MetaOrObject level, Show (variable level))
+    => MetadataTools level StepperAttributes
+    -> StepPattern level variable
+    -> Either ConstructorLikeError [ConstructorLikeProof]
+isConstructorModuloLikePattern tools =
+    provePattern (checkConstructorModuloLikeHead tools)
 
 data PartialPatternProof proof
     = Descend proof
@@ -151,10 +178,51 @@ isConstructorLikeTop
     -> StepPatternHead level variable pat
     -> Bool
 isConstructorLikeTop tools (ApplicationPattern ap) =
-    give tools isConstructor_ patternHead
+    give tools $ isConstructor_ patternHead
   where
     patternHead = applicationSymbolOrAlias ap
 isConstructorLikeTop _ p = isRight (isPreconstructedPattern undefined p)
+
+checkConstructorLikeHead
+    :: MetadataTools level StepperAttributes
+    -> StepPatternHead level variable a
+    -> Either
+        ConstructorLikeError
+        (PartialPatternProof ConstructorLikeProof)
+checkConstructorLikeHead
+    tools
+    (ApplicationPattern Application {applicationSymbolOrAlias})
+  | give tools $ isConstructor_ applicationSymbolOrAlias
+    || isSortInjection_ applicationSymbolOrAlias
+  = return (Descend ConstructorLikeProof)
+checkConstructorLikeHead
+    _
+    (VariablePattern _)
+  = return (Descend ConstructorLikeProof)
+checkConstructorLikeHead _ patternHead
+  | isRight (isPreconstructedPattern undefined patternHead) =
+    return (DoNotDescend ConstructorLikeProof)
+  | otherwise = Left NonConstructorLikeHead
+
+checkConstructorModuloLikeHead
+    :: (MetaOrObject level, Show a, Show (variable level))
+    => MetadataTools level StepperAttributes
+    -> StepPatternHead level variable a
+    -> Either
+        ConstructorLikeError
+        (PartialPatternProof ConstructorLikeProof)
+checkConstructorModuloLikeHead
+    tools
+    patt
+  =
+    case checkConstructorLikeHead tools patt of
+        r@(Right _) -> r
+        Left _ -> case patt of
+            (ApplicationPattern Application {applicationSymbolOrAlias}) ->
+                if give tools $ isConstructorModulo_ applicationSymbolOrAlias
+                    then return (Descend ConstructorLikeProof)
+                    else Left NonConstructorLikeHead
+            _ -> Left NonConstructorLikeHead
 
 {-| checks whether a pattern is function-like or not and, if it is, returns
     a proof certifying that.

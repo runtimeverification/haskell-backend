@@ -5,6 +5,7 @@ import           Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
+import           Test.Tasty.HUnit
 
 import           Data.Sequence
                  ( Seq )
@@ -12,17 +13,27 @@ import qualified Data.Sequence as Seq
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Hook
+                 ( Hook )
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
+import qualified Kore.Step.StepperAttributes as StepperAttributes
 
 import           Test.Kore
                  ( testId )
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+                 ( makeMetadataTools )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 
 genInteger :: Gen Integer
@@ -156,6 +167,42 @@ test_simplify =
                 $ mkDomainValue listSort
                 $ Domain.BuiltinList (Seq.fromList [x])
         (===) expected =<< evaluate original
+
+test_isBuiltin :: [TestTree]
+test_isBuiltin =
+    [ testCase "isSymbolConcat" $ do
+        assertBool ""
+            (List.isSymbolConcat mockHookTools Mock.concatListSymbol)
+        assertBool ""
+            (not (List.isSymbolConcat mockHookTools Mock.aSymbol))
+        assertBool ""
+            (not (List.isSymbolConcat mockHookTools Mock.elementListSymbol))
+    , testCase "isSymbolElement" $ do
+        assertBool ""
+            (List.isSymbolElement mockHookTools Mock.elementListSymbol)
+        assertBool ""
+            (not (List.isSymbolElement mockHookTools Mock.aSymbol))
+        assertBool ""
+            (not (List.isSymbolElement mockHookTools Mock.concatListSymbol))
+    , testCase "isSymbolUnit" $ do
+        assertBool ""
+            (List.isSymbolUnit mockHookTools Mock.unitListSymbol)
+        assertBool ""
+            (not (List.isSymbolUnit mockHookTools Mock.aSymbol))
+        assertBool ""
+            (not (List.isSymbolUnit mockHookTools Mock.concatListSymbol))
+    ]
+
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.sortAttributesMapping
+        Mock.subsorts
+
+mockHookTools :: MetadataTools Object Hook
+mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern :: List.Builtin Variable -> CommonStepPattern Object
