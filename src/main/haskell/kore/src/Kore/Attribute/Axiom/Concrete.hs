@@ -18,7 +18,8 @@ import           Data.Default
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Kore hiding ( Concrete )
+import           Kore.AST.Kore hiding
+                 ( Concrete )
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser

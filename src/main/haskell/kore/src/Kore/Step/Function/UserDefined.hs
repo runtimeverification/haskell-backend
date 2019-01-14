@@ -103,7 +103,6 @@ ruleFunctionEvaluator
 
     notApplicable = return [(AttemptedFunction.NotApplicable, SimplificationProof)]
 
-
     stepResult =
         stepWithRuleForUnifier
             tools

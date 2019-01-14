@@ -253,11 +253,11 @@ hSymbol = SymbolOrAlias
     , symbolOrAliasParams = []
     }
 
-metaH :: Functor dom => PurePattern Meta dom variable (Valid Meta)
+metaH :: Functor dom => PurePattern Meta dom variable (Valid (Variable Meta) Meta)
 metaH = asPurePattern $
     valid :< ApplicationPattern (Application hSymbol [])
   where
-    valid = Valid { patternSort = patternMetaSort }
+    valid = Valid { patternSort = patternMetaSort, freeVariables = mempty }
 
 sigmaSymbol :: SymbolOrAlias Meta
 sigmaSymbol = SymbolOrAlias
