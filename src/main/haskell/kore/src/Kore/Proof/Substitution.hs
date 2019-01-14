@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.ASTUtils.Substitution
+Module      : Kore.Proof.Substitution
 Description : Substitute phi_1 for phi_2, avoiding capture
               In particular this implements axiom 7 in
               the "large" axiom set (Rosu 2017).
@@ -8,11 +8,15 @@ License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
+
+This implementation of substitution allows the substitution target to be an
+arbitrary pattern, not just a variable. It should not be used outside
+"Kore.Proof.Proof" and the test suite.
 -}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-module Kore.ASTUtils.Substitution
+module Kore.Proof.Substitution
     ( subst
     ) where
 
@@ -33,11 +37,12 @@ import Kore.Variables.Free
 subst
     ::  ( Eq1 domain, Traversable domain
         , MetaOrObject level
+        , valid ~ Valid (Variable level) level
         )
-    => PurePattern level domain Variable (Valid level)
-    -> PurePattern level domain Variable (Valid level)
-    -> PurePattern level domain Variable (Valid level)
-    -> PurePattern level domain Variable (Valid level)
+    => PurePattern level domain Variable valid
+    -> PurePattern level domain Variable valid
+    -> PurePattern level domain Variable valid
+    -> PurePattern level domain Variable valid
 subst old new =
     \case
         Forall_ _ v p -> handleBinder old new mkForall v p
@@ -49,7 +54,8 @@ subst old new =
 handleBinder
     ::  ( Eq1 domain, Traversable domain
         , MetaOrObject level
-        , pattern' ~ PurePattern level domain Variable (Valid level)
+        , valid ~ Valid (Variable level) level
+        , pattern' ~ PurePattern level domain Variable valid
         )
     => pattern'
     -> pattern'

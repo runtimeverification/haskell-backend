@@ -17,7 +17,6 @@ module Kore.Step.Simplification.AndTerms
 
 import           Control.Applicative
                  ( Alternative (..) )
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( ExceptT, MaybeT (..), fromMaybe )
 import qualified Control.Error as Error
@@ -776,7 +775,7 @@ when @src1@ is a subsort of @src2@.
  -}
 sortInjectionAndEqualsAssumesDifferentHeads
     ::  forall level variable m .
-        ( Eq (variable Object)
+        ( Ord (variable level)
         , MetaOrObject level
         , MonadCounter m
         )
@@ -839,8 +838,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
 
     isSubsortOf = MetadataTools.isSubsortOf tools
 
-    isConstructorLike =
-        isConstructorLikeTop tools . Cofree.tailF . Recursive.project
+    isConstructorLike = isConstructorLikeTop tools . Recursive.project
     isFirstConstructorLike = isConstructorLike firstChild
     isSecondConstructorLike = isConstructorLike secondChild
 
@@ -1070,7 +1068,7 @@ The function patterns are unified by creating an @\\equals@ predicate.
 functionAnd
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )

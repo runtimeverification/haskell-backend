@@ -11,6 +11,7 @@ Portability : portable
 module Kore.Unification.Substitution
     ( Substitution
     , unwrap
+    , toMap
     , wrap
     , modify
     , Kore.Unification.Substitution.mapVariables
@@ -20,17 +21,18 @@ module Kore.Unification.Substitution
     , unsafeWrap
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Hashable
-import GHC.Generics
-       ( Generic )
-import Prelude hiding
-       ( null )
+import           Control.DeepSeq
+                 ( NFData )
+import           Data.Hashable
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
+import           GHC.Generics
+                 ( Generic )
+import           Prelude hiding
+                 ( null )
 
-import Kore.AST.Pure as Pure
 import Kore.Step.Pattern
-       ( StepPattern )
 import Kore.TopBottom
        ( TopBottom (..) )
 
@@ -72,6 +74,12 @@ unwrap
 unwrap (Substitution xs) = xs
 unwrap (NormalizedSubstitution xs)  = xs
 
+toMap
+    :: Ord (variable level)
+    => Substitution level variable
+    -> Map (variable level) (StepPattern level variable)
+toMap = Map.fromList . unwrap
+
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
 wrap
@@ -100,7 +108,9 @@ modify f = wrap . f . unwrap
 -- | 'mapVariables' changes all the variables in the substitution
 -- with the given function.
 mapVariables
-    :: (variableFrom level -> variableTo level)
+    ::  forall level variableFrom variableTo.
+        Ord (variableTo level)
+    => (variableFrom level -> variableTo level)
     -> Substitution level variableFrom
     -> Substitution level variableTo
 mapVariables variableMapper =
@@ -114,7 +124,7 @@ mapVariables variableMapper =
         mapper
         (variable, patt)
       =
-        (mapper variable, Pure.mapVariables mapper patt)
+        (mapper variable, Kore.Step.Pattern.mapVariables mapper patt)
 
 -- | Returns true iff the substitution is normalized.
 isNormalized :: Substitution level variable -> Bool

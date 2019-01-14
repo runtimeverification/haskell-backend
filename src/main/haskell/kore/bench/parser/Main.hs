@@ -11,7 +11,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( defaultAttributesVerification, verifyDefinition )
 import qualified Kore.Builtin as Builtin
 import           Kore.Parser.Parser
-                 ( fromKore )
+                 ( parseKoreDefinition )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes )
 import           Kore.Step.StepperAttributes
@@ -55,8 +55,11 @@ parse
     :: FilePath  -- ^ name of file to parse
     -> Benchmark
 parse filename =
-    env (readFile filename)  -- Read Kore definition once before benchmark
-    (bench name . nf (fromKore filename))  -- Benchmark parsing step only
+    env
+        -- Read Kore definition once before benchmarkt
+        (readFile filename)
+        -- Benchmark parsing step only
+        (bench name . nf (parseKoreDefinition filename))
   where
     name = takeFileName filename
 
@@ -70,7 +73,7 @@ readAndParse
     :: FilePath  -- ^ name of file to parse
     -> Benchmark
 readAndParse filename =
-    bench name $ nfIO (fromKore filename <$> readFile filename)
+    bench name $ nfIO (parseKoreDefinition filename <$> readFile filename)
   where
     name = takeFileName filename
 
@@ -89,7 +92,7 @@ verify filename =
     name = takeFileName filename
     -- | Read and parse the file once before the benchmark
     parse1 = do
-        parsed <- fromKore filename <$> readFile filename
+        parsed <- parseKoreDefinition filename <$> readFile filename
         case parsed of
             Left err -> error err
             Right defn -> pure defn

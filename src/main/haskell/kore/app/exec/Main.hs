@@ -35,8 +35,6 @@ import           Data.Limit
 import           Kore.AST.Kore
                  ( CommonKorePattern, VerifiedKorePattern )
 import           Kore.AST.Pure
-import           Kore.AST.PureToKore
-                 ( patternKoreToPure )
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -50,7 +48,7 @@ import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import           Kore.Parser.Parser
-                 ( fromKore, fromKorePattern )
+                 ( parseKoreDefinition, parseKorePattern )
 import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step.AxiomPatterns
@@ -486,12 +484,12 @@ Also prints timing information; see 'mainParse'.
 
  -}
 parseDefinition :: FilePath -> IO KoreDefinition
-parseDefinition = mainParse fromKore
+parseDefinition = mainParse parseKoreDefinition
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
 mainPatternParse :: String -> IO CommonKorePattern
-mainPatternParse = mainParse fromKorePattern
+mainPatternParse = mainParse parseKorePattern
 
 -- | IO action that parses a kore pattern from a filename, verifies it,
 -- converts it to a pure patterm, and prints timing information.
@@ -578,7 +576,7 @@ makePurePattern
     :: VerifiedKorePattern
     -> CommonStepPattern Object
 makePurePattern pat =
-    case patternKoreToPure Object pat of
+    case fromKorePattern Object pat of
         Left err -> error (printError err)
         Right objPat -> objPat
 

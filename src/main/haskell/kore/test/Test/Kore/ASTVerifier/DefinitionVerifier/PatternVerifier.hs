@@ -7,12 +7,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( HasCallStack )
 
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.Set as Set
 
 import           Kore.AST.AstWithLocation
 import           Kore.AST.Kore
 import           Kore.AST.Pure
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Hook as Attribute.Hook
@@ -20,6 +21,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.MetaML.AST
+import           Kore.Step.Pattern
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
@@ -50,7 +52,16 @@ testPatternUnifiedPattern
   =
     asKorePattern (valid :< testPatternPattern)
   where
-    valid = Valid { patternSort = testPatternSort }
+    valid =
+        Valid
+            { patternSort = testPatternSort
+            , freeVariables =
+                Foldable.foldl'
+                    Set.union
+                    Set.empty
+                    (unifiedFreeVariables . extract <$> testPatternPattern)
+            }
+    unifiedFreeVariables = transformUnified freeVariables
 
 test_patternVerifier :: [TestTree]
 test_patternVerifier =
@@ -105,9 +116,14 @@ test_patternVerifier =
             { existsSort = anotherSort
             , existsVariable = anotherVariable
             , existsChild =
-                let valid = Valid { patternSort = objectSort } in
-                asKorePattern
-                    (valid :< simpleExistsPattern objectVariable' objectSort)
+                let
+                    valid = Valid { patternSort, freeVariables }
+                      where
+                        patternSort = objectSort
+                        freeVariables = Set.empty
+                    pattern' = simpleExistsPattern objectVariable' objectSort
+                in
+                    asKorePattern (valid :< pattern')
             }
         )
         (NamePrefix "dummy")
@@ -128,10 +144,7 @@ test_patternVerifier =
         (ExistsPattern Exists
             { existsSort = objectSort
             , existsVariable = objectVariable'
-            , existsChild =
-                let valid =
-                        Valid { patternSort = variableSort anotherVariable }
-                in asKorePattern (valid :< VariablePattern anotherVariable)
+            , existsChild = toKorePattern (mkVar anotherVariable)
             }
         )
         (NamePrefix "dummy")
@@ -166,7 +179,10 @@ test_patternVerifier =
             , existsChild =
                 asKorePattern
                     ((:<)
-                        Valid { patternSort = objectSortVariableSort }
+                        Valid
+                            { patternSort = objectSortVariableSort
+                            , freeVariables = Set.empty
+                            }
                         (simpleExistsPattern
                             objectVariableSortVariable
                             objectSortVariableSort
@@ -949,10 +965,7 @@ genericPatternInAllContexts
         ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild =
-                let var = VariablePattern anotherVariable
-                    valid = Valid { patternSort = testedSort }
-                in asKorePattern (valid :< var)
+            , existsChild = toKorePattern (mkVar anotherVariable)
             }
     anotherVariable =
         Variable
@@ -1005,10 +1018,7 @@ objectPatternInAllContexts
         ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild =
-                let var = VariablePattern anotherVariable
-                    valid = Valid { patternSort = testedSort }
-                in asKorePattern (valid :< var)
+            , existsChild = toKorePattern (mkVar anotherVariable)
             }
     anotherVariable =
         Variable
@@ -1073,7 +1083,7 @@ patternsInAllContexts
     aliasSentence =
         let aliasConstructor = testId rawAliasName
             aliasParams = [SortVariable (testId rawSortVariableName)]
-        in (sentencePureToKore . SentenceAliasSentence)
+        in (toKoreSentence . SentenceAliasSentence)
             SentenceAlias
                 { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
                 , sentenceAliasSorts = [symbolAliasSort]
@@ -1093,10 +1103,7 @@ patternsInAllContexts
                                 }
                             ]
                         }
-                , sentenceAliasRightPattern =
-                    let top' = TopPattern Top { topSort = anotherSort }
-                        valid = Valid { patternSort = anotherSort }
-                    in asPurePattern (valid :< top')
+                , sentenceAliasRightPattern = mkTop anotherSort
                 , sentenceAliasAttributes = Attributes []
                 }
 
@@ -1162,7 +1169,16 @@ genericPatternInPatterns
             }
         ]
   where
-    valid = Valid { patternSort = testedSort }
+    valid =
+        Valid
+            { patternSort = testedSort
+            , freeVariables =
+                Foldable.foldl'
+                    Set.union
+                    Set.empty
+                    (unifiedFreeVariables . extract <$> testedPattern)
+            }
+    unifiedFreeVariables = transformUnified freeVariables
 
 objectPatternInPatterns
     :: Pattern Object Domain.Builtin Variable VerifiedKorePattern
@@ -1208,7 +1224,16 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         }
     ]
   where
-    valid = Valid { patternSort = testedSort }
+    valid =
+        Valid
+            { patternSort = testedSort
+            , freeVariables =
+                Foldable.foldl'
+                    Set.union
+                    Set.empty
+                    (unifiedFreeVariables . extract <$> testedPattern)
+            }
+    unifiedFreeVariables = transformUnified freeVariables
     testedKorePattern = asKorePattern (valid :< testedPattern)
 
 patternInUnquantifiedGenericPatterns
@@ -1364,7 +1389,16 @@ patternInUnquantifiedGenericPatterns
         }
     ]
   where
-    valid = Valid { patternSort = testedSort }
+    valid =
+        Valid
+            { patternSort = testedSort
+            , freeVariables =
+                Foldable.foldl'
+                    Set.union
+                    Set.empty
+                    (unifiedFreeVariables . extract <$> testedPattern)
+            }
+    unifiedFreeVariables = transformUnified freeVariables
     anotherUnifiedPattern = asKorePattern (valid :< anotherPattern)
     testedUnifiedPattern = asKorePattern (valid :< testedPattern)
 
@@ -1407,7 +1441,16 @@ patternInUnquantifiedObjectPatterns
 
     ]
   where
-    valid = Valid { patternSort = testedSort }
+    valid =
+        Valid
+            { patternSort = testedSort
+            , freeVariables =
+                Foldable.foldl'
+                    Set.union
+                    Set.empty
+                    (unifiedFreeVariables . extract <$> testedPattern)
+            }
+    unifiedFreeVariables = transformUnified freeVariables
     anotherUnifiedPattern = asKorePattern (valid :< anotherPattern)
     testedUnifiedPattern = asKorePattern (valid :< testedPattern)
 

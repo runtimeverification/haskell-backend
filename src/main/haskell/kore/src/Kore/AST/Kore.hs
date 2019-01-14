@@ -446,7 +446,8 @@ type CommonKorePattern =
     KorePattern Domain.Builtin Variable (Unified Annotation.Null)
 
 -- | A 'CommonKorePattern' that has passed verification.
-type VerifiedKorePattern = KorePattern Domain.Builtin Variable (Unified Valid)
+type VerifiedKorePattern =
+    KorePattern Domain.Builtin Variable (Unified (Valid (Unified Variable)))
 
 type UnifiedSortVariable = Unified SortVariable
 type UnifiedSort = Unified Sort

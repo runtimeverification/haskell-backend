@@ -14,7 +14,6 @@ module Kore.Step.Function.Matcher
 
 import           Control.Applicative
                  ( (<|>) )
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error.Util
                  ( just, nothing )
 import           Control.Monad.Counter
@@ -577,19 +576,18 @@ freeVariablesUnderNonConstructorSymbols tools expandedPatt =
   where
     NonConstructorSymbols { under = freeUnderNonConstructorSymbols } =
         Recursive.fold
-            (freeVarsHelper . Cofree.tailF)
+            freeVarsHelper
             (Predicated.toMLPattern
                 (Predicated.predicateSubstitutionToExpandedPattern
                     expandedPatt
                 )
             )
     freeVarsHelper
-        :: StepPatternHead
-            level
-            variable
+        :: Recursive.Base
+            (StepPattern level variable)
             (NonConstructorSymbols (variable level))
         -> NonConstructorSymbols (variable level)
-    freeVarsHelper patt =
+    freeVarsHelper (_ :< patt) =
         case patt of
             (ApplicationPattern Application {applicationSymbolOrAlias}) ->
                 if give tools $

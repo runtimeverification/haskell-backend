@@ -127,7 +127,10 @@ evalKEq
     -> MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
     -> StepPatternSimplifier Object variable
-    -> CofreeF (Application Object) (Valid Object) (StepPattern Object variable)
+    -> CofreeF
+        (Application Object)
+        (Valid (variable Object) Object)
+        (StepPattern Object variable)
     -> Simplifier
         [   ( AttemptedFunction Object variable
             , SimplificationProof Object
@@ -163,7 +166,10 @@ evalKIte
     => MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
     -> StepPatternSimplifier Object variable
-    -> CofreeF (Application Object) (Valid Object) (StepPattern Object variable)
+    -> CofreeF
+        (Application Object)
+        (Valid (variable Object) Object)
+        (StepPattern Object variable)
     -> Simplifier
         [   ( AttemptedFunction Object variable
             , SimplificationProof Object

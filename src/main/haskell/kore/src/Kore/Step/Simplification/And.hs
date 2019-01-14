@@ -245,7 +245,7 @@ makeEvaluateNonBool
         )
 
 applyAndIdempotence
-    ::  ( Eq (variable level)
+    ::  ( Ord (variable level)
         , MetaOrObject level
         , Show (variable level)
         , Unparse (variable level)

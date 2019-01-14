@@ -279,7 +279,8 @@ builtinFunctions =
 
  -}
 asPattern
-    :: VerifiedModule declAttrs axiomAttrs
+    :: Ord (variable Object)
+    => VerifiedModule declAttrs axiomAttrs
     -- ^ indexed module where pattern would appear
     -> Sort Object
     -> Either (Kore.Error e)
@@ -302,7 +303,8 @@ asPattern indexedModule dvSort = do
 
  -}
 asExpandedPattern
-    :: VerifiedModule declAttrs axiomAttrs
+    :: Ord (variable Object)
+    => VerifiedModule declAttrs axiomAttrs
     -- ^ dictionary of Map constructor symbols
     -> Sort Object
     -> Either (Kore.Error e)

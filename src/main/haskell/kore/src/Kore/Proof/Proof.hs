@@ -49,8 +49,8 @@ import           GHC.Generics
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.ASTPrettyPrint
-import           Kore.ASTUtils.Substitution
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Proof.Substitution
 import           Kore.Unparser
 import           Kore.Variables.Free
 
@@ -75,7 +75,8 @@ import           Kore.Variables.Free
 impossible :: a
 impossible = error "The impossible happened."
 
-type Term = PurePattern Object Domain.Builtin Variable (Valid Object)
+type Term =
+    PurePattern Object Domain.Builtin Variable (Valid (Variable Object) Object)
 type Var = Variable Object
 
 -- | Fix-able functor representing a single deduction step

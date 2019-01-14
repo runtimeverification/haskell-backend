@@ -417,7 +417,7 @@ test_ceilSimplification =
             Mock.sortAttributesMapping
             Mock.subsorts
     asConcrete p =
-        let Just r = asConcretePurePattern p in r
+        let Just r = asConcreteStepPattern p in r
 
 makeCeil
     :: Ord (variable Object)

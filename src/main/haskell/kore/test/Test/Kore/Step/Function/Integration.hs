@@ -435,15 +435,15 @@ appliedMockEvaluator
     :: CommonExpandedPattern level -> ApplicationFunctionEvaluator level
 appliedMockEvaluator result =
     ApplicationFunctionEvaluator
-        (mockEvaluator
-            (AttemptedFunction.Applied
-                (OrOfExpandedPattern.make [mapVariables result])
-            )
-        )
+    $ mockEvaluator
+    $ AttemptedFunction.Applied
+    $ OrOfExpandedPattern.make
+        [Test.Kore.Step.Function.Integration.mapVariables result]
 
 mapVariables
     ::  ( FreshVariable variable
         , MetaOrObject level
+        , Ord (variable level)
         )
     => CommonExpandedPattern level
     -> ExpandedPattern level variable
@@ -455,7 +455,10 @@ mockEvaluator
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
-    -> CofreeF (Application level) (Valid level) (StepPattern level variable)
+    -> CofreeF
+        (Application level)
+        (Valid (variable level) level)
+        (StepPattern level variable)
     -> Simplifier
         [(AttemptedFunction level variable, SimplificationProof level)]
 mockEvaluator evaluation _ _ _ _ =

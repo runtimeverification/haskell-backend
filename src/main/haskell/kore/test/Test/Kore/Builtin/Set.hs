@@ -107,7 +107,7 @@ test_inConcat =
             values <- forAll genSetConcreteIntegerPattern
             let patIn = mkApp boolSort inSetSymbol [ patElem , patSet ]
                 patSet = asPattern $ Set.insert elem' values
-                patElem = fromConcretePurePattern elem'
+                patElem = fromConcreteStepPattern elem'
                 patTrue = Test.Bool.asPattern True
                 predicate = mkEquals_ patTrue patIn
             (===) (Test.Bool.asExpandedPattern True) =<< evaluate patIn
@@ -180,7 +180,7 @@ test_toList =
         (do
             set1 <- forAll genSetConcreteIntegerPattern
             let set2 =
-                    fmap fromConcretePurePattern
+                    fmap fromConcreteStepPattern
                     . Seq.fromList . Set.toList $ set1
                 patSet2 = Test.List.asPattern set2
                 patToList =

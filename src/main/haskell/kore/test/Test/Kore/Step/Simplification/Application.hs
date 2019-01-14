@@ -6,9 +6,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 import           Data.These
                  ( These (That) )
 
+import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
@@ -262,11 +264,11 @@ test_applicationSimplification =
         ]
     ]
   where
-    fOfA, fOfB :: StepPattern Object variable
+    fOfA, fOfB :: Ord (variable Object) => StepPattern Object variable
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
 
-    gOfA, gOfB :: StepPattern Object variable
+    gOfA, gOfB :: Ord (variable Object) => StepPattern Object variable
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
 
@@ -291,7 +293,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded :: ExpandedPattern Object variable
+    gOfAExpanded :: Ord (variable Object) => ExpandedPattern Object variable
     gOfAExpanded = Predicated
         { term = gOfA
         , predicate = makeTruePredicate
@@ -312,7 +314,7 @@ makeApplication
     -> [[ExpandedPattern level variable]]
     -> CofreeF
         (Application level)
-        (Valid level)
+        (Valid (variable level) level)
         (OrOfExpandedPattern level variable)
 makeApplication patternSort symbol patterns =
     (:<)
@@ -322,7 +324,10 @@ makeApplication patternSort symbol patterns =
             , applicationChildren = map OrOfExpandedPattern.make patterns
             }
   where
-    valid = Valid { patternSort }
+    valid = Valid { patternSort, freeVariables }
+    expandedFreeVariables = (<$>) (Valid.freeVariables . extract . term)
+    freeVariables =
+        Set.unions (Set.unions . expandedFreeVariables <$> patterns)
 
 evaluate
     ::  ( MetaOrObject level)
@@ -333,7 +338,7 @@ evaluate
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application level)
-        (Valid level)
+        (Valid (Variable level) level)
         (CommonOrOfExpandedPattern level)
     -> IO (CommonOrOfExpandedPattern level)
 evaluate

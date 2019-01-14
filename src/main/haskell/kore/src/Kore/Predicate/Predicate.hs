@@ -32,13 +32,14 @@ module Kore.Predicate.Predicate
     , makeMultipleOrPredicate
     , makeTruePredicate
     , allVariables
-    , freeVariables
+    , Kore.Predicate.Predicate.freeVariables
     , Kore.Predicate.Predicate.mapVariables
     , stringFromPredicate
     , substitutionToPredicate
     , fromPredicate
     , unwrapPredicate
     , wrapPredicate
+    , substitute
     ) where
 
 import           Control.DeepSeq
@@ -47,6 +48,8 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Hashable
 import           Data.List
                  ( foldl', nub )
+import           Data.Map.Strict
+                 ( Map )
 import           Data.Set
                  ( Set )
 import           GHC.Generics
@@ -57,6 +60,8 @@ import           Kore.AST.Valid
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Step.Pattern
+                 ( StepPattern )
+import qualified Kore.Step.Pattern as Step.Pattern
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
@@ -65,6 +70,8 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Free
                  ( freePureVariables, pureAllVariables )
+import           Kore.Variables.Fresh
+                 ( FreshVariable, MonadCounter )
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
@@ -164,7 +171,7 @@ doing some simplification.
 makeMultipleAndPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -181,7 +188,7 @@ doing some simplification.
 makeMultipleOrPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -200,7 +207,7 @@ makeAndPredicate
     -- or, even better, a type (like ShowMetaOrObject in MetaOrObject).
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Unparse (variable level)
         )
     => Predicate level variable
@@ -221,7 +228,7 @@ some simplification.
 makeOrPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -243,7 +250,7 @@ implication, doing some simplification.
 makeImpliesPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -263,7 +270,7 @@ some simplification.
 makeIffPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -300,7 +307,7 @@ predicate.
 makeEqualsPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -316,6 +323,7 @@ predicate.
 makeInPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -358,6 +366,7 @@ makeFloorPredicate patt =
 makeExistsPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -374,6 +383,7 @@ makeExistsPredicate v (GenericPredicate p) =
 makeForallPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -403,7 +413,7 @@ makePredicate
     :: forall level variable e .
         ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -454,8 +464,11 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
 mapVariables
-    :: (from level -> to level) -> Predicate level from -> Predicate level to
-mapVariables f = fmap (Kore.AST.Pure.mapVariables f)
+    :: Ord (to level)
+    => (from level -> to level)
+    -> Predicate level from
+    -> Predicate level to
+mapVariables f = fmap (Step.Pattern.mapVariables f)
 
 {- | Extract the set of all (free and bound) variables from a @Predicate@.
 -}
@@ -482,7 +495,7 @@ freeVariables = freePureVariables . unwrapPredicate
 substitutionToPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -496,7 +509,7 @@ substitutionToPredicate =
 singleSubstitutionToPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -504,3 +517,22 @@ singleSubstitutionToPredicate
     -> Predicate level variable
 singleSubstitutionToPredicate (var, patt) =
     makeEqualsPredicate (mkVar var) patt
+
+{- | Traverse the predicate from the top down and apply substitutions.
+
+The 'freeVariables' annotation is used to avoid traversing subterms that
+contain none of the targeted variables.
+
+ -}
+substitute
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , MonadCounter m
+        , Ord (variable level)
+        , SortedVariable variable
+        )
+    => Map (variable level) (StepPattern level variable)
+    -> Predicate level variable
+    -> m (Predicate level variable)
+substitute subst (GenericPredicate stepPattern) =
+    GenericPredicate <$> Step.Pattern.substitute subst stepPattern

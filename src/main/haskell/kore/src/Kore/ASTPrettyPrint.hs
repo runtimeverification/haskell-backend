@@ -12,17 +12,18 @@ module Kore.ASTPrettyPrint
     , Flags(..)
     ) where
 
-import Control.Comonad.Trans.Cofree
-       ( Cofree, CofreeT (..) )
-import Data.Functor.Const
-import Data.Functor.Identity
-import Data.List
-       ( intersperse )
-import Data.String
-       ( fromString )
-import Data.Text.Prettyprint.Doc as Doc
-import Data.Text.Prettyprint.Doc.Render.String
-import Data.Void
+import           Control.Comonad.Trans.Cofree
+                 ( Cofree, CofreeT (..) )
+import           Data.Functor.Const
+import           Data.Functor.Identity
+import           Data.List
+                 ( intersperse )
+import qualified Data.Set as Set
+import           Data.String
+                 ( fromString )
+import           Data.Text.Prettyprint.Doc as Doc
+import           Data.Text.Prettyprint.Doc.Render.String
+import           Data.Void
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Kore
@@ -190,6 +191,9 @@ instance PrettyPrint a => PrettyPrint [a] where
         inSquareBracketsIndent
             (printableList (map (prettyPrint MaySkipParentheses) items))
 
+instance PrettyPrint a => PrettyPrint (Set.Set a) where
+    prettyPrint flags = prettyPrint flags . Set.toList
+
 listWithDelimiters :: String -> String -> [Doc ann] -> Doc ann
 listWithDelimiters start end [] =
     " " <> fromString start <> fromString end
@@ -332,11 +336,19 @@ instance PrettyPrint a => PrettyPrint (Const a b) where
 instance PrettyPrint (Annotation.Null level) where
     prettyPrint _ Annotation.Null = "Null"
 
-instance MetaOrObject level => PrettyPrint (Valid level) where
-    prettyPrint _ valid@(Valid _) =
+instance
+    ( MetaOrObject level
+    , PrettyPrint variable
+    ) => PrettyPrint (Valid variable level)
+  where
+    prettyPrint _ valid@(Valid _ _) =
         writeStructure
             "Valid"
             [ writeFieldOneLine "patternSort" patternSort valid
+            , writeFieldNewLine
+                "freeVariables"
+                Kore.AST.Kore.freeVariables
+                valid
             ]
 
 instance PrettyPrint child => PrettyPrint (Domain.Builtin child) where

@@ -192,11 +192,12 @@ expectBuiltinInt ctx =
 
  -}
 asPattern
-    :: Sort Object  -- ^ resulting sort
+    :: Ord (variable Object)
+    => Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> StepPattern Object variable
 asPattern resultSort result =
-    fromConcretePurePattern (asConcretePattern resultSort result)
+    fromConcreteStepPattern (asConcretePattern resultSort result)
 
 {- | Render an 'Integer' as a concrete domain value pattern of the given sort.
 
@@ -219,18 +220,20 @@ asConcretePattern domainValueSort =
 asMetaPattern
     :: Functor domain
     => Integer
-    -> PurePattern Meta domain variable (Valid Meta)
+    -> PurePattern Meta domain variable (Valid (variable Meta) Meta)
 asMetaPattern result = mkStringLiteral $ show result
 
 asExpandedPattern
-    :: Sort Object  -- ^ resulting sort
+    :: Ord (variable Object)
+    => Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asPattern resultSort
 
 asPartialExpandedPattern
-    :: Sort Object  -- ^ resulting sort
+    :: Ord (variable Object)
+    => Sort Object  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asPartialExpandedPattern resultSort =

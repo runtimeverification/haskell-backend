@@ -93,7 +93,7 @@ instance
 instance
     ( MetaOrObject level
     , SortedVariable variable
-    , Eq (variable level)
+    , Ord (variable level)
     , Show (variable level)
     , Unparse (variable level)
     ) =>
@@ -140,7 +140,8 @@ type CommonPredicateSubstitution level = PredicateSubstitution level Variable
 in an ExpandedPattern.
 -}
 mapVariables
-    :: (variableFrom level -> variableTo level)
+    :: Ord (variableTo level)
+    => (variableFrom level -> variableTo level)
     -> ExpandedPattern level variableFrom
     -> ExpandedPattern level variableTo
 mapVariables
@@ -148,7 +149,7 @@ mapVariables
     Predicated { term, predicate, substitution }
   =
     Predicated
-        { term = Kore.AST.Pure.mapVariables variableMapper term
+        { term = Kore.Step.Pattern.mapVariables variableMapper term
         , predicate = Predicate.mapVariables variableMapper predicate
         , substitution =
             Substitution.mapVariables variableMapper substitution
@@ -209,7 +210,7 @@ toMLPattern
     ::  forall level variable.
         ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -320,7 +321,7 @@ bottomPredicate = bottom $> ()
 toPredicate
     :: ( MetaOrObject level
        , SortedVariable variable
-       , Eq (variable level)
+       , Ord (variable level)
        , Show (variable level)
        , Unparse (variable level)
        )

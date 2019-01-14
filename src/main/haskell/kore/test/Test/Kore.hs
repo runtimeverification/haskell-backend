@@ -35,7 +35,6 @@ import qualified Hedgehog.Range as Range
 import           Control.Monad.Reader
                  ( ReaderT )
 import qualified Control.Monad.Reader as Reader
-import           Data.Functor.Foldable
 import           Data.Proxy
 import           Data.Text
                  ( Text )
@@ -519,23 +518,94 @@ stepPatternChildGen
     => Sort level
     -> Gen (CommonStepPattern level)
 stepPatternChildGen patternSort =
-    embed . (valid :<) <$> Gen.sized stepPatternChildGenWorker
+    Gen.sized stepPatternChildGenWorker
   where
-    valid = Valid { patternSort }
     stepPatternChildGenWorker n
       | n <= 1 =
         case isMetaOrObject patternSort of
             IsMeta
               | patternSort == stringMetaSort ->
-                StringLiteralPattern <$> stringLiteralGen
+                mkStringLiteral . getStringLiteral <$> stringLiteralGen
               | patternSort == charMetaSort ->
-                CharLiteralPattern <$> charLiteralGen
+                mkCharLiteral . getCharLiteral <$> charLiteralGen
               | otherwise ->
-                VariablePattern <$> variableGen patternSort
+                mkVar <$> variableGen patternSort
             IsObject ->
-                DomainValuePattern
-                    <$> domainValueGen builtinDomainGen patternSort
-      | otherwise = patternGen stepPatternChildGen patternSort
+                mkDomainValue patternSort <$> builtinDomainGen patternSort
+      | otherwise =
+        (Gen.small . Gen.frequency)
+            [ (1, stepPatternAndGen)
+            , (1, stepPatternAppGen)
+            , (1, stepPatternBottomGen)
+            , (1, stepPatternCeilGen)
+            , (1, stepPatternEqualsGen)
+            , (1, stepPatternExistsGen)
+            , (1, stepPatternFloorGen)
+            , (1, stepPatternForallGen)
+            , (1, stepPatternIffGen)
+            , (1, stepPatternImpliesGen)
+            , (1, stepPatternInGen)
+            , (1, stepPatternNotGen)
+            , (1, stepPatternOrGen)
+            , (1, stepPatternTopGen)
+            , (5, stepPatternVariableGen)
+            ]
+    stepPatternAndGen =
+        mkAnd
+            <$> stepPatternChildGen patternSort
+            <*> stepPatternChildGen patternSort
+    stepPatternAppGen =
+        mkApp patternSort
+            <$> symbolOrAliasGen
+            <*> couple (stepPatternChildGen =<< sortGen)
+    stepPatternBottomGen = pure (mkBottom patternSort)
+    stepPatternCeilGen = do
+        child <- stepPatternChildGen =<< sortGen
+        pure (mkCeil patternSort child)
+    stepPatternEqualsGen = do
+        operandSort <- sortGen
+        mkEquals patternSort
+            <$> stepPatternChildGen operandSort
+            <*> stepPatternChildGen operandSort
+    stepPatternExistsGen = do
+        varSort <- sortGen
+        var <- variableGen varSort
+        child <-
+            Reader.local
+                (addVariable var)
+                (stepPatternChildGen patternSort)
+        pure (mkExists var child)
+    stepPatternForallGen = do
+        varSort <- sortGen
+        var <- variableGen varSort
+        child <-
+            Reader.local
+                (addVariable var)
+                (stepPatternChildGen patternSort)
+        pure (mkForall var child)
+    stepPatternFloorGen = do
+        child <- stepPatternChildGen =<< sortGen
+        pure (mkFloor patternSort child)
+    stepPatternIffGen =
+        mkIff
+            <$> stepPatternChildGen patternSort
+            <*> stepPatternChildGen patternSort
+    stepPatternImpliesGen =
+        mkImplies
+            <$> stepPatternChildGen patternSort
+            <*> stepPatternChildGen patternSort
+    stepPatternInGen =
+        mkIn patternSort
+            <$> stepPatternChildGen patternSort
+            <*> stepPatternChildGen patternSort
+    stepPatternNotGen =
+        mkNot <$> stepPatternChildGen patternSort
+    stepPatternOrGen =
+        mkOr
+            <$> stepPatternChildGen patternSort
+            <*> stepPatternChildGen patternSort
+    stepPatternTopGen = pure (mkTop patternSort)
+    stepPatternVariableGen = mkVar <$> variableGen patternSort
 
 korePatternGen :: Hedgehog.Gen CommonKorePattern
 korePatternGen =
@@ -819,26 +889,93 @@ definitionGen senGen =
 
 metaMLPatternGen
     :: Sort Meta
-    -> Gen (MetaMLPattern Variable (Valid Meta))
+    -> Gen (MetaMLPattern Variable (Valid (Variable Meta) Meta))
 metaMLPatternGen patternSort =
-    embed . (valid :<) <$> Gen.sized metaMLPatternGenWorker
+    Gen.sized metaMLPatternGenWorker
   where
-    valid = Valid { patternSort }
     metaMLPatternGenWorker n
       | n <= 1 =
         case () of
             () | patternSort == stringMetaSort ->
-                 StringLiteralPattern <$> stringLiteralGen
+                 mkStringLiteral . getStringLiteral <$> stringLiteralGen
                | patternSort == charMetaSort ->
-                 CharLiteralPattern <$> charLiteralGen
+                 mkCharLiteral . getCharLiteral <$> charLiteralGen
                | otherwise ->
-                 VariablePattern <$> variableGen patternSort
+                 mkVar <$> variableGen patternSort
       | otherwise =
-        Gen.frequency
-            [ (15, patternGen metaMLPatternGen patternSort)
-            , (1, StringLiteralPattern <$> stringLiteralGen)
-            , (1, CharLiteralPattern <$> charLiteralGen)
+        (Gen.small . Gen.frequency)
+            [ (1, metaMLPatternAndGen)
+            , (1, metaMLPatternAppGen)
+            , (1, metaMLPatternBottomGen)
+            , (1, metaMLPatternCeilGen)
+            , (1, metaMLPatternEqualsGen)
+            , (1, metaMLPatternExistsGen)
+            , (1, metaMLPatternFloorGen)
+            , (1, metaMLPatternForallGen)
+            , (1, metaMLPatternIffGen)
+            , (1, metaMLPatternImpliesGen)
+            , (1, metaMLPatternInGen)
+            , (1, metaMLPatternNotGen)
+            , (1, metaMLPatternOrGen)
+            , (1, metaMLPatternTopGen)
+            , (5, metaMLPatternVariableGen)
             ]
+    metaMLPatternAndGen =
+        mkAnd
+            <$> metaMLPatternGen patternSort
+            <*> metaMLPatternGen patternSort
+    metaMLPatternAppGen =
+        mkApp patternSort
+            <$> symbolOrAliasGen
+            <*> couple (metaMLPatternGen =<< sortGen)
+    metaMLPatternBottomGen = pure (mkBottom patternSort)
+    metaMLPatternCeilGen = do
+        child <- metaMLPatternGen =<< sortGen
+        pure (mkCeil patternSort child)
+    metaMLPatternEqualsGen = do
+        operandSort <- sortGen
+        mkEquals patternSort
+            <$> metaMLPatternGen operandSort
+            <*> metaMLPatternGen operandSort
+    metaMLPatternExistsGen = do
+        varSort <- sortGen
+        var <- variableGen varSort
+        child <-
+            Reader.local
+                (addVariable var)
+                (metaMLPatternGen patternSort)
+        pure (mkExists var child)
+    metaMLPatternForallGen = do
+        varSort <- sortGen
+        var <- variableGen varSort
+        child <-
+            Reader.local
+                (addVariable var)
+                (metaMLPatternGen patternSort)
+        pure (mkForall var child)
+    metaMLPatternFloorGen = do
+        child <- metaMLPatternGen =<< sortGen
+        pure (mkFloor patternSort child)
+    metaMLPatternIffGen =
+        mkIff
+            <$> metaMLPatternGen patternSort
+            <*> metaMLPatternGen patternSort
+    metaMLPatternImpliesGen =
+        mkImplies
+            <$> metaMLPatternGen patternSort
+            <*> metaMLPatternGen patternSort
+    metaMLPatternInGen =
+        mkIn patternSort
+            <$> metaMLPatternGen patternSort
+            <*> metaMLPatternGen patternSort
+    metaMLPatternNotGen =
+        mkNot <$> metaMLPatternGen patternSort
+    metaMLPatternOrGen =
+        mkOr
+            <$> metaMLPatternGen patternSort
+            <*> metaMLPatternGen patternSort
+    metaMLPatternTopGen = pure (mkTop patternSort)
+    metaMLPatternVariableGen = mkVar <$> variableGen patternSort
 
 metaSentenceGen :: Gen MetaSentence
 metaSentenceGen =

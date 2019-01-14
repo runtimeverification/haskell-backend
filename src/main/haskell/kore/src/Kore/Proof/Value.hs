@@ -12,9 +12,9 @@ module Kore.Proof.Value
     ( ValueF (..)
     , Value
     , fromPattern
-    , fromConcreteStepPattern
+    , Kore.Proof.Value.fromConcreteStepPattern
     , asPattern
-    , asConcreteStepPattern
+    , Kore.Proof.Value.asConcreteStepPattern
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -74,10 +74,11 @@ instance Show1 (ValueF level) where
     liftShowsPrec = $(Deriving.makeLiftShowsPrec ''ValueF)
 
 newtype Value (level :: *) =
-    Value { getValue :: Cofree (ValueF level) (Valid level) }
+    Value { getValue :: Cofree (ValueF level) (Valid (Concrete level) level) }
     deriving (Eq, Generic, Ord, Show)
 
-type instance Base (Value level) = CofreeF (ValueF level) (Valid level)
+type instance Base (Value level) =
+    CofreeF (ValueF level) (Valid (Concrete level) level)
 
 instance Recursive (Value level) where
     project (Value embedded) =

@@ -12,15 +12,15 @@ module Kore.Step.Simplification.PredicateSubstitution
     , simplify
     ) where
 
-import qualified Control.Arrow as Arrow
-import           Data.List
-                 ( group )
+import Data.List
+       ( group )
 
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Simplification.Data
@@ -32,9 +32,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Substitution.Class
-                 ( substitute )
-import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -102,14 +99,8 @@ simplify
     initialValue@Predicated { predicate, substitution }
     times
   = do
-    let
-        unifiedSubstitution =
-            ListSubstitution.fromList
-                (makeUnifiedSubstitution $ Substitution.unwrap substitution)
-    substitutedPredicate <-
-        traverse
-            (`substitute` unifiedSubstitution)
-            predicate
+    let substitution' = Substitution.toMap substitution
+    substitutedPredicate <- Predicate.substitute substitution' predicate
     -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
     -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
     -- This was needed because, when we need to simplify 'requires' clauses,
@@ -175,10 +166,3 @@ assertDistinctVariables subst =
 
     variables :: [variable level]
     variables = Substitution.variables subst
-
-makeUnifiedSubstitution
-    :: MetaOrObject level
-    => [(variable level, a)]
-    -> [(Unified variable, a)]
-makeUnifiedSubstitution =
-    map (Arrow.first asUnified)

@@ -77,7 +77,6 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 
 import           Kore.AST.Kore
-import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
@@ -167,7 +166,7 @@ newtype PatternVerifier =
       runPatternVerifier
           :: forall m child. MonadError (Error VerifyError) m
           => (Id Object -> m HookedSortDescription)
-          -> StepPatternHead Object Variable child
+          -> Pattern Object Domain.Builtin Variable child
           -> m ()
     }
 
@@ -369,7 +368,7 @@ verifyDomainValue builtinSort validate =
         :: forall m child. MonadError (Error VerifyError) m
         => (Id Object -> m HookedSortDescription)
         -- ^ Function to lookup sorts by identifier
-        -> StepPatternHead Object Variable child
+        -> Pattern Object Domain.Builtin Variable child
         -- ^ Pattern to verify
         -> m ()
     runPatternVerifier findSort =
@@ -477,7 +476,10 @@ unaryOperator
     :: forall a b
     .  Parser a
     -- ^ Parse operand
-    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
+    ->  (   forall variable.
+            Ord (variable Object)
+        => Sort Object -> b -> ExpandedPattern Object variable
+        )
     -- ^ Render result as pattern with given sort
     -> Text
     -- ^ Builtin function name (for error messages)
@@ -524,7 +526,10 @@ binaryOperator
     :: forall a b
     .  Parser a
     -- ^ Parse operand
-    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
+    ->  (   forall variable.
+            Ord (variable Object)
+        => Sort Object -> b -> ExpandedPattern Object variable
+        )
     -- ^ Render result as pattern with given sort
     -> Text
     -- ^ Builtin function name (for error messages)
@@ -571,7 +576,9 @@ ternaryOperator
     :: forall a b
     .  Parser a
     -- ^ Parse operand
-    -> (forall variable . Sort Object -> b -> ExpandedPattern Object variable)
+    ->  (forall variable. Ord (variable Object)
+        => Sort Object -> b -> ExpandedPattern Object variable
+        )
     -- ^ Render result as pattern with given sort
     -> Text
     -- ^ Builtin function name (for error messages)
@@ -625,7 +632,7 @@ functionEvaluator impl =
         -> StepPatternSimplifier Object variable
         -> CofreeF
             (Application Object)
-            (Valid Object)
+            (Valid (variable Object) Object)
             (StepPattern Object variable)
         -> Simplifier
             [   ( AttemptedFunction Object variable
@@ -694,7 +701,7 @@ expectNormalConcreteTerm
     -> MaybeT m (ConcreteStepPattern level)
 expectNormalConcreteTerm tools purePattern =
     MaybeT $ return $ do
-        p <- asConcretePurePattern purePattern
+        p <- asConcreteStepPattern purePattern
         -- TODO (thomas.tuegel): Use the return value as the term.
         _ <- Value.fromConcreteStepPattern tools p
         return p

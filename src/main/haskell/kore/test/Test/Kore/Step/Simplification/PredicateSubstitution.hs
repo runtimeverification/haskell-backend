@@ -319,7 +319,10 @@ simpleEvaluator
         , ShowMetaOrObject variable
         )
     => [(StepPattern Object variable, StepPattern Object variable)]
-    -> CofreeF (Application Object) (Valid Object) (StepPattern Object variable)
+    -> CofreeF
+        (Application Object)
+        (Valid (variable Object) Object)
+        (StepPattern Object variable)
     -> Simplifier
         [   ( AttemptedFunction Object variable
             , SimplificationProof Object
