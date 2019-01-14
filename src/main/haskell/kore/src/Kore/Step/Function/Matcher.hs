@@ -24,8 +24,6 @@ import           Control.Monad.Trans.Except
                  ( ExceptT (..) )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
-import           Data.Either
-                 ( isRight )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -47,8 +45,6 @@ import           Kore.Step.OrOfExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, filterOr, fullCrossProduct, make )
 import           Kore.Step.Pattern
-import           Kore.Step.PatternAttributes
-                 ( isConstructorModuloLikePattern )
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -540,7 +536,6 @@ matchNonVarToPattern tools substitutionSimplifier first second
     -- which first's variables do not occur under non-constructor-like
     -- symbols.
     if null (Set.intersection firstVariables resultVariables)
-        || isRight (isConstructorModuloLikePattern tools first)
         then return finalResult
         else nothing
   where

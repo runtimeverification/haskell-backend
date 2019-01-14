@@ -1308,3 +1308,13 @@ instance StructEqualWithExplanation (Valid level) where
 instance EqualWithExplanation (Valid level) where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
+instance EqualWithExplanation (PatternAttributesError.ConstructorLikeError)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (ConstructorLikeProof)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show

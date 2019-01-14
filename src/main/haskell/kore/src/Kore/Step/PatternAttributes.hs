@@ -192,8 +192,13 @@ checkConstructorLikeHead
 checkConstructorLikeHead
     tools
     (ApplicationPattern Application {applicationSymbolOrAlias})
-  | give tools $ isConstructor_ applicationSymbolOrAlias =
-    return (Descend ConstructorLikeProof)
+  | give tools $ isConstructor_ applicationSymbolOrAlias
+    || isSortInjection_ applicationSymbolOrAlias
+  = return (Descend ConstructorLikeProof)
+checkConstructorLikeHead
+    _
+    (VariablePattern _)
+  = return (Descend ConstructorLikeProof)
 checkConstructorLikeHead _ patternHead
   | isRight (isPreconstructedPattern undefined patternHead) =
     return (DoNotDescend ConstructorLikeProof)
@@ -217,7 +222,6 @@ checkConstructorModuloLikeHead
                 if give tools $ isConstructorModulo_ applicationSymbolOrAlias
                     then return (Descend ConstructorLikeProof)
                     else Left NonConstructorLikeHead
-            (VariablePattern _) -> return (Descend ConstructorLikeProof)
             _ -> Left NonConstructorLikeHead
 
 {-| checks whether a pattern is function-like or not and, if it is, returns
