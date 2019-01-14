@@ -16,7 +16,8 @@ import           Kore.Proof.Functional
 import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributes
 import           Kore.Step.PatternAttributesError
-                 ( FunctionError (..), FunctionalError (..) )
+                 ( ConstructorLikeError (..), FunctionError (..),
+                 FunctionalError (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -242,6 +243,195 @@ test_patternAttributes =
                 (isFunctionPattern
                     mockMetadataTools
                     nonFunctionPatt
+                )
+        )
+    , testCase "isConstructorLikePattern"
+        (do
+            assertEqualWithExplanation "variables are constructor-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorLikePattern
+                    mockMetadataTools
+                    (mkVar Mock.x)
+                )
+            let
+                constructor :: CommonStepPattern Object
+                constructor = Mock.a
+            assertEqualWithExplanation "constructors are constructor-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorLikePattern
+                    mockMetadataTools
+                    constructor
+                )
+            let
+                sortInjection :: CommonStepPattern Object
+                sortInjection = Mock.sortInjection10 Mock.a
+            assertEqualWithExplanation "sort injections are constructor-like"
+                (Right [ConstructorLikeProof, ConstructorLikeProof])
+                (isConstructorLikePattern
+                    mockMetadataTools
+                    sortInjection
+                )
+            let
+                mapElement :: CommonStepPattern Object
+                mapElement = Mock.elementMap Mock.a Mock.b
+            assertEqualWithExplanation
+                "constructors-modulo are not constructor-like"
+                (Left NonConstructorLikeHead)
+                (isConstructorLikePattern
+                    mockMetadataTools
+                    mapElement
+                )
+            let
+                str :: CommonStepPattern Meta
+                str = mkStringLiteral "10"
+            assertEqualWithExplanation "string literals are constructor-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorLikePattern
+                    mockMetaMetadataTools
+                    str
+                )
+            let
+                chr :: CommonStepPattern Meta
+                chr = mkCharLiteral 'a'
+            assertEqualWithExplanation "char literals are constructor-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorLikePattern
+                    mockMetaMetadataTools
+                    chr
+                )
+            let
+                dv :: CommonStepPattern Object
+                dv = mkDomainValue
+                        Mock.testSort
+                        (Domain.BuiltinPattern
+                            $ eraseAnnotations
+                            $ mkStringLiteral "a"
+                        )
+            assertEqualWithExplanation "domain values are constructor-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorLikePattern
+                    mockMetadataTools
+                    dv
+                )
+
+            let
+                functionConstant :: CommonStepPattern Object
+                functionConstant = Mock.cf
+            assertEqualWithExplanation
+                "function symbols are not constructor-like"
+                (Left NonConstructorLikeHead)
+                (isConstructorLikePattern
+                    mockMetadataTools
+                    functionConstant
+                )
+            let
+                injectionConstant :: CommonStepPattern Object
+                injectionConstant = Mock.injective10 Mock.a
+            assertEqualWithExplanation "injections are not constructor-like"
+                (Left NonConstructorLikeHead)
+                (isConstructorLikePattern
+                    mockMetadataTools
+                    injectionConstant
+                )
+        )
+    , testCase "isConstructorModuloLikePattern"
+        (do
+            assertEqualWithExplanation "variables are constructor-modulo-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorModuloLikePattern
+                    mockMetadataTools
+                    (mkVar Mock.x)
+                )
+            let
+                constructor :: CommonStepPattern Object
+                constructor = Mock.a
+            assertEqualWithExplanation
+                "constructors are constructor-modulo-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorModuloLikePattern
+                    mockMetadataTools
+                    constructor
+                )
+            let
+                sortInjection :: CommonStepPattern Object
+                sortInjection = Mock.sortInjection10 Mock.a
+            assertEqualWithExplanation
+                "sort injections are constructor-modulo-like"
+                (Right [ConstructorLikeProof, ConstructorLikeProof])
+                (isConstructorModuloLikePattern
+                    mockMetadataTools
+                    sortInjection
+                )
+            let
+                mapElement :: CommonStepPattern Object
+                mapElement = Mock.elementMap Mock.a Mock.b
+            assertEqualWithExplanation
+                "constructors-modulo are constructor-modulo-like"
+                (Right
+                    [ ConstructorLikeProof
+                    , ConstructorLikeProof
+                    , ConstructorLikeProof
+                    ]
+                )
+                (isConstructorModuloLikePattern
+                    mockMetadataTools
+                    mapElement
+                )
+            let
+                str :: CommonStepPattern Meta
+                str = mkStringLiteral "10"
+            assertEqualWithExplanation
+                "string literals are constructor-modulo-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorModuloLikePattern
+                    mockMetaMetadataTools
+                    str
+                )
+            let
+                chr :: CommonStepPattern Meta
+                chr = mkCharLiteral 'a'
+            assertEqualWithExplanation
+                "char literals are constructor-modulo-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorModuloLikePattern
+                    mockMetaMetadataTools
+                    chr
+                )
+            let
+                dv :: CommonStepPattern Object
+                dv = mkDomainValue
+                        Mock.testSort
+                        (Domain.BuiltinPattern
+                            $ eraseAnnotations
+                            $ mkStringLiteral "a"
+                        )
+            assertEqualWithExplanation
+                "domain values are constructor-modulo-like"
+                (Right [ConstructorLikeProof])
+                (isConstructorModuloLikePattern
+                    mockMetadataTools
+                    dv
+                )
+
+            let
+                functionConstant :: CommonStepPattern Object
+                functionConstant = Mock.cf
+            assertEqualWithExplanation
+                "function symbols are not constructor-modulo-like"
+                (Left NonConstructorLikeHead)
+                (isConstructorModuloLikePattern
+                    mockMetadataTools
+                    functionConstant
+                )
+            let
+                injectionConstant :: CommonStepPattern Object
+                injectionConstant = Mock.injective10 Mock.a
+            assertEqualWithExplanation
+                "injections are not constructor-modulo-like"
+                (Left NonConstructorLikeHead)
+                (isConstructorModuloLikePattern
+                    mockMetadataTools
+                    injectionConstant
                 )
         )
     ]

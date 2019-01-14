@@ -148,10 +148,18 @@ lessIntId :: Id level
 lessIntId = testId "lessIntId"
 greaterEqIntId :: Id level
 greaterEqIntId = testId "greaterEqIntId"
-elemListId :: Id level
-elemListId = testId "elemList"
 concatListId :: Id level
 concatListId = testId "concatList"
+elementListId :: Id level
+elementListId = testId "elementList"
+unitListId :: Id level
+unitListId = testId "unitList"
+concatSetId :: Id level
+concatSetId = testId "concatSet"
+elementSetId :: Id level
+elementSetId = testId "elementSet"
+unitSetId :: Id level
+unitSetId = testId "unitSet"
 sigmaId :: Id level
 sigmaId = testId "sigma"
 
@@ -436,15 +444,39 @@ greaterEqIntSymbol = SymbolOrAlias
     , symbolOrAliasParams      = []
     }
 
-elemListSymbol :: SymbolOrAlias level
-elemListSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = elemListId
-    , symbolOrAliasParams = []
-    }
-
 concatListSymbol :: SymbolOrAlias level
 concatListSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = concatListId
+    , symbolOrAliasParams = []
+    }
+
+elementListSymbol :: SymbolOrAlias level
+elementListSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = elementListId
+    , symbolOrAliasParams = []
+    }
+
+unitListSymbol :: SymbolOrAlias level
+unitListSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = unitListId
+    , symbolOrAliasParams = []
+    }
+
+concatSetSymbol :: SymbolOrAlias level
+concatSetSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = concatSetId
+    , symbolOrAliasParams = []
+    }
+
+elementSetSymbol :: SymbolOrAlias level
+elementSetSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = elementSetId
+    , symbolOrAliasParams = []
+    }
+
+unitSetSymbol :: SymbolOrAlias level
+unitSetSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = unitSetId
     , symbolOrAliasParams = []
     }
 
@@ -894,11 +926,23 @@ attributesMapping =
     ,   ( concatMapSymbol
         , Mock.functionalAttributes { hook = Hook (Just "MAP.concat") }
         )
-    ,   ( elemListSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "LIST.elem") }
-        )
     ,   ( concatListSymbol
         , Mock.functionalAttributes { hook = Hook (Just "LIST.concat") }
+        )
+    ,   ( elementListSymbol
+        , Mock.functionalAttributes { hook = Hook (Just "LIST.element") }
+        )
+    ,   ( unitListSymbol
+        , Mock.functionalAttributes { hook = Hook (Just "LIST.unit") }
+        )
+    ,   ( concatSetSymbol
+        , Mock.functionalAttributes { hook = Hook (Just "SET.concat") }
+        )
+    ,   ( elementSetSymbol
+        , Mock.functionalAttributes { hook = Hook (Just "SET.element") }
+        )
+    ,   ( unitSetSymbol
+        , Mock.functionalAttributes { hook = Hook (Just "SET.unit") }
         )
     ,   ( lessIntSymbol
         , Mock.functionalAttributes
@@ -1081,10 +1125,22 @@ headTypeMapping =
     ,   ( concatMapSymbol
         , HeadType.Symbol
         )
-    ,   ( elemListSymbol
+    ,   ( elementListSymbol
+        , HeadType.Symbol
+        )
+    ,   ( unitListSymbol
         , HeadType.Symbol
         )
     ,   ( concatListSymbol
+        , HeadType.Symbol
+        )
+    ,   ( elementSetSymbol
+        , HeadType.Symbol
+        )
+    ,   ( unitSetSymbol
+        , HeadType.Symbol
+        )
+    ,   ( concatSetSymbol
         , HeadType.Symbol
         )
     ,   ( lessIntSymbol

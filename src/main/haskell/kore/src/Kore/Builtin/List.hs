@@ -31,6 +31,7 @@ module Kore.Builtin.List
     , lookupSymbolGet
     , isSymbolConcat
     , isSymbolElement
+    , isSymbolUnit
     , unifyEquals
     ) where
 
@@ -341,17 +342,29 @@ lookupSymbolGet
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolGet = Builtin.lookupSymbol "LIST.get"
 
+{- | Check if the given symbol is hooked to @LIST.concat@.
+-}
 isSymbolConcat
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
 isSymbolConcat = Builtin.isSymbol "LIST.concat"
 
+{- | Check if the given symbol is hooked to @LIST.element@.
+-}
 isSymbolElement
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
 isSymbolElement = Builtin.isSymbol "LIST.element"
+
+{- | Check if the given symbol is hooked to @LIST.unit@.
+-}
+isSymbolUnit
+    :: MetadataTools Object Hook
+    -> SymbolOrAlias Object
+    -> Bool
+isSymbolUnit = Builtin.isSymbol "LIST.unit"
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
 

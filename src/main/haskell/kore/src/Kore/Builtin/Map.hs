@@ -31,6 +31,8 @@ module Kore.Builtin.Map
     , lookupSymbolInKeys
     , lookupSymbolKeys
     , isSymbolConcat
+    , isSymbolElement
+    , isSymbolUnit
     -- * Unification
     , unifyEquals
     -- * Raw evaluators
@@ -488,6 +490,15 @@ isSymbolElement
     -> SymbolOrAlias Object
     -> Bool
 isSymbolElement = Builtin.isSymbol "MAP.element"
+
+{- | Check if the given symbol is hooked to @MAP.unit@.
+-}
+isSymbolUnit
+    :: MetadataTools Object Hook
+    -> SymbolOrAlias Object
+    -> Bool
+isSymbolUnit = Builtin.isSymbol "MAP.unit"
+
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 

@@ -4,6 +4,7 @@ import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
+import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
@@ -16,8 +17,12 @@ import           Prelude hiding
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Hook
+                 ( Hook )
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.BaseStep
@@ -25,6 +30,9 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
+import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Unification.Data
 import qualified Kore.Unification.Substitution as Substitution
 
@@ -38,8 +46,11 @@ import           Test.Kore.Builtin.Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.Set as Test.Set
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+                 ( makeMetadataTools )
 import           Test.Kore.Step.Condition.Evaluator
                  ( genSortedVariable )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 import           Test.Tasty.HUnit.Extensions
 
@@ -302,6 +313,42 @@ test_symbolic =
                 then discard
                 else (===) expect =<< evaluate patMap
         )
+
+test_isBuiltin :: [TestTree]
+test_isBuiltin =
+    [ testCase "isSymbolConcat" $ do
+        assertBool ""
+            (Map.isSymbolConcat mockHookTools Mock.concatMapSymbol)
+        assertBool ""
+            (not (Map.isSymbolConcat mockHookTools Mock.aSymbol))
+        assertBool ""
+            (not (Map.isSymbolConcat mockHookTools Mock.elementMapSymbol))
+    , testCase "isSymbolElement" $ do
+        assertBool ""
+            (Map.isSymbolElement mockHookTools Mock.elementMapSymbol)
+        assertBool ""
+            (not (Map.isSymbolElement mockHookTools Mock.aSymbol))
+        assertBool ""
+            (not (Map.isSymbolElement mockHookTools Mock.concatMapSymbol))
+    , testCase "isSymbolUnit" $ do
+        assertBool ""
+            (Map.isSymbolUnit mockHookTools Mock.unitMapSymbol)
+        assertBool ""
+            (not (Map.isSymbolUnit mockHookTools Mock.aSymbol))
+        assertBool ""
+            (not (Map.isSymbolUnit mockHookTools Mock.concatMapSymbol))
+    ]
+
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.sortAttributesMapping
+        Mock.subsorts
+
+mockHookTools :: MetadataTools Object Hook
+mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
