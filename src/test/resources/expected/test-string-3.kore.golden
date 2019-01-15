@@ -13,7 +13,7 @@ Definition
                             , applicationChildren =
                                 [ CofreeT
                                     { runCofreeT = Identity
-                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "\v"))
+                                        { runIdentity = UnifiedMeta Null :< UnifiedMetaPattern (StringLiteralPattern (StringLiteral "\x0b"))
                                         }
                                     }
                                 ]

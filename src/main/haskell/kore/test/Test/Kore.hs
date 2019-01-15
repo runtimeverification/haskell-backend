@@ -49,7 +49,7 @@ import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
 import           Kore.MetaML.AST
-import           Kore.Parser.LexemeImpl
+import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
@@ -170,15 +170,12 @@ charLiteralGen = CharLiteral <$> charGen
 
 charGen :: MonadGen m => m Char
 charGen =
-    Gen.filter (/= '?')
-        (Gen.choice
-            [ Gen.ascii
-            , Gen.element "\a\b\f\n\r\t\v\\\"\'"
-            , Gen.enum '\32' '\127'
-            , Gen.enum '\0' '\255'
-            , Gen.enum '\0' '\65535'
-            ]
-        )
+    Gen.choice
+        [ Gen.ascii
+        , Gen.enum '\x80' '\xFF'
+        , Gen.enum '\x100' '\xD7FF'
+        , Gen.enum '\xE000' '\x10FFFF'
+        ]
 
 symbolOrAliasRawGen
     :: MetaOrObject level

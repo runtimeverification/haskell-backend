@@ -15,10 +15,16 @@ module Kore.Unparser
     , parameters
     , arguments
     , attributes
+    , escapeString
+    , escapeChar
     ) where
 
+import qualified Data.Char as Char
 import           Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( catMaybes )
 import           Data.String
@@ -28,6 +34,7 @@ import           Data.Text.Prettyprint.Doc hiding
 import           Data.Text.Prettyprint.Doc.Render.String
                  ( renderString )
 import           Data.Void
+import qualified Numeric
 
 import           Kore.AST.Kore
 import           Kore.AST.Pure
@@ -35,8 +42,6 @@ import           Kore.AST.Sentence
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Domain.External as Domain
-import           Kore.Parser.CString
-                 ( escapeCString )
 
 {- | Class of types that can be rendered in concrete Kore syntax.
 
@@ -75,10 +80,10 @@ instance
             UnifiedObject object -> unparse object
 
 instance Unparse StringLiteral where
-    unparse = dquotes . fromString . escapeCString . getStringLiteral
+    unparse = dquotes . fromString . escapeString . getStringLiteral
 
 instance Unparse CharLiteral where
-    unparse = squotes . fromString . escapeCString . (: []) . getCharLiteral
+    unparse = squotes . fromString . escapeChar . getCharLiteral
 
 instance Unparse (SymbolOrAlias level) where
     unparse
@@ -523,3 +528,51 @@ list left right =
 -- | Render a 'Doc ann' with indentation and without extra line breaks.
 layoutPrettyUnbounded :: Doc ann -> SimpleDocStream ann
 layoutPrettyUnbounded = layoutPretty LayoutOptions { layoutPageWidth = Unbounded }
+
+{- | Escape a 'String' for a Kore string literal.
+
+@escapeString@ does not include the surrounding delimiters.
+
+ -}
+escapeString :: String -> String
+escapeString s = foldr (.) id (map escapeCharS s) ""
+
+{- | Escape a 'Char' for a Kore character literal.
+
+@escapeChar@ does not include the surrounding delimiters.
+
+ -}
+escapeChar :: Char -> String
+escapeChar c = escapeCharS c ""
+
+escapeCharS :: Char -> ShowS
+escapeCharS c
+  | c >= '\x20' && c < '\x7F' =
+    case Map.lookup c oneCharEscapes of
+        Nothing ->
+            -- printable 7-bit ASCII
+            showChar c
+        Just esc ->
+            -- single-character escape sequence
+            showChar '\\' . showChar esc
+  | c < '\x100' = showString "\\x" . zeroPad 2 (showHexCode c)
+  | c < '\x10000' = showString "\\u" . zeroPad 4 (showHexCode c)
+  | otherwise =  showString "\\U" . zeroPad 8 (showHexCode c)
+  where
+    showHexCode = Numeric.showHex . Char.ord
+    zeroPad = padLeftWithCharToLength '0'
+
+padLeftWithCharToLength :: Char -> Int -> ShowS -> ShowS
+padLeftWithCharToLength c i ss =
+    showString (replicate (i - length (ss "")) c) . ss
+
+oneCharEscapes :: Map Char Char
+oneCharEscapes =
+    Map.fromList
+        [ ('\\', '\\')
+        , ('"', '"')
+        , ('\f', 'f')
+        , ('\n', 'n')
+        , ('\r', 'r')
+        , ('\t', 't')
+        ]

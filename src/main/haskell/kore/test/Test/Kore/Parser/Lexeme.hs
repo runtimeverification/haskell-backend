@@ -253,46 +253,100 @@ stringLiteralParserTests =
     parseTree stringLiteralParser
         [ success "\"\"" (StringLiteral "")
         , success "\"a\"" (StringLiteral "a")
-        , success "\"\\'\"" (StringLiteral "'")
         , success "\"\\\"\"" (StringLiteral "\"")
-        , success "\"\\?\"" (StringLiteral "?")
-        , success "\"\\a\"" (StringLiteral "\7")
-        , success "\"\\b\"" (StringLiteral "\8")
         , success "\"\\f\"" (StringLiteral "\12")
         , success "\"\\n\"" (StringLiteral "\10")
         , success "\"\\r\"" (StringLiteral "\13")
         , success "\"\\t\"" (StringLiteral "\9")
-        , success "\"\\v\"" (StringLiteral "\11")
-        , success "\"\\377\"" (StringLiteral "\255")
-        , success "\"\\77\"" (StringLiteral "\63")
-        , success "\"\\77a\"" (StringLiteral ("\63" ++ "a"))
-        , success "\"\\xFF\"" (StringLiteral "\255")
-        , success "\"\\xff\"" (StringLiteral "\255")
-        , success "\"\\xF\"" (StringLiteral "\15")
-        , success "\"\\xFr\"" (StringLiteral ("\15" ++ "r"))
         , success "\"\\u1ABC\"" (StringLiteral "\6844")
         , success "\"\\u1ABCa\"" (StringLiteral ("\6844" ++ "a"))
         , success "\"\\u1abc\"" (StringLiteral "\6844")
         , success "\"\\U000120FF\"" (StringLiteral "\73983")
         , success "\"\\U000120FFa\"" (StringLiteral ("\73983" ++ "a"))
         , success "\"\\U000120ff\"" (StringLiteral "\73983")
+        , success "\"\\xFF\"" (StringLiteral "\xFF")
+        , success "\"\\xff\"" (StringLiteral "\xFF")
+        , Failure FailureTest
+            { failureInput = "\"\\xF\""
+            , failureExpected =
+                unlines
+                    [ "<test-string>:1:5:"
+                    , "  |"
+                    , "1 | \"\\xF\""
+                    , "  |     ^"
+                    , "unexpected '\"'"
+                    , "expecting hexadecimal digit"
+                    ]
+            }
+        , Failure FailureTest
+            { failureInput = "\"\\xFr\""
+            , failureExpected =
+                unlines
+                    [ "<test-string>:1:5:"
+                    , "  |"
+                    , "1 | \"\\xFr\""
+                    , "  |     ^"
+                    , "unexpected 'r'"
+                    , "expecting hexadecimal digit"
+                    ]
+            }
+        , invalidEscape "\"\\'\""
+        , invalidEscape "\"\\b\""
+        , invalidEscape "\"\\?\""
+        , invalidEscape "\"\\a\""
+        , invalidEscape "\"\\v\""
+        , invalidEscape "\"\\377\""
+        , invalidEscape "\"\\77\""
+        , invalidEscape "\"\\77a\""
+        , Failure FailureTest
+            { failureInput = "\"\DEL\""
+            , failureExpected =
+                unlines
+                    [ "<test-string>:1:2:"
+                    , "  |"
+                    , "1 | \"\DEL\""
+                    , "  |  ^"
+                    , "unexpected delete"
+                    , "expecting '\"', escape sequence, \
+                      \or printable ASCII character"
+                    ]
+            }
+        , Failure FailureTest
+            { failureInput = "\"\\uD800\""
+            , failureExpected =
+                unlines
+                    [ "<test-string>:1:8:"
+                    , "  |"
+                    , "1 | \"\\uD800\""
+                    , "  |        ^"
+                    , illegalSurrogate "D800"
+                    ]
+            }
+        , Failure FailureTest
+            { failureInput = "\"\\uZZZZ\""
+            , failureExpected =
+                unlines
+                    [ "<test-string>:1:4:"
+                    , "  |"
+                    , "1 | \"\\uZZZZ\""
+                    , "  |    ^"
+                    , "unexpected 'Z'"
+                    , "expecting hexadecimal digit"
+                    ]
+            }
         , Failure FailureTest
             { failureInput = "\"\\UFFFFFFFF\""
             , failureExpected =
-                "<test-string>:1:13:\n\
-                \  |\n\
-                \1 | \"\\UFFFFFFFF\"\n\
-                \  |             ^\n\
-                \Character code 4294967295 outside of the representable codes.\n"
+                unlines
+                    [ "<test-string>:1:12:"
+                    , "  |"
+                    , "1 | \"\\UFFFFFFFF\""
+                    , "  |            ^"
+                    , unrepresentableCode "FFFFFFFF"
+                    ]
             }
         , FailureWithoutMessage
             [ "", "'a'", "\"\\z\"", "\"\\xzf\"", "\"\\u123\"", "\"\\U1234567\""
-            {-  TODO(virgil): It's not clear whether the strings below should
-                fail or not. A C hex sequence can be longer than 2 if it fits
-                into the char size being considered. Not sure if octals above
-                \377 are allowed or not.
-            , "\"\\400\"", "\"\\xfff\""
-            -}
             ]
         ]
 
@@ -300,52 +354,110 @@ charLiteralParserTests :: [TestTree]
 charLiteralParserTests =
     parseTree charLiteralParser
         [ success "'a'" (CharLiteral 'a')
-        , success "'\\''" (CharLiteral '\'')
+        , success "'''" (CharLiteral '\'')
         , success "'\\\"'" (CharLiteral '\"')
-        , success "'\\?'" (CharLiteral '?')
-        , success "'\\a'" (CharLiteral '\7')
-        , success "'\\b'" (CharLiteral '\8')
         , success "'\\f'" (CharLiteral '\12')
         , success "'\\n'" (CharLiteral '\10')
         , success "'\\r'" (CharLiteral '\13')
         , success "'\\t'" (CharLiteral '\9')
-        , success "'\\v'" (CharLiteral '\11')
-        , success "'\\377'" (CharLiteral '\255')
-        , success "'\\77'" (CharLiteral '\63')
-        , success "'\\xFF'" (CharLiteral '\255')
-        , success "'\\xff'" (CharLiteral '\255')
-        , success "'\\xF'" (CharLiteral '\15')
         , success "'\\u1ABC'" (CharLiteral '\6844')
         , success "'\\u1abc'" (CharLiteral '\6844')
         , success "'\\U000120FF'" (CharLiteral '\73983')
         , success "'\\U000120ff'" (CharLiteral '\73983')
+        , success "'\\xFF'" (CharLiteral '\xFF')
+        , success "'\\xff'" (CharLiteral '\xFF')
+        , Failure FailureTest
+            { failureInput = "'\DEL'"
+            , failureExpected =
+                unlines
+                    [ "<test-string>:1:2:"
+                    , "  |"
+                    , "1 | '\DEL'"
+                    , "  |  ^"
+                    , "unexpected delete"
+                    , "expecting escape sequence or printable ASCII character"
+                    ]
+            }
+        , Failure FailureTest
+            { failureInput = "'\\xF'"
+            , failureExpected =
+                unlines
+                    [ "<test-string>:1:5:"
+                    , "  |"
+                    , "1 | '\\xF'"
+                    , "  |     ^"
+                    , "unexpected '''"
+                    , "expecting hexadecimal digit"
+                    ]
+            }
+        , Failure FailureTest
+            { failureInput = "'\\xFr'"
+            , failureExpected =
+                unlines
+                    [ "<test-string>:1:5:"
+                    , "  |"
+                    , "1 | '\\xFr'"
+                    , "  |     ^"
+                    , "unexpected 'r'"
+                    , "expecting hexadecimal digit"
+                    ]
+            }
+        , invalidEscape "'\\?'"
+        , invalidEscape "'\\a'"
+        , invalidEscape "'\\b'"
+        , invalidEscape "'\\v'"
+        , invalidEscape "'\\377'"
+        , invalidEscape "'\\77'"
+        , Failure FailureTest
+            { failureInput = "'\\uD800'"
+            , failureExpected =
+                unlines
+                    [ "<test-string>:1:8:"
+                    , "  |"
+                    , "1 | '\\uD800'"
+                    , "  |        ^"
+                    , illegalSurrogate "D800"
+                    ]
+            }
         , Failure FailureTest
             { failureInput = "'\\UFFFFFFFF'"
             , failureExpected =
-                "<test-string>:1:13:\n\
-                \  |\n\
-                \1 | '\\UFFFFFFFF'\n\
-                \  |             ^\n\
-                \Character code 4294967295 outside of the representable codes.\n"
+                unlines
+                    [ "<test-string>:1:12:"
+                    , "  |"
+                    , "1 | '\\UFFFFFFFF'"
+                    , "  |            ^"
+                    , unrepresentableCode "FFFFFFFF"
+                    ]
             }
         , Failure FailureTest
             { failureInput = "''"
             , failureExpected =
-                "<test-string>:1:3:\n\
-                \  |\n\
-                \1 | ''\n\
-                \  |   ^\n\
-                \'' is not a valid character literal.\n"
+                unlines
+                    [ "<test-string>:1:3:"
+                    , "  |"
+                    , "1 | ''"
+                    , "  |   ^"
+                    , "unexpected end of input"
+                    , "expecting '''"
+                    ]
             }
         , FailureWithoutMessage
             [ "", "'\\z'", "'\\xzf'", "'\\u123'", "'\\U1234567'"
             , "'\\U000120FFa'", "'\\xFr'", "'\\77a'", "'\\u1ABCa'"
             , "'ab'"
-            {-  TODO(virgil): It's not clear whether the strings below should
-                fail or not. A C hex sequence can be longer than 2 if it fits
-                into the char size being considered. Not sure if octals above
-                \377 are allowed or not.
-            , "'\\400'", "'\\xfff'"
-            -}
             ]
         ]
+
+invalidEscape :: String -> ParserTest a
+invalidEscape failureInput =
+    Failure FailureTest { failureInput, failureExpected }
+  where
+    failureExpected =
+        unlines
+            [ "<test-string>:1:4:"
+            , "  |"
+            , "1 | " ++ failureInput
+            , "  |    ^"
+            , "expecting escape sequence"
+            ]
