@@ -15,6 +15,7 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Axiom.Concrete
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
@@ -23,7 +24,8 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
 import           Kore.Predicate.Predicate
                  ( makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+                 ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
+                 RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
@@ -78,7 +80,42 @@ test_userDefinedFunction =
                 (mockSimplifier [])
                 (metaF (mkVar $ x patternMetaSort))
         assertEqualWithExplanation "f(x) => g(x)" [expect] actual
-
+    , testCase "Cannot apply concrete rule to symbolic pattern" $ do
+        let expect =
+                AttemptedFunction.NotApplicable
+        actual <-
+            evaluateWithAxiom
+                mockMetadataTools
+                (EqualityRule RulePattern
+                    { left =
+                        asApplicationPattern $ metaF (mkVar $ x patternMetaSort)
+                    , right =
+                        asApplicationPattern $ metaG (mkVar $ x patternMetaSort)
+                    , requires = makeTruePredicate
+                    , attributes = def { concrete = Concrete True }
+                    }
+                )
+                (mockSimplifier [])
+                (metaF (mkVar $ x patternMetaSort))
+        assertEqualWithExplanation "f(x) => g(x)" [expect] actual
+    , testCase "Can apply concrete rule to concrete pattern" $ do
+        let expect =
+                AttemptedFunction.NotApplicable
+        actual <-
+            evaluateWithAxiom
+                mockMetadataTools
+                (EqualityRule RulePattern
+                    { left =
+                        asApplicationPattern $ metaF metaH
+                    , right =
+                        asApplicationPattern $ metaG metaH
+                    , requires = makeTruePredicate
+                    , attributes = def { concrete = Concrete True }
+                    }
+                )
+                (mockSimplifier [])
+                (metaF (mkVar $ x patternMetaSort))
+        assertEqualWithExplanation "f(x) => g(x)" [expect] actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
                 AttemptedFunction.Applied (OrOfExpandedPattern.make [])
@@ -209,6 +246,18 @@ metaG p =
   where
     Valid { freeVariables } = extract p
     valid = Valid { patternSort = patternMetaSort, freeVariables }
+
+hSymbol :: SymbolOrAlias Meta
+hSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = testId "#h"
+    , symbolOrAliasParams = []
+    }
+
+metaH :: Functor dom => PurePattern Meta dom variable (Valid (Variable Meta) Meta)
+metaH = asPurePattern $
+    valid :< ApplicationPattern (Application hSymbol [])
+  where
+    valid = Valid { patternSort = patternMetaSort, freeVariables = mempty }
 
 sigmaSymbol :: SymbolOrAlias Meta
 sigmaSymbol = SymbolOrAlias
