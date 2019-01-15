@@ -38,7 +38,6 @@ import           Kore.Unification.Data
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
-                 ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
@@ -49,8 +48,6 @@ import qualified Test.Kore.Builtin.List as Test.List
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
-import           Test.Kore.Step.Condition.Evaluator
-                 ( genSortedVariable )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 import           Test.Tasty.HUnit.Extensions
@@ -214,14 +211,12 @@ test_size =
             (===) ExpandedPattern.top =<< evaluate predicate
         )
 
-genSetSortedVariable
+setVariableGen
     :: MetaOrObject level
     => Sort level
     -> Gen (Set (Variable level))
-genSetSortedVariable sort =
-    Gen.set
-        (Range.linear 0 32)
-        (genSortedVariable sort)
+setVariableGen sort =
+    Gen.set (Range.linear 0 32) (standaloneGen $ variableGen sort)
 
 -- | Sets with symbolic keys are not simplified.
 test_symbolic :: TestTree
@@ -229,7 +224,7 @@ test_symbolic =
     testPropertyWithSolver
         "builtin functions are not evaluated on symbolic keys"
         (do
-            values <- forAll (genSetSortedVariable intSort)
+            values <- forAll (setVariableGen intSort)
             let patMap = asSymbolicPattern (Set.map mkVar values)
                 expect = ExpandedPattern.fromPurePattern patMap
             if Set.null values
@@ -293,7 +288,7 @@ test_unifyFramingVariable =
                 (<$>)
                     (Set.insert framedElem)
                     (forAll genSetConcreteIntegerPattern)
-            frameVar <- forAll (genSortedVariable setSort)
+            frameVar <- forAll (standaloneGen $ variableGen setSort)
             let framedSet = Set.singleton framedElem
                 patConcreteSet = asPattern concreteSet
                 patFramedSet =

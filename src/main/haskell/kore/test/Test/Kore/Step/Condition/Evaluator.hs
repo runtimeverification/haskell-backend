@@ -1,23 +1,17 @@
 module Test.Kore.Step.Condition.Evaluator where
 
-import           Hedgehog hiding
-                 ( property )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Hedgehog hiding
+       ( property )
+import Test.Tasty
+import Test.Tasty.HUnit
 
 import qualified Control.Monad.Trans as Trans
-import           Data.Proxy
 import           Data.Reflection
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.Parser.LexemeImpl
-                 ( idFirstChars, idOtherChars )
 import           Kore.Predicate.Predicate
 import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.ExpandedPattern
@@ -28,7 +22,6 @@ import           SMT
 import qualified SMT
 
 import           Test.Kore
-                 ( testId )
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
 import           Test.Kore.Builtin.Builtin
                  ( testMetadataTools, testSubstitutionSimplifier )
@@ -40,82 +33,17 @@ import           Test.Kore.Predicate.Predicate ()
 import           Test.Kore.Step.Simplifier
 import           Test.SMT
 
-genId :: forall level. MetaOrObject level => Gen (Id level)
-genId =
-    case isMetaOrObject (Proxy :: Proxy level) of
-        IsMeta -> testId . Text.cons '#' <$> genIdGeneric
-        IsObject -> testId <$> genIdGeneric
-  where
-    genFirstChar = Gen.element idFirstChars
-    nextChars = idFirstChars ++ idOtherChars
-    genNextChar = Gen.element nextChars
-    genIdGeneric :: Gen Text
-    genIdGeneric = do
-        firstChar <- genFirstChar
-        body <- Gen.list (Range.linear 1 32) genNextChar
-        (return . Text.pack) (firstChar : body)
-
-genSortedVariable
-    :: forall level.
-        MetaOrObject level
-    => Sort level
-    -> Gen (Variable level)
-genSortedVariable sort = Variable <$> genId <*> pure sort
-
-genPredicate :: Gen (Predicate Object Variable)
-genPredicate =
-    Gen.recursive
-        Gen.choice
-        -- non-recursive generators
-        [ pure makeFalsePredicate
-        , pure makeTruePredicate
-        ]
-        -- recursive generators
-        [ genAndPredicate
-        , genCeilPredicate
-        , genEqualsPredicate
-        , genExistsPredicate
-        , genFloorPredicate
-        , genForallPredicate
-        , genIffPredicate
-        , genImpliesPredicate
-        , genInPredicate
-        , genNotPredicate
-        , genOrPredicate
-        ]
-  where
-    genVariable = genSortedVariable Builtin.boolSort
-    genAndPredicate = makeAndPredicate <$> genPredicate <*> genPredicate
-    genCeilPredicate = makeCeilPredicate . mkVar <$> genVariable
-    genEqualsPredicate =
-        makeEqualsPredicate
-            <$> (mkVar <$> genVariable)
-            <*> (mkVar <$> genVariable)
-    genExistsPredicate = makeExistsPredicate <$> genVariable <*> genPredicate
-    genFloorPredicate = makeFloorPredicate . mkVar <$> genVariable
-    genForallPredicate = makeForallPredicate <$> genVariable <*> genPredicate
-    genIffPredicate = makeIffPredicate <$> genPredicate <*> genPredicate
-    genImpliesPredicate = makeImpliesPredicate <$> genPredicate <*> genPredicate
-    genInPredicate =
-        makeInPredicate
-            <$> (mkVar <$> genVariable)
-            <*> (mkVar <$> genVariable)
-    genNotPredicate = makeNotPredicate <$> genPredicate
-    genOrPredicate = makeOrPredicate <$> genPredicate <*> genPredicate
-
-{- |
-@
-
-@
- -}
 test_andNegation :: TestTree
 test_andNegation =
     testPropertyWithSolver
-        "\\and{_}(φ, \not{_}(φ)) === \\bottom"
+        "\\and{_}(φ, \\not{_}(φ)) === \\bottom"
         property
   where
     property = do
-        predicate <- forAll genPredicate
+        let boolVariableGen = mkVar <$> variableGen Builtin.boolSort
+            boolPredicateGen =
+                predicateChildGen boolVariableGen Builtin.boolSort
+        predicate <- forAll (standaloneGen boolPredicateGen)
         actual <-
             evaluate
                 (makeAndPredicate
