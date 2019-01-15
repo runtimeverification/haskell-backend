@@ -156,7 +156,7 @@ assertValue purePattern =
         concretePattern
         (concretePattern >>= roundTrip)
   where
-    concretePattern = asConcretePurePattern purePattern
+    concretePattern = asConcreteStepPattern purePattern
     roundTrip patt = do
         value <- Value.fromConcreteStepPattern tools patt
         return (Value.asConcreteStepPattern value)
@@ -170,4 +170,4 @@ assertNotValue purePattern =
         Nothing
         (concretePattern >>= Value.fromConcreteStepPattern tools)
   where
-    concretePattern = asConcretePurePattern purePattern
+    concretePattern = asConcreteStepPattern purePattern

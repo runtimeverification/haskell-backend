@@ -163,7 +163,7 @@ makeEvaluateNonBoolCeil
 makeEvaluateTerm
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )
@@ -203,7 +203,7 @@ makeEvaluateBuiltin
     :: forall level variable .
         ( level ~ Object
         , SortedVariable variable
-        , Eq (variable level)
+        , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         )

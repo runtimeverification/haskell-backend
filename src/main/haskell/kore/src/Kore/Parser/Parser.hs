@@ -10,7 +10,7 @@ Portability : POSIX
 This is a parser for the Kore language. Sample usage:
 
 @
-import Kore.Parser.KoreParser
+import Kore.Parser.Parser
 
 import           Kore.Parser.ParserUtils (parseOnly)
 import           System.Environment (getArgs)
@@ -19,7 +19,7 @@ main :: IO ()
 main = do
     (fileName:_) <- getArgs
     contents <- readFile fileName
-    print (fromKore contents)
+    print (parseKoreDefinition contents)
     -- or --
     print (parse koreParser fileName contents)
     -- or --
@@ -28,8 +28,8 @@ main = do
 
 -}
 module Kore.Parser.Parser
-    ( fromKore
-    , fromKorePattern
+    ( parseKoreDefinition
+    , parseKorePattern
     , koreParser
     , korePatternParser
     , metaPatternParser
@@ -64,21 +64,30 @@ The input must contain a full valid Kore pattern and nothing else.
 korePatternParser :: Parser CommonKorePattern
 korePatternParser = KoreParser.korePatternParser
 
-{-|'fromKore' takes a string representation of a Kore Definition and returns
-a 'KoreDefinition' or a parse error.
+{- | Parse a string representing a Kore definition.
 
-The input must contain a full valid Kore definition and nothing else.
--}
-fromKore :: FilePath -> String -> Either String KoreDefinition
-fromKore = parseOnly koreParser
+@parseKoreDefinition@ returns a 'KoreDefinition' upon success, or an parse error
+message otherwise. The input must contain a valid Kore definition and nothing
+else.
 
-{-|'fromKorePattern' takes a string representation of a Kore Pattern and returns
-a 'KorePattern' or a parse error.
+ -}
+parseKoreDefinition
+    :: FilePath  -- ^ Filename used for error messages
+    -> String  -- ^ The concrete syntax of a valid Kore definition
+    -> Either String KoreDefinition
+parseKoreDefinition = parseOnly koreParser
 
-The input must contain a full valid Kore pattern and nothing else.
--}
-fromKorePattern :: FilePath -> String -> Either String CommonKorePattern
-fromKorePattern = parseOnly korePatternParser
+{- | Parse a string representing a Kore pattern.
+
+@parseKorePattern@ returns a 'CommonKorePattern' upon success, or an parse error
+message otherwise. The input must contain a valid Kore pattern and nothing else.
+
+ -}
+parseKorePattern
+    :: FilePath  -- ^ Filename used for error messages
+    -> String  -- ^ The concrete syntax of a valid Kore pattern
+    -> Either String CommonKorePattern
+parseKorePattern = parseOnly korePatternParser
 
 
 ---------------------------------

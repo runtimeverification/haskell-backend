@@ -23,14 +23,13 @@ module Kore.Step.BaseStep
     , stepWithRuleForUnifier
     ) where
 
-import qualified Control.Arrow as Arrow
 import           Control.Monad.Except
 import           Control.Monad.Trans.Except
                  ( throwE )
 import           Data.Either
                  ( partitionEithers )
 import qualified Data.Hashable as Hashable
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 import           Data.Semigroup
@@ -76,9 +75,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
-import           Kore.Substitution.Class
-                 ( substitute )
-import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Error
@@ -286,8 +282,10 @@ stepWithRuleForUnifier
     -- Distinguish configuration (pattern) and axiom variables by lifting them
     -- into 'StepperVariable'.
     let
-        axiomLeft = mapVariables AxiomVariable axiomLeftRaw
-        startPattern = mapVariables ConfigurationVariable initialTerm
+        axiomLeft =
+            Kore.Step.Pattern.mapVariables AxiomVariable axiomLeftRaw
+        startPattern =
+            Kore.Step.Pattern.mapVariables ConfigurationVariable initialTerm
 
     let
         -- Keep a set of all variables for remapping errors (below).
@@ -398,7 +396,7 @@ applyUnificationToRhs
                 ExpandedPattern.mapVariables
                     ConfigurationVariable expandedPattern
 
-        wrapAxiomVariables = mapVariables AxiomVariable
+        wrapAxiomVariables = Kore.Step.Pattern.mapVariables AxiomVariable
         axiomRight :: StepPattern level (StepperVariable variable)
         axiomRight = wrapAxiomVariables axiomRightRaw
         axiomRequires = Predicate.mapVariables AxiomVariable axiomRequiresRaw
@@ -467,13 +465,9 @@ applyUnificationToRhs
         hasConfigurationVariable (AxiomVariable _, _) = False
         hasConfigurationVariable (ConfigurationVariable _, _) = True
 
-    let
-        rawNormalizedSubstitution = Substitution.unwrap normalizedSubstitution
-        unifiedSubstitution =
-            ListSubstitution.fromList
-                (makeUnifiedSubstitution rawNormalizedSubstitution)
+    let substitution = Substitution.toMap normalizedSubstitution
     -- Apply substitution to resulting configuration and conditions.
-    rawResult <- substitute axiomRight unifiedSubstitution
+    rawResult <- substitute substitution axiomRight
 
     let
         variablesInLeftAxiom =
@@ -491,8 +485,8 @@ applyUnificationToRhs
         extractAxiomVariables =
             Set.fromList . mapMaybe toVariable . Set.toList
         substitutions =
-            Set.fromList . mapMaybe (toVariable . fst)
-            $ rawNormalizedSubstitution
+            Set.fromList . mapMaybe toVariable . Map.keys
+            $ substitution
 
     -- Unwrap internal 'StepperVariable's and collect the variable mappings
     -- for the proof.
@@ -890,7 +884,7 @@ predicateStepVariablesToCommon existingVars mapped predicate' = do
         )
   where
     configurationVariablesToCommon =
-        mapVariables configurationVariableToCommon
+        Kore.Step.Pattern.mapVariables configurationVariableToCommon
 
 patternStepVariablesToCommon
     ::  ( FreshVariable variable
@@ -917,7 +911,7 @@ patternStepVariablesToCommon existingVars mapped patt = do
         )
   where
     configurationVariablesToCommon =
-        mapVariables configurationVariableToCommon
+        Kore.Step.Pattern.mapVariables configurationVariableToCommon
 
 configurationVariableToCommon
     :: StepperVariable variable level -> variable level
@@ -933,7 +927,7 @@ replacePatternVariables
     -> StepPattern level (StepperVariable variable)
     -> StepPattern level (StepperVariable variable)
 replacePatternVariables mapping =
-    mapVariables
+    Kore.Step.Pattern.mapVariables
         (\var -> fromMaybe var (Map.lookup var mapping))
 
 addAxiomVariablesAsConfig
@@ -986,14 +980,3 @@ removeAxiomVariables =
             ConfigurationVariable _ -> True
         )
     . Substitution.unwrap
-
-makeUnifiedSubstitution
-    :: MetaOrObject level
-    => [( StepperVariable variable level
-        , StepPattern level (StepperVariable variable)
-        )]
-    -> [(Unified (StepperVariable variable)
-        , StepPattern level (StepperVariable variable)
-        )]
-makeUnifiedSubstitution =
-    map (Arrow.first asUnified)

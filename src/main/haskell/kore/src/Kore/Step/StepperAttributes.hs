@@ -212,7 +212,6 @@ A symbol is injective if it is given the @injective@ attribute, the
 
 See also: 'isInjective', 'injectiveAttribute', 'constructorAttribute',
 'sortInjectionAttribute'
-
  -}
 isInjective_
     :: Given (MetadataTools level StepperAttributes)

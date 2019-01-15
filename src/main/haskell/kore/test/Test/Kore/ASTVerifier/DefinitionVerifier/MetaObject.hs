@@ -5,6 +5,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.MetaObject
 import Test.Tasty
        ( TestTree )
 
+import qualified Data.Set as Set
+
 import Kore.AST.AstWithLocation
 import Kore.AST.Kore
 import Kore.AST.Sentence
@@ -20,7 +22,11 @@ test_metaObject =
             (ModuleName "test")
             [ simpleAxiomSentence
                 ((<$)
-                    (asUnified Valid { patternSort = patternMetaSort })
+                    (asUnified Valid
+                        { patternSort = patternMetaSort
+                        , freeVariables = Set.empty
+                        }
+                    )
                     (asCommonKorePattern
                         (notPattern
                             (updateAstLocation patternMetaSort AstLocationTest)
@@ -47,7 +53,11 @@ test_metaObject =
             (ModuleName "test")
             [ simpleAxiomSentence
                 ((<$)
-                    (asUnified Valid { patternSort = charMetaSort })
+                    (asUnified Valid
+                        { patternSort = charMetaSort
+                        , freeVariables = Set.empty
+                        }
+                    )
                     (asCommonKorePattern
                         (notPattern
                             (updateAstLocation charMetaSort AstLocationTest)
@@ -63,7 +73,11 @@ test_metaObject =
             (ModuleName "test")
             [ simpleAxiomSentence
                 ((<$)
-                    (asUnified Valid { patternSort = objectSort })
+                    (asUnified Valid
+                        { patternSort = objectSort
+                        , freeVariables = Set.empty
+                        }
+                    )
                     (asCommonKorePattern
                         (notPattern
                             objectSort
@@ -97,7 +111,11 @@ test_metaObject =
             (ModuleName "test")
             [ simpleAxiomSentence
                 ((<$)
-                    (asUnified Valid { patternSort = objectSort })
+                    (asUnified Valid
+                        { patternSort = objectSort
+                        , freeVariables = Set.empty
+                        }
+                    )
                     (asCommonKorePattern
                         (notPattern
                             objectSort

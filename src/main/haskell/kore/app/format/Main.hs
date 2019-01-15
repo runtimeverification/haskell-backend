@@ -14,7 +14,7 @@ import System.IO
 import Kore.AST.Sentence
        ( KoreDefinition )
 import Kore.Parser.Parser
-       ( fromKore )
+       ( parseKoreDefinition )
 import Kore.Unparser
 
 import GlobalMain
@@ -68,4 +68,4 @@ main =
 -- | Read a 'KoreDefinition' from the given file name or signal an error.
 readKoreOrDie :: FilePath -> IO KoreDefinition
 readKoreOrDie fileName =
-    readFile fileName >>= either error return . fromKore fileName
+    readFile fileName >>= either error return . parseKoreDefinition fileName

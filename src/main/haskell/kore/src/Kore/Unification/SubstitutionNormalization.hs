@@ -27,6 +27,7 @@ import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
 import           Kore.AST.Pure
+import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -37,14 +38,11 @@ import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isNonSimplifiable_ )
-import           Kore.Substitution.Class
-import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.Free
 import           Kore.Variables.Fresh
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
@@ -58,9 +56,9 @@ normalizeSubstitution
     ::  forall m level variable
      .  ( MetaOrObject level
         , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
+        , OrdMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         , MonadCounter m
         , Show (variable level)
         )
@@ -74,14 +72,11 @@ normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
   where
-    rawSubstitution :: [(variable level, StepPattern level variable)]
-    rawSubstitution = Substitution.unwrap substitution
-
     interestingVariables :: Set (variable level)
-    interestingVariables = extractVariables rawSubstitution
+    interestingVariables = Map.keysSet variableToPattern
 
     variableToPattern :: Map (variable level) (StepPattern level variable)
-    variableToPattern = Map.fromList rawSubstitution
+    variableToPattern = Substitution.toMap substitution
 
     allDependencies :: Map (variable level) (Set (variable level))
     allDependencies =
@@ -146,13 +141,14 @@ variableToSubstitution varToPattern var =
 normalizeSortedSubstitution
     ::  ( MetaOrObject level
         , OrdMetaOrObject variable
-        , Eq (variable level)
+        , Ord (variable level)
         , MonadCounter m
         , FreshVariable variable
+        , SortedVariable variable
         )
     => [(variable level, StepPattern level variable)]
     -> [(variable level, StepPattern level variable)]
-    -> [(Unified variable, StepPattern level variable)]
+    -> [(variable level, StepPattern level variable)]
     -> m (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
     return Predicated
@@ -172,21 +168,11 @@ normalizeSortedSubstitution
             normalizeSortedSubstitution unprocessed result substitution
         _ -> do
             substitutedVarPattern <-
-                substitute varPattern (ListSubstitution.fromList substitution)
+                substitute (Map.fromList substitution) varPattern
             normalizeSortedSubstitution
                 unprocessed
                 ((var, substitutedVarPattern) : result)
-                ((asUnified var, substitutedVarPattern) : substitution)
-
-extractVariables
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        )
-    => [(variable level, StepPattern level variable)]
-    -> Set (variable level)
-extractVariables unification =
-    let (vars, _) = unzip unification
-    in Set.fromList vars
+                ((var, substitutedVarPattern) : substitution)
 
 {- | Calculate the dependencies of a substitution.
 
@@ -202,10 +188,12 @@ getDependencies
     -> variable level  -- ^ substitution variable
     -> StepPattern level variable  -- ^ substitution pattern
     -> Set (variable level)
-getDependencies interesting var p@(Recursive.project -> _ :< h) =
-    case h of
+getDependencies interesting var (Recursive.project -> valid :< patternHead) =
+    case patternHead of
         VariablePattern v | v == var -> Set.empty
-        _ -> Set.intersection interesting (freePureVariables p)
+        _ -> Set.intersection interesting freeVariables
+  where
+    Valid { freeVariables } = valid
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.

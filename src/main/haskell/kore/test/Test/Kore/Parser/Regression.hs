@@ -102,11 +102,11 @@ runParser inputFileName verifyRequest = do
         withCurrentDirectory (Paths.dataFileName ".") (readFile inputFileName)
     let
         definition = do
-            unverifiedDefinition <- fromKore inputFileName fileContent
+            unverifiedDefn <- parseKoreDefinition inputFileName fileContent
             verifiedDefinition <- case verifyRequest of
-                VerifyRequestWithLifting -> verify unverifiedDefinition
-                VerifyRequestYes         -> verify unverifiedDefinition
-                VerifyRequestNo          -> return unverifiedDefinition
+                VerifyRequestWithLifting -> verify unverifiedDefn
+                VerifyRequestYes         -> verify unverifiedDefn
+                VerifyRequestNo          -> return unverifiedDefn
             case verifyRequest of
                 VerifyRequestWithLifting ->
                     void $ verify

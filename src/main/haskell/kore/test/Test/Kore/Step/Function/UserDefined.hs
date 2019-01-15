@@ -181,11 +181,15 @@ fSymbol = SymbolOrAlias
 
 metaF
     :: CommonStepPattern Meta
-    -> CofreeF (Application Meta) (Valid Meta) (CommonStepPattern Meta)
+    -> CofreeF
+        (Application Meta)
+        (Valid (Variable Meta) Meta)
+        (CommonStepPattern Meta)
 metaF p =
     valid :< Application fSymbol [p]
   where
-    valid = Valid { patternSort = patternMetaSort }
+    Valid { freeVariables } = extract p
+    valid = Valid { patternSort = patternMetaSort, freeVariables }
 
 
 gSymbol :: SymbolOrAlias Meta
@@ -196,11 +200,15 @@ gSymbol = SymbolOrAlias
 
 metaG
     :: CommonStepPattern Meta
-    -> CofreeF (Application Meta) (Valid Meta) (CommonStepPattern Meta)
+    -> CofreeF
+        (Application Meta)
+        (Valid (Variable Meta) Meta)
+        (CommonStepPattern Meta)
 metaG p =
     valid :< Application gSymbol [p]
   where
-    valid = Valid { patternSort = patternMetaSort }
+    Valid { freeVariables } = extract p
+    valid = Valid { patternSort = patternMetaSort, freeVariables }
 
 sigmaSymbol :: SymbolOrAlias Meta
 sigmaSymbol = SymbolOrAlias
@@ -211,14 +219,23 @@ sigmaSymbol = SymbolOrAlias
 metaSigma
     :: CommonStepPattern Meta
     -> CommonStepPattern Meta
-    -> CofreeF (Application Meta) (Valid Meta) (CommonStepPattern Meta)
+    -> CofreeF
+        (Application Meta)
+        (Valid (Variable Meta) Meta)
+        (CommonStepPattern Meta)
 metaSigma p1 p2 =
     valid :< Application sigmaSymbol [p1, p2]
   where
-    valid = Valid { patternSort = patternMetaSort }
+    Valid { freeVariables = freeVariables1 } = extract p1
+    Valid { freeVariables = freeVariables2 } = extract p2
+    freeVariables = Set.union freeVariables1 freeVariables2
+    valid = Valid { patternSort = patternMetaSort, freeVariables }
 
 asApplicationPattern
-    :: CofreeF (Application Meta) (Valid Meta) (CommonStepPattern Meta)
+    :: CofreeF
+        (Application Meta)
+        (Valid (Variable Meta) Meta)
+        (CommonStepPattern Meta)
     -> CommonStepPattern Meta
 asApplicationPattern (valid :< app) =
     asPurePattern (valid :< ApplicationPattern app)
@@ -228,7 +245,10 @@ evaluateWithAxiom
     => MetadataTools level StepperAttributes
     -> EqualityRule level
     -> CommonStepPatternSimplifier level
-    -> CofreeF (Application level) (Valid level) (CommonStepPattern level)
+    -> CofreeF
+        (Application level)
+        (Valid (Variable level) level)
+        (CommonStepPattern level)
     -> IO [CommonAttemptedFunction level]
 evaluateWithAxiom
     metadataTools

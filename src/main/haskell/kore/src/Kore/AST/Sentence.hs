@@ -681,7 +681,12 @@ type VerifiedPureSentence level =
     Sentence
         level
         (SortVariable level)
-        (PurePattern level Domain.Builtin Variable (Valid level))
+        (PurePattern
+            level
+            Domain.Builtin
+            Variable
+            (Valid (Variable level) level)
+        )
 
 instance
     ( MetaOrObject level
