@@ -195,6 +195,7 @@
     hooked-symbol,
     alias,
     axiom,
+    import,
    },
     % list of connectives
     keywordstyle=[2]\color{codegreen},
@@ -1690,15 +1691,15 @@ An alternative way to define greatest fixed-point is using the least fixed-point
 where the pattern $\neg e[\neg x / x]$ is called the \emph{dual of pattern $e$ w.r.t. the variable $x$}.
 This definition is justified by the following theorem which establishes the duality between least and greatest fixed-points.
 \begin{theorem}[Duality of Fixed-Points]
- Let $F \colon 2^M \to 2^M$ be a monotone function. By Knaster-Tarski theorem, 
- it has a unique least fixed-point $\mu x . F \subseteq M$ and a unique 
- greatest fixed-point $\nu x . F \subseteq M$, which satisfy the following 
+ Let $F \colon 2^M \to 2^M$ be a monotone function. By Knaster-Tarski theorem,
+ it has a unique least fixed-point $\mu x . F \subseteq M$ and a unique
+ greatest fixed-point $\nu x . F \subseteq M$, which satisfy the following
  duality equations:
  \begin{align*}
  & \nu x . F = M \setminus \left( \mu x . \bar{F} \right) \\
  & \mu x . F = M \setminus \left( \nu x . \bar{F} \right) \\
  \end{align*}
- where $\bar{F} \colon 2^M \to 2^M$ is also a monotone function defined as 
+ where $\bar{F} \colon 2^M \to 2^M$ is also a monotone function defined as
  $\bar{F}(A) = M \setminus ( F(M \setminus A))$.
 \end{theorem}
 
@@ -2327,23 +2328,23 @@ we get
 $\rand \imp \bot$.
 
 \prule{Axiom B} is also wrong, but it is \emph{consistent}.
-What it says is that $\rand$ must be the predecessor of \emph{some positive 
+What it says is that $\rand$ must be the predecessor of \emph{some positive
 number}.
 Therefore, the transition system where $\rand$ can \emph{only} go to,
 say, $42$, satisfies \prule{Axiom B}.
-This means that \prule{Axiom B} is too weak to capture the intended semantics 
+This means that \prule{Axiom B} is too weak to capture the intended semantics
 of $\rand$.
 
-\prule{Axiom A} is the correct axiom. It says that \emph{for all positive 
-numbers 
+\prule{Axiom A} is the correct axiom. It says that \emph{for all positive
+numbers
 $n$},
 $\rand$ is a predecessor of $n$.
 This captures precisely the intended semantics of $\rand$.
 Note that \prule{Axiom A} is a \emph{positive axiom}, meaning that
 it merely says what the transition system \emph{must do},
 but not constrains what it \emph{cannot do}.
-Positive axioms will \emph{not} introduce inconsistency, as 
-the total transition system (i.e., the translation relation is the total 
+Positive axioms will \emph{not} introduce inconsistency, as
+the total transition system (i.e., the translation relation is the total
 relation and all states can go to all other states, including themselves)
 is always a candidate model.
 
@@ -2354,33 +2355,33 @@ $$
 \prule{Axiom D} \qquad \rand \imp \wnext ( \exists x . (x > 0) \wedge x )
 $$
 where $\wnext \varphi \equiv \neg \snext \neg \varphi$ is the dual
-of ``one-path next'' $\snext$, called ``all-path next''. 
+of ``one-path next'' $\snext$, called ``all-path next''.
 The axiom says that \emph{for all next states} of $\rand$,
 it must be some positive number.
 \prule{Axiom A} together with \prule{Axiom D} capture the intended semantics
-of $\rand$ most precisely. 
+of $\rand$ most precisely.
 For the purpose of reasoning about \emph{what the transition system can do},
 e.g., one-path reachability properties,
 \prule{Axiom A} is good enough,
-but for reasoning about more general properties, e.g., all-path reachability 
+but for reasoning about more general properties, e.g., all-path reachability
 properties,
 we must know \emph{what the transition system cannot do},
 and \prule{Axiom D} is needed in there.
 
 
 
-%Just a following up on @grigore.rosu’s `rand` example where `rand` can rewrite 
-%to any positive integers. The following three axioms are _different_ (where 
+%Just a following up on @grigore.rosu’s `rand` example where `rand` can rewrite
+%to any positive integers. The following three axioms are _different_ (where
 %`snext` is strong next):
 %```(A) \forall x . (rand -> (x > 0 -> snext(x)))   // correct
 %(B) rand -> snext(\exists x . (x /\ x > 0))  // incorrect
 %(C) \forall x . (rand -> (x > 0 /\ snext(x)))  // totally wrong```
-%(A) is what Grigore proposed and is the correct one. It forces the model to 
-%have all transitions `rand => 1, rand => 2, rand => 3, ...`. (B) is my first 
-%attemp, which is strong, because it allows models which contain, for example, 
-%only one transition `rand => 42` and nothing else, which is _not_ what we 
-%want. 
-%(C) is totally wrong, as one can prove `rand -> \bot` by instantiating `x` to 
+%(A) is what Grigore proposed and is the correct one. It forces the model to
+%have all transitions `rand => 1, rand => 2, rand => 3, ...`. (B) is my first
+%attemp, which is strong, because it allows models which contain, for example,
+%only one transition `rand => 42` and nothing else, which is _not_ what we
+%want.
+%(C) is totally wrong, as one can prove `rand -> \bot` by instantiating `x` to
 %be `0`.
 
 %
@@ -3074,7 +3075,7 @@ where
  axiomatizes the provability relation of matching logic (see
  Section~\ref{sec:ML-proof-system});
 \end{itemize}
- 
+
 With the meta-theory $K$, any schema mechanisms, conventions or notations
 that are found useful to define theories $T$ can be given a formal semantics by
 defining a corresponding meta-representation $\denote{T}$, which is a finite
@@ -3818,7 +3819,7 @@ Derived connectives have axioms
 \end{align*}
 
 \begin{notation}
- As one may have already noticed, patterns of sort $\KPattern$ get huge rather 
+ As one may have already noticed, patterns of sort $\KPattern$ get huge rather
  quickly.
  The following notations are adopted to write $\KPattern$ patterns in a more
  compact way, by putting a bar over their normal mixfix forms
@@ -5670,11 +5671,11 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %  \\\hline
 %  Non-parametric sort $\Nat$ & $\Ksort(\text{``Nat''}, \KnilKSortList)$
 %  \\\hline
-%  Parametric sort $\parametric{\List}{\Nat}$ & $\Ksort(\text{``List''}, 
-%\KconsKSortList(\Ksort(\text{``Nat''}, \KnilKSortList),$ \\ & 
+%  Parametric sort $\parametric{\List}{\Nat}$ & $\Ksort(\text{``List''},
+%\KconsKSortList(\Ksort(\text{``Nat''}, \KnilKSortList),$ \\ &
 %$\KnilKSortList))$
 %  \\\hline
-%  Non-parametric constant symbol $\zero$ & $\Ksymbol(\text{``zero''}, 
+%  Non-parametric constant symbol $\zero$ & $\Ksymbol(\text{``zero''},
 %\KnilKSortList, \KnilKSortList,$ \\ &
 %  $\Ksort(\text{``Nat''}, \KnilKSortList))$
 %  \\\hline
@@ -5682,7 +5683,7 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %  \\\hline
 %  Parametric symbol $\parametric{\cons}{\Nat}$ & See equation~\eqref{cons-Nat}
 % \end{tabular}
-% \captionof{table}{Objects and Their Abstract Syntax Trees (Without Notation 
+% \captionof{table}{Objects and Their Abstract Syntax Trees (Without Notation
 %Sugar)}
 %\end{center}
 %
@@ -5716,7 +5717,7 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %  Pattern $\parametric{\cons}{\Nat}(\zero, \parametric{\nil}{\Nat})$
 %  & $\Kcons(\KNat, \Kzero, \Knil(\KNat))$
 % \end{tabular}
-% \captionof{table}{Objects and Their Abstract Syntax Trees (With Notation 
+% \captionof{table}{Objects and Their Abstract Syntax Trees (With Notation
 %Sugar)}
 % \label{tab:ast-with-sugar}
 %\end{center}
@@ -5745,18 +5746,18 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %  \\\hline
 %  \texttt{symbol succ(Nat):Nat} & $\KsymbolDeclared(\KSymbolsucc)$
 %  \\\hline
-%  \texttt{symbol nil\{S\}():List\{S\}} & 
+%  \texttt{symbol nil\{S\}():List\{S\}} &
 %$\KsortDeclared(s)\to\KsymbolDeclared(\KSymbolnil(s))$
 %  \\\hline
-%  \texttt{symbol cons\{S\}(S,List\{S\}):List\{S\}} & 
+%  \texttt{symbol cons\{S\}(S,List\{S\}):List\{S\}} &
 %$\KsortDeclared(s)\to\KsymbolDeclared(\KSymbolcons(s))$
 %  \\\hline
 %  \texttt{axiom $\varphi$} & $\Kdeduce(\denote{\varphi})$
 %  \\\hline
-%  \texttt{axiom\{S\} $\varphi$} & $\KsortDeclared(s) \to 
+%  \texttt{axiom\{S\} $\varphi$} & $\KsortDeclared(s) \to
 %\Kdeduce(\denote{\varphi})$
 %  \\\hline
-%  \texttt{axiom\{S1,..,Sn\} $\varphi$} & $\KsortDeclared(s_1) \wedge \dots 
+%  \texttt{axiom\{S1,..,Sn\} $\varphi$} & $\KsortDeclared(s_1) \wedge \dots
 %\wedge \KsortDeclared(s_n) \to \Kdeduce(\denote{\varphi})$
 % \end{tabular}
 % \captionof{table}{Lift Declarations to Assertions}
@@ -6187,7 +6188,7 @@ We use string literals to represent patterns in the meta-theory whose sort is
 $\KString$ (a.k.a., $\KCharList$).
 
 \paragraph{Keywords.}
-Kore has six keywords.
+Kore has nine keywords.
 They belong to the syntactic category \syntacc{keyword}.
 They are used to signify the begin and end of a declaration.
 \begin{center}
@@ -6206,10 +6207,12 @@ They are used to signify the begin and end of a declaration.
    alias & \textrm{Initiate an alias declaration}
    \\
    axiom & \textrm{Initiate an axiom declaration}
-      \\
-      hooked-sort & \textrm{Initiate a hooked sort declaration}
-      \\
-      hooked-symbol & \textrm{Initiate a hooked symbol declaration}
+   \\
+   hooked-sort & \textrm{Initiate a hooked sort declaration}
+   \\
+   hooked-symbol & \textrm{Initiate a hooked symbol declaration}
+   \\
+   import & \textrm{Initiate an import declaration}
  \end{tabular}}
 \end{center}
 
@@ -6225,12 +6228,12 @@ sort is object-level or meta-level in the parse time.
 \setlength{\grammarparsep}{3pt}
 \begin{grammar}\small
 <sort> ::= <object-sort> | <meta-sort>
- 
+
 <object-sort> ::= <object-sort-variable> | <object-non-variable-sort>
 
 <object-sort-variable> ::= <object-identifier>
 
-<object-non-variable-sort> ::= <object-sort-constructor> `{'  
+<object-non-variable-sort> ::= <object-sort-constructor> `{'
 <object-sort-list> `}'
 
 <object-sort-constructor> ::= <object-identifier>
@@ -6423,13 +6426,13 @@ respectively, as shown in the next grammar.
 
 \begin{grammar}\small
  <head> ::= <object-head> | <meta-head>
- 
+
  <object-head> ::= <object-head-constructor> `{' <object-sort-list> `}'
-  
+
  <object-head-constructor> ::= <object-identifier>
- 
+
  <meta-head> ::= <meta-head-constructor> `{' <meta-sort-list> `}'
- 
+
  <meta-head-constructor> ::= <meta-identifier>
 \end{grammar}
 A head is of the form \texttt{$C$\{$s_1,\dots,s_n$\}} for some $n \ge 0$, where
@@ -6509,9 +6512,9 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 \label{grammar:patterns}
  \small
  <pattern> ::= <object-pattern> | <meta-pattern>
- 
+
  <variable> ::= <object-variable> | <meta-variable>
- 
+
  <object-pattern> ::= \quad
     \alt <object-variable>
  \alt <object-head> `(' <pattern-list> `)'
@@ -6542,9 +6545,9 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
  \alt `\\dv' `{' <object-sort> `}' `(' <meta-pattern> `)'
  \doubleslash where <meta-pattern> has sort {\KString} (see wellformedness
  conditions)
- 
+
  <object-variable> ::= <object-identifier> `:' <object-sort>
- 
+
  <meta-pattern> ::= \quad
     \alt <meta-variable>
     \alt <string>
@@ -6574,11 +6577,11 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
  `(' <pattern> `,' <pattern> `)'
  \alt `\\top' `{' <meta-sort> `}' `(' `)'
  \alt `\\bottom' `{' <meta-sort> `}' `(' `)'
- 
+
  <meta-variable> ::= <meta-identifier> `:' <meta-sort>
- 
+
  <pattern-list> ::= $\epsilon$ | <nonempty-pattern-list>
- 
+
  <nonempty-pattern-list> ::= <pattern> | <pattern> `,'
  <nonempty-pattern-list>
 \end{grammar}
@@ -6980,12 +6983,12 @@ A Kore definition contains at least a module.
 %\begin{grammar}\small
 % <symbol-declaration> ::= <object-symbol-declaration> |
 % <meta-symbol-declaration>
-% 
+%
 % <object-symbol-declaration> ::= \quad
 % \alt `symbol' <object-symbol-constructor> `{'
 %  <object-sort-variable-list> `}' `(' <object-sort-list> `)' `:'
 %  <object-sort>
-%  
+%
 % <meta-symbol-declaration> ::= \quad
 % \alt `symbol' <meta-symbol-constructor> `{'
 %  <meta-sort-variable-list> `}' `(' <meta-sort-list> `)' `:'
@@ -8138,22 +8141,22 @@ For that reason, we introduce the next definition.
   $\KString$ pattern in $K$, such that $K \vdash e_\Var(x) \neq
   e_\Var(y)$ for any distinct variables $x$ and $y$.
  \end{itemize}
- 
+
  Given $e = \{e_S, e_\Sigma, e_\Var \}$ is a naming of theory $T$, the
  \emph{lift of $T$ with respect to $e$} consists of the following lifting
  functions.
- 
+
  (Sort-lifting).
  For each sort $s$ in theory $T$, the lift of $s$ is a
  $\parametric{\KSort}{}$ pattern
  $$ \hat{s} = \Ksort(e_S(s))$$
- 
+
  (Symbol-lifting).
  For each symbol $\sigma \in \Sigma_{s_1 \dots s_n, s}$, the lift of
  $\sigma$ is a $\KSymbol$ pattern
  $$ \hat{\sigma} = \Ksymbol(e_\Sigma(\sigma), (\hat{s_1}, \dots, \hat{s_n}),
  \hat{s})$$
- 
+
  (Pattern-lifting).
  For each $\Sigma$-pattern $\varphi$, the lift of $\varphi$ is a $\KPattern$
  pattern inductively defined as follows
@@ -8175,7 +8178,7 @@ For that reason, we introduce the next definition.
  $\exists x . \psi \in \PATTERNS_{s_2}$ and $x \in \Var_{s_1}$
  \end{cases*}
  \end{equation*}
- 
+
  (Theory-lifting). Since $T = (S, \Sigma, A)$ is a finite theory, let us
  suppose
  \begin{equation*}
@@ -8205,48 +8208,48 @@ canonical model of $K$.
  The canonical model of $K$, denoted as $M_K$, contains
  carrier sets (for each sort in $S_K$) and relations (for each
  symbols in $\Sigma_K$) that are defined in the following.
- 
+
  The carrier set for the sort $\KPred$ is a singleton set $M_\KPred = \{
  \star \}$.
- 
+
  The carrier set for the sort $\KChar$ is the set of all 62 constructors of
  the sort $\KChar$, denoted as $M_\KChar$.
- 
+
  The carrier set for the sort $\KString$ is the set of all syntactic
  patterns of the sort $\KString$, denoted as $M_\KString$.
- 
+
  The carrier set for the sort $\parametric{\KSort}{}$ is the set of all
  syntactic patterns
  of the sort $\parametric{\KSort}{}$
  $$M_\parametric{\KSort}{} = \{ \Ksort(str) \mid str \in M_\KString \}.$$
- 
+
  The carrier set for the sort $\parametric{\KSort}{}List$ is the set of all
  finite lists of
  $M_\parametric{\KSort}{}$:
  $$M_\parametric{\KSort}{}List = (M_\parametric{\KSort}{})^*.$$
- 
+
  The carrier set for the sort $\KSymbol$ is the set of all syntactic
  patterns of the sort $\KSymbol$
  $$M_\KSymbol = \{ \Ksymbol(str, l, s) \mid str \in M_\KString, l \in
  M_\parametric{\KSort}{}List, s \in M_\parametric{\KSort}{} \}.$$
- 
+
  The carrier set for the sort $\KSymbolList$ is the set of all finite lists
  over $M_\KSymbol$:
  $$M_\KSymbolList = (M_\KSymbol)^* .$$
- 
+
  The carrier set for the sort $\KPattern$ is the set of all syntactic
  patterns of the sort $\KPattern$, denoted as $M_\KPattern$.
- 
+
  The carrier set for the sort $\KPatternList$ is the set of all finite lists
  over $M_\KPattern$:
  $$M_\KPatternList = (M_\KPattern)^*.$$
- 
+
  The carrier set for the sort $\KSignature$ is a product set
  $$ M_\KSignature = M_\parametric{\KSort}{}List \times M_\KSymbolList.$$
- 
+
  The carrier set for the sort $\KTheory$ is a product set
  $$ M_\KTheory = M_\KSignature \times M_\KPattern. $$
- 
+
  The interpretations of most symbols (except $\Kdeduce$) in $K$ are
  so straightforward that they are trivial.\improvement{Basically I want to
  say that $M_K$ is almost (except $Kprovable$) the initial algebra of $K$.}
@@ -8255,7 +8258,7 @@ canonical model of $K$.
  a function on
  $M_\KPattern \times M_\KPatternList$ that deletes the first argument from
  the second, etc.
- 
+
  The only nontrivial interpretation is the one for $\Kdeduce$, as we would
  like to interpret it \emph{in terms of} matching logic reasoning.
  The interpretation of $\Kdeduce$ in the canonical model is a predicate on
@@ -8264,7 +8267,7 @@ canonical model of $K$.
  well-formed and $\varphi$ is deducible in the finite matching logic theory
  $T$.
  This intuition is captured by the next formal definition.
- 
+
  For any $T = (\Sigma, A) \in M_\KTheory$ and $\varphi \in M_\KPattern$, we
  define
  \begin{equation*}
@@ -8295,7 +8298,7 @@ canonical model of $K$.
    \varphi_1, s_2)$
    \end{cases*}$
  \end{tabular}\end{center}
- 
+
  It is tedious but straightforward to verify that $\Kdeduce_M$ satisfies all
  axioms about $\Kdeduce$ that we introduced in
  Section~\ref{sec:ml-proof-system-finite-case}.
@@ -8317,26 +8320,26 @@ canonical model of $K$.
  $$\text{if $\Bracket{T} \vdash \Bracket{\varphi}$ and $\Bracket{T} \vdash
  \Bracket{\varphi} \to \Bracket{\psi}$, then $\Bracket{T} \vdash
  \Bracket{\psi}$}.$$
- 
+
  Readers are welcomed to verify the remaining axioms in $K$ also hold
  in $M_K$.
  We omit them here.
- 
- 
+
+
 \end{definition}
 
 
 Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 
 \begin{proof}[Proof Sketch of Theorem~\ref{thm:faithfulness-finite}]\quad
- 
+
  Step 1 (The ``$\Rightarrow$'' part).
- 
+
  We prove this by simply mimicking the proof of $T \vdash \varphi$ in
  $K$.
- 
+
  Step 2 (The ``$\Leftarrow$'' part).
- 
+
  Let us fix a finite matching logic theory $T = (S, \Sigma, A)$, a
  $\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $K
  \vdash \Kdeduce(\hat{T}, \hat{\varphi})$.
@@ -8345,22 +8348,22 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
  $$ \Kdeduce_M(\hat{T}, \hat{\varphi}) = \{ \star \}. $$
  By definition, this means that
  $$\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}.$$
- 
+
  Finally notice that by construction of encoding, lifting, and the semantics
  bracket, there is an isomorphism between $T$ and  $\Bracket{\hat{T}}$, so
  from $\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}$ we have
  $$T \vdash \varphi.$$
- 
+
 % \fbox{\begin{minipage}{35em}\color{blue}\small
 %   The following a snapshot of what we had on the board:
-%   
+%
 %   Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, A)$
 %   and a $\Sigma$-pattern $\varphi$.
-%   
+%
 %   Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, A)$.
-%   
+%
 %   Step 2.3. Show that $M_T$ is a model of $K$.
-%   
+%
 %   Step 2.4. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_T$ and
 %   get $T
 %   \vDash \varphi$.
@@ -8391,7 +8394,7 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 % of sorts
 % $S=\{\Nat, \parametric{\List}{\Nat},
 % \parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
-% 
+%
 %\end{itemize}
 %
 %From here on, unless otherwise specified, when we say \emph{set} we mean
