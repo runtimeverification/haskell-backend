@@ -17,6 +17,7 @@ module Kore.AST.Pure
     , traverseVariables
     , mapVariables
     , asConcretePurePattern
+    , isConcrete
     , fromConcretePurePattern
     , castMetaDomainValues
     , castVoidDomainValues
@@ -55,6 +56,7 @@ import           Data.Functor.Identity
                  ( Identity (..) )
 import           Data.Hashable
                  ( Hashable (..) )
+import           Data.Maybe
 import           Data.Text
                  ( Text )
 import           Data.Void
@@ -399,10 +401,16 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcretePurePattern
-    :: forall level domain variable annotation. Traversable domain
+    :: forall level domain variable annotation . Traversable domain
     => PurePattern level domain variable annotation
     -> Maybe (PurePattern level domain Concrete annotation)
 asConcretePurePattern = traverseVariables (\case { _ -> Nothing })
+
+isConcrete
+    :: forall level domain variable annotation . Traversable domain
+    => PurePattern level domain variable annotation
+    -> Bool
+isConcrete = isJust . asConcretePurePattern
 
 {- | Construct a 'PurePattern' from a 'ConcretePurePattern'.
 

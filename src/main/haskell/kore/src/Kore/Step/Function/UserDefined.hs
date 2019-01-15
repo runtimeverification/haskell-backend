@@ -15,14 +15,18 @@ module Kore.Step.Function.UserDefined
 import Control.Monad.Except
        ( runExceptT )
 
-import           Kore.AST.Pure
+import           Kore.AST.Pure hiding
+                 ( isConcrete )
+import qualified Kore.AST.Pure as Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule) )
+                 ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
+                 RulePattern (..) )
 import           Kore.Step.BaseStep
                  ( StepResult (StepResult), UnificationProcedure (..),
                  stepWithRuleForUnifier )
@@ -44,6 +48,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unparser
+                 ( Unparse )
 import           Kore.Variables.Fresh
 
 {-| 'ruleFunctionEvaluator' evaluates a user-defined function. After
@@ -82,16 +87,22 @@ ruleFunctionEvaluator
     tools
     substitutionSimplifier
     simplifier
-    app
-  = do
+    app@(_ :< Application _ c)
+    | (Axiom.Concrete.isConcrete $ concrete $ attributes rule)
+        && any (not . Pure.isConcrete) c
+    = notApplicable
+    | otherwise = do
     result <- runExceptT stepResult
     case result of
         Left _ ->
-            return [(AttemptedFunction.NotApplicable, SimplificationProof)]
+            notApplicable
         Right results -> do
             processedResults <- mapM processResult results
             return (concat processedResults)
   where
+
+    notApplicable = return [(AttemptedFunction.NotApplicable, SimplificationProof)]
+
     stepResult =
         stepWithRuleForUnifier
             tools
