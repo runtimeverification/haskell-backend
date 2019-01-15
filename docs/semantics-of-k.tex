@@ -6177,15 +6177,61 @@ components and we do
 not want to take the risk of confusing them.
 
 \paragraph{Character and string literals.}
-Kore supports C-style character and string literals.
-Character literals are wrapped with single quotes while string literals are
-wrapped with double quotes.
 The syntactic category of character literals is~\syntacc{char}.
-We use character literals to represent patterns in the meta-theory whose sort
-is $\KChar$.
+A character literal is one printable ASCII character or escape sequence
+surrounded by single quotes.
+The accepted escape sequences are listed in Table~\ref{tab:lexicon-escapes}.
+We use character literals to represent patterns in the meta-theory whose sort is
+$\KChar$.
 The syntactic category of string literals is~\syntacc{string}.
+A string literal is a sequence of zero or more characters surrounded by double
+quotes; the contents of the string may be ASCII characters or the escape
+sequences listed above for character literals.
 We use string literals to represent patterns in the meta-theory whose sort is
 $\KString$ (a.k.a., $\KCharList$).
+
+\begin{table}[h]
+	\centering
+  \begin{tabular}{l|l}
+    Escape sequence & Decoding
+    \\
+    \hline
+    \texttt{\textbackslash t}
+    & Horizontal tab (ASCII \texttt{HT}, Unicode \texttt{U+0009})
+    \\
+    \texttt{\textbackslash n}
+    & Line feed (ASCII \texttt{LF}, Unicode \texttt{U+000A})
+    \\
+    \texttt{\textbackslash f}
+    & Form feed (ASCII \texttt{FF}, Unicode \texttt{U+000C})
+    \\
+    \texttt{\textbackslash r}
+    & Carriage return (ASCII \texttt{CR}, Unicode \texttt{U+000D})
+    \\
+    \texttt{\textbackslash "}
+    & Double quote (ASCII ", Unicode \texttt{U+0022})
+    \\
+    \texttt{\textbackslash \textbackslash}
+    & Backslash (ASCII \textbackslash, Unicode \texttt{U+005C})
+    \\
+    \texttt{\textbackslash x}\textit{hh}
+    & Extended ASCII code point (Unicode \texttt{U+}\textit{00hh})
+    \\
+    \texttt{\textbackslash u}\textit{hhhh}
+    & UTF-16 code point (Unicode \texttt{U+}\textit{hhhh})
+    \\
+    \texttt{\textbackslash U}\textit{hhhhhhhh}
+    & UTF-32 code point (Unicode \texttt{U+}\textit{hhhhhhhh})
+  \end{tabular}
+  \caption{
+    Escape sequences in Kore. \textit{h} is stands for a single hexadecimal
+    digit. The surrogate code points in the range [\texttt{U+D800},
+    \texttt{U+DFFF}] are illegal in the \texttt{\textbackslash u} and
+    \texttt{\textbackslash U} escapes. The UTF-32 code point must not exceed
+    \texttt{U+10FFFF}.
+  }
+	\label{tab:lexicon-escapes}
+\end{table}
 
 \paragraph{Keywords.}
 Kore has nine keywords.
