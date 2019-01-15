@@ -123,7 +123,7 @@ defaultStrategy
     :: forall level
     .   (MetaOrObject level)
     => [Claim level]
-    -- The claims that we wnt to prove
+    -- The claims that we want to prove
     -> [Axiom level]
     -> CommonStepPattern level
     -> [Strategy (Prim (CommonExpandedPattern level) (RewriteRule level))]
