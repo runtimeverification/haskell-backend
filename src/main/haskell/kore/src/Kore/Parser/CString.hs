@@ -12,6 +12,8 @@ module Kore.Parser.CString
        , escapeCString
        , oneCharEscapes
        , oneCharEscapeDict
+       , unknownEscapeSequence
+       , unexpectedEndOfInput
        ) where
 
 import Data.Char
@@ -98,8 +100,16 @@ unescapePrefixAndContinue (c:cs)
       in if digitCount == length unis
           then (:) <$> safeChr hexVal <*> unescapeCString rest
           else Left "Invalid unicode sequence length."
-unescapePrefixAndContinue cs =
-  Left ("unescapeCString : Unknown escape sequence '\\" ++ cs ++ "'.")
+  | otherwise =
+    Left (unknownEscapeSequence c)
+unescapePrefixAndContinue [] =
+    Left unexpectedEndOfInput
+
+unknownEscapeSequence :: Char -> String
+unknownEscapeSequence esc = "Unknown escape sequence '\\" ++ esc : "'"
+
+unexpectedEndOfInput :: String
+unexpectedEndOfInput = "Unexpected end of input"
 
 {-|Unescapes the provided character.
 -}

@@ -1,4 +1,7 @@
-module Test.Kore.Parser.CString (test_cString) where
+module Test.Kore.Parser.CString
+    ( test_cString
+    , test_idemUnescapeEscape
+    ) where
 
 import Test.Tasty
        ( TestTree )
@@ -13,31 +16,22 @@ test_cString :: [TestTree]
 test_cString =
     [ success (Input "hello") (Expected "hello")
     , success (Input "") (Expected "")
-    , success (Input "\\U000120FF") (Expected "\73983")
     , success (Input "\\\\") (Expected "\\")
     , success (Input "\\'") (Expected "'")
     , success (Input "\\\"") (Expected "\"")
-    , success (Input "\\?") (Expected "?")
-    , success (Input "\\a") (Expected "\7")
-    , success (Input "\\b") (Expected "\8")
-    , success (Input "\\f") (Expected "\12")
-    , success (Input "\\n") (Expected "\10")
-    , success (Input "\\r") (Expected "\13")
-    , success (Input "\\t") (Expected "\9")
-    , success (Input "\\v") (Expected "\11")
-    , success (Input "\\1") (Expected "\1")
-    , success (Input "\\10") (Expected "\8")
-    , success (Input "\\100") (Expected "\64")
-    , success (Input "\\1000") (Expected ("\64" ++ "0"))
-    , success (Input "\\xf") (Expected "\15")
-    , success (Input "\\xfz") (Expected ("\15" ++ "z"))
-    , success (Input "\\xff") (Expected "\255")
-    , success (Input "\\xffz") (Expected ("\255" ++ "z"))
-    , success (Input "\\u1ABC") (Expected "\6844")
-    , success (Input "\\u1ABCD") (Expected ("\6844" ++ "D"))
-    , success (Input "\\U000120FF") (Expected "\73983")
-    , success (Input "\\U000120FFF") (Expected ("\73983" ++ "F"))
-    , testProperty "QuickCheck Escape&Unescape" escapeUnescapeProp
+    , success (Input "\\b") (Expected "\x08")
+    , success (Input "\\t") (Expected "\x09")
+    , success (Input "\\n") (Expected "\x0A")
+    , success (Input "\\f") (Expected "\x0C")
+    , success (Input "\\r") (Expected "\x0D")
+    , success (Input "\\u1ABC") (Expected "\x1ABC")
+    , success (Input "\\u1ABCD") (Expected ['\x1ABC', 'D'])
+    , success (Input "\\U000120FF") (Expected "\x120FF")
+    , success (Input "\\U000120FFF") (Expected ['\x120FF', 'F'])
+
+    , failureWithMessage
+        (Input "\\")
+        (Expected unexpectedEndOfInput)
 
     , failureWithMessage
         (Input "\\UFFFFFFFF")
@@ -61,7 +55,25 @@ test_cString =
     -}
     , failureWithMessage
         (Input "\\z")
-        (Expected "unescapeCString : Unknown escape sequence '\\z'.")
+        (Expected (unknownEscapeSequence 'z'))
+    , failureWithMessage
+        (Input "\\?")
+        (Expected (unknownEscapeSequence '?'))
+    , failureWithMessage
+        (Input "\\a")
+        (Expected (unknownEscapeSequence 'a'))
+    , failureWithMessage
+        (Input "\\v")
+        (Expected (unknownEscapeSequence 'v'))
+    , failureWithMessage
+        (Input "\\1")
+        (Expected (unknownEscapeSequence '1'))
+    , failureWithMessage
+        (Input "\\10")
+        (Expected (unknownEscapeSequence '1'))
+    , failureWithMessage
+        (Input "\\x08")
+        (Expected (unknownEscapeSequence 'x'))
     ]
 
 newtype Input = Input String
@@ -70,8 +82,8 @@ newtype Expected = Expected String
 success :: Input -> Expected -> TestTree
 success (Input input) (Expected expected) =
     testCase
-        ("Unescaping '" ++ input ++ "'.")
-        (assertEqual "Expecting unescaping success."
+        ("Unescaping '" ++ input ++ "'")
+        (assertEqual ""
             (Right expected)
             (unescapeCString input)
         )
@@ -79,12 +91,15 @@ success (Input input) (Expected expected) =
 failureWithMessage :: Input -> Expected -> TestTree
 failureWithMessage (Input input) (Expected expected) =
     testCase
-        ("Failing to unescape '" ++ input ++ "'.")
-        (assertEqual "Expecting unescaping failure."
+        ("Failing to unescape '" ++ input ++ "'")
+        (assertEqual ""
             (Left expected)
             (unescapeCString input)
         )
 
-escapeUnescapeProp :: String -> Bool
-escapeUnescapeProp str =
-    Right str == unescapeCString (escapeCString str)
+test_idemUnescapeEscape :: TestTree
+test_idemUnescapeEscape =
+    testProperty "Idempotency (unescape . escape)" escapeUnescapeProp
+  where
+    escapeUnescapeProp str =
+        Right str == (unescapeCString . escapeCString) str
