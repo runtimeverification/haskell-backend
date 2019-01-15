@@ -18,15 +18,20 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Maybe
-                 ( fromMaybe, mapMaybe )
+                 ( fromMaybe, isJust, mapMaybe )
 
 import Kore.AST.Kore
 import Kore.AST.Pure
 import Kore.AST.Sentence
+import Kore.Attribute.Simplification
+       ( Simplification (..) )
 import Kore.IndexedModule.IndexedModule
 import Kore.Step.AxiomPatterns
 import Kore.Step.Function.Data
-       ( ApplicationFunctionEvaluator (..) )
+       ( ApplicationFunctionEvaluator (..),
+       FunctionEvaluators (FunctionEvaluators) )
+import Kore.Step.Function.Data as FunctionEvaluators
+       ( FunctionEvaluators (..) )
 import Kore.Step.Function.UserDefined
        ( ruleFunctionEvaluator )
 import Kore.Step.StepperAttributes
@@ -113,11 +118,43 @@ axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
 -- 'ApplicationFunctionEvaluator's
 axiomPatternsToEvaluators
     :: Map.Map (Id level) [EqualityRule level]
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) (FunctionEvaluators level)
 axiomPatternsToEvaluators axiomPatterns =
-    -- remove the key if there are no associated function evaluators
-    Map.filter (not . null)
-        (mapMaybe axiomPatternEvaluator <$> axiomPatterns)
+    Map.map
+        (fromMaybe (error "Unexpected Nothing"))
+        -- remove the key if there are no associated function evaluators
+        (Map.filter isJust
+            (Map.map equalitiesToEvaluators axiomPatterns)
+        )
+  where
+    splitEqualities
+        :: [EqualityRule level] -> ([EqualityRule level], [EqualityRule level])
+    splitEqualities [] = ([], [])
+    splitEqualities
+        (axiomPat@(EqualityRule RulePattern { attributes }) : equalities)
+      =
+        if isSimplification
+        then (axiomPat : simplifications, evaluations)
+        else (simplifications, axiomPat : evaluations)
+      where
+        Simplification { isSimplification } = simplification attributes
+        (simplifications, evaluations) = splitEqualities equalities
+
+    equalitiesToEvaluators
+        :: [EqualityRule level] -> Maybe (FunctionEvaluators level)
+    equalitiesToEvaluators equalities =
+        if null simplification && null definition
+        then Nothing
+        else Just FunctionEvaluators
+            { definitionEvaluators = definition
+            , simplificationEvaluators = simplification
+            }
+      where
+        (simplifications, evaluations) = splitEqualities equalities
+        simplification = mapMaybe axiomPatternEvaluator simplifications
+        definition = mapMaybe axiomPatternEvaluator evaluations
+
+
 
 {- | Return the function evaluator corresponding to the 'AxiomPattern'.
 

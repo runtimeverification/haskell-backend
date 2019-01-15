@@ -105,7 +105,7 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( top )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
-                 AttemptedFunction (..) )
+                 AttemptedFunction (..), EvaluationType )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -258,7 +258,7 @@ notImplemented :: Function
 notImplemented =
     ApplicationFunctionEvaluator notImplemented0
   where
-    notImplemented0 _ _ _ _ = pure [(NotApplicable, SimplificationProof)]
+    notImplemented0 _ _ _ _ _ = pure [(NotApplicable, SimplificationProof)]
 
 {- | Verify a builtin sort declaration.
 
@@ -630,6 +630,7 @@ functionEvaluator impl =
         => MetadataTools Object StepperAttributes
         -> PredicateSubstitutionSimplifier level Simplifier
         -> StepPatternSimplifier Object variable
+        -> EvaluationType
         -> CofreeF
             (Application Object)
             (Valid (variable Object) Object)
@@ -639,7 +640,7 @@ functionEvaluator impl =
                 , SimplificationProof Object
                 )
             ]
-    evaluator tools _ simplifier (valid :< app) = do
+    evaluator tools _ simplifier _evaluationType (valid :< app) = do
         attempt <- impl tools simplifier resultSort applicationChildren
         return [(attempt, SimplificationProof)]
       where

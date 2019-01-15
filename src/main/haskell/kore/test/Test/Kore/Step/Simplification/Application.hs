@@ -120,9 +120,9 @@ test_applicationSimplification =
                 (mockSimplifier [])
                 (Map.singleton
                     Mock.fId
-                    (That
+                    (thatDefinition
                         [ ApplicationFunctionEvaluator
-                            (const $ const $ const $ const $ return
+                            (const $ const $ const $ const $ const $ return
                                 [( AttemptedFunction.Applied
                                     (OrOfExpandedPattern.make [gOfAExpanded])
                                 , SimplificationProof
@@ -215,9 +215,9 @@ test_applicationSimplification =
                     (mockSimplifier [])
                     (Map.singleton
                         Mock.sigmaId
-                        (That
+                        (thatDefinition
                             [ ApplicationFunctionEvaluator
-                                (const $ const $ const $ const $ do
+                                (const $ const $ const $ const $ const $ do
                                     let zvar =
                                             freshVariableFromVariable Mock.z 1
                                     return
@@ -306,6 +306,15 @@ test_applicationSimplification =
             Mock.headTypeMapping
             Mock.sortAttributesMapping
             Mock.subsorts
+
+thatDefinition
+    :: [ApplicationFunctionEvaluator Object]
+    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+thatDefinition evaluators =
+    That FunctionEvaluators
+        { definitionEvaluators = evaluators
+        , simplificationEvaluators = evaluators
+        }
 
 makeApplication
     :: (MetaOrObject level, Ord (variable level), HasCallStack)

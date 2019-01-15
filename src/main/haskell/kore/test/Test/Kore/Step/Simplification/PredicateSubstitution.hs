@@ -129,7 +129,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , That
+                        , thatDefinition
                             [ makeEvaluator
                                     [ (Mock.f Mock.functional00, Mock.functional00)
                                 , (Mock.f Mock.functional01, Mock.a)
@@ -165,7 +165,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , That
+                        , thatDefinition
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 ]
@@ -202,7 +202,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , That
+                        , thatDefinition
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 ]
@@ -245,7 +245,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , That
+                        , thatDefinition
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 , (Mock.f Mock.a, Mock.g Mock.b)
@@ -298,6 +298,15 @@ runSimplifier patternSimplifierMap predicateSubstitution =
             mockMetadataTools
             (Simplifier.create mockMetadataTools patternSimplifierMap)
 
+thatDefinition
+    :: [ApplicationFunctionEvaluator Object]
+    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+thatDefinition evaluators =
+    That FunctionEvaluators
+        { definitionEvaluators = evaluators
+        , simplificationEvaluators = evaluators
+        }
+
 makeEvaluator
     ::  (forall variable
         .   ( FreshVariable variable
@@ -310,7 +319,7 @@ makeEvaluator
     -> ApplicationFunctionEvaluator Object
 makeEvaluator mapping =
     ApplicationFunctionEvaluator
-        $ const $ const $ const $ simpleEvaluator mapping
+        $ const $ const $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator
     ::  ( FreshVariable variable
