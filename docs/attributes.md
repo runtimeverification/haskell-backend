@@ -1,8 +1,9 @@
 # Attributes
 
-As pointed out in [Attributes as Patterns](../design-decisions/2018-07-25
-Attributes as patterns.md), attributes are encoded as Kore patterns that only
-use application and string literals.
+As pointed out in
+[Attributes as Patterns](<../design-decisions/2018-07-25 Attributes as patterns.md>),
+attributes are encoded as Kore patterns that only use application and string
+literals.
 
 ## Axiom Pattern Attributes
 
@@ -18,7 +19,17 @@ Associativity axiom
 assoc{}()
 ```
 
-Axioms with this attribute should not be used for evaluating functions.
+Example, List concatenation
+
+```
+axiom{R} \equals{SortList{}, R} (
+  Lbl'Unds'List'Unds'{}(
+    Lbl'Unds'List'Unds'{}(K1:SortList{},K2:SortList{}),
+    K3:SortList{}),
+  Lbl'Unds'List'Unds'{}(
+    K1:SortList{},
+    Lbl'Unds'List'Unds'{}(K2:SortList{},K3:SortList{}))) [assoc{}()]
+```
 
 ### Comm
 
@@ -28,7 +39,14 @@ Commutativity axiom
 comm{}()
 ```
 
-Axioms with this attribute should not be used for evaluating functions.
+Example: Map concatenation
+
+```
+axiom{R} \equals{SortMap{}, R} (
+  Lbl'Unds'Map'Unds'{}(K1:SortMap{},K2:SortMap{}),
+  Lbl'Unds'Map'Unds'{}(K2:SortMap{},K1:SortMap{})) [comm{}()]
+```
+
 
 ### HeatCool
 
@@ -52,7 +70,12 @@ Idempotency axiom
 idem{}()
 ```
 
-Axioms with this attribute should not be used for evaluating functions.
+Example: concatenation of identical Sets
+
+```
+axiom{R} \equals{SortSet{}, R} (
+  Lbl'Unds'Set'Unds'{}(K:SortSet{},K:SortSet{}),K:SortSet{}) [idem{}()]
+```
 
 ### ProductionID
 
@@ -70,11 +93,11 @@ Spec axioms with this attribute are excluded from verification.
 
 ### Unit
 
+Unit element axiom
+
 ```
 unit{}()
 ```
-
-Axioms with this attribute should not be used for evaluating functions.
 
 
 ## Stepper Attributes
@@ -176,13 +199,12 @@ A symbol is functional if it is given the `functional` attribute or the
 subsort{Sub,Super}()
 ```
 
-Used to define subsorting relations, (not necessarily) attached to subsort
-axiom. For example,
+Used to define subsorting relations, attached to subsort axiom. For example,
 
 ```
 axiom{R} \exists{R} (Val:SortKResult{},
-   \equals{SortKResult{}, R}
-      (Val:SortKResult{},
-       inj{SortBool{}, SortKResult{}} (From:SortBool{})))
-   [subsort{SortBool{}, SortKResult{}}()]
+  \equals{SortKResult{}, R}
+    (Val:SortKResult{},
+     inj{SortBool{}, SortKResult{}} (From:SortBool{})))
+  [subsort{SortBool{}, SortKResult{}}()]
 ```
