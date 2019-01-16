@@ -139,7 +139,7 @@ A symbol is functional if it is given the `functional` attribute or the
 hook{}("BUILTIN.name")
 ```
 
-The string `"BUILTIN.name"` is used to lookup for known builtins.
+The string `"BUILTIN.name"` is used to lookup for [known builtins](./hooks.md).
 
 ### Injective
 
