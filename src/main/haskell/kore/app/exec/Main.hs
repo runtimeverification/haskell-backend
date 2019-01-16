@@ -343,6 +343,32 @@ externalizeFreshVars pat = Recursive.fold renameFreshLocal pat
       where
         name :: Text
         name = getId variableName
+    renameFreshLocal
+        (_ :< ExistsPattern (Exists _ v@(Variable {variableName}) existsChild))
+      | name `Set.member` freshVarsIds =
+        mkExists
+            (v {
+                variableName = variableName
+                    { getId = freshPrefix <> Text.filter (/= '_') name
+                    }
+            })
+            existsChild
+      where
+        name :: Text
+        name = getId variableName
+    renameFreshLocal
+        (_ :< ForallPattern (Forall _ v@(Variable {variableName}) forallChild))
+      | name `Set.member` freshVarsIds =
+        mkForall
+            (v {
+                variableName = variableName
+                    { getId = freshPrefix <> Text.filter (/= '_') name
+                    }
+            })
+            forallChild
+      where
+        name :: Text
+        name = getId variableName
     renameFreshLocal pat' = asPurePattern pat'
 
 -- TODO(virgil): Maybe add a regression test for main.
