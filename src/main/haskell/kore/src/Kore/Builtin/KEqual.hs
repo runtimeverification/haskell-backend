@@ -38,6 +38,7 @@ import           Kore.AST.Sentence
                  ( SentenceSymbol (..) )
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
+import           Kore.Builtin.Builtin ( anySort )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
@@ -64,20 +65,17 @@ import           Kore.Variables.Fresh
   See also: 'Builtin.verifySymbol'
 
  -}
-symbolVerifiers :: Builtin.SymbolVerifiers
+symbolVerifiers :: Builtin.MonadVerify m => Builtin.SymbolVerifiers m
 symbolVerifiers =
     HashMap.fromList
     [ ( eqKey
-      , Builtin.verifySymbol Bool.assertSort [trivialVerifier, trivialVerifier])
+      , Builtin.verifySymbol Bool.assertSort [anySort, anySort])
     , (neqKey
-      , Builtin.verifySymbol Bool.assertSort [trivialVerifier, trivialVerifier])
+      , Builtin.verifySymbol Bool.assertSort [anySort, anySort])
     , (iteKey, iteVerifier)
     ]
   where
-    trivialVerifier :: Builtin.SortVerifier
-    trivialVerifier = const $ const $ Right ()
-
-    iteVerifier :: Builtin.SymbolVerifier
+    iteVerifier :: Builtin.MonadVerify m =>  Builtin.SymbolVerifier m
     iteVerifier
         findSort
         SentenceSymbol

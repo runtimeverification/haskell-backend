@@ -15,11 +15,14 @@ This module is intended to be imported qualified.
  -}
 module Kore.Builtin
     ( Builtin.Verifiers (..)
-    , Builtin.PatternVerifier (..)
+--    , Builtin.PatternVerifier (..)
+    , Builtin.DomainValueVerifiers
+    , Builtin.MonadVerify
     , Builtin.Function
     , Builtin
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
+    , Builtin.verifyDomainValue
     , koreVerifiers
     , koreEvaluators
     , evaluators
@@ -31,6 +34,7 @@ module Kore.Builtin
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Map
                  ( Map )
+import qualified Data.HashMap.Strict as HashMap                 
 import qualified Data.Map as Map
 import           Data.Semigroup
                  ( (<>) )
@@ -73,7 +77,7 @@ type Builtin = DomainValue Object Domain.Builtin (CommonStepPattern Object)
   If you aren't sure which verifiers you need, use these.
 
  -}
-koreVerifiers :: Builtin.Verifiers
+koreVerifiers :: Builtin.MonadVerify m =>  Builtin.Verifiers m child
 koreVerifiers =
     Builtin.Verifiers
     { sortDeclVerifiers =
@@ -92,10 +96,11 @@ koreVerifiers =
         <> Set.symbolVerifiers
         <> String.symbolVerifiers
         <> Krypto.symbolVerifiers
-    , patternVerifier =
-           Bool.patternVerifier
-        <> Int.patternVerifier
-        <> String.patternVerifier
+    , domainValueVerifiers = HashMap.fromList
+        [ (Bool.sort, Bool.patternVerifier)
+        , (Int.sort, Int.patternVerifier)
+        , (String.sort, String.patternVerifier)
+        ]
     }
 
 {- | Construct an evaluation context for Kore builtin functions.

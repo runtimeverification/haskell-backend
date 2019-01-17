@@ -63,6 +63,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
+import           Kore.Builtin.Builtin ( anySort )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
@@ -94,7 +95,7 @@ sort = "LIST.List"
   See also: 'sort', 'Builtin.verifySort'
 
  -}
-assertSort :: Builtin.SortVerifier
+assertSort :: Builtin.MonadVerify m => Builtin.SortVerifier m
 assertSort findSort = Builtin.verifySort findSort sort
 
 {- | Verify that hooked sort declarations are well-formed.
@@ -102,7 +103,7 @@ assertSort findSort = Builtin.verifySort findSort sort
   See also: 'Builtin.verifySortDecl'
 
  -}
-sortDeclVerifiers :: Builtin.SortDeclVerifiers
+sortDeclVerifiers :: Builtin.MonadVerify m => Builtin.SortDeclVerifiers m
 sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 
 {- | Verify that hooked symbol declarations are well-formed.
@@ -110,7 +111,7 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
   See also: 'Builtin.verifySymbol'
 
  -}
-symbolVerifiers :: Builtin.SymbolVerifiers
+symbolVerifiers :: Builtin.MonadVerify m => Builtin.SymbolVerifiers m
 symbolVerifiers =
     HashMap.fromList
     [ ( concatKey
@@ -126,9 +127,6 @@ symbolVerifiers =
       , Builtin.verifySymbol anySort [assertSort, Int.assertSort]
       )
     ]
-  where
-    anySort :: Builtin.SortVerifier
-    anySort = const $ const $ Right ()
 
 type Builtin variable = Seq (StepPattern Object variable)
 

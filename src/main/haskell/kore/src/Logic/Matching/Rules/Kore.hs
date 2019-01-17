@@ -64,7 +64,7 @@ formulaVerifier verifiedModule formula = do
         PatternVerifier.Context
             { indexedModule = makeIndexedModuleAttributesNull indexedModule
             , declaredSortVariables = sortVariables unifiedFormula
-            , builtinPatternVerifier =
+            , builtinDomainValueVerifiers =
                 -- Do not validate builtin patterns.
                 mempty
             , declaredVariables = emptyDeclaredVariables
