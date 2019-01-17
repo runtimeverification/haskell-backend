@@ -8,9 +8,12 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.AndTerms
-    ( termAnd
+    ( simplifySortInjections
+    , termAnd
     , termEquals
     , termUnification
+    , SortInjectionMatch (..)
+    , SortInjectionSimplification (..)
     , TermSimplifier
     , TermTransformationOld
     ) where
@@ -787,6 +790,47 @@ sortInjectionAndEqualsAssumesDifferentHeads
 sortInjectionAndEqualsAssumesDifferentHeads
     tools
     termMerger
+    first
+    second
+  = case simplifySortInjections tools first second of
+    NotInjection -> empty
+    NotMatching -> return (ExpandedPattern.bottom, SimplificationProof)
+    Matching SortInjectionMatch
+        { injectionHead, sort, firstChild, secondChild } -> do
+            (merged, _) <- Monad.Trans.lift $ termMerger firstChild secondChild
+            if ExpandedPattern.isBottom merged
+                then return (ExpandedPattern.bottom, SimplificationProof)
+                else return
+                    ( applyInjection sort injectionHead <$> merged
+                    , SimplificationProof
+                    )
+  where
+    applyInjection sort injectionHead term = mkApp sort injectionHead [term]
+
+data SortInjectionMatch level variable =
+    SortInjectionMatch
+        { injectionHead :: !(SymbolOrAlias level)
+        , sort :: !(Sort level)
+        , firstChild :: !(StepPattern level variable)
+        , secondChild :: !(StepPattern level variable)
+        }
+
+data SortInjectionSimplification level variable
+  = NotInjection
+  | NotMatching
+  | Matching !(SortInjectionMatch level variable)
+
+simplifySortInjections
+    ::  forall level variable .
+        ( Ord (variable level)
+        , MetaOrObject level
+        )
+    => MetadataTools level StepperAttributes
+    -> StepPattern level variable
+    -> StepPattern level variable
+    -> SortInjectionSimplification level variable
+simplifySortInjections
+    tools
     (App_
         firstHead@SymbolOrAlias
             { symbolOrAliasConstructor = firstConstructor
@@ -806,17 +850,13 @@ sortInjectionAndEqualsAssumesDifferentHeads
     $ assert (firstConstructor == secondConstructor)
     $ case () of
         _
-          | firstOrigin `isSubsortOf` secondOrigin ->
-            mergeFirstIntoSecond
+          | firstOrigin `isSubsortOf` secondOrigin -> mergeFirstIntoSecond
 
-          | secondOrigin `isSubsortOf` firstOrigin ->
-            mergeSecondIntoFirst
+          | secondOrigin `isSubsortOf` firstOrigin -> mergeSecondIntoFirst
 
-          | isFirstConstructorLike || isSecondConstructorLike ->
-            return (ExpandedPattern.bottom, SimplificationProof)
+          | isFirstConstructorLike || isSecondConstructorLike -> NotMatching
 
-          | Set.null sortIntersection ->
-            return (ExpandedPattern.bottom, SimplificationProof)
+          | Set.null sortIntersection -> NotMatching
 
           | otherwise ->
             (error . unlines)
@@ -824,7 +864,6 @@ sortInjectionAndEqualsAssumesDifferentHeads
                 , "and sort " ++ show secondOrigin
                 , "have common subsort(s): " ++ show sortIntersection
                 ]
-
   where
     subsorts = MetadataTools.subsorts tools
 
@@ -851,12 +890,17 @@ sortInjectionAndEqualsAssumesDifferentHeads
 
         when src1 is a subsort of src2.
      -}
-    mergeFirstIntoSecond
-        :: MaybeT m (ExpandedPattern level variable, SimplificationProof level)
-    mergeFirstIntoSecond = Monad.Trans.lift $ do
-        let firstIntoSecond = sortInjection firstOrigin secondOrigin firstChild
-        (merged, _) <- termMerger firstIntoSecond secondChild
-        return (termSortInjection secondOrigin secondDestination merged)
+    mergeFirstIntoSecond ::  SortInjectionSimplification level variable
+    mergeFirstIntoSecond =
+        Matching SortInjectionMatch
+            { injectionHead = SymbolOrAlias
+                { symbolOrAliasConstructor = firstConstructor
+                , symbolOrAliasParams = [secondOrigin, firstDestination]
+                }
+            , sort = firstDestination
+            , firstChild = sortInjection firstOrigin secondOrigin firstChild
+            , secondChild = secondChild
+            }
 
     {- |
         Merge the terms inside a sort injection,
@@ -867,28 +911,18 @@ sortInjectionAndEqualsAssumesDifferentHeads
 
         when src2 is a subsort of src1.
      -}
-    mergeSecondIntoFirst
-        :: MaybeT m (ExpandedPattern level variable, SimplificationProof level)
-    mergeSecondIntoFirst = Monad.Trans.lift $ do
-        let secondIntoFirst = sortInjection secondOrigin firstOrigin secondChild
-        (merged, _) <- termMerger firstChild secondIntoFirst
-        return (termSortInjection firstOrigin firstDestination merged)
+    mergeSecondIntoFirst :: SortInjectionSimplification level variable
+    mergeSecondIntoFirst =
+        Matching SortInjectionMatch
+            { injectionHead = SymbolOrAlias
+                { symbolOrAliasConstructor = firstConstructor
+                , symbolOrAliasParams = [firstOrigin, firstDestination]
+                }
+            , sort = firstDestination
+            , firstChild = firstChild
+            , secondChild = sortInjection secondOrigin firstOrigin secondChild
+            }
 
-    termSortInjection
-        :: Sort level
-        -> Sort level
-        -> ExpandedPattern level variable
-        -> (ExpandedPattern level variable, SimplificationProof level)
-    termSortInjection
-        originSort
-        destinationSort
-        patt
-      =
-        if ExpandedPattern.isBottom patt
-        then (ExpandedPattern.bottom, SimplificationProof)
-        else ( sortInjection originSort destinationSort <$> patt
-            , SimplificationProof
-            )
     sortInjection
         :: Sort level
         -> Sort level
@@ -905,8 +939,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
     firstSubsorts = subsorts firstOrigin
     secondSubsorts = subsorts secondOrigin
     sortIntersection = Set.intersection firstSubsorts secondSubsorts
-
-sortInjectionAndEqualsAssumesDifferentHeads _ _ _ _ = empty
+simplifySortInjections _ _ _ = NotInjection
 
 {- | Unify a constructor application pattern with a sort injection pattern.
 

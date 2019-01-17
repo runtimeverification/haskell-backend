@@ -1,4 +1,8 @@
-module Test.Kore.Step.BaseStep (test_baseStep, test_baseStepRemainder) where
+module Test.Kore.Step.BaseStep
+    ( test_baseStep
+    , test_baseStepRemainder
+    , test_baseStepMultipleRemainder
+    ) where
 
 import Test.Tasty
        ( TestTree )
@@ -29,6 +33,8 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( make )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -67,7 +73,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term = mkVar $ v1 patternMetaSort
                     , predicate = makeTruePredicate
@@ -93,7 +99,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term = mkVar $ y1 patternMetaSort
                     , predicate = makeTruePredicate
@@ -119,7 +125,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -154,7 +160,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -186,7 +192,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -233,7 +239,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -295,7 +301,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term = mkVar $ a1 patternMetaSort
                     , predicate = makeTruePredicate
@@ -319,7 +325,7 @@ test_baseStep =
         let expect = Right []
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -338,7 +344,7 @@ test_baseStep =
         let expect = Right []
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -381,7 +387,7 @@ test_baseStep =
         let expect = Right [ExpandedPattern.bottom]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -409,7 +415,7 @@ test_baseStep =
                     )
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -429,7 +435,7 @@ test_baseStep =
         let expect = Left $ StepErrorUnification UnsupportedPatterns
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -472,7 +478,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -520,7 +526,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -577,7 +583,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -613,7 +619,7 @@ test_baseStep =
         let expect = Right []
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term = mkStringLiteral "sl2"
                     , predicate = makeTruePredicate
@@ -652,7 +658,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term = mkVar $ a1 patternMetaSort
                     , predicate =
@@ -689,7 +695,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -748,7 +754,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term = mkVar $ a1 patternMetaSort
                     , predicate = makeTruePredicate
@@ -804,7 +810,7 @@ test_baseStep =
                 ]
         actual <-
             runStep
-                mockMetadataTools
+                mockMetaMetadataTools
                 Predicated
                     { term =
                         metaSigma
@@ -890,8 +896,8 @@ test_baseStepRemainder =
                         )
                     )
                 ]
-        actual <- runStepWithRemainder
-            mockMetadataToolsR
+        actual <- runSingleStepWithRemainder
+            mockMetadataTools
             Predicated
                 { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
                 , predicate = makeTruePredicate
@@ -954,8 +960,8 @@ test_baseStepRemainder =
                         )
                     )
                 ]
-        actual <- runStepWithRemainder
-            mockMetadataToolsR
+        actual <- runSingleStepWithRemainder
+            mockMetadataTools
             Predicated
                 { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
                 , predicate = makeCeilPredicate Mock.cf
@@ -1012,8 +1018,8 @@ test_baseStepRemainder =
                         )
                     )
                 ]
-        actual <- runStepWithRemainder
-            mockMetadataToolsR
+        actual <- runSingleStepWithRemainder
+            mockMetadataTools
             Predicated
                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                 , predicate = makeTruePredicate
@@ -1030,14 +1036,167 @@ test_baseStepRemainder =
             )
         assertEqualWithExplanation "" expected actual
     ]
-  where
-    mockMetadataToolsR :: MetadataTools Object StepperAttributes
-    mockMetadataToolsR =
-        Mock.makeMetadataTools
-            Mock.attributesMapping
-            Mock.headTypeMapping
-            Mock.sortAttributesMapping
-            Mock.subsorts
+
+test_baseStepMultipleRemainder :: [TestTree]
+test_baseStepMultipleRemainder =
+    [ testCase "If-then" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: if x then cg
+        --   axiom: if true y => y
+        -- Actual:
+        --   term: constr20(x, cg)
+        --   axiom: constr20(a, y) => y
+        -- Expected:
+        --   rewritten: cg, with ⌈cg⌉ and [x=a]
+        --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
+        let
+            expected =
+                OrStepResult
+                    { rewrittenPattern = OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = Mock.cg
+                            , predicate = makeCeilPredicate Mock.cg
+                            , substitution =
+                                Substitution.wrap [(Mock.x, Mock.a)]
+                            }
+                        ]
+                    , remainder = OrOfExpandedPattern.make
+                        [ Predicated
+                            { term =
+                                Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                            , predicate =
+                                makeNotPredicate
+                                    (makeAndPredicate
+                                        (makeCeilPredicate Mock.cg)
+                                        (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                                    )
+                            , substitution = mempty
+                            }
+                        ]
+                    }
+        actual <- runStepWithRemainders
+            mockMetadataTools
+            Predicated
+                { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+            [RewriteRule RulePattern
+                { left =
+                    Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+                , right = mkVar Mock.y
+                , requires = makeTruePredicate
+                , attributes = def
+                }
+            ]
+        assertEqualWithExplanation "" expected actual
+    , testCase "case" $ do
+        -- This uses `functionalConstr30(x, y, z)` to represent a case
+        -- statement,
+        -- i.e. `case x of 1 -> y; 2 -> z`
+        -- and `a`, `b` as the case labels.
+        --
+        -- Intended:
+        --   term: case x of 1 -> cf; 2 -> cg
+        --   axiom: case 1 of 1 -> cf; 2 -> cg => cf
+        --   axiom: case 2 of 1 -> cf; 2 -> cg => cg
+        -- Actual:
+        --   term: constr30(x, cg, cf)
+        --   axiom: constr30(a, y, z) => y
+        --   axiom: constr30(b, y, z) => z
+        -- Expected:
+        --   rewritten: cf, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
+        --   rewritten:
+        --      cg, with ¬(⌈cf⌉ and ⌈cg⌉ and x=b) and (⌈cf⌉ and ⌈cg⌉ and b=a)
+        --   remainder:
+        --     constr20(x, cf, cg)
+        --        with ¬(⌈cf⌉ and ⌈cg⌉ and x=a)
+        --        and ¬(⌈cf⌉ and ⌈cg⌉ and x=b)
+        let
+            unificationNotBottom =
+                makeAndPredicate
+                    (makeCeilPredicate Mock.cf)
+                    (makeCeilPredicate Mock.cg)
+            expected =
+                OrStepResult
+                    { rewrittenPattern = OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = Mock.cf
+                            , predicate = unificationNotBottom
+                            , substitution =
+                                Substitution.wrap [(Mock.x, Mock.a)]
+                            }
+                        , Predicated
+                            { term = Mock.cg
+                            , predicate = makeAndPredicate
+                                (makeNotPredicate
+                                    (makeAndPredicate
+                                        unificationNotBottom
+                                        (makeEqualsPredicate Mock.b Mock.a)
+                                    )
+                                )
+                                unificationNotBottom
+                            , substitution =
+                                Substitution.wrap [(Mock.x, Mock.b)]
+                            }
+                        ]
+                    , remainder = OrOfExpandedPattern.make
+                        [ Predicated
+                            { term =
+                                Mock.functionalConstr30
+                                    (mkVar Mock.x) Mock.cf Mock.cg
+                            , predicate =
+                                makeAndPredicate
+                                    (makeNotPredicate
+                                        (makeAndPredicate
+                                            unificationNotBottom
+                                            (makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.a
+                                            )
+                                        )
+                                    )
+                                    (makeNotPredicate
+                                        (makeAndPredicate
+                                            unificationNotBottom
+                                            (makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.b
+                                            )
+                                        )
+                                    )
+                            , substitution = mempty
+                            }
+                        ]
+                    }
+        actual <- runStepWithRemainders
+            mockMetadataTools
+            Predicated
+                { term =
+                    Mock.functionalConstr30 (mkVar Mock.x) Mock.cf Mock.cg
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+            [ RewriteRule RulePattern
+                { left = Mock.functionalConstr30
+                    Mock.a (mkVar Mock.y) (mkVar Mock.z)
+                , right = mkVar Mock.y
+                , requires = makeTruePredicate
+                , attributes = def
+                }
+            , RewriteRule RulePattern
+                { left = Mock.functionalConstr30
+                    Mock.b (mkVar Mock.y) (mkVar Mock.z)
+                , right = mkVar Mock.z
+                , requires = makeTruePredicate
+                , attributes = def
+                }
+            ]
+        assertEqualWithExplanation "" expected actual
+    ]
 
 mockStepperAttributes :: SymbolOrAlias Meta -> StepperAttributes
 mockStepperAttributes patternHead =
@@ -1053,14 +1212,22 @@ mockStepperAttributes patternHead =
     isDeclaredFunction = patternHead /= iSymbol
     isDeclaredInjective = patternHead /= hSymbol && patternHead /= iSymbol
 
-mockMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetadataTools = MetadataTools
+mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
+mockMetaMetadataTools = MetadataTools
     { symAttributes = mockStepperAttributes
     , symbolOrAliasType = const HeadType.Symbol
     , sortAttributes = undefined
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     }
+
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.sortAttributesMapping
+        Mock.subsorts
 
 sigmaSymbol :: SymbolOrAlias Meta
 sigmaSymbol = SymbolOrAlias
@@ -1134,7 +1301,7 @@ runStep
         )
 runStep metadataTools configuration axiom = do
     ioResult <-
-        runStepWithRemainder metadataTools configuration axiom
+        runSingleStepWithRemainder metadataTools configuration axiom
     return $ do
         results <- ioResult
         return (map processResult results)
@@ -1142,7 +1309,26 @@ runStep metadataTools configuration axiom = do
     processResult (StepResult { rewrittenPattern }, proof) =
         (rewrittenPattern, proof)
 
-runStepWithRemainder
+runStepWithRemainders
+    :: MetaOrObject level
+    => MetadataTools level StepperAttributes
+    -- ^functions yielding metadata for pattern heads
+    -> CommonExpandedPattern level
+    -- ^left-hand-side of unification
+    -> [RewriteRule level]
+    -> IO (OrStepResult level Variable)
+runStepWithRemainders metadataTools configuration axioms =
+    fst
+    <$> SMT.runSMT SMT.defaultConfig
+            ( evalSimplifier
+            $ stepWithRemainders
+                metadataTools
+                (Mock.substitutionSimplifier metadataTools)
+                configuration
+                axioms
+            )
+
+runSingleStepWithRemainder
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
@@ -1154,7 +1340,7 @@ runStepWithRemainder
             (StepError level Variable)
             [(StepResult level Variable, StepProof level Variable)]
         )
-runStepWithRemainder metadataTools configuration axiom =
+runSingleStepWithRemainder metadataTools configuration axiom =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier
     $ runExceptT

@@ -247,7 +247,7 @@ test_functionRegistry =
         assertEqual ""
             2
             (case Map.lookup (testId "f") testEvaluators of
-                Just (That axioms) -> length $ definitionEvaluators axioms
+                Just (That axioms) -> length $ definitionRules axioms
                 _ -> error "Should find precisely two axioms for f"
             )
         assertEqual ""

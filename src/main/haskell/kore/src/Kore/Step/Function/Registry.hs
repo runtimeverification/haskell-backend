@@ -141,10 +141,10 @@ axiomPatternsToEvaluators axiomPatterns =
     equalitiesToEvaluators
         :: [EqualityRule level] -> Maybe (FunctionEvaluators level)
     equalitiesToEvaluators equalities =
-        if null simplification && null definition
+        if null simplification && null evaluations
         then Nothing
         else Just FunctionEvaluators
-            { definitionEvaluators = definition
+            { definitionRules = evaluations
             , simplificationEvaluators = simplification
             }
       where
@@ -153,15 +153,11 @@ axiomPatternsToEvaluators axiomPatterns =
         (simplifications, evaluations) =
             partition isSimplificationRule equalities
         simplification = mapMaybe axiomPatternEvaluator simplifications
-        definition = mapMaybe axiomPatternEvaluator evaluations
         isSimplificationRule (EqualityRule RulePattern { attributes }) =
             isSimplification
           where
             Simplification { isSimplification } =
                 AxiomPatterns.simplification attributes
-
-
-
 
 {- | Return the function evaluator corresponding to the 'AxiomPattern'.
 

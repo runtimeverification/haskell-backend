@@ -120,13 +120,13 @@ test_applicationSimplification =
                 (mockSimplifier [])
                 (Map.singleton
                     Mock.fId
-                    (thatDefinition
+                    (thatSimplification
                         [ ApplicationFunctionEvaluator
-                            (const $ const $ const $ const $ const $ return
-                                [( AttemptedFunction.Applied
+                            (const $ const $ const $ const $ return
+                                ( AttemptedFunction.Applied
                                     (OrOfExpandedPattern.make [gOfAExpanded])
                                 , SimplificationProof
-                                )]
+                                )
                             )
                         ]
                     )
@@ -215,13 +215,13 @@ test_applicationSimplification =
                     (mockSimplifier [])
                     (Map.singleton
                         Mock.sigmaId
-                        (thatDefinition
+                        (thatSimplification
                             [ ApplicationFunctionEvaluator
-                                (const $ const $ const $ const $ const $ do
+                                (const $ const $ const $ const $ do
                                     let zvar =
                                             freshVariableFromVariable Mock.z 1
                                     return
-                                        [( AttemptedFunction.Applied
+                                        ( AttemptedFunction.Applied
                                             (OrOfExpandedPattern.make
                                                 [ Predicated
                                                     { term = fOfA
@@ -236,7 +236,7 @@ test_applicationSimplification =
                                                 ]
                                             )
                                         , SimplificationProof
-                                        )]
+                                        )
                                 )
                             ]
                         )
@@ -307,12 +307,12 @@ test_applicationSimplification =
             Mock.sortAttributesMapping
             Mock.subsorts
 
-thatDefinition
+thatSimplification
     :: [ApplicationFunctionEvaluator Object]
     -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
-thatDefinition evaluators =
+thatSimplification evaluators =
     That FunctionEvaluators
-        { definitionEvaluators = evaluators
+        { definitionRules = []
         , simplificationEvaluators = evaluators
         }
 

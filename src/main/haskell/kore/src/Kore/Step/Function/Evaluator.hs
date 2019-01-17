@@ -13,10 +13,8 @@ module Kore.Step.Function.Evaluator
 
 import           Control.Exception
                  ( assert )
-import           Data.Filtrable
-                 ( mapEither )
-import           Data.List
-                 ( foldl', nub, partition )
+import           Control.Monad
+                 ( when )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( isJust )
@@ -32,24 +30,32 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.AxiomPatterns
+                 ( EqualityRule (EqualityRule) )
+import           Kore.Step.BaseStep
+                 ( OrStepResult (OrStepResult),
+                 UnificationProcedure (UnificationProcedure),
+                 stepWithRemaindersForUnifier )
+import qualified Kore.Step.BaseStep as OrStepResult
+                 ( OrStepResult (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..),
-                 BuiltinAndAxiomsFunctionEvaluatorMap, EvaluationType,
+                 BuiltinAndAxiomsFunctionEvaluatorMap,
                  FunctionEvaluators (FunctionEvaluators) )
-import           Kore.Step.Function.Data as EvaluationType
-                 ( EvaluationType (..) )
 import           Kore.Step.Function.Data as FunctionEvaluators
                  ( FunctionEvaluators (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
+import           Kore.Step.Function.Matcher
+                 ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, isFalse, make, merge, traverseWithPairs )
+                 ( extractPatterns, make, traverseWithPairs )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -112,7 +118,7 @@ evaluateApplication
             return unchanged
         Just builtinOrAxiomEvaluators ->
             these
-                (evaluateWithDefinitonAxioms . pure)
+                evaluateWithBuiltins
                 evaluateWithFunctionAxioms
                 evaluateBuiltinAndAxioms
                 builtinOrAxiomEvaluators
@@ -120,46 +126,15 @@ evaluateApplication
     Application { applicationSymbolOrAlias = appHead } = app
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
 
+    appPurePattern = asPurePattern (valid :< ApplicationPattern app)
+
     evaluateBuiltinAndAxioms
         :: ApplicationFunctionEvaluator level
         -> FunctionEvaluators level
         -> Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
     evaluateBuiltinAndAxioms builtinEvaluator axiomEvaluators = do
-        unprocessedResults <-
-            applyEvaluator validApp EvaluationType.Definition builtinEvaluator
-        orResultsWithProofs <-
-            mapM (processResult axiomEvaluators) unprocessedResults
-        let
-            dropProofs :: [(a, SimplificationProof level)] -> [a]
-            dropProofs = map fst
-        return
-            (OrOfExpandedPattern.make
-                (concatMap
-                    OrOfExpandedPattern.extractPatterns
-                    (dropProofs orResultsWithProofs)
-                )
-            , SimplificationProof
-            )
-
-    notApplicable :: (AttemptedFunction level variable, x) -> Bool
-    notApplicable (AttemptedFunction.NotApplicable, _) = True
-    notApplicable _ = False
-
-    unwrapApplied
-        :: (AttemptedFunction level variable, proof)
-        -> OrOfExpandedPattern level variable
-    unwrapApplied (AttemptedFunction.Applied term, _proof) = term
-    unwrapApplied _ = error "Can only unwrap 'Applied' terms."
-
-    appPurePattern = asPurePattern (valid :< ApplicationPattern app)
-
-    processResult
-        :: FunctionEvaluators level
-        -> (AttemptedFunction level variable, SimplificationProof level)
-        -> Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-    processResult axiomEvaluators (result, proof) =
+        (result, _proof) <- applyEvaluator validApp builtinEvaluator
         case result of
             AttemptedFunction.NotApplicable
               | isAppConcrete
@@ -171,7 +146,7 @@ evaluateApplication
                     )
               | otherwise ->
                 evaluateWithFunctionAxioms axiomEvaluators
-            AttemptedFunction.Applied pat -> return (pat, proof)
+            AttemptedFunction.Applied pat -> return (pat, SimplificationProof)
 
     unchangedPatt =
         case childrenPredicateSubstitution of
@@ -189,37 +164,25 @@ evaluateApplication
             (Application level)
             (Valid (variable level) level)
             (StepPattern level variable)
-        -> EvaluationType
         -> ApplicationFunctionEvaluator level
         -> Simplifier
-            [   ( AttemptedFunction level variable
-                , SimplificationProof level
-                )
-            ]
+            ( AttemptedFunction level variable
+            , SimplificationProof level
+            )
     applyEvaluator
-        app' evaluationType (ApplicationFunctionEvaluator evaluator)
+        app' (ApplicationFunctionEvaluator evaluator)
       = do
-        results <- evaluator
+        result <- evaluator
             tools
             substitutionSimplifier
             simplifier
-            evaluationType
             app'
-        mapM
-            (mergeWithConditionAndSubstitution
-                tools
-                substitutionSimplifier
-                simplifier
-                childrenPredicateSubstitution
-            )
-            results
-
-    notBottom =
-        \case
-            (AttemptedFunction.NotApplicable, _) ->
-                True
-            (AttemptedFunction.Applied thing, _) ->
-                not (OrOfExpandedPattern.isFalse thing)
+        mergeWithConditionAndSubstitution
+            tools
+            substitutionSimplifier
+            simplifier
+            childrenPredicateSubstitution
+            result
 
     isAppConcrete = isJust (asConcretePurePattern appPurePattern)
     getAppHookString =
@@ -230,21 +193,19 @@ evaluateApplication
         -> Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
     evaluateWithFunctionAxioms
-        FunctionEvaluators { definitionEvaluators, simplificationEvaluators }
+        FunctionEvaluators { definitionRules, simplificationEvaluators }
       = do
         (simplifiedResult, proof) <-
             evaluateWithSimplificationAxioms simplificationEvaluators
         case simplifiedResult of
             AttemptedFunction.NotApplicable ->
-                if null definitionEvaluators
+                if null definitionRules
                     then
                         -- We don't have a definition, so we shouldn't attempt
                         -- to evaluate it, since it would currently evaluate
                         -- to bottom.
-                        -- TODO(virgil): Remove this branch when we start
-                        -- using reminders in function evaluation.
                         return (OrOfExpandedPattern.make [unchangedPatt], proof)
-                    else evaluateWithDefinitonAxioms definitionEvaluators
+                    else evaluateWithDefinitionAxioms definitionRules
             AttemptedFunction.Applied result -> return (result, proof)
 
     evaluateWithSimplificationAxioms [] =
@@ -253,21 +214,9 @@ evaluateApplication
             , SimplificationProof
             )
     evaluateWithSimplificationAxioms (evaluator : evaluators) = do
-        results <-
-            applyEvaluator validApp EvaluationType.Simplification evaluator
-        let
-            extractValidResult (AttemptedFunction.NotApplicable, _proof) =
-                Left ()
-            extractValidResult (AttemptedFunction.Applied orPatt, _proof) =
-                Right orPatt
-            (invalidResults, validResults) =
-                mapEither extractValidResult results
-            mergedResults =
-                foldl'
-                    OrOfExpandedPattern.merge
-                    (OrOfExpandedPattern.make [])
-                    validResults
+        (applicationResult, _proof) <- applyEvaluator validApp evaluator
 
+        let
             simplify
                 :: ExpandedPattern level variable
                 -> Simplifier [ExpandedPattern level variable]
@@ -278,78 +227,110 @@ evaluateApplication
                     simplifier
                     result
                 return (OrOfExpandedPattern.extractPatterns orPatt)
-        -- TODO: If we are simplifying, then we should probably
-        -- allow at most one valid result, since more than that
-        -- would probably make the result more complicated.
-        if null invalidResults
-            then do
+        case applicationResult of
+            AttemptedFunction.Applied orResults -> do
+                when
+                    (length (OrOfExpandedPattern.extractPatterns orResults) > 1)
+                    -- We should only allow multiple simplification results
+                    -- when they are created by unification splitting the
+                    -- configuration.
+                    -- However, right now, we shouldn't be able to get more
+                    -- than one result, so we throw an error.
+                    (error
+                        (  "Unexpected simplification result with more "
+                        ++ "than one configuration: "
+                        ++ show orResults
+                        )
+                    )
                 patts <-
                     mapM
                         simplify
-                        (OrOfExpandedPattern.extractPatterns mergedResults)
+                        (OrOfExpandedPattern.extractPatterns orResults)
                 return
                     ( AttemptedFunction.Applied
                         (OrOfExpandedPattern.make (concat patts))
                     , SimplificationProof
                     )
-            else evaluateWithSimplificationAxioms evaluators
+            AttemptedFunction.NotApplicable ->
+                evaluateWithSimplificationAxioms evaluators
 
-    evaluateWithDefinitonAxioms evaluators = do
-        -- TODO(virgil): Apply these axioms using unification, using reminders
-        -- in a similar way to the one-step strategy.
-        resultsLists <-
-            mapM (applyEvaluator validApp EvaluationType.Definition) evaluators
+    evaluateWithBuiltins evaluator = do
+        (result, _proof) <- applyEvaluator validApp evaluator
+        case result of
+            AttemptedFunction.NotApplicable -> return
+                ( OrOfExpandedPattern.make [unchangedPatt]
+                , SimplificationProof
+                )
+            AttemptedFunction.Applied orResult -> do
+                -- TODO(virgil): Find out if builtin results need to be
+                -- resimplified and, if they don't, skip resimplification.
+                simplifiedPatts <-
+                    mapM simplifyIfNeeded
+                        (OrOfExpandedPattern.extractPatterns orResult)
+                return
+                    ( OrOfExpandedPattern.make (concat simplifiedPatts)
+                    , SimplificationProof
+                    )
+
+    evaluateWithDefinitionAxioms
+        :: [EqualityRule level]
+        -> Simplifier
+            (OrOfExpandedPattern level variable, SimplificationProof level)
+    evaluateWithDefinitionAxioms definitionRules = do
+        (OrStepResult { rewrittenPattern, remainder }, _proof) <-
+            stepWithRemaindersForUnifier
+                tools
+                (UnificationProcedure unificationWithAppMatchOnTop)
+                substitutionSimplifier
+                (map (\ (EqualityRule rule) -> rule) definitionRules)
+                unchangedPatt
         let
-            results
-                ::  [   ( AttemptedFunction level variable
-                        , SimplificationProof level
-                        )
-                    ]
-            results = concat resultsLists
-            -- Separate into NotApplied and Applied results.
-            (notApplied, applied) =
-                partition
-                    notApplicable
-                    -- TODO(virgil): nub is O(n^2), should do better than
-                    -- that.
-                    (nub (filter notBottom results))
-            -- All NotApplied results are equivalent, so we just check if
-            -- we have at least one.
-            notAppliedTerm = case notApplied of
-                [] -> OrOfExpandedPattern.make []
-                _ -> OrOfExpandedPattern.make [unchangedPatt]
-                -- TODO(virgil): attach a predicate identifying the
-                -- rule which didn't apply; returning the pattern unchanged
-                -- is not really correct as we doesn't explain how we got
-                -- here.
-            appliedTerms = map unwrapApplied applied
-            unsimplifiedResults :: OrOfExpandedPattern level variable
-            unsimplifiedResults =
-                foldr OrOfExpandedPattern.merge notAppliedTerm appliedTerms
-            simplifiedResults :: Simplifier (OrOfExpandedPattern level variable)
-            simplifiedResults = do
-                simplifiedLists <- mapM
-                    simplifyIfNeeded
-                    (OrOfExpandedPattern.extractPatterns unsimplifiedResults)
-                return (OrOfExpandedPattern.make (concat simplifiedLists))
-            simplifyIfNeeded
+            evaluationResults :: [ExpandedPattern level variable]
+            evaluationResults =
+                OrOfExpandedPattern.extractPatterns rewrittenPattern
+
+            remainderResults :: [ExpandedPattern level variable]
+            remainderResults =
+                    OrOfExpandedPattern.extractPatterns remainder
+
+            simplifyPredicate
                 :: ExpandedPattern level variable
-                -> Simplifier [ExpandedPattern level variable]
-            simplifyIfNeeded result =
-                if result == unchangedPatt
-                    then return [unchangedPatt]
-                    else do
-                        orPatt <- reevaluateFunctions
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            result
-                        return (OrOfExpandedPattern.extractPatterns orPatt)
-        simplified <- simplifiedResults
+                -> Simplifier
+                    (ExpandedPattern level variable, SimplificationProof level)
+            simplifyPredicate =
+                ExpandedPattern.simplifyPredicate
+                    tools
+                    substitutionSimplifier
+                    simplifier
+        simplifiedEvaluationLists <- mapM simplifyIfNeeded evaluationResults
+        simplifiedRemainderList <-
+            mapM simplifyPredicate remainderResults
+        let
+            simplifiedEvaluationResults :: [ExpandedPattern level variable]
+            simplifiedEvaluationResults = concat simplifiedEvaluationLists
+
+            simplifiedRemainderResults :: [ExpandedPattern level variable]
+            (simplifiedRemainderResults, _proofs) =
+                unzip simplifiedRemainderList
         return
-            ( simplified
+            ( OrOfExpandedPattern.make
+                (simplifiedEvaluationResults ++ simplifiedRemainderResults)
             , SimplificationProof
             )
+
+    simplifyIfNeeded
+        :: ExpandedPattern level variable
+        -> Simplifier [ExpandedPattern level variable]
+    simplifyIfNeeded result =
+        if result == unchangedPatt
+            then return [unchangedPatt]
+            else do
+                orPatt <- reevaluateFunctions
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    result
+                return (OrOfExpandedPattern.extractPatterns orPatt)
 
 {-| 'reevaluateFunctions' re-evaluates functions after a user-defined function
 was evaluated.

@@ -131,7 +131,7 @@ test_onePathStrategy =
         -- Normal axiom: a => b
         -- Start pattern: a
         -- Expected: c, since a->b->c and b->d is ignored
-        [ _actual1, _actual2 ] <- runOnePathSteps
+        [ _actual1 ] <- runOnePathSteps
             metadataTools
             (Limit 2)
             (ExpandedPattern.fromPurePattern Mock.a)
@@ -142,13 +142,11 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ Bottom
-                , RewritePattern $ ExpandedPattern.fromPurePattern Mock.c
+                [ RewritePattern $ ExpandedPattern.fromPurePattern Mock.c
                 ]
             )
             (sort
                 [ _actual1
-                , _actual2
                 ]
             )
 
@@ -158,7 +156,7 @@ test_onePathStrategy =
         -- Normal axiom: a => b
         -- Start pattern: a
         -- Expected: d, since a->b->d
-        [ _actual1, _actual2 ] <- runOnePathSteps
+        [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 2)
             (ExpandedPattern.fromPurePattern Mock.a)
@@ -169,13 +167,11 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ Bottom
-                , RewritePattern $ ExpandedPattern.fromPurePattern Mock.d
+                [ RewritePattern $ ExpandedPattern.fromPurePattern Mock.d
                 ]
             )
             (sort
-                [ _actual1
-                , _actual2
+                [ _actual
                 ]
             )
     , testCase "Differentiated axioms" $ do
@@ -264,7 +260,7 @@ test_onePathStrategy =
         --   or (f(b) and x=b)
         --   or (f(c) and x=c)
         --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
-        [ _actual1, _actual2, _actual3, _actual4 ] <-
+        [ _actual1, _actual2, _actual3 ] <-
             runOnePathSteps
                 metadataTools
                 (Limit 2)
@@ -311,12 +307,10 @@ test_onePathStrategy =
                         )
                 , substitution = mempty
                 }
-            , Bottom
             ]
             [ _actual1
             , _actual2
             , _actual3
-            , _actual4
             ]
     , testCase "Axiom with requires" $ do
         -- Target: a

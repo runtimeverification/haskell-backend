@@ -34,6 +34,8 @@ import           Kore.Proof.Functional
 import           Kore.Step.BaseStep
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
+import           Kore.Step.BaseStep as OrStepResult
+                 ( OrStepResult (..) )
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
@@ -322,7 +324,7 @@ instance
     EqualWithExplanation (CofreeF f a b)
   where
     compareWithExplanation (a1 :< fb1) (a2 :< fb2) =
-        compareWithExplanation a1 a2 <|> compareWithExplanation fb1 fb2
+        compareWithExplanation fb1 fb2 <|> compareWithExplanation a1 a2
     printWithExplanation = show
 
 instance
@@ -1264,6 +1266,39 @@ instance
     printWithExplanation = show
 
 instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
+    )
+    => StructEqualWithExplanation (OrStepResult level variable)
+  where
+    structFieldsWithNames
+        expected@(OrStepResult _ _)
+        actual@(OrStepResult _ _)
+      = [ EqWrap
+            "rewrittenPattern = "
+            (OrStepResult.rewrittenPattern expected)
+            (OrStepResult.rewrittenPattern actual)
+        , EqWrap
+            "remainder = "
+            (OrStepResult.remainder expected)
+            (OrStepResult.remainder actual)
+        ]
+    structConstructorName _ = "OrStepResult"
+
+instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation (variable level)
+    , EqualWithExplanation (StepPattern level variable)
+    )
+    => EqualWithExplanation (OrStepResult level variable)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
     ( EqualWithExplanation patt
     , Show patt
     , Eq patt
@@ -1319,12 +1354,12 @@ instance
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PatternAttributesError.ConstructorLikeError)
+instance EqualWithExplanation PatternAttributesError.ConstructorLikeError
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (ConstructorLikeProof)
+instance EqualWithExplanation ConstructorLikeProof
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

@@ -25,6 +25,7 @@ module Kore.Step.OrOfExpandedPattern
     , make
     , makeFromSinglePurePattern
     , merge
+    , mergeAll
     , crossProductGeneric
     , crossProductGenericF
     , extractPatterns
@@ -410,7 +411,7 @@ crossProductGenericF joiner (MultiOr first) (MultiOr second) =
 
 The result is simplified with the 'filterOr' function.
 
- -}
+-}
 merge
     :: (Ord term, TopBottom term)
     => MultiOr term
@@ -418,6 +419,18 @@ merge
     -> MultiOr term
 merge patts1 patts2 =
     filterOr (mergeGeneric patts1 patts2)
+
+{- | Merge any number of disjunctions of items.
+
+The result is simplified with the 'filterOr' function.
+
+-}
+mergeAll
+    :: (Ord term, TopBottom term)
+    => [MultiOr term]
+    -> MultiOr term
+mergeAll ors =
+    filterOr (foldl' mergeGeneric (make []) ors)
 
 {-| 'merge' merges two 'MultiOr'.
 -}
