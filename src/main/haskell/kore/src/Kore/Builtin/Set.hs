@@ -70,6 +70,7 @@ import           Data.Set
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Pure as Kore
 import           Kore.AST.Valid
@@ -171,7 +172,7 @@ type Builtin = Set (ConcreteStepPattern Object)
  -}
 expectBuiltinSet
     :: Monad m
-    => String  -- ^ Context for error message
+    => Text  -- ^ Context for error message
     -> MetadataTools Object StepperAttributes
     -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m Builtin
@@ -184,7 +185,7 @@ expectBuiltinSet ctx tools _set =
                     Domain.BuiltinSet set -> return set
                     _ ->
                         Builtin.verifierBug
-                            (ctx ++ ": Domain value is not a set")
+                            (Text.unpack ctx ++ ": Domain value is not a set")
             _ ->
                 empty
 
@@ -230,7 +231,7 @@ evalIn =
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity inKey
             _elem <- Builtin.expectNormalConcreteTerm tools _elem
-            _set <- expectBuiltinSet inKey tools _set
+            _set <- expectBuiltinSet inKeyT tools _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Set.member _elem _set)
         )
@@ -250,7 +251,7 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    ctx = concatKey
+    ctx = concatKeyT
     evalConcat0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -264,7 +265,7 @@ evalConcat =
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity concatKey
                 leftIdentity = do
                     _set1 <- expectBuiltinSet ctx tools _set1
                     if Set.null _set1
@@ -290,7 +291,7 @@ evalDifference :: Builtin.Function
 evalDifference =
     Builtin.functionEvaluator evalDifference0
   where
-    ctx = differenceKey
+    ctx = differenceKeyT
     evalDifference0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -304,7 +305,7 @@ evalDifference =
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity differenceKey
                 rightIdentity = do
                     _set2 <- expectBuiltinSet ctx tools _set2
                     if Set.null _set2
@@ -335,7 +336,7 @@ evalToList = Builtin.functionEvaluator evalToList0
                         case arguments of
                             [_set] -> _set
                             _      -> Builtin.wrongArity toListKey
-            _set <- expectBuiltinSet toListKey tools _set
+            _set <- expectBuiltinSet toListKeyT tools _set
             List.returnList resultSort
                 . fmap fromConcreteStepPattern
                 . Seq.fromList
@@ -358,7 +359,7 @@ evalSize = Builtin.functionEvaluator evalSize0
                         case arguments of
                             [_set] -> _set
                             _      -> Builtin.wrongArity sizeKey
-            _set <- expectBuiltinSet sizeKey tools _set
+            _set <- expectBuiltinSet sizeKeyT tools _set
             Builtin.appliedFunction
                 . Int.asExpandedPattern resultSort
                 . toInteger

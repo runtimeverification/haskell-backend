@@ -32,7 +32,6 @@ import           Data.String
                  ( fromString )
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 
 import           Kore.AST.MetaOrObject

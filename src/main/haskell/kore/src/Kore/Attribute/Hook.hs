@@ -22,7 +22,6 @@ import           Data.Hashable
 import qualified Data.Maybe as Maybe
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 

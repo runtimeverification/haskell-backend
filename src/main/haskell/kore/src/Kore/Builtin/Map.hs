@@ -33,6 +33,21 @@ module Kore.Builtin.Map
     , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
+      -- * keys
+    , concatKey
+    , concatKeyT
+    , lookupKey
+    , lookupKeyT
+    , elementKey
+    , elementKeyT
+    , unitKey
+    , unitKeyT
+    , updateKey
+    , updateKeyT
+    , in_keysKey
+    , in_keysKeyT
+    , keysKey
+    , keysKeyT
     -- * Unification
     , unifyEquals
     -- * Raw evaluators
@@ -52,6 +67,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Pure as Kore
 import           Kore.AST.Valid
@@ -113,25 +129,25 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( "MAP.concat"
+    [ ( concatKeyT
       , Builtin.verifySymbol assertSort [assertSort , assertSort]
       )
-    , ( "MAP.element"
+    , ( elementKeyT
       , Builtin.verifySymbol assertSort [anySort, anySort]
       )
-    , ( "MAP.lookup"
+    , ( lookupKeyT
       , Builtin.verifySymbol anySort [assertSort, anySort]
       )
-    , ( "MAP.unit"
+    , ( unitKeyT
       , Builtin.verifySymbol assertSort []
       )
-    , ( "MAP.update"
+    , ( updateKeyT
       , Builtin.verifySymbol assertSort [assertSort, anySort, anySort]
       )
-    , ( "MAP.in_keys"
+    , ( in_keysKeyT
       , Builtin.verifySymbol Bool.assertSort [anySort, assertSort]
       )
-    , ( "MAP.keys"
+    , ( keysKeyT
       , Builtin.verifySymbol Builtin.Set.assertSort [assertSort]
       )
     ]
@@ -151,7 +167,7 @@ type Builtin variable =
  -}
 expectBuiltinMap
     :: Monad m
-    => String  -- ^ Context for error message
+    => Text  -- ^ Context for error message
     -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
 expectBuiltinMap ctx _map =
@@ -162,7 +178,7 @@ expectBuiltinMap ctx _map =
                     Domain.BuiltinMap map' -> return map'
                     _ ->
                         Builtin.verifierBug
-                            (ctx ++ ": Domain value is not a map")
+                            (Text.unpack ctx ++ ": Domain value is not a map")
             _ ->
                 empty
 
@@ -180,7 +196,6 @@ evalLookup :: Builtin.Function
 evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
-    ctx = "MAP.lookup"
     evalLookup0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -194,15 +209,15 @@ evalLookup =
             let (_map, _key) =
                     case arguments of
                         [_map, _key] -> (_map, _key)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity lookupKey
                 emptyMap = do
-                    _map <- expectBuiltinMap ctx _map
+                    _map <- expectBuiltinMap lookupKeyT _map
                     if Map.null _map
                         then Builtin.appliedFunction ExpandedPattern.bottom
                         else empty
                 bothConcrete = do
                     _key <- Builtin.expectNormalConcreteTerm tools _key
-                    _map <- expectBuiltinMap ctx _map
+                    _map <- expectBuiltinMap lookupKeyT _map
                     Builtin.appliedFunction $ maybeBottom $ Map.lookup _key _map
             emptyMap <|> bothConcrete
         )
@@ -219,7 +234,7 @@ evalElement =
             let (_key, _value) =
                     case arguments of
                         [_key, _value] -> (_key, _value)
-                        _ -> Builtin.wrongArity "MAP.element"
+                        _ -> Builtin.wrongArity elementKey
             _key <- Builtin.expectNormalConcreteTerm tools _key
             returnMap resultSort (Map.singleton _key _value)
         )
@@ -229,7 +244,6 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    ctx = "MAP.concat"
     evalConcat0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -243,9 +257,9 @@ evalConcat =
             let (_map1, _map2) =
                     case arguments of
                         [_map1, _map2] -> (_map1, _map2)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity concatKey
                 leftIdentity = do
-                    _map1 <- expectBuiltinMap ctx _map1
+                    _map1 <- expectBuiltinMap concatKeyT _map1
                     if Map.null _map1
                         then
                             Builtin.appliedFunction
@@ -253,7 +267,7 @@ evalConcat =
                         else
                             empty
                 rightIdentity = do
-                    _map2 <- expectBuiltinMap ctx _map2
+                    _map2 <- expectBuiltinMap concatKeyT _map2
                     if Map.null _map2
                         then
                             Builtin.appliedFunction
@@ -261,8 +275,8 @@ evalConcat =
                         else
                             empty
                 bothConcrete = do
-                    _map1 <- expectBuiltinMap ctx _map1
-                    _map2 <- expectBuiltinMap ctx _map2
+                    _map1 <- expectBuiltinMap concatKeyT _map1
+                    _map2 <- expectBuiltinMap concatKeyT _map2
                     let overlapping =
                             (not . Set.null)
                                 (Set.intersection
@@ -286,7 +300,7 @@ evalUnit =
     evalUnit0 _ _ resultSort =
         \case
             [] -> returnMap resultSort Map.empty
-            _ -> Builtin.wrongArity "MAP.unit"
+            _ -> Builtin.wrongArity unitKey
 
 evalUpdate :: Builtin.Function
 evalUpdate =
@@ -298,9 +312,9 @@ evalUpdate =
             let (_map, _key, value) =
                     case arguments of
                         [_map, _key, value'] -> (_map, _key, value')
-                        _ -> Builtin.wrongArity "MAP.update"
+                        _ -> Builtin.wrongArity updateKey
             _key <- Builtin.expectNormalConcreteTerm tools _key
-            _map <- expectBuiltinMap "MAP.update" _map
+            _map <- expectBuiltinMap updateKeyT _map
             returnMap resultSort (Map.insert _key value _map)
         )
 
@@ -314,9 +328,9 @@ evalInKeys =
             let (_key, _map) =
                     case arguments of
                         [_key, _map] -> (_key, _map)
-                        _ -> Builtin.wrongArity "MAP.in_keys"
+                        _ -> Builtin.wrongArity in_keysKey
             _key <- Builtin.expectNormalConcreteTerm tools _key
-            _map <- expectBuiltinMap "MAP.in_keys" _map
+            _map <- expectBuiltinMap in_keysKeyT _map
             Builtin.appliedFunction
                 $ Bool.asExpandedPattern resultSort
                 $ Map.member _key _map
@@ -326,7 +340,6 @@ evalKeys :: Builtin.Function
 evalKeys =
     Builtin.functionEvaluator evalKeys0
   where
-    ctx = "MAP.in_keys"
     evalKeys0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -340,8 +353,8 @@ evalKeys =
             let _map =
                     case arguments of
                         [_map] -> _map
-                        _ -> Builtin.wrongArity ctx
-            _map <- expectBuiltinMap ctx _map
+                        _ -> Builtin.wrongArity lookupKey
+            _map <- expectBuiltinMap lookupKeyT _map
             Builtin.Set.returnSet resultSort (Map.keysSet _map)
         )
 
@@ -350,13 +363,13 @@ evalKeys =
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ ("MAP.concat", evalConcat)
-        , ("MAP.lookup", evalLookup)
-        , ("MAP.element", evalElement)
-        , ("MAP.unit", evalUnit)
-        , ("MAP.update", evalUpdate)
-        , ("MAP.in_keys", evalInKeys)
-        , ("MAP.keys", evalKeys)
+        [ (concatKeyT, evalConcat)
+        , (lookupKeyT, evalLookup)
+        , (elementKeyT, evalElement)
+        , (unitKeyT, evalUnit)
+        , (updateKeyT, evalUpdate)
+        , (in_keysKeyT, evalInKeys)
+        , (keysKeyT, evalKeys)
         ]
 
 {- | Render a 'Map' as a domain value pattern of the given sort.
@@ -411,6 +424,41 @@ asExpandedPattern symbols resultSort =
     asExpandedPattern0 = \asPattern0 builtin ->
         ExpandedPattern.fromPurePattern $ asPattern0 builtin
 
+concatKey :: String
+concatKey = "MAP.concat"
+concatKeyT :: Text
+concatKeyT = "MAP.concat"
+
+lookupKey :: String
+lookupKey = "MAP.lookup"
+lookupKeyT :: Text
+lookupKeyT = "MAP.lookup"
+
+elementKey :: String
+elementKey = "MAP.element"
+elementKeyT :: Text
+elementKeyT = "MAP.element"
+
+unitKey :: String
+unitKey = "MAP.unit"
+unitKeyT :: Text
+unitKeyT = "MAP.unit"
+
+updateKey :: String
+updateKey = "MAP.update"
+updateKeyT :: Text
+updateKeyT = "MAP.update"
+
+in_keysKey :: String
+in_keysKey = "MAP.in_keys"
+in_keysKeyT :: Text
+in_keysKeyT = "MAP.in_keys"
+
+keysKey :: String
+keysKey = "MAP.keys"
+keysKeyT :: Text
+keysKeyT = "MAP.keys"
+
 {- | Embed a 'Map' in a builtin domain value pattern.
  -}
 asBuiltinDomainValue
@@ -427,7 +475,7 @@ lookupSymbolUnit
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol "MAP.unit"
+lookupSymbolUnit = Builtin.lookupSymbol unitKeyT
 
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
@@ -435,7 +483,7 @@ lookupSymbolUpdate
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUpdate = Builtin.lookupSymbol "MAP.update"
+lookupSymbolUpdate = Builtin.lookupSymbol updateKeyT
 
 {- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
  -}
@@ -443,7 +491,7 @@ lookupSymbolLookup
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolLookup = Builtin.lookupSymbol "MAP.lookup"
+lookupSymbolLookup = Builtin.lookupSymbol lookupKeyT
 
 {- | Find the symbol hooked to @MAP.element@ in an indexed module.
  -}
@@ -451,7 +499,7 @@ lookupSymbolElement
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbol "MAP.element"
+lookupSymbolElement = Builtin.lookupSymbol elementKeyT
 
 {- | Find the symbol hooked to @MAP.concat@ in an indexed module.
  -}
@@ -459,7 +507,7 @@ lookupSymbolConcat
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol "MAP.concat"
+lookupSymbolConcat = Builtin.lookupSymbol concatKeyT
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
  -}
@@ -467,7 +515,7 @@ lookupSymbolInKeys
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolInKeys = Builtin.lookupSymbol "MAP.in_keys"
+lookupSymbolInKeys = Builtin.lookupSymbol in_keysKeyT
 
 {- | Find the symbol hooked to @MAP.keys@ in an indexed module.
  -}
@@ -475,7 +523,7 @@ lookupSymbolKeys
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolKeys = Builtin.lookupSymbol "MAP.keys"
+lookupSymbolKeys = Builtin.lookupSymbol keysKeyT
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
@@ -483,7 +531,7 @@ isSymbolConcat
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolConcat = Builtin.isSymbol "MAP.concat"
+isSymbolConcat = Builtin.isSymbol concatKeyT
 
 {- | Check if the given symbol is hooked to @MAP.element@.
  -}
@@ -491,7 +539,7 @@ isSymbolElement
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolElement = Builtin.isSymbol "MAP.element"
+isSymbolElement = Builtin.isSymbol elementKeyT
 
 {- | Check if the given symbol is hooked to @MAP.unit@.
 -}
@@ -499,7 +547,7 @@ isSymbolUnit
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolUnit = Builtin.isSymbol "MAP.unit"
+isSymbolUnit = Builtin.isSymbol unitKeyT
 
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
