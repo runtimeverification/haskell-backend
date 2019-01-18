@@ -38,7 +38,8 @@ import           Kore.AST.Sentence
                  ( SentenceSymbol (..) )
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.Builtin.Builtin ( anySort )
+import           Kore.Builtin.Builtin
+                 ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
@@ -69,9 +70,9 @@ symbolVerifiers :: Builtin.MonadVerify m => Builtin.SymbolVerifiers m
 symbolVerifiers =
     HashMap.fromList
     [ ( eqKey
-      , Builtin.verifySymbol Bool.assertSort [anySort, anySort])
+      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, acceptAnySort])
     , (neqKey
-      , Builtin.verifySymbol Bool.assertSort [anySort, anySort])
+      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, acceptAnySort])
     , (iteKey, iteVerifier)
     ]
   where

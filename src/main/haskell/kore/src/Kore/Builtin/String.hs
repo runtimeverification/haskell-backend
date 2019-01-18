@@ -67,8 +67,7 @@ import qualified Text.Megaparsec as Parsec
 
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
-import           Kore.AST.Valid hiding (pattern StringLiteral_)
-import           Kore.ASTUtils.SmartPatterns (pattern StringLiteral_)
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int

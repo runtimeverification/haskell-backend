@@ -25,7 +25,7 @@ module Kore.ASTVerifier.PatternVerifier
 import           Control.Comonad
 import qualified Control.Monad as Monad
 import           Control.Monad.Reader
-                 ( MonadReader, ReaderT, runReaderT, lift )
+                 ( MonadReader, ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Const
@@ -44,7 +44,6 @@ import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Error
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
-import           Kore.AST.Valid
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
@@ -76,9 +75,9 @@ data Context =
         -- ^ The sort variables in scope.
         , indexedModule :: !(KoreIndexedModule Attribute.Null Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
-        , builtinDomainValueVerifiers
-          :: !(Builtin.DomainValueVerifiers
-               (Either (Error (VerifyError))) (VerifiedKorePattern)) 
+        , builtinDomainValueVerifiers :: !(Builtin.DomainValueVerifiers
+                                             (Either (Error (VerifyError)))
+                                             (VerifiedKorePattern))
         }
 
 newtype PatternVerifier a =
@@ -358,10 +357,6 @@ verifyObjectPattern
     -> PatternVerifier (CofreeF base valid VerifiedKorePattern)
 verifyObjectPattern pat =
     withLocationAndContext pat patternName $ do
-        -- Builtin domains only occur in object-level patterns.
-        -- The builtin pattern verifiers only look at the pattern head,
-        -- so we erase the child verifiers.
---        verifyBuiltinPattern (mempty <$ pat)
         verifyPatternHead pat
   where
     patternName = patternNameForContext pat
@@ -586,16 +581,6 @@ verifyNext
     -> PatternVerifier (CofreeF operator valid VerifiedKorePattern)
 verifyNext = verifyOperands nextSort
 
--- 
--- verifyBuiltinPattern
---     :: Pattern Object Domain.Builtin Variable ()
---     -> PatternVerifier ()
--- verifyBuiltinPattern (DomainValuePattern dv) = do
---     Context { builtinDomainValueVerifiers } <- Reader.ask
---     _ <- Builtin.verifyDomainValue builtinDomainValueVerifiers lookupSortDeclaration dv
---     return ()
--- verifyBuiltinPattern _ = return ()
-
 verifyPatternsWithSorts
     :: ( Comonad pat, valid ~ Valid (Unified Variable) )
     => [UnifiedSort]
@@ -710,13 +695,13 @@ verifyDomainValue
         )
     => base (PatternVerifier VerifiedKorePattern)
     -> PatternVerifier (CofreeF base valid VerifiedKorePattern)
-verifyDomainValue dv@DomainValue { domainValueSort, domainValueChild } = do
+verifyDomainValue dv@DomainValue { domainValueSort, domainValueChild = _ } = do
     let patternSort = domainValueSort
     Context { builtinDomainValueVerifiers, indexedModule } <- Reader.ask
     verifyPatternSort patternSort
     let lookupSortDeclaration' sortId = do
-          (_, sortDecl) <- resolveSort indexedModule sortId
-          return sortDecl
+            (_, sortDecl) <- resolveSort indexedModule sortId
+            return sortDecl
     dv' <- sequence dv
     verified <- PatternVerifier $ Reader.lift $ Builtin.verifyDomainValue
                     builtinDomainValueVerifiers lookupSortDeclaration' dv'

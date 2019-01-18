@@ -67,8 +67,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
-import           Control.Monad
-                 ( void )
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
 import qualified Data.HashMap.Strict as HashMap
@@ -92,7 +90,6 @@ import           Kore.Annotation.Valid
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.Builtin.Builtin ( anySort )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Step.ExpandedPattern

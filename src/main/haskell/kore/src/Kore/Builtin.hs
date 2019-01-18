@@ -15,7 +15,6 @@ This module is intended to be imported qualified.
  -}
 module Kore.Builtin
     ( Builtin.Verifiers (..)
---    , Builtin.PatternVerifier (..)
     , Builtin.DomainValueVerifiers
     , Builtin.MonadVerify
     , Builtin.Function
@@ -32,9 +31,9 @@ module Kore.Builtin
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
-import qualified Data.HashMap.Strict as HashMap                 
 import qualified Data.Map as Map
 import           Data.Semigroup
                  ( (<>) )

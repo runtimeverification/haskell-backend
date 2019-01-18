@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {- |
 Module      : Kore.Builtin.Set
 Description : Built-in sets
@@ -73,7 +72,8 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.Builtin.Builtin ( anySort )
+import           Kore.Builtin.Builtin
+                 ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
@@ -135,13 +135,13 @@ symbolVerifiers =
       , Builtin.verifySymbol assertSort [assertSort , assertSort]
       )
     , ( elementKey
-      , Builtin.verifySymbol assertSort [anySort]
+      , Builtin.verifySymbol assertSort [acceptAnySort]
       )
     , ( unitKey
       , Builtin.verifySymbol assertSort []
       )
     , ( inKey
-      , Builtin.verifySymbol Bool.assertSort [anySort, assertSort]
+      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]
       )
     , ( differenceKey
       , Builtin.verifySymbol assertSort [assertSort, assertSort]

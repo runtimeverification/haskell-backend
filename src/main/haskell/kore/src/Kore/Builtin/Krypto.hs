@@ -64,7 +64,7 @@ ecsdaRecover = "KRYPTO.ecdsaRecover"
   See also: 'Builtin.verifySymbol'
 
 -}
-symbolVerifiers :: Builtin.SymbolVerifiers
+symbolVerifiers :: Builtin.MonadVerify m => Builtin.SymbolVerifiers m
 symbolVerifiers =
     HashMap.fromList
     [ ( keccakKey

@@ -220,7 +220,7 @@ verifyMetaSentence
         return verified
 
 verifyObjectSentence
-    :: Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern 
+    :: Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
     -> Sentence Object UnifiedSortVariable CommonKorePattern

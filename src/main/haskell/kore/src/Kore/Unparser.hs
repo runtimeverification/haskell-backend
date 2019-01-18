@@ -187,6 +187,9 @@ instance
             Domain.BuiltinMap _ -> Builtin.notImplementedInternal
             Domain.BuiltinList _ -> Builtin.notImplementedInternal
             Domain.BuiltinSet _ -> Builtin.notImplementedInternal
+            Domain.BuiltinInteger _ -> Builtin.notImplementedInternal
+            Domain.BuiltinBool _ -> Builtin.notImplementedInternal
+
 
 instance Unparse (Domain.External child) where
     unparse (Domain.External lit) = unparse lit

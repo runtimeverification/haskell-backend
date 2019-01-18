@@ -37,8 +37,6 @@ module Kore.Builtin.Bool
     , orElseKey
     ) where
 
-import           Control.Monad
-                 ( void )
 import           Data.Functor
                  ( ($>) )
 import qualified Data.HashMap.Strict as HashMap
@@ -107,7 +105,7 @@ symbolVerifiers =
 patternVerifier :: Builtin.MonadVerify m => Builtin.DomainValueVerifier m child
 patternVerifier =
     Builtin.makeEncodedDomainValueVerifier sort
-    (Builtin.parseEncodeDomainValue parse Domain.BuiltinBool)
+        (Builtin.parseEncodeDomainValue parse Domain.BuiltinBool)
 
 {- | Parse an integer string literal.
  -}
