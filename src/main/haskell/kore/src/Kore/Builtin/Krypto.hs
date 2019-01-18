@@ -24,14 +24,16 @@ module Kore.Builtin.Krypto
 
 import           Crypto.Hash
                  ( Digest, Keccak_256, hash )
-import           Data.ByteString.Char8
-                 ( pack )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.String
+                 ( fromString )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
 
 import           Kore.AST.MetaOrObject
                  ( Object )
@@ -93,9 +95,9 @@ evalKeccak =
                     case arguments of
                       [input] -> input
                       _ -> Builtin.wrongArity keccakKey
-            str <- String.expectBuiltinString keccakKey arg
+            str <- String.expectBuiltinString keccakKeyT arg
             let
-                digest = hash . pack $ str :: Digest Keccak_256
-                result = show digest
+                digest = hash . Text.encodeUtf8 $ str :: Digest Keccak_256
+                result = fromString (show digest)
             Builtin.appliedFunction
                 $ String.asExpandedPattern resultSort result

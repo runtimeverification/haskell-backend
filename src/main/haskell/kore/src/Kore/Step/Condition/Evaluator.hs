@@ -263,10 +263,8 @@ translateInt pat =
     case Cofree.tailF (Recursive.project pat) of
         VariablePattern _ -> translateUninterpretedInt pat
         DomainValuePattern dv ->
-            (return . SMT.int . Builtin.runParser ctx)
+            (return . SMT.int . Builtin.runParser Builtin.Int.sort)
                 (Builtin.parseDomainValue Builtin.Int.parse dv)
-          where
-            ctx = Text.unpack Builtin.Int.sort
         ApplicationPattern app ->
             translateApplication app
         _ -> empty
@@ -284,10 +282,8 @@ translateBool pat =
     case Cofree.tailF (Recursive.project pat) of
         VariablePattern _ -> translateUninterpretedBool pat
         DomainValuePattern dv ->
-            (return . SMT.bool . Builtin.runParser ctx)
+            (return . SMT.bool . Builtin.runParser Builtin.Bool.sort)
             (Builtin.parseDomainValue Builtin.Bool.parse dv)
-          where
-            ctx = Text.unpack Builtin.Bool.sort
         NotPattern Not { notChild } ->
             -- \not is equivalent to BOOL.not for functional patterns.
             -- The following is safe because non-functional patterns will fail

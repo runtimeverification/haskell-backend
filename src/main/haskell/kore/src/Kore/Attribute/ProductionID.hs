@@ -18,7 +18,6 @@ import           Data.Default
 import qualified Data.Maybe as Maybe
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
@@ -57,7 +56,7 @@ productionIDAttribute name =
             { applicationSymbolOrAlias = productionIDSymbol
             , applicationChildren =
                 [ (asCommonKorePattern . StringLiteralPattern)
-                    (StringLiteral $ Text.unpack name)
+                    (StringLiteral name)
                 ]
             }
 
@@ -68,7 +67,7 @@ instance ParseAttributes ProductionID where
             arg <- Parser.getOneArgument args
             StringLiteral name <- Parser.getStringLiteral arg
             Monad.unless (Maybe.isNothing productionID) failDuplicate
-            return ProductionID { getProductionID = Just (Text.pack name) }
+            return ProductionID { getProductionID = Just name }
       where
         withApplication = Parser.withApplication productionIDId
         failDuplicate = Parser.failDuplicate productionIDId

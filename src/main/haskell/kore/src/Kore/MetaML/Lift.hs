@@ -51,7 +51,7 @@ instance LiftableToMetaML (Id Object) where
         asCommonMetaPattern
         . StringLiteralPattern
         . StringLiteral
-        . getIdForError
+        . getId
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortVariable Object) where

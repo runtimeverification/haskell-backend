@@ -13,6 +13,8 @@ module Kore.Building.Patterns where
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Proxy
                  ( Proxy (Proxy) )
+import           Data.Text
+                 ( Text )
 import qualified Data.Text as Text
 
 import           Kore.AST.Kore
@@ -640,12 +642,12 @@ objectTop = PatternTop
 -------------------------------------
 
 newtype MetaString = MetaString
-    { patternStringValue :: String }
+    { patternStringValue :: Text }
 
 instance ProperPattern Meta CharListSort MetaString where
     asProperPattern (MetaString value) =
         StringLiteralPattern (StringLiteral value)
-metaString :: String -> MetaString
+metaString :: Text -> MetaString
 metaString = MetaString
 
 -------------------------------------

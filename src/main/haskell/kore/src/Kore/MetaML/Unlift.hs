@@ -75,7 +75,7 @@ unliftObjectId
 
 instance UnliftableFromMetaML (Id Object) where
     unliftFromMeta (StringLiteral_ str) =
-        parseObjectId str AstLocationNone
+        parseObjectId (Text.unpack str) AstLocationNone
     unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML (SortVariable Object) where

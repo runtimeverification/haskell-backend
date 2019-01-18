@@ -50,6 +50,7 @@ import           Data.Sequence
 import qualified Data.Sequence as Seq
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -133,7 +134,7 @@ type Builtin variable = Seq (StepPattern Object variable)
  -}
 expectBuiltinList
     :: Monad m
-    => String  -- ^ Context for error message
+    => Text  -- ^ Context for error message
     -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
 expectBuiltinList ctx =
@@ -141,7 +142,7 @@ expectBuiltinList ctx =
         DV_ _ domain ->
             case domain of
                 Domain.BuiltinList list -> return list
-                _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a list")
+                _ -> Builtin.verifierBug (Text.unpack ctx ++ ": Domain value is not a list")
         _ ->
             empty
 
@@ -183,7 +184,7 @@ evalGet =
             let (_list, _ix) =
                     case arguments of
                         [_list, _ix] -> (_list, _ix)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity (Text.unpack ctx)
                 emptyList = do
                     _list <- expectBuiltinList ctx _list
                     if Seq.null _list
@@ -231,7 +232,7 @@ evalConcat =
             let (_list1, _list2) =
                     case arguments of
                         [_list1, _list2] -> (_list1, _list2)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity (Text.unpack ctx)
                 leftIdentity = do
                     _list1 <- expectBuiltinList ctx _list1
                     if Seq.null _list1

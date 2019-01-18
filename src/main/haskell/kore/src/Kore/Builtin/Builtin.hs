@@ -117,7 +117,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unparser
 
-type Parser = Parsec Void String
+type Parser = Parsec Void Text
 
 type Function = ApplicationFunctionEvaluator Object
 
@@ -405,7 +405,7 @@ verifyDomainValue builtinSort validate =
 
  -}
 verifyStringLiteral
-    :: (forall m. MonadError (Error VerifyError) m => String -> m ())
+    :: (forall m. MonadError (Error VerifyError) m => Text -> m ())
     -- ^ validation function
     -> DomainValueVerifier
 verifyStringLiteral validate DomainValue { domainValueChild } =
@@ -441,7 +441,7 @@ parseDomainValue
 parseString
     :: MonadError (Error VerifyError) m
     => Parser a
-    -> String
+    -> Text
     -> m a
 parseString parser lit =
     let parsed = Parsec.parse (parser <* Parsec.eof) "<string literal>" lit
@@ -495,7 +495,7 @@ unaryOperator
     functionEvaluator unaryOperator0
   where
     get :: DomainValue Object Domain.Builtin child -> a
-    get = runParser (Text.unpack ctx) . parseDomainValue parser
+    get = runParser ctx . parseDomainValue parser
     unaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
@@ -545,7 +545,7 @@ binaryOperator
     functionEvaluator binaryOperator0
   where
     get :: DomainValue Object Domain.Builtin child -> a
-    get = runParser (Text.unpack ctx) . parseDomainValue parser
+    get = runParser ctx . parseDomainValue parser
     binaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
@@ -594,7 +594,7 @@ ternaryOperator
     functionEvaluator ternaryOperator0
   where
     get :: DomainValue Object Domain.Builtin child -> a
-    get = runParser (Text.unpack ctx) . parseDomainValue parser
+    get = runParser ctx . parseDomainValue parser
     ternaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
@@ -653,10 +653,10 @@ functionEvaluator impl =
     case an error is thrown.
 
  -}
-runParser :: HasCallStack => String -> Either (Error e) a -> a
+runParser :: HasCallStack => Text -> Either (Error e) a -> a
 runParser ctx result =
     case result of
-        Left e -> verifierBug (ctx ++ ": " ++ Kore.Error.printError e)
+        Left e -> verifierBug $ Text.unpack ctx ++ ": " ++ Kore.Error.printError e
         Right a -> a
 
 {- | Look up the symbol hooked to the named builtin in the provided module.

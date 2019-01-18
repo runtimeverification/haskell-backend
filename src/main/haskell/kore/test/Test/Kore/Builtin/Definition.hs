@@ -316,7 +316,7 @@ sortDecl sort =
             }
 
 -- | Declare a hooked sort.
-hookedSortDecl :: Sort Object -> String -> KoreSentence
+hookedSortDecl :: Sort Object -> Text -> KoreSentence
 hookedSortDecl sort hook =
     (asSentence . SentenceHookedSort) sentence
   where
@@ -908,41 +908,41 @@ setModule =
                 unitSetSymbol
                 setSort
                 []
-                [hookAttribute Set.unitKey]
+                [hookAttribute Set.unitKeyT]
             , hookedSymbolDecl
                 elementSetSymbol
                 setSort
                 [intSort]
-                [ hookAttribute Set.elementKey
+                [ hookAttribute Set.elementKeyT
                 , functionalAttribute
                 ]
             , hookedSymbolDecl
                 concatSetSymbol
                 setSort
                 [setSort, setSort]
-                [ hookAttribute Set.concatKey
+                [ hookAttribute Set.concatKeyT
                 , functionalAttribute
                 ]
             , hookedSymbolDecl
                 inSetSymbol
                 boolSort
                 [intSort, setSort]
-                [hookAttribute Set.inKey]
+                [hookAttribute Set.inKeyT]
             , hookedSymbolDecl
                 differenceSetSymbol
                 setSort
                 [setSort, setSort]
-                [hookAttribute Set.differenceKey]
+                [hookAttribute Set.differenceKeyT]
             , hookedSymbolDecl
                 toListSetSymbol
                 listSort
                 [setSort]
-                [hookAttribute Set.toListKey]
+                [hookAttribute Set.toListKeyT]
             , hookedSymbolDecl
                 sizeSetSymbol
                 intSort
                 [setSort]
-                [hookAttribute Set.sizeKey]
+                [hookAttribute Set.sizeKeyT]
             ]
         }
 

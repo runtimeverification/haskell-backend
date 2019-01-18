@@ -47,6 +47,7 @@ import           Data.Map
 import qualified Data.Map as Map
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 import           GHC.Integer
                  ( smallInteger )
 import           GHC.Integer.GMP.Internals
@@ -167,7 +168,7 @@ parse = Parsec.signed noSpace Parsec.decimal
  -}
 expectBuiltinInt
     :: Monad m
-    => String  -- ^ Context for error message
+    => Text  -- ^ Context for error message
     -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m Integer
 expectBuiltinInt ctx =
@@ -179,7 +180,7 @@ expectBuiltinInt ctx =
                         (Builtin.parseString parse lit)
                 _ ->
                     Builtin.verifierBug
-                        (ctx ++ ": Domain value argument is not a string")
+                        (Text.unpack ctx ++ ": Domain value argument is not a string")
         _ ->
             empty
 
@@ -221,7 +222,7 @@ asMetaPattern
     :: Functor domain
     => Integer
     -> PurePattern Meta domain variable (Valid (variable Meta) Meta)
-asMetaPattern result = mkStringLiteral $ show result
+asMetaPattern result = mkStringLiteral $ Text.pack $ show result
 
 asExpandedPattern
     :: Ord (variable Object)

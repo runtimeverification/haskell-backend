@@ -1,5 +1,9 @@
 module Test.Kore.Attribute.Smtlib where
 
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
+
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -8,7 +12,7 @@ import Kore.Attribute.Parser
 import Kore.Attribute.Smtlib
 
 -- | A list of arguments to @smtlib@, extracted from the K distribution
-extracted :: [String]
+extracted :: [Text]
 extracted =
     [ "smt_seq_concat"
     , "smt_seq_nil"
@@ -70,7 +74,7 @@ test_extracted =
             $ isRightAndJust $ parseSmtlib attrs
       where
         attrs = Attributes [ smtlibAttribute arg ]
-        caseName = "[smtlib{}(\"" ++ arg ++ "\")]"
+        caseName = "[smtlib{}(\"" ++ Text.unpack arg ++ "\")]"
 
 parseSmtlib :: Attributes -> Parser Smtlib
 parseSmtlib = parseAttributes
