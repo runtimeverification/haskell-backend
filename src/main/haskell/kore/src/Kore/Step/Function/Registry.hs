@@ -14,27 +14,37 @@ module Kore.Step.Function.Registry
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Foldable as Foldable
+import           Data.List
+                 ( partition )
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe, isJust, mapMaybe )
 
-import Kore.AST.Kore
-import Kore.AST.Pure
-import Kore.AST.Sentence
-import Kore.Attribute.Simplification
-       ( Simplification (..) )
-import Kore.IndexedModule.IndexedModule
-import Kore.Step.AxiomPatterns
-import Kore.Step.Function.Data
-       ( ApplicationFunctionEvaluator (..),
-       FunctionEvaluators (FunctionEvaluators) )
-import Kore.Step.Function.Data as FunctionEvaluators
-       ( FunctionEvaluators (..) )
-import Kore.Step.Function.UserDefined
-       ( ruleFunctionEvaluator )
-import Kore.Step.StepperAttributes
+import           Kore.AST.Kore
+import           Kore.AST.Pure
+import           Kore.AST.Sentence
+import           Kore.Attribute.Simplification
+                 ( Simplification (..) )
+import           Kore.IndexedModule.IndexedModule
+import           Kore.Step.AxiomPatterns
+                 ( Assoc (Assoc), AxiomPatternAttributes, Comm (Comm),
+                 EqualityRule (EqualityRule), Idem (Idem),
+                 QualifiedAxiomPattern (FunctionAxiomPattern, RewriteAxiomPattern),
+                 RulePattern (RulePattern), Unit (Unit),
+                 verifiedKoreSentenceToAxiomPattern )
+import qualified Kore.Step.AxiomPatterns as AxiomPatterns
+                 ( Assoc (..), AxiomPatternAttributes (..), Comm (..),
+                 Idem (..), RulePattern (..), Unit (..) )
+import           Kore.Step.Function.Data
+                 ( ApplicationFunctionEvaluator (..),
+                 FunctionEvaluators (FunctionEvaluators) )
+import           Kore.Step.Function.Data as FunctionEvaluators
+                 ( FunctionEvaluators (..) )
+import           Kore.Step.Function.UserDefined
+                 ( ruleFunctionEvaluator )
+import           Kore.Step.StepperAttributes
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
@@ -117,7 +127,8 @@ axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
 -- |Converts a registry of 'RulePattern's to one of
 -- 'ApplicationFunctionEvaluator's
 axiomPatternsToEvaluators
-    :: Map.Map (Id level) [EqualityRule level]
+    :: forall level
+    .  Map.Map (Id level) [EqualityRule level]
     -> Map.Map (Id level) (FunctionEvaluators level)
 axiomPatternsToEvaluators axiomPatterns =
     Map.map
@@ -127,19 +138,6 @@ axiomPatternsToEvaluators axiomPatterns =
             (Map.map equalitiesToEvaluators axiomPatterns)
         )
   where
-    splitEqualities
-        :: [EqualityRule level] -> ([EqualityRule level], [EqualityRule level])
-    splitEqualities [] = ([], [])
-    splitEqualities
-        (axiomPat@(EqualityRule RulePattern { attributes }) : equalities)
-      =
-        if isSimplification
-        then (axiomPat : simplifications, evaluations)
-        else (simplifications, axiomPat : evaluations)
-      where
-        Simplification { isSimplification } = simplification attributes
-        (simplifications, evaluations) = splitEqualities equalities
-
     equalitiesToEvaluators
         :: [EqualityRule level] -> Maybe (FunctionEvaluators level)
     equalitiesToEvaluators equalities =
@@ -150,9 +148,18 @@ axiomPatternsToEvaluators axiomPatterns =
             , simplificationEvaluators = simplification
             }
       where
-        (simplifications, evaluations) = splitEqualities equalities
+        simplifications :: [EqualityRule level]
+        evaluations :: [EqualityRule level]
+        (simplifications, evaluations) =
+            partition isSimplificationRule equalities
         simplification = mapMaybe axiomPatternEvaluator simplifications
         definition = mapMaybe axiomPatternEvaluator evaluations
+        isSimplificationRule (EqualityRule RulePattern { attributes }) =
+            isSimplification
+          where
+            Simplification { isSimplification } =
+                AxiomPatterns.simplification attributes
+
 
 
 
@@ -176,7 +183,7 @@ axiomPatternEvaluator axiomPat@(EqualityRule RulePattern { attributes })
     | otherwise =
         Just (ApplicationFunctionEvaluator $ ruleFunctionEvaluator axiomPat)
   where
-    Assoc { isAssoc } = assoc attributes
-    Comm { isComm } = comm attributes
-    Unit { isUnit } = unit attributes
-    Idem { isIdem } = idem attributes
+    Assoc { isAssoc } = AxiomPatterns.assoc attributes
+    Comm { isComm } = AxiomPatterns.comm attributes
+    Unit { isUnit } = AxiomPatterns.unit attributes
+    Idem { isIdem } = AxiomPatterns.idem attributes
