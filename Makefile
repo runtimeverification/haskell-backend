@@ -43,14 +43,14 @@ test-kore:
 	fi
 
 test-k: all
-	$(MAKE) --directory src/main/k/working test-k -j$(NPROCS)
+	$(MAKE) --directory src/main/k/working test-k
 
 jenkins: clean check all test docs
 
 clean:
 	stack clean
 	find . -name '*.tix' -exec rm -f '{}' \;
-	$(MAKE) --directory src/main/k/working clean -j$(NPROCS)
+	$(MAKE) --directory src/main/k/working clean
 	rm -rf $(BUILD_DIR)
 
 check:
