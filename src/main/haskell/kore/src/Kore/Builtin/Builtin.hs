@@ -293,24 +293,15 @@ lookupHookSort
     :: MonadVerify m
     => (Id Object -> m HookedSortDescription)
     -> Sort Object
-    -> m Text
-lookupHookSort findSort sort = do -- (SortActualSort SortActual { sortActualName }) = do
-    SentenceSort { sentenceSortAttributes } <- findSort sortName-- sortActualName
+    -> m (Maybe Text)
+lookupHookSort findSort (SortActualSort SortActual { sortActualName }) = do
+    SentenceSort { sentenceSortAttributes } <- findSort sortActualName-- sortActualName
     Hook mHookSort <- Verifier.Attributes.parseAttributes sentenceSortAttributes
-    case mHookSort of
-      Just hookSortName -> return hookSortName
-      Nothing ->
-          Kore.Error.koreFail
-              ("Sort '" ++ getIdForError sortName ++ "' is not hooked")
-    where sortName = case sort of
-              (SortActualSort SortActual { sortActualName }) -> sortActualName
-              (SortVariableSort SortVariable { getSortVariable }) -> getSortVariable 
-
--- lookupHookSort _ (SortVariableSort SortVariable { getSortVariable }) =
---     Kore.Error.koreFail
---         ("unexpected sort variable '" ++ getIdForError getSortVariable ++ "'")
+    return mHookSort
+lookupHookSort _ (SortVariableSort SortVariable { getSortVariable }) =
+    Kore.Error.koreFail
+        ("unexpected sort variable '" ++ getIdForError getSortVariable ++ "'")
  
-
 {- | Verify a builtin symbol declaration.
 
   The declared sorts must match the builtin sorts.
@@ -394,22 +385,22 @@ verifySymbolArguments
 
 {- | Verify a literal string domain value.
 
-  If the given domain value is not a literal string, it is skipped.
+  If the given domain value is not a literal string, an error is thrown.
 
   See also: 'verifyDomainValue'
 
  -}
--- verifyStringLiteral
---     :: (forall m. MonadError (Error VerifyError) m => String -> m ())
---     -- ^ validation function
---     -> DomainValueVerifier
--- verifyStringLiteral validate DomainValue { domainValueChild } =
---     case domainValueChild of
---         Domain.BuiltinPattern (StringLiteral_ lit) -> validate lit
---         _ -> return ()
+verifyStringLiteral
+    :: MonadVerify m
+    => DomainValue level Domain.Builtin child
+    -> m (DomainValue level Domain.Builtin child)
+verifyStringLiteral dv =
+      case domainValueChild dv of
+          Domain.BuiltinPattern (StringLiteral_ lit) -> return dv
+          _ -> Kore.Error.koreFail
+               "Domain value argument must be a literal string"
 
 {- | Run a DomainValueVerifier.  
-
 -}
 verifyDomainValue
     :: MonadVerify m
@@ -420,25 +411,47 @@ verifyDomainValue
 verifyDomainValue
     verifiers
     findSort
-    dv@DomainValue { domainValueSort }
-  = do
-    builtinSort <-
-        Kore.Error.withContext "Looking up sort hook"
-            $ lookupHookSort findSort domainValueSort
-    verifier <-
-        Kore.Error.withContext
-            ("Looking up domain value verifier for Sort '"
-                ++ Text.unpack builtinSort ++"'")
-            (maybeToKoreError $ HashMap.lookup builtinSort verifiers)
+    dv@DomainValue { domainValueSort = (SortActualSort _) }
+  = do mHookSort <- lookupHookSort findSort $ domainValueSort dv
+       case mHookSort of
+         Nothing -> defaultDomainValueVerifier dv
+         Just hookSort -> verifyHookedSortDomainValue verifiers hookSort dv
+verifyDomainValue
+    verifiers
+    findSort
+    dv@DomainValue { domainValueSort = (SortVariableSort _) }
+  = defaultDomainValueVerifier dv
+
+{- | In the case of a hooked sort, lookup the specific verifier for the hook
+  sort and attempt to encode the domain value. -}
+verifyHookedSortDomainValue
+    :: MonadVerify m
+    => DomainValueVerifiers m child
+    -> Text
+    -> DomainValue Object Domain.Builtin child
+    -> m (DomainValue Object Domain.Builtin child)
+verifyHookedSortDomainValue verifiers hookSort dv = do
+    verifier <- case HashMap.lookup hookSort verifiers of
+                  Nothing -> return defaultDomainValueVerifier
+                  Just verifier -> return verifier
     validDomainValue <-
         Kore.Error.withContext
-            ("Verifying '" ++ Text.unpack builtinSort
-                ++ "' domain value pattern")
+            ("Verifying builtin sort '" ++ Text.unpack hookSort ++"'")
             (verifier dv)
     return validDomainValue
-    where
-      maybeToKoreError :: MonadVerify m => Maybe b -> m b
-      maybeToKoreError = maybe (Kore.Error.koreFail "") return
+
+{- | In the case of either variable, unhooked, or non builtin sorts
+  confirm the domain value argument is a string literal pattern.
+-}
+defaultDomainValueVerifier
+    :: MonadVerify m
+    => DomainValueVerifier m child
+defaultDomainValueVerifier
+    dv@DomainValue
+    { domainValueChild = (Domain.BuiltinPattern (StringLiteral_ _))}
+  = return dv
+defaultDomainValueVerifier _
+  = Kore.Error.koreFail "Domain value argument must be a literal string."
 
 -- | Construct a DomainValueVerifier for an encodable sort.
 makeEncodedDomainValueVerifier
@@ -452,13 +465,8 @@ makeEncodedDomainValueVerifier
     builtinSort
     encodeSort
     dv@DomainValue { domainValueSort, domainValueChild }
-  =
-    Kore.Error.withContext
-        ("Encoding builtin sort '"
-            ++ Text.unpack builtinSort ++ "'")
-        (do dvChild' <- encodeSort dv
-            return $ dv {domainValueChild = dvChild'} 
-        )
+  = do dvChild' <- encodeSort dv
+       return $ dv {domainValueChild = dvChild'} 
 
 -- | Construct a 'DomainValueVerifier@ for a sort with no builtin encoding
 makeNonEncodedDomainValueVerifier
@@ -517,7 +525,8 @@ parseDomainValue
         $ case domainValueChild of
             Domain.BuiltinPattern (StringLiteral_ lit) ->
                 parseString parser lit
-            _ -> Kore.Error.koreFail "Expected literal string"
+            _ -> Kore.Error.koreFail
+                     "Domain value argument must be a literal string."
 
 {- | Run a parser on a string.
 
