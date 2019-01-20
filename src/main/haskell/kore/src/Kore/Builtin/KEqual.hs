@@ -39,7 +39,8 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..), AttemptedFunction (..),
-                 notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
+                 EvaluationType, notApplicableFunctionEvaluator,
+                 purePatternFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -127,6 +128,7 @@ evalKEq
     -> MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
     -> StepPatternSimplifier Object variable
+    -> EvaluationType
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
@@ -136,7 +138,7 @@ evalKEq
             , SimplificationProof Object
             )
         ]
-evalKEq true tools substitutionSimplifier _ (valid :< app) =
+evalKEq true tools substitutionSimplifier _ _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
         _ -> Builtin.wrongArity (if true then "KEQUAL.eq" else "KEQUAL.neq")
@@ -166,6 +168,7 @@ evalKIte
     => MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
     -> StepPatternSimplifier Object variable
+    -> EvaluationType
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
@@ -175,7 +178,7 @@ evalKIte
             , SimplificationProof Object
             )
         ]
-evalKIte _ _ _ (_ :< app) =
+evalKIte _ _ _ _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2

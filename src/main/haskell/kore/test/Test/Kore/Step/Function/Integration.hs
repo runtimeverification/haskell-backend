@@ -72,7 +72,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (That $
+                    (thatDefinition
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.g (mkVar Mock.x))
@@ -114,7 +114,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (These
+                    (theseDefinition
                         (axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.g (mkVar Mock.x))
@@ -140,9 +140,9 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (These
+                    (theseDefinition
                         (ApplicationFunctionEvaluator
-                            (\_ _ _ _ -> notApplicableFunctionEvaluator)
+                            (\_ _ _ _ _ -> notApplicableFunctionEvaluator)
                         )
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
@@ -164,7 +164,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (That
+                    (thatDefinition
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.functional10 (mkVar Mock.x))
@@ -188,7 +188,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (That
+                    (thatDefinition
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.functional10 (mkVar Mock.x))
@@ -219,7 +219,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (That
+                    (thatDefinition
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.functional10 (mkVar Mock.x))
@@ -244,7 +244,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map That $ Map.singleton Mock.cId
+                (Map.map thatDefinition $ Map.singleton Mock.cId
                     [ appliedMockEvaluator Predicated
                         { term   = Mock.d
                         , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
@@ -268,7 +268,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map That $ Map.fromList
+                (Map.map thatDefinition $ Map.fromList
                     [   ( Mock.cId
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.e
@@ -306,7 +306,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map That $ Map.fromList
+                (Map.map thatDefinition $ Map.fromList
                     [   ( Mock.cId
                         ,   [ axiomEvaluator Mock.c Mock.d ]
                         )
@@ -341,7 +341,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map That $ Map.fromList
+                (Map.map thatDefinition $ Map.fromList
                     [   ( Mock.cId
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.d
@@ -388,7 +388,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map That $ Map.fromList
+                (Map.map thatDefinition $ Map.fromList
                     [   ( Mock.fId
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.a
@@ -408,6 +408,151 @@ test_functionIntegration =
                                     Substitution.wrap [(Mock.x, Mock.cf)]
                                 }
                             ]
+                        )
+                    ]
+                )
+                (Mock.f (mkVar Mock.x))
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Evaluates only simplifications." $ do
+        let expect =
+                Predicated
+                    { term = Mock.b
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                mockMetadataTools
+                (Map.map That $ Map.fromList
+                    [   ( Mock.fId
+                        ,   FunctionEvaluators
+                            { definitionEvaluators =
+                                [ appliedMockEvaluator Predicated
+                                    { term = Mock.a
+                                    , predicate = makeTruePredicate
+                                    , substitution = mempty
+                                    }
+                                ]
+                            , simplificationEvaluators =
+                                [ appliedMockEvaluator Predicated
+                                    { term = Mock.b
+                                    , predicate = makeTruePredicate
+                                    , substitution = mempty
+                                    }
+                                ]
+                            }
+                        )
+                    ]
+                )
+                (Mock.f (mkVar Mock.x))
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Picks first matching simplification." $ do
+        let expect =
+                Predicated
+                    { term = Mock.b
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                mockMetadataTools
+                (Map.map That $ Map.fromList
+                    [   ( Mock.fId
+                        ,   FunctionEvaluators
+                            { definitionEvaluators =
+                                [ appliedMockEvaluator Predicated
+                                    { term = Mock.a
+                                    , predicate = makeTruePredicate
+                                    , substitution = mempty
+                                    }
+                                ]
+                            , simplificationEvaluators =
+                                [ axiomEvaluator
+                                    (Mock.f (Mock.g (mkVar Mock.x)))
+                                    Mock.c
+                                ,  appliedMockEvaluator Predicated
+                                    { term = Mock.b
+                                    , predicate = makeTruePredicate
+                                    , substitution = mempty
+                                    }
+                                ,  appliedMockEvaluator Predicated
+                                    { term = Mock.c
+                                    , predicate = makeTruePredicate
+                                    , substitution = mempty
+                                    }
+                                ]
+                            }
+                        )
+                    ]
+                )
+                (Mock.f (mkVar Mock.x))
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Falls back to evaluating the definition." $ do
+        let expect =
+                Predicated
+                    { term = Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                mockMetadataTools
+                (Map.map That $ Map.fromList
+                    [   ( Mock.fId
+                        ,   FunctionEvaluators
+                            { definitionEvaluators =
+                                [ appliedMockEvaluator Predicated
+                                    { term = Mock.a
+                                    , predicate = makeTruePredicate
+                                    , substitution = mempty
+                                    }
+                                ]
+                            , simplificationEvaluators =
+                                [ axiomEvaluator
+                                    (Mock.f (Mock.g (mkVar Mock.x)))
+                                    Mock.b
+                                ]
+                            }
+                        )
+                    ]
+                )
+                (Mock.f (mkVar Mock.x))
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "Multiple definition branches." $ do
+        let expect =
+                Predicated
+                    { term = mkOr Mock.a Mock.b
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                mockMetadataTools
+                (Map.map That $ Map.fromList
+                    [   ( Mock.fId
+                        ,   FunctionEvaluators
+                            { definitionEvaluators =
+                                [ appliedMockEvaluator Predicated
+                                    { term = Mock.a
+                                    , predicate = makeTruePredicate
+                                    , substitution = mempty
+                                    }
+                                , appliedMockEvaluator Predicated
+                                    { term = Mock.b
+                                    , predicate = makeTruePredicate
+                                    , substitution = mempty
+                                    }
+                                ]
+                            , simplificationEvaluators =
+                                [ axiomEvaluator
+                                    (Mock.f (Mock.g (mkVar Mock.x)))
+                                    Mock.c
+                                ]
+                            }
                         )
                     ]
                 )
@@ -455,14 +600,36 @@ mockEvaluator
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
+    -> EvaluationType
     -> CofreeF
         (Application level)
         (Valid (variable level) level)
         (StepPattern level variable)
     -> Simplifier
         [(AttemptedFunction level variable, SimplificationProof level)]
-mockEvaluator evaluation _ _ _ _ =
+mockEvaluator evaluation _ _ _ _ _ =
     return [(evaluation, SimplificationProof)]
+
+thatDefinition
+    :: [ApplicationFunctionEvaluator Object]
+    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+thatDefinition evaluators =
+    That FunctionEvaluators
+        { definitionEvaluators = evaluators
+        , simplificationEvaluators = evaluators
+        }
+
+theseDefinition
+    :: ApplicationFunctionEvaluator Object
+    -> [ApplicationFunctionEvaluator Object]
+    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+theseDefinition evaluator evaluators =
+    These
+        evaluator
+        FunctionEvaluators
+            { definitionEvaluators = evaluators
+            , simplificationEvaluators = evaluators
+            }
 
 evaluate
     :: forall level . MetaOrObject level

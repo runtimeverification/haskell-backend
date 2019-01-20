@@ -14,22 +14,37 @@ module Kore.Step.Function.Registry
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Foldable as Foldable
+import           Data.List
+                 ( partition )
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Maybe
-                 ( fromMaybe, mapMaybe )
+                 ( fromMaybe, isJust, mapMaybe )
 
-import Kore.AST.Kore
-import Kore.AST.Pure
-import Kore.AST.Sentence
-import Kore.IndexedModule.IndexedModule
-import Kore.Step.AxiomPatterns
-import Kore.Step.Function.Data
-       ( ApplicationFunctionEvaluator (..) )
-import Kore.Step.Function.UserDefined
-       ( ruleFunctionEvaluator )
-import Kore.Step.StepperAttributes
+import           Kore.AST.Kore
+import           Kore.AST.Pure
+import           Kore.AST.Sentence
+import           Kore.Attribute.Simplification
+                 ( Simplification (..) )
+import           Kore.IndexedModule.IndexedModule
+import           Kore.Step.AxiomPatterns
+                 ( Assoc (Assoc), AxiomPatternAttributes, Comm (Comm),
+                 EqualityRule (EqualityRule), Idem (Idem),
+                 QualifiedAxiomPattern (FunctionAxiomPattern, RewriteAxiomPattern),
+                 RulePattern (RulePattern), Unit (Unit),
+                 verifiedKoreSentenceToAxiomPattern )
+import qualified Kore.Step.AxiomPatterns as AxiomPatterns
+                 ( Assoc (..), AxiomPatternAttributes (..), Comm (..),
+                 Idem (..), RulePattern (..), Unit (..) )
+import           Kore.Step.Function.Data
+                 ( ApplicationFunctionEvaluator (..),
+                 FunctionEvaluators (FunctionEvaluators) )
+import           Kore.Step.Function.Data as FunctionEvaluators
+                 ( FunctionEvaluators (..) )
+import           Kore.Step.Function.UserDefined
+                 ( ruleFunctionEvaluator )
+import           Kore.Step.StepperAttributes
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
@@ -112,12 +127,41 @@ axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
 -- |Converts a registry of 'RulePattern's to one of
 -- 'ApplicationFunctionEvaluator's
 axiomPatternsToEvaluators
-    :: Map.Map (Id level) [EqualityRule level]
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    :: forall level
+    .  Map.Map (Id level) [EqualityRule level]
+    -> Map.Map (Id level) (FunctionEvaluators level)
 axiomPatternsToEvaluators axiomPatterns =
-    -- remove the key if there are no associated function evaluators
-    Map.filter (not . null)
-        (mapMaybe axiomPatternEvaluator <$> axiomPatterns)
+    Map.map
+        (fromMaybe (error "Unexpected Nothing"))
+        -- remove the key if there are no associated function evaluators
+        (Map.filter isJust
+            (Map.map equalitiesToEvaluators axiomPatterns)
+        )
+  where
+    equalitiesToEvaluators
+        :: [EqualityRule level] -> Maybe (FunctionEvaluators level)
+    equalitiesToEvaluators equalities =
+        if null simplification && null definition
+        then Nothing
+        else Just FunctionEvaluators
+            { definitionEvaluators = definition
+            , simplificationEvaluators = simplification
+            }
+      where
+        simplifications :: [EqualityRule level]
+        evaluations :: [EqualityRule level]
+        (simplifications, evaluations) =
+            partition isSimplificationRule equalities
+        simplification = mapMaybe axiomPatternEvaluator simplifications
+        definition = mapMaybe axiomPatternEvaluator evaluations
+        isSimplificationRule (EqualityRule RulePattern { attributes }) =
+            isSimplification
+          where
+            Simplification { isSimplification } =
+                AxiomPatterns.simplification attributes
+
+
+
 
 {- | Return the function evaluator corresponding to the 'AxiomPattern'.
 
@@ -139,7 +183,7 @@ axiomPatternEvaluator axiomPat@(EqualityRule RulePattern { attributes })
     | otherwise =
         Just (ApplicationFunctionEvaluator $ ruleFunctionEvaluator axiomPat)
   where
-    Assoc { isAssoc } = assoc attributes
-    Comm { isComm } = comm attributes
-    Unit { isUnit } = unit attributes
-    Idem { isIdem } = idem attributes
+    Assoc { isAssoc } = AxiomPatterns.assoc attributes
+    Comm { isComm } = AxiomPatterns.comm attributes
+    Unit { isUnit } = AxiomPatterns.unit attributes
+    Idem { isIdem } = AxiomPatterns.idem attributes

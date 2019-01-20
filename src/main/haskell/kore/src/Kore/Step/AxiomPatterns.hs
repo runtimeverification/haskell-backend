@@ -19,6 +19,7 @@ module Kore.Step.AxiomPatterns
     , lensUnit, Unit (..)
     , lensIdem, Idem (..)
     , lensTrusted, Trusted (..)
+    , lensSimplification, Simplification (..)
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
@@ -55,6 +56,7 @@ import           Kore.Attribute.Parser
                  ( ParseAttributes (..), parseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.ProductionID
+import           Kore.Attribute.Simplification
 import           Kore.Attribute.Trusted
 import           Kore.Attribute.Unit
 import           Kore.Error
@@ -81,6 +83,9 @@ data AxiomPatternAttributes =
     , trusted :: !Trusted
     -- ^ The claim is trusted
     , concrete :: !Axiom.Concrete
+    , simplification :: !Simplification
+    -- ^ This is an axiom used for simplification
+    -- (as opposed to, e.g., function evaluation).
     }
     deriving (Eq, Ord, Show, Generic)
 
@@ -99,6 +104,7 @@ instance Default AxiomPatternAttributes where
             , idem = def
             , trusted = def
             , concrete = def
+            , simplification = def
             }
 
 instance ParseAttributes AxiomPatternAttributes where
@@ -111,6 +117,7 @@ instance ParseAttributes AxiomPatternAttributes where
         >=> lensIdem (parseAttribute attr)
         >=> lensTrusted (parseAttribute attr)
         >=> lensConcrete (parseAttribute attr)
+        >=> lensSimplification (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 

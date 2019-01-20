@@ -30,6 +30,8 @@ import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom )
+import           Kore.Step.Function.Data as EvaluationType
+                 ( EvaluationType (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.Function.Data
@@ -332,4 +334,5 @@ evaluateWithAxiom
             metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
+            EvaluationType.Definition
             app

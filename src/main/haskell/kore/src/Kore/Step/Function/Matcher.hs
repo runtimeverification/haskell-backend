@@ -39,6 +39,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Function.Data
+                 ( EvaluationType )
+import           Kore.Step.Function.Data as EvaluationType
+                 ( EvaluationType (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -95,7 +99,8 @@ matchAsUnification
         , SortedVariable variable
         , MonadCounter m
         )
-    => MetadataTools level StepperAttributes
+    => EvaluationType
+    -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
     -> StepPattern level variable
     -> StepPattern level variable
@@ -105,13 +110,15 @@ matchAsUnification
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
-matchAsUnification tools substitutionSimplifier first second = do
+matchAsUnification evaluationType tools substitutionSimplifier first second
+  = do
     result <- runMaybeT matchResult
     case result of
         Nothing -> throwError (UnificationError UnsupportedPatterns)
         Just r -> return (r, EmptyUnificationProof)
   where
-    matchResult = match tools substitutionSimplifier Map.empty first second
+    matchResult =
+        match tools substitutionSimplifier evaluationType Map.empty first second
 
 match
     ::  ( FreshVariable variable
@@ -128,6 +135,7 @@ match
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
+    -> EvaluationType
     -> Map.Map (variable level) (variable level)
     -> StepPattern level variable
     -> StepPattern level variable
@@ -138,11 +146,24 @@ match
             m
         )
         (OrOfPredicateSubstitution level variable)
-match tools substitutionSimplifier quantifiedVariables first second =
+match
+    tools
+    substitutionSimplifier
+    evaluationType
+    quantifiedVariables
+    first
+    second
+  =
     matchEqualHeadPatterns
-        tools substitutionSimplifier quantifiedVariables first second
+        tools
+        substitutionSimplifier
+        evaluationType
+        quantifiedVariables
+        first
+        second
     <|> matchVariableFunction tools quantifiedVariables first second
-    <|> matchNonVarToPattern tools substitutionSimplifier first second
+    <|> matchNonVarToPattern
+            tools substitutionSimplifier evaluationType first second
 
 matchEqualHeadPatterns
     ::  forall level variable m.
@@ -160,6 +181,7 @@ matchEqualHeadPatterns
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
+    -> EvaluationType
     -> Map.Map (variable level) (variable level)
     -> StepPattern level variable
     -> StepPattern level variable
@@ -170,7 +192,12 @@ matchEqualHeadPatterns
         )
         (OrOfPredicateSubstitution level variable)
 matchEqualHeadPatterns
-    tools substitutionSimplifier quantifiedVariables first second
+    tools
+    substitutionSimplifier
+    evaluationType
+    quantifiedVariables
+    first
+    second
   =
     case first of
         (And_ _ firstFirst firstSecond) ->
@@ -179,6 +206,7 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -192,6 +220,7 @@ matchEqualHeadPatterns
                         matchJoin
                             tools
                             substitutionSimplifier
+                            evaluationType
                             quantifiedVariables
                             (zip firstChildren secondChildren)
                     else nothing
@@ -203,6 +232,7 @@ matchEqualHeadPatterns
                     match
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         firstChild
                         secondChild
@@ -217,6 +247,7 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -229,6 +260,7 @@ matchEqualHeadPatterns
                     <$> match
                         tools
                         substitutionSimplifier
+                        evaluationType
                         (Map.insert
                             firstVariable secondVariable quantifiedVariables
                         )
@@ -241,6 +273,7 @@ matchEqualHeadPatterns
                     match
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         firstChild
                         secondChild
@@ -253,6 +286,7 @@ matchEqualHeadPatterns
                         (match
                             tools
                             substitutionSimplifier
+                            evaluationType
                             (Map.insert
                                 firstVariable
                                 secondVariable
@@ -268,6 +302,7 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -279,6 +314,7 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -290,6 +326,7 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -301,6 +338,7 @@ matchEqualHeadPatterns
                     match
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         firstChild
                         secondChild
@@ -311,6 +349,7 @@ matchEqualHeadPatterns
                     match
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         firstChild
                         secondChild
@@ -321,6 +360,7 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -332,6 +372,7 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        evaluationType
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -381,6 +422,7 @@ matchJoin
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
+    -> EvaluationType
     -> Map.Map (variable level) (variable level)
     -> [(StepPattern level variable, StepPattern level variable)]
     -> MaybeT
@@ -389,11 +431,18 @@ matchJoin
             m
         )
         (OrOfPredicateSubstitution level variable)
-matchJoin tools substitutionSimplifier quantifiedVariables patterns
+matchJoin
+    tools substitutionSimplifier evaluationType quantifiedVariables patterns
   = do
     matched <-
         traverse
-            (uncurry $ match tools substitutionSimplifier quantifiedVariables)
+            (uncurry $
+                match
+                    tools
+                    substitutionSimplifier
+                    evaluationType
+                    quantifiedVariables
+            )
             patterns
     let
         crossProduct :: MultiOr [PredicateSubstitution level variable]
@@ -483,6 +532,7 @@ matchNonVarToPattern
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
+    -> EvaluationType
     -> StepPattern level variable
     -> StepPattern level variable
     -> MaybeT
@@ -491,9 +541,12 @@ matchNonVarToPattern
             m
         )
         (OrOfPredicateSubstitution level variable)
-matchNonVarToPattern tools substitutionSimplifier first second
+matchNonVarToPattern
+    _ _ EvaluationType.Simplification _ _
+  = nothing
+matchNonVarToPattern
+    tools substitutionSimplifier EvaluationType.Definition first second
   = do
-    -- TODO(virgil): For simplification axioms this would need to return bottom!
     finalResult <- MaybeT $ lift $ do -- MonadCounter
         (result, _proof) <-
             Equals.makeEvaluateTermsToPredicateSubstitution
