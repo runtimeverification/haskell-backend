@@ -20,6 +20,8 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
+import           Kore.Attribute.Simplification
+                 ( simplificationSymbol )
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
@@ -113,7 +115,7 @@ testDef =
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    (toKorePattern
+                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -124,14 +126,13 @@ testDef =
                                 (mkTop sortVarS)
                             )
                         )
-                    )
                 }
         , asKoreAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    (toKorePattern
+                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -142,14 +143,13 @@ testDef =
                                 (mkTop sortVarS)
                             )
                         :: CommonStepPattern Object)
-                    )
                 }
-            , asKoreAxiomSentence
+        , asKoreAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    (toKorePattern
+                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -160,16 +160,40 @@ testDef =
                                 (mkTop sortVarS)
                             )
                         :: CommonStepPattern Object)
-                    )
+                }
+        , asKoreAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [asUnified sortVar]
+                , sentenceAxiomAttributes =
+                    Attributes
+                        [ asCommonKorePattern
+                            (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    simplificationSymbol
+                                , applicationChildren = []
+                                }
+                            )
+                        ]
+                , sentenceAxiomPattern =
+                    toKorePattern
+                        (mkImplies
+                            (mkTop sortVarS)
+                            (mkAnd
+                                (mkEquals sortVarS
+                                    (mkApp sortS fHead [])
+                                    (mkApp sortS gHead [])
+                                )
+                                (mkTop sortVarS)
+                            )
+                        :: CommonStepPattern Object)
                 }
         , asKoreAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = [asUnified sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    (toKorePattern
+                    toKorePattern
                         (mkTop sortS :: CommonStepPattern Object)
-                    )
                 }
         , asKoreAxiomSentence
             SentenceAxiom
@@ -219,14 +243,19 @@ testMetadataTools = extractMetadataTools testIndexedModule
 
 test_functionRegistry :: [TestTree]
 test_functionRegistry =
-    [ testCase "Checking that two axioms are found for f"
-        (assertEqual ""
+    [ testCase "Checking that three axioms are found for f" $ do
+        assertEqual ""
             2
             (case Map.lookup (testId "f") testEvaluators of
-                Just (That axioms) -> length axioms
+                Just (That axioms) -> length $ definitionEvaluators axioms
                 _ -> error "Should find precisely two axioms for f"
             )
-        )
+        assertEqual ""
+            1
+            (case Map.lookup (testId "f") testEvaluators of
+                Just (That axioms) -> length $ simplificationEvaluators axioms
+                _ -> error "Should find precisely one axiom for f"
+            )
      , testCase "Checking that evaluator map has size 2"
         (assertEqual ""
             2

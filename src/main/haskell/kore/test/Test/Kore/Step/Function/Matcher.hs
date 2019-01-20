@@ -26,6 +26,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( CommonPredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Function.Data as EvaluationType
+                 ( EvaluationType (..) )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import           Kore.Step.OrOfExpandedPattern
@@ -63,7 +65,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkAnd (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkAnd (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
@@ -79,7 +81,7 @@ test_matcherEqualHeads =
                         }
                     ]
             actual <-
-                match mockMetadataTools
+                matchDefinition mockMetadataTools
                     (Mock.plain10 (mkVar Mock.x))
                     (Mock.plain10 Mock.a)
             assertEqualWithExplanation "" expect actual
@@ -87,7 +89,7 @@ test_matcherEqualHeads =
         , testCase "different constructors" $ do
             let expect = Just $ OrOfExpandedPattern.make []
             actual <-
-                match mockMetadataTools
+                matchDefinition mockMetadataTools
                     (Mock.constr10 (mkVar Mock.x))
                     (Mock.constr11 Mock.a)
             assertEqualWithExplanation "" expect actual
@@ -104,7 +106,7 @@ test_matcherEqualHeads =
                         }
                     ]
             actual <-
-                match mockMetadataTools
+                matchDefinition mockMetadataTools
                     (Mock.f Mock.b)
                     (Mock.g Mock.a)
             assertEqualWithExplanation "" expect actual
@@ -112,7 +114,7 @@ test_matcherEqualHeads =
         , testCase "different functions with variable" $ do
             let expect = Nothing
             actual <-
-                match mockMetadataTools
+                matchDefinition mockMetadataTools
                     (Mock.f (mkVar Mock.x))
                     (Mock.g Mock.a)
             assertEqualWithExplanation "" expect actual
@@ -129,7 +131,7 @@ test_matcherEqualHeads =
                         }
                     ]
             actual <-
-                match mockMetadataTools
+                matchDefinition mockMetadataTools
                     (Mock.plain10 Mock.b)
                     (Mock.plain11 Mock.a)
             assertEqualWithExplanation "" expect actual
@@ -138,7 +140,7 @@ test_matcherEqualHeads =
         , testCase "different symbols with variable" $ do
             let expect = Nothing
             actual <-
-                match mockMetadataTools
+                matchDefinition mockMetadataTools
                     (Mock.plain10 (mkVar Mock.x))
                     (Mock.plain11 Mock.a)
             assertEqualWithExplanation "" expect actual
@@ -146,7 +148,7 @@ test_matcherEqualHeads =
     , testCase "Bottom" $ do
         let expect = Just $ OrOfExpandedPattern.make [Predicated.topPredicate]
         actual <-
-            match
+            matchDefinition
                 mockMetadataTools
                 mkBottom_
                 mkBottom_
@@ -161,7 +163,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkCeil_ (Mock.plain10 (mkVar Mock.x)))
                 (mkCeil_ (Mock.plain10 Mock.a))
         assertEqualWithExplanation "" expect actual
@@ -169,7 +171,7 @@ test_matcherEqualHeads =
     , testCase "CharLiteral" $ do
         let expect = Just $ OrOfExpandedPattern.make [Predicated.topPredicate]
         actual <-
-            match mockMetaMetadataTools
+            matchDefinition mockMetaMetadataTools
                 (mkCharLiteral 'a')
                 (mkCharLiteral 'a')
         assertEqualWithExplanation "" expect actual
@@ -177,7 +179,7 @@ test_matcherEqualHeads =
     , testCase "DomainValue" $ do
         let expect = Just $ OrOfExpandedPattern.make [Predicated.topPredicate]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkDomainValue Mock.testSort1
                     $ Domain.BuiltinPattern
                     $ eraseAnnotations
@@ -199,7 +201,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkEquals_ (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkEquals_ (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
@@ -213,7 +215,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkExists Mock.x (Mock.plain10 (mkVar Mock.y)))
                 (mkExists Mock.z (Mock.plain10 Mock.a))
         assertEqualWithExplanation "" expect actual
@@ -227,7 +229,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkFloor_ (Mock.plain10 (mkVar Mock.x)))
                 (mkFloor_ (Mock.plain10 Mock.a))
         assertEqualWithExplanation "" expect actual
@@ -241,7 +243,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkForall Mock.x (Mock.plain10 (mkVar Mock.y)))
                 (mkForall Mock.z (Mock.plain10 Mock.a))
         assertEqualWithExplanation "" expect actual
@@ -255,7 +257,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkIff (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
@@ -269,7 +271,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkImplies (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkImplies (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
@@ -283,7 +285,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkIn_ (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkIn_ (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
@@ -297,7 +299,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkNext (Mock.plain10 (mkVar Mock.x)))
                 (mkNext (Mock.plain10 Mock.a))
         assertEqualWithExplanation "" expect actual
@@ -311,7 +313,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkNot (Mock.plain10 (mkVar Mock.x)))
                 (mkNot (Mock.plain10 Mock.a))
         assertEqualWithExplanation "" expect actual
@@ -325,7 +327,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkOr (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkOr (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
@@ -339,7 +341,7 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkRewrites (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkRewrites (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
@@ -347,7 +349,7 @@ test_matcherEqualHeads =
     , testCase "StringLiteral" $ do
         let expect = Just $ OrOfExpandedPattern.make [Predicated.topPredicate]
         actual <-
-            match mockMetaMetadataTools
+            matchDefinition mockMetaMetadataTools
                 (mkStringLiteral "10")
                 (mkStringLiteral "10")
         assertEqualWithExplanation "" expect actual
@@ -355,7 +357,7 @@ test_matcherEqualHeads =
     , testCase "Top" $ do
         let expect = Just $ OrOfExpandedPattern.make [Predicated.topPredicate]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 mkTop_
                 mkTop_
         assertEqualWithExplanation "" expect actual
@@ -363,7 +365,7 @@ test_matcherEqualHeads =
     , testCase "Variable (quantified)" $ do
         let expect = Just $ OrOfExpandedPattern.make [Predicated.topPredicate]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkExists Mock.x (Mock.plain10 (mkVar Mock.x)))
                 (mkExists Mock.y (Mock.plain10 (mkVar Mock.y)))
         assertEqualWithExplanation "" expect actual
@@ -379,10 +381,35 @@ test_matcherEqualHeads =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
                 (mkOr (Mock.plain10 Mock.a) Mock.b)
         assertEqualWithExplanation "" expect actual
+
+    , testGroup "Simplification"
+        [ testCase "same symbol" $ do
+            let expect = Just $ OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.x, Mock.a)]
+                        }
+                    ]
+            actual <-
+                matchSimplification mockMetadataTools
+                    (Mock.plain10 (mkVar Mock.x))
+                    (Mock.plain10 Mock.a)
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "different constructors" $ do
+            let expect = Nothing
+            actual <-
+                matchSimplification mockMetadataTools
+                    (Mock.constr10 (mkVar Mock.x))
+                    (Mock.constr11 Mock.a)
+            assertEqualWithExplanation "" expect actual
+        ]
     ]
 
 test_matcherVariableFunction :: [TestTree]
@@ -396,7 +423,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkVar Mock.x)
                 Mock.functional00
         assertEqualWithExplanation "" expect actual
@@ -410,7 +437,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkVar Mock.x)
                 Mock.cf
         assertEqualWithExplanation "" expect actual
@@ -426,7 +453,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkVar Mock.x)
                 (Mock.constr10 Mock.cf)
         assertEqualWithExplanation "" expect actual
@@ -434,7 +461,7 @@ test_matcherVariableFunction =
     , testCase "Unidirectional" $ do
         let expect = Nothing
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (Mock.functional10 (mkVar Mock.y))
                 (mkVar Mock.x)
         assertEqualWithExplanation "" expect actual
@@ -452,7 +479,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (Mock.sortInjectionSubToTop (mkVar x))
                 (Mock.sortInjectionSubSubToTop a)
         assertEqualWithExplanation "" expect actual
@@ -471,7 +498,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (Mock.sortInjectionSubSubToTop a)
                 (Mock.sortInjectionSubToTop (mkVar x))
         assertEqualWithExplanation "" expect actual
@@ -491,7 +518,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (Mock.functionalTopConstr20
                     (Mock.sortInjectionSubToTop (mkVar xSub))
                     (Mock.functional10 Mock.a)
@@ -517,7 +544,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (Mock.functionalTopConstr21
                     (Mock.functional10 Mock.a)
                     (Mock.sortInjectionSubToTop (mkVar xSub))
@@ -537,14 +564,14 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkExists Mock.y (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y)))
                 (mkExists Mock.z (Mock.constr20 Mock.a (mkVar Mock.z)))
         assertEqualWithExplanation "positive case" expect actual
         catch
             (do
                 matched <-
-                    match mockMetadataTools
+                    matchDefinition mockMetadataTools
                         (mkExists Mock.y
                             $ Mock.constr20 (mkVar Mock.x) (mkVar Mock.y)
                         )
@@ -559,56 +586,114 @@ test_matcherVariableFunction =
                     "quantified variables in substitution or predicate escaping\
                     \ context"
             )
+    , testGroup "Simplification"
+        [ testCase "Function" $ do
+            let expect = Just $ OrOfExpandedPattern.make
+                    [ Predicated
+                        { predicate = makeCeilPredicate Mock.cf
+                        , substitution = Substitution.wrap [(Mock.x, Mock.cf)]
+                        , term = ()
+                        }
+                    ]
+            actual <-
+                matchSimplification mockMetadataTools
+                    (mkVar Mock.x)
+                    Mock.cf
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "Non-function" $ do
+            let expect = Nothing
+            actual <-
+                matchSimplification mockMetadataTools
+                    (mkVar Mock.x)
+                    (Mock.constr10 Mock.cf)
+            assertEqualWithExplanation "" expect actual
+        ]
     ]
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =
-    [ testCase "no-var - no-var" $ do
-        let expect = Just $ OrOfExpandedPattern.make
-                [ Predicated
-                    { predicate = makeEqualsPredicate
-                        (Mock.plain10 Mock.a) (Mock.plain11 Mock.b)
-                    , substitution = mempty
-                    , term = ()
-                    }
-                ]
-        actual <-
-            match mockMetadataTools
-               (Mock.plain10 Mock.a)
-               (Mock.plain11 Mock.b)
-        assertEqualWithExplanation "" expect actual
+    [ testGroup "Definition"
+        [ testCase "no-var - no-var" $ do
+            let expect = Just $ OrOfExpandedPattern.make
+                    [ Predicated
+                        { predicate = makeEqualsPredicate
+                            (Mock.plain10 Mock.a) (Mock.plain11 Mock.b)
+                        , substitution = mempty
+                        , term = ()
+                        }
+                    ]
+            actual <-
+                matchDefinition mockMetadataTools
+                (Mock.plain10 Mock.a)
+                (Mock.plain11 Mock.b)
+            assertEqualWithExplanation "" expect actual
 
-    , testCase "var - no-var" $ do
-        let expect = Nothing
-        actual <-
-            match mockMetadataTools
-               (Mock.plain10 (mkVar Mock.x))
-               (Mock.plain11 Mock.b)
-        assertEqualWithExplanation "" expect actual
+        , testCase "var - no-var" $ do
+            let expect = Nothing
+            actual <-
+                matchDefinition mockMetadataTools
+                (Mock.plain10 (mkVar Mock.x))
+                (Mock.plain11 Mock.b)
+            assertEqualWithExplanation "" expect actual
 
-    , testCase "no-var - var" $ do
-        let expect = Just $ OrOfExpandedPattern.make
-                [ Predicated
-                    { predicate = makeEqualsPredicate
-                        (Mock.plain10 Mock.a)
-                        (Mock.plain11 (mkVar Mock.x))
-                    , substitution = mempty
-                    , term = ()
-                    }
-                ]
-        actual <-
-            match mockMetadataTools
-               (Mock.plain10 Mock.a)
-               (Mock.plain11 (mkVar Mock.x))
-        assertEqualWithExplanation "" expect actual
+        , testCase "no-var - var" $ do
+            let expect = Just $ OrOfExpandedPattern.make
+                    [ Predicated
+                        { predicate = makeEqualsPredicate
+                            (Mock.plain10 Mock.a)
+                            (Mock.plain11 (mkVar Mock.x))
+                        , substitution = mempty
+                        , term = ()
+                        }
+                    ]
+            actual <-
+                matchDefinition mockMetadataTools
+                (Mock.plain10 Mock.a)
+                (Mock.plain11 (mkVar Mock.x))
+            assertEqualWithExplanation "" expect actual
 
-    , testCase "var - var" $ do
-        let expect = Nothing
-        actual <-
-            match mockMetadataTools
-               (Mock.plain10 (mkVar Mock.x))
-               (Mock.plain11 (mkVar Mock.y))
-        assertEqualWithExplanation "" expect actual
+        , testCase "var - var" $ do
+            let expect = Nothing
+            actual <-
+                matchDefinition mockMetadataTools
+                (Mock.plain10 (mkVar Mock.x))
+                (Mock.plain11 (mkVar Mock.y))
+            assertEqualWithExplanation "" expect actual
+        ]
+    , testGroup "Simplification"
+        [ testCase "no-var - no-var" $ do
+            let expect = Nothing
+            actual <-
+                matchSimplification mockMetadataTools
+                (Mock.plain10 Mock.a)
+                (Mock.plain11 Mock.b)
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "var - no-var" $ do
+            let expect = Nothing
+            actual <-
+                matchSimplification mockMetadataTools
+                (Mock.plain10 (mkVar Mock.x))
+                (Mock.plain11 Mock.b)
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "no-var - var" $ do
+            let expect = Nothing
+            actual <-
+                matchSimplification mockMetadataTools
+                (Mock.plain10 Mock.a)
+                (Mock.plain11 (mkVar Mock.x))
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "var - var" $ do
+            let expect = Nothing
+            actual <-
+                matchSimplification mockMetadataTools
+                (Mock.plain10 (mkVar Mock.x))
+                (Mock.plain11 (mkVar Mock.y))
+            assertEqualWithExplanation "" expect actual
+        ]
     ]
 
 test_matcherMergeSubresults :: [TestTree]
@@ -626,7 +711,7 @@ test_matcherMergeSubresults =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkAnd (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
                 (mkAnd    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
         assertEqualWithExplanation "" expect actual
@@ -644,7 +729,7 @@ test_matcherMergeSubresults =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (Mock.plain20
                     (mkVar Mock.x)
                     (Mock.constr20 Mock.cf (mkVar Mock.y))
@@ -668,12 +753,12 @@ test_matcherMergeSubresults =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkEquals_
                     (mkVar Mock.x)
                     (Mock.constr20 Mock.cf (mkVar Mock.y))
                 )
-                (mkEquals_    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
+                (mkEquals_ Mock.cf (Mock.constr20 Mock.cg Mock.b))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Iff" $ do
@@ -689,7 +774,7 @@ test_matcherMergeSubresults =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkIff (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
                 (mkIff    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
         assertEqualWithExplanation "" expect actual
@@ -707,7 +792,7 @@ test_matcherMergeSubresults =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkImplies
                     (mkVar Mock.x)
                     (Mock.constr20 Mock.cf (mkVar Mock.y))
@@ -731,7 +816,7 @@ test_matcherMergeSubresults =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkIn_ (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
                 (mkIn_    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
         assertEqualWithExplanation "" expect actual
@@ -749,7 +834,7 @@ test_matcherMergeSubresults =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkOr (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
                 (mkOr    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
         assertEqualWithExplanation "" expect actual
@@ -767,7 +852,7 @@ test_matcherMergeSubresults =
                     }
                 ]
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkRewrites
                     (mkVar Mock.x)
                     (Mock.constr20 Mock.cf (mkVar Mock.y))
@@ -781,7 +866,7 @@ test_matcherMergeSubresults =
     , testCase "Merge conflict" $ do
         let expect = Just (OrOfExpandedPattern.make [])
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkAnd (mkVar Mock.x) (mkVar Mock.x))
                 (mkAnd    Mock.a         Mock.b)
         assertEqualWithExplanation "" expect actual
@@ -789,7 +874,7 @@ test_matcherMergeSubresults =
     , testCase "Merge error" $ do
         let expect = Nothing
         actual <-
-            match mockMetadataTools
+            matchDefinition mockMetadataTools
                 (mkAnd (mkVar Mock.x) (mkVar Mock.x))
                 (mkAnd (mkVar Mock.y) (Mock.f (mkVar Mock.y)))
         assertEqualWithExplanation "" expect actual
@@ -807,7 +892,7 @@ mockMetadataTools =
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
 
-match
+matchDefinition
     :: forall level .
         ( MetaOrObject level
         , NFData (CommonPredicateSubstitution level)
@@ -816,7 +901,30 @@ match
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
-match tools first second =
+matchDefinition = match EvaluationType.Definition
+
+matchSimplification
+    :: forall level .
+        ( MetaOrObject level
+        , NFData (CommonPredicateSubstitution level)
+        )
+    => MetadataTools level StepperAttributes
+    -> CommonStepPattern level
+    -> CommonStepPattern level
+    -> IO (Maybe (CommonOrOfPredicateSubstitution level))
+matchSimplification = match EvaluationType.Simplification
+
+match
+    :: forall level .
+        ( MetaOrObject level
+        , NFData (CommonPredicateSubstitution level)
+        )
+    => EvaluationType
+    -> MetadataTools level StepperAttributes
+    -> CommonStepPattern level
+    -> CommonStepPattern level
+    -> IO (Maybe (CommonOrOfPredicateSubstitution level))
+match evaluationType tools first second =
     matchAsEither >>= return . \case
         Left _err -> Nothing
         Right (result, _) -> Just result
@@ -840,4 +948,8 @@ match tools first second =
             )
     matchResult =
         matchAsUnification
-            tools (Mock.substitutionSimplifier tools) first second
+            evaluationType
+            tools
+            (Mock.substitutionSimplifier tools)
+            first
+            second

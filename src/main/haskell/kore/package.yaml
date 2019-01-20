@@ -34,6 +34,7 @@ dependencies:
   - deriving-compat
   - errors
   - fgl
+  - filtrable
   - free
   - gitrev
   - groom

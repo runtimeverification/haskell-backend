@@ -13,6 +13,8 @@ module Kore.Step.Function.Data
     , AttemptedFunction (..)
     , BuiltinAndAxiomsFunctionEvaluator
     , CommonAttemptedFunction
+    , EvaluationType (..)
+    , FunctionEvaluators (..)
     , notApplicableFunctionEvaluator
     , purePatternFunctionEvaluator
     ) where
@@ -71,6 +73,7 @@ newtype ApplicationFunctionEvaluator level =
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level Simplifier
         -> StepPatternSimplifier level variable
+        -> EvaluationType
         -> CofreeF
             (Application level)
             (Valid (variable level) level)
@@ -81,6 +84,19 @@ newtype ApplicationFunctionEvaluator level =
                 )
             ]
         )
+{-| Data structure for holding evaluators for the same symbol
+-}
+data FunctionEvaluators level
+    = FunctionEvaluators
+        { definitionEvaluators :: [ApplicationFunctionEvaluator level]
+        -- ^ Evaluators used when evaluating functions according to their
+        -- definition.
+        , simplificationEvaluators :: [ApplicationFunctionEvaluator level]
+        -- ^ Evaluators used when simplifying functions.
+        }
+
+-- | Which type of simplification we are attempting.
+data EvaluationType = Definition | Simplification
 
 {-|Datastructure to combine both a builtin evaluator and axiom-based
 function evaluators for the same symbol.
@@ -94,7 +110,7 @@ other succeeds, using both results would introduce a split in the search space.
 type BuiltinAndAxiomsFunctionEvaluator level =
     These
         (ApplicationFunctionEvaluator level)
-        [ApplicationFunctionEvaluator level]
+        (FunctionEvaluators level)
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.

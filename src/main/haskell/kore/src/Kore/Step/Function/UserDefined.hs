@@ -35,7 +35,7 @@ import           Kore.Step.BaseStep as StepResult
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+                 ( AttemptedFunction (..), EvaluationType )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -75,6 +75,7 @@ ruleFunctionEvaluator
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
+    -> EvaluationType
     -> CofreeF
         (Application level)
         (Valid (variable level) level)
@@ -87,6 +88,7 @@ ruleFunctionEvaluator
     tools
     substitutionSimplifier
     simplifier
+    evaluationType
     app@(_ :< Application _ c)
     | (Axiom.Concrete.isConcrete $ concrete $ attributes rule)
         && any (not . Pure.isConcrete) c
@@ -106,7 +108,7 @@ ruleFunctionEvaluator
     stepResult =
         stepWithRuleForUnifier
             tools
-            (UnificationProcedure matchAsUnification)
+            (UnificationProcedure (matchAsUnification evaluationType))
             substitutionSimplifier
             (stepperConfiguration app)
             rule

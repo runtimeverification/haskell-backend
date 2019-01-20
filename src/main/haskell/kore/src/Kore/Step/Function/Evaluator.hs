@@ -13,8 +13,10 @@ module Kore.Step.Function.Evaluator
 
 import           Control.Exception
                  ( assert )
+import           Data.Filtrable
+                 ( mapEither )
 import           Data.List
-                 ( nub, partition )
+                 ( foldl', nub, partition )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( isJust )
@@ -34,7 +36,12 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..),
-                 BuiltinAndAxiomsFunctionEvaluatorMap )
+                 BuiltinAndAxiomsFunctionEvaluatorMap, EvaluationType,
+                 FunctionEvaluators (FunctionEvaluators) )
+import           Kore.Step.Function.Data as EvaluationType
+                 ( EvaluationType (..) )
+import           Kore.Step.Function.Data as FunctionEvaluators
+                 ( FunctionEvaluators (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
@@ -105,30 +112,35 @@ evaluateApplication
             return unchanged
         Just builtinOrAxiomEvaluators ->
             these
-                (evaluateWithFunctionAxioms . pure)
+                (evaluateWithDefinitonAxioms . pure)
                 evaluateWithFunctionAxioms
-                (\builtinEvaluator axiomEvaluators -> do
-                    unprocessedResults <-
-                        applyEvaluator validApp builtinEvaluator
-                    orResultsWithProofs <-
-                        mapM (processResult axiomEvaluators) unprocessedResults
-                    let
-                        dropProofs :: [(a, SimplificationProof level)] -> [a]
-                        dropProofs = map fst
-                    return
-                        (OrOfExpandedPattern.make
-                            (concatMap
-                                OrOfExpandedPattern.extractPatterns
-                                (dropProofs orResultsWithProofs)
-                            )
-                        , SimplificationProof
-                        )
-
-                )
+                evaluateBuiltinAndAxioms
                 builtinOrAxiomEvaluators
   where
     Application { applicationSymbolOrAlias = appHead } = app
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
+
+    evaluateBuiltinAndAxioms
+        :: ApplicationFunctionEvaluator level
+        -> FunctionEvaluators level
+        -> Simplifier
+            (OrOfExpandedPattern level variable, SimplificationProof level)
+    evaluateBuiltinAndAxioms builtinEvaluator axiomEvaluators = do
+        unprocessedResults <-
+            applyEvaluator validApp EvaluationType.Definition builtinEvaluator
+        orResultsWithProofs <-
+            mapM (processResult axiomEvaluators) unprocessedResults
+        let
+            dropProofs :: [(a, SimplificationProof level)] -> [a]
+            dropProofs = map fst
+        return
+            (OrOfExpandedPattern.make
+                (concatMap
+                    OrOfExpandedPattern.extractPatterns
+                    (dropProofs orResultsWithProofs)
+                )
+            , SimplificationProof
+            )
 
     notApplicable :: (AttemptedFunction level variable, x) -> Bool
     notApplicable (AttemptedFunction.NotApplicable, _) = True
@@ -143,7 +155,7 @@ evaluateApplication
     appPurePattern = asPurePattern (valid :< ApplicationPattern app)
 
     processResult
-        :: [ApplicationFunctionEvaluator level]
+        :: FunctionEvaluators level
         -> (AttemptedFunction level variable, SimplificationProof level)
         -> Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -172,11 +184,26 @@ evaluateApplication
     unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
 
-    applyEvaluator app' (ApplicationFunctionEvaluator evaluator) = do
+    applyEvaluator
+        :: CofreeF
+            (Application level)
+            (Valid (variable level) level)
+            (StepPattern level variable)
+        -> EvaluationType
+        -> ApplicationFunctionEvaluator level
+        -> Simplifier
+            [   ( AttemptedFunction level variable
+                , SimplificationProof level
+                )
+            ]
+    applyEvaluator
+        app' evaluationType (ApplicationFunctionEvaluator evaluator)
+      = do
         results <- evaluator
             tools
             substitutionSimplifier
             simplifier
+            evaluationType
             app'
         mapM
             (mergeWithConditionAndSubstitution
@@ -198,8 +225,80 @@ evaluateApplication
     getAppHookString =
         Text.unpack <$> (getHook . hook . symAttributes tools) appHead
 
-    evaluateWithFunctionAxioms evaluators = do
-        resultsLists <- mapM (applyEvaluator validApp) evaluators
+    evaluateWithFunctionAxioms
+        :: FunctionEvaluators level
+        -> Simplifier
+            (OrOfExpandedPattern level variable, SimplificationProof level)
+    evaluateWithFunctionAxioms
+        FunctionEvaluators { definitionEvaluators, simplificationEvaluators }
+      = do
+        (simplifiedResult, proof) <-
+            evaluateWithSimplificationAxioms simplificationEvaluators
+        case simplifiedResult of
+            AttemptedFunction.NotApplicable ->
+                if null definitionEvaluators
+                    then
+                        -- We don't have a definition, so we shouldn't attempt
+                        -- to evaluate it, since it would currently evaluate
+                        -- to bottom.
+                        -- TODO(virgil): Remove this branch when we start
+                        -- using reminders in function evaluation.
+                        return (OrOfExpandedPattern.make [unchangedPatt], proof)
+                    else evaluateWithDefinitonAxioms definitionEvaluators
+            AttemptedFunction.Applied result -> return (result, proof)
+
+    evaluateWithSimplificationAxioms [] =
+        return
+            ( AttemptedFunction.NotApplicable
+            , SimplificationProof
+            )
+    evaluateWithSimplificationAxioms (evaluator : evaluators) = do
+        results <-
+            applyEvaluator validApp EvaluationType.Simplification evaluator
+        let
+            extractValidResult (AttemptedFunction.NotApplicable, _proof) =
+                Left ()
+            extractValidResult (AttemptedFunction.Applied orPatt, _proof) =
+                Right orPatt
+            (invalidResults, validResults) =
+                mapEither extractValidResult results
+            mergedResults =
+                foldl'
+                    OrOfExpandedPattern.merge
+                    (OrOfExpandedPattern.make [])
+                    validResults
+
+            simplify
+                :: ExpandedPattern level variable
+                -> Simplifier [ExpandedPattern level variable]
+            simplify result = do
+                orPatt <- reevaluateFunctions
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    result
+                return (OrOfExpandedPattern.extractPatterns orPatt)
+        -- TODO: If we are simplifying, then we should probably
+        -- allow at most one valid result, since more than that
+        -- would probably make the result more complicated.
+        if null invalidResults
+            then do
+                patts <-
+                    mapM
+                        simplify
+                        (OrOfExpandedPattern.extractPatterns mergedResults)
+                return
+                    ( AttemptedFunction.Applied
+                        (OrOfExpandedPattern.make (concat patts))
+                    , SimplificationProof
+                    )
+            else evaluateWithSimplificationAxioms evaluators
+
+    evaluateWithDefinitonAxioms evaluators = do
+        -- TODO(virgil): Apply these axioms using unification, using reminders
+        -- in a similar way to the one-step strategy.
+        resultsLists <-
+            mapM (applyEvaluator validApp EvaluationType.Definition) evaluators
         let
             results
                 ::  [   ( AttemptedFunction level variable

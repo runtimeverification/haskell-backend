@@ -361,7 +361,7 @@ evaluate tools patt =
 
 evaluateWithAxioms
     :: MetadataTools Object StepperAttributes
-    -> Map.Map (Id Object) [ApplicationFunctionEvaluator Object]
+    -> Map.Map (Id Object) (FunctionEvaluators Object)
     -> CommonExpandedPattern Object
     -> IO (CommonOrOfExpandedPattern Object)
 evaluateWithAxioms tools axioms patt =
