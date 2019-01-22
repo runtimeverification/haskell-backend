@@ -78,7 +78,7 @@ normalize
         normalizeSubstitutionAfterMerge
             tools
             substitutionSimplifier
-            (Predicated { term = (), predicate, substitution })
+            Predicated { term = (), predicate, substitution }
     return $ case x of
       Right (Predicated { predicate = p, substitution = s }, _) ->
           if Predicate.isFalse p

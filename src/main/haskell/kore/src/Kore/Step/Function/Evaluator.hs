@@ -145,7 +145,12 @@ evaluateApplication
                     ++ show app
                     )
               | otherwise ->
-                evaluateWithFunctionAxioms axiomEvaluators
+                -- If the builtin axioms failed, in many cases we can't just
+                -- apply evaluation axioms, since may of them are recursive
+                -- and will be applied indefinitely.
+                -- TODO(virgil): We should refine this at some point.
+                evaluateWithFunctionAxioms
+                    axiomEvaluators { definitionRules = [] }
             AttemptedFunction.Applied pat -> return (pat, SimplificationProof)
 
     unchangedPatt =
