@@ -1,19 +1,15 @@
-TOP := $(shell git rev-parse --show-toplevel)
-include $(TOP)/include.mk
+include $(CURDIR)/../../include.mk
 
 KOMPILED := ord-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): ord.k $(K)
+$(DEFINITION): ord.k
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module ord
 
-%.ord.kore: %.ord $(DEFINITION) $(K) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --dry-run
-
-%.output: %.ord $(DEFINITION) $(K) $(KORE_EXEC)
+%.output: %.ord $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.ord $(DEFINITION) $(K) $(KORE_EXEC)
+%.krun: %.ord $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
@@ -29,6 +25,6 @@ test-k: tests/1.test tests/2.test
 golden: tests/1.output.golden tests/2.output.golden
 
 clean:
-	rm -rf $(KOMPILED) tests/*.ord.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.output
 
 .PHONY: test-k test golden clean %.test %.krun

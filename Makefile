@@ -50,7 +50,7 @@ $(STACK_LOCAL_HPC_ROOT):
 coverage_report: $(STACK_LOCAL_HPC_ROOT)
 	cp -r $(STACK_LOCAL_HPC_ROOT) coverage_report
 
-test-k: all
+test-k:
 	$(MAKE) --directory src/main/k/working test-k
 
 jenkins:

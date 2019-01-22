@@ -1,6 +1,6 @@
 # Settings
 
-TOP = $(shell git rev-parse --show-toplevel)
+TOP ?= $(shell git rev-parse --show-toplevel)
 UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
@@ -16,9 +16,12 @@ KOMPILE = $(K_DIST_BIN)/kompile
 KRUN = $(K_DIST_BIN)/krun
 KPROVE = $(K_DIST_BIN)/kprove
 
+KOMPILE_OPTS = --backend haskell
+KRUN_OPTS = --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
+KPROVE_OPTS = --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
+
 HS_TOP = $(TOP)/src/main/haskell/kore
 HS_SOURCE_DIRS = $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test $(HS_TOP)/bench
-STACK_OPTS = --pedantic
 STACK_NO_PROFILE = --no-library-profiling --no-executable-profiling
 STACK_FAST = --fast
 STACK_COVERAGE = --coverage
@@ -37,8 +40,4 @@ KORE_EXEC = $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-exec
 KORE_EXEC_OPTS =
 
 $(KORE_EXEC):
-	$(STACK) build --pedantic kore:exe:kore-exec
-
-KOMPILE_OPTS = --backend haskell
-KRUN_OPTS = --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
-KPROVE_OPTS = --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
+	$(STACK) build --pedantic $(STACK_NO_PROFILE) kore:exe:kore-exec

@@ -1,19 +1,15 @@
-TOP := $(shell git rev-parse --show-toplevel)
-include $(TOP)/include.mk
+include $(CURDIR)/../include.mk
 
-KOMPILED := demo-kompiled
-DEFINITION := $(KOMPILED)/definition.kore
+KOMPILED = demo-kompiled
+DEFINITION = $(KOMPILED)/definition.kore
 
-$(DEFINITION): demo.k $(KOMPILE)
+$(DEFINITION): demo.k
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module DEMO
 
-%.imp.kore: %.demo $(DEFINITION) $(KRUN) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --dry-run
-
-%.output: %.demo $(DEFINITION) $(KRUN) $(KORE_EXEC)
+%.output: %.demo $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.demo $(DEFINITION) $(KRUN) $(KORE_EXEC)
+%.krun: %.demo $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
@@ -29,6 +25,6 @@ test-k: test
 golden: tests/Nat.output.golden tests/NatList.output.golden tests/Truth.output.golden
 
 clean:
-	rm -rf $(KOMPILED) tests/*.imp.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.output
 
 .PHONY: test-k test golden clean %.test %.krun
