@@ -21,7 +21,6 @@ import           Data.List
 import qualified Data.Set as Set
 import           Data.String
                  ( fromString )
-import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc as Doc
 import           Data.Text.Prettyprint.Doc.Render.String
 import           Data.Void
@@ -40,7 +39,7 @@ import           Kore.Unification.Substitution
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
 import           Kore.Unparser
-                 ( escapeCharT, escapeStringT, escapeString )
+                 ( escapeCharT, escapeString, escapeStringT )
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-

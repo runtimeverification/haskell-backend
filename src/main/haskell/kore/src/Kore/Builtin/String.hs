@@ -29,6 +29,16 @@ module Kore.Builtin.String
     , asExpandedPattern
     , asPartialExpandedPattern
     , parse
+      -- * keys
+    , ltKey
+    , plusKey
+    , string2IntKey
+    , substrKey
+    , lengthKey
+    , findKey
+    , string2BaseKey
+    , chrKey
+    , ordKey
     ) where
 
 import           Control.Applicative
