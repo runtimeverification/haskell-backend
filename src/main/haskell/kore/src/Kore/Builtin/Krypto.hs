@@ -19,7 +19,6 @@ module Kore.Builtin.Krypto
     ( symbolVerifiers
     , builtinFunctions
     , keccakKey
-    , keccakKeyT
     ) where
 
 import           Crypto.Hash
@@ -29,7 +28,7 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.String
-                 ( fromString )
+                 ( IsString, fromString )
 import           Data.Text
                  ( Text )
 import qualified Data.Text.Encoding as Text
@@ -50,10 +49,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
-keccakKey :: String
+keccakKey :: IsString s => s
 keccakKey = "KRYPTO.keccak256"
-keccakKeyT :: Text
-keccakKeyT = "KRYPTO.keccak256"
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -63,7 +60,7 @@ keccakKeyT = "KRYPTO.keccak256"
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( keccakKeyT
+    [ ( keccakKey
       , Builtin.verifySymbol String.assertSort [String.assertSort]
       )
     ]
@@ -73,7 +70,7 @@ symbolVerifiers =
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ (keccakKeyT, evalKeccak)
+        [ (keccakKey, evalKeccak)
         ]
 
 evalKeccak :: Builtin.Function
@@ -94,7 +91,7 @@ evalKeccak =
                     case arguments of
                       [input] -> input
                       _ -> Builtin.wrongArity keccakKey
-            str <- String.expectBuiltinString keccakKeyT arg
+            str <- String.expectBuiltinString keccakKey arg
             let
                 digest = hash . Text.encodeUtf8 $ str :: Digest Keccak_256
                 result = fromString (show digest)

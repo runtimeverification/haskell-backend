@@ -45,6 +45,8 @@ import           Data.List
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -103,37 +105,37 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [   ( ltKeyT
+    [   ( ltKey
         , Builtin.verifySymbol Bool.assertSort [assertSort, assertSort]
         )
-    ,   ( plusKeyT
+    ,   ( plusKey
         , Builtin.verifySymbol assertSort [assertSort, assertSort]
         )
-    ,   ( substrKeyT
+    ,   ( substrKey
         , Builtin.verifySymbol
             assertSort
             [assertSort, Int.assertSort, Int.assertSort]
         )
-    ,   ( lengthKeyT
+    ,   ( lengthKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
-    ,   ( findKeyT
+    ,   ( findKey
         , Builtin.verifySymbol
             Int.assertSort
             [assertSort, assertSort, Int.assertSort]
         )
-    ,   ( string2BaseKeyT
+    ,   ( string2BaseKey
         , Builtin.verifySymbol
             Int.assertSort
             [assertSort, Int.assertSort]
         )
-    ,   ( string2IntKeyT
+    ,   ( string2IntKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
-    ,   ( chrKeyT
+    ,   ( chrKey
         , Builtin.verifySymbol assertSort [Int.assertSort]
         )
-    ,   ( ordKeyT
+    ,   ( ordKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
     ]
@@ -231,46 +233,32 @@ asPartialExpandedPattern
 asPartialExpandedPattern resultSort =
     maybe ExpandedPattern.bottom (asExpandedPattern resultSort)
 
-ltKeyT :: Text
-ltKeyT = "STRING.lt"
+ltKey :: IsString s => s
+ltKey = "STRING.lt"
 
-plusKeyT :: Text
-plusKeyT = "STRING.concat"
+plusKey :: IsString s => s
+plusKey = "STRING.concat"
 
-string2IntKey :: String
+string2IntKey :: IsString s => s
 string2IntKey = "STRING.string2int"
-string2IntKeyT :: Text
-string2IntKeyT = "STRING.string2int"
 
-substrKey :: String
+substrKey :: IsString s => s
 substrKey = "STRING.substr"
-substrKeyT :: Text
-substrKeyT = "STRING.substr"
 
-lengthKey :: String
+lengthKey :: IsString s => s
 lengthKey = "STRING.length"
-lengthKeyT :: Text
-lengthKeyT = "STRING.length"
 
-findKey :: String
+findKey :: IsString s => s
 findKey = "STRING.find"
-findKeyT :: Text
-findKeyT = "STRING.find"
 
-string2BaseKey :: String
+string2BaseKey :: IsString s => s
 string2BaseKey = "STRING.string2base"
-string2BaseKeyT :: Text
-string2BaseKeyT = "STRING.string2base"
 
-chrKey :: String
+chrKey :: IsString s => s
 chrKey = "STRING.chr"
-chrKeyT :: Text
-chrKeyT = "STRING.chr"
 
-ordKey :: String
+ordKey :: IsString s => s
 ordKey = "STRING.ord"
-ordKeyT :: Text
-ordKeyT = "STRING.ord"
 
 evalSubstr :: Builtin.Function
 evalSubstr = Builtin.functionEvaluator evalSubstr0
@@ -291,9 +279,9 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
                     case arguments of
                         [_str, _start, _end] -> (_str, _start, _end)
                         _                    -> Builtin.wrongArity substrKey
-            _str   <- expectBuiltinString substrKeyT _str
-            _start <- fromInteger <$> Int.expectBuiltinInt substrKeyT _start
-            _end   <- fromInteger <$> Int.expectBuiltinInt substrKeyT _end
+            _str   <- expectBuiltinString substrKey _str
+            _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
+            _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
             Builtin.appliedFunction
                 . asExpandedPattern resultSort
                 $ substr _start _end _str
@@ -314,7 +302,7 @@ evalLength = Builtin.functionEvaluator evalLength0
                     case arguments of
                         [_str] -> _str
                         _      -> Builtin.wrongArity lengthKey
-            _str <- expectBuiltinString lengthKeyT _str
+            _str <- expectBuiltinString lengthKey _str
             Builtin.appliedFunction
                 . Int.asExpandedPattern resultSort
                 . toInteger
@@ -339,9 +327,9 @@ evalFind = Builtin.functionEvaluator evalFind0
                     case arguments of
                         [_str, _substr, _idx] -> (_str, _substr, _idx)
                         _                     -> Builtin.wrongArity findKey
-            _str <- expectBuiltinString findKeyT _str
-            _substr <- expectBuiltinString findKeyT _substr
-            _idx <- fromInteger <$> Int.expectBuiltinInt substrKeyT _idx
+            _str <- expectBuiltinString findKey _str
+            _substr <- expectBuiltinString findKey _substr
+            _idx <- fromInteger <$> Int.expectBuiltinInt substrKey _idx
             Builtin.appliedFunction
                 . Int.asExpandedPattern resultSort
                 . maybeNotFound
@@ -363,8 +351,8 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
                     case arguments of
                         [_str, _base] -> (_str, _base)
                         _             -> Builtin.wrongArity string2BaseKey
-            _str  <- expectBuiltinString string2BaseKeyT _str
-            _base <- Int.expectBuiltinInt string2BaseKeyT _base
+            _str  <- expectBuiltinString string2BaseKey _str
+            _base <- Int.expectBuiltinInt string2BaseKey _base
             let readN =
                     case _base of
                         -- no builtin reader for number in octal notation
@@ -399,7 +387,7 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
                     case arguments of
                         [_str] -> _str
                         _      -> Builtin.wrongArity string2IntKey
-            _str <- expectBuiltinString string2IntKeyT _str
+            _str <- expectBuiltinString string2IntKey _str
             case Text.signed Text.decimal _str of
                 Right (result, Text.unpack -> "") ->
                     Builtin.appliedFunction
@@ -424,7 +412,7 @@ evalChr = Builtin.functionEvaluator evalChr0
                     case arguments of
                         [_n] -> _n
                         _    -> Builtin.wrongArity chrKey
-            _n <- Int.expectBuiltinInt chrKeyT _n
+            _n <- Int.expectBuiltinInt chrKey _n
             Builtin.appliedFunction
                 . asExpandedPattern resultSort
                 $ Text.singleton $ chr $ fromIntegral _n
@@ -445,7 +433,7 @@ evalOrd = Builtin.functionEvaluator evalOrd0
                     case arguments of
                         [_str] -> _str
                         _    -> Builtin.wrongArity ordKey
-            _str <- expectBuiltinString ordKeyT _str
+            _str <- expectBuiltinString ordKey _str
             Builtin.appliedFunction
                 . maybe ExpandedPattern.bottom charToOrdInt
                 $ if Text.length _str == 1
@@ -462,15 +450,15 @@ evalOrd = Builtin.functionEvaluator evalOrd0
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-    [ comparator ltKeyT (<)
-    , binaryOperator plusKeyT Text.append
-    , (substrKeyT, evalSubstr)
-    , (lengthKeyT, evalLength)
-    , (findKeyT, evalFind)
-    , (string2BaseKeyT, evalString2Base)
-    , (string2IntKeyT, evalString2Int)
-    , (chrKeyT, evalChr)
-    , (ordKeyT, evalOrd)
+    [ comparator ltKey (<)
+    , binaryOperator plusKey Text.append
+    , (substrKey, evalSubstr)
+    , (lengthKey, evalLength)
+    , (findKey, evalFind)
+    , (string2BaseKey, evalString2Base)
+    , (string2IntKey, evalString2Int)
+    , (chrKey, evalChr)
+    , (ordKey, evalOrd)
     ]
   where
     comparator name op =

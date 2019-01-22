@@ -248,25 +248,25 @@ pairSymbol lSort rSort =
 -- ** Set
 
 unitSetSymbol :: SymbolOrAlias Object
-unitSetSymbol = builtinSymbol Set.unitKeyT
+unitSetSymbol = builtinSymbol Set.unitKey
 
 elementSetSymbol :: SymbolOrAlias Object
-elementSetSymbol = builtinSymbol Set.elementKeyT
+elementSetSymbol = builtinSymbol Set.elementKey
 
 concatSetSymbol :: SymbolOrAlias Object
-concatSetSymbol = builtinSymbol Set.concatKeyT
+concatSetSymbol = builtinSymbol Set.concatKey
 
 inSetSymbol :: SymbolOrAlias Object
-inSetSymbol = builtinSymbol Set.inKeyT
+inSetSymbol = builtinSymbol Set.inKey
 
 differenceSetSymbol :: SymbolOrAlias Object
-differenceSetSymbol = builtinSymbol Set.differenceKeyT
+differenceSetSymbol = builtinSymbol Set.differenceKey
 
 toListSetSymbol :: SymbolOrAlias Object
-toListSetSymbol = builtinSymbol Set.toListKeyT
+toListSetSymbol = builtinSymbol Set.toListKey
 
 sizeSetSymbol :: SymbolOrAlias Object
-sizeSetSymbol = builtinSymbol Set.sizeKeyT
+sizeSetSymbol = builtinSymbol Set.sizeKey
 
 -- ** String
 
@@ -908,41 +908,41 @@ setModule =
                 unitSetSymbol
                 setSort
                 []
-                [hookAttribute Set.unitKeyT]
+                [hookAttribute Set.unitKey]
             , hookedSymbolDecl
                 elementSetSymbol
                 setSort
                 [intSort]
-                [ hookAttribute Set.elementKeyT
+                [ hookAttribute Set.elementKey
                 , functionalAttribute
                 ]
             , hookedSymbolDecl
                 concatSetSymbol
                 setSort
                 [setSort, setSort]
-                [ hookAttribute Set.concatKeyT
+                [ hookAttribute Set.concatKey
                 , functionalAttribute
                 ]
             , hookedSymbolDecl
                 inSetSymbol
                 boolSort
                 [intSort, setSort]
-                [hookAttribute Set.inKeyT]
+                [hookAttribute Set.inKey]
             , hookedSymbolDecl
                 differenceSetSymbol
                 setSort
                 [setSort, setSort]
-                [hookAttribute Set.differenceKeyT]
+                [hookAttribute Set.differenceKey]
             , hookedSymbolDecl
                 toListSetSymbol
                 listSort
                 [setSort]
-                [hookAttribute Set.toListKeyT]
+                [hookAttribute Set.toListKey]
             , hookedSymbolDecl
                 sizeSetSymbol
                 intSort
                 [setSort]
-                [hookAttribute Set.sizeKeyT]
+                [hookAttribute Set.sizeKey]
             ]
         }
 

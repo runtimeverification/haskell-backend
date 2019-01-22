@@ -35,19 +35,12 @@ module Kore.Builtin.Map
     , isSymbolUnit
       -- * keys
     , concatKey
-    , concatKeyT
     , lookupKey
-    , lookupKeyT
     , elementKey
-    , elementKeyT
     , unitKey
-    , unitKeyT
     , updateKey
-    , updateKeyT
     , in_keysKey
-    , in_keysKeyT
     , keysKey
-    , keysKeyT
     -- * Unification
     , unifyEquals
     -- * Raw evaluators
@@ -65,6 +58,8 @@ import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -129,25 +124,25 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( concatKeyT
+    [ ( concatKey
       , Builtin.verifySymbol assertSort [assertSort , assertSort]
       )
-    , ( elementKeyT
+    , ( elementKey
       , Builtin.verifySymbol assertSort [anySort, anySort]
       )
-    , ( lookupKeyT
+    , ( lookupKey
       , Builtin.verifySymbol anySort [assertSort, anySort]
       )
-    , ( unitKeyT
+    , ( unitKey
       , Builtin.verifySymbol assertSort []
       )
-    , ( updateKeyT
+    , ( updateKey
       , Builtin.verifySymbol assertSort [assertSort, anySort, anySort]
       )
-    , ( in_keysKeyT
+    , ( in_keysKey
       , Builtin.verifySymbol Bool.assertSort [anySort, assertSort]
       )
-    , ( keysKeyT
+    , ( keysKey
       , Builtin.verifySymbol Builtin.Set.assertSort [assertSort]
       )
     ]
@@ -211,13 +206,13 @@ evalLookup =
                         [_map, _key] -> (_map, _key)
                         _ -> Builtin.wrongArity lookupKey
                 emptyMap = do
-                    _map <- expectBuiltinMap lookupKeyT _map
+                    _map <- expectBuiltinMap lookupKey _map
                     if Map.null _map
                         then Builtin.appliedFunction ExpandedPattern.bottom
                         else empty
                 bothConcrete = do
                     _key <- Builtin.expectNormalConcreteTerm tools _key
-                    _map <- expectBuiltinMap lookupKeyT _map
+                    _map <- expectBuiltinMap lookupKey _map
                     Builtin.appliedFunction $ maybeBottom $ Map.lookup _key _map
             emptyMap <|> bothConcrete
         )
@@ -259,7 +254,7 @@ evalConcat =
                         [_map1, _map2] -> (_map1, _map2)
                         _ -> Builtin.wrongArity concatKey
                 leftIdentity = do
-                    _map1 <- expectBuiltinMap concatKeyT _map1
+                    _map1 <- expectBuiltinMap concatKey _map1
                     if Map.null _map1
                         then
                             Builtin.appliedFunction
@@ -267,7 +262,7 @@ evalConcat =
                         else
                             empty
                 rightIdentity = do
-                    _map2 <- expectBuiltinMap concatKeyT _map2
+                    _map2 <- expectBuiltinMap concatKey _map2
                     if Map.null _map2
                         then
                             Builtin.appliedFunction
@@ -275,8 +270,8 @@ evalConcat =
                         else
                             empty
                 bothConcrete = do
-                    _map1 <- expectBuiltinMap concatKeyT _map1
-                    _map2 <- expectBuiltinMap concatKeyT _map2
+                    _map1 <- expectBuiltinMap concatKey _map1
+                    _map2 <- expectBuiltinMap concatKey _map2
                     let overlapping =
                             (not . Set.null)
                                 (Set.intersection
@@ -314,7 +309,7 @@ evalUpdate =
                         [_map, _key, value'] -> (_map, _key, value')
                         _ -> Builtin.wrongArity updateKey
             _key <- Builtin.expectNormalConcreteTerm tools _key
-            _map <- expectBuiltinMap updateKeyT _map
+            _map <- expectBuiltinMap updateKey _map
             returnMap resultSort (Map.insert _key value _map)
         )
 
@@ -330,7 +325,7 @@ evalInKeys =
                         [_key, _map] -> (_key, _map)
                         _ -> Builtin.wrongArity in_keysKey
             _key <- Builtin.expectNormalConcreteTerm tools _key
-            _map <- expectBuiltinMap in_keysKeyT _map
+            _map <- expectBuiltinMap in_keysKey _map
             Builtin.appliedFunction
                 $ Bool.asExpandedPattern resultSort
                 $ Map.member _key _map
@@ -354,7 +349,7 @@ evalKeys =
                     case arguments of
                         [_map] -> _map
                         _ -> Builtin.wrongArity lookupKey
-            _map <- expectBuiltinMap lookupKeyT _map
+            _map <- expectBuiltinMap lookupKey _map
             Builtin.Set.returnSet resultSort (Map.keysSet _map)
         )
 
@@ -363,13 +358,13 @@ evalKeys =
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ (concatKeyT, evalConcat)
-        , (lookupKeyT, evalLookup)
-        , (elementKeyT, evalElement)
-        , (unitKeyT, evalUnit)
-        , (updateKeyT, evalUpdate)
-        , (in_keysKeyT, evalInKeys)
-        , (keysKeyT, evalKeys)
+        [ (concatKey, evalConcat)
+        , (lookupKey, evalLookup)
+        , (elementKey, evalElement)
+        , (unitKey, evalUnit)
+        , (updateKey, evalUpdate)
+        , (in_keysKey, evalInKeys)
+        , (keysKey, evalKeys)
         ]
 
 {- | Render a 'Map' as a domain value pattern of the given sort.
@@ -424,40 +419,26 @@ asExpandedPattern symbols resultSort =
     asExpandedPattern0 = \asPattern0 builtin ->
         ExpandedPattern.fromPurePattern $ asPattern0 builtin
 
-concatKey :: String
+concatKey :: IsString s => s
 concatKey = "MAP.concat"
-concatKeyT :: Text
-concatKeyT = "MAP.concat"
 
-lookupKey :: String
+lookupKey :: IsString s => s
 lookupKey = "MAP.lookup"
-lookupKeyT :: Text
-lookupKeyT = "MAP.lookup"
 
-elementKey :: String
+elementKey :: IsString s => s
 elementKey = "MAP.element"
-elementKeyT :: Text
-elementKeyT = "MAP.element"
 
-unitKey :: String
+unitKey :: IsString s => s
 unitKey = "MAP.unit"
-unitKeyT :: Text
-unitKeyT = "MAP.unit"
 
-updateKey :: String
+updateKey :: IsString s => s
 updateKey = "MAP.update"
-updateKeyT :: Text
-updateKeyT = "MAP.update"
 
-in_keysKey :: String
+in_keysKey :: IsString s => s
 in_keysKey = "MAP.in_keys"
-in_keysKeyT :: Text
-in_keysKeyT = "MAP.in_keys"
 
-keysKey :: String
+keysKey :: IsString s => s
 keysKey = "MAP.keys"
-keysKeyT :: Text
-keysKeyT = "MAP.keys"
 
 {- | Embed a 'Map' in a builtin domain value pattern.
  -}
@@ -475,7 +456,7 @@ lookupSymbolUnit
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol unitKeyT
+lookupSymbolUnit = Builtin.lookupSymbol unitKey
 
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
@@ -483,7 +464,7 @@ lookupSymbolUpdate
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUpdate = Builtin.lookupSymbol updateKeyT
+lookupSymbolUpdate = Builtin.lookupSymbol updateKey
 
 {- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
  -}
@@ -491,7 +472,7 @@ lookupSymbolLookup
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolLookup = Builtin.lookupSymbol lookupKeyT
+lookupSymbolLookup = Builtin.lookupSymbol lookupKey
 
 {- | Find the symbol hooked to @MAP.element@ in an indexed module.
  -}
@@ -499,7 +480,7 @@ lookupSymbolElement
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbol elementKeyT
+lookupSymbolElement = Builtin.lookupSymbol elementKey
 
 {- | Find the symbol hooked to @MAP.concat@ in an indexed module.
  -}
@@ -507,7 +488,7 @@ lookupSymbolConcat
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol concatKeyT
+lookupSymbolConcat = Builtin.lookupSymbol concatKey
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
  -}
@@ -515,7 +496,7 @@ lookupSymbolInKeys
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolInKeys = Builtin.lookupSymbol in_keysKeyT
+lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
 
 {- | Find the symbol hooked to @MAP.keys@ in an indexed module.
  -}
@@ -523,7 +504,7 @@ lookupSymbolKeys
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolKeys = Builtin.lookupSymbol keysKeyT
+lookupSymbolKeys = Builtin.lookupSymbol keysKey
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
@@ -531,7 +512,7 @@ isSymbolConcat
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolConcat = Builtin.isSymbol concatKeyT
+isSymbolConcat = Builtin.isSymbol concatKey
 
 {- | Check if the given symbol is hooked to @MAP.element@.
  -}
@@ -539,7 +520,7 @@ isSymbolElement
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolElement = Builtin.isSymbol elementKeyT
+isSymbolElement = Builtin.isSymbol elementKey
 
 {- | Check if the given symbol is hooked to @MAP.unit@.
 -}
@@ -547,7 +528,7 @@ isSymbolUnit
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolUnit = Builtin.isSymbol unitKeyT
+isSymbolUnit = Builtin.isSymbol unitKey
 
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
