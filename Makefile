@@ -22,11 +22,6 @@ k-frontend:
 
 docs: haddock
 
-clean-haddock: STACK := $(STACK_HADDOCK)
-clean-haddock:
-	$(STACK) clean
-	rm -rf $(STACK_LOCAL_DOC_ROOT)
-
 $(STACK_LOCAL_DOC_ROOT)/index.html: STACK := $(STACK_HADDOCK)
 $(STACK_LOCAL_DOC_ROOT)/index.html:
 	$(STACK) haddock $(STACK_NO_PROFILE) $(STACK_FAST) --no-haddock-deps 2>&1 | tee haddock.log
@@ -46,11 +41,14 @@ all: kore k-frontend
 
 test: test-kore test-k
 
-test-kore:
-	stack test $(STACK_TEST_OPTS)
-	if [ -n "$$BUILD_NUMBER" ]; then \
-		cp -r $$(stack path --local-hpc-root) coverage_report; \
-	fi
+test-kore: $(STACK_LOCAL_HPC_ROOT)
+
+$(STACK_LOCAL_HPC_ROOT): STACK := $(STACK_TEST)
+$(STACK_LOCAL_HPC_ROOT):
+	$(STACK) build $(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) --test --bench --no-run-benchmarks
+
+coverage_report: $(STACK_LOCAL_HPC_ROOT)
+	cp -r $(STACK_LOCAL_HPC_ROOT) coverage_report
 
 test-k: all
 	$(MAKE) --directory src/main/k/working test-k
@@ -62,16 +60,15 @@ jenkins:
 	$(MAKE) test
 	$(MAKE) docs
 
-clean-stack:
-	$(STACK) clean
-	rm -rf $(STACK_LOCAL_INSTALL_ROOT)/bin
+clean:
+	$(STACK) clean --full
+	$(STACK_HADDOCK) clean --full
+	$(STACK_TEST) clean --full
 	find . -name '*.tix' -exec rm -f '{}' \;
-
-clean-k:
+	rm -rf haskell_documentation
+	rm -rf coverage_report
 	$(MAKE) --directory src/main/k/working clean
 	rm -rf $(BUILD_DIR)
-
-clean: clean-stack clean-haddock clean-k
 
 check:
 	if ! ./scripts/git-assert-clean.sh; \

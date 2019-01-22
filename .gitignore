@@ -31,3 +31,6 @@ src/main/haskell/stack.yaml
 *.prof
 .kprove-*
 .stack-work-haddock
+/coverage_report
+/haskell_documentation
+.stack-work-test

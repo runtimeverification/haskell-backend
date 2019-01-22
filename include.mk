@@ -19,14 +19,13 @@ KPROVE = $(K_DIST_BIN)/kprove
 HS_TOP = $(TOP)/src/main/haskell/kore
 HS_SOURCE_DIRS = $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test $(HS_TOP)/bench
 STACK_OPTS = --pedantic
-STACK_BUILD_OPTS = $(STACK_OPTS) --no-run-tests --no-run-benchmarks
-STACK_HADDOCK_OPTS = $(STACK_OPTS) --no-run-tests --no-run-benchmarks
-STACK_TEST_OPTS = $(STACK_OPTS) --no-run-benchmarks
 STACK_NO_PROFILE = --no-library-profiling --no-executable-profiling
 STACK_FAST = --fast
+STACK_COVERAGE = --coverage
 
 STACK = stack
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
+STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
 # These paths are assigned with ?= so they will only be assigned once.
 # Sub-processes will inherit the setting from their parent process.
