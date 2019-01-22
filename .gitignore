@@ -34,3 +34,4 @@ src/main/haskell/stack.yaml
 /coverage_report
 /haskell_documentation
 .stack-work-test
+/src/main/haskell/kore/test-results.xml

@@ -33,10 +33,6 @@ STACK_LOCAL_INSTALL_ROOT ?= $(shell $(STACK) path --local-install-root)
 STACK_LOCAL_DOC_ROOT ?= $(shell $(STACK_HADDOCK) path --local-doc-root)
 STACK_LOCAL_HPC_ROOT ?= $(shell $(STACK_TEST) path --local-hpc-root)
 
-ifdef BUILD_NUMBER
-STACK_TEST_OPTS += --ta --xml=test-results.xml --coverage
-endif
-
 KORE_EXEC = $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-exec
 KORE_EXEC_OPTS =
 

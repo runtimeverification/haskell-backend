@@ -1,8 +1,5 @@
 include include.mk
 
-jenkins: STACK_OPTS += --test --bench
-export STACK_OPTS
-
 .PHONY: all clean docs haddock jenkins kore k-frontend stylish \
         test test-kore test-k
 
@@ -45,7 +42,10 @@ test-kore: $(STACK_LOCAL_HPC_ROOT)
 
 $(STACK_LOCAL_HPC_ROOT): STACK := $(STACK_TEST)
 $(STACK_LOCAL_HPC_ROOT):
-	$(STACK) build $(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) --test --bench --no-run-benchmarks
+	$(STACK) build \
+		$(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) \
+		--test --bench --no-run-benchmarks \
+		--ta --xml=test-results.xml
 
 coverage_report: $(STACK_LOCAL_HPC_ROOT)
 	cp -r $(STACK_LOCAL_HPC_ROOT) coverage_report
@@ -65,10 +65,11 @@ clean:
 	$(STACK_HADDOCK) clean --full
 	$(STACK_TEST) clean --full
 	find . -name '*.tix' -exec rm -f '{}' \;
+	rm -f src/main/haskell/kore/test-results.xml
 	rm -rf haskell_documentation
 	rm -rf coverage_report
-	$(MAKE) --directory src/main/k/working clean
 	rm -rf $(BUILD_DIR)
+	$(MAKE) --directory src/main/k/working clean
 
 check:
 	if ! ./scripts/git-assert-clean.sh; \
