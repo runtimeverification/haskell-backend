@@ -70,21 +70,3 @@ clean:
 	rm -rf coverage_report
 	rm -rf $(BUILD_DIR)
 	$(MAKE) --directory src/main/k/working clean
-
-check:
-	if ! ./scripts/git-assert-clean.sh; \
-	then \
-		echo >&2 "Please commit your changes!"; \
-		exit 1; \
-	fi
-	if ! ./scripts/git-rebased-on.sh "$$(git rev-parse $(UPSTREAM_BRANCH))" --linear; \
-	then \
-		echo >&2 "Please rebase your branch onto ‘master’!"; \
-		exit 1; \
-	fi
-	$(TOP)/scripts/stylish.sh
-	if ! ./scripts/git-assert-clean.sh; \
-	then \
-		echo >&2 "Please run ‘scripts/stylish.sh’ to fix style errors!"; \
-		exit 1; \
-	fi
