@@ -47,6 +47,15 @@ axiom{R} \equals{SortMap{}, R} (
   Lbl'Unds'Map'Unds'{}(K2:SortMap{},K1:SortMap{})) [comm{}()]
 ```
 
+### Concrete
+
+```
+concrete{}()
+```
+
+Concrete axioms are not applied to symbolic patterns (patterns containing
+variables).
+
 
 ### HeatCool
 
@@ -82,6 +91,19 @@ axiom{R} \equals{SortSet{}, R} (
 ```
 productionID{}("id")
 ```
+
+### Simplification
+
+```
+simplification{}()
+```
+
+There are 2 types of evaluation: definition evaluations that implement the
+actual semantics and simplification evaluations which are not the part of the
+semantics, but can be used for simplifying the configuration before applying
+definitions. For example, `(x + y) + z = (x + z) + y` where `x` and `z` are
+concrete and `y` is not concrete.
+
 
 ### Trusted
 
