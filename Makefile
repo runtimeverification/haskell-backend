@@ -9,6 +9,8 @@ export STACK_OPTS
 kore:
 	stack build $(STACK_BUILD_OPTS)
 
+kore-exec: $(KORE_EXEC)
+
 k-frontend:
 	mkdir -p $(BUILD_DIR)
 	rm -rf $(K_DIST) $(K_NIGHTLY)
