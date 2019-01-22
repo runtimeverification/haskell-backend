@@ -45,7 +45,12 @@ test-kore:
 test-k: all
 	$(MAKE) --directory src/main/k/working test-k
 
-jenkins: clean check all test docs
+jenkins:
+	$(MAKE) clean
+	$(MAKE) check
+	$(MAKE) all
+	$(MAKE) test
+	$(MAKE) docs
 
 clean:
 	stack clean
