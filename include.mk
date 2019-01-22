@@ -22,14 +22,23 @@ STACK_OPTS = --pedantic
 STACK_BUILD_OPTS = $(STACK_OPTS) --no-run-tests --no-run-benchmarks
 STACK_HADDOCK_OPTS = $(STACK_OPTS) --no-run-tests --no-run-benchmarks
 STACK_TEST_OPTS = $(STACK_OPTS) --no-run-benchmarks
+STACK_NO_PROFILE = --no-library-profiling --no-executable-profiling
+STACK_FAST = --fast
+
+STACK = stack
+STACK_LOCAL_INSTALL_ROOT := $(shell $(STACK) path --local-install-root)
+STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
+STACK_LOCAL_DOC_ROOT := $(shell $(STACK_HADDOCK) path --local-doc-root)
 
 ifdef BUILD_NUMBER
 STACK_TEST_OPTS += --ta --xml=test-results.xml --coverage
 endif
 
-STACK_LOCAL_INSTALL_ROOT = $(shell stack path --local-install-root)
 KORE_EXEC = $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-exec
 KORE_EXEC_OPTS =
+
+$(KORE_EXEC):
+	$(STACK) build --pedantic kore:exe:kore-exec
 
 KOMPILE_OPTS = --backend haskell
 KRUN_OPTS = --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"

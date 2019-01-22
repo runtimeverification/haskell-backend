@@ -22,17 +22,25 @@ k-frontend:
 
 docs: haddock
 
-haddock:
-	stack haddock --no-haddock-deps $(STACK_HADDOCK_OPTS) 2>&1 | tee haddock.log
+clean-haddock: STACK := $(STACK_HADDOCK)
+clean-haddock:
+	$(STACK) clean
+	rm -rf $(STACK_LOCAL_DOC_ROOT)
+
+$(STACK_LOCAL_DOC_ROOT)/index.html: STACK := $(STACK_HADDOCK)
+$(STACK_LOCAL_DOC_ROOT)/index.html:
+	$(STACK) haddock $(STACK_NO_PROFILE) $(STACK_FAST) --no-haddock-deps 2>&1 | tee haddock.log
 	if grep -B 2 'Module header' haddock.log; then \
 		echo >&2 "Please fix the missing documentation!"; \
 		exit 1; \
 	else \
 		rm haddock.log; \
 	fi
-	if [ -n "$$BUILD_NUMBER" ]; then \
-		cp -r $$(stack path --local-doc-root) haskell_documentation; \
-	fi
+
+haddock: $(STACK_LOCAL_DOC_ROOT)/index.html
+
+haskell_documentation: $(STACK_LOCAL_DOC_ROOT)/index.html
+	cp -r $(STACK_LOCAL_DOC_ROOT) haskell_documentation
 
 all: kore k-frontend
 
@@ -54,11 +62,16 @@ jenkins:
 	$(MAKE) test
 	$(MAKE) docs
 
-clean:
-	stack clean
+clean-stack:
+	$(STACK) clean
+	rm -rf $(STACK_LOCAL_INSTALL_ROOT)/bin
 	find . -name '*.tix' -exec rm -f '{}' \;
+
+clean-k:
 	$(MAKE) --directory src/main/k/working clean
 	rm -rf $(BUILD_DIR)
+
+clean: clean-stack clean-haddock clean-k
 
 check:
 	if ! ./scripts/git-assert-clean.sh; \
