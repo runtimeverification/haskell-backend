@@ -1,6 +1,6 @@
 include include.mk
 
-.PHONY: all clean docs haddock jenkins kore k-frontend stylish \
+.PHONY: all clean docs haddock jenkins kore k-frontend \
         test test-kore test-k
 
 kore:
@@ -82,17 +82,9 @@ check:
 		echo >&2 "Please rebase your branch onto ‘master’!"; \
 		exit 1; \
 	fi
-	$(MAKE) stylish
+	$(TOP)/scripts/stylish.sh
 	if ! ./scripts/git-assert-clean.sh; \
 	then \
-		echo >&2 "Please run ‘make stylish’ to fix style errors!"; \
+		echo >&2 "Please run ‘scripts/stylish.sh’ to fix style errors!"; \
 		exit 1; \
 	fi
-
-stylish:
-	if ! command -v stylish-haskell; then\
-		stack install stylish-haskell; \
-	fi
-	find $(HS_SOURCE_DIRS) \
-		\( -name '*.hs' -o -name '*.hs-boot' \) \
-		-print0 | xargs -0L1 stylish-haskell -i
