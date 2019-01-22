@@ -26,9 +26,13 @@ STACK_NO_PROFILE = --no-library-profiling --no-executable-profiling
 STACK_FAST = --fast
 
 STACK = stack
-STACK_LOCAL_INSTALL_ROOT := $(shell $(STACK) path --local-install-root)
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
-STACK_LOCAL_DOC_ROOT := $(shell $(STACK_HADDOCK) path --local-doc-root)
+
+# These paths are assigned with ?= so they will only be assigned once.
+# Sub-processes will inherit the setting from their parent process.
+STACK_LOCAL_INSTALL_ROOT ?= $(shell $(STACK) path --local-install-root)
+STACK_LOCAL_DOC_ROOT ?= $(shell $(STACK_HADDOCK) path --local-doc-root)
+STACK_LOCAL_HPC_ROOT ?= $(shell $(STACK_TEST) path --local-hpc-root)
 
 ifdef BUILD_NUMBER
 STACK_TEST_OPTS += --ta --xml=test-results.xml --coverage
