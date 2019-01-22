@@ -29,7 +29,7 @@ import           Kore.Step.AxiomPatterns
                  RulePattern (..) )
 import           Kore.Step.BaseStep
                  ( StepResult (StepResult), UnificationProcedure (..),
-                 stepWithRuleForUnifier )
+                 stepWithRule )
 import           Kore.Step.BaseStep as StepResult
                  ( StepProof, StepResult (..) )
 import           Kore.Step.ExpandedPattern
@@ -112,7 +112,7 @@ ruleFunctionEvaluator
     dropProof = fst
 
     stepResult =
-        stepWithRuleForUnifier
+        stepWithRule
             tools
             (UnificationProcedure matchAsUnification)
             substitutionSimplifier

@@ -1344,7 +1344,7 @@ runSingleStepWithRemainder metadataTools configuration axiom =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier
     $ runExceptT
-    $ stepWithRule
+    $ stepWithRewriteRule
         metadataTools
         (Mock.substitutionSimplifier metadataTools)
         configuration

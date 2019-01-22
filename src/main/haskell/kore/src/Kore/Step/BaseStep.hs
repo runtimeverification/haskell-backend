@@ -22,8 +22,8 @@ module Kore.Step.BaseStep
     , stepProofSumName
     , stepWithRemainders
     , stepWithRemaindersForUnifier
+    , stepWithRewriteRule
     , stepWithRule
-    , stepWithRuleForUnifier
     ) where
 
 import           Control.Monad.Except
@@ -225,7 +225,7 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Function.Matcher.matchAsUnification' to be used in
--- 'stepWithRuleForUnifier'.
+-- 'stepWithRule'.
 newtype UnificationProcedure level =
     UnificationProcedure
         ( forall variable m
@@ -260,7 +260,7 @@ newtype UnificationProcedure level =
     Returns 'Left' only if there is an error. It is not an error if the axiom
     does not apply to the given configuration.
 -}
-stepWithRuleForUnifier
+stepWithRule
     :: forall level variable .
         ( FreshVariable variable
         , MetaOrObject level
@@ -285,7 +285,7 @@ stepWithRuleForUnifier
             , StepProof level variable
             )
         ]
-stepWithRuleForUnifier
+stepWithRule
     tools
     (UnificationProcedure unificationProcedure')
     substitutionSimplifier
@@ -406,7 +406,7 @@ applyUnificationToRhs
     let
         -- TODO(virgil): Some of the work is duplicated with the
         -- startPattern = mapVariables ConfigurationVariable initialTerm
-        -- statement in the caller (stepWithRuleForUnifier). Should solve
+        -- statement in the caller (stepWithRule). Should solve
         -- this somehow.
         Predicated
             { predicate = startCondition
@@ -609,7 +609,7 @@ keepGoodResults mresultsm = do
             (err : _) -> throwE err
         else return goodResults
 
-stepWithRule
+stepWithRewriteRule
     ::  ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
@@ -632,8 +632,8 @@ stepWithRule
             , StepProof level variable
             )
         ]
-stepWithRule tools substitutionSimplifier patt (RewriteRule rule) =
-    stepWithRuleForUnifier
+stepWithRewriteRule tools substitutionSimplifier patt (RewriteRule rule) =
+    stepWithRule
             tools
             (UnificationProcedure unificationProcedure)
             substitutionSimplifier
@@ -710,7 +710,7 @@ stepWithRemaindersForUnifier
     patt
   = do
     resultsEither <- runExceptT
-        $ stepWithRuleForUnifier
+        $ stepWithRule
             tools
             unification
             substitutionSimplifier
