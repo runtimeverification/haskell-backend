@@ -53,13 +53,6 @@ coverage_report: $(STACK_LOCAL_HPC_ROOT)
 test-k:
 	$(MAKE) --directory src/main/k/working test-k
 
-jenkins:
-	$(MAKE) clean
-	$(MAKE) check
-	$(MAKE) all
-	$(MAKE) test
-	$(MAKE) docs
-
 clean:
 	$(STACK) clean --full
 	$(STACK_HADDOCK) clean --full
