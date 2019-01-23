@@ -33,7 +33,7 @@ import           GHC.Generics
 import           Prelude hiding
                  ( all, and, lines, not, pred, succ )
 import           Text.Megaparsec
-                 ( Parsec, eof, parse, parseErrorPretty )
+                 ( Parsec, eof, errorBundlePretty, parse )
 import           Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as Lexer
 
@@ -307,7 +307,7 @@ loadCoqOutput :: IO Simple_proof
 loadCoqOutput = do
     text <- L.readFile (Paths.dataFileName "test/resources/proof_tree.txt")
     case parse (space1 *> pSimple_proof' <* eof) "proof_tree.txt" text of
-        Left err -> error (parseErrorPretty err)
+        Left err -> error (errorBundlePretty err)
         Right proof -> return proof
 
 {- ^ runConversion takes the number of indices to leave free at the beginning,

@@ -284,7 +284,7 @@ parseSExpr = parseAtom <|> parseList
 readSExpr :: MonadFail m => Text -> m SExpr
 readSExpr txt =
     case Parser.parse parseSExpr "<unknown>" txt of
-        Left err -> fail (Parser.parseErrorPretty err)
+        Left err -> fail (Parser.errorBundlePretty err)
         Right sExpr -> return sExpr
 
 -- | Parse many S-expressions.

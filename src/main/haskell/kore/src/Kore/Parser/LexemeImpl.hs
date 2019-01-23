@@ -40,9 +40,9 @@ import           Data.HashSet
 import qualified Data.HashSet as HashSet
 import qualified Data.Text as Text
 import           Text.Megaparsec
-                 ( SourcePos (..), eof, getPosition, unPos )
+                 ( SourcePos (..), anySingle, eof, getSourcePos, unPos )
 import qualified Text.Megaparsec.Char as Parser
-                 ( anyChar, char, space1, string )
+                 ( char, space1, string )
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import           Kore.AST.Common
@@ -79,14 +79,14 @@ idParser :: MetaOrObject level
 idParser x =
   case isMetaOrObject (toProxy x) of
     IsObject -> do
-        pos <- sourcePosToFileLocation <$> getPosition
+        pos <- sourcePosToFileLocation <$> getSourcePos
         name <- lexeme (objectIdRawParser KeywordsForbidden)
         return Id
             { getId = Text.pack name
             , idLocation = AstLocationFile pos
             }
     IsMeta -> do
-        pos <- sourcePosToFileLocation <$> getPosition
+        pos <- sourcePosToFileLocation <$> getSourcePos
         name <- lexeme metaIdRawParser
         return Id
             { getId = Text.pack name
@@ -123,7 +123,7 @@ skipWhitespace ::  Parser ()
 skipWhitespace = L.space Parser.space1 (L.skipLineComment "//") blockComment
   where
     blockComment = Parser.string "/*" >> void (manyTill commentBody (Parser.string "*/"))
-    commentBody = Parser.anyChar <|> (eof >> fail "Unfinished comment.")
+    commentBody = anySingle <|> (eof >> fail "Unfinished comment.")
 
 koreKeywordsSet :: HashSet Char8.ByteString
 koreKeywordsSet = HashSet.fromList (Char8.pack <$> keywords)

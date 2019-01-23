@@ -26,7 +26,7 @@ import           Data.Sequence
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (pretty) )
 import           Text.Megaparsec
-                 ( parse, parseErrorPretty )
+                 ( errorBundlePretty, parse )
 
 import           Kore.Error
 import           Kore.Parser.ParserUtils ()
@@ -106,7 +106,7 @@ repl = do
         Just strCmd -> do
           pCommand <- reader commandParser
           case parse pCommand "<stdin>" strCmd of
-            Left  err -> outputStrLn (parseErrorPretty err) >> repl
+            Left  err -> outputStrLn (errorBundlePretty err) >> repl
             Right cmd' -> applyCommand cmd' >> repl
 
 

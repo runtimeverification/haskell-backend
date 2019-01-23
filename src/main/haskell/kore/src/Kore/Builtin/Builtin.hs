@@ -448,7 +448,7 @@ parseString parser lit =
     in castParseError parsed
   where
     castParseError =
-        either (Kore.Error.koreFail . Parsec.parseErrorPretty) pure
+        either (Kore.Error.koreFail . Parsec.errorBundlePretty) pure
 
 {- | Return the supplied pattern as an 'AttemptedFunction'.
 
