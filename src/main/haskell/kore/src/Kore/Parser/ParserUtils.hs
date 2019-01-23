@@ -19,10 +19,10 @@ import           Control.Monad
 import           Data.Functor
                  ( ($>) )
 import           Text.Megaparsec
-                 ( Parsec, eof, lookAhead, parse, takeWhileP )
+                 ( Parsec, anySingle, eof, lookAhead, parse, takeWhileP )
 import qualified Text.Megaparsec.Char as Parser
 import           Text.Megaparsec.Error
-                 ( ShowErrorComponent (..), parseErrorPretty )
+                 ( ShowErrorComponent (..), errorBundlePretty )
 
 type Parser = Parsec String String
 
@@ -40,7 +40,7 @@ does not have any available characters.
 -}
 peekChar' :: Parser Char
 peekChar' =
-    lookAhead Parser.anyChar
+    lookAhead anySingle
 
 {-|'scan' is similar to Attoparsec's 'scan'. It does the same thing as
 'runScanner', but without returning the last state.
@@ -60,7 +60,7 @@ runScanner state delta = do
     case maybeC >>= delta state of
         Nothing -> return ("", state)
         Just s -> do
-            c <- Parser.anyChar
+            c <- anySingle
             (reminder, finalState) <- runScanner s delta
             return (c :reminder, finalState)
 
@@ -93,7 +93,7 @@ and produces either a parsed object, or an error message.
 parseOnly :: Parser a -> FilePath -> String -> Either String a
 parseOnly parser filePathForErrors input =
     case parse parser filePathForErrors input of
-        Left err -> Left (parseErrorPretty err)
+        Left err -> Left (errorBundlePretty err)
         Right v  -> Right v
 
 {-|'manyUntilChar' parses a list of 'a' items.

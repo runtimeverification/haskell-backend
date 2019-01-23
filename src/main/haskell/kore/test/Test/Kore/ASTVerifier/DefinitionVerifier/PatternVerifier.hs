@@ -503,6 +503,9 @@ test_patternVerifier =
     , failureTestsForObjectPattern "Domain value - INT.Int"
         (ExpectedErrorMessage
             "<string literal>:1:1:\n\
+            \  |\n\
+            \1 | abcd\n\
+            \  | ^\n\
             \unexpected 'a'\n\
             \expecting '+', '-', or integer\n")
         (ErrorStack
@@ -573,6 +576,9 @@ test_patternVerifier =
     , failureTestsForObjectPattern "Domain value - BOOL.Bool"
         (ExpectedErrorMessage
             "<string literal>:1:1:\n\
+            \  |\n\
+            \1 | untrue\n\
+            \  | ^^^^^\n\
             \unexpected \"untru\"\n\
             \expecting \"false\" or \"true\"\n")
         (ErrorStack

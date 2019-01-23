@@ -692,8 +692,11 @@ nextPatternParserTests =
         , Failure FailureTest
             { failureInput = "\\next{#s}(\"a\")"
             , failureExpected =
-                "<test-string>:1:7:\n"
-                ++"Cannot have a \\next Meta pattern.\n"
+                "<test-string>:1:7:\n\
+                \  |\n\
+                \1 | \\next{#s}(\"a\")\n\
+                \  |       ^\n\
+                \Cannot have a \\next Meta pattern.\n"
             }
         , FailureWithoutMessage
             [ ""
@@ -740,8 +743,11 @@ rewritesPatternParserTests =
         , Failure FailureTest
             { failureInput = "\\rewrites{#s}(\"a\", \"b\")"
             , failureExpected =
-                "<test-string>:1:11:\n"
-                ++ "Cannot have a \\rewrites Meta pattern.\n"
+                "<test-string>:1:11:\n\
+                \  |\n\
+                \1 | \\rewrites{#s}(\"a\", \"b\")\n\
+                \  |           ^\n\
+                \Cannot have a \\rewrites Meta pattern.\n"
             }
         , FailureWithoutMessage
             [ ""

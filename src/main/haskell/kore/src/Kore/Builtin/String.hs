@@ -52,7 +52,6 @@ import           Data.Text
 import           Numeric
                  ( readDec, readHex, readOct, readSigned )
 import qualified Text.Megaparsec as Parsec
-import qualified Text.Megaparsec.Char as Parsec
 
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
@@ -149,7 +148,7 @@ patternVerifier =
 {- | Parse a string literal.
  -}
 parse :: Builtin.Parser String
-parse = Parsec.many Parsec.anyChar
+parse = Parsec.many Parsec.anySingle
 
 {- | Abort function evaluation if the argument is not a String domain value.
 
