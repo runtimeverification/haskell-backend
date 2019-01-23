@@ -38,7 +38,7 @@ module Kore.Step.StepperAttributes
     , lensHook, Hook (..)
     , hookAttribute
     -- * SMT symbols
-    , smtlib, Smtlib (..)
+    , Smtlib (..)
     , smtlibAttribute
     -- * Total symbols
     , isTotal_, isTotal

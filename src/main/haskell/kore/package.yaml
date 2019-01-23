@@ -42,7 +42,7 @@ dependencies:
   - haskeline
   - integer-gmp
   - lens
-  - megaparsec >= 6.4.0
+  - megaparsec >= 7.0.4
   - memory
   - mmorph
   - mtl

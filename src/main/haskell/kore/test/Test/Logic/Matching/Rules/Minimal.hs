@@ -149,4 +149,4 @@ parseTestRule :: String -> DummyRule
 parseTestRule ruleStr =
     case parse mlRuleTestParser "" ruleStr of
         Right parsedRule -> parsedRule
-        Left err -> error (parseErrorPretty err)
+        Left err -> error (errorBundlePretty err)

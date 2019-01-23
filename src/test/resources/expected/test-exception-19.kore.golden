@@ -1,3 +1,6 @@
 Parse error: ../../../test/resources//test-exception-19.kore:6:16:
+  |
+6 |     \equals{#S,S}(X:S,X:S) []
+  |                ^
 unexpected 'S'
 expecting '#'

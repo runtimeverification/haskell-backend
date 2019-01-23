@@ -1,3 +1,6 @@
 Parse error: ../../../test/resources//test-exception-25.kore:5:17:
+  |
+5 |   symbol #a{#b}(m) : #n []
+  |                 ^
 unexpected 'm'
 expecting '#'
