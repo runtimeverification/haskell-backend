@@ -1,25 +1,21 @@
-TOP := $(shell git rev-parse --show-toplevel)
-include $(TOP)/include.mk
+include $(CURDIR)/../include.mk
 
-KOMPILED := imp-kompiled
-DEFINITION := $(KOMPILED)/definition.kore
+KOMPILED = imp-kompiled
+DEFINITION = $(KOMPILED)/definition.kore
 
-$(DEFINITION): imp.k $(KOMPILE)
+$(DEFINITION): imp.k
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module IMP
 
-%.imp.kore: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --dry-run
-
-%.krun: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
+%.krun: %.imp $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
-%.kprove: %.k $(DEFINITION) $(KPROVE) $(KORE_EXEC)
+%.kprove: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
 
-%.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
+%.output: %.imp $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.search.final.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
+%.search.final.output: %.imp $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final \
 		$(foreach pat, $(wildcard $*.search.pattern), --pattern "$$(cat $(pat))")
 
@@ -54,6 +50,6 @@ test-prove: $(foreach test, $(prove_tests), prove/$(test).kprove)
 golden: $(foreach test, $(all_tests), tests/$(test).output.golden)
 
 clean:
-	rm -rf $(KOMPILED) tests/*.imp.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.output
 
 .PHONY: test-k test golden clean %.test %.krun
