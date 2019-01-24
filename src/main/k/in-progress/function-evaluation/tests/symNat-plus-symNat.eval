@@ -1,0 +1,2 @@
+// acceptable result for both branch
+plus(symNat, symNat)

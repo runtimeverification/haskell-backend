@@ -1,0 +1,2 @@
+// safe result for `Nil` case, acceptable result for `Cons` case (constructor at the top, but contains a recursive occurrence)
+lenNat(symNatList)

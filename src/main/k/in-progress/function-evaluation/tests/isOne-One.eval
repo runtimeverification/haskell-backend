@@ -1,0 +1,2 @@
+// safe result in all cases
+isOne(Succ(Zero))

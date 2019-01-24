@@ -1,0 +1,2 @@
+// not acceptable for `Cons` case
+lenInt(symNatList)

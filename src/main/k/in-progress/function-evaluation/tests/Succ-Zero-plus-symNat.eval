@@ -1,0 +1,2 @@
+// safe result
+plus(Succ(Zero), symNat)

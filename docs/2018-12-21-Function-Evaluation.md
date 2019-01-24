@@ -33,22 +33,22 @@ We will separate functions into safe functions, unsafe but acceptable functions,
 and complicated functions.
 
 First, a symbol is constructor-like if it is a constructor, a sort injection,
-or a "constructor modulo axioms" like Map.concat and Map.elem
+or a "constructor modulo axioms" like `Map.concat` and `Map.elem`
 (not defined precisely here).
 
 ### Safe functions
 
-A function is safe if
+A function is safe if it meets one of the following criteria:
 
 1. The function is builtin and does not have axioms for non-builtin evaluation
    (e.g. `+Int`, but not `bitRangeInt` for the EVM semantics since it also has a
    non-builtin definition).
 1. The function evaluates (including the predicate) to either
-    * patterns without free variables (i.e. constant functions)
-    * patterns whose symbols are constructor-like
-      (including `Map.concat and kseq`)
-    * patterns whose symbols are either constructor-like or functions which
-      are safe according to this definition.
+    * a pattern without free variables (i.e. constant functions)
+    * a pattern whose symbols are either constructor-like (including
+      `Map.concat` and `kseq`) or safe functions according to this definition.
+      The recursive occurrences of the function begin defined in the body
+      should be assumed to be unsafe and unacceptable.
 
 Examples:
 * `+Int`, `.Map`
@@ -62,20 +62,18 @@ Examples:
   (assuming that `initKCell` is also safe) since it evaluates to
   since it evaluates to patterns with constructor-like symbols and safe
   symbols.
+* All recursive functions are unsafe since its recursive occurrences are
+  assumed unsafe.
 
 ### Acceptable functions
 
-A function is acceptable if
-1. The function is builtin and does not have axioms for non-builtin evaluation
-1. The function evaluates (including the predicate) to either
-    * patterns without free variables
-    * patterns whose symbols are constructor-like
-    * patterns whose terms have constructor-like symbols at the top
-    * patterns whose symbols are either constructor-like or functions which
-      are safe according to this definition.
+A function is acceptable if it meets one of the following criteria:
+
+1. The function is safe.
+1. The function evaluates to
+    * a pattern whose top-level symbol is constructor-like.
 
 Examples:
-1. all safe functions are acceptable
 1. `plus` for Peano arithmetic where `plus(s(x), y) = s(plus(x, y))` and
   `plus(0, y) = y`.
     * Unsafe because it is not builtin, and it evaluates to a pattern

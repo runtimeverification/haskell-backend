@@ -1,0 +1,2 @@
+// safe result (may add a substitution with an axiom variable but results only consist of contructor-likes)
+isZero(symNat)
