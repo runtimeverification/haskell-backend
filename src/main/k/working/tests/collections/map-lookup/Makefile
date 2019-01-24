@@ -1,19 +1,15 @@
-TOP := $(shell git rev-parse --show-toplevel)
-include $(TOP)/include.mk
+include $(CURDIR)/../../../include.mk
 
 KOMPILED := map-lookup-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): map-lookup.k $(KOMPILE)
+$(DEFINITION): map-lookup.k
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module MAP-LOOKUP
 
-%.map-lookup.kore: %.map-lookup $(DEFINITION) $(KRUN) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --dry-run
-
-%.output: %.map-lookup $(DEFINITION) $(KRUN) $(KORE_EXEC)
+%.output: %.map-lookup $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.map-lookup $(DEFINITION) $(KRUN) $(KORE_EXEC)
+%.krun: %.map-lookup $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
@@ -29,6 +25,6 @@ test-k: tests/1.test
 golden: tests/1.output.golden tests/2.output.golden
 
 clean:
-	rm -rf $(KOMPILED) tests/*.map-lookup.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.output
 
 .PHONY: test-k test golden clean %.test %.krun

@@ -1,19 +1,15 @@
-TOP := $(shell git rev-parse --show-toplevel)
-include $(TOP)/include.mk
+include $(CURDIR)/../../../include.mk
 
 KOMPILED := list-unify-concrete-kompiled
 DEFINITION := $(KOMPILED)/definition.kore
 
-$(DEFINITION): list-unify-concrete.k $(KOMPILE)
+$(DEFINITION): list-unify-concrete.k
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module list-unify-concrete
 
-%.list-unify-concrete.kore: %.list-unify-concrete $(DEFINITION) $(KRUN) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --dry-run
-
-%.output: %.list-unify-concrete $(DEFINITION) $(KRUN) $(KORE_EXEC)
+%.output: %.list-unify-concrete $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.krun: %.list-unify-concrete $(DEFINITION) $(KRUN) $(KORE_EXEC)
+%.krun: %.list-unify-concrete $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
@@ -29,6 +25,6 @@ test-k: tests/1.test tests/2.test tests/3.test tests/4.test tests/5.test
 golden: tests/1.output.golden tests/2.output.golden tests/3.output.golden tests/4.output.golden tests/5.output.golden
 
 clean:
-	rm -rf $(KOMPILED) tests/*.list-unify-concrete.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.output
 
 .PHONY: test-k test golden clean %.test %.krun
