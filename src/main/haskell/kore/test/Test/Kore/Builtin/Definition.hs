@@ -32,8 +32,14 @@ builtinSymbol name =
 orBoolSymbol :: SymbolOrAlias Object
 orBoolSymbol = builtinSymbol "orBool"
 
+orElseBoolSymbol :: SymbolOrAlias Object
+orElseBoolSymbol = builtinSymbol "orElseBool"
+
 andBoolSymbol :: SymbolOrAlias Object
 andBoolSymbol = builtinSymbol "andBool"
+
+andThenBoolSymbol :: SymbolOrAlias Object
+andThenBoolSymbol = builtinSymbol "andThenBool"
 
 xorBoolSymbol :: SymbolOrAlias Object
 xorBoolSymbol = builtinSymbol "xorBool"
@@ -568,8 +574,12 @@ boolModule =
             [ boolSortDecl
             , binarySymbolDecl orBoolSymbol
                 [hookAttribute "BOOL.or", smtlibAttribute "or"]
+            , binarySymbolDecl orElseBoolSymbol
+                [hookAttribute "BOOL.orElse"]
             , binarySymbolDecl andBoolSymbol
                 [hookAttribute "BOOL.and", smtlibAttribute "and"]
+            , binarySymbolDecl andThenBoolSymbol
+                [hookAttribute "BOOL.andThen"]
             , binarySymbolDecl xorBoolSymbol
                 [hookAttribute "BOOL.xor", smtlibAttribute "xor"]
             , binarySymbolDecl neBoolSymbol
