@@ -1,21 +1,11 @@
     Result
   #Equals
-    <generatedTop>
-      <k>
-        final1
-      </k>
-      <generatedCounter>
-        0
-      </generatedCounter>
-    </generatedTop>
+    <k>
+      final1
+    </k>
 #Or
     Result
   #Equals
-    <generatedTop>
-      <k>
-        final2
-      </k>
-      <generatedCounter>
-        0
-      </generatedCounter>
-    </generatedTop>
+    <k>
+      final2
+    </k>

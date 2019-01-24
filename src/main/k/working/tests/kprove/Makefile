@@ -16,8 +16,8 @@ $(DEFINITION): imp.k $(KOMPILE)
 %.kprove: %.k $(DEFINITION) $(KPROVE) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
 
-%.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
+%.output: %.k $(DEFINITION) $(KRUN) $(KORE_EXEC)
+	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $< --output-file $@
 
 %.search.final.output: %.imp $(DEFINITION) $(KRUN) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final \
@@ -29,27 +29,18 @@ $(DEFINITION): imp.k $(KOMPILE)
 %.output.golden: %.output
 	mv $< $<.golden
 
-all_tests := \
-	collatz \
-	impossible-branch.search.final \
-	max-symbolic.search.final \
-	primes \
-	sum
-k_tests := \
-	impossible-branch.search.final \
-	sum
 prove_tests := \
 	sum-spec
 
-test: $(foreach test, $(all_tests), tests/$(test).test)
+test: test-k
 
 test-k: test-prove
 
 test-prove: $(foreach test, $(prove_tests), prove/$(test).kprove)
 
-golden: $(foreach test, $(all_tests), tests/$(test).output.golden)
+golden: $(foreach test, $(prove_tests), prove/$(test).output.golden)
 
 clean:
-	rm -rf $(KOMPILED) tests/*.imp.kore tests/*.output
+	rm -rf $(KOMPILED) prove/*.imp.kore prove/*.output
 
-.PHONY: test-k test golden clean %.test %.krun
+.PHONY: test-k test test-prove golden clean %.test %.krun

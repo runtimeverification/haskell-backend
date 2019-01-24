@@ -31,8 +31,6 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Parser.CString
-                 ( escapeCString )
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.ExpandedPattern
@@ -40,6 +38,8 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
+import           Kore.Unparser
+                 ( escapeChar, escapeString )
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
@@ -239,7 +239,7 @@ instance PrettyPrint StringLiteral where
         betweenParentheses
             flags
             ("StringLiteral "
-            <> inDoubleQuotes (fromString (escapeCString (getStringLiteral s)))
+            <> inDoubleQuotes (fromString (escapeString (getStringLiteral s)))
             )
 
 instance PrettyPrint CharLiteral where
@@ -247,7 +247,7 @@ instance PrettyPrint CharLiteral where
         betweenParentheses
             flags
             ("CharLiteral "
-            <> inSingleQuotes (fromString (escapeCString [getCharLiteral s]))
+            <> inSingleQuotes (fromString (escapeChar $ getCharLiteral s))
             )
 
 instance MetaOrObject level => PrettyPrint (SymbolOrAlias level) where
@@ -826,7 +826,7 @@ instance MetaOrObject level => PrettyPrint (ClashReason level) where
         betweenParentheses
             flags
             ("DomainValueClash "
-            <> inDoubleQuotes (fromString (escapeCString h))
+            <> inDoubleQuotes (fromString (escapeString h))
             )
     prettyPrint flags (HeadClash h) =
         writeOneFieldStruct flags "HeadClash" h

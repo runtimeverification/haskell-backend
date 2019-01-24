@@ -1,107 +1,87 @@
       Result
     #Equals
-      <generatedTop>
-        <T>
-          <k>
-            .
-          </k>
-          <state>
-            max |-> varvarVar'Ques'I1763
-            x |-> varvarVar'Ques'I1763
-            y |-> varvarVar'Ques'I2393
-            z |-> varvarVar'Ques'I3023
-          </state>
-        </T>
-        <generatedCounter>
-          0
-        </generatedCounter>
-      </generatedTop>
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          max |-> varvarVar'Ques'I0
+          x |-> varvarVar'Ques'I0
+          y |-> varvarVar'Ques'I1
+          z |-> varvarVar'Ques'I2
+        </state>
+      </T>
   #And
       false
     #Equals
-      varvarVar'Ques'I1763 <=Int varvarVar'Ques'I2393
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
   #And
       false
     #Equals
-      varvarVar'Ques'I1763 <=Int varvarVar'Ques'I3023
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I2
 #Or
       Result
     #Equals
-      <generatedTop>
-        <T>
-          <k>
-            .
-          </k>
-          <state>
-            max |-> varvarVar'Ques'I2393
-            x |-> varvarVar'Ques'I1763
-            y |-> varvarVar'Ques'I2393
-            z |-> varvarVar'Ques'I3023
-          </state>
-        </T>
-        <generatedCounter>
-          0
-        </generatedCounter>
-      </generatedTop>
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          max |-> varvarVar'Ques'I1
+          x |-> varvarVar'Ques'I0
+          y |-> varvarVar'Ques'I1
+          z |-> varvarVar'Ques'I2
+        </state>
+      </T>
   #And
       false
     #Equals
-      varvarVar'Ques'I2393 <=Int varvarVar'Ques'I3023
+      varvarVar'Ques'I1 <=Int varvarVar'Ques'I2
   #And
       true
     #Equals
-      varvarVar'Ques'I1763 <=Int varvarVar'Ques'I2393
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
 #Or
       Result
     #Equals
-      <generatedTop>
-        <T>
-          <k>
-            .
-          </k>
-          <state>
-            max |-> varvarVar'Ques'I3023
-            x |-> varvarVar'Ques'I1763
-            y |-> varvarVar'Ques'I2393
-            z |-> varvarVar'Ques'I3023
-          </state>
-        </T>
-        <generatedCounter>
-          0
-        </generatedCounter>
-      </generatedTop>
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          max |-> varvarVar'Ques'I2
+          x |-> varvarVar'Ques'I0
+          y |-> varvarVar'Ques'I1
+          z |-> varvarVar'Ques'I2
+        </state>
+      </T>
   #And
       false
     #Equals
-      varvarVar'Ques'I1763 <=Int varvarVar'Ques'I2393
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
   #And
       true
     #Equals
-      varvarVar'Ques'I1763 <=Int varvarVar'Ques'I3023
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I2
 #Or
       Result
     #Equals
-      <generatedTop>
-        <T>
-          <k>
-            .
-          </k>
-          <state>
-            max |-> varvarVar'Ques'I3023
-            x |-> varvarVar'Ques'I1763
-            y |-> varvarVar'Ques'I2393
-            z |-> varvarVar'Ques'I3023
-          </state>
-        </T>
-        <generatedCounter>
-          0
-        </generatedCounter>
-      </generatedTop>
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          max |-> varvarVar'Ques'I2
+          x |-> varvarVar'Ques'I0
+          y |-> varvarVar'Ques'I1
+          z |-> varvarVar'Ques'I2
+        </state>
+      </T>
   #And
       true
     #Equals
-      varvarVar'Ques'I1763 <=Int varvarVar'Ques'I2393
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
   #And
       true
     #Equals
-      varvarVar'Ques'I2393 <=Int varvarVar'Ques'I3023
+      varvarVar'Ques'I1 <=Int varvarVar'Ques'I2

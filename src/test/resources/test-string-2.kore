@@ -1,4 +1,4 @@
-[key{}("\a")]
+[key{}("\u0007")]
 
 module TEST-STRING-2
 

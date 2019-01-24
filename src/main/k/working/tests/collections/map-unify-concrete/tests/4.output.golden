@@ -1,17 +1,12 @@
-<generatedTop>
-  <T>
-    <k>
-      ready
-    </k>
-    <a>
-      .Map
-    </a>
-    <b>
-      x |-> 1
-      z |-> 3
-    </b>
-  </T>
-  <generatedCounter>
-    0
-  </generatedCounter>
-</generatedTop>
+<T>
+  <k>
+    ready
+  </k>
+  <a>
+    .Map
+  </a>
+  <b>
+    x |-> 1
+    z |-> 3
+  </b>
+</T>

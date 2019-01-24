@@ -1,16 +1,11 @@
-<generatedTop>
-  <T>
-    <k>
-      success
-    </k>
-    <a>
-      .Map
-    </a>
-    <b>
-      .Map
-    </b>
-  </T>
-  <generatedCounter>
-    0
-  </generatedCounter>
-</generatedTop>
+<T>
+  <k>
+    success
+  </k>
+  <a>
+    .Map
+  </a>
+  <b>
+    .Map
+  </b>
+</T>
