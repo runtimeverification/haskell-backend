@@ -23,8 +23,14 @@ import Test.SMT
 test_or :: TestTree
 test_or = testBinary orBoolSymbol (||)
 
+test_orElse :: TestTree
+test_orElse = testBinary orElseBoolSymbol (||)
+
 test_and :: TestTree
 test_and = testBinary andBoolSymbol (&&)
+
+test_andThen :: TestTree
+test_andThen = testBinary andThenBoolSymbol (&&)
 
 test_xor :: TestTree
 test_xor = testBinary xorBoolSymbol xor
