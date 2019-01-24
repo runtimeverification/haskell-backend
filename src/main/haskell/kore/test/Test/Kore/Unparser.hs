@@ -1,5 +1,7 @@
 module Test.Kore.Unparser
-    ( test_parse, test_unparse ) where
+    ( test_parse
+    , test_unparse
+    ) where
 
 import           Hedgehog
                  ( Gen, Property, (===) )
@@ -12,7 +14,7 @@ import           Test.Tasty.HUnit
 
 import Kore.AST.Kore
 import Kore.AST.Sentence
-import Kore.Parser.LexemeImpl
+import Kore.Parser.Lexeme
 import Kore.Parser.ParserImpl
 import Kore.Parser.ParserUtils
 import Kore.Unparser
@@ -153,7 +155,7 @@ test_unparse =
                     ]
                 }::Attributes
             )
-            "['\\'', '\\'']"
+            "[''', ''']"
         ]
 
 test_parse :: TestTree
@@ -219,7 +221,7 @@ unparseParseTest
 unparseParseTest parser astInput =
     testCase
         "Parsing + unparsing."
-        (assertEqual "Expecting unparse success!"
+        (assertEqual ""
             (Right astInput)
             (parse parser (unparseToString astInput)))
 
@@ -227,6 +229,6 @@ unparseTest :: (Unparse a, Show a) => a -> String -> TestTree
 unparseTest astInput expected =
     testCase
         "Unparsing"
-        (assertEqual ("Expecting unparse success!" ++ show astInput)
+        (assertEqual (show astInput)
             expected
             (unparseToString astInput))

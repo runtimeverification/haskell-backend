@@ -1,14 +1,9 @@
-<generatedTop>
-  <T>
-    <k>
-      c
-    </k>
-    <s1>
-      a |-> 1
-      b |-> 2
-    </s1>
-  </T>
-  <generatedCounter>
-    0
-  </generatedCounter>
-</generatedTop>
+<T>
+  <k>
+    c
+  </k>
+  <s1>
+    a |-> 1
+    b |-> 2
+  </s1>
+</T>

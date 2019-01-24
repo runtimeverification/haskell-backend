@@ -31,6 +31,8 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
+import           GHC.Stack
+                 ( HasCallStack )
 
 import Kore.AST.Error
        ( koreFailWithLocations )
@@ -150,7 +152,7 @@ getHeadType m patternHead =
     headName = symbolOrAliasConstructor patternHead
 
 getSortAttributes
-    :: MetaOrObject level
+    :: (HasCallStack, MetaOrObject level)
     => IndexedModule sortParam patternType declAtts axiomAtts
     -> Sort level
     -> declAtts

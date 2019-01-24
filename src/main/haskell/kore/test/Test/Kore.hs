@@ -22,8 +22,10 @@ module Test.Kore
     , metaMLPatternGen
     , expandedPatternGen
     , orOfExpandedPatternGen
+    , predicateGen
     , predicateChildGen
     , metaModuleGen
+    , variableGen
     ) where
 
 import           Hedgehog
@@ -47,7 +49,7 @@ import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
 import           Kore.MetaML.AST
-import           Kore.Parser.LexemeImpl
+import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
@@ -168,15 +170,12 @@ charLiteralGen = CharLiteral <$> charGen
 
 charGen :: MonadGen m => m Char
 charGen =
-    Gen.filter (/= '?')
-        (Gen.choice
-            [ Gen.ascii
-            , Gen.element "\a\b\f\n\r\t\v\\\"\'"
-            , Gen.enum '\32' '\127'
-            , Gen.enum '\0' '\255'
-            , Gen.enum '\0' '\65535'
-            ]
-        )
+    Gen.choice
+        [ Gen.ascii
+        , Gen.enum '\x80' '\xFF'
+        , Gen.enum '\x100' '\xD7FF'
+        , Gen.enum '\xE000' '\x10FFFF'
+        ]
 
 symbolOrAliasRawGen
     :: MetaOrObject level
@@ -677,8 +676,18 @@ korePatternUnifiedGen :: Gen CommonKorePattern
 korePatternUnifiedGen =
     transformUnified korePatternChildGen =<< unifiedSortGen
 
-predicateChildGen :: MetaOrObject level => Gen (Predicate level Variable)
-predicateChildGen =
+predicateGen
+    :: MetaOrObject level
+    => Gen (CommonStepPattern level)
+    -> Hedgehog.Gen (Predicate level Variable)
+predicateGen childGen = standaloneGen (predicateChildGen childGen =<< sortGen)
+
+predicateChildGen
+    :: MetaOrObject level
+    => Gen (CommonStepPattern level)
+    -> Sort level
+    -> Gen (Predicate level Variable)
+predicateChildGen childGen patternSort' =
     Gen.recursive
         Gen.choice
         -- non-recursive generators
@@ -700,41 +709,43 @@ predicateChildGen =
         ]
   where
     predicateChildGenAnd =
-        makeAndPredicate <$> predicateChildGen <*> predicateChildGen
+        makeAndPredicate
+            <$> predicateChildGen childGen patternSort'
+            <*> predicateChildGen childGen patternSort'
     predicateChildGenOr =
-        makeOrPredicate <$> predicateChildGen <*> predicateChildGen
+        makeOrPredicate
+            <$> predicateChildGen childGen patternSort'
+            <*> predicateChildGen childGen patternSort'
     predicateChildGenIff =
-        makeIffPredicate <$> predicateChildGen <*> predicateChildGen
+        makeIffPredicate
+            <$> predicateChildGen childGen patternSort'
+            <*> predicateChildGen childGen patternSort'
     predicateChildGenImplies =
-        makeImpliesPredicate <$> predicateChildGen <*> predicateChildGen
-    predicateChildGenCeil =
-        makeCeilPredicate
-            <$> (stepPatternChildGen =<< sortGen)
-    predicateChildGenFloor =
-        makeFloorPredicate
-            <$> (stepPatternChildGen =<< sortGen)
-    predicateChildGenEquals = do
-        operandSort <- Gen.small sortGen
-        makeEqualsPredicate
-            <$> stepPatternChildGen operandSort
-            <*> stepPatternChildGen operandSort
-    predicateChildGenIn = do
-        operandSort <- Gen.small sortGen
-        makeInPredicate
-            <$> stepPatternChildGen operandSort
-            <*> stepPatternChildGen operandSort
+        makeImpliesPredicate
+            <$> predicateChildGen childGen patternSort'
+            <*> predicateChildGen childGen patternSort'
+    predicateChildGenCeil = makeCeilPredicate <$> childGen
+    predicateChildGenFloor = makeFloorPredicate <$> childGen
+    predicateChildGenEquals = makeEqualsPredicate <$> childGen <*> childGen
+    predicateChildGenIn = makeInPredicate <$> childGen <*> childGen
     predicateChildGenNot = do
-        makeNotPredicate <$> predicateChildGen
+        makeNotPredicate <$> predicateChildGen childGen patternSort'
     predicateChildGenExists = do
         varSort <- sortGen
         var <- variableGen varSort
-        makeExistsPredicate var
-            <$> Reader.local (addVariable var) predicateChildGen
+        child <-
+            Reader.local
+                (addVariable var)
+                (predicateChildGen childGen patternSort')
+        return (makeExistsPredicate var child)
     predicateChildGenForall = do
         varSort <- sortGen
         var <- variableGen varSort
-        makeForallPredicate var
-            <$> Reader.local (addVariable var) predicateChildGen
+        child <-
+            Reader.local
+                (addVariable var)
+                (predicateChildGen childGen patternSort')
+        return (makeForallPredicate var child)
 
 sentenceAliasGen
     ::  forall level patternType.

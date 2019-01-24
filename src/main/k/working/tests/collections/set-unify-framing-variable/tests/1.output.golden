@@ -1,14 +1,9 @@
-<generatedTop>
-  <T>
-    <k>
-      a
-    </k>
-    <s1>
-      SetItem ( b )
-      SetItem ( c )
-    </s1>
-  </T>
-  <generatedCounter>
-    0
-  </generatedCounter>
-</generatedTop>
+<T>
+  <k>
+    a
+  </k>
+  <s1>
+    SetItem ( b )
+    SetItem ( c )
+  </s1>
+</T>

@@ -1,20 +1,15 @@
-<generatedTop>
-  <T>
-    <k>
-      success
-    </k>
-    <a>
-      x |-> 1
-      y |-> 2
-      z |-> 3
-    </a>
-    <b>
-      x |-> 1
-      y |-> 2
-      z |-> 3
-    </b>
-  </T>
-  <generatedCounter>
-    0
-  </generatedCounter>
-</generatedTop>
+<T>
+  <k>
+    success
+  </k>
+  <a>
+    x |-> 1
+    y |-> 2
+    z |-> 3
+  </a>
+  <b>
+    x |-> 1
+    y |-> 2
+    z |-> 3
+  </b>
+</T>

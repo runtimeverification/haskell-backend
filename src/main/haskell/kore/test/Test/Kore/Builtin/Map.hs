@@ -37,7 +37,6 @@ import           Kore.Unification.Data
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
-                 ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
@@ -48,8 +47,6 @@ import qualified Test.Kore.Builtin.Set as Test.Set
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
-import           Test.Kore.Step.Condition.Evaluator
-                 ( genSortedVariable )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 import           Test.Tasty.HUnit.Extensions
@@ -73,7 +70,7 @@ genMapSortedVariable
 genMapSortedVariable sort genElement =
     Gen.map
         (Range.linear 0 32)
-        ((,) <$> genSortedVariable sort <*> genElement)
+        ((,) <$> standaloneGen (variableGen sort) <*> genElement)
 
 test_lookupUnit :: TestTree
 test_lookupUnit =
@@ -374,7 +371,8 @@ test_unifyConcrete =
             let genVariablePair =
                     (,) <$> genIntVariable <*> genIntVariable
                   where
-                    genIntVariable = mkVar <$> genSortedVariable intSort
+                    genIntVariable =
+                        standaloneGen $ mkVar <$> variableGen intSort
             map12 <- forAll (genConcreteMap genVariablePair)
             let map1 = fst <$> map12
                 map2 = snd <$> map12

@@ -7,6 +7,8 @@ import Test.Tasty.HUnit
 
 import Data.Either
        ( isLeft )
+import GHC.Stack
+       ( HasCallStack )
 
 import Kore.Parser.ParserUtils
 
@@ -38,10 +40,18 @@ failure input expected = Failure FailureTest
     , failureExpected = expected
     }
 
-parseTree :: (Show a, Eq a) => Parser a -> [ParserTest a] -> [TestTree]
+parseTree
+    :: (HasCallStack, Show a, Eq a)
+    => Parser a
+    -> [ParserTest a]
+    -> [TestTree]
 parseTree parser = map (parseTest parser)
 
-parseTest :: (Show a, Eq a) => Parser a -> ParserTest a -> TestTree
+parseTest
+    :: (HasCallStack, Show a, Eq a)
+    => Parser a
+    -> ParserTest a
+    -> TestTree
 parseTest parser (Success test) =
     testCase
         ("Parsing '" ++ successInput test ++ "'")
@@ -88,30 +98,30 @@ parseSkipTest parser test = parseTest parser test
 parseSuccess :: (Show a, Eq a) => a -> Parser a -> String -> Assertion
 parseSuccess expected parser input =
     assertEqual
-        "Expecting parse success!"
+        ""
         (Right expected)
         (parseOnly (parser <* endOfInput) "<test-string>" input)
 
 parseSkip :: Parser () -> String -> Assertion
 parseSkip parser input =
     assertEqual
-        "Expecting skip success!"
+        ""
         (Right ())
         (parseOnly (parser <* endOfInput) "<test-string>" input)
 
 parseFailureWithoutMessage :: Parser a -> String -> Assertion
 parseFailureWithoutMessage parser input =
     assertBool
-        "Expecting parse failure!"
+        ""
         (isLeft
             (parseOnly (parser <* endOfInput) "<test-string>" input)
         )
 
 parseFailureWithMessage
-    :: (Show a, Eq a)
+    :: (HasCallStack, Show a, Eq a)
     => String -> Parser a -> String -> Assertion
 parseFailureWithMessage expected parser input =
     assertEqual
-        "Expecting parse failure!"
+        ""
         (Left expected)
         (parseOnly (parser <* endOfInput) "<test-string>" input)

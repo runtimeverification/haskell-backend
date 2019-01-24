@@ -37,7 +37,7 @@ import           Kore.Implicit.ImplicitKore
                  ( mlPatternP, variable )
 import           Kore.Implicit.ImplicitSorts
 import           Kore.MetaML.AST
-import           Kore.Parser.LexemeImpl
+import           Kore.Parser.Lexeme
 import           Kore.Parser.ParserUtils as Parser
 
 type LiftedPatternHead = Pattern Meta (Const Void) Variable
