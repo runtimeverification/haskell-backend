@@ -1,13 +1,8 @@
-<generatedTop>
-  <T>
-    <k>
-      0
-    </k>
-    <a>
-      .Map
-    </a>
-  </T>
-  <generatedCounter>
+<T>
+  <k>
     0
-  </generatedCounter>
-</generatedTop>
+  </k>
+  <a>
+    .Map
+  </a>
+</T>

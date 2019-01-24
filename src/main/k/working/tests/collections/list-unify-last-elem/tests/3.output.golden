@@ -1,19 +1,14 @@
-<generatedTop>
-  <T>
-    <k>
-      c
-    </k>
-    <l>
-      ListItem ( a )
-      ListItem ( b )
-      ListItem ( c )
-      .List
-    </l>
-    <v>
-      c
-    </v>
-  </T>
-  <generatedCounter>
-    0
-  </generatedCounter>
-</generatedTop>
+<T>
+  <k>
+    c
+  </k>
+  <l>
+    ListItem ( a )
+    ListItem ( b )
+    ListItem ( c )
+    .List
+  </l>
+  <v>
+    c
+  </v>
+</T>

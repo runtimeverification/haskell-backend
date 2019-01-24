@@ -1,20 +1,15 @@
-<generatedTop>
-  <T>
-    <k>
-      success
-    </k>
-    <a>
-      SetItem ( x )
-      SetItem ( y )
-      SetItem ( z )
-    </a>
-    <b>
-      SetItem ( x )
-      SetItem ( y )
-      SetItem ( z )
-    </b>
-  </T>
-  <generatedCounter>
-    0
-  </generatedCounter>
-</generatedTop>
+<T>
+  <k>
+    success
+  </k>
+  <a>
+    SetItem ( x )
+    SetItem ( y )
+    SetItem ( z )
+  </a>
+  <b>
+    SetItem ( x )
+    SetItem ( y )
+    SetItem ( z )
+  </b>
+</T>

@@ -1,21 +1,16 @@
-<generatedTop>
-  <T>
-    <k>
-      ready
-    </k>
-    <a>
-      ListItem ( x )
-      ListItem ( y )
-      .List
-    </a>
-    <b>
-      ListItem ( x )
-      ListItem ( y )
-      ListItem ( z )
-      .List
-    </b>
-  </T>
-  <generatedCounter>
-    0
-  </generatedCounter>
-</generatedTop>
+<T>
+  <k>
+    ready
+  </k>
+  <a>
+    ListItem ( x )
+    ListItem ( y )
+    .List
+  </a>
+  <b>
+    ListItem ( x )
+    ListItem ( y )
+    ListItem ( z )
+    .List
+  </b>
+</T>

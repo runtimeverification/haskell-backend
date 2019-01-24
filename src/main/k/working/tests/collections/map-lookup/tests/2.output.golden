@@ -1,13 +1,8 @@
-<generatedTop>
-  <T>
-    <k>
-      success
-    </k>
-    <a>
-      3 |-> success
-    </a>
-  </T>
-  <generatedCounter>
-    0
-  </generatedCounter>
-</generatedTop>
+<T>
+  <k>
+    get ( 3 )
+  </k>
+  <a>
+    3 |-> success
+  </a>
+</T>

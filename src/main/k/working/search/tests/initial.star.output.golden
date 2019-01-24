@@ -1,54 +1,29 @@
     Result
   #Equals
-    <generatedTop>
-      <k>
-        final1
-      </k>
-      <generatedCounter>
-        0
-      </generatedCounter>
-    </generatedTop>
+    <k>
+      final1
+    </k>
 #Or
     Result
   #Equals
-    <generatedTop>
-      <k>
-        final2
-      </k>
-      <generatedCounter>
-        0
-      </generatedCounter>
-    </generatedTop>
+    <k>
+      final2
+    </k>
 #Or
     Result
   #Equals
-    <generatedTop>
-      <k>
-        initial
-      </k>
-      <generatedCounter>
-        0
-      </generatedCounter>
-    </generatedTop>
+    <k>
+      initial
+    </k>
 #Or
     Result
   #Equals
-    <generatedTop>
-      <k>
-        next1
-      </k>
-      <generatedCounter>
-        0
-      </generatedCounter>
-    </generatedTop>
+    <k>
+      next1
+    </k>
 #Or
     Result
   #Equals
-    <generatedTop>
-      <k>
-        next2
-      </k>
-      <generatedCounter>
-        0
-      </generatedCounter>
-    </generatedTop>
+    <k>
+      next2
+    </k>
