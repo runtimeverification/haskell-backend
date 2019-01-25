@@ -162,13 +162,14 @@ The following is not acceptable:
 
 1. Any function application that evaluates to safe results is evaluated at
    simplification time.
-1. Any function application that evaluates to acceptable results is
-   evaluated at unification/matching time whenever we try to unify
-   two symbol applications and the result would be of the form
-   `safe-results vs acceptable-results`. We keep evaluating symbol applications
-   at the top of terms in the two result sets (if any) until either they
-   have a constructor-like symbol at the top or they have no symbol at the top
-   (e.g. top/bottom).
+1. Some function applications that evaluate to acceptable results are
+   evaluated at unification/matching time.
+   To be specific, whenever we try to unify `sigma(s1..sn)` with `tau(t1..tn)`
+   and `sigma(s1..sn)` is a safe result, or can be evaluated to one
+   and `tau(t1..tn)` is an acceptable result or can be evaluated to one
+   (or the other way around), we evaluate both of them until they
+   can't be further evaluated, or both are constructor-like, or have
+   constructor-like symbols at the top.
 
 Evaluating any other function applications (e.g. containing unsafe results)
 is not explored here. We may try to print an error, or we may try to do the
